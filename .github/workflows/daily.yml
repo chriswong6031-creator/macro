@@ -134,6 +134,14 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
+          # Marker for the libraries-rebuild guard further down. The four non-US search
+          # libraries are each built by their dashboard step (build_china / build_hk, and
+          # build_canada / build_intl via build_vector) AND again by the resilient rebuild
+          # step at the end — duplicate per-name analyze() work (~11m/run). Any
+          # <mkt>stockdata/index.json newer than this marker was (re)built FRESH this run,
+          # so the rebuild step skips it; a market whose dashboard failed keeps its older
+          # (pulled) index.json and is still rebuilt. Set BEFORE any builder runs.
+          touch /tmp/engine_libs_marker
           run_py() {
             local label="$1"; local mod="$2"
             echo "::group::$label"
@@ -322,7 +330,26 @@ jobs:
         # aborting the deploy. Idempotent.
         run: |
           set +e
+          libdir() {
+            case "$1" in
+              scripts.build_china_library) echo site/chinastockdata;;
+              scripts.build_hk_library) echo site/hkstockdata;;
+              scripts.build_canada_library) echo site/canadastockdata;;
+              scripts.build_intl_library) echo site/intlstockdata;;
+            esac
+          }
           for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
+            idx="$(libdir "$mod")/index.json"
+            # Skip a market whose dashboard step already built its library FRESH this run
+            # (index.json newer than the job-start marker). This rebuild is a FAILURE-PATH
+            # safety net — on the success path the same heavy analyze() over the whole
+            # universe already ran, so rebuilding is pure duplicate work. A dashboard that
+            # swallowed an error leaves an older (pulled) index.json => marker is newer =>
+            # we still rebuild and the library ships.
+            if [ -f /tmp/engine_libs_marker ] && [ "$idx" -nt /tmp/engine_libs_marker ]; then
+              echo "::notice::$mod — already built fresh this run ($idx); skipping redundant rebuild"
+              continue
+            fi
             echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
               echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"

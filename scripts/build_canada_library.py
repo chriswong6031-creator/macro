@@ -15,7 +15,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -33,6 +35,59 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("canada_library")
 
 TSX_INDEX = "^GSPTSE"   # cap-weighted TSX market proxy for the residual-alpha leg
+
+
+# ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
+# Fan the GIL-bound engine.cycles.analyze across processes (knobs match the US/CN/HK
+# builds: STOCK_LIB_WORKERS env > stock_search.workers > cpu_count, capped 8). The
+# pool carries only the market-wide liquidity overlay; per-name post-processing
+# (alpha, conviction, deferred writes) stays serial in main() → output order-identical.
+_CA_SHARED: dict = {}
+
+
+def _library_workers() -> int:
+    n = os.environ.get("STOCK_LIB_WORKERS") or None
+    if n is None:
+        n = config.load().get("stock_search", {}).get("workers")
+    if n is None:
+        n = os.cpu_count() or 1
+    return max(1, min(int(n), 8))
+
+
+def _ca_winit(liq=None) -> None:
+    _CA_SHARED["liq"] = liq
+
+
+def _ca_one_task(item):
+    ticker, close, high, name, sector = item
+    try:
+        return _one(ticker, close, high, name, sector, liquidity=_CA_SHARED.get("liq"))
+    except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
+        log.debug("canada library %s failed: %s", ticker, e)
+        return None
+
+
+def _analyze_universe(uni, liq):
+    """Run _one over the universe, parallel when worthwhile else serial; recs align
+    1:1 with uni. Any pool error degrades to serial — parallelism never breaks the build."""
+    _ca_winit(liq)  # also primes the serial path
+    workers = _library_workers()
+    if workers > 1 and len(uni) > 50:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+            t0 = time.time()
+            with ProcessPoolExecutor(max_workers=workers, initializer=_ca_winit,
+                                     initargs=(liq,)) as ex:
+                recs = list(ex.map(_ca_one_task, uni, chunksize=8))
+            log.info("canada library: analysed %d names in %.0fs (%d processes)",
+                     len(uni), time.time() - t0, workers)
+            return recs
+        except Exception as e:  # noqa: BLE001 — parallelism must never break the build
+            log.warning("parallel canada library build failed (%s) — serial fallback", e)
+    t0 = time.time()
+    recs = [_ca_one_task(item) for item in uni]
+    log.info("canada library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
+    return recs
 
 
 def current_liquidity() -> str | None:
@@ -309,6 +364,9 @@ def main(alpha: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001
         log.warning("canada earnings fetch failed (%s)", e)
     names_map = canada_fundamentals.display_names()
+    # fold the pretty display-name remap into the universe up front so the parallel
+    # analyze() fan-out (and the serial post-loop) carry the final name unchanged.
+    uni = [(t, c, h, names_map.get(t) or n, s) for (t, c, h, n, s) in uni]
 
     # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
@@ -316,13 +374,8 @@ def main(alpha: dict | None = None) -> dict | None:
     # Mirrors build_stock_library (US).
     profiles: dict[str, dict] = {}
     to_write: dict[str, tuple[str, dict]] = {}   # ticker -> (safe, rec)
-    for ticker, close, high, name, sector in uni:
-        name = names_map.get(ticker) or name
-        try:
-            rec = _one(ticker, close, high, name, sector, liquidity=liq)
-        except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
-            log.debug("canada library %s failed: %s", ticker, e)
-            rec = None
+    recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+    for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue

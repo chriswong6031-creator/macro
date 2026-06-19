@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import time
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -129,6 +130,7 @@ def main() -> int:
         registry = {k: v for k, v in registry.items() if k in keep}
 
     results = []
+    timings: dict[str, float] = {}
     for key, cls in registry.items():
         log.info("=== running %s ===", key)
         try:
@@ -136,11 +138,26 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             log.error("init %s failed: %s", key, e)
             continue
+        t0 = time.perf_counter()
         res = run_adapter(adapter, full_history=args.full_history)
+        dt = time.perf_counter() - t0
+        timings[key] = round(dt, 1)
         res.source = key
         results.append(res)
-        log.info("%s -> %s (%d rows, last %s)%s", key, res.status, res.rows,
-                 res.last_date, f" err={res.error}" if res.error else "")
+        log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
+                 res.last_date, dt, f" err={res.error}" if res.error else "")
+
+    # Per-adapter wall-clock: the EVIDENCE for safely targeting the next collect cut.
+    # The top-level loop stays SERIAL on purpose — 14 akshare adapters segfault under
+    # threads (see akshare notes) and the yfinance pullers (china/hk_prices, *_universe)
+    # already parallelise internally via threads=True / their own ThreadPoolExecutor, so
+    # an outer pool would stack Yahoo concurrency into throttle/ban territory while
+    # store.upsert writes parquet non-atomically. So MEASURE first, then thread only the
+    # proven-heavy, proven-independent sources (or raise the existing internal pools).
+    if timings:
+        slow = sorted(timings.items(), key=lambda kv: kv[1], reverse=True)
+        log.info("collect timing total %.0fs · slowest: %s", sum(timings.values()),
+                 ", ".join(f"{k} {v:.0f}s" for k, v in slow[:12]))
 
     # ALFRED point-in-time vintages — slow-moving (revisions accrue over months),
     # so refresh weekly via an mtime gate. Additive: a separate store the live
@@ -148,8 +165,6 @@ def main() -> int:
     # FRED is in scope; failure never aborts collection.
     if "fred" in registry:
         try:
-            import time
-
             from collectors.fred import FredAdapter, _vintage_path
             vp = _vintage_path()
             stale = not vp.exists() or (time.time() - vp.stat().st_mtime) / 86400.0 >= 7
@@ -198,7 +213,7 @@ def main() -> int:
     # merge: a partial --only run must not wipe the health of sources it skipped
     sources = status.get("sources", {})
     for r in results:
-        sources[r.source] = {**asdict(r),
+        sources[r.source] = {**asdict(r), "elapsed_sec": timings.get(r.source),
                              "checked_at": datetime.now(timezone.utc).isoformat()}
     status["sources"] = sources
     status["circuit_breaker"] = update_breaker(results)

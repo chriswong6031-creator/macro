@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -29,6 +31,59 @@ from scripts.build_hk import tv_symbol  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("hk_library")
+
+
+# ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
+# The HK universe runs the GIL-bound engine.cycles.analyze per name; fan it across
+# processes (knobs match the US/CN builds: STOCK_LIB_WORKERS env > stock_search.
+# workers > cpu_count, capped 8). The pool carries only the market-wide liquidity
+# label; per-name post-processing stays serial in main(), so output is order-identical.
+_HK_SHARED: dict = {}
+
+
+def _library_workers() -> int:
+    n = os.environ.get("STOCK_LIB_WORKERS") or None
+    if n is None:
+        n = config.load().get("stock_search", {}).get("workers")
+    if n is None:
+        n = os.cpu_count() or 1
+    return max(1, min(int(n), 8))
+
+
+def _hk_winit(liq=None) -> None:
+    _HK_SHARED["liq"] = liq
+
+
+def _hk_one_task(item):
+    ticker, close, high, name, sector = item
+    try:
+        return _one(ticker, close, high, name, sector, liquidity=_HK_SHARED.get("liq"))
+    except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
+        log.debug("hk library %s failed: %s", ticker, e)
+        return None
+
+
+def _analyze_universe(uni, liq):
+    """Run _one over the universe, parallel when worthwhile else serial; recs align
+    1:1 with uni. Any pool error degrades to serial — parallelism never breaks the build."""
+    _hk_winit(liq)  # also primes the serial path
+    workers = _library_workers()
+    if workers > 1 and len(uni) > 50:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+            t0 = time.time()
+            with ProcessPoolExecutor(max_workers=workers, initializer=_hk_winit,
+                                     initargs=(liq,)) as ex:
+                recs = list(ex.map(_hk_one_task, uni, chunksize=8))
+            log.info("hk library: analysed %d names in %.0fs (%d processes)",
+                     len(uni), time.time() - t0, workers)
+            return recs
+        except Exception as e:  # noqa: BLE001 — parallelism must never break the build
+            log.warning("parallel hk library build failed (%s) — serial fallback", e)
+    t0 = time.time()
+    recs = [_hk_one_task(item) for item in uni]
+    log.info("hk library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
+    return recs
 
 
 def compute_hk_global_betas() -> dict | None:
@@ -446,12 +501,9 @@ def main(betas: dict | None = None) -> dict | None:
     log.info("hk dual-liquidity regime for library: %s", liq or "unknown")
     index, built, failed = [], 0, 0
     price_by: dict[str, float] = {}
-    for ticker, close, high, name, sector in universe():
-        try:
-            rec = _one(ticker, close, high, name, sector, liquidity=liq)
-        except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
-            log.debug("hk library %s failed: %s", ticker, e)
-            rec = None
+    uni = universe()
+    recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+    for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
