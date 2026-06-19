@@ -3,9 +3,9 @@
     "label": "deteriorating",
     "name": "AI Agents & Applications",
     "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
-    "rank": 29,
+    "rank": 28,
     "reco": "avoid",
-    "score": 34
+    "score": 36
   },
   "ai_infra": {
     "label": "dominant",
@@ -27,9 +27,9 @@
     "label": "dominant",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 7,
+    "rank": 9,
     "reco": "hold",
-    "score": 68
+    "score": 67
   },
   "ai_software": {
     "label": "deteriorating",
@@ -45,7 +45,7 @@
     "name_zh": "\u5173\u952e\u77ff\u4ea7\u4e0e\u7a00\u571f",
     "rank": 25,
     "reco": "avoid",
-    "score": 45
+    "score": 44
   },
   "crypto": {
     "label": "neutral",
@@ -59,7 +59,7 @@
     "label": "neutral",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 18,
+    "rank": 19,
     "reco": "hold",
     "score": 52
   },
@@ -67,7 +67,7 @@
     "label": "dominant",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 8,
+    "rank": 7,
     "reco": "hold",
     "score": 68
   },
@@ -101,7 +101,7 @@
     "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
     "rank": 12,
     "reco": "hold",
-    "score": 62
+    "score": 63
   },
   "mag7": {
     "label": "deteriorating",
@@ -115,7 +115,7 @@
     "label": "fading",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 19,
+    "rank": 20,
     "reco": "trim",
     "score": 51
   },
@@ -131,9 +131,9 @@
     "label": "deteriorating",
     "name": "Non-AI Software",
     "name_zh": "\u975eAI\u8f6f\u4ef6",
-    "rank": 28,
+    "rank": 29,
     "reco": "avoid",
-    "score": 35
+    "score": 34
   },
   "non_ai_tech": {
     "label": "dominant",
@@ -147,23 +147,23 @@
     "label": "dominant",
     "name": "Nuclear & SMR Power",
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
-    "rank": 11,
+    "rank": 10,
     "reco": "accumulate",
-    "score": 63
+    "score": 64
   },
   "obesity_glp1": {
-    "label": "emerging",
+    "label": "neutral",
     "name": "GLP-1 & Obesity",
     "name_zh": "GLP-1 \u4e0e\u51cf\u80a5\u836f",
-    "rank": 15,
-    "reco": "enter",
-    "score": 56
+    "rank": 17,
+    "reco": "hold",
+    "score": 53
   },
   "payments_fintech": {
     "label": "deteriorating",
     "name": "Payments & Fintech",
     "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
-    "rank": 20,
+    "rank": 21,
     "reco": "avoid",
     "score": 51
   },
@@ -173,13 +173,13 @@
     "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
     "rank": 14,
     "reco": "hold",
-    "score": 58
+    "score": 59
   },
   "quantum_computing": {
     "label": "dominant",
     "name": "Quantum Computing",
     "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
-    "rank": 10,
+    "rank": 11,
     "reco": "accumulate",
     "score": 64
   },
@@ -195,7 +195,7 @@
     "label": "dominant",
     "name": "Reshoring & Industrial Capex",
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
-    "rank": 9,
+    "rank": 8,
     "reco": "hold",
     "score": 67
   },
@@ -203,17 +203,17 @@
     "label": "neutral",
     "name": "Retail",
     "name_zh": "\u96f6\u552e",
-    "rank": 21,
+    "rank": 18,
     "reco": "hold",
-    "score": 51
+    "score": 52
   },
   "robotics_automation": {
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 17,
+    "rank": 16,
     "reco": "hold",
-    "score": 53
+    "score": 54
   },
   "semicap_equipment": {
     "label": "dominant",
@@ -243,7 +243,7 @@
     "label": "emerging",
     "name": "Uranium & Nuclear Fuel",
     "name_zh": "\u94c0\u77ff\u4e0e\u6838\u71c3\u6599",
-    "rank": 16,
+    "rank": 15,
     "reco": "enter",
     "score": 55
   }

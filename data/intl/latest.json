@@ -41,8 +41,8 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.1,
         "m2_yoy": 4.22,
-        "fx": 161.189,
-        "fx_strength_3m": -1.71,
+        "fx": 161.28,
+        "fx_strength_3m": -1.77,
         "realvol": 32.1,
         "drawdown": 0.0
       },
@@ -95,8 +95,8 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.5,
         "m2_yoy": 5.73,
-        "fx": 1528.51,
-        "fx_strength_3m": -2.91,
+        "fx": 1529.89,
+        "fx_strength_3m": -3.0,
         "realvol": 64.9,
         "drawdown": -0.1
       },
@@ -257,8 +257,8 @@
         "unemployment": 4.49,
         "unemployment_chg6m": 0.37,
         "m2_yoy": null,
-        "fx": 0.702,
-        "fx_strength_3m": 0.2,
+        "fx": 0.7016,
+        "fx_strength_3m": 0.14,
         "realvol": 14.5,
         "drawdown": -4.0
       },
@@ -296,7 +296,7 @@
       "inflation_score": -0.5,
       "confidence": 0.35,
       "liquidity": "unknown",
-      "recession_score": 19.0,
+      "recession_score": 20.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.94,
@@ -311,10 +311,10 @@
         "unemployment": 4.9,
         "unemployment_chg6m": -0.2,
         "m2_yoy": -3.66,
-        "fx": 1.3233,
-        "fx_strength_3m": -1.42,
-        "realvol": 10.1,
-        "drawdown": -4.9
+        "fx": 1.3237,
+        "fx_strength_3m": -1.39,
+        "realvol": 10.2,
+        "drawdown": -5.0
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -323,13 +323,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 10381.01,
-        "off_52w_high": -4.9,
+        "price": 10363.27,
+        "off_52w_high": -5.0,
         "above_50d": false,
         "above_200d": true,
-        "realvol": 10.1,
-        "rsi": 50.0,
-        "ext_z": -1.55,
+        "realvol": 10.2,
+        "rsi": 49.0,
+        "ext_z": -1.62,
         "ext_grade": "intrend",
         "drawdown_risk": 10.0,
         "drawdown_band": "low",
@@ -365,8 +365,8 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.1471,
-        "fx_strength_3m": -1.18,
+        "fx": 1.1469,
+        "fx_strength_3m": -1.19,
         "realvol": 9.4,
         "drawdown": -0.4
       },
@@ -414,7 +414,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 19.0
+          "value": 20.0
         },
         {
           "cc": "KR",
@@ -574,25 +574,25 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": -2.91
+          "value": -3.0
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -1.71
+          "value": -1.77
         },
         {
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": -1.42
+          "value": -1.39
         },
         {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": -1.18
+          "value": -1.19
         },
         {
           "cc": "IN",
@@ -604,7 +604,7 @@
           "cc": "AU",
           "flag": "\ud83c\udde6\ud83c\uddfa",
           "name": "Australia",
-          "value": 0.2
+          "value": 0.14
         },
         {
           "cc": "TW",

@@ -1,5 +1,5 @@
 {
-  "cash": 0.233,
+  "cash": 0.227,
   "crash": false,
   "eligible": [
     "ca_asset_mgrs",
@@ -19,8 +19,8 @@
   ],
   "held": [
     "ca_base_metals",
-    "ca_silver_royalty",
     "ca_uranium",
+    "ca_silver_royalty",
     "ca_banks"
   ],
   "leader": "ca_base_metals",

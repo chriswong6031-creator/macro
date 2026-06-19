@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-06-19T13:39:43.579512+00:00",
+  "generated_at": "2026-06-19T22:50:31.715611+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -114,7 +114,7 @@
       "years": 27.5
     },
     "baskets": {
-      "n_assets": 25,
+      "n_assets": 31,
       "span": [
         "2023-05-31",
         "2026-06-30"
@@ -122,98 +122,98 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.5148,
-          "sharpe": 1.86,
-          "max_dd": -0.149,
-          "calmar": 3.45,
+          "cagr": 0.5762,
+          "sharpe": 1.96,
+          "max_dd": -0.1537,
+          "calmar": 3.75,
           "n_months": 37,
-          "dsr": 0.932
+          "dsr": 0.952
         },
         "top3_mom12_rel": {
-          "cagr": 1.5281,
-          "sharpe": 1.78,
-          "max_dd": -0.3352,
+          "cagr": 1.3385,
+          "sharpe": 1.71,
+          "max_dd": -0.2936,
           "calmar": 4.56,
           "n_months": 25,
-          "dsr": 0.814
+          "dsr": 0.858
         },
         "top3_mom6_rel": {
-          "cagr": 1.0027,
-          "sharpe": 1.5,
-          "max_dd": -0.3034,
-          "calmar": 3.3,
+          "cagr": 1.343,
+          "sharpe": 1.84,
+          "max_dd": -0.194,
+          "calmar": 6.92,
           "n_months": 27,
-          "dsr": 0.727
+          "dsr": 0.904
         },
         "top3_mom12_dual": {
-          "cagr": 1.4279,
-          "sharpe": 1.76,
-          "max_dd": -0.3352,
-          "calmar": 4.26,
+          "cagr": 1.2749,
+          "sharpe": 1.71,
+          "max_dd": -0.2936,
+          "calmar": 4.34,
           "n_months": 25,
-          "dsr": 0.793
+          "dsr": 0.841
         },
         "top4_mom12_dual": {
-          "cagr": 1.1793,
-          "sharpe": 1.77,
-          "max_dd": -0.3227,
-          "calmar": 3.65,
+          "cagr": 1.1613,
+          "sharpe": 1.69,
+          "max_dd": -0.2138,
+          "calmar": 5.43,
           "n_months": 25,
-          "dsr": 0.791
+          "dsr": 0.839
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.1534,
-          "ic_t_hac": 3.023,
-          "hit": 0.68,
+          "mean_ic": 0.117,
+          "ic_t_hac": 2.959,
+          "hit": 0.64,
           "n_steps": 25
         },
         "3m": {
-          "mean_ic": 0.2046,
-          "ic_t_hac": 3.119,
+          "mean_ic": 0.1995,
+          "ic_t_hac": 3.107,
           "hit": 0.75,
           "n_steps": 8
         }
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0329,
-          "std": 0.1138,
-          "sharpe": 1.0,
-          "p05": -0.1258,
-          "n": 572
+          "mean": 0.0385,
+          "std": 0.1287,
+          "sharpe": 1.04,
+          "p05": -0.1421,
+          "n": 714
         },
         "below_trend": {
-          "mean": 0.045,
-          "std": 0.1159,
-          "sharpe": 1.35,
-          "p05": -0.1024,
-          "n": 353
+          "mean": 0.0455,
+          "std": 0.12,
+          "sharpe": 1.31,
+          "p05": -0.1098,
+          "n": 433
         },
-        "mean_diff_t": -1.55,
-        "mean_diff_p": 0.1208
+        "mean_diff_t": -0.93,
+        "mean_diff_p": 0.352
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
-            "mean_fwd_maxdd": -0.0912,
-            "p05_fwd_maxdd": -0.2795,
-            "n": 9745
+            "mean_fwd_maxdd": -0.0946,
+            "p05_fwd_maxdd": -0.2886,
+            "n": 11870
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.0914,
-            "p05_fwd_maxdd": -0.2965,
-            "n": 2113
+            "mean_fwd_maxdd": -0.0943,
+            "p05_fwd_maxdd": -0.3015,
+            "n": 2603
           },
           "parabolic": {
-            "mean_fwd_maxdd": -0.0961,
-            "p05_fwd_maxdd": -0.3577,
-            "n": 517
+            "mean_fwd_maxdd": -0.104,
+            "p05_fwd_maxdd": -0.3271,
+            "n": 872
           }
         },
-        "spearman_ez_vs_fwd_maxdd": 0.038
+        "spearman_ez_vs_fwd_maxdd": 0.039
       },
       "warning": "HINDSIGHT-curated membership + only ~3y + ~15 names -> severely underpowered and survivorship-biased. Context only, never a validation."
     }
