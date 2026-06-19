@@ -740,6 +740,77 @@
   @media (prefers-reduced-motion: reduce) {
     body.page-macro .qm { transition: none; }
   }
+
+  /* ===== HERO enlargement + "New here?" tuck (desktop) ===== */
+  body.page-macro #regime-radar { position: relative; }
+  body.page-macro .qmini { grid-template-columns: repeat(2, 41px); grid-template-rows: repeat(2, 41px); gap: 6px; }
+  body.page-macro h1.hr-name { font-size: 42px; }
+  body.page-macro .hr-dot { width: 15px; height: 15px; }
+  body.page-macro .hero-says { font-size: 14.5px; max-width: 52ch; }
+  /* "New here?" → compact, de-emphasised, right-tucked so the hero is the star;
+     it expands in place (a thin help line), never crowding the locator/headline */
+  body.page-macro #regime-radar > .howto { margin: 11px 0 0; text-align: right; }
+  body.page-macro #regime-radar > .howto > summary { display: inline-block; font-size: 12px;
+    font-weight: 600; color: var(--ink-3); }
+  body.page-macro #regime-radar > .howto > summary:hover { color: var(--link); }
+  body.page-macro #regime-radar > .howto[open] > div { text-align: left; }
+
+  /* ===== Foldable panel (Data health, dormant Dislocation): click header to open/close ===== */
+  body.page-macro details.fold > summary { list-style: none; cursor: pointer; display: flex;
+    align-items: center; gap: 9px; font-size: 14px; font-weight: 700; color: var(--ink-1);
+    line-height: 1.35; }
+  body.page-macro details.fold > summary::-webkit-details-marker { display: none; }
+  body.page-macro details.fold > summary::before { content: ""; flex: none; width: 3px; height: 14px;
+    border-radius: 1.5px; background: var(--link); }
+  body.page-macro details.fold > summary .fold-stat { font-weight: 500; color: var(--ink-2);
+    font-size: 12.5px; }
+  body.page-macro details.fold > summary .fold-caret { margin-left: auto; flex: none; font-size: 11px;
+    color: var(--ink-3); transition: transform .22s ease; }
+  body.page-macro details.fold[open] > summary .fold-caret { transform: rotate(180deg); }
+  body.page-macro details.fold[open] > summary { margin-bottom: 13px; padding-bottom: 11px;
+    border-bottom: var(--rule) solid var(--hair); }
+  body.page-macro details.fold > summary:hover .fold-caret { color: var(--link); }
+
+  /* ===== Combined "Now" board — pure-CSS radio tabs (no JS) ===== */
+  body.page-macro .cb-tabs { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin-top: 2px; }
+  body.page-macro .cb-radio { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  body.page-macro .cb-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px;
+    border-radius: 9px; border: var(--rule) solid var(--hair); background: var(--panel);
+    cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink-2); user-select: none;
+    transition: color .15s, background .15s, border-color .15s; }
+  body.page-macro .cb-tab:hover { color: var(--ink-1); border-color: color-mix(in srgb, var(--link) 45%, var(--hair)); }
+  body.page-macro .cb-radio:checked + .cb-tab { color: var(--ink-1); background: var(--tile);
+    border-color: color-mix(in srgb, var(--link) 55%, var(--hair));
+    box-shadow: inset 0 -2px 0 0 var(--link); }
+  body.page-macro .cb-radio:focus-visible + .cb-tab { outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
+  /* a full-width hairline divider that wraps right after the tab row, above the panes */
+  body.page-macro .cb-tabs::after { content: ""; order: 1; flex-basis: 100%; height: var(--rule);
+    background: var(--hair); margin: 9px 0 0; }
+  body.page-macro .cb-pane { order: 2; display: none; flex-basis: 100%; width: 100%; min-width: 0; padding-top: 14px; }
+  body.page-macro #cb-alerts:checked ~ .cb-p-alerts,
+  body.page-macro #cb-news:checked ~ .cb-p-news,
+  body.page-macro #cb-relief:checked ~ .cb-p-relief { display: block; }
+  body.page-macro .cb-count { font-size: 11px; font-weight: 800; padding: 0 7px; border-radius: 8px;
+    background: color-mix(in srgb, var(--act) 18%, var(--tile)); color: var(--act);
+    font-family: var(--num); font-variant-numeric: tabular-nums; }
+  body.page-macro .cb-live { width: 8px; height: 8px; border-radius: 50%; background: var(--up);
+    box-shadow: 0 0 8px var(--up); flex: none; }
+  body.page-macro .cb-sub { font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 0 0 9px;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  body.page-macro .cb-sub a { margin-left: auto; }
+  /* dislocation surfaced into the alerts pane when active */
+  body.page-macro .alert.alert-dislocation { border-left-color: var(--act); }
+  /* when a dislocation is active its panel renders (only then) and floats to the very
+     top of the page — a rare, urgent risk banner above the regime hero. Hidden (not
+     rendered at all) when dormant, so it never occupies prime space on normal days. */
+  body.page-macro #dislocation { order: -1; scroll-margin-top: 16px; }
+
+  @media (max-width: 900px) {
+    body.page-macro .qmini { grid-template-columns: repeat(2, 34px); grid-template-rows: repeat(2, 34px); }
+    body.page-macro h1.hr-name { font-size: 30px; }
+    body.page-macro #regime-radar > .howto { text-align: left; }
+    body.page-macro .cb-tab { padding: 7px 12px; font-size: 12.5px; }
+  }
 </style>
 </head>
 <body class="{{ 'page-stocks' if mode == 'stocks' else 'page-macro' }}">
@@ -1317,32 +1388,15 @@
     </div>
   </div>
 
-  {% if alerts %}
-  <div class="panel span12">
-    <h2>{{ t('Fired alerts (today)', '已触发警报（今日）') }}
-      {{ help("Alerts fire only when something CHANGES — a warning level escalating, a crossing, a sign flip — never just because a level is high. They're rare by design; read every one. Click any alert to jump to the scorecard it came from.", "警报只在某物发生变化时触发 — 预警级别升级、出现交叉、符号翻转 — 绝不仅因某个水平偏高而触发。它们刻意设计得稀少；每一条都要读。点击任意警报可跳转到其来源的计分卡。") }}
-    </h2>
-    {% for a in alerts %}
-      <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
-        <div class="alert-head">
-          <span class="alert-ico">{{ a.icon }}</span>
-          <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
-          {% if a.anchor %}<span class="alert-jump">{{ t('View scorecard ↓', '查看计分卡 ↓') }}</span>{% endif %}
-        </div>
-        <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
-        <div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>
-        {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
-      </a>
-    {% endfor %}
-  </div>
-  {% endif %}
+  {# Fired alerts moved into the combined "Now" board (alerts · news · relief radar) below. #}
 
   <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
   {% if latest.dislocation %}
   {% set DL = latest.dislocation %}
   {% set DI = DL.inputs %}
   {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
-  <div class="panel span12{% if DL.dislocation_active %} dislo-lit{% endif %}" id="dislocation"{% if DL.dislocation_active %} style="--lit:{{ vcolor }}"{% endif %}>
+  {% if DL.dislocation_active %}{# only renders when a real dislocation is firing; CSS floats it to the very top #}
+  <div class="panel span12 dislo-lit" id="dislocation" style="--lit:{{ vcolor }}">
     <h2>🚦 {{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
       {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). The whole edge is in REFUSING the falling knife (2000/2008/2022), not in catching the bounce — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。全部优势在于拒绝接飞刀（2000／2008／2022），而非抄到反弹 — 基于标普 1997-2026 实测。") }}
     </h2>
@@ -1453,7 +1507,8 @@
 
     </div>
   </div>
-  {% endif %}
+  {% endif %}{# /dislocation panel — only when active #}
+  {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
 
   {# AI Master Brief — cross-asset LLM synthesis (engine/master_brain.py). Client-
      fetched from master_brief.json so it never depends on build order; hidden until
@@ -1851,10 +1906,44 @@
   #macro-news .mn-disc{color:var(--muted);font-size:11px;margin-top:12px;border-top:1px solid var(--line);padding-top:8px;line-height:1.5}
   @media(max-width:760px){ #macro-news .mn-cols{grid-template-columns:1fr} }
   </style>
-  <div class="panel span12" id="macro-news">
-    <h2>📰 {{ t('Macro news, sentiment &amp; catalysts', '宏观新闻、情绪与日程') }}
-      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and a unified US event calendar (FOMC, CPI/PPI, jobs report, GDP, PCE, jobless claims, ISM, options-expiry and Treasury auctions). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it. There is deliberately NO event-risk dampener: pre-FOMC drift died after 2016 and the announcement premium is positive, so cutting exposure into prints would be wrong-signed. Dates are scheduling info, not forecasts.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及统一的美国事件日历（FOMC、CPI/PPI、就业报告、GDP、PCE、初请失业金、ISM、期权到期与国债拍卖）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。我们刻意不做事件风险衰减：2016 年后 FOMC 前漂移已消失、公告溢价为正，因此在数据公布前削减仓位方向是错的。日期为日程信息，而非预测。") }}
+  {% set _has_alerts = alerts or (latest.dislocation and latest.dislocation.dislocation_active) %}
+  <div class="panel span12" id="now-board">
+    <h2>📡 {{ t('Now — alerts, news &amp; relief radar', '当前 — 警报、新闻与反弹雷达') }}
+      {{ help("Three related 'right now' reads, consolidated into one board: today's FIRED ALERTS (they fire only on a CHANGE — a level escalating, a crossing, a sign flip — so read every one), filtered MACRO NEWS + sentiment + the US event calendar + market-implied odds (all CONTEXT — never scored, the mechanical model never reads it), and the RELIEF RADAR (a coincident detector for a fast risk-on snap out of a washout — an attention radar, never a buy signal). Switch tabs to read each.", "三个相关的'当前'读数，汇总为一个面板：今日已触发警报（仅在发生变化时触发 — 级别升级、出现交叉、符号翻转 — 故每条都要读）、已筛选的宏观新闻＋情绪＋美国事件日历＋市场隐含概率（全部为背景 — 从不评分，机械模型也从不读取），以及反弹雷达（从清洗中快速转向风险偏好的同步探测器 — 注意力雷达，绝非买入信号）。切换标签分别查看。") }}
     </h2>
+    <div class="cb-tabs">
+      {% if _has_alerts %}<input class="cb-radio" type="radio" name="nowtab" id="cb-alerts" checked><label class="cb-tab" for="cb-alerts">⚠ {{ t('Fired alerts', '已触发警报') }} <span class="cb-count">{{ (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) }}</span></label>{% endif %}
+      <input class="cb-radio" type="radio" name="nowtab" id="cb-news"{% if not _has_alerts %} checked{% endif %}><label class="cb-tab" for="cb-news">📰 {{ t('News &amp; catalysts', '新闻与日程') }}</label>
+      <input class="cb-radio" type="radio" name="nowtab" id="cb-relief"><label class="cb-tab" for="cb-relief">⚡ {{ t('Relief radar', '反弹雷达') }}{% if regime_snap and regime_snap.status == 'firing' %} <span class="cb-live" title="firing"></span>{% endif %}</label>
+
+      {% if _has_alerts %}
+      <div class="cb-pane cb-p-alerts">
+        {% if latest.dislocation and latest.dislocation.dislocation_active %}
+        <a class="alert alert-dislocation" href="#dislocation">
+          <div class="alert-head"><span class="alert-ico">🚦</span>
+            <b>{{ t('Dislocation Gate-1 is ACTIVE', '错位一道闸已激活') }}</b>
+            <span class="alert-jump">{{ t('View gate ↓', '查看一道闸 ↓') }}</span></div>
+          <div class="alert-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.', '压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).', '压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.', '急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
+        </a>
+        {% endif %}
+        {% if alerts %}{% for a in alerts %}
+        <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
+          <div class="alert-head">
+            <span class="alert-ico">{{ a.icon }}</span>
+            <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
+            {% if a.anchor %}<span class="alert-jump">{{ t('View scorecard ↓', '查看计分卡 ↓') }}</span>{% endif %}
+          </div>
+          <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+          <div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>
+          {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
+        </a>
+        {% endfor %}{% else %}<p class="muted sm" style="margin-top:6px">{{ t('No alerts fired today — alerts are rare by design (they fire only on a change).', '今日无警报触发 —— 警报刻意设计得稀少（仅在发生变化时触发）。') }}</p>{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="cb-pane cb-p-news" id="macro-news">
+        <div class="cb-sub">📰 {{ t('Macro news, sentiment &amp; catalysts', '宏观新闻、情绪与日程') }}
+      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and a unified US event calendar (FOMC, CPI/PPI, jobs report, GDP, PCE, jobless claims, ISM, options-expiry and Treasury auctions). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it. There is deliberately NO event-risk dampener: pre-FOMC drift died after 2016 and the announcement premium is positive, so cutting exposure into prints would be wrong-signed. Dates are scheduling info, not forecasts.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及统一的美国事件日历（FOMC、CPI/PPI、就业报告、GDP、PCE、初请失业金、ISM、期权到期与国债拍卖）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。我们刻意不做事件风险衰减：2016 年后 FOMC 前漂移已消失、公告溢价为正，因此在数据公布前削减仓位方向是错的。日期为日程信息，而非预测。") }}</div>
     {# compact US high-impact catalyst strip (next 14 days) — glanceable scheduling
        context. DISPLAY ONLY: it never feeds a score, signal or allocation. #}
     <div class="ev-strip">
@@ -1933,16 +2022,13 @@
       </div>
     </div>
     <p class="mn-disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
-  </div>
-  {% endif %}{# /mode != stocks — macro group 1 (regime, index health, nowcast, news) #}
+      </div>
 
-  <!-- ===== REGIME SNAP / RELIEF RADAR (display-only velocity complement) ===== -->
-  {% if mode != 'stocks' %}
-  <div class="panel span12" id="relief-radar">
-    <h2>⚡ {{ t('Relief radar: regime-snap detector', '反弹雷达：周期急转探测器') }}
+      <div class="cb-pane cb-p-relief" id="relief-radar">
+        <div class="cb-sub">⚡ {{ t('Relief radar: regime-snap detector', '反弹雷达：周期急转探测器') }}
       {{ help("A fast 'is the regime snapping risk-on RIGHT NOW' radar — the velocity complement to the Fear↔Euphoria level read below. It fires when the cross-asset RORO complex flips risk-on hard and broadly (RORO velocity in its top decile AND several legs flipping together) coming OUT of a capitulation washout — the relief-rally fingerprint. VERIFIED on 55 years: it lights up on every canonical relief (COVID, the 2022 CPI relief, SVB, the 2024 carry-unwind snapback, the 2026-06 relief) but its forward returns are about the base rate — it is COINCIDENT, not predictive. So it is an ATTENTION radar that compresses reaction time (you see the snap on day 1, before slow technicals confirm), NEVER a buy/size signal. Zero new data, never scored — nothing in the quad, macro-risk or any axis reads it.", "一个'周期此刻是否正急转向风险偏好'的快速雷达 — 是下方恐惧↔欣喜水平读数的速度补充。当跨资产 RORO 综合急速且广泛地转向风险偏好（RORO 速度处于最高十分位 且 多项分量同时转向），且发生在一次投降清洗之后时触发 — 这是反弹行情的指纹。经 55 年验证：它在每一次标志性反弹（新冠、2022 年 CPI 反弹、SVB、2024 年套利平仓反弹、2026 年 6 月反弹）都会亮起，但其前瞻收益约等于基准 — 它是同步的，而非预测性的。因此它是压缩反应时间的注意力雷达（第一天就看到急转，先于滞后的技术指标），绝非买入／仓位信号。零新增数据、从不评分 — 象限、宏观风险与任何轴都不读取它。") }}
-      <a href="#fear-euphoria" class="muted" style="font-size:12px;font-weight:400;float:right">{{ t('regime level →', '周期水平 →') }}</a>
-    </h2>
+      <a href="#fear-euphoria" class="muted" style="font-size:12px;font-weight:400">{{ t('regime level →', '周期水平 →') }}</a>
+        </div>
     <p class="muted sm" style="margin:-4px 0 10px">{{ t('An attention radar, not a buy signal — verified coincident (forward returns about the base rate). It flags a fast risk-on snap out of a washout; it does not predict the snap will last.', '这是注意力雷达而非买入信号 — 经验证为同步（前瞻收益约等于基准）。它标记从清洗中快速转向风险偏好的急转；并不预测急转能否持续。') }}</p>
     {% if regime_snap %}
     {% set RS = regime_snap %}
@@ -2045,8 +2131,10 @@
     {% else %}
     <p class="muted">{{ t('Building…', '构建中…') }}</p>
     {% endif %}
+      </div>
+    </div>
   </div>
-  {% endif %}{# /relief-radar — macro only #}
+  {% endif %}{# /mode != stocks — combined Now board (alerts · news · relief) #}
 
   <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
   {% if mode != 'stocks' %}
@@ -3074,10 +3162,13 @@
 
   {% if mode != 'stocks' %}
   <!-- ======================= HEALTH ======================= -->
-  <div class="panel span12" id="health">
-    <h2>{{ t('Data health', '数据健康度') }}
+  <details class="panel span12 fold" id="health">
+    <summary>{{ t('Data health', '数据健康度') }}
       {{ help("Every data source this dashboard depends on. OK = fresh. STALE = no new data lately (signal confidence reduced automatically). FAILED = today's fetch broke (yesterday's data still used). BLOCKED = a known, documented limitation — not a malfunction. DEAD = failed 3+ runs and paused until it recovers.", "本仪表盘所依赖的每个数据源。OK = 新鲜。STALE = 近期无新数据（信号置信度已自动下调）。FAILED = 今日抓取失败（仍沿用昨日数据）。BLOCKED = 已知且有记录的限制 — 并非故障。DEAD = 连续 3 次以上失败，已暂停直至恢复。") }}
-    </h2>
+      {% set _bad = health|rejectattr('status','equalto','ok')|rejectattr('status','equalto','blocked')|list %}
+      <span class="fold-stat">{% if _bad %}{{ _bad|length }} {{ t('need attention', '需关注') }}{% else %}{{ t('all sources OK', '全部正常') }}{% endif %} · {{ health|length }} {{ t('sources', '数据源') }}</span>
+      <span class="fold-caret">▾</span>
+    </summary>
     <table>
       <tr><th class="l">{{ t('source', '数据源') }}</th><th class="l">{{ t('status', '状态') }}</th><th>{{ t('rows', '行数') }}</th><th>{{ t('last data', '最新数据') }}</th><th class="l">{{ t('note', '备注') }}</th></tr>
       {% for s in health %}
@@ -3094,7 +3185,7 @@
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
        生成于 {{ generated_utc }} UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
-  </div>
+  </details>
   {% endif %}{# /mode != stocks — data health #}
 
 </div>
