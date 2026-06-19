@@ -72,6 +72,19 @@
   details.method dl { margin:8px 0 0; } details.method dt { font-weight:600; margin-top:7px; }
   details.method dd { margin:1px 0 0; color:var(--muted); font-size:12.5px; }
   .scroll { overflow-x:auto; }
+  .ctl { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .ctl input[type=search], .ctl select { font:13px inherit; padding:6px 10px; border-radius:8px;
+    border:1px solid var(--line); background:var(--panel2); color:var(--text); }
+  .ctl input[type=search] { flex:1 1 240px; min-width:170px; }
+  .tier-tog-wrap { display:flex; flex-wrap:wrap; gap:10px; }
+  .tier-tog-wrap label { display:inline-flex; align-items:center; gap:5px; font-size:12px;
+    color:var(--muted); cursor:pointer; white-space:nowrap; }
+  table.sl-table thead th { cursor:pointer; user-select:none; }
+  table.sl-table thead th:hover { color:var(--text); }
+  table.sl-table thead th.sorted::after { content:" ↓"; font-size:9px; }
+  table.sl-table thead th.sorted.asc::after { content:" ↑"; }
+  .ovl-note { font-size:11.5px; color:var(--muted); margin:-2px 0 9px; max-width:80ch;
+    border-left:2px solid color-mix(in srgb,var(--link) 45%,var(--line)); padding-left:9px; }
 </style>
 </head>
 <body>
@@ -123,6 +136,19 @@
       {{ t('cross-sectional factors survive FDR','横截面因子通过 FDR') }}</span>
     {% endif %}
   </div>
+</div>
+
+<div class="panel ctl">
+  <input id="slq" type="search" autocomplete="off"
+    placeholder="Filter signals — name, market, rationale…" data-ph-zh="筛选信号 — 名称、市场、说明…">
+  <select id="slmkt" aria-label="market"><option value="">All markets · 全部市场</option></select>
+  <div class="tier-tog-wrap">
+    {% for tk in ['scored','confirmer','display','killed'] %}
+    <label><input type="checkbox" class="sltier" data-tier="{{ tk }}" checked>
+      <span class="dot d-{{ tk }}"></span>{{ t(tk, {'scored':'已计分','confirmer':'确认项','display':'仅展示','killed':'已否决'}[tk]) }}</label>
+    {% endfor %}
+  </div>
+  <span id="slcount" class="muted sm" style="margin-left:auto"></span>
 </div>
 
 {% if factor_rows %}
@@ -187,13 +213,22 @@
 {% endif %}
 
 {% for tier in tiers %}
-<div class="panel {{ 'win' if tier.key=='scored' else ('grave' if tier.key=='killed') }}">
+<div class="panel tier-panel {{ 'win' if tier.key=='scored' else ('grave' if tier.key=='killed') }}">
   <div class="tierhead">
     <span class="dot d-{{ tier.key }}" style="align-self:center"></span>
     <h2>{{ t(tier.label, tier.label_zh) }} · {{ tier.count }}</h2>
     <span class="bl">{{ t(tier.blurb, tier.blurb_zh) }}</span>
   </div>
-  <div class="scroll"><table>
+  {% if tier.key == 'confirmer' %}
+  <p class="ovl-note">{{ t(
+    'Read these as a RISK-OVERLAY LAYER, not standalone buys: each has a measured forward edge '
+    '(mostly drawdown-reduction or regime context) but is dominated by a simpler rule (often a plain '
+    '200-day moving average) or is too sample-thin to size alone. Use them to confirm or temper the '
+    'scored signals — not to trade on their own.',
+    '把这些当作风险叠加层，而非独立买入信号：每个都有可测的前瞻边际（多为回撤削减或体制背景），'
+    '但被更简单的规则（常是朴素的200日均线）压制，或样本过薄不宜单独定仓。用来确认或缓和已计分信号，而非单独交易。') }}</p>
+  {% endif %}
+  <div class="scroll"><table class="sl-table">
     <thead><tr>
       <th>{{ t('Signal','信号') }}</th>
       <th class="r">IC</th>
@@ -208,7 +243,8 @@
     </tr></thead>
     <tbody>
     {% for r in tier.rows %}
-      <tr>
+      <tr class="sl-row" data-tier="{{ tier.key }}" data-mkt="{{ r.market }}"
+          data-text="{{ (r.name ~ ' ' ~ r.name_zh ~ ' ' ~ r.market ~ ' ' ~ r.why)|replace('"','')|lower }}">
         <td>
           <div class="sig">{{ t(r.name, r.name_zh) }}
             {% if r.fdr_survivor %}<span class="yes" title="survives FDR">✓FDR</span>{% endif %}</div>
@@ -270,5 +306,63 @@
 </div>
 
 <script src="theme.js"></script>
+<script>
+(function(){
+  var rows = Array.prototype.slice.call(document.querySelectorAll('tr.sl-row'));
+  if(!rows.length) return;
+  var q = document.getElementById('slq'), mkt = document.getElementById('slmkt'),
+      tierBoxes = Array.prototype.slice.call(document.querySelectorAll('.sltier')),
+      countEl = document.getElementById('slcount'),
+      panels = Array.prototype.slice.call(document.querySelectorAll('.tier-panel'));
+  var seen = {};
+  rows.forEach(function(r){ if(r.dataset.mkt) seen[r.dataset.mkt]=1; });
+  Object.keys(seen).sort().forEach(function(m){
+    var o=document.createElement('option'); o.value=m; o.textContent=m; mkt.appendChild(o);
+  });
+  function apply(){
+    var term=(q.value||'').trim().toLowerCase(), m=mkt.value, on={};
+    tierBoxes.forEach(function(b){ if(b.checked) on[b.dataset.tier]=1; });
+    var vis=0;
+    rows.forEach(function(r){
+      var show = on[r.dataset.tier] && (!m || r.dataset.mkt===m) &&
+                 (!term || (r.dataset.text||'').indexOf(term)>=0);
+      r.style.display = show ? '' : 'none'; if(show) vis++;
+    });
+    panels.forEach(function(p){
+      var any = Array.prototype.some.call(p.querySelectorAll('tr.sl-row'),
+                  function(r){ return r.style.display!=='none'; });
+      p.style.display = any ? '' : 'none';
+    });
+    if(countEl) countEl.textContent = vis + ' / ' + rows.length + ' shown';
+  }
+  q.addEventListener('input', apply);
+  mkt.addEventListener('change', apply);
+  tierBoxes.forEach(function(b){ b.addEventListener('change', apply); });
+  function cellVal(tr, i){
+    var td = tr.children[i]; if(!td) return '';
+    var txt = td.textContent.trim().replace(/[%,]/g,'');
+    if(txt==='' || txt==='—') return -Infinity;
+    var n = parseFloat(txt);
+    return isNaN(n) ? txt.toLowerCase() : n;
+  }
+  document.querySelectorAll('table.sl-table').forEach(function(tbl){
+    var ths = tbl.querySelectorAll('thead th'), body = tbl.querySelector('tbody');
+    ths.forEach(function(th, i){
+      th.addEventListener('click', function(){
+        var asc = !(th.dataset.dir==='asc'); th.dataset.dir = asc?'asc':'desc';
+        ths.forEach(function(o){ o.classList.remove('sorted','asc'); });
+        th.classList.add('sorted'); if(asc) th.classList.add('asc');
+        var trs = Array.prototype.slice.call(body.querySelectorAll('tr'));
+        trs.sort(function(a,b){
+          var av=cellVal(a,i), bv=cellVal(b,i);
+          if(av<bv) return asc?-1:1; if(av>bv) return asc?1:-1; return 0;
+        });
+        trs.forEach(function(tr){ body.appendChild(tr); });
+      });
+    });
+  });
+  apply();
+})();
+</script>
 </body>
 </html>
