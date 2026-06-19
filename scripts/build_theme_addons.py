@@ -67,6 +67,19 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("theme_extension import failed: %s", e)
 
+    # within-basket member context — leader (extended WITH the theme) vs chase (extended BEYOND it)
+    try:
+        from engine.basket_member_context import compute_member_context
+        for region, fname in (("us", "member_context.json"), ("cn", "member_context_cn.json"),
+                              ("hk", "member_context_hk.json"), ("ca", "member_context_ca.json")):
+            try:
+                if _dump(fdir, fname, compute_member_context(region)):
+                    wrote.append(f"member_context:{region}")
+            except Exception as e:  # noqa: BLE001 — one region failing never blocks the rest
+                log.error("member_context[%s] failed: %s", region, e)
+    except Exception as e:  # noqa: BLE001
+        log.error("member_context import failed: %s", e)
+
     log.info("theme add-ons built -> %s (%s)", fdir, ", ".join(wrote) or "nothing")
     return 0
 
