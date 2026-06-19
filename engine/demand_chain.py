@@ -207,15 +207,18 @@ def _consensus_dir(revisions: dict | None) -> str:
 
 
 def _divergence(trend: str, consensus_dir: str) -> str:
-    capex_up = trend in ("accelerating", "expanding")
-    capex_down = trend in ("contracting", "peaking")
+    # "peaking" is still POSITIVE growth (decelerating, not falling) — treat it as up,
+    # so a name compounding +40% that ticked down from +44% is not mislabeled at-risk.
+    # Only genuine CONTRACTION (negative growth) flags consensus_at_risk.
+    up = trend in ("accelerating", "expanding", "peaking")
+    down = trend == "contracting"
     if consensus_dir == "none":
         return "signal_only"
-    if capex_up and consensus_dir == "rising":
+    if up and consensus_dir == "rising":
         return "aligned"
-    if capex_up and consensus_dir in ("flat", "falling"):
+    if up and consensus_dir in ("flat", "falling"):
         return "ahead_of_consensus"
-    if capex_down and consensus_dir == "rising":
+    if down and consensus_dir == "rising":
         return "consensus_at_risk"
     return "aligned"
 
@@ -242,6 +245,73 @@ def chain_read(signals: dict[str, dict], baskets_membership: list[dict] | None,
             tier = {"slug": slug, **chain["tiers"][slug]}
             return _build_read(chain, sig, tier, revisions)
     return None
+
+
+def rpo_read(rpo_rows: list[dict], revisions: dict | None) -> dict | None:
+    """A name's OWN contracted forward bookings (Remaining Performance Obligation)
+    as an L2 read — for the software complex the customer-capex chains don't reach.
+    RPO is signed, not-yet-recognized revenue: leading and hard to manage, though a
+    single-company disclosure (not cross-company independent). Same shape as
+    chain_read so the panel + ledger treat it identically. Leading → ledger-eligible.
+
+    `rpo_rows`: list of {fy, rpo, revenue} for ONE ticker. None if <2 years."""
+    rows = sorted((r for r in (rpo_rows or []) if r.get("rpo") is not None),
+                  key=lambda r: r["fy"])
+    if len(rows) < 2:
+        return None
+    series = [[int(r["fy"]), round(r["rpo"] / 1e9, 1)] for r in rows][-4:]
+    latest, prior = rows[-1], rows[-2]
+    rpo_now, rpo_prev = latest["rpo"], prior["rpo"]
+    yoy = round((rpo_now / rpo_prev - 1.0) * 100.0, 1) if rpo_prev else None
+    yoy_prev = None
+    if len(rows) >= 3 and rows[-3]["rpo"]:
+        yoy_prev = round((rpo_prev / rows[-3]["rpo"] - 1.0) * 100.0, 1)
+    trend = _trend(yoy, yoy_prev)
+    cons = _consensus_dir(revisions)
+    div = _divergence(trend, cons)
+    tw_en, tw_zh = _TREND_WORD.get(trend, _TREND_WORD["unknown"])
+    yoy_s = (("+" if yoy >= 0 else "") + f"{yoy:.0f}%") if yoy is not None else "n/a"
+    rpo_bn = round(rpo_now / 1e9, 1)
+    rev = latest.get("revenue")
+    cov = (rpo_now / rev) if rev else None
+    cov_s_en = f", {cov:.1f}× revenue" if cov else ""
+    cov_s_zh = f"，覆盖营收 {cov:.1f} 倍" if cov else ""
+
+    headline_en = (f"Contracted bookings (RPO) {tw_en} ({yoy_s} YoY to ~${rpo_bn:.0f}B{cov_s_en}) — "
+                   "signed demand locked in ahead of recognition")
+    headline_zh = (f"已签约订单（RPO）{tw_zh}（同比{yoy_s}，约 ${rpo_bn:.0f}B{cov_s_zh}）——"
+                   "已锁定、尚未确认的需求")
+    DIV = {
+        "aligned": ("Contracted bookings are growing AND analyst estimates already reflect it — the "
+                    "forward-demand strength is largely IN THE PRICE.",
+                    "已签约订单在增长，且分析师预期已反映——这部分前瞻需求基本已计入价格。"),
+        "ahead_of_consensus": ("Contracted bookings (RPO) are growing FASTER than this name's analyst "
+                               "revisions imply — signed demand not yet fully in consensus. Variant worth "
+                               "watching (not a buy signal).",
+                               "已签约订单（RPO）的增长快于该股分析师评级调整所暗示的——已签约需求尚未充分计入共识。"
+                               "值得作为变体关注（非买入信号）。"),
+        "consensus_at_risk": ("Contracted bookings are decelerating while analyst estimates still rise — the "
+                              "booked pipeline may not support consensus. Caution.",
+                              "已签约订单增速放缓，而分析师预期仍在上修——已签约管道可能不足以支撑共识。需谨慎。"),
+        "signal_only": ("No analyst-revision data for this name; we show the contracted-bookings (RPO) trend "
+                        "on its own.",
+                        "该股暂无分析师评级调整数据，故仅单独展示已签约订单（RPO）趋势。"),
+    }
+    read_en, read_zh = DIV[div]
+    caveat_en = ("The company's OWN contracted backlog (RPO) — signed revenue not yet recognized; leads the "
+                 "income statement but is a single-name disclosure (not cross-company). Annual; display-only, "
+                 "not a buy signal.")
+    caveat_zh = ("该公司自身的已签约在手订单（RPO）——已签约但尚未确认的收入；领先于利润表，但属单一公司披露"
+                 "（非跨公司）。年度数据；仅作展示，非买入信号。")
+    return {
+        "chain_key": "own_rpo", "leading": True, "tier": "bookings", "tier_slug": "own_rpo",
+        "divergence": div, "consensus_dir": cons, "trend": trend, "yoy_pct": yoy,
+        "total_latest_bn": rpo_bn, "fy_latest": int(latest["fy"]), "horizon_d": 126,
+        "series": series, "spenders": ["self"],
+        "headline": {"en": headline_en, "zh": headline_zh},
+        "read": {"en": read_en, "zh": read_zh},
+        "caveat": {"en": caveat_en, "zh": caveat_zh},
+    }
 
 
 def _build_read(chain: dict, sig: dict, tier: dict, revisions: dict | None) -> dict:

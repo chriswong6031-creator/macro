@@ -132,22 +132,35 @@ def _thesis_for(tkr: str, read: dict, asof: str, entry_lvl: float | None,
     }
 
 
+def _rpo_map(root: Path) -> dict[str, list[dict]]:
+    p = root / "data" / "edgar" / "rpo.parquet"
+    if not p.exists():
+        return {}
+    df = pd.read_parquet(p)
+    out: dict[str, list[dict]] = {}
+    for t, g in df.groupby("ticker"):
+        out[str(t)] = [{"fy": int(r.fy), "rpo": float(r.rpo),
+                        "revenue": (float(r.revenue) if r.revenue == r.revenue else None)}
+                       for r in g.itertuples()]
+    return out
+
+
 def build_theses(root=None, today=None) -> list[dict]:
-    """Compute today's actionable theses across all LEADING chains (pure of writes)."""
+    """Compute today's actionable theses across all LEADING reads — the customer-
+    capex chains AND per-name RPO (contracted forward bookings). Pure of writes."""
     root = Path(root or config.ROOT)
     today = today or date.today()
     asof = today.isoformat()
-    sp = root / "data" / "edgar" / "statements.parquet"
-    if not sp.exists():
-        return []
-    signals = dc.compute_signals(pd.read_parquet(sp))
-    if not signals:
-        return []
     mem = _membership_map(root)
     revs = _revisions_map(root)
     spy_lvl = _desk._level_asof(_BENCH, root, asof)
-    baskets = (json.loads((root / "data" / "baskets" / "membership.json").read_text()).get("baskets") or {})
-    out, seen = [], set()
+    baskets = (json.loads((root / "data" / "baskets" / "membership.json").read_text()).get("baskets") or {}) \
+        if (root / "data" / "baskets" / "membership.json").exists() else {}
+
+    # (ticker, read) candidates from both L2 sources
+    candidates: list[tuple[str, dict]] = []
+    sp = root / "data" / "edgar" / "statements.parquet"
+    signals = dc.compute_signals(pd.read_parquet(sp)) if sp.exists() else {}
     for chain in dc.CHAINS:
         if not chain["leading"] or chain["key"] not in signals:
             continue
@@ -158,12 +171,21 @@ def build_theses(root=None, today=None) -> list[dict]:
                     cand.add(m["ticker"])
         for tkr in sorted(cand):
             read = dc.chain_read(signals, mem.get(tkr), revs.get(tkr), ticker=tkr)
-            if not read or read.get("divergence") not in _ACTIONABLE:
-                continue
-            th = _thesis_for(tkr, read, asof, _desk._level_asof(tkr, root, asof), spy_lvl)
-            if th and th["vintage"] not in seen:
-                seen.add(th["vintage"])
-                out.append(th)
+            if read:
+                candidates.append((tkr, read))
+    for tkr, rows in sorted(_rpo_map(root).items()):     # RPO: own contracted bookings (leading)
+        read = dc.rpo_read(rows, revs.get(tkr))
+        if read:
+            candidates.append((tkr, read))
+
+    out, seen = [], set()
+    for tkr, read in candidates:
+        if not read.get("leading") or read.get("divergence") not in _ACTIONABLE:
+            continue
+        th = _thesis_for(tkr, read, asof, _desk._level_asof(tkr, root, asof), spy_lvl)
+        if th and th["vintage"] not in seen:
+            seen.add(th["vintage"])
+            out.append(th)
     return out
 
 

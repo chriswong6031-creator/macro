@@ -120,3 +120,36 @@ def test_divergence_matrix():
     assert dc._divergence("accelerating", "flat") == "ahead_of_consensus"
     assert dc._divergence("contracting", "rising") == "consensus_at_risk"
     assert dc._divergence("accelerating", "none") == "signal_only"
+
+
+# ── RPO (own contracted forward bookings) read ────────────────────────────────
+def _rpo(rows):
+    return [{"fy": fy, "rpo": rpo, "revenue": rev} for (fy, rpo, rev) in rows]
+
+
+def test_rpo_read_signal_only_and_shape():
+    r = dc.rpo_read(_rpo([(2023, 48e9, 31e9), (2024, 57e9, 35e9), (2025, 72e9, 41e9)]), None)
+    assert r is not None
+    assert r["chain_key"] == "own_rpo" and r["leading"] is True and r["tier"] == "bookings"
+    assert r["divergence"] == "signal_only" and r["total_latest_bn"] == 72.0
+    assert r["series"][-1] == [2025, 72.0]
+    assert "×" in r["headline"]["en"]                    # RPO/revenue coverage rendered
+
+
+def test_rpo_read_ahead_of_consensus():
+    # RPO accelerating, consensus flat → ahead_of_consensus
+    r = dc.rpo_read(_rpo([(2023, 30e9, 20e9), (2024, 39e9, 23e9), (2025, 60e9, 27e9)]),
+                    {"est_chg_90d": 0.1, "breadth": 0.0})
+    assert r["trend"] == "accelerating" and r["divergence"] == "ahead_of_consensus"
+
+
+def test_rpo_read_consensus_at_risk():
+    # RPO contracting, consensus still rising
+    r = dc.rpo_read(_rpo([(2023, 60e9, 20e9), (2024, 62e9, 23e9), (2025, 45e9, 27e9)]),
+                    {"est_chg_90d": 6.0, "breadth": 0.6})
+    assert r["trend"] == "contracting" and r["divergence"] == "consensus_at_risk"
+
+
+def test_rpo_read_none_when_too_short():
+    assert dc.rpo_read(_rpo([(2025, 50e9, 30e9)]), None) is None
+    assert dc.rpo_read([], None) is None

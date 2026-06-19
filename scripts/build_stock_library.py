@@ -788,6 +788,26 @@ def main() -> int:
                          sg["fy_latest"], sg["n_spenders"])
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("demand-chain signals skipped (%s)", e)
+    # RPO / contracted forward bookings (engine/demand_chain.rpo_read) — the per-name
+    # L2 read for the software complex the capex chains don't reach. Used as a
+    # fallback when a name is not on any customer-capex chain.
+    rpo_by_ticker: dict[str, list[dict]] = {}
+    try:                                        # drip RPO for the software universe (cached 25d; like revisions)
+        from collectors.edgar_rpo import fetch_rpo
+        fetch_rpo()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("rpo drip skipped (%s)", e)
+    _rpop = config.data_dir() / "edgar" / "rpo.parquet"
+    if _rpop.exists():
+        try:
+            _rpo = pd.read_parquet(_rpop)
+            for t, g in _rpo.groupby("ticker"):
+                rpo_by_ticker[str(t)] = [{"fy": int(r.fy), "rpo": float(r.rpo),
+                                          "revenue": (float(r.revenue) if r.revenue == r.revenue else None)}
+                                         for r in g.itertuples()]
+            log.info("demand-chain: RPO bookings for %d names", len(rpo_by_ticker))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("rpo.parquet unreadable (%s)", e)
     # scored-ledger track record (engine/demand_ledger, prior build) for the panel's
     # accountability line; absent on first run — degrade silently.
     demand_track = None
@@ -915,9 +935,11 @@ def main() -> int:
             rec["baskets_membership"] = bsk_mem[ticker]
         if revision_raw.get(ticker):           # raw analyst-revision fields → Demand Context (L1 consensus)
             rec["revisions"] = revision_raw[ticker]
-        if demand_signals:                     # customer-demand chains → Demand Context (L2 variant)
-            dchread = dchain.chain_read(demand_signals, rec.get("baskets_membership"),
-                                        rec.get("revisions"), ticker=ticker)
+        if demand_signals or rpo_by_ticker:    # customer-demand chains / RPO → Demand Context (L2 variant)
+            dchread = (dchain.chain_read(demand_signals, rec.get("baskets_membership"),
+                                         rec.get("revisions"), ticker=ticker) if demand_signals else None)
+            if dchread is None and rpo_by_ticker.get(ticker):   # software complex: own forward bookings
+                dchread = dchain.rpo_read(rpo_by_ticker[ticker], rec.get("revisions"))
             if dchread:
                 # attach the scored-ledger summary (leading chains only) for the
                 # panel's accountability line — global, same for every name
