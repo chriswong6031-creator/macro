@@ -585,6 +585,9 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   padding: 11px 14px; margin-bottom: 14px; }
 .af-pin.dir-up { --c: var(--up); } .af-pin.dir-down { --c: var(--down); }
 .af-pin.dir-neutral { --c: var(--muted); }
+/* caution = amber (take-profits / unconfirmed-turn): a rising-price read that is
+   NOT a green buy. Mirrors .st-TOP_WATCH / .urg-caution -> --warn. */
+.af-pin.dir-caution { --c: var(--warn); }
 .af-pin .af-pin-h { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .af-pin .af-pin-tag { font-size: 10px; font-weight: 800; text-transform: uppercase;
   letter-spacing: .06em; color: var(--c, var(--info)); }
@@ -610,6 +613,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   border-radius: 50%; background: var(--muted); border: 2px solid var(--panel); }
 .af-node.dir-up { background: var(--up); } .af-node.dir-down { background: var(--down); }
 .af-node.dir-neutral { background: var(--muted); }
+.af-node.dir-caution { background: var(--warn); }
 .af-item.pinned > summary .af-node { box-shadow: 0 0 0 3px color-mix(in srgb, var(--info) 30%, transparent); }
 .af-chip { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 7px;
   background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));

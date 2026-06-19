@@ -405,7 +405,13 @@ STATE_DISPLAY = {
                       "label_zh": "买入区", "action_zh": "买入"},
     "RALLY ON":      {"label": "UPTREND",        "action": "HOLD",         "dir": "up",
                       "label_zh": "上涨趋势", "action_zh": "持有"},
-    "TOP WATCH":     {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "up",
+    # NEARING A HIGH is a late-cycle "take profits / don't chase" read, so its
+    # alert TONE is caution (amber), NOT a green up-signal — even though price is
+    # rising. `dir` here drives the alert-feed colour (af-pin card + timeline dot,
+    # see site/theme.css .af-pin.dir-caution); it is a signal-tone, not a price
+    # arrow, which is why COUNTERTREND BOUNCE also uses "caution". Matches the
+    # existing .st-TOP_WATCH / .urg-caution -> --warn mapping (verdict bar & pills).
+    "TOP WATCH":     {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "caution",
                       "label_zh": "接近高点", "action_zh": "止盈"},
     "ROLLING OVER":  {"label": "TOPPING",        "action": "SELL SETUP",   "dir": "down",
                       "label_zh": "做顶中", "action_zh": "卖出预备"},

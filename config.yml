@@ -261,6 +261,14 @@ polygon:
     contract_multiplier: 100
     pct_move: 0.01
     r: 0.043
+  intraday:
+    # Hourly US bars -> data/intraday/<T>.parquet (scripts/build_polygon_intraday),
+    # shipped as site/intraday/<T>.json and aggregated to 4H client-side by chart.js.
+    # Universe = deep-history US names (data/stocks/*) + sector/factor ETFs. US-only.
+    multiplier: 1
+    timespan: hour
+    lookback_days: 180           # ~6 months of hourly bars (small per-ticker JSON)
+    sleep: 0.06                  # polite pacing between per-ticker aggregate calls
   # per-underlying dividend yields for the compute_gex summary (single names -> 0)
   div_yield: {SPY: 0.013, QQQ: 0.006, IWM: 0.013, DIA: 0.018}
 

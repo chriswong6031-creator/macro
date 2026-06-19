@@ -84,7 +84,8 @@
   .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
   .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
+  .ae-laggard { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ae-neutral { background:var(--panel2); color:var(--muted); }
   .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
            border-left:4px solid var(--muted); cursor:help; }
   .bc-head { display:flex; align-items:baseline; gap:9px; }
@@ -1497,7 +1498,7 @@
   function tvLoad(d) {
     var box = document.getElementById('tvbox');
     if (!box || !window.StockChart) return;
-    try { window.StockChart.mount(box, d.ticker, {name: d.name}); }
+    try { window.StockChart.mount(box, d.ticker, {name: d.name, intraday: !!d.has_intraday}); }
     catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
 

@@ -194,6 +194,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("Polygon GEX accrual step failed: %s", e)
 
+    # Polygon intraday (hourly) US bars -> data/intraday/<T>.parquet, powering the 4H
+    # timeframe on US single-stock charts. No-op without the key. Additive, never fatal.
+    try:
+        from scripts.build_polygon_intraday import accrue as accrue_polygon_intraday
+        log.info("=== accruing Polygon intraday (4H chart data) ===")
+        accrue_polygon_intraday(datetime.now(timezone.utc))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("Polygon intraday accrual step failed: %s", e)
+
     status = store.read_status()
     status["last_run"] = datetime.now(timezone.utc).isoformat()
     # merge: a partial --only run must not wipe the health of sources it skipped

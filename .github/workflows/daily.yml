@@ -54,6 +54,15 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache
+        # Polygon hourly bars: regenerable + daily-changing, so cached cross-job (like the
+        # breadth caches) instead of committed, to keep the repo from bloating. The collect
+        # job populates it; the engine job restores it to emit site/intraday.
+        uses: actions/cache@v4
+        with:
+          path: data/intraday
+          key: intraday-${{ github.run_id }}
+          restore-keys: intraday-
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -121,6 +130,12 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-engine-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache (build_chart_data emits site/intraday from it)
+        uses: actions/cache@v4
+        with:
+          path: data/intraday
+          key: intraday-engine-${{ github.run_id }}
+          restore-keys: intraday-
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -374,6 +389,9 @@ jobs:
           # gitignore + force-add situation as their stockdata libraries (HK needs none —
           # its per-stock JSON carries the chart series inline).
           git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
+          # US 4H intraday chart data (built by build_site -> build_chart_data.emit_intraday
+          # from the cached data/intraday) — gitignored, force-add so the deploy ships it.
+          git add -f site/intraday 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
