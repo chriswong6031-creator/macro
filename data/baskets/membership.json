@@ -1353,6 +1353,24 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Toast — restaurant payments + software vertical"
+        },
+        {
+          "ticker": "HOOD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Robinhood — retail brokerage; equities, options & crypto"
+        },
+        {
+          "ticker": "UPST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Upstart — AI consumer-lending marketplace"
+        },
+        {
+          "ticker": "FUTU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Futu Holdings — digital brokerage (HK/US-listed)"
         }
       ],
       "etf_proxy_note": "",
@@ -1378,6 +1396,11 @@
           "date": "2026-06-18",
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: XYZ, FOUR, JKHY, WU, FI, AFRM, SOFI, TOST."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Added HOOD (from Crypto), UPST, FUTU — broadening the fintech/neobroker group."
         }
       ],
       "parent": "Financials",
@@ -2005,8 +2028,8 @@
         {
           "ticker": "HOOD",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Robinhood — retail brokerage with crypto leverage"
+          "removed": "2026-06-18",
+          "rationale": "HOOD — EXITED to Fintech (retail brokerage, not crypto)"
         },
         {
           "ticker": "MSTR",
@@ -2023,26 +2046,26 @@
         {
           "ticker": "GLXY",
           "added": "2025-05-16",
-          "removed": null,
-          "rationale": "Galaxy Digital — crypto merchant bank & trading"
+          "removed": "2026-06-18",
+          "rationale": "GLXY — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Marathon Digital — bitcoin miner; hashrate beta"
+          "removed": "2026-06-18",
+          "rationale": "MARA — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "RIOT",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Riot Platforms — bitcoin miner; power + hashrate"
+          "removed": "2026-06-18",
+          "rationale": "RIOT — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "CLSK",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "CleanSpark — bitcoin miner; low-cost power"
+          "removed": "2026-06-18",
+          "rationale": "CLSK — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "IREN",
@@ -2070,7 +2093,7 @@
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
-      "thesis": "Listed crypto-equity beta — the US exchange (COIN), retail brokerage (HOOD), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL), a crypto merchant bank (GLXY), spot-ETH via the iShares ETF (ETHA) and the pure-play bitcoin miners (MARA/RIOT/CLSK). Membership is screened to actually track bitcoin: miners that pivoted to AI/HPC hosting in the BTC bear market (IREN/CORZ/HUT) were removed once their BTC correlation collapsed and they began trading as data-center beta — keeping them would have polluted the basket's data and signals. The cleanest public sensor for the crypto regulatory & liquidity cycle — and by far the highest-beta basket here: it amplifies bitcoin both ways. A regime sensor, not a buy list.",
+      "thesis": "Pure crypto-asset beta — the US exchange (COIN), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL) and spot-ETH (ETHA). Miners that pivoted to AI/HPC moved to AI Neoclouds; the retail broker (HOOD) moved to Fintech. A regime sensor, not a buy list.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2092,6 +2115,11 @@
           "date": "2026-06-18",
           "action": "add",
           "note": "Added ETHA (iShares Ethereum ETF) — spot-ETH beta; ETH tracks bitcoin closely (ETH↔BTC daily-return corr ≈0.8–0.9) so it belongs, and broadens the basket beyond bitcoin-only."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "remove",
+          "note": "Moved RIOT/CLSK/MARA/GLXY to AI Neoclouds (all now AI/HPC hyperscalers) and HOOD to Payments & Fintech (retail brokerage). Crypto now = COIN/MSTR/CRCL/ETHA."
         }
       ],
       "parent": "Crypto",
@@ -2173,6 +2201,30 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Bitdeer — mining-tech firm expanding into AI cloud and GPU datacenter hosting capacity"
+        },
+        {
+          "ticker": "RIOT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Riot Platforms — bitcoin miner converting power/datacenters to AI-HPC hosting"
+        },
+        {
+          "ticker": "CLSK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CleanSpark — miner repurposing low-cost power sites toward HPC/AI compute"
+        },
+        {
+          "ticker": "MARA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "MARA Holdings — miner/BTC-treasury expanding into AI-HPC datacenter hosting"
+        },
+        {
+          "ticker": "GLXY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Galaxy Digital — Helios datacenter converted to AI/HPC (CoreWeave lease)"
         }
       ],
       "thesis": "A basket of GPU-cloud and AI-HPC hosting pure-plays — \"neoclouds\" renting Nvidia capacity to AI labs plus ex-bitcoin miners converting power and datacenter shells into compute leases — driven by hyperscaler capex, GPU supply, power availability, and signed take-or-pay contracts. Treat it as a monitoring lens on the AI compute buildout, not a buy list: names are early-stage, capital-intensive, lease-concentrated, and highly volatile.",
@@ -2182,6 +2234,11 @@
           "date": "2026-06-19",
           "action": "create",
           "note": "Seeded AI Neoclouds & HPC Hosting — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPU cloud / AI-HPC datacenter hosting pure-plays, including ex-bitcoin miners that pivoted power and datacenter assets into AI compute leasing"
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Added RIOT/CLSK/MARA/GLXY — bitcoin miners + Galaxy that pivoted to AI/HPC hosting (from Crypto)."
         }
       ]
     },
