@@ -35,6 +35,8 @@
   .prow:first-of-type { border-top:0; } .prow:hover { background:var(--panel2); }
   .pverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
   .prow .pn { font-weight:650; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sb-badge { font-size:10px; font-weight:700; color:var(--warn); margin-left:5px;
+              padding:0 4px; border-radius:6px; background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .prow .pw { font-variant-numeric:tabular-nums; font-weight:700; }
   .palert { display:flex; gap:9px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .palert:first-of-type { border-top:0; }
@@ -401,7 +403,10 @@ const ALLOC = {{ data_json|safe }};
 const ROT_ALERTS = {{ rotation_alerts_json|safe }};
 const RISK_HIST = {{ risk_history_json|safe }};
 const ACT_NOW = {{ act_now_json|safe }};
+const STANDOUTS = {{ standouts_json|default('{}')|safe }};   // theme id -> # members on the US standout buy board
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+// ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
+const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US standout buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const bid = s => /^[a-z0-9_-]+$/i.test(s||'') ? s : '';
@@ -413,11 +418,11 @@ function renderEntries(){
   // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
   let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="basket/${bid(w.id)}.html">
     <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
-    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
+    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
     buy.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
-      <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
+      <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];

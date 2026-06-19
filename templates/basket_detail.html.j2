@@ -23,6 +23,10 @@
   .back { font-size:12.5px; color:var(--muted); }
   .back:hover { color:var(--link); }
   .chip { display:inline-block; font-size:11px; padding:1px 8px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  /* standout-board cross-reference: ★ marks a member currently on the US standout buy board */
+  .sb-star { color:var(--warn); text-decoration:none; font-size:12px; }
+  .sb-star:hover { filter:brightness(1.15); }
+  .chip.sb-chip { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 38%, var(--line)); background:color-mix(in srgb, var(--warn) 12%, var(--panel2)); }
   .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
   .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
   .hero .lhs { flex:1; min-width:280px; }
@@ -236,15 +240,17 @@ function render(){
   // ---- holdings scoreboard ----
   const mem=(d.members||[]).slice();
   const rows=mem.map(m=>{const c=m.conviction;
+    const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US standout buy board right now">★</a>`:'';
     return `<tr>
-      <td>${stk(m.symbol)} <span class="muted sm">${esc(m.name||'')}</span></td>
+      <td>${stk(m.symbol)}${star} <span class="muted sm">${esc(m.name||'')}</span></td>
       <td class="num">${convCell(c)}</td>
       <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
       <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
       <td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td>
       <td class="why">${esc(m.rationale||'')}</td>
     </tr>`;}).join('');
-  h+=`<h2><span class="idx">04</span>${L('Holdings — buy/avoid by conviction','成分股 — 按信念可买/回避')} <span class="chip">${mem.length} ${L('names','只')}</span></h2>
+  const nBoard=mem.filter(m=>m.on_board).length;
+  h+=`<h2><span class="idx">04</span>${L('Holdings — buy/avoid by conviction','成分股 — 按信念可买/回避')} <span class="chip">${mem.length} ${L('names','只')}</span>${nBoard?` <span class="chip sb-chip" title="Members currently on the US standout buy board">★ ${nBoard} ${L('on standout board','在精选榜')}</span>`:''}</h2>
   <div class="panel"><div class="ts"><table id="hold">
     <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
