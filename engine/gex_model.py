@@ -46,6 +46,8 @@ DEFAULTS = dict(
     # the volatility smile (front expiry) and the IV term structure
     smile_window_pct=0.15, term_max_expiries=12,
     trading_days=252.0,
+    # volatility-hole: "coiled" when spot is within this many daily-σ of a wall
+    hole_arm_sigma=1.0,
 )
 
 
@@ -342,6 +344,90 @@ def expected_move(iv30, spot, cf, term) -> dict:
     return em
 
 
+def volatility_hole(summary: dict, em: dict, cf: dict) -> dict:
+    """Re-express the dealer-gamma map as a "volatility hole" (the DannyTrades framing,
+    given a real mechanism). Long gamma = a SUPPRESSIVE band: dealers fade moves so
+    price pins between the put-wall floor and call-wall ceiling — the "hole". A daily
+    CLOSE beyond a wall flips hedging pro-cyclical and RELEASES the move (the wall is a
+    valve, not a target). Short gamma = the "black hole": below the flip dealers hedge
+    WITH the move so realized vol EXPANDS and there is no suppressive band until price
+    reclaims the flip.
+
+    DISPLAY-ONLY and mechanism-first: a relabeling of gamma_flip / call_wall / put_wall /
+    expected_move already on the page (so it can never drift from them), NOT a new data
+    source and NOT a backtested edge. Same honest caveats as gex_engine — the dealer
+    sign is an assumption (fragile for single names), levels are where hedging
+    concentrates, the feed is delayed EOD. Distances are measured in DAILY expected-move
+    σ so "near a wall" means the same thing on a $40 ETF and a $900 name.
+
+    Language-neutral (gex.js renders the bilingual labels). States:
+      IN_HOLE · COILED_UP · COILED_DOWN · EXPANSION · NONE
+    The walls are computed SPOT-relative (call wall strictly above spot, put wall below),
+    so a single EOD snapshot always has spot inside the band — a "spot beyond the wall"
+    breakout can't be read from one frame. The genuine realized downside release is the
+    flip into short gamma (EXPANSION); the COILED states are the armed edges where the
+    next daily close decides it. (A true cross-day breakout would need persisted wall
+    history — a fast-follow, not this leaf.)
+    """
+    none = {"state": "NONE", "bias": "neutral", "upper": None, "lower": None,
+            "upper_src": None, "lower_src": None, "to_upper_pct": None,
+            "to_lower_pct": None, "to_upper_sigma": None, "to_lower_sigma": None,
+            "band_width_pct": None, "compression": None, "pos": None}
+    spot = summary.get("spot")
+    if not spot or spot <= 0:
+        return none
+    regime = summary.get("regime")                       # "long" / "short" / None
+    cw, pw = summary.get("call_wall"), summary.get("put_wall")
+    mu, md = summary.get("magnet_up"), summary.get("magnet_down")
+    daily = em.get("daily_pct")                          # percent, 1σ/day
+    weekly = em.get("weekly_pct")
+    arm = float(cf.get("hole_arm_sigma", 1.0))           # "coiled" if within this many σ
+
+    # boundaries: prefer the gamma WALLS, fall back to the heaviest-OI magnets
+    upper, upper_src = ((cw, "call_wall") if (cw and cw > spot)
+                        else (mu, "magnet_up") if (mu and mu > spot) else (None, None))
+    lower, lower_src = ((pw, "put_wall") if (pw and pw < spot)
+                        else (md, "magnet_down") if (md and md < spot) else (None, None))
+
+    sig_abs = spot * daily / 100.0 if (daily and daily > 0) else None
+    to_upper_pct = round((upper - spot) / spot * 100.0, 2) if upper is not None else None
+    to_lower_pct = round((spot - lower) / spot * 100.0, 2) if lower is not None else None
+    to_upper_sigma = round((upper - spot) / sig_abs, 2) if (upper is not None and sig_abs) else None
+    to_lower_sigma = round((spot - lower) / sig_abs, 2) if (lower is not None and sig_abs) else None
+
+    band_width_pct = (round((upper - lower) / spot * 100.0, 2)
+                      if (upper is not None and lower is not None) else None)
+    pos = None
+    if upper is not None and lower is not None and upper > lower:
+        pos = round(min(1.0, max(0.0, (spot - lower) / (upper - lower))), 3)
+    # how tight the hole is vs a weekly 1σ move — a narrow, deep hole coils harder
+    compression = None
+    if band_width_pct is not None and weekly and weekly > 0:
+        ratio = band_width_pct / (2.0 * weekly)
+        compression = "tight" if ratio <= 1.0 else "normal" if ratio <= 2.0 else "wide"
+
+    # ---- state machine ----
+    if regime == "short":
+        state, bias = "EXPANSION", "volatile"            # below the flip → the black hole
+    else:                                                # long / neutral gamma → suppressive band
+        near_up = to_upper_sigma is not None and to_upper_sigma <= arm
+        near_dn = to_lower_sigma is not None and to_lower_sigma <= arm
+        if near_up and (not near_dn or to_upper_sigma <= to_lower_sigma):
+            state, bias = "COILED_UP", "up"              # armed at the ceiling
+        elif near_dn:
+            state, bias = "COILED_DOWN", "down"          # armed at the floor (close below → expansion)
+        elif upper is not None or lower is not None:
+            state, bias = "IN_HOLE", "neutral"           # pinned inside the band
+        else:
+            state, bias = "NONE", "neutral"
+
+    return {"state": state, "bias": bias, "upper": _f(upper), "lower": _f(lower),
+            "upper_src": upper_src, "lower_src": lower_src,
+            "to_upper_pct": to_upper_pct, "to_lower_pct": to_lower_pct,
+            "to_upper_sigma": to_upper_sigma, "to_lower_sigma": to_lower_sigma,
+            "band_width_pct": band_width_pct, "compression": compression, "pos": pos}
+
+
 # --------------------------------------------------------------------------- #
 # orchestrator
 # --------------------------------------------------------------------------- #
@@ -384,10 +470,12 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
         pv = float(chain.loc[~chain["is_call"], "volume"].fillna(0).sum())
         summary["put_call_vol_ratio"] = round(pv / cv, 2) if cv > 0 else None
 
+    em = expected_move(iv30, spot, cf, term)
     return {
         "meta": meta or {},
         "summary": summary,
-        "expected_move": expected_move(iv30, spot, cf, term),
+        "expected_move": em,
+        "vol_hole": volatility_hole(summary, em, cf),
         "profile": gamma_profile(chain, spot, cf),
         "walls": walls,
         "surface": surface(chain, spot, cf),

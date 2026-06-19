@@ -78,11 +78,12 @@
     // group section headers preserved only when sorting by symbol or when "all"
     var html = "", lastGrp = null, grouped = (boardSort.key === "key");
     rows.forEach(function (m) {
-      if (grouped && m.grp !== lastGrp) { html += '<tr class="ghead"><td colspan="8">' + esc(lz(m.grp, m.grp)) + "</td></tr>"; lastGrp = m.grp; }
+      if (grouped && m.grp !== lastGrp) { html += '<tr class="ghead"><td colspan="9">' + esc(lz(m.grp, m.grp)) + "</td></tr>"; lastGrp = m.grp; }
       html += '<tr class="sym' + (m.key === curKey ? " sel" : "") + '" data-key="' + m.key + '">' +
         '<td><span class="symk">' + esc(m.key) + '</span><span class="symn">' + esc(lz(m.en, m.zh)) + "</span></td>" +
         "<td>" + price(m.spot) + "</td>" +
         '<td><span class="reg ' + regClass(m.regime) + '">' + regWord(m.regime) + "</span></td>" +
+        vhCell(m) +
         '<td class="' + (m.net_gex_bn >= 0 ? "pos" : "neg") + '">' + sgn(m.net_gex_bn, 1) + "</td>" +
         '<td class="' + (m.dist_to_flip_pct >= 0 ? "pos" : "neg") + '">' + pct(m.dist_to_flip_pct, 1) + "</td>" +
         "<td>" + pctU(m.iv30, 1) + "</td>" +
@@ -230,7 +231,7 @@
     var termTbl = termTableHTML();
     var cards = cardsHTML();
 
-    box.innerHTML = hero + charts + heat + vol + termTbl + cards + caveatHTML();
+    box.innerHTML = hero + volHoleHTML() + charts + heat + vol + termTbl + cards + caveatHTML();
     // draw the SVG/HTML views
     drawBars(); drawProfile(); drawHeat(); drawSmile(); drawTerm(); drawSpark();
     wireBarTabs(); wireHeatTabs();
@@ -262,6 +263,105 @@
       parts.push(mv);
     }
     return '<div class="gx-read">' + parts.join(lz(". ", "。")) + (lang() === "zh" ? "。" : ".") + "</div>";
+  }
+
+  // ---- volatility hole (dealer-gamma compression band, DannyTrades framing) ----
+  var VHS = {
+    IN_HOLE:     { emo: "🕳️", en: "In the hole",           zh: "洞内",        cls: "neu",  sh_en: "In hole",   sh_zh: "洞内" },
+    COILED_UP:   { emo: "⬆",  en: "Coiled · ceiling",      zh: "贴上沿蓄势",  cls: "up",   sh_en: "Coiled ↑",  sh_zh: "贴上沿" },
+    COILED_DOWN: { emo: "⬇",  en: "Coiled · floor",        zh: "贴下沿承压",  cls: "down", sh_en: "Coiled ↓",  sh_zh: "贴下沿" },
+    EXPANSION:   { emo: "🌪", en: "Expansion · black hole", zh: "扩张 · 黑洞", cls: "vol",  sh_en: "Expansion", sh_zh: "扩张" },
+    NONE:        { emo: "·",  en: "No clear hole",          zh: "无明显洞",    cls: "na",   sh_en: "—",         sh_zh: "—" }
+  };
+
+  function vhCell(m) {
+    if (!m.vh_state || m.vh_state === "NONE") return '<td><span class="vh-pill na">—</span></td>';
+    var v = VHS[m.vh_state] || VHS.NONE;
+    return '<td><span class="vh-pill ' + v.cls + '" title="' + esc(lz(v.en, v.zh)) + '">' + v.emo + " " + esc(lz(v.sh_en, v.sh_zh)) + "</span></td>";
+  }
+
+  function sigTxt(x) { return x == null ? "—" : (+x).toFixed(1) + "σ"; }
+
+  function vhRead(vh, s) {
+    var up = price(vh.upper), lo = price(vh.lower), flip = price(s.gamma_flip);
+    var usrc = vh.upper_src === "call_wall" ? lz("call wall", "看涨墙") : lz("magnet", "磁吸位");
+    var lsrc = vh.lower_src === "put_wall" ? lz("put wall", "看跌墙") : lz("magnet", "磁吸位");
+    var su = sigTxt(vh.to_upper_sigma), sl = sigTxt(vh.to_lower_sigma);
+    var bw = vh.band_width_pct, tu = vh.to_upper_pct, tl = vh.to_lower_pct;
+    switch (vh.state) {
+      case "IN_HOLE":
+        return lz(
+          "<b>Inside the hole.</b> Long gamma pins price between the <b>" + lo + "</b> " + lsrc + " floor and the <b>" + up + "</b> " + usrc + " ceiling" + (bw != null ? " (a <b>" + bw + "%</b>-wide band)" : "") + ". Spot sits " + sl + " above the floor and " + su + " below the ceiling — dealers fade moves, so expect chop / mean-reversion toward the magnets. The trigger is a <b>daily close</b> beyond a wall: through " + up + " releases upside (accumulate); through " + lo + " releases downside (de-risk).",
+          "<b>洞内。</b> 多头Gamma将价格压在 <b>" + lo + "</b> " + lsrc + "下沿与 <b>" + up + "</b> " + usrc + "上沿之间" + (bw != null ? "（区间宽 <b>" + bw + "%</b>）" : "") + "。现价距下沿 " + sl + "、距上沿 " + su + " — 做市商抑制走势，预期在磁吸位之间震荡/均值回归。触发条件是<b>日线收盘</b>突破某墙：上破 " + up + " 释放上行（可加仓），下破 " + lo + " 释放下行（应减仓）。");
+      case "COILED_UP":
+        return lz(
+          "<b>Coiled at the ceiling.</b> Spot is only " + su + " (~" + tu + "%) below the <b>" + up + "</b> " + usrc + " — the top edge of the long-gamma hole. A <b>daily close above " + up + "</b> unclenches dealer hedging and can accelerate up (the DannyTrades 'close above the upper boundary' = buy / accumulate). Until then the wall still caps and price tends to fade back inside.",
+          "<b>贴近上沿蓄势。</b> 现价距 <b>" + up + "</b> " + usrc + " 仅 " + su + "（约 " + tu + "%）— 多头Gamma洞的上缘。<b>日线收于 " + up + " 之上</b>会松开做市商对冲、可能加速上行（即DannyTrades“收于上沿之上”=买入/加仓）。在此之前该墙仍压制，价格倾向回落洞内。");
+      case "COILED_DOWN":
+        return lz(
+          "<b>Coiled at the floor.</b> Spot is only " + sl + " (~" + tl + "%) above the <b>" + lo + "</b> " + lsrc + ". A <b>daily close below " + lo + "</b> removes the cushion; losing the <b>" + flip + "</b> flip tips into short-gamma expansion where downside accelerates. Holding the floor keeps the pin intact.",
+          "<b>贴近下沿承压。</b> 现价距 <b>" + lo + "</b> " + lsrc + " 仅 " + sl + "（约 " + tl + "%）。<b>日线收于 " + lo + " 之下</b>将失去缓冲；跌破 <b>" + flip + "</b> 翻转则进入空头Gamma扩张、下行加速。守住下沿则磁吸延续。");
+      case "EXPANSION":
+        return lz(
+          "<b>Expansion — the black hole.</b> Spot is below the <b>" + flip + "</b> flip, in short gamma: dealers hedge WITH the move so realized vol <b>expands</b> (trends and air-pockets both run larger, downside-skewed). There is no suppressive hole until price <b>reclaims the " + flip + " flip</b> — size moves bigger and don't fade breaks the way you would inside a long-gamma hole.",
+          "<b>扩张 — 黑洞。</b> 现价位于 <b>" + flip + "</b> 翻转之下、处于空头Gamma：做市商顺势对冲，已实现波动<b>放大</b>（趋势与急跌都更大，偏下行）。在价格<b>收复 " + flip + " 翻转</b>之前没有压制洞 — 应放大波动预期，勿像在多头Gamma洞内那样去做反向。");
+      default:
+        return "";
+    }
+  }
+
+  function vhBand(vh, s) {
+    var lo = vh.lower, hi = vh.upper, sp = s.spot;
+    var vals = [sp]; if (lo != null) vals.push(lo); if (hi != null) vals.push(hi);
+    if (vals.length < 2 || sp == null) return "";
+    var mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
+    var pad = (mx - mn) * 0.18 || (sp * 0.02) || 1; mn -= pad; mx += pad;
+    function xp(v) { return (v - mn) / (mx - mn) * 100; }
+    var html = '<div class="vh-band"><div class="track">';
+    if (lo != null && hi != null) {
+      var x1 = xp(lo), x2 = xp(hi);
+      html += '<div class="fill" style="left:' + x1.toFixed(1) + "%;width:" + (x2 - x1).toFixed(1) + "%;background:var(--info)\"></div>";
+    }
+    html += "</div>";
+    function mk(v, cls, lab) {
+      if (v == null) return "";
+      var x = xp(v).toFixed(1);
+      return '<div class="mk ' + cls + '" style="left:' + x + '%"></div>' +
+        '<div class="cap ' + (cls === "spot" ? "spot" : "") + '" style="left:' + x + '%"><span class="v">' + price(v) + "</span>" + esc(lab) + "</div>";
+    }
+    html += mk(lo, "lo", lz("floor", "下沿")) + mk(hi, "hi", lz("ceiling", "上沿")) + mk(sp, "spot", lz("spot", "现价"));
+    return html + "</div>";
+  }
+
+  function vhStats(vh) {
+    var out = [];
+    if (vh.to_lower_sigma != null) out.push(lz("To floor: ", "距下沿：") + "<b>" + sigTxt(vh.to_lower_sigma) + "</b>" + (vh.to_lower_pct != null ? " (" + vh.to_lower_pct + "%)" : ""));
+    if (vh.to_upper_sigma != null) out.push(lz("To ceiling: ", "距上沿：") + "<b>" + sigTxt(vh.to_upper_sigma) + "</b>" + (vh.to_upper_pct != null ? " (" + vh.to_upper_pct + "%)" : ""));
+    if (vh.band_width_pct != null) out.push(lz("Band width: ", "区间宽度：") + "<b>" + vh.band_width_pct + "%</b>");
+    if (vh.compression) {
+      var cc = vh.compression === "tight" ? lz("tight (coiled)", "紧（蓄势）")
+        : vh.compression === "wide" ? lz("wide (loose)", "宽（松散）") : lz("normal", "一般");
+      out.push(lz("Compression: ", "压缩：") + "<b>" + cc + "</b>");
+    }
+    return out.length ? '<div class="vh-stats">' + out.join("") + "</div>" : "";
+  }
+
+  function volHoleHTML() {
+    var vh = cur.vol_hole; if (!vh || vh.state === "NONE") return "";
+    var s = cur.summary;
+    var v = VHS[vh.state] || VHS.NONE;
+    var biasCls = vh.bias === "up" ? "vh-up" : vh.bias === "down" ? "vh-down"
+      : vh.bias === "volatile" ? "vh-volatile" : "vh-neutral";
+    var hHelp = help(lz(
+      "The dealer-gamma map re-expressed as a 'volatility hole' (the DannyTrades idea, given a mechanism). LONG gamma is a suppressive band — dealers fade moves so price pins between the put-wall floor and call-wall ceiling. A daily CLOSE beyond a wall flips hedging pro-cyclical and releases the move. SHORT gamma (below the flip) is the 'black hole' where vol expands. Distances are in daily expected-move σ. Display-only — a relabeling of the flip / walls / expected move above, never a price target or a backtested signal.",
+      "把做市商Gamma地图重新表述为“波动洞”（DannyTrades的概念，但带机制）。多头Gamma是压制区间 — 做市商抑制走势，价格被压在看跌墙下沿与看涨墙上沿之间。日线收盘突破某墙会使对冲转为顺势、释放走势。空头Gamma（翻转之下）即“黑洞”，波动放大。距离以单日预期波动σ计。仅供展示 — 是对上方翻转/墙/预期波动的重新表述，绝非目标价或回测信号。"));
+    var head = '<div class="topline" style="justify-content:space-between;align-items:center"><h2 style="margin:0">' +
+      lz("🕳️ Volatility Hole", "🕳️ 波动洞") + hHelp + '</h2><span class="vh-badge ' + v.cls + '">' + v.emo + " " + esc(lz(v.en, v.zh)) + "</span></div>";
+    var caveat = '<p class="muted xs" style="margin:8px 0 0">' + lz(
+      "Derived entirely from the gamma flip, walls and expected move above (EOD delayed Cboe) — a vol-regime relabeling, display-only. The dealer long-call / short-put sign is an assumption, fragile for single names; 'close' means the daily EOD level.",
+      "完全由上方的Gamma翻转、墙与预期波动推导（Cboe延迟收盘数据）— 波动率体制的重新表述，仅供展示。做市商“多头看涨/空头看跌”符号为假设，对个股脆弱；“收盘”指每日收盘价位。") + "</p>";
+    return '<div class="panel vhole ' + biasCls + '">' + head +
+      '<div class="vh-read">' + vhRead(vh, s) + "</div>" + vhBand(vh, s) + vhStats(vh) + caveat + "</div>";
   }
 
   // ---- key-levels ruler (two label lanes so close markers don't collide) ----
