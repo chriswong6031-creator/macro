@@ -79,6 +79,14 @@ def macd_parts(close: pd.Series) -> pd.DataFrame:
     return pd.DataFrame({"line": line, "signal": sig, "hist": line - sig})
 
 
+# Linear extrapolation of a 3-bar MACD-histogram slope only carries information
+# a few bars out; past this horizon the cross isn't "approaching", the histogram
+# is just drifting near zero. Beyond the cap we drop the ETA rather than surface
+# a saturated, meaningless number (the old clip-to-99 produced "≈99 bars/days to
+# cross" for a near-flat slope).
+_MACD_APPROACH_MAX_BARS = 6
+
+
 def _tf_state(close: pd.Series) -> dict:
     """Indicator snapshot for one timeframe (already-resampled close)."""
     if len(close) < 40:
@@ -101,11 +109,15 @@ def _tf_state(close: pd.Series) -> dict:
         rising = bool(h.iloc[-1] > h.iloc[-2] > h.iloc[-3])
         falling = bool(h.iloc[-1] < h.iloc[-2] < h.iloc[-3])
         if h.iloc[-1] < 0 and rising and slope > 0:
-            approaching_up = True
-            bars_to_cross = float(np.clip(-h.iloc[-1] / slope, 0.5, 99))
+            eta = -h.iloc[-1] / slope
+            if eta <= _MACD_APPROACH_MAX_BARS:
+                approaching_up = True
+                bars_to_cross = float(max(eta, 0.5))
         elif h.iloc[-1] > 0 and falling and slope < 0:
-            approaching_dn = True
-            bars_to_cross = float(np.clip(h.iloc[-1] / -slope, 0.5, 99))
+            eta = h.iloc[-1] / -slope
+            if eta <= _MACD_APPROACH_MAX_BARS:
+                approaching_dn = True
+                bars_to_cross = float(max(eta, 0.5))
         # histogram trough/peak turn — Aspray's earliest pre-cross flag: a local
         # min in the histogram while still below zero (1 confirming up-bar)
         macd_curl_up = bool(h.iloc[-1] < 0 and h.iloc[-1] > h.iloc[-2] <= h.iloc[-3])
@@ -142,7 +154,7 @@ def mtf_snapshot(close: pd.Series, kind: str = "equity") -> dict:
     24/7 crypto)."""
     daily = close.dropna()
     tf3 = _preset(kind)["tf3"]
-    return {
+    out = {
         "D": _tf_state(daily),
         "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
         "W": _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {},
@@ -151,6 +163,15 @@ def mtf_snapshot(close: pd.Series, kind: str = "equity") -> dict:
         # i.e. ~900 trading days; thin-history names simply omit it.
         "M": _tf_state(daily.resample("ME").last().dropna()) if len(daily) > 900 else {},
     }
+    # The MACD cross ETA is computed in *bars of each timeframe*; a 3-day or
+    # weekly bar is not one day. Surface it in trading days so the "d to cross"
+    # label reads honestly across cards (1 daily bar = 1d, 1 three-day bar = 3d).
+    for tf, bar_days in (("D", 1), ("3D", 3), ("W", 5), ("M", 21)):
+        st = out.get(tf) or {}
+        btc = st.get("macd_bars_to_cross")
+        if btc:
+            st["macd_days_to_cross"] = int(round(btc * bar_days))
+    return out
 
 
 # ---------------------------------------------------------------- cycles ----

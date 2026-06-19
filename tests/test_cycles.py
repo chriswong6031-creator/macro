@@ -10,6 +10,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.cycles import (  # noqa: E402
+    _MACD_APPROACH_MAX_BARS,
     _EQ_BEARISH, _EQ_BULLISH, _eq_freshness, _eq_grade, _eq_proximity, analyze,
     bottom_confidence, bottom_confidence_fields, market_vix_context, washout,
     cycle_state, early_signals, entry_quality, entry_quality_fields, entry_timing,
@@ -64,6 +65,35 @@ def test_ladder_states_sane() -> None:
                            "TOP WATCH", "ROLLING OVER", "DECLINE", "COUNTERTREND BOUNCE")
     assert -100 <= st["score"] <= 100
     assert st["why"] and st["next"]
+
+
+def test_macd_cross_eta_is_bounded_and_in_days() -> None:
+    """The MACD "days to cross" ETA is a short-horizon extrapolation, not a
+    runaway countdown: it must never exceed the near-term bar cap (the old
+    clip-to-99 surfaced an absurd "≈99d to ↑cross" on COIN's 3-Day card), and
+    it must be reported in trading days, not raw timeframe bars."""
+    bar_days = {"D": 1, "3D": 3, "W": 5, "M": 21}
+    seen_eta = False
+    for seed in range(60):
+        r = np.random.default_rng(seed)
+        n = int(r.integers(220, 1100))
+        t = np.arange(n)
+        price = (100 * np.exp(0.0003 * t) * (1 + 0.05 * np.sin(t / r.uniform(8, 60)))
+                 + r.normal(0, 0.4, n).cumsum())
+        s = pd.Series(np.abs(price) + 5, index=pd.bdate_range("2018-01-01", periods=n))
+        mtf = mtf_snapshot(s, "crypto" if seed % 2 else "equity")
+        for tf, st in mtf.items():
+            btc = st.get("macd_bars_to_cross") if st else None
+            dtc = st.get("macd_days_to_cross") if st else None
+            approaching = st and (st.get("macd_approaching_up") or st.get("macd_approaching_dn"))
+            if btc is None:
+                assert not approaching and dtc is None
+                continue
+            seen_eta = True
+            assert approaching, f"{tf}: ETA set without an approaching flag"
+            assert 0 < btc <= _MACD_APPROACH_MAX_BARS, f"{tf}: bars {btc} over cap"
+            assert dtc == round(btc * bar_days[tf]), f"{tf}: days {dtc} != bars*{bar_days[tf]}"
+    assert seen_eta, "fixture never exercised an approaching cross"
 
 
 def test_decline_on_breakdown() -> None:
