@@ -3633,6 +3633,37 @@ intl:
       ucits: {product_id: "251878", file_name: ITWN, suffix: ".TW", slug: "ishares-msci-taiwan-ucits-etf"}
       fred:                          # Taiwan is sparse on keyless macro sources (honest data gap)
         cpi_yoy: TWNCPIALLMINMEI
+    IN:
+      name: India
+      name_zh: 印度
+      flag: "🇮🇳"
+      region: Asia
+      index: "^NSEI"
+      indices: {"^NSEI": Nifty 50, "^BSESN": Sensex}
+      vol: null
+      fx: "USDINR=X"
+      fx_invert: true               # USD/INR up = INR weaker = stress
+      ucits: {product_id: "297617", file_name: NDIA, suffix: ".NS", slug: "ishares-msci-india-ucits-etf"}
+      fred:                          # India (non-OECD): only the 10y govt yield + CPI index are current/keyless -> data_limited like TW
+        yield_10y: INDIRLTLT01STM
+        cpi_yoy: INDCPIALLMINMEI     # CPI index (2010=100); engine auto-computes YoY, stale-gated
+    AU:
+      name: Australia
+      name_zh: 澳大利亚
+      flag: "🇦🇺"
+      region: Asia-Pacific
+      index: "^AXJO"
+      indices: {"^AXJO": ASX 200}
+      vol: null
+      fx: "AUDUSD=X"
+      fx_invert: false              # AUD/USD up = AUD stronger = risk-on (commodity-beta currency)
+      ucits: {product_id: "251851", file_name: SAUS, suffix: ".AX", slug: "ishares-msci-australia-ucits-etf"}
+      fred:                          # OECD member: rates/labour/output current; CPI is quarterly (auto-YoY, stale-gated)
+        yield_10y: IRLTLT01AUM156N
+        short_3m: IR3TIB01AUM156N
+        cpi_yoy: AUSCPIALLQINMEI
+        unemployment: LRHUTTTTAUM156S
+        gdp: NGDPRSAXDCAUQ
     GB:
       name: United Kingdom
       name_zh: 英国
@@ -3644,6 +3675,8 @@ intl:
       fx: "GBPUSD=X"
       fx_invert: false              # GBP/USD up = GBP stronger = risk-on
       ucits: {product_id: "251795", file_name: ISF, suffix: ".L", slug: "ishares-ftse-100-ucits-etf-inc-fund"}
+      ucits_extra:                  # deepen the UK cross-section with FTSE 250 mid-caps (distinct names below the 100)
+        - {product_id: "251796", file_name: MIDD, suffix: ".L", slug: "ishares-ftse-250-ucits-etf"}
       fred:
         yield_10y: IRLTLT01GBM156N
         short_3m: IR3TIB01GBM156N

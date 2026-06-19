@@ -6,10 +6,16 @@ Universe source = the UK-domiciled iShares **UCITS** ETF holdings CSV for each
 market (keyless; the SAME ajax pattern as the canada XIC collector). One request
 per fund yields ticker + proper company name + GICS sector + index weight + the
 listing Location/Exchange — so we derive the Yahoo suffix AND the country flag
-straight from the CSV (no get_info enrichment loop). Verified 2026-06-15:
+straight from the CSV (no get_info enrichment loop). Verified 2026-06-15/19:
 
   JP IJPN 251866 -> .T    KR IKOR 251871 -> .KS   TW ITWN 251878 -> .TW
-  GB ISF  251795 -> .L    EZ IMEU 251860 -> per-row Exchange/Location
+  IN NDIA 297617 -> .NS   AU SAUS 251851 -> .AX   GB ISF  251795 -> .L
+  EZ IMEU 251860 -> per-row Exchange/Location
+
+A market may list MULTIPLE funds — its primary `ucits` plus an optional
+`ucits_extra` list (e.g. UK = FTSE 100 ISF + FTSE 250 mid-caps MIDD) — pooled to
+widen the cross-section. Funds degrade independently; first-write-wins dedup
+handles a name carried by two funds.
 
 The holdings CSV link is exposed in the product page's static HTML (UK site) at a
 stable loader id (config intl.search_universe.ajax_holdings_id); if it rots we
@@ -111,9 +117,8 @@ class IntlUniverseAdapter(Adapter):
                       page)
         return ("https://www.blackrock.com" + m.group(0)) if m else None
 
-    def _fetch_holdings(self, cc: str, c: dict) -> pd.DataFrame:
+    def _fetch_holdings(self, cc: str, c: dict, u: dict) -> pd.DataFrame:
         """DataFrame[ticker, name, sector, country, flag, market, weight] for one fund."""
-        u = c["ucits"]
         url = self._holdings_url(u)
         try:
             r = self.http_get(url, retries=self.ycfg["retries"],
@@ -173,14 +178,18 @@ class IntlUniverseAdapter(Adapter):
         return out
 
     def _all_members(self) -> pd.DataFrame:
+        # Each market contributes its primary UCITS fund plus any `ucits_extra`
+        # funds (e.g. UK FTSE 100 + FTSE 250 mid-caps) — pooled to widen the
+        # cross-section. Each fund degrades independently; one down can't kill the
+        # universe. First-write-wins dedup handles names listed in two funds.
         parts = []
         for cc, c in self.countries.items():
-            if not c.get("ucits"):
-                continue
-            try:
-                parts.append(self._fetch_holdings(cc, c))
-            except Exception as e:  # noqa: BLE001 — one fund down can't kill the universe
-                log.warning("intl_universe: %s fund failed: %s", cc, e)
+            funds = ([c["ucits"]] if c.get("ucits") else []) + list(c.get("ucits_extra") or [])
+            for u in funds:
+                try:
+                    parts.append(self._fetch_holdings(cc, c, u))
+                except Exception as e:  # noqa: BLE001 — one fund down can't kill the universe
+                    log.warning("intl_universe: %s/%s fund failed: %s", cc, u.get("file_name"), e)
         if not parts:
             raise RuntimeError("intl_universe: every UCITS fund failed")
         m = pd.concat(parts, ignore_index=True).drop_duplicates(subset="ticker")

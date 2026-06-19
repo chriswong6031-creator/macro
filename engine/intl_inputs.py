@@ -125,14 +125,19 @@ def country_frame(cc: str, closes: pd.DataFrame | None = None,
     # stance reach the latest day; the direction diffs still span real changes.
     put("yield_10y", mcol("yield_10y"), ffill_limit=130)
     put("short_3m", mcol("short_3m"), ffill_limit=130)
-    # CPI: some sources are an INDEX (2015=100), others already YoY %. Auto-detect
-    # by level and compute YoY for index series. ffill is short, so a STALE CPI
-    # (FRED's OECD MEI series are discontinued for several economies) goes NaN at
-    # recent dates and is dropped from scoring — only fresh CPI drives the axis.
+    # CPI: some sources are an INDEX (2015=100 / 2010=100), others already YoY %.
+    # Detect by the RECENT level — an index sits ~100+, a YoY rate ~0-15 — using a
+    # trailing window so a long index history (e.g. India's 1957-base series) can't
+    # drag the median below the threshold and get mis-read as a rate. For an index,
+    # step YoY by the series' own cadence: 4 for quarterly (Australia), else 12
+    # (monthly). ffill is short, so a STALE CPI (FRED's OECD MEI series are
+    # discontinued for several economies) goes NaN at recent dates and is dropped
+    # from scoring — only fresh CPI drives the axis.
     cpi_raw = mcol("cpi_yoy")
     if cpi_raw is not None and not cpi_raw.dropna().empty:
         cs = cpi_raw.dropna()
-        cpi_yoy = (cs.pct_change(12) * 100) if float(cs.median()) > 40 else cs
+        is_index = float(cs.tail(24).median()) > 40
+        cpi_yoy = (cs.pct_change(4 if _is_quarterly(cs) else 12) * 100) if is_index else cs
         put("cpi_yoy", cpi_yoy, ffill_limit=70)
     else:
         f["cpi_yoy"] = np.nan
