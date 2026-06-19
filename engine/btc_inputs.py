@@ -100,7 +100,10 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "open_interest_df": store.read("bgeo", "open_interest_futures"),  # all 15 venue cols
         "okx_ls_ratio": _col("okx", "ls_account_ratio"),     # OKX retail account long/short breadth (DISPLAY)
         "okx_taker_buy": _col("okx", "taker_volume"),        # taker buy / (buy+sell) flow ratio (DISPLAY)
+        "okx_spot_usdt": _col("okx", "spot_usdt_daily", "close"),  # offshore-USDT ref for self-computed Coinbase Premium (2018->)
         "etf_flow": _col("bgeo", "etf_flow_btc"),
+        "farside_etf": store.read("farside", "etf_flows"),   # per-fund spot-BTC-ETF flows US$m (2024-01->)
+        "farside_total": _col("farside", "etf_flows", "total"),  # aggregate net flow US$m (Farside, primary)
         "btc_dominance": _col("bgeo", "btc_dominance"),
         "stablecoins": stables,
         "stablecoin_peg": _col("defillama", "stablecoin_peg"),  # peg-deviation veto (D-vec-PEG)

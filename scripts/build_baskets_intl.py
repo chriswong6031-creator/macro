@@ -59,9 +59,24 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("intl theme desk failed: %s", e)
 
+    # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — coherent, TIGHTENING cross-country
+    # groups not yet in a basket, with clean-entry recommended tickers. Display-only, additive.
+    emergence = None
+    try:
+        from engine.narrative_emergence import compute_emergence
+        emergence = compute_emergence("intl")
+        if emergence:
+            from engine import emergence_alerts
+            emergence_alerts.rebuild(emergence, "intl")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("intl narrative emergence failed: %s", e)
+
     fdir = site / "intlbasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    if emergence:
+        (fdir / "narrative_emergence.json").write_text(
+            json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))
 
     chart = data.pop("chart")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -80,6 +95,9 @@ def main() -> int:
         deskjs = config.ROOT / "templates" / "baskets_desk.js"
         if deskjs.exists():
             (site / "baskets_desk.js").write_text(deskjs.read_text())
+        ne = config.ROOT / "templates" / "forming_narratives.js"
+        if ne.exists():
+            (site / "forming_narratives.js").write_text(ne.read_text())
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("intl theme detail pages failed: %s", e)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page

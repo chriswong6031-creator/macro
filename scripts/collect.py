@@ -110,6 +110,7 @@ def all_adapters() -> dict:
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
         ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
+        ("farside", "collectors.farside", "FarsideAdapter"),  # per-fund spot-BTC-ETF flows (US$m, 2024->)
     ]
     for key, mod, cls in specs:
         try:

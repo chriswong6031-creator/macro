@@ -520,28 +520,28 @@ ALERT_META: dict[str, dict] = {
                    "re-check your tilt before it confirms.",
         "what_zh": "增长／通胀象限需「待定」读数持续一周才翻转标签。证据正在累积指向新的象限 —"
                    "在确认前重新检视配置。",
-        "anchor": "regime-hero"},
+        "anchor": "regime-radar"},
     "hk_regime_confidence_floor": {
         "icon": "🎚️", "plain_en": "Regime read got muddy — trust the quad less",
         "plain_zh": "周期信号变浑浊 — 降低对象限的信任",
         "what_en": "Confidence (how strongly the indicators agree on the quad) fell below "
                    "a usable threshold. Size down and lean on the conditions lens.",
         "what_zh": "置信度（指标对象限的认同程度）跌破可用阈值。缩小仓位，更依赖条件透镜。",
-        "anchor": "regime-hero"},
+        "anchor": "regime-radar"},
     "hk_growth_confidence_floor": {
         "icon": "🎚️", "plain_en": "Growth read got muddy — trust the quad less",
         "plain_zh": "增长信号变浑浊 — 降低对象限的信任",
         "what_en": "The growth dial's indicators stopped agreeing. The growth half of the "
                    "quad is now mixed — size down.",
         "what_zh": "增长刻度盘的指标停止一致。象限的增长一侧现已混杂 — 缩小仓位。",
-        "anchor": "regime-hero"},
+        "anchor": "regime-radar"},
     "hk_inflation_confidence_floor": {
         "icon": "🎚️", "plain_en": "Inflation read got muddy — trust the quad less",
         "plain_zh": "通胀信号变浑浊 — 降低对象限的信任",
         "what_en": "The inflation dial's indicators stopped agreeing. The inflation half "
                    "of the quad is now mixed — size down.",
         "what_zh": "通胀刻度盘的指标停止一致。象限的通胀一侧现已混杂 — 缩小仓位。",
-        "anchor": "regime-hero"},
+        "anchor": "regime-radar"},
     "hk_risk_on": {
         "icon": "🟢", "plain_en": "Global risk overlay flipped RISK-ON",
         "plain_zh": "全球风险开关转「开」",
