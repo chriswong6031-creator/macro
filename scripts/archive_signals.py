@@ -39,6 +39,7 @@ MANIFEST: list[tuple[str, str, str | None]] = [
     ("intl_regime",   "intl/latest.json",          "date"),
     ("forex",         "forex/latest.json",         "date"),
     ("commodity",     "commodity/latest.json",     "date"),
+    ("baskets",       "baskets/latest.json",       "as_of"),   # per-theme score history (build_baskets)
 ]
 
 
