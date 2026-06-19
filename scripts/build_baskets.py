@@ -176,7 +176,8 @@ def main() -> int:
     # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
     # theme_intel + members) and the env; chart already split off above. Additive.
     try:
-        _build_detail_pages(data, site, env)
+        from scripts.build_theme_detail import build_detail_pages
+        build_detail_pages(data, site, env, "us")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme detail pages failed: %s", e)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page

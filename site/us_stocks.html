@@ -513,9 +513,226 @@
   .rm-tbl td, .rm-tbl th { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; }
   .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
   .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+
+  /* ======================================================================
+     MACRO TERMINAL — scoped enhancement layer (macro.html only)
+     Everything here is gated under body.page-macro, which is emitted ONLY for
+     mode != 'stocks' (line ~528). The US Stock Dashboard + every other page
+     are byte-untouched. NO theme.css edits — all colour routes through the
+     existing theme vars so dark/light AND the zh Asia red/green swap propagate
+     at paint. Aesthetic: a Bloomberg-grade macro terminal — hairline-precise,
+     tabular, monochrome-by-default; the regime reads in 2 seconds and every
+     figure reads in one, with colour spent only on signal.
+     ====================================================================== */
+  body.page-macro {
+    /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
+           "Roboto Mono", Menlo, Consolas, monospace;
+    /* hairlines + inset surface, layered on the existing palette */
+    --hair: color-mix(in srgb, var(--line) 72%, transparent);
+    --hair-strong: var(--line);
+    --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+    /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+       genuine captions only (the single highest-leverage readability fix) */
+    --ink-1: var(--text);
+    --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+    --ink-3: var(--muted);
+    --rule: 1px;
+    --pad: 17px;
+    --ms: var(--card-shadow), inset 0 1px 0 0 color-mix(in srgb, var(--text) 7%, transparent);
+  }
+  html[data-theme="light"] body.page-macro {
+    --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+    --hair: color-mix(in srgb, var(--line) 90%, transparent);
+    --ms: var(--card-shadow), inset 0 1px 0 0 rgba(255,255,255,.6);
+  }
+
+  /* ---- type scale: confident hierarchy, kill the tiny-muted soup ---- */
+  body.page-macro { font-size: 14.5px; line-height: 1.55; }
+  body.page-macro h1 { font-size: 20px; font-weight: 800; letter-spacing: -.01em;
+    color: var(--ink-1); }
+  /* section headers: readable sentence-case (NOT tiny uppercase — these are long
+     descriptive titles), strong ink, with an accent channel tick + hairline rule */
+  body.page-macro .panel > h2 { font-size: 14px; font-weight: 700; letter-spacing: -.005em;
+    text-transform: none; color: var(--ink-1); margin: 0 0 13px; padding: 0 0 11px;
+    border-bottom: var(--rule) solid var(--hair); line-height: 1.35; }
+  body.page-macro .panel > h2::before { content: ""; display: inline-block;
+    width: 3px; height: 14px; border-radius: 1.5px; background: var(--link);
+    margin-right: 9px; vertical-align: -2px; }
+  html[data-lang="zh"] body.page-macro .panel > h2 { letter-spacing: 0; }
+  body.page-macro h3 { font-size: 12.5px; font-weight: 700; letter-spacing: 0;
+    color: var(--ink-1); text-transform: none; }
+  /* lift inline body greys; keep a true-caption class at the dimmer --ink-3 */
+  body.page-macro .muted { color: var(--ink-2); }
+  body.page-macro .kv { color: var(--ink-2); }
+  body.page-macro .sm { color: var(--ink-2); }
+  body.page-macro .cap, body.page-macro .muted.cap { font-size: 11px; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ---- numerals: the terminal signature — figures tabular + mono ---- */
+  body.page-macro .num, body.page-macro .num-lg, body.page-macro .num-xl,
+  body.page-macro .kv b, body.page-macro .idx-gv, body.page-macro .prob .pc,
+  body.page-macro .tm-date, body.page-macro .sc-v, body.page-macro .stance-meta,
+  body.page-macro th, body.page-macro td:not(:first-child):not(.l),
+  body.page-macro .sig-val, body.page-macro .v-num, body.page-macro .v-chip,
+  body.page-macro .mtile-val, body.page-macro .vixnum {
+    font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1; letter-spacing: -.01em; }
+  body.page-macro .num-xl { font-size: 34px; font-weight: 800; line-height: 1;
+    letter-spacing: -.02em; color: var(--ink-1); }
+  body.page-macro .num-lg { font-size: 22px; font-weight: 800; line-height: 1.05; }
+  /* keep help-tooltip tables as readable prose — the numeral mono face must not
+     bleed into the explanatory sentences in their cells (.tip tables are prose) */
+  body.page-macro .tip td:not(:first-child):not(.l), body.page-macro .tip th {
+    font-family: inherit; font-variant-numeric: normal; letter-spacing: normal; }
+
+  /* ---- panel: crisp module — hairline frame, faint machined top edge ---- */
+  body.page-macro .grid { gap: 14px; }
+  @media (min-width: 1100px) { body.page-macro .grid { gap: 16px 18px; } }
+  body.page-macro .panel { background: var(--panel);
+    border: var(--rule) solid var(--hair-strong); border-radius: 12px;
+    padding: var(--pad) calc(var(--pad) + 1px); box-shadow: var(--ms); }
+
+  /* ---- tables: terminal treatment ---- */
+  body.page-macro table { font-size: 12.5px; }
+  body.page-macro th { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+    border-bottom: var(--rule) solid var(--hair-strong); }
+  body.page-macro td { border-bottom: var(--rule) solid var(--hair); color: var(--ink-1); }
+  body.page-macro tbody tr:hover td, body.page-macro tr:hover td {
+    background: color-mix(in srgb, var(--link) 6%, transparent); }
+
+  /* ---- inset tiles: a class hook (opt-in) instead of attribute-matching ---- */
+  body.page-macro .mtile-x { background: var(--tile);
+    border: var(--rule) solid var(--hair); border-radius: 9px; }
+
+  /* ---- gauges: crisper needle ---- */
+  body.page-macro .gauge { height: 8px; border-radius: 4px;
+    outline: var(--rule) solid var(--hair); outline-offset: -1px; }
+  body.page-macro .gauge i { width: 3px; height: 16px; top: -4px; background: var(--ink-1);
+    box-shadow: 0 0 0 1.5px var(--panel), 0 0 8px color-mix(in srgb, var(--ink-1) 60%, transparent); }
+  body.page-macro .prob .bar, body.page-macro .lifebar { background: var(--tile); }
+  body.page-macro .prob .pc { font-size: 17px; }
+
+  /* ======================= HERO (command center) ======================= */
+  body.page-macro #regime-radar { padding: 19px 21px; }
+  body.page-macro .hero-bar { display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 26px; }
+  body.page-macro .hero-main { padding: 2px 28px; min-width: 0;
+    border-left: var(--rule) solid var(--hair); border-right: var(--rule) solid var(--hair); }
+
+  /* LEFT — 2x2 quadrant locator (growth↑ top, inflation→ right; lit cell only) */
+  body.page-macro .hero-loc { display: grid; gap: 7px; justify-items: start; }
+  body.page-macro .qmini { display: grid; grid-template-columns: repeat(2, 31px);
+    grid-template-rows: repeat(2, 31px); gap: 5px; }
+  body.page-macro .qm { border-radius: 6px;
+    background: color-mix(in srgb, var(--qc) 14%, var(--tile));
+    border: var(--rule) solid color-mix(in srgb, var(--qc) 28%, var(--hair));
+    transition: box-shadow .2s ease; }
+  body.page-macro .qm.on { background: var(--qc);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--qc),
+                0 0 18px color-mix(in srgb, var(--qc) 55%, transparent); }
+  body.page-macro .loc-axes { display: flex; justify-content: space-between; width: 100%;
+    gap: 8px; font-family: var(--num); font-size: 8px; letter-spacing: .05em;
+    color: var(--ink-3); text-transform: uppercase; font-weight: 700; }
+
+  /* CENTER — the read */
+  body.page-macro .hero-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center;
+    gap: 7px; flex-wrap: wrap; }
+  body.page-macro .hero-eyebrow .num { color: var(--ink-2); }
+  body.page-macro .hero-regime { display: flex; align-items: center; gap: 12px; margin: 7px 0 6px; }
+  body.page-macro .hr-dot { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+  body.page-macro h1.hr-name { font-size: 33px; font-weight: 800; letter-spacing: -.02em;
+    line-height: 1; color: var(--ink-1); margin: 0; }
+  html[data-lang="zh"] body.page-macro h1.hr-name { font-size: 31px; letter-spacing: 0; }
+  body.page-macro .hero-says { margin: 0; font-size: 14px; color: var(--ink-2);
+    max-width: 52ch; line-height: 1.5; }
+  body.page-macro .hero-says b { color: var(--ink-1); font-weight: 700; }
+
+  /* RIGHT — vitals strip: 4 cells, each LABEL · VALUE · plain-English MEANING */
+  body.page-macro .hero-vitals { display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 13px 20px; }
+  body.page-macro .vital { display: grid; gap: 4px; align-content: start; }
+  body.page-macro .v-top { display: flex; align-items: center; gap: 5px; }
+  body.page-macro .v-label { font-family: var(--num); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+  body.page-macro .v-num { color: var(--ink-1); }
+  body.page-macro .v-num small { font-size: 14px; color: var(--ink-3); font-weight: 600;
+    font-family: var(--num); }
+  body.page-macro .v-mean { font-size: 11px; color: var(--ink-2); line-height: 1.35; }
+  body.page-macro .v-meter { height: 4px; border-radius: 2px; background: var(--tile);
+    position: relative; overflow: hidden; }
+  body.page-macro .v-meter::after { content: ""; position: absolute; inset: 0 auto 0 0;
+    width: var(--p, 0%); background: var(--mc, var(--ink-2)); border-radius: 2px; }
+  body.page-macro .v-chip { font-size: 12.5px; font-weight: 700; padding: 3px 10px;
+    border-radius: 7px; width: max-content; border: var(--rule) solid var(--hair);
+    background: var(--tile); color: var(--ink-1); }
+  body.page-macro .liq-expanding { color: var(--up);
+    border-color: color-mix(in srgb, var(--up) 45%, var(--hair));
+    background: color-mix(in srgb, var(--up) 13%, var(--tile)); }
+  body.page-macro .liq-contracting { color: var(--down);
+    border-color: color-mix(in srgb, var(--down) 45%, var(--hair));
+    background: color-mix(in srgb, var(--down) 13%, var(--tile)); }
+  body.page-macro .v-chip.state-WEAKENING { color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 45%, var(--hair));
+    background: color-mix(in srgb, var(--warn) 11%, var(--tile)); }
+  body.page-macro .v-chip.state-TRANSITIONING { color: var(--orange);
+    border-color: color-mix(in srgb, var(--orange) 45%, var(--hair));
+    background: color-mix(in srgb, var(--orange) 11%, var(--tile)); }
+  body.page-macro .v-chip.state-NEW_REGIME { color: var(--act);
+    border-color: color-mix(in srgb, var(--act) 45%, var(--hair));
+    background: color-mix(in srgb, var(--act) 11%, var(--tile)); }
+
+  @media (max-width: 900px) {
+    body.page-macro .hero-bar { grid-template-columns: 1fr; gap: 16px; }
+    body.page-macro .hero-main { border: 0; padding: 14px 0;
+      border-top: var(--rule) solid var(--hair); border-bottom: var(--rule) solid var(--hair); }
+    body.page-macro h1.hr-name { font-size: 28px; }
+    body.page-macro .hero-vitals { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ======================= SIGNAL ATOM (one language everywhere) =======================
+     3px state rail · LABEL (mono caption) · VALUE (tabular) · MEANING (plain English).
+     State->colour declared in ONE place; the zh swap propagates via --up/--down/--qN. */
+  body.page-macro .sig { display: grid; grid-template-columns: 3px 1fr;
+    background: var(--tile); border: var(--rule) solid var(--hair);
+    border-radius: 9px; overflow: hidden; }
+  body.page-macro .sig::before { content: ""; background: var(--sc, var(--ink-3)); }
+  body.page-macro .sig-body { padding: 10px 12px; display: grid; gap: 3px; }
+  body.page-macro .sig-label { font-family: var(--num); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  body.page-macro .sig-val { font-size: 16px; font-weight: 800; color: var(--ink-1); }
+  body.page-macro .sig-mean { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+  body.page-macro .sig.is-good   { --sc: var(--up); }     /* direction → swaps in zh */
+  body.page-macro .sig.is-bad    { --sc: var(--down); }   /* direction → swaps in zh */
+  body.page-macro .sig.is-warn   { --sc: var(--warn); }   /* health → not swapped   */
+  body.page-macro .sig.is-danger { --sc: var(--act); }
+  body.page-macro .sig.is-ok     { --sc: var(--ok); }
+  body.page-macro .sig.is-flat   { --sc: var(--ink-3); }
+  body.page-macro .sig.is-q1 { --sc: var(--q1); } body.page-macro .sig.is-q2 { --sc: var(--q2); }
+  body.page-macro .sig.is-q3 { --sc: var(--q3); } body.page-macro .sig.is-q4 { --sc: var(--q4); }
+  body.page-macro .sig.is-good .sig-val { color: var(--up); }
+  body.page-macro .sig.is-bad  .sig-val { color: var(--down); }
+
+  /* inline headwind/tailwind chip — named .wind (NOT .tw — that's the trendword macro) */
+  body.page-macro .wind { font-family: var(--num); font-size: 11px; font-weight: 700;
+    letter-spacing: .02em; padding: 1px 7px; border-radius: 5px;
+    background: color-mix(in srgb, var(--wc, var(--ink-3)) 15%, var(--tile));
+    color: var(--wc, var(--ink-2));
+    border: var(--rule) solid color-mix(in srgb, var(--wc, var(--ink-3)) 35%, transparent); }
+  body.page-macro .wind.tail { --wc: var(--up); }
+  body.page-macro .wind.head { --wc: var(--down); }
+  body.page-macro .wind.neu  { --wc: var(--ink-3); }
+
+  /* respect reduced-motion: the locator cell's glow can fade its colour on a
+     theme/language toggle (the quad vars swap in zh) — neutralise that motion */
+  @media (prefers-reduced-motion: reduce) {
+    body.page-macro .qm { transition: none; }
+  }
 </style>
 </head>
-<body>
+<body class="page-stocks">
 <nav class="site-nav">
     
 
@@ -700,7 +917,7 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></span>
-        <span class="muted" style="font-size:11.5px">120 <span class="l-en">of</span><span class="l-zh">/</span> 401 <span class="l-en">cleared the +0.5 α floor · ranked across the full S&P 1500 by validated residual momentum · each card carries the unified Conviction profile (cycle state caps the verdict)</span><span class="l-zh">只通过 +0.5 α 门槛 · 在整个标普1500内按已验证残差动量排序 · 每张卡片附带统一确信度画像（周期状态会封顶结论）</span>
+        <span class="muted" style="font-size:11.5px">120 <span class="l-en">of</span><span class="l-zh">/</span> 399 <span class="l-en">cleared the +0.5 α floor · ranked across the full S&P 1500 by validated residual momentum · each card carries the unified Conviction profile (cycle state caps the verdict)</span><span class="l-zh">只通过 +0.5 α 门槛 · 在整个标普1500内按已验证残差动量排序 · 每张卡片附带统一确信度画像（周期状态会封顶结论）</span>
           <span class="help">?<span class="tip"><span class="l-en">The bench is ranked by the VALIDATED sector-neutral residual-momentum leg (α) across the full S&P 1500 — so it surfaces leaders that aren't in any sector ETF's top-10. Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and a single honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — which is why this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability); the composite is shown as context until a deep Phase-0 clears it. Click any card for the full breakdown.</span><span class="l-zh">榜单按已验证的行业中性残差动量（α）在整个标普1500内排序——因此能发掘不在任何行业ETF前十大持仓中的领涨股。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示“买入”，而显示“强势但趋势不利”——这正是该卡片与个股自身页面永不矛盾的原因。0-100 分是市场内百分位的展示皮肤（非概率）；在深度 Phase-0 通过前，综合分仅作情境展示。点击任意卡片查看完整拆解。</span></span></span></span>
         
       </div>
@@ -923,7 +1140,7 @@
             <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.17</span>
             <span class="nb-rk">#35/60</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -976,7 +1193,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.67</span>
             <span class="nb-rk">#19/107</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1347,7 +1564,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.61</span>
             <span class="nb-rk">#46/196</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1453,7 +1670,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.14</span>
             <span class="nb-rk">#122/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting warn</span><span class="l-zh">⚠ accounting warn</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting warn</span><span class="l-zh">⚠ 财务质量警示</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1559,7 +1776,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +2.39</span>
             <span class="nb-rk">#1/168</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1575,7 +1792,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.3 3.8,34.4 7.6,41.0 11.4,39.4 15.2,38.0 19.0,38.6 22.9,40.3 26.7,40.0 30.5,38.0 34.3,36.7 38.1,35.0 41.9,35.4 45.7,36.5 49.5,34.1 53.3,36.1 57.1,38.1 61.0,37.2 64.8,36.0 68.6,37.0 72.4,33.6 76.2,33.3 80.0,31.0 83.8,29.0 87.6,32.0 91.4,30.5 95.2,33.0 99.0,32.4 102.9,33.2 106.7,31.6 110.5,32.6 114.3,33.4 118.1,42.0 121.9,26.6 125.7,28.7 129.5,28.0 133.3,22.5 137.1,23.8 141.0,25.1 144.8,23.5 148.6,26.0 152.4,23.9 156.2,22.4 160.0,21.4 163.8,20.5 167.6,21.9 171.4,20.4 175.2,17.9 179.0,16.9 182.9,19.9 186.7,21.0 190.5,17.7 194.3,20.2 198.1,19.2 201.9,17.6 205.7,17.2 209.5,13.8 213.3,10.4 217.1,12.3 221.0,10.3 224.8,10.1 228.6,14.0 232.4,13.1 236.2,17.0 240.0,16.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.3 3.8,34.4 7.6,41.0 11.4,39.4 15.2,38.0 19.0,38.6 22.9,40.3 26.7,40.0 30.5,38.0 34.3,36.7 38.1,35.0 41.9,35.4 45.7,36.5 49.5,34.1 53.3,36.1 57.1,38.1 61.0,37.2 64.8,36.0 68.6,37.0 72.4,33.6 76.2,33.3 80.0,31.0 83.8,29.0 87.6,32.0 91.4,30.5 95.2,33.0 99.0,32.4 102.9,33.2 106.7,31.6 110.5,32.6 114.3,33.4 118.1,42.0 121.9,26.6 125.7,28.7 129.5,28.0 133.3,22.5 137.1,23.8 141.0,25.1 144.8,23.5 148.6,26.0 152.4,23.9 156.2,22.4 160.0,21.4 163.8,20.5 167.6,21.9 171.4,20.4 175.2,17.9 179.0,16.9 182.9,19.9 186.7,21.0 190.5,17.7 194.3,20.2 198.1,19.2 201.9,17.6 205.7,17.2 209.5,13.8 213.3,10.4 217.1,12.3 221.0,10.3 224.8,10.1 228.6,14.0 232.4,13.1 236.2,17.0 240.0,16.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">98</span>
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">99</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           <div class="nb-axes">
@@ -1665,7 +1882,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.56</span>
             <span class="nb-rk">#82/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1718,7 +1935,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.47</span>
             <span class="nb-rk">#92/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1930,7 +2147,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.44</span>
             <span class="nb-rk">#55/168</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -1983,7 +2200,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.44</span>
             <span class="nb-rk">#75/187</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -2089,7 +2306,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.46</span>
             <span class="nb-rk">#25/76</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -2142,7 +2359,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.75</span>
             <span class="nb-rk">#36/168</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span><span class="l-en">⚠ weak fundamentals</span><span class="l-zh">⚠ weak fundamentals</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span><span class="l-en">⚠ weak fundamentals</span><span class="l-zh">⚠ 基本面偏弱</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -2672,7 +2889,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.90</span>
             <span class="nb-rk">#56/253</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -3255,7 +3472,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.81</span>
             <span class="nb-rk">#3/196</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -3573,7 +3790,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.05</span>
             <span class="nb-rk">#130/253</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -3748,7 +3965,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,39.3 3.8,42.0 7.6,37.2 11.4,37.3 15.2,37.4 19.0,39.2 22.9,40.8 26.7,41.8 30.5,40.1 34.3,37.2 38.1,38.1 41.9,40.2 45.7,40.4 49.5,34.9 53.3,32.2 57.1,31.2 61.0,30.6 64.8,29.5 68.6,31.4 72.4,32.5 76.2,27.2 80.0,26.5 83.8,27.5 87.6,27.0 91.4,28.3 95.2,27.6 99.0,28.3 102.9,28.4 106.7,30.2 110.5,28.5 114.3,28.7 118.1,33.2 121.9,30.8 125.7,28.6 129.5,29.8 133.3,21.5 137.1,25.3 141.0,27.5 144.8,29.2 148.6,25.9 152.4,27.8 156.2,26.0 160.0,30.5 163.8,25.1 167.6,23.6 171.4,24.9 175.2,22.7 179.0,21.4 182.9,20.6 186.7,21.8 190.5,23.1 194.3,25.0 198.1,23.8 201.9,21.2 205.7,19.5 209.5,18.1 213.3,14.8 217.1,18.5 221.0,14.9 224.8,12.8 228.6,14.8 232.4,14.0 236.2,16.5 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.3 3.8,42.0 7.6,37.2 11.4,37.3 15.2,37.4 19.0,39.2 22.9,40.8 26.7,41.8 30.5,40.1 34.3,37.2 38.1,38.1 41.9,40.2 45.7,40.4 49.5,34.9 53.3,32.2 57.1,31.2 61.0,30.6 64.8,29.5 68.6,31.4 72.4,32.5 76.2,27.2 80.0,26.5 83.8,27.5 87.6,27.0 91.4,28.3 95.2,27.6 99.0,28.3 102.9,28.4 106.7,30.2 110.5,28.5 114.3,28.7 118.1,33.2 121.9,30.8 125.7,28.6 129.5,29.8 133.3,21.5 137.1,25.3 141.0,27.5 144.8,29.2 148.6,25.9 152.4,27.8 156.2,26.0 160.0,30.5 163.8,25.1 167.6,23.6 171.4,24.9 175.2,22.7 179.0,21.4 182.9,20.6 186.7,21.8 190.5,23.1 194.3,25.0 198.1,23.8 201.9,21.2 205.7,19.5 209.5,18.1 213.3,14.8 217.1,18.5 221.0,14.9 224.8,12.8 228.6,14.8 232.4,14.0 236.2,16.5 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">94</span>
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">95</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           <div class="nb-axes">
@@ -3801,7 +4018,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,42.0 3.8,41.4 7.6,37.6 11.4,35.1 15.2,35.1 19.0,34.0 22.9,37.5 26.7,35.9 30.5,32.4 34.3,31.1 38.1,30.2 41.9,28.6 45.7,27.6 49.5,22.0 53.3,17.3 57.1,20.7 61.0,20.1 64.8,21.8 68.6,22.3 72.4,23.7 76.2,18.5 80.0,17.5 83.8,21.8 87.6,22.9 91.4,20.4 95.2,22.4 99.0,20.1 102.9,19.4 106.7,23.2 110.5,20.8 114.3,21.5 118.1,24.3 121.9,22.1 125.7,21.3 129.5,22.8 133.3,22.8 137.1,26.8 141.0,27.1 144.8,28.9 148.6,28.1 152.4,30.7 156.2,27.0 160.0,28.3 163.8,24.1 167.6,24.3 171.4,23.5 175.2,21.1 179.0,23.2 182.9,23.4 186.7,22.8 190.5,26.5 194.3,22.3 198.1,26.8 201.9,21.3 205.7,20.4 209.5,21.1 213.3,18.3 217.1,15.7 221.0,15.2 224.8,10.1 228.6,13.9 232.4,13.0 236.2,17.2 240.0,16.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,41.4 7.6,37.6 11.4,35.1 15.2,35.1 19.0,34.0 22.9,37.5 26.7,35.9 30.5,32.4 34.3,31.1 38.1,30.2 41.9,28.6 45.7,27.6 49.5,22.0 53.3,17.3 57.1,20.7 61.0,20.1 64.8,21.8 68.6,22.3 72.4,23.7 76.2,18.5 80.0,17.5 83.8,21.8 87.6,22.9 91.4,20.4 95.2,22.4 99.0,20.1 102.9,19.4 106.7,23.2 110.5,20.8 114.3,21.5 118.1,24.3 121.9,22.1 125.7,21.3 129.5,22.8 133.3,22.8 137.1,26.8 141.0,27.1 144.8,28.9 148.6,28.1 152.4,30.7 156.2,27.0 160.0,28.3 163.8,24.1 167.6,24.3 171.4,23.5 175.2,21.1 179.0,23.2 182.9,23.4 186.7,22.8 190.5,26.5 194.3,22.3 198.1,26.8 201.9,21.3 205.7,20.4 209.5,21.1 213.3,18.3 217.1,15.7 221.0,15.2 224.8,10.1 228.6,13.9 232.4,13.0 236.2,17.2 240.0,16.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.1" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">94</span>
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">95</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           <div class="nb-axes">
@@ -3944,7 +4161,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.86</span>
             <span class="nb-rk">#11/69</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -4209,7 +4426,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.04</span>
             <span class="nb-rk">#3/60</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -4262,7 +4479,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.11</span>
             <span class="nb-rk">#31/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -4421,7 +4638,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.07</span>
             <span class="nb-rk">#18/196</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -4686,7 +4903,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.35</span>
             <span class="nb-rk">#15/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -4845,7 +5062,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.87</span>
             <span class="nb-rk">#3/48</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -4951,60 +5168,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.45</span>
             <span class="nb-rk">#18/253</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span><span class="l-en">⚠ weak fundamentals</span><span class="l-zh">⚠ weak fundamentals</span></div>
-          <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
-          
-        </a>
-      
-        
-        <a class="nbcard nb-up" href="stock.html#VCTR">
-          <div class="nb-top">
-            <span class="nb-tk">VCTR</span>
-            <span class="nb-nm">Victory Capital Holdings, Inc.</span>
-            <span class="nb-px">$87.01</span>
-          </div>
-          <div class="nb-sub"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span>-1.8% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,35.8 3.8,35.5 7.6,36.3 11.4,36.2 15.2,33.0 19.0,33.8 22.9,39.2 26.7,39.4 30.5,38.8 34.3,39.5 38.1,41.9 41.9,42.0 45.7,42.0 49.5,37.1 53.3,35.4 57.1,36.0 61.0,34.3 64.8,30.9 68.6,29.5 72.4,30.8 76.2,28.6 80.0,27.8 83.8,27.9 87.6,27.2 91.4,27.8 95.2,28.0 99.0,25.9 102.9,25.7 106.7,26.8 110.5,23.0 114.3,23.7 118.1,23.4 121.9,19.6 125.7,18.4 129.5,16.7 133.3,14.7 137.1,14.1 141.0,12.6 144.8,12.7 148.6,11.5 152.4,14.5 156.2,12.6 160.0,18.3 163.8,16.7 167.6,14.0 171.4,14.0 175.2,11.6 179.0,12.3 182.9,15.0 186.7,15.6 190.5,15.5 194.3,15.0 198.1,15.1 201.9,10.5 205.7,12.0 209.5,12.2 213.3,10.1 217.1,11.0 221.0,12.8 224.8,14.7 228.6,13.3 232.4,11.7 236.2,12.1 240.0,12.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,35.8 3.8,35.5 7.6,36.3 11.4,36.2 15.2,33.0 19.0,33.8 22.9,39.2 26.7,39.4 30.5,38.8 34.3,39.5 38.1,41.9 41.9,42.0 45.7,42.0 49.5,37.1 53.3,35.4 57.1,36.0 61.0,34.3 64.8,30.9 68.6,29.5 72.4,30.8 76.2,28.6 80.0,27.8 83.8,27.9 87.6,27.2 91.4,27.8 95.2,28.0 99.0,25.9 102.9,25.7 106.7,26.8 110.5,23.0 114.3,23.7 118.1,23.4 121.9,19.6 125.7,18.4 129.5,16.7 133.3,14.7 137.1,14.1 141.0,12.6 144.8,12.7 148.6,11.5 152.4,14.5 156.2,12.6 160.0,18.3 163.8,16.7 167.6,14.0 171.4,14.0 175.2,11.6 179.0,12.3 182.9,15.0 186.7,15.6 190.5,15.5 194.3,15.0 198.1,15.1 201.9,10.5 205.7,12.0 209.5,12.2 213.3,10.1 217.1,11.0 221.0,12.8 224.8,14.7 228.6,13.3 232.4,11.7 236.2,12.1 240.0,12.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.0" r="2.6" fill="var(--up)"/></svg>
-          
-          <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">93</span>
-            <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
-          </div>
-          <div class="nb-axes">
-            
-            
-            <div class="nb-ax" title="SEL 62/100">
-              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:62%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="ENT 59/100">
-              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-              <div class="axt"><div class="axf" style="width:59%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax ax-na" title="TWD — no data">
-              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:0%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="QUAL 49/100">
-              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:49%"></div></div>
-            </div>
-            
-          </div>
-          
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +1.0</span><span class="nbb nbb-context">momentum +0.5</span></div>
-          <div class="nb-bot">
-            <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.45</span>
-            <span class="nb-rk">#96/257</span>
-          </div>
-          
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span><span class="l-en">⚠ weak fundamentals</span><span class="l-zh">⚠ 基本面偏弱</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -5269,7 +5433,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.58</span>
             <span class="nb-rk">#3/107</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -5905,7 +6069,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.33</span>
             <span class="nb-rk">#104/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -6064,7 +6228,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.44</span>
             <span class="nb-rk">#26/76</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -6441,59 +6605,6 @@
         </a>
       
         
-        <a class="nbcard nb-up" href="stock.html#RNR">
-          <div class="nb-top">
-            <span class="nb-tk">RNR</span>
-            <span class="nb-nm">RenaissanceRe</span>
-            <span class="nb-px">$299.17</span>
-          </div>
-          <div class="nb-sub"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span>-5.1% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
-          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,29.9 3.8,30.7 7.6,28.6 11.4,27.8 15.2,28.6 19.0,26.3 22.9,29.4 26.7,26.6 30.5,25.2 34.3,26.5 38.1,22.6 41.9,22.0 45.7,20.6 49.5,16.9 53.3,14.6 57.1,20.3 61.0,16.3 64.8,16.0 68.6,13.8 72.4,10.6 76.2,10.1 80.0,12.1 83.8,13.0 87.6,13.6 91.4,11.6 95.2,15.0 99.0,13.6 102.9,13.9 106.7,19.7 110.5,17.0 114.3,23.5 118.1,21.0 121.9,21.2 125.7,20.7 129.5,22.2 133.3,22.8 137.1,26.3 141.0,26.0 144.8,31.3 148.6,33.1 152.4,27.7 156.2,24.6 160.0,21.5 163.8,20.7 167.6,22.8 171.4,27.0 175.2,27.6 179.0,31.9 182.9,35.3 186.7,39.8 190.5,42.0 194.3,42.0 198.1,39.5 201.9,42.0 205.7,32.9 209.5,38.3 213.3,37.8 217.1,26.8 221.0,24.8 224.8,22.5 228.6,25.1 232.4,22.4 236.2,20.3 240.0,23.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,29.9 3.8,30.7 7.6,28.6 11.4,27.8 15.2,28.6 19.0,26.3 22.9,29.4 26.7,26.6 30.5,25.2 34.3,26.5 38.1,22.6 41.9,22.0 45.7,20.6 49.5,16.9 53.3,14.6 57.1,20.3 61.0,16.3 64.8,16.0 68.6,13.8 72.4,10.6 76.2,10.1 80.0,12.1 83.8,13.0 87.6,13.6 91.4,11.6 95.2,15.0 99.0,13.6 102.9,13.9 106.7,19.7 110.5,17.0 114.3,23.5 118.1,21.0 121.9,21.2 125.7,20.7 129.5,22.2 133.3,22.8 137.1,26.3 141.0,26.0 144.8,31.3 148.6,33.1 152.4,27.7 156.2,24.6 160.0,21.5 163.8,20.7 167.6,22.8 171.4,27.0 175.2,27.6 179.0,31.9 182.9,35.3 186.7,39.8 190.5,42.0 194.3,42.0 198.1,39.5 201.9,42.0 205.7,32.9 209.5,38.3 213.3,37.8 217.1,26.8 221.0,24.8 224.8,22.5 228.6,25.1 232.4,22.4 236.2,20.3 240.0,23.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.6" r="2.6" fill="var(--up)"/></svg>
-          
-          <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">89</span>
-            <span class="nb-verdict"><span class="l-en">Neutral — no clear edge</span><span class="l-zh">中性 — 无明显优势</span></span>
-          </div>
-          <div class="nb-axes">
-            
-            
-            <div class="nb-ax" title="SEL 49/100">
-              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
-              <div class="axt"><div class="axf" style="width:49%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="ENT 64/100">
-              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
-              <div class="axt"><div class="axf" style="width:64%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax ax-na" title="TWD — no data">
-              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
-              <div class="axt"><div class="axf" style="width:0%"></div></div>
-            </div>
-            
-            
-            <div class="nb-ax" title="QUAL 63/100">
-              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
-              <div class="axt"><div class="axf" style="width:63%"></div></div>
-            </div>
-            
-          </div>
-          
-          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.1</span><span class="nbb nbb-literature">revisions -0.6</span><span class="nbb nbb-context">momentum +0.6</span></div>
-          <div class="nb-bot">
-            <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.63</span>
-            <span class="nb-rk">#68/257</span>
-          </div>
-          
-          <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
-          
-        </a>
-      
-        
         <a class="nbcard nb-up" href="stock.html#SMP">
           <div class="nb-top">
             <span class="nb-tk">SMP</span>
@@ -6647,7 +6758,7 @@
             <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.49</span>
             <span class="nb-rk">#114/168</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -6822,7 +6933,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.0 3.8,28.0 7.6,27.0 11.4,26.1 15.2,24.7 19.0,24.7 22.9,28.3 26.7,26.2 30.5,21.5 34.3,19.3 38.1,17.2 41.9,17.7 45.7,14.8 49.5,11.9 53.3,16.4 57.1,18.3 61.0,16.5 64.8,12.1 68.6,12.4 72.4,13.1 76.2,11.9 80.0,10.1 83.8,13.3 87.6,14.8 91.4,42.0 95.2,38.0 99.0,35.4 102.9,38.2 106.7,37.2 110.5,36.0 114.3,36.3 118.1,36.4 121.9,33.3 125.7,34.1 129.5,33.7 133.3,34.8 137.1,36.4 141.0,35.8 144.8,34.8 148.6,35.9 152.4,36.8 156.2,35.6 160.0,35.7 163.8,35.3 167.6,33.3 171.4,32.7 175.2,33.6 179.0,33.8 182.9,29.1 186.7,29.3 190.5,28.3 194.3,29.7 198.1,28.4 201.9,26.6 205.7,27.6 209.5,26.8 213.3,24.7 217.1,24.9 221.0,22.7 224.8,24.5 228.6,24.5 232.4,25.9 236.2,26.9 240.0,26.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.0 3.8,28.0 7.6,27.0 11.4,26.1 15.2,24.7 19.0,24.7 22.9,28.3 26.7,26.2 30.5,21.5 34.3,19.3 38.1,17.2 41.9,17.7 45.7,14.8 49.5,11.9 53.3,16.4 57.1,18.3 61.0,16.5 64.8,12.1 68.6,12.4 72.4,13.1 76.2,11.9 80.0,10.1 83.8,13.3 87.6,14.8 91.4,42.0 95.2,38.0 99.0,35.4 102.9,38.2 106.7,37.2 110.5,36.0 114.3,36.3 118.1,36.4 121.9,33.3 125.7,34.1 129.5,33.7 133.3,34.8 137.1,36.4 141.0,35.8 144.8,34.8 148.6,35.9 152.4,36.8 156.2,35.6 160.0,35.7 163.8,35.3 167.6,33.3 171.4,32.7 175.2,33.6 179.0,33.8 182.9,29.1 186.7,29.3 190.5,28.3 194.3,29.7 198.1,28.4 201.9,26.6 205.7,27.6 209.5,26.8 213.3,24.7 217.1,24.9 221.0,22.7 224.8,24.5 228.6,24.5 232.4,25.9 236.2,26.9 240.0,26.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">89</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           <div class="nb-axes">
@@ -6912,7 +7023,7 @@
             <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.66</span>
             <span class="nb-rk">#66/257</span>
           </div>
-          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ accounting watch</span></div>
+          <div class="nb-cau"><span class="l-en">⚠ accounting watch</span><span class="l-zh">⚠ 财务质量关注</span></div>
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
           
         </a>
@@ -7070,6 +7181,112 @@
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
             <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.60</span>
             <span class="nb-rk">#50/76</span>
+          </div>
+          
+          <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
+          
+        </a>
+      
+        
+        <a class="nbcard nb-down" href="stock.html#OHI">
+          <div class="nb-top">
+            <span class="nb-tk">OHI</span>
+            <span class="nb-nm">Omega Healthcare Investors</span>
+            <span class="nb-px">$44.53</span>
+          </div>
+          <div class="nb-sub"><span><span class="l-en">Real Estate</span><span class="l-zh">房地产</span></span><span>-9.1% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,25.8 3.8,36.7 7.6,36.5 11.4,37.1 15.2,37.1 19.0,38.0 22.9,38.1 26.7,40.5 30.5,42.0 34.3,39.2 38.1,35.6 41.9,36.1 45.7,33.2 49.5,33.4 53.3,31.7 57.1,31.3 61.0,33.3 64.8,32.7 68.6,26.7 72.4,27.0 76.2,25.7 80.0,27.4 83.8,30.4 87.6,35.5 91.4,28.3 95.2,27.9 99.0,26.5 102.9,22.5 106.7,26.2 110.5,24.9 114.3,24.8 118.1,25.4 121.9,25.9 125.7,26.2 129.5,25.8 133.3,20.0 137.1,21.0 141.0,17.5 144.8,15.5 148.6,15.9 152.4,19.2 156.2,13.8 160.0,11.5 163.8,10.1 167.6,14.1 171.4,16.1 175.2,13.7 179.0,17.0 182.9,20.8 186.7,22.4 190.5,30.0 194.3,33.1 198.1,37.3 201.9,39.4 205.7,35.0 209.5,38.7 213.3,28.4 217.1,27.3 221.0,30.5 224.8,27.8 228.6,30.9 232.4,29.3 236.2,34.0 240.0,34.6 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,25.8 3.8,36.7 7.6,36.5 11.4,37.1 15.2,37.1 19.0,38.0 22.9,38.1 26.7,40.5 30.5,42.0 34.3,39.2 38.1,35.6 41.9,36.1 45.7,33.2 49.5,33.4 53.3,31.7 57.1,31.3 61.0,33.3 64.8,32.7 68.6,26.7 72.4,27.0 76.2,25.7 80.0,27.4 83.8,30.4 87.6,35.5 91.4,28.3 95.2,27.9 99.0,26.5 102.9,22.5 106.7,26.2 110.5,24.9 114.3,24.8 118.1,25.4 121.9,25.9 125.7,26.2 129.5,25.8 133.3,20.0 137.1,21.0 141.0,17.5 144.8,15.5 148.6,15.9 152.4,19.2 156.2,13.8 160.0,11.5 163.8,10.1 167.6,14.1 171.4,16.1 175.2,13.7 179.0,17.0 182.9,20.8 186.7,22.4 190.5,30.0 194.3,33.1 198.1,37.3 201.9,39.4 205.7,35.0 209.5,38.7 213.3,28.4 217.1,27.3 221.0,30.5 224.8,27.8 228.6,30.9 232.4,29.3 236.2,34.0 240.0,34.6" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.6" r="2.6" fill="var(--down)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
+            <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
+          </div>
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 56/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 57/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:57%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax ax-na" title="TWD — no data">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:0%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 56/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.3</span><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum +1.4</span></div>
+          <div class="nb-bot">
+            <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.35</span>
+            <span class="nb-rk">#6/107</span>
+          </div>
+          
+          <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>
+          
+        </a>
+      
+        
+        <a class="nbcard nb-down" href="stock.html#TRMK">
+          <div class="nb-top">
+            <span class="nb-tk">TRMK</span>
+            <span class="nb-nm">Trustmark Corp.</span>
+            <span class="nb-px">$44.67</span>
+          </div>
+          <div class="nb-sub"><span><span class="l-en">Financials</span><span class="l-zh">金融</span></span><span>-2.7% <span class="l-en">off 52w high</span><span class="l-zh">距52周高</span></span></div>
+          <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,41.5 3.8,42.0 7.6,36.2 11.4,34.7 15.2,34.7 19.0,33.3 22.9,36.3 26.7,34.7 30.5,34.3 34.3,32.3 38.1,31.6 41.9,28.6 45.7,27.0 49.5,20.1 53.3,15.0 57.1,17.7 61.0,17.9 64.8,18.1 68.6,21.9 72.4,22.2 76.2,15.4 80.0,15.9 83.8,19.0 87.6,20.0 91.4,17.7 95.2,20.5 99.0,16.6 102.9,14.1 106.7,21.4 110.5,20.9 114.3,17.7 118.1,21.1 121.9,18.6 125.7,17.6 129.5,17.6 133.3,18.7 137.1,22.5 141.0,24.3 144.8,26.4 148.6,24.6 152.4,28.5 156.2,23.7 160.0,24.3 163.8,21.6 167.6,20.4 171.4,20.7 175.2,18.4 179.0,22.1 182.9,22.4 186.7,22.2 190.5,26.2 194.3,21.9 198.1,28.5 201.9,21.5 205.7,20.7 209.5,19.6 213.3,16.4 217.1,14.3 221.0,13.1 224.8,10.1 228.6,14.6 232.4,14.1 236.2,19.8 240.0,17.6 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,41.5 3.8,42.0 7.6,36.2 11.4,34.7 15.2,34.7 19.0,33.3 22.9,36.3 26.7,34.7 30.5,34.3 34.3,32.3 38.1,31.6 41.9,28.6 45.7,27.0 49.5,20.1 53.3,15.0 57.1,17.7 61.0,17.9 64.8,18.1 68.6,21.9 72.4,22.2 76.2,15.4 80.0,15.9 83.8,19.0 87.6,20.0 91.4,17.7 95.2,20.5 99.0,16.6 102.9,14.1 106.7,21.4 110.5,20.9 114.3,17.7 118.1,21.1 121.9,18.6 125.7,17.6 129.5,17.6 133.3,18.7 137.1,22.5 141.0,24.3 144.8,26.4 148.6,24.6 152.4,28.5 156.2,23.7 160.0,24.3 163.8,21.6 167.6,20.4 171.4,20.7 175.2,18.4 179.0,22.1 182.9,22.4 186.7,22.2 190.5,26.2 194.3,21.9 198.1,28.5 201.9,21.5 205.7,20.7 209.5,19.6 213.3,16.4 217.1,14.3 221.0,13.1 224.8,10.1 228.6,14.6 232.4,14.1 236.2,19.8 240.0,17.6" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.6" r="2.6" fill="var(--down)"/></svg>
+          
+          <div class="nb-conv">
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
+            <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
+          </div>
+          <div class="nb-axes">
+            
+            
+            <div class="nb-ax" title="SEL 56/100">
+              <div class="axl"><span class="l-en">SEL</span><span class="l-zh">选股</span></div>
+              <div class="axt"><div class="axf" style="width:56%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="ENT 54/100">
+              <div class="axl"><span class="l-en">ENT</span><span class="l-zh">入场</span></div>
+              <div class="axt"><div class="axf" style="width:54%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax ax-na" title="TWD — no data">
+              <div class="axl"><span class="l-en">TWD</span><span class="l-zh">顺风</span></div>
+              <div class="axt"><div class="axf" style="width:0%"></div></div>
+            </div>
+            
+            
+            <div class="nb-ax" title="QUAL 57/100">
+              <div class="axl"><span class="l-en">QUAL</span><span class="l-zh">质量</span></div>
+              <div class="axt"><div class="axf" style="width:57%"></div></div>
+            </div>
+            
+          </div>
+          
+          <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.0</span><span class="nbb nbb-literature">revisions +0.3</span><span class="nbb nbb-context">momentum +1.2</span></div>
+          <div class="nb-bot">
+            <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.16</span>
+            <span class="nb-rk">#27/257</span>
           </div>
           
           <div class="nb-tier"><span class="l-en">Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha</span><span class="l-zh">事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益</span></div>

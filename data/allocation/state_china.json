@@ -1,0 +1,47 @@
+{
+  "cash": 0.201,
+  "crash": false,
+  "eligible": [
+    "cn_ai_compute",
+    "cn_battery",
+    "cn_coal",
+    "cn_consumer_elec",
+    "cn_defense",
+    "cn_metals",
+    "cn_rare_earth",
+    "cn_robotics",
+    "cn_semis",
+    "cn_solar"
+  ],
+  "held": [
+    "cn_ai_compute",
+    "cn_rare_earth",
+    "cn_robotics",
+    "cn_battery"
+  ],
+  "leader": "cn_ai_compute",
+  "names": {
+    "cn_ai_compute": "AI Compute & Optics",
+    "cn_appliances": "Home Appliances",
+    "cn_autos": "Autos & NEV Makers",
+    "cn_baijiu": "Baijiu / Liquor",
+    "cn_banks": "Banks",
+    "cn_battery": "Battery & Lithium",
+    "cn_brokers": "Brokers & Securities",
+    "cn_coal": "Coal",
+    "cn_consumer_elec": "Consumer Electronics",
+    "cn_defense": "Defense & Aerospace",
+    "cn_food_bev": "Food & Beverage",
+    "cn_gold": "Gold Miners",
+    "cn_insurers": "Insurers",
+    "cn_med_devices": "Medical Devices & TCM",
+    "cn_metals": "Industrial Metals",
+    "cn_pharma_cxo": "Innovative Pharma & CXO",
+    "cn_rare_earth": "Rare Earth & Magnets",
+    "cn_robotics": "Robotics & Automation",
+    "cn_semis": "Semiconductors",
+    "cn_soe_value": "SOE Blue Chips (\u4e2d\u7279\u4f30)",
+    "cn_software": "Software & AI Apps",
+    "cn_solar": "Solar / Photovoltaics"
+  }
+}

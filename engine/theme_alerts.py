@@ -45,16 +45,21 @@ def _ev(asset, type_, ts, severity, headline, detail, context, to_state,
             "context": context, "anchor": f"#theme-{asset}"}
 
 
-def _state_path():
-    return config.data_dir() / "themes" / "state.json"
+def _dir(region: str = "us"):
+    # US keeps the original data/themes/ path; other markets get data/themes_<region>/
+    return config.data_dir() / ("themes" if region == "us" else f"themes_{region}")
 
 
-def _path():
-    return config.data_dir() / "themes" / "alerts.jsonl"
+def _state_path(region: str = "us"):
+    return _dir(region) / "state.json"
 
 
-def load_state() -> dict:
-    p = _state_path()
+def _path(region: str = "us"):
+    return _dir(region) / "alerts.jsonl"
+
+
+def load_state(region: str = "us") -> dict:
+    p = _state_path(region)
     if not p.exists():
         return {}
     try:
@@ -63,8 +68,8 @@ def load_state() -> dict:
         return {}
 
 
-def write_state(state: dict) -> None:
-    p = _state_path()
+def write_state(state: dict, region: str = "us") -> None:
+    p = _state_path(region)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(state, indent=2, sort_keys=True))
 
@@ -153,8 +158,8 @@ def compute_events(theme_intel: dict, prior: dict | None) -> list[dict]:
     return events
 
 
-def load_events() -> list[dict]:
-    p = _path()
+def load_events(region: str = "us") -> list[dict]:
+    p = _path(region)
     if not p.exists():
         return []
     out = []
@@ -168,17 +173,17 @@ def load_events() -> list[dict]:
     return out
 
 
-def write_events(events: list[dict]) -> None:
-    p = _path()
+def write_events(events: list[dict], region: str = "us") -> None:
+    p = _path(region)
     p.parent.mkdir(parents=True, exist_ok=True)
     with open(p, "w") as fh:
         for e in events:
             fh.write(json.dumps(e) + "\n")
 
 
-def recent(days: int = 30, as_of: str | None = None) -> list[dict]:
+def recent(days: int = 30, as_of: str | None = None, region: str = "us") -> list[dict]:
     """Events within the trailing window, newest first (for the page bell dropdown)."""
-    evs = load_events()
+    evs = load_events(region)
     if not evs:
         return []
     ref = pd.Timestamp(as_of) if as_of else max(pd.Timestamp(e["ts"]) for e in evs)
@@ -188,16 +193,16 @@ def recent(days: int = 30, as_of: str | None = None) -> list[dict]:
     return out
 
 
-def rebuild(theme_intel: dict) -> list[dict]:
+def rebuild(theme_intel: dict, region: str = "us") -> list[dict]:
     """Diff vs prior state, append+dedup new events into the jsonl, persist new state.
     Returns the events fired THIS run (empty on the seed run)."""
     if not theme_intel or not theme_intel.get("themes"):
         return []
-    prior = load_state()
+    prior = load_state(region)
     new_events = compute_events(theme_intel, prior)
 
     # merge into history: keep-first by id, then trim to the KEEP_DAYS window
-    by_id = {e["id"]: e for e in load_events()}
+    by_id = {e["id"]: e for e in load_events(region)}
     for e in new_events:
         by_id.setdefault(e["id"], e)
     merged = list(by_id.values())
@@ -206,8 +211,8 @@ def rebuild(theme_intel: dict) -> list[dict]:
         cutoff = ref - pd.Timedelta(days=KEEP_DAYS)
         merged = [e for e in merged if pd.Timestamp(e["ts"]) >= cutoff]
         merged.sort(key=lambda e: e["ts"])
-    write_events(merged)
-    write_state(_snapshot(theme_intel))
-    log.info("theme alerts: %d new event(s), %d in window (seed=%s)",
-             len(new_events), len(merged), not prior)
+    write_events(merged, region)
+    write_state(_snapshot(theme_intel), region)
+    log.info("theme alerts [%s]: %d new event(s), %d in window (seed=%s)",
+             region, len(new_events), len(merged), not prior)
     return new_events
