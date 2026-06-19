@@ -48,6 +48,14 @@ WIKI_SUMMARY = "https://en.wikipedia.org/api/rest_v1/page/summary/{}"
 WIKI_OPENSEARCH = ("https://en.wikipedia.org/w/api.php?action=opensearch"
                    "&search={}&limit=5&namespace=0&format=json")
 REFRESH_DAYS = 120
+# A row whose SEC identity resolved but whose Wikipedia description came back empty
+# was usually a TRANSIENT miss (Wikipedia throttled/down for that one fetch), not a
+# name Wikipedia genuinely lacks — the matcher resolves the vast majority on a retry.
+# So don't freeze that gap for the full REFRESH_DAYS: retry description-less rows on a
+# short cadence, bounded by an attempt counter so a truly-undescribable name backs off
+# to the normal refresh cycle instead of burning the per-build budget forever.
+DESC_RETRY_DAYS = 4
+MAX_DESC_TRIES = 6
 
 # Trailing corporate-form words stripped to build a bare "core" search/match term
 # ("Microsoft Corp" -> "Microsoft", "CVR Energy, Inc." -> "CVR Energy").
@@ -172,6 +180,23 @@ def _search_terms(*names: str) -> list[str]:
 
 def _norm(s: str) -> str:
     return re.sub(r"[^a-z0-9]", "", str(s).lower())
+
+
+def _cell(v):
+    """A parquet cell coerced to None when missing — round-tripped object columns
+    come back as float NaN, which is truthy as a string ("nan") and breaks int()."""
+    try:
+        return None if pd.isna(v) else v
+    except (TypeError, ValueError):       # arrays/odd types: leave as-is
+        return v
+
+
+def _int0(v) -> int:
+    """A count cell as a non-negative int (NaN/None/garbage → 0)."""
+    try:
+        return int(v) if pd.notna(v) else 0
+    except (TypeError, ValueError):
+        return 0
 
 
 def _lawsuit_title(title: str) -> bool:
@@ -414,30 +439,67 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
     names = _universe()
     universe = tickers or list(names) or list(existing.index)
 
-    def stale(t: str) -> bool:
+    def _age(t: str):
+        if existing.empty or t not in existing.index:
+            return None
+        try:
+            return (datetime.now(timezone.utc) - pd.to_datetime(existing.loc[t].get("as_of"))).days
+        except Exception:  # noqa: BLE001
+            return None
+
+    def _has_desc(t: str) -> bool:
+        if existing.empty or t not in existing.index:
+            return False
+        d = _cell(existing.loc[t].get("description"))
+        return d is not None and bool(str(d).strip())
+
+    def new_or_stale(t: str) -> bool:
         if force or existing.empty or t not in existing.index:
             return True
-        ts = existing.loc[t].get("as_of")
-        try:
-            age = (datetime.now(timezone.utc) - pd.to_datetime(ts)).days
-        except Exception:  # noqa: BLE001
-            return True
-        return age > REFRESH_DAYS
+        age = _age(t)
+        return age is None or age > REFRESH_DAYS
 
-    todo = [t for t in universe if stale(t)][:max_new]
-    log.info("equity_profile: %d universe, %d stale → fetching %d (cap %d)",
-             len(universe), sum(stale(t) for t in universe), len(todo), max_new)
+    def desc_retry(t: str) -> bool:
+        """Re-attempt a row that has an identity but no description, on the short
+        DESC_RETRY_DAYS cadence and only until MAX_DESC_TRIES — so a transient
+        Wikipedia miss self-heals without a undescribable name looping forever."""
+        if new_or_stale(t) or _has_desc(t):
+            return False
+        age = _age(t)
+        tries = _int0(existing.loc[t].get("desc_tries"))
+        return age is not None and age >= DESC_RETRY_DAYS and tries < MAX_DESC_TRIES
+
+    # new/stale names take the budget first; leftover budget retries empty descriptions
+    primary = [t for t in universe if new_or_stale(t)]
+    retries = [t for t in universe if t not in set(primary) and desc_retry(t)]
+    todo = (primary + retries)[:max_new]
+    log.info("equity_profile: %d universe, %d new/stale + %d desc-retry → fetching %d (cap %d)",
+             len(universe), len(primary), len(retries), len(todo), max_new)
 
     rows = []
     now = datetime.now(timezone.utc).isoformat()
     for t in todo:
-        display = names.get(t, t)                  # clean breadth name (mixed-case)
+        prior = {k: _cell(v) for k, v in
+                 (existing.loc[t].to_dict() if (not existing.empty and t in existing.index) else {}).items()}
+        display = names.get(t) or prior.get("name") or t   # clean breadth name (mixed-case)
         rec: dict = {"ticker": t, "name": display, "as_of": now}
+        # carry forward previously-resolved identity so a transient SEC hiccup on a
+        # retry can't blank out good chips
+        for k in ("sic_description", "exchange", "hq"):
+            if prior.get(k) is not None:
+                rec[k] = prior[k]
         if t in cik:
-            rec.update(_sec_submission(cik[t]))    # may overwrite name with the SEC entity
+            sec = _sec_submission(cik[t])          # may overwrite name with the SEC entity
+            rec.update({k: v for k, v in sec.items() if v is not None})
         # Search the clean display name FIRST, the (ALL-CAPS) SEC name as backup:
         # "MICROSOFT CORP" ranks the EU antitrust case ahead of the company.
-        rec["description"] = _wiki_description(display, rec.get("name"))
+        desc = _wiki_description(display, rec.get("name"))
+        prior_desc = prior.get("description")
+        if not desc and isinstance(prior_desc, str) and prior_desc.strip():
+            desc = prior_desc                       # never regress a good blurb on a failed retry
+        rec["description"] = desc or None
+        # bound the retry loop: reset on success, increment on a still-empty fetch
+        rec["desc_tries"] = 0 if rec["description"] else _int0(prior.get("desc_tries")) + 1
         rec["source"] = "wikipedia+sec"
         rows.append(rec)
 

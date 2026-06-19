@@ -83,6 +83,7 @@
               border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
               color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  .fnd-meta { font-size:12px; color:var(--muted); margin:2px 0 4px; line-height:1.5; }
   .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
   .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px;
               padding:5px 10px; font-size:12px; min-width:74px; }
@@ -433,7 +434,7 @@
 
     // Fundamentals — descriptive context (akshare) + HK-unique analyst consensus.
     var fpEl = document.getElementById('r_fund_panel'), f = d.fundamentals;
-    if (f && (f.financials || f.consensus)) {
+    if (f && (f.financials || f.consensus || (f.profile && f.profile.description))) {
       var q = f.quality || {}, fin = f.financials || {}, val = f.valuation || {}, cons = f.consensus;
       var prof = f.profile || {};
       var fnum = function (x, n) { return x == null ? '—' : (+x).toFixed(n == null ? 1 : n); };
@@ -444,12 +445,15 @@
       }
       var fhtml = '<div><span class="fnd-arch">' + lz(f.archetype_label, f.archetype_label_zh) + '</span>'
         + (f.fy ? ' <span class="muted" style="font-size:11px">' + L('f_year') + ' ' + f.fy + (f.currency ? ' · ' + f.currency : '') + '</span>' : '') + '</div>';
+      // 公司介绍 — one-paragraph "what it does" business description (akshare);
+      // the structured industry/size/domicile facts sit below it as muted metadata
+      if (prof.description) fhtml += '<p class="fnd-desc">' + esc(prof.description) + '</p>';
       var pbits = [];
       if (prof.industry) pbits.push(prof.industry);
       if (prof.employees) pbits.push(prof.employees.toLocaleString() + ' ' + L('f_emp'));
       if (prof.founded) pbits.push(prof.founded.slice(0, 4));
       if (prof.domicile) pbits.push(L('f_domicile') + ' ' + prof.domicile);  // VIE / offshore tell
-      if (pbits.length) fhtml += '<p class="fnd-desc">' + pbits.join(' · ') + '</p>';
+      if (pbits.length) fhtml += '<p class="fnd-meta">' + pbits.join(' · ') + '</p>';
       fhtml += '<div class="fnd-grid">'
         + chip('PE', val.pe) + chip('PB', val.pb)
         + chip(L('f_roe'), q.roe, '%') + chip(L('f_roa'), q.roa, '%')

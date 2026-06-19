@@ -231,8 +231,17 @@ def _full_universe() -> list[str]:
         return []
     try:
         df = pd.read_parquet(p)
-        col = "ticker" if "ticker" in df.columns else df.columns[0]
-        return sorted(df[col].astype(str).tolist())
+        # members.parquet is ticker-INDEXED (index.name == "ticker"); the columns are
+        # name/sector/mktcap. The old `df.columns[0]` fallback grabbed the NAME column,
+        # so `--all` silently fetched company names as akshare symbols and stored nothing
+        # — the China widen has been a no-op, freezing coverage at the high-value subset.
+        if "ticker" in df.columns:
+            vals = df["ticker"]
+        elif df.index.name == "ticker":
+            vals = df.index.to_series()
+        else:
+            vals = df[df.columns[0]]
+        return sorted(vals.astype(str).tolist())
     except Exception:  # noqa: BLE001
         return []
 
