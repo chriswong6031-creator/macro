@@ -39,7 +39,9 @@ def _universe() -> list[str]:
         for p in d.glob("*.parquet"):
             names.add(p.stem)
     ycfg = (config.load().get("yahoo") or {}).get("tickers") or {}
-    for grp in ("sectors", "factors"):
+    # sectors/factors = the ETF set; extras = the big index ETFs (SPY/QQQ/IWM) plus the
+    # searchable off-index US roster (ADRs, recent IPOs) — all have stock-library pages.
+    for grp in ("sectors", "factors", "extras"):
         for t in (ycfg.get(grp) or []):
             if not str(t).startswith("^"):
                 names.add(str(t))
