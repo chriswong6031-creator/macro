@@ -523,9 +523,226 @@
   .rm-tbl td, .rm-tbl th { padding: 5px 8px; border-bottom: 1px solid var(--line); text-align: right; }
   .rm-tbl td.l, .rm-tbl th.l { text-align: left; }
   .rm-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+
+  /* ======================================================================
+     MACRO TERMINAL — scoped enhancement layer (macro.html only)
+     Everything here is gated under body.page-macro, which is emitted ONLY for
+     mode != 'stocks' (line ~528). The US Stock Dashboard + every other page
+     are byte-untouched. NO theme.css edits — all colour routes through the
+     existing theme vars so dark/light AND the zh Asia red/green swap propagate
+     at paint. Aesthetic: a Bloomberg-grade macro terminal — hairline-precise,
+     tabular, monochrome-by-default; the regime reads in 2 seconds and every
+     figure reads in one, with colour spent only on signal.
+     ====================================================================== */
+  body.page-macro {
+    /* terminal numeral face — SYSTEM mono stack, no web-font dependency */
+    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono",
+           "Roboto Mono", Menlo, Consolas, monospace;
+    /* hairlines + inset surface, layered on the existing palette */
+    --hair: color-mix(in srgb, var(--line) 72%, transparent);
+    --hair-strong: var(--line);
+    --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+    /* ink ramp — lift BODY copy off the ~40% muted soup; reserve --muted for
+       genuine captions only (the single highest-leverage readability fix) */
+    --ink-1: var(--text);
+    --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+    --ink-3: var(--muted);
+    --rule: 1px;
+    --pad: 17px;
+    --ms: var(--card-shadow), inset 0 1px 0 0 color-mix(in srgb, var(--text) 7%, transparent);
+  }
+  html[data-theme="light"] body.page-macro {
+    --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+    --hair: color-mix(in srgb, var(--line) 90%, transparent);
+    --ms: var(--card-shadow), inset 0 1px 0 0 rgba(255,255,255,.6);
+  }
+
+  /* ---- type scale: confident hierarchy, kill the tiny-muted soup ---- */
+  body.page-macro { font-size: 14.5px; line-height: 1.55; }
+  body.page-macro h1 { font-size: 20px; font-weight: 800; letter-spacing: -.01em;
+    color: var(--ink-1); }
+  /* section headers: readable sentence-case (NOT tiny uppercase — these are long
+     descriptive titles), strong ink, with an accent channel tick + hairline rule */
+  body.page-macro .panel > h2 { font-size: 14px; font-weight: 700; letter-spacing: -.005em;
+    text-transform: none; color: var(--ink-1); margin: 0 0 13px; padding: 0 0 11px;
+    border-bottom: var(--rule) solid var(--hair); line-height: 1.35; }
+  body.page-macro .panel > h2::before { content: ""; display: inline-block;
+    width: 3px; height: 14px; border-radius: 1.5px; background: var(--link);
+    margin-right: 9px; vertical-align: -2px; }
+  html[data-lang="zh"] body.page-macro .panel > h2 { letter-spacing: 0; }
+  body.page-macro h3 { font-size: 12.5px; font-weight: 700; letter-spacing: 0;
+    color: var(--ink-1); text-transform: none; }
+  /* lift inline body greys; keep a true-caption class at the dimmer --ink-3 */
+  body.page-macro .muted { color: var(--ink-2); }
+  body.page-macro .kv { color: var(--ink-2); }
+  body.page-macro .sm { color: var(--ink-2); }
+  body.page-macro .cap, body.page-macro .muted.cap { font-size: 11px; font-weight: 700;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ---- numerals: the terminal signature — figures tabular + mono ---- */
+  body.page-macro .num, body.page-macro .num-lg, body.page-macro .num-xl,
+  body.page-macro .kv b, body.page-macro .idx-gv, body.page-macro .prob .pc,
+  body.page-macro .tm-date, body.page-macro .sc-v, body.page-macro .stance-meta,
+  body.page-macro th, body.page-macro td:not(:first-child):not(.l),
+  body.page-macro .sig-val, body.page-macro .v-num, body.page-macro .v-chip,
+  body.page-macro .mtile-val, body.page-macro .vixnum {
+    font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1; letter-spacing: -.01em; }
+  body.page-macro .num-xl { font-size: 34px; font-weight: 800; line-height: 1;
+    letter-spacing: -.02em; color: var(--ink-1); }
+  body.page-macro .num-lg { font-size: 22px; font-weight: 800; line-height: 1.05; }
+  /* keep help-tooltip tables as readable prose — the numeral mono face must not
+     bleed into the explanatory sentences in their cells (.tip tables are prose) */
+  body.page-macro .tip td:not(:first-child):not(.l), body.page-macro .tip th {
+    font-family: inherit; font-variant-numeric: normal; letter-spacing: normal; }
+
+  /* ---- panel: crisp module — hairline frame, faint machined top edge ---- */
+  body.page-macro .grid { gap: 14px; }
+  @media (min-width: 1100px) { body.page-macro .grid { gap: 16px 18px; } }
+  body.page-macro .panel { background: var(--panel);
+    border: var(--rule) solid var(--hair-strong); border-radius: 12px;
+    padding: var(--pad) calc(var(--pad) + 1px); box-shadow: var(--ms); }
+
+  /* ---- tables: terminal treatment ---- */
+  body.page-macro table { font-size: 12.5px; }
+  body.page-macro th { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-3);
+    border-bottom: var(--rule) solid var(--hair-strong); }
+  body.page-macro td { border-bottom: var(--rule) solid var(--hair); color: var(--ink-1); }
+  body.page-macro tbody tr:hover td, body.page-macro tr:hover td {
+    background: color-mix(in srgb, var(--link) 6%, transparent); }
+
+  /* ---- inset tiles: a class hook (opt-in) instead of attribute-matching ---- */
+  body.page-macro .mtile-x { background: var(--tile);
+    border: var(--rule) solid var(--hair); border-radius: 9px; }
+
+  /* ---- gauges: crisper needle ---- */
+  body.page-macro .gauge { height: 8px; border-radius: 4px;
+    outline: var(--rule) solid var(--hair); outline-offset: -1px; }
+  body.page-macro .gauge i { width: 3px; height: 16px; top: -4px; background: var(--ink-1);
+    box-shadow: 0 0 0 1.5px var(--panel), 0 0 8px color-mix(in srgb, var(--ink-1) 60%, transparent); }
+  body.page-macro .prob .bar, body.page-macro .lifebar { background: var(--tile); }
+  body.page-macro .prob .pc { font-size: 17px; }
+
+  /* ======================= HERO (command center) ======================= */
+  body.page-macro #regime-radar { padding: 19px 21px; }
+  body.page-macro .hero-bar { display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 26px; }
+  body.page-macro .hero-main { padding: 2px 28px; min-width: 0;
+    border-left: var(--rule) solid var(--hair); border-right: var(--rule) solid var(--hair); }
+
+  /* LEFT — 2x2 quadrant locator (growth↑ top, inflation→ right; lit cell only) */
+  body.page-macro .hero-loc { display: grid; gap: 7px; justify-items: start; }
+  body.page-macro .qmini { display: grid; grid-template-columns: repeat(2, 31px);
+    grid-template-rows: repeat(2, 31px); gap: 5px; }
+  body.page-macro .qm { border-radius: 6px;
+    background: color-mix(in srgb, var(--qc) 14%, var(--tile));
+    border: var(--rule) solid color-mix(in srgb, var(--qc) 28%, var(--hair));
+    transition: box-shadow .2s ease; }
+  body.page-macro .qm.on { background: var(--qc);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--qc),
+                0 0 18px color-mix(in srgb, var(--qc) 55%, transparent); }
+  body.page-macro .loc-axes { display: flex; justify-content: space-between; width: 100%;
+    gap: 8px; font-family: var(--num); font-size: 8px; letter-spacing: .05em;
+    color: var(--ink-3); text-transform: uppercase; font-weight: 700; }
+
+  /* CENTER — the read */
+  body.page-macro .hero-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center;
+    gap: 7px; flex-wrap: wrap; }
+  body.page-macro .hero-eyebrow .num { color: var(--ink-2); }
+  body.page-macro .hero-regime { display: flex; align-items: center; gap: 12px; margin: 7px 0 6px; }
+  body.page-macro .hr-dot { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+  body.page-macro h1.hr-name { font-size: 33px; font-weight: 800; letter-spacing: -.02em;
+    line-height: 1; color: var(--ink-1); margin: 0; }
+  html[data-lang="zh"] body.page-macro h1.hr-name { font-size: 31px; letter-spacing: 0; }
+  body.page-macro .hero-says { margin: 0; font-size: 14px; color: var(--ink-2);
+    max-width: 52ch; line-height: 1.5; }
+  body.page-macro .hero-says b { color: var(--ink-1); font-weight: 700; }
+
+  /* RIGHT — vitals strip: 4 cells, each LABEL · VALUE · plain-English MEANING */
+  body.page-macro .hero-vitals { display: grid;
+    grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 13px 20px; }
+  body.page-macro .vital { display: grid; gap: 4px; align-content: start; }
+  body.page-macro .v-top { display: flex; align-items: center; gap: 5px; }
+  body.page-macro .v-label { font-family: var(--num); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+  body.page-macro .v-num { color: var(--ink-1); }
+  body.page-macro .v-num small { font-size: 14px; color: var(--ink-3); font-weight: 600;
+    font-family: var(--num); }
+  body.page-macro .v-mean { font-size: 11px; color: var(--ink-2); line-height: 1.35; }
+  body.page-macro .v-meter { height: 4px; border-radius: 2px; background: var(--tile);
+    position: relative; overflow: hidden; }
+  body.page-macro .v-meter::after { content: ""; position: absolute; inset: 0 auto 0 0;
+    width: var(--p, 0%); background: var(--mc, var(--ink-2)); border-radius: 2px; }
+  body.page-macro .v-chip { font-size: 12.5px; font-weight: 700; padding: 3px 10px;
+    border-radius: 7px; width: max-content; border: var(--rule) solid var(--hair);
+    background: var(--tile); color: var(--ink-1); }
+  body.page-macro .liq-expanding { color: var(--up);
+    border-color: color-mix(in srgb, var(--up) 45%, var(--hair));
+    background: color-mix(in srgb, var(--up) 13%, var(--tile)); }
+  body.page-macro .liq-contracting { color: var(--down);
+    border-color: color-mix(in srgb, var(--down) 45%, var(--hair));
+    background: color-mix(in srgb, var(--down) 13%, var(--tile)); }
+  body.page-macro .v-chip.state-WEAKENING { color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 45%, var(--hair));
+    background: color-mix(in srgb, var(--warn) 11%, var(--tile)); }
+  body.page-macro .v-chip.state-TRANSITIONING { color: var(--orange);
+    border-color: color-mix(in srgb, var(--orange) 45%, var(--hair));
+    background: color-mix(in srgb, var(--orange) 11%, var(--tile)); }
+  body.page-macro .v-chip.state-NEW_REGIME { color: var(--act);
+    border-color: color-mix(in srgb, var(--act) 45%, var(--hair));
+    background: color-mix(in srgb, var(--act) 11%, var(--tile)); }
+
+  @media (max-width: 900px) {
+    body.page-macro .hero-bar { grid-template-columns: 1fr; gap: 16px; }
+    body.page-macro .hero-main { border: 0; padding: 14px 0;
+      border-top: var(--rule) solid var(--hair); border-bottom: var(--rule) solid var(--hair); }
+    body.page-macro h1.hr-name { font-size: 28px; }
+    body.page-macro .hero-vitals { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ======================= SIGNAL ATOM (one language everywhere) =======================
+     3px state rail · LABEL (mono caption) · VALUE (tabular) · MEANING (plain English).
+     State->colour declared in ONE place; the zh swap propagates via --up/--down/--qN. */
+  body.page-macro .sig { display: grid; grid-template-columns: 3px 1fr;
+    background: var(--tile); border: var(--rule) solid var(--hair);
+    border-radius: 9px; overflow: hidden; }
+  body.page-macro .sig::before { content: ""; background: var(--sc, var(--ink-3)); }
+  body.page-macro .sig-body { padding: 10px 12px; display: grid; gap: 3px; }
+  body.page-macro .sig-label { font-family: var(--num); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  body.page-macro .sig-val { font-size: 16px; font-weight: 800; color: var(--ink-1); }
+  body.page-macro .sig-mean { font-size: 12px; color: var(--ink-2); line-height: 1.4; }
+  body.page-macro .sig.is-good   { --sc: var(--up); }     /* direction → swaps in zh */
+  body.page-macro .sig.is-bad    { --sc: var(--down); }   /* direction → swaps in zh */
+  body.page-macro .sig.is-warn   { --sc: var(--warn); }   /* health → not swapped   */
+  body.page-macro .sig.is-danger { --sc: var(--act); }
+  body.page-macro .sig.is-ok     { --sc: var(--ok); }
+  body.page-macro .sig.is-flat   { --sc: var(--ink-3); }
+  body.page-macro .sig.is-q1 { --sc: var(--q1); } body.page-macro .sig.is-q2 { --sc: var(--q2); }
+  body.page-macro .sig.is-q3 { --sc: var(--q3); } body.page-macro .sig.is-q4 { --sc: var(--q4); }
+  body.page-macro .sig.is-good .sig-val { color: var(--up); }
+  body.page-macro .sig.is-bad  .sig-val { color: var(--down); }
+
+  /* inline headwind/tailwind chip — named .wind (NOT .tw — that's the trendword macro) */
+  body.page-macro .wind { font-family: var(--num); font-size: 11px; font-weight: 700;
+    letter-spacing: .02em; padding: 1px 7px; border-radius: 5px;
+    background: color-mix(in srgb, var(--wc, var(--ink-3)) 15%, var(--tile));
+    color: var(--wc, var(--ink-2));
+    border: var(--rule) solid color-mix(in srgb, var(--wc, var(--ink-3)) 35%, transparent); }
+  body.page-macro .wind.tail { --wc: var(--up); }
+  body.page-macro .wind.head { --wc: var(--down); }
+  body.page-macro .wind.neu  { --wc: var(--ink-3); }
+
+  /* respect reduced-motion: the locator cell's glow can fade its colour on a
+     theme/language toggle (the quad vars swap in zh) — neutralise that motion */
+  @media (prefers-reduced-motion: reduce) {
+    body.page-macro .qm { transition: none; }
+  }
 </style>
 </head>
-<body>
+<body class="{{ 'page-stocks' if mode == 'stocks' else 'page-macro' }}">
 <nav class="site-nav">
     {% include "_navlinks.html.j2" %}
   <div class="nav-search">
@@ -564,10 +781,28 @@
   {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
-    <div class="topline">
-      <h1>{{ t('Macro Regime Dashboard', '宏观周期仪表盘') }}</h1>
-      <span class="badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
-      <span class="help">?<span class="tip tip-map">
+    {% set _ol = {
+      'Q1': ('Falling inflation with steady growth — the friendliest backdrop for tech &amp; quality. Trust the radar, not just the label.', '通胀回落、增长平稳 — 对科技与质量最友好的环境。盯住雷达，而非仅看标签。'),
+      'Q2': ('Growth and inflation both firming — favour cyclicals, energy and banks.', '增长与通胀同步走强 — 偏好周期股、能源与银行。'),
+      'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital first.', '通胀粘性叠加增长放缓 — 最危险的周期；优先保住本金。'),
+      'Q4': ('A growth scare with cooling inflation — lean defensive, bonds over stocks.', '增长恐慌伴随通胀降温 — 偏防御，债优于股。')
+    } %}
+    <div class="hero-bar">
+      <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
+      <div class="hero-loc">
+        <div class="loc-axes"><span>{{ t('GROWTH','增长') }} ↑</span><span>{{ t('INFL','通胀') }} →</span></div>
+        <div class="qmini">
+          <span class="qm{{ ' on' if latest.quad == 'Q1' }}" style="--qc:var(--q1)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q2' }}" style="--qc:var(--q2)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q4' }}" style="--qc:var(--q4)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q3' }}" style="--qc:var(--q3)"></span>
+        </div>
+      </div>
+
+      <!-- CENTER — headline regime + plain-English standfirst -->
+      <div class="hero-main">
+        <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('CURRENT MACRO REGIME', '当前宏观周期') }}
+          <span class="help below">?<span class="tip tip-map">
         <span class="l-en">
         <b>The four market regimes</b> — combinations of growth and inflation direction.
         (Sometimes written Q1–Q4, but these are <b>quadrants, NOT calendar quarters</b>.)
@@ -602,9 +837,20 @@
         标签只有在连续 7 天证据一致（或单日极端冲击）后才会改变，
         因此不会反复横跳。今日周期以白色边框标出。
         </span>
-      </span></span>
-      <span class="badge state-{{ latest.transition_state }}">{{ td(latest.transition_state) }}</span>
-      <span class="help">?<span class="tip">
+          </span></span>
+        </div>
+        <div class="hero-regime">
+          <span class="hr-dot" style="background:var(--q{{ latest.quad[1] }});box-shadow:0 0 14px var(--q{{ latest.quad[1] }})"></span>
+          <h1 class="hr-name">{{ td(latest.quad_name) }}</h1>
+        </div>
+        <p class="hero-says">{{ t(_ol[latest.quad][0], _ol[latest.quad][1]) }}</p>
+      </div>
+
+      <!-- RIGHT — vitals strip: LABEL · VALUE · plain-English MEANING -->
+      <div class="hero-vitals">
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('TRANSITION', '转换') }}</span>
+            <span class="help below edge-right">?<span class="tip">
         <span class="l-en">
         <b>The transition radar</b> — is the current regime ending? It escalates as warning
         signals stack up:
@@ -623,9 +869,13 @@
         <span class="lad lad-tint" style="--c:var(--down)">🚨 <b>新周期</b> — 标签在过去一周内已改变。</span>
         预警包括：参与度变薄、信用市场紧张、风险比率反转、通胀交易反转、信号分歧、期权仓位脆弱。
         </span>
-      </span></span>
-      <span class="kv">{{ t('signal agreement', '信号一致度') }} <b>{{ (latest.confidence * 100) | round | int }}%</b></span>
-      <span class="help">?<span class="tip">
+            </span></span></div>
+          <span class="v-chip state-{{ latest.transition_state }}">{{ td(latest.transition_state) }}</span>
+          <span class="v-mean">{{ t('is this regime ending?', '此周期是否在结束？') }}</span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span>
+            <span class="help below edge-right">?<span class="tip">
         <span class="l-en">
         <b>Signal agreement</b> — how many of the ~14 underlying indicators point the
         same way. Today: <b>{{ (latest.confidence * 100) | round | int }}%</b>.
@@ -651,9 +901,13 @@
         <b>分歧</b>：指标互相矛盾 — 预期震荡，缩小仓位，相信雷达多于标签。
         <b>尚可</b>：可用，但需谨慎。<b>扎实</b>：周期判断有充分支撑。
         </span>
-      </span></span>
-      <span class="kv">{{ t('Fed liquidity', '美联储流动性') }} <b>{{ td(latest.liquidity_overlay) }}</b></span>
-      <span class="help">?<span class="tip">
+            </span></span></div>
+          <span class="v-num num-lg">{{ (latest.confidence * 100) | round | int }}<small>%</small></span>
+          <span class="v-meter" style="--p:{{ (latest.confidence * 100) | round | int }}%;--mc:{{ 'var(--up)' if latest.confidence >= 0.45 else ('var(--warn)' if latest.confidence >= 0.30 else 'var(--down)') }}"></span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('FED LIQUIDITY', '联储流动性') }}</span>
+            <span class="help below edge-right">?<span class="tip">
         <span class="l-en">
         <b>Fed liquidity</b> — net money flowing into or out of the financial system
         (Fed balance sheet − reverse-repo parking − the government's checking account),
@@ -675,9 +929,13 @@
           <tr><td>🔴 <b>收缩</b></td><td>资金流失</td><td>持续逆风 — 需更挑剔</td></tr>
         </table>
         </span>
-      </span></span>
-      <span class="kv">{{ t('cycle', '商业周期') }} <b>{{ td(latest.cycle_tag) }}</b></span>
-      <span class="help">?<span class="tip">
+            </span></span></div>
+          <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
+          <span class="v-mean">{{ t('4-week money tide', '四周资金潮') }}</span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('CYCLE', '商业周期') }}</span>
+            <span class="help below edge-right">?<span class="tip">
         <span class="l-en">
         <b>Business-cycle position</b> — the multi-year backdrop (from the yield curve,
         credit spreads and market breadth). Slower-moving than the regime.
@@ -698,7 +956,11 @@
         </table>
         仅作背景参考 — 它决定你的耐心，而非你的交易。
         </span>
-      </span></span>
+            </span></span></div>
+          <span class="v-chip">{{ td(latest.cycle_tag) }}</span>
+          <span class="v-mean">{{ t('multi-year backdrop', '多年期背景') }}</span>
+        </div>
+      </div>
     </div>
     <details class="howto">
       <summary>{{ t('New here? How to read this page in 60 seconds', '初次访问？60 秒读懂本页') }}</summary>
@@ -845,10 +1107,10 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
       <div><span class="tone-down" style="font-weight:700">{{ t('Headwind','逆风') }}</span>
-        {% for h in rit.headwinds[:4] %}<div style="margin-top:3px"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span> <b class="tone-down">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+        {% for h in rit.headwinds[:4] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind head">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
       </div>
       <div><span class="tone-up" style="font-weight:700">{{ t('Tailwind','顺风') }}</span>
-        {% for h in rit.tailwinds[:4] %}<div style="margin-top:3px"><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span> <b class="tone-up">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+        {% for h in rit.tailwinds[:4] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind tail">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
       </div>
     </div>
     {% set ac = rit.chains|selectattr('active')|list %}
@@ -935,7 +1197,7 @@
       {% if alloc_card and alloc_card.present %}
       <a class="idx-alloc" href="spvector.html">
         <div class="idx-gk">{{ t('S&P Vector allocation', '标普向量仓位') }} →</div>
-        <div class="idx-gv" style="color:{{ '#1FA971' if alloc_card.band == 'low' else ('var(--warn)' if alloc_card.band in ['elevated','high'] else 'var(--down)') }}">{{ alloc_card.equity_w }}%<small> {{ t('equity', '股票') }}</small></div>
+        <div class="idx-gv" style="color:{{ 'var(--up)' if alloc_card.band == 'low' else ('var(--warn)' if alloc_card.band in ['elevated','high'] else 'var(--down)') }}">{{ alloc_card.equity_w }}%<small> {{ t('equity', '股票') }}</small></div>
         <div class="muted" style="font-size:11px">{{ t('de-risk score', '降险分') }} {{ alloc_card.score }} · Sharpe {{ alloc_card.sharpe }} · MaxDD {{ alloc_card.maxdd }}%</div>
       </a>
       {% else %}
@@ -1138,7 +1400,7 @@
 
       {% if DL.catalyst_narrative %}
       {% set CN = DL.catalyst_narrative %}
-      {% set cncolor = 'var(--up)' if CN.agreement=='corroborates' else '#d98a00' %}
+      {% set cncolor = 'var(--up)' if CN.agreement=='corroborates' else 'var(--warn)' %}
       <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ cncolor }};border-radius:8px;padding:10px 14px">
         <div style="font-weight:700;margin-bottom:4px">🧠 {{ t('Catalyst cross-check', '催化交叉验证') }}
           {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
@@ -1153,7 +1415,7 @@
 
       {% if DL.geo_reversibility %}
       {% set GR = DL.geo_reversibility %}
-      {% set grcolor = 'var(--up)' if GR.agreement=='corroborates' else '#d98a00' %}
+      {% set grcolor = 'var(--up)' if GR.agreement=='corroborates' else 'var(--warn)' %}
       <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ grcolor }};border-radius:8px;padding:10px 14px">
         <div style="font-weight:700;margin-bottom:4px">🌍 {{ t('Geopolitical reversibility', '地缘可逆性') }}
           {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供背景 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
@@ -1168,7 +1430,7 @@
 
       {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
       {% set g2 = DL.gate2 %}
-      {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('#d98a00' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
+      {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('var(--warn)' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
       <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ g2color }};border-radius:8px;padding:10px 14px">
         <div style="font-weight:700;margin-bottom:4px">{{ t('Gate-2 entry timer', '二道闸 · 入场时机') }}
           {{ help("The entry TIMER — it arms ONLY once Gate-1 says buyable, and it is a coincident CONFIRM, never anticipation: it waits for the VIX term structure to un-invert (backwardation back to contango), which historically lags the VIX peak by ~13 sessions. MEASURED on matched buyable washouts (2006+): waiting for the un-inversion lifted hit-rate 61->67%, median 3-month return +2.2->+4.6% and shallowed median drawdown -4.5->-2.9% — but the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller.", "入场时机器 — 仅在一道闸判定可买入后才启动，且是同步确认而非提前预判：它等待 VIX 期限结构回正（由倒挂转为正向），历史上滞后 VIX 峰值约 13 个交易日。基于匹配的可买入错杀样本（2006+）实测：等待回正将胜率由 61% 提升至 67%，三月中位回报 +2.2% 升至 +4.6%，中位回撤由 −4.5% 收窄至 −2.9% — 但 1/10 尾部略差。这是确认，而非抄底。") }}
@@ -1292,7 +1554,7 @@
         <div style="font-weight:700;margin-bottom:6px">{{ t('Recession risk', '衰退风险') }}
           {{ help("A 0–100 score for how close the US economy is to recession, blending four respected signals (the breakdown is under 'what's behind it'). LOW today means the expansion looks intact; it climbs months before a downturn, not on the day. A risk gauge, not a market-timing trigger.", "美国经济离衰退有多近的 0–100 评分，融合四个公认信号（拆解见'背后构成'）。今日低位意味着扩张看起来完好；它在衰退前数月就上升，而非当天。这是风险指标，而非择时触发器。") }}</div>
         {% if RC.score is not none %}
-        {% set rcolor = 'var(--down)' if RC.label=='high' else ('#d98a00' if RC.label=='elevated' else 'var(--up)') %}
+        {% set rcolor = 'var(--down)' if RC.label=='high' else ('var(--warn)' if RC.label=='elevated' else 'var(--up)') %}
         <div style="font-size:22px;font-weight:700;color:{{ rcolor }}">{{ RC.score|round|int }}<span class="muted" style="font-size:13px">/100</span>
           <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(RC.label, {'low':'低','elevated':'偏高','high':'高'}.get(RC.label, RC.label)) }}</span></div>
         <div style="height:7px;border-radius:4px;background:var(--line);margin:7px 0;overflow:hidden"><div style="height:100%;width:{{ RC.score|round|int }}%;background:{{ rcolor }}"></div></div>
@@ -1306,7 +1568,7 @@
           </div>
         </details>
         {% if DR and DR.score is not none %}
-        {% set dcolor = 'var(--down)' if DR.band in ('high','extreme') else ('#d98a00' if DR.band=='elevated' else 'var(--muted)') %}
+        {% set dcolor = 'var(--down)' if DR.band in ('high','extreme') else ('var(--warn)' if DR.band=='elevated' else 'var(--muted)') %}
         <div class="kv" style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">{{ t('Macro-stress (drawdown risk)', '宏观压力（回撤风险）') }}
           {{ help("A LEAN 4-factor macro-stress composite (recession-risk + NFCI + Excess Bond Premium + HY credit spreads; the weak curve/VIX legs were dropped after measurement). It is a DRAWDOWN-RISK gauge, not a return forecast: at the HIGH band the S&P had a ~36% chance of a >10% drawdown over the next 3 months vs ~8% base rate — the cleanest drawdown discriminator we measured (beats quad==Q4 and net-liquidity). Returns still rebound, so this says 'size down / widen stops', not 'sell everything'.", "精简版四因子宏观压力综合（衰退风险＋NFCI＋超额债券溢价＋高收益信用利差；曲线/VIX 经测量后剔除）。这是回撤风险指标而非回报预测：在高位区，标普未来三个月出现 >10% 回撤的概率约 36%（基准约 8%）。") }}
           <b style="float:right;color:{{ dcolor }}">{{ DR.score|round|int }}/100 · {{ t(DR.band, {'low':'低','elevated':'偏高','high':'高','extreme':'极高'}.get(DR.band, DR.band)) }}</b></div>
