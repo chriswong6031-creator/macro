@@ -43,6 +43,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from engine import i18n as _i18n  # bilingual glossary for caution labels
+
 # ----------------------------------------------------------------------------
 # market constants
 # ----------------------------------------------------------------------------
@@ -689,7 +691,13 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     sel_t = _tier(sel)
 
     drivers: list[str] = []
-    cautions: list[str] = []
+    # cautions carry BOTH languages ({"en","zh"}); _v() splits them into the
+    # `cautions` / `cautions_zh` lists the templates render as l-en/l-zh spans.
+    cautions: list[dict] = []
+
+    def _cau(en: str, zh: str) -> None:
+        cautions.append({"en": en, "zh": zh})
+
     if sel_t in ("high", "mid"):
         drivers.append((axes.get("selection", {}).get("kind")) or _SEL_KIND.get(m, ("edge", "优势"))[0])
     if _tier(ent) in ("high", "mid"):
@@ -699,26 +707,32 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     if _tier(axes.get("tailwind", {}).get("z")) in ("high", "mid"):
         drivers.append("tailwind")
     if acct == "warn":
-        cautions.append("accounting warn")
+        _cau("accounting warn", "财务质量警示")
     elif acct == "watch":
-        cautions.append("accounting watch")
+        _cau("accounting watch", "财务质量关注")
     if grade == _PARABOLIC:
-        cautions.append("parabolic — extended")
+        _cau("parabolic — extended", "抛物线急涨 — 过热")
     _ovx = _overextended(rec)
     if _ovx:
         _pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
-        cautions.append(f"extended +{_pv:.0f}% over 200dma — chasing" if _pv is not None
-                        else "extended over 200dma — chasing")
+        _cau(f"extended +{_pv:.0f}% over 200dma — chasing" if _pv is not None
+             else "extended over 200dma — chasing",
+             f"高于200日均线 +{_pv:.0f}% — 追高" if _pv is not None
+             else "高于200日均线 — 追高")
     _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
     if _risk_veto:
-        cautions.append("stressed tape — size down / confirm")
+        _cau("stressed tape — size down / confirm", "盘面承压 — 减仓／确认")
     _ed = _f(rec.get("earnings_days"))
     _earn_imminent = _ed is not None and 0 <= _ed <= 8
     if _earn_imminent:
-        cautions.append(f"earnings in {int(_ed)}d — binary event, size down"
-                        if _ed >= 1 else "earnings imminent — binary event, size down")
+        _cau(f"earnings in {int(_ed)}d — binary event, size down"
+             if _ed >= 1 else "earnings imminent — binary event, size down",
+             f"{int(_ed)}天后财报 — 二元事件，减仓"
+             if _ed >= 1 else "财报临近 — 二元事件，减仓")
     if cycle_blocked:
-        cautions.append("cycle: " + (lad.get("label") or state or "weak tape"))
+        _lbl = lad.get("label") or state or "weak tape"
+        _lbl_zh = "盘面疲弱" if _lbl == "weak tape" else _i18n.tr(_lbl)
+        _cau("cycle: " + _lbl, "周期：" + _lbl_zh)
 
     # ---- HK: never a buy verb. Screen / exposure language only, but NAME the driver. ----
     if m == "HK":
@@ -778,7 +792,7 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
             return _v("Strong name · elevated-risk tape — smaller size, confirm",
                       "强势个股 · 高风险行情 — 减小仓位并确认", drivers, cautions)
         if _tier(qz) == "low":                 # strong edge but weak fundamentals — flag the risk
-            cautions.append("weak fundamentals")
+            _cau("weak fundamentals", "基本面偏弱")
             return _v("Leader · weak fundamentals — higher-risk",
                       "领先 · 基本面偏弱 — 风险偏高", drivers, cautions)
         return _v("High-conviction — leader with a good entry",
@@ -796,9 +810,10 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
     return _v("Neutral — no clear edge", "中性 — 无明显优势", drivers, cautions)
 
 
-def _v(en: str, zh: str, drivers: list[str], cautions: list[str]) -> dict:
-    return {"verdict": en, "verdict_zh": zh,
-            "drivers": drivers, "cautions": cautions}
+def _v(en: str, zh: str, drivers: list[str], cautions: list[dict]) -> dict:
+    return {"verdict": en, "verdict_zh": zh, "drivers": drivers,
+            "cautions": [c["en"] for c in cautions],
+            "cautions_zh": [c["zh"] for c in cautions]}
 
 
 # ----------------------------------------------------------------------------
@@ -909,6 +924,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
                 ((rec.get("ladder") or {}).get("entry") or {}).get("tag"))),
         "verdict": vb["verdict"], "verdict_zh": vb["verdict_zh"],
         "drivers": vb["drivers"], "cautions": vb["cautions"],
+        "cautions_zh": vb["cautions_zh"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
         "regime": _regime_tilt(m, calm),
         "axes": axes,

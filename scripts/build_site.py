@@ -11,6 +11,7 @@ from __future__ import annotations
 import calendar
 import json
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -2774,6 +2775,20 @@ def main() -> int:
         regime_snap=_rs_view,                     # velocity complement + triggered AI veto (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
     )
+    # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
+    # view-model so scripts/render_macro_fast.py can re-render macro.html /
+    # us_stocks.html from the SAME data in <1s while iterating on the template/CSS
+    # (a full build is ~4min). Completely inert on normal/daily builds (env unset),
+    # and never fatal — a pickling failure just skips the cache. Not committed-path.
+    if os.environ.get("MACRO_DUMP_VM"):
+        try:
+            import pickle as _pickle
+            _vmcache = config.data_dir() / "_dev_macro_vm.pkl"
+            with open(_vmcache, "wb") as _fh:
+                _pickle.dump({"vm": vm, "generated": generated}, _fh)
+            log.info("MACRO_DUMP_VM: cached view-model -> %s", _vmcache)
+        except Exception as e:  # noqa: BLE001 — dev convenience only
+            log.warning("MACRO_DUMP_VM cache failed: %s", e)
     # Write the macro dashboard straight to macro.html. index.html is owned
     # solely by build_vector.build_landing() (the landing hub) — keeping the raw
     # dashboard out of index.html is what stops Home (-> index.html) from

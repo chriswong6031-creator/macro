@@ -125,6 +125,7 @@ def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
         return None
     s = model["summary"]
     em = model["expected_move"]
+    vh = model.get("vol_hole") or {}
     manifest = {
         "key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"],
         "spot": s["spot"], "regime": s["regime"], "tier": s["tier"],
@@ -132,7 +133,9 @@ def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
         "dist_to_flip_pct": s["dist_to_flip_pct"], "iv30": s["iv30"],
         "call_wall": s["call_wall"], "put_wall": s["put_wall"],
         "max_pain": s["max_pain"], "daily_move_pct": em.get("daily_pct"),
-        "put_call_oi_ratio": s["put_call_oi_ratio"], "asof": str(date.today()),
+        "put_call_oi_ratio": s["put_call_oi_ratio"],
+        "vh_state": vh.get("state"), "vh_bias": vh.get("bias"),
+        "asof": str(date.today()),
     }
     return model, manifest
 

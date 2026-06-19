@@ -371,8 +371,8 @@
     }).join('');
     var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g,
       function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); };
-    var cau = (c.cautions || []).map(function (x) {
-      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    var cau = (c.cautions || []).map(function (x, i) {
+      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +

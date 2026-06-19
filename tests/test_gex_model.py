@@ -13,7 +13,7 @@ import pandas as pd
 import pytest
 
 from engine.greeks import bs_greeks
-from engine.gex_model import build_model
+from engine.gex_model import build_model, volatility_hole
 
 SPOT = 100.0
 EXPIRY_DAYS = (12, 26, 54)            # three listed expiries
@@ -128,3 +128,80 @@ def test_minimal_chain_degrades_gracefully():
 def test_empty_chain_returns_none():
     assert build_model(pd.DataFrame(), SPOT, {"q": 0.0}) is None
     assert build_model(_chain(), 0.0, {"q": 0.0}) is None
+
+
+# --------------------------------------------------------------------------- #
+# volatility hole — the dealer-gamma compression band
+# --------------------------------------------------------------------------- #
+def _summary(spot=100.0, regime="long", flip=98.0, cw=110.0, pw=90.0, mu=None, md=None):
+    return {"spot": spot, "regime": regime, "gamma_flip": flip,
+            "call_wall": cw, "put_wall": pw, "magnet_up": mu, "magnet_down": md}
+
+
+def _em(daily=1.5):
+    return {"daily_pct": daily, "weekly_pct": round(daily * np.sqrt(5), 4)}
+
+
+CF = {"hole_arm_sigma": 1.0}
+
+
+def test_vol_hole_in_build_model_payload():
+    m = build_model(_chain(), SPOT, {"q": 0.0})
+    vh = m["vol_hole"]
+    for k in ("state", "bias", "upper", "lower", "to_upper_sigma", "to_lower_sigma",
+              "band_width_pct", "compression", "pos"):
+        assert k in vh
+    # spot 100 sits ~6σ off each 90/110 wall → squarely in the hole (or, if the flip
+    # lands just above spot, the short-gamma black hole) — never a coiled/none edge here
+    assert vh["state"] in ("IN_HOLE", "EXPANSION")
+
+
+def test_vol_hole_in_hole_pins_between_walls():
+    vh = volatility_hole(_summary(), _em(daily=1.5), CF)
+    assert vh["state"] == "IN_HOLE" and vh["bias"] == "neutral"
+    assert vh["upper"] == 110.0 and vh["lower"] == 90.0
+    assert vh["upper_src"] == "call_wall" and vh["lower_src"] == "put_wall"
+    assert vh["band_width_pct"] == 20.0
+    assert vh["pos"] == pytest.approx(0.5, abs=1e-6)        # midway between the walls
+    assert vh["to_upper_sigma"] > 1.0 and vh["to_lower_sigma"] > 1.0
+
+
+def test_vol_hole_coiled_up_near_ceiling():
+    vh = volatility_hole(_summary(spot=109.0), _em(daily=1.5), CF)
+    assert vh["state"] == "COILED_UP" and vh["bias"] == "up"
+    assert vh["to_upper_sigma"] <= 1.0                      # within an arm's-length σ of 110
+    assert vh["to_lower_sigma"] > 1.0
+
+
+def test_vol_hole_coiled_down_near_floor():
+    vh = volatility_hole(_summary(spot=91.0), _em(daily=1.5), CF)
+    assert vh["state"] == "COILED_DOWN" and vh["bias"] == "down"
+    assert vh["to_lower_sigma"] <= 1.0
+
+
+def test_vol_hole_short_gamma_is_expansion():
+    # below the flip → the "black hole"; dealers amplify, regardless of wall distance
+    vh = volatility_hole(_summary(regime="short", flip=105.0), _em(daily=1.5), CF)
+    assert vh["state"] == "EXPANSION" and vh["bias"] == "volatile"
+
+
+def test_vol_hole_magnet_fallback_when_no_walls():
+    # no walls → fall back to the heaviest-OI magnets as the band edges
+    vh = volatility_hole(_summary(cw=None, pw=None, mu=112.0, md=88.0),
+                         _em(daily=1.5), CF)
+    assert vh["upper_src"] == "magnet_up" and vh["lower_src"] == "magnet_down"
+    assert vh["upper"] == 112.0 and vh["lower"] == 88.0
+
+
+def test_vol_hole_compression_tightens_with_narrow_band():
+    tight = volatility_hole(_summary(cw=102.0, pw=98.0), _em(daily=1.5), CF)   # 4% band
+    wide = volatility_hole(_summary(cw=130.0, pw=70.0), _em(daily=1.5), CF)    # 60% band
+    assert tight["compression"] == "tight"
+    assert wide["compression"] == "wide"
+
+
+def test_vol_hole_degrades_without_spot_or_move():
+    assert volatility_hole(_summary(spot=0.0), _em(), CF)["state"] == "NONE"
+    # no expected move → σ-distances are None, so no "coiled" call, falls to in-hole
+    vh = volatility_hole(_summary(), {"daily_pct": None, "weekly_pct": None}, CF)
+    assert vh["to_upper_sigma"] is None and vh["state"] == "IN_HOLE"

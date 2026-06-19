@@ -424,8 +424,8 @@
         (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
         (pct == null ? '—' : pct) + '</span></div>';
     }).join('');
-    var cau = (c.cautions || []).map(function (x) {
-      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    var cau = (c.cautions || []).map(function (x, i) {
+      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +

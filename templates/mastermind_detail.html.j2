@@ -160,6 +160,34 @@ html[data-theme="dark"] .pc{background:rgba(255,255,255,.03)}
 .pc-you{font-size:9.5px;font-weight:800;letter-spacing:.06em;color:#fff;background:var(--accent);border-radius:6px;padding:2px 7px}
 .pc-row{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--muted);padding:7px 0;border-top:1px solid var(--grid)}
 .pc-row b{color:var(--ink);font-weight:800}
+
+/* ===== Live regime layer panel (optional — rendered when regime_legs is passed) ===== */
+.rg-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}
+.rg-state{font-size:13.5px;font-weight:800;padding:6px 14px;border-radius:999px;white-space:nowrap}
+.rg-off{background:#fde7ef;color:#a01457}.rg-mixed{background:#FFF4E0;color:#8a5a00}.rg-on{background:#dff5ea;color:#1FA971}
+html[data-theme="dark"] .rg-off{background:#3a1d2b;color:#f08bb4}
+html[data-theme="dark"] .rg-mixed{background:#3a2f17;color:#e0b25a}
+html[data-theme="dark"] .rg-on{background:#16321f;color:#48d39a}
+.rg-gauge-wrap{flex:1;min-width:220px}
+.rg-meter{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#e5484d)}
+.rg-meter::after{content:"";position:absolute;top:50%;left:calc(var(--v)*100%);transform:translate(-50%,-50%);width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--ink);box-shadow:0 1px 5px rgba(0,0,0,.4)}
+.rg-meter-l{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.04em;margin-top:6px}
+.rg-meter-l .rg-val{color:var(--ink);font-weight:800;letter-spacing:0;text-transform:none}
+.rg-asof{font-size:12px;color:var(--faint);white-space:nowrap}
+.rg-lead{font-size:13.5px;color:var(--text);line-height:1.6;margin:2px 0 16px;max-width:920px}
+.rg-legs{margin-top:2px}
+.rg-leg{background:var(--bg);border:1px solid var(--grid);border-radius:13px;padding:14px 15px}
+html[data-theme="dark"] .rg-leg{background:rgba(255,255,255,.03)}
+.rg-leg-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.rg-leg-nm{font-size:14px;font-weight:800;color:var(--ink)}
+.rg-leg-w{font-size:11px;font-weight:700;color:var(--muted);background:var(--card);border:1px solid var(--grid);border-radius:7px;padding:2px 7px;white-space:nowrap}
+html[data-theme="dark"] .rg-leg-w{background:var(--grid)}
+.rg-leg-v{font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:8px 0 0}
+.rg-leg-v small{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0}
+.rg-leg-bar{position:relative;height:6px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#e5484d);margin:6px 0 10px}
+.rg-leg-bar::after{content:"";position:absolute;top:50%;left:calc(var(--v)*100%);transform:translate(-50%,-50%);width:12px;height:12px;border-radius:50%;background:#fff;border:2.5px solid var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.rg-leg-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:9px}
+.rg-leg-src{font-size:10.5px;color:var(--faint);border-top:1px solid var(--grid);padding-top:7px}
 </style>{% include "_vector_polish.html.j2" %}
 </head>
 <body>
@@ -202,7 +230,7 @@ html[data-theme="dark"] .pc{background:rgba(255,255,255,.03)}
 
   <!-- ===== How it works ===== -->
   <div class="section-title">{{ t('How this strategy works','本策略如何运作') }}</div>
-  <div class="mm-engine">{{ t('Every Mastermind profile runs the SAME engine. It scores all nine assets on a','每个操盘大师风险档都运行同一台引擎。它用一个') }} <b>{{ t('four-factor conviction','四因子信念') }}</b>{{ t(', sizes them by risk, scales the whole book to a target volatility, and rebalances weekly. The three profiles differ ONLY in how much risk they target and how much leverage they will use — same signals, three risk dials.','为全部九个资产打分，按风险定仓，将整个组合缩放至目标波动率，并每周再平衡。三个档位之间唯一的差别，是它们瞄准多大的风险、使用多大的杠杆——相同信号，三档风险旋钮。') }}</div>
+  <div class="mm-engine">{{ t(engine_a_en, engine_a_zh) }} <b>{{ t(engine_b_en, engine_b_zh) }}</b>{{ t(engine_c_en, engine_c_zh) }}</div>
 
   <div class="mm-sub">① {{ t('The four conviction factors','四个信念因子') }} <span class="faint">· {{ t('what makes an asset attractive, and how much each one counts','决定资产吸引力的因素，以及各自的权重') }}</span></div>
   <div class="grid cols-4">
@@ -218,7 +246,7 @@ html[data-theme="dark"] .pc{background:rgba(255,255,255,.03)}
     {% endfor %}
   </div>
 
-  <div class="mm-sub">② {{ t('The investable universe','可投资域') }} <span class="faint">· {{ t('nine assets across five classes — full cross-asset freedom','五大类、九个资产——完全跨资产自由') }}</span></div>
+  <div class="mm-sub">② {{ t('The investable universe','可投资域') }} <span class="faint">· {{ t(universe_sub_en, universe_sub_zh) }}</span></div>
   <div class="grid uni-grid">
     {% for c in universe %}
     <div class="uni">
@@ -254,6 +282,34 @@ html[data-theme="dark"] .pc{background:rgba(255,255,255,.03)}
       {% endfor %}
     </div>
   </div>
+
+  {% if regime_legs %}
+  <!-- ===== Live regime layer (China flagship) — why the book is positioned this way ===== -->
+  <div class="section-title">{{ t('Live regime layer · why the book is positioned this way','实时体制层 · 当前持仓为何如此') }}</div>
+  <div class="card">
+    <div class="rg-head">
+      <span class="rg-state rg-{{ regime_tone }}">{{ t(regime_state_en, regime_state_zh) }}</span>
+      <div class="rg-gauge-wrap">
+        <div class="rg-meter" style="--v:{{ regime_v }}"></div>
+        <div class="rg-meter-l"><span>{{ t('Risk-on','风险偏好') }}</span><span class="rg-val">{{ t('Blended de-risk','综合降险') }} {{ regime_pct }}/100</span><span>{{ t('Risk-off','风险偏离') }}</span></div>
+      </div>
+      <span class="rg-asof">{{ t('As of','截至') }} {{ regime_asof }}</span>
+    </div>
+    <p class="rg-lead">{{ t(regime_lead_en, regime_lead_zh) }}</p>
+    <div class="grid cols-3 rg-legs">
+      {% for lg in regime_legs %}
+      <div class="rg-leg">
+        <div class="rg-leg-top"><span class="rg-leg-nm">{{ t(lg.name_en, lg.name_zh) }}</span><span class="rg-leg-w">{{ (lg.weight*100)|round|int }}% {{ t('of layer','层内权重') }}</span></div>
+        <div class="rg-leg-v">{{ (lg.value*100)|round|int }}<small>/100 {{ t('de-risk','降险') }}</small></div>
+        <div class="rg-leg-bar" style="--v:{{ lg.value }}"></div>
+        <div class="rg-leg-desc">{{ t(lg.desc_en, lg.desc_zh) }}</div>
+        <div class="rg-leg-src">{{ t('Source','来源') }}: {{ t(lg.src_en, lg.src_zh) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="note b" style="margin-top:14px">{{ t('These are the live de-risk legs, lagged exactly as the book trades them (credit ~1 month, vol & margin 1 day); weights renormalise over whichever legs have data. Display-only — the same gauges already drive the weekly allocation below.','以上为实时降险分腿，按组合实际交易的滞后处理（信用约1个月，波动率与融资1天）；权重在有数据的分腿间重新归一化。仅展示——同一组指标已驱动下方的每周配置。') }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===== Live book + scorecard ===== -->
   <div class="grid cols-2" style="margin-top:18px">

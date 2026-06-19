@@ -305,7 +305,7 @@
         <td class="muted">{{ a.sector_rank }}/{{ a.sector_n }}</td>
         <td class="{{ 'pos' if (a.resid_ann or 0) >= 0 else 'neg' }}">{% if a.resid_ann is not none %}{{ "%+.0f"|format(a.resid_ann) }}%{% else %}—{% endif %}</td>
         <td class="{{ 'pos' if (a.rev_1m or 0) >= 0 else 'neg' }}">{% if a.rev_1m is not none %}{{ "%+.1f"|format(a.rev_1m) }}%{% else %}—{% endif %}</td>
-        <td class="l">{% if a.entry %}<span class="alpha-entry ae-{{ a.entry }}">{{ a.entry }}</span>{% endif %}</td>
+        <td class="l">{% if a.entry %}{% set _aez = {'pullback':'回调买点','extended':'急涨偏热','intact':'趋势完好','laggard':'落后','neutral':'中性'} %}<span class="alpha-entry ae-{{ a.entry }}">{{ t(a.entry, _aez.get(a.entry, a.entry)) }}</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </table>

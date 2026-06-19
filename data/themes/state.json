@@ -19,9 +19,9 @@
     "label": "dominant",
     "name": "Crypto & Digital Assets",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-    "rank": 4,
+    "rank": 5,
     "reco": "accumulate",
-    "score": 67
+    "score": 63
   },
   "defense": {
     "label": "neutral",
@@ -51,7 +51,7 @@
     "label": "dominant",
     "name": "Housing Chain",
     "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
-    "rank": 5,
+    "rank": 4,
     "reco": "hold",
     "score": 63
   },

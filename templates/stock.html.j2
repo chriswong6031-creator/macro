@@ -68,6 +68,26 @@
   .ms-chip.ms-negative { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ms-chip.ms-tier-low { color:var(--muted); }
   .macro-sens .ms-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
+
+  /* DannyTrades CONTRARIAN read (display-only) — extension flag + whale-fade. Border by
+     the contrarian verdict: fade=caution (red), bounce=opportunity (green). */
+  .dt-contra { margin:6px 0; padding:8px 12px; border-radius:8px; background:var(--panel2);
+           border-left:3px solid var(--muted); font-size:13px; color:var(--text); }
+  .dt-contra.dtc-fade { border-left-color:var(--down);
+           background:color-mix(in srgb, var(--down) 8%, var(--panel2)); }
+  .dt-contra.dtc-bounce { border-left-color:var(--up);
+           background:color-mix(in srgb, var(--up) 8%, var(--panel2)); }
+  .dt-contra .dtc-head { font-weight:600; }
+  .dt-contra .dtc-ttl { font-size:11px; font-weight:800; letter-spacing:.03em;
+           text-transform:uppercase; color:var(--muted); margin-right:6px; }
+  .dt-contra .dtc-chips { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 0; }
+  .dt-contra .dtc-chip { display:inline-flex; align-items:center; gap:5px; padding:2px 9px;
+           border-radius:9px; font-size:11.5px; border:1px solid var(--line);
+           background:var(--panel); white-space:nowrap; }
+  .dtc-chip.extended, .dtc-chip.entering { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .dtc-chip.washed, .dtc-chip.leaving { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .dtc-chip.elevated { color:var(--muted); }
+  .dt-contra .dtc-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
   .agewhen { margin:6px 0; padding:7px 11px; border-radius:8px; background:var(--panel2);
              border-left:3px solid var(--link); font-size:13px; color:var(--text); }
   .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
@@ -367,6 +387,7 @@
       <p id="r_early" class="early" style="display:none"></p>
       <p id="r_macro" class="macro-caution" style="display:none"></p>
       <div id="r_macrosens" class="macro-sens" style="display:none"></div>
+      <div id="r_dtcontra" class="dt-contra" style="display:none"></div>
       <ul id="r_points" class="points"></ul>
       <div id="r_cyclebox" class="cyclebox"></div>
       <p id="r_flags" class="neg" style="margin:4px 0"></p>
@@ -740,6 +761,29 @@
     box.style.display = 'block';
   }
 
+  // DannyTrades CONTRARIAN read (engine/dannytrades_chip.py) — the two findings that
+  // survived the phase-0 gate, both INVERSE of his usual framing: a high composite =
+  // extended/fade (decile Spearman −0.88), and rising "whale accumulation" precedes
+  // under-performance. Display-only, never scored; validated stats live in the caveat.
+  function renderDtContra(d) {
+    var box = el('r_dtcontra'), dc = d.dt_contra;
+    if (!box) return;
+    if (!dc) { box.style.display = 'none'; return; }
+    box.className = 'dt-contra' + (dc.state !== 'neutral' ? ' dtc-' + dc.state : '');
+    var ttl = lang() === 'zh' ? 'DannyTrades 逆向' : 'DannyTrades contrarian';
+    var chips = (dc.chips || []).map(function (c) {
+      return '<span class="dtc-chip ' + c.cls + '">' + esc(lz(c.label.en, c.label.zh)) + '</span>';
+    }).join('');
+    box.innerHTML =
+      '<div class="dtc-head"><span class="dtc-ttl">' + ttl + '</span>' +
+        esc(lz(dc.headline.en, dc.headline.zh)) + '</div>' +
+      '<div class="dtc-chips">' + chips + '</div>' +
+      '<div class="muted" style="font-size:12px;margin-top:5px">' +
+        esc(lz(dc.detail.en, dc.detail.zh)) + '</div>' +
+      '<div class="dtc-cav">' + esc(lz(dc.caveat.en, dc.caveat.zh)) + '</div>';
+    box.style.display = 'block';
+  }
+
   function renderFundamentals(d) {
     var prof = d.profile, val = d.valuation, fin = d.financials, fac = d.factors, pos = d.positioning, an = d.analyst;
     var isEquity = !!(prof || val || fin || fac);
@@ -1034,8 +1078,8 @@
         (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
         (pct == null ? '—' : pct) + '</span></div>';
     }).join('');
-    var cau = (c.cautions || []).map(function (x) {
-      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    var cau = (c.cautions || []).map(function (x, i) {
+      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
     // EDGE basis — which legs are firing + how strong, each tagged validated / literature /
     // context / screen, so a user (and the AI layer) sees WHY the edge score is what it is.
     var TIER_C = { validated: 'var(--up)', literature: 'var(--g-cold)',
@@ -1484,6 +1528,7 @@
     if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
     else { macro.style.display = 'none'; }
     renderMacroSens(d);
+    renderDtContra(d);
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -1541,7 +1586,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

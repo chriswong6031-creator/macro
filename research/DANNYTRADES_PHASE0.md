@@ -86,3 +86,36 @@ Honest bottom line: his *framework* is coherent and his *names* did well (a
 concentrated AI-leader book in a bull market — selection, not signal); the
 *reconstructed signals* carry no significant forward buy-edge, but do carry a
 small, validated **contrarian** one.
+
+## Follow-up (`scripts/dannytrades_whale.py`, `engine.dannytrades.whale_buy_fraction`)
+
+Two open questions from the phase-0, settled with a FAITHFUL saturating whale metric
+(`whale_buy_fraction` = share of windowed volume that traded as buying, 0–100 — runs
+to the 90s like his reads) on **monthly bars** (his actual timeframe) with
+**NON-OVERLAPPING** forward returns (the overlap that sank daily-63d significance is
+gone). Results (`/tmp/dt_whale.json`):
+
+**Q1 — the whale signal is statistically REAL, but it INVERTS his thesis.**
+- Whale *level* alone: weak (IC@1m −0.009, t −1.2, p 0.24).
+- **Whale *change* = "whales entering": IC@1m −0.023, t −3.9, p 0.0001** (and −0.022,
+  t −2.9 at 3m, non-overlapping) — **significant and NEGATIVE**.
+- Event study (ticker-cluster bootstrap, CIs **exclude zero**): "whales entering"
+  (Δ>+10) → next-month P(up) 0.546 vs 0.572 base, +1.22% vs +1.54% (lift −0.025,
+  CI [−0.034, −0.016]); **"whales leaving" (Δ<−10) → 0.593, +2.01%** (lift +0.022,
+  CI [+0.015, +0.029]); whale **hot >75** → 0.546, lift −0.026, CI [−0.047, −0.006].
+- Reading: by the time his accumulation metric is **hot/rising**, the move is mature
+  and **mean-reverts → FADE**; when it has bled out, that's the bounce. The whale
+  strategy works **as a contrarian signal — the opposite of how he uses it.**
+
+**Q2 — the extension/contrarian read is clean and monotone.** Forward-63d return
+falls monotonically across all ten composite-score deciles (**5.68% → 4.30%**,
+top−bottom −1.38%, **Spearman −0.88**); whale-level deciles likewise (Spearman −0.82).
+A high DannyTrades score is a textbook **"extended / don't-chase"** flag.
+
+**Net update:** the validated, combinable signal is **contrarian** — (a) high composite
+score = extension caution (Spearman −0.88), and (b) "whales entering" = a significant
+fade tilt (t −3.9). Both align with the repo's washout/extension-veto philosophy.
+Caveat unchanged: 114-name survivor panel (survivorship flatters mean-reversion).
+**Live-shipping prerequisite:** the daily pipeline only stores ~1 month of per-stock
+volume (`data/stocks/*.parquet`), so any volume-based leg needs the stocks collector
+extended to persist full-history volume first.

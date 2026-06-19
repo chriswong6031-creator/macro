@@ -1,0 +1,105 @@
+"""Advanced theme textures (engine.basket_score) — display-only, honest.
+
+Verify bull-market age, overbought, clean-entry and roll-over read the level/texture inputs
+correctly, every texture carries directional:False, and market_concentration degrades to {}
+without the breadth file. Pure functions on synthetic series; no network.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from engine import basket_score as bs
+
+
+def _ramp(n=300, slope=0.0015, start=1.0):
+    idx = pd.date_range("2024-01-01", periods=n, freq="B")
+    return pd.Series(start * np.cumprod(1 + np.full(n, slope)), index=idx)
+
+
+def test_bull_age_uptrend_vs_downtrend():
+    up = bs.bull_age(_ramp(slope=0.002))
+    assert up["in_bull"] is True and up["days"] > 0
+    assert up["stage"] in ("young", "building", "mature", "aging")
+    assert up["directional"] is False
+    dn = bs.bull_age(_ramp(slope=-0.002))
+    assert dn["in_bull"] is False and dn["stage"] == "downtrend"
+
+
+def test_bull_age_needs_history():
+    assert bs.bull_age(_ramp(n=40)) is None
+
+
+def test_overbought_band_scales_with_rsi_and_rs():
+    hot = bs.overbought(_ramp(slope=0.004), 0.95, None)
+    cool = bs.overbought(_ramp(slope=0.0001), 0.4, None)
+    assert hot["value"] >= cool["value"]
+    assert hot["band"] in ("overbought", "extreme", "elevated")
+    assert hot["directional"] is False
+
+
+def test_clean_entry_flag_requires_not_extended():
+    lvl = _ramp(slope=0.0015)
+    # accelerating, not extended, RSI room, broad → flag on
+    on = bs.clean_entry(lvl, {"accel_z": 0.8, "rs_pctile": 0.5}, {"pct50": 0.6}, 55)
+    assert on["flag"] is True and on["quality"] >= 0.6
+    # same but extended (rs_pctile high) → flag off
+    off = bs.clean_entry(lvl, {"accel_z": 0.8, "rs_pctile": 0.95}, {"pct50": 0.6}, 55)
+    assert off["flag"] is False
+    assert on["directional"] is False
+
+
+def test_rollover_risk_rises_with_extension_and_decel():
+    lvl = _ramp(slope=0.0015)
+    hi = bs.rollover_risk(lvl, {"rs_pctile": 0.92, "accel_z": -0.6},
+                          {"accel_z": 0.4}, {"pct50": 0.4, "nh": 0, "nl": 5},
+                          {"5d": {"rel": -0.03}})
+    lo = bs.rollover_risk(lvl, {"rs_pctile": 0.5, "accel_z": 0.5},
+                          {"accel_z": 0.3}, {"pct50": 0.7, "nh": 4, "nl": 0},
+                          {"5d": {"rel": 0.02}})
+    assert hi["risk"] > lo["risk"]
+    assert hi["band"] in ("elevated", "high")
+    assert lo["band"] == "low"
+    assert hi["directional"] is False
+
+
+def test_theme_textures_bundles_all_four():
+    tx = bs.theme_textures(_ramp(), {"rs_pctile": 0.6, "accel_z": 0.4},
+                           {"accel_z": 0.3}, None, {"pct50": 0.55, "nh": 2, "nl": 1},
+                           {"5d": {"rel": 0.01}})
+    assert set(tx) == {"bull_age", "overbought", "clean_entry", "rollover_risk"}
+
+
+def test_act_now_stocks_gated_by_theme_health():
+    members = [
+        {"symbol": "AAA", "conviction": {"score": 72, "verdict": "Buy — pullback", "cycle_blocked": False, "entry_pct": 0.7}},
+        {"symbol": "BBB", "conviction": {"score": 80, "verdict": "Add — strong", "cycle_blocked": False, "entry_pct": 0.6}},
+        {"symbol": "CCC", "conviction": {"score": 30, "verdict": "Avoid — downtrend", "cycle_blocked": True, "entry_pct": 0.2}},
+        {"symbol": "DDD", "conviction": {"score": 90, "verdict": "Strong name, wrong tape", "cycle_blocked": True, "entry_pct": 0.1}},
+    ]
+    # healthy theme → returns the buys (AAA/BBB), excludes avoid + cycle-blocked
+    good = bs.act_now_stocks(members, {"label": "emerging", "reco": "enter",
+                                       "textures": {"bull_age": {"in_bull": True}}})
+    assert good["status"] == "ok"
+    syms = [x["symbol"] for x in good["buys"]]
+    assert "AAA" in syms and "BBB" in syms and "CCC" not in syms and "DDD" not in syms
+    # out-of-favour theme → NOTHING recommended, with a reason
+    for bad in ({"label": "deteriorating", "reco": "avoid", "textures": {"bull_age": {"in_bull": True}}},
+                {"label": "fading", "reco": "trim", "textures": {"bull_age": {"in_bull": True}}},
+                {"label": "neutral", "reco": "hold", "textures": {"bull_age": {"in_bull": False}}}):
+        r = bs.act_now_stocks(members, bad)
+        assert r["status"] == "theme_out_of_favour" and r["buys"] == [] and r["note_en"]
+
+
+def test_act_now_no_clean_entries():
+    # healthy theme but no member is a buy → honest 'no clean entry', not a forced pick
+    members = [{"symbol": "X", "conviction": {"score": 40, "verdict": "Neutral — no edge", "cycle_blocked": False, "entry_pct": 0.5}}]
+    r = bs.act_now_stocks(members, {"label": "dominant", "reco": "hold", "textures": {"bull_age": {"in_bull": True}}})
+    assert r["status"] == "no_clean_entries" and r["buys"] == []
+
+
+def test_market_concentration_graceful(monkeypatch, tmp_path):
+    # point data_dir at an empty tmp → no breadth file → {} (never raises)
+    from lib import config
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    assert bs.market_concentration() == {}

@@ -127,11 +127,13 @@ def test_never_scored_invariant():
 
 # ---- card render (the baskets.html.j2 flow-lens slice) ----
 def _render_card(flow):
-    from jinja2 import Environment
+    from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "baskets.html.j2").read_text()
     macro = src[: src.index("endmacro %}") + len("endmacro %}")]
     slice_ = src[src.index("{% if flow %}"): src.index('<div id="content">')]
-    env = Environment(autoescape=True)
+    # FileSystemLoader so any {% include %} inside the slice (e.g. _theme_addons)
+    # resolves against templates/ instead of raising "no loader for this environment".
+    env = Environment(autoescape=True, loader=FileSystemLoader(str(TEMPLATES)))
     return env.from_string(macro + "\n" + slice_).render(flow=flow)
 
 

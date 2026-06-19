@@ -1427,6 +1427,16 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
  animation:sky-breathe 7.5s ease-in-out infinite}
 @keyframes sky-spin{to{transform:rotate(360deg)}}
 @keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
+/* ===== orbital satellite (sky.js) — DARK MODE ONLY =====
+   Orbits the globe in a tilted 3-D ellipse; sky.js drives transform/opacity each
+   frame. Lives in #sky so it sits in front of the moon but behind the page (the
+   "earth") — reading as a true orbit between earth and moon. */
+#sky-sat{position:absolute;left:0;top:0;width:var(--satw,118px);opacity:0;
+ transform-origin:50% 50%;will-change:transform,opacity;pointer-events:none;
+ filter:drop-shadow(0 0 7px rgba(150,185,255,.35))}
+#sky-sat svg{display:block;width:100%;height:auto;overflow:visible}
+#sky[data-sky="day"] #sky-sat{opacity:0!important}
+@media(max-width:560px){#sky-sat{--satw:78px}#sky-sat .sat-fine{display:none}}  /* smaller, simpler silhouette on phones */
 /* headline legibility over the sun/moon is handled by a soft --bg glyph halo on
    the text itself (see .h h1 / .h p) — no backdrop scrim, so nothing draws an
    edge across the celestial body */
@@ -1733,7 +1743,28 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             + _GLOBE_HUB_CSS + "</head><body>")
 
     body = (
-        '<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div></div>'
+        '<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div>'
+        '<div id="sky-sat"><svg viewBox="0 0 148 74" xmlns="http://www.w3.org/2000/svg"><defs>'
+        '<linearGradient id="satPanel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d7cc8"/><stop offset=".2" stop-color="#3a5495"/><stop offset=".6" stop-color="#273768"/><stop offset="1" stop-color="#1b294f"/></linearGradient>'
+        '<linearGradient id="satSheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#bcd6ff" stop-opacity="0"/><stop offset=".5" stop-color="#cfe2ff" stop-opacity=".6"/><stop offset="1" stop-color="#bcd6ff" stop-opacity="0"/></linearGradient>'
+        '<linearGradient id="satFoil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7df9a"/><stop offset=".34" stop-color="#d8af57"/><stop offset=".52" stop-color="#b6882f"/><stop offset=".72" stop-color="#caa149"/><stop offset="1" stop-color="#8a6020"/></linearGradient>'
+        '<radialGradient id="satDish" cx=".36" cy=".3" r=".85"><stop offset="0" stop-color="#f0f4fc"/><stop offset=".55" stop-color="#bcc7dc"/><stop offset="1" stop-color="#8a98b6"/></radialGradient>'
+        '<radialGradient id="satGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e0ecff" stop-opacity=".5"/><stop offset=".45" stop-color="#9fc0ff" stop-opacity=".15"/><stop offset="1" stop-color="#9fc0ff" stop-opacity="0"/></radialGradient>'
+        '<pattern id="satCells" width="7.4" height="8.6" patternUnits="userSpaceOnUse"><path d="M7.4 0V8.6M0 4.3H7.4" stroke="#0d1730" stroke-opacity=".5" stroke-width=".7"/></pattern></defs>'
+        '<ellipse cx="74" cy="37" rx="66" ry="30" fill="url(#satGlow)"/>'
+        '<g stroke="#101c3a" stroke-width=".8" stroke-opacity=".75">'
+        '<rect x="5" y="23" width="45" height="28" rx="2.2" fill="url(#satPanel)"/><rect x="5" y="23" width="45" height="28" rx="2.2" fill="url(#satCells)"/>'
+        '<rect x="98" y="23" width="45" height="28" rx="2.2" fill="url(#satPanel)"/><rect x="98" y="23" width="45" height="28" rx="2.2" fill="url(#satCells)"/></g>'
+        '<rect x="5" y="24.2" width="45" height="2.8" rx="1.4" fill="url(#satSheen)"/><rect x="98" y="24.2" width="45" height="2.8" rx="1.4" fill="url(#satSheen)"/>'
+        '<rect x="49" y="35.6" width="10" height="2.8" fill="#9a7a33"/><rect x="89" y="35.6" width="10" height="2.8" fill="#9a7a33"/>'
+        '<g><rect x="58" y="21.5" width="32" height="31" rx="3.4" fill="url(#satFoil)" stroke="#6e4e1c" stroke-width="1"/>'
+        '<path d="M58 29.5H90M58 44H90" stroke="#7c5820" stroke-opacity=".5" stroke-width=".7"/>'
+        '<path d="M74 21.5V52.5" stroke="#fff" stroke-opacity=".13" stroke-width=".8"/>'
+        '<rect x="62" y="39.5" width="7" height="7" rx="1.3" fill="#212e4c"/>'
+        '<ellipse cx="65.5" cy="28" rx="5.2" ry="2.4" fill="#fff" opacity=".18" transform="rotate(-20 65.5 28)"/></g>'
+        '<g class="sat-fine"><path d="M67 22 60 8" stroke="#c9d3e6" stroke-width="1.1" stroke-linecap="round"/><circle cx="60" cy="8" r="1.5" fill="#dfe7f5"/></g>'
+        '<g transform="rotate(-17 76 14)"><line x1="74" y1="21" x2="76" y2="15" stroke="#9aa7c2" stroke-width="1.3"/><ellipse cx="76" cy="13.5" rx="8.6" ry="5" fill="url(#satDish)" stroke="#75839f" stroke-width=".8"/><circle cx="74.2" cy="12" r="1.5" fill="#5f6c88"/></g>'
+        '</svg></div></div>'
         '<div class="wrap">'
         '<div class="hub-top">'
         '<button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>'
