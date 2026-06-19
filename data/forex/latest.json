@@ -10,63 +10,63 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.145,
-      "chg": -1.5,
+      "quote": 1.1432,
+      "chg": -1.6,
       "action": "FLAT",
-      "score": -13.2
+      "score": -12.6
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.319,
-      "chg": -1.8,
+      "quote": 1.3171,
+      "chg": -1.9,
       "action": "FLAT",
-      "score": 17.7
+      "score": 17.5
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.268,
+      "quote": 161.364,
       "chg": 1.5,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8066,
-      "chg": 3.1,
+      "quote": 0.8084,
+      "chg": 3.3,
       "action": "LONG",
-      "score": 29.7
+      "score": 31.6
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7003,
-      "chg": -2.2,
+      "quote": 0.6995,
+      "chg": -2.3,
       "action": "SHORT",
-      "score": -24.9
+      "score": -25.5
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4148,
+      "quote": 1.4153,
       "chg": 2.5,
       "action": "LONG",
-      "score": 25.8
+      "score": 25.6
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.364,
-      "chg": 0.6,
+      "quote": 17.385,
+      "chg": 0.7,
       "action": "SHORT",
-      "score": -32.1
+      "score": -31.3
     },
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.1681,
       "chg": 2.8,
       "action": "FLAT",
-      "score": 4.9
+      "score": 4.4
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7535,
+      "quote": 6.7575,
       "chg": -0.5,
       "action": "FLAT",
       "score": 15.0

@@ -1,6 +1,6 @@
 {
   "n": 27,
-  "built": "2026-06-19 04:26 UTC",
+  "built": "2026-06-19 05:47 UTC",
   "cards": [
     {
       "key": "spvector",
@@ -176,7 +176,7 @@
     {
       "key": "gold_macro",
       "name": "Gold Macro Timer",
-      "cagr": 6.9,
+      "cagr": 6.89,
       "sharpe": 0.62,
       "maxdd": -33.0,
       "income": 2.47,
@@ -185,7 +185,7 @@
     {
       "key": "oil_trend",
       "name": "Crude-Oil Trend",
-      "cagr": 2.88,
+      "cagr": 2.89,
       "sharpe": 0.24,
       "maxdd": -44.4,
       "income": 1.25,
@@ -194,7 +194,7 @@
     {
       "key": "copper_growth",
       "name": "Copper Growth Cyclical",
-      "cagr": 7.36,
+      "cagr": 7.35,
       "sharpe": 0.58,
       "maxdd": -32.9,
       "income": 1.25,

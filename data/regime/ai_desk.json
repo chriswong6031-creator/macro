@@ -1,39 +1,11 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-19T04:36:28.995677+00:00",
+  "generated_at": "2026-06-19T05:57:46.654488+00:00",
   "state_asof": "2026-06-18",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow detector is display-only with no validated directional edge; all sectors fail directional filters. The regime snap is dormant with fear rebuilding (fear_built 0.502) but no relief trigger; VIX at 16.4 (35.8th percentile). The cyclical cluster (Consumer Discretionary, Industrials, Financials, Real Estate) exhibits broad co-movement but no forward signal.",
-  "theses": [
-    {
-      "id": "2026-06-18-1",
-      "subject": "VIX",
-      "lean": "fade-fear",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "VIX is near the 36th percentile while fear is rebuilding (fear_built 0.502) but the regime snap remains dormant with no relief trigger. The term structure (vix_term 0.838) suggests near-month fear premium is already priced, making a spike fade likely absent a genuine tail event.",
-      "evidence": [
-        "opportunity analyst: VIX at 35.8th percentile, dormant regime snap, fear building capped",
-        "skeptic analyst: fear already priced; fade-fear logical given no acute stress signal",
-        "regime_snap: status dormant, legs_up 1/7, vel_pctile 0.214"
-      ],
-      "dissent": "base-rate analyst: no validated directional edge for VIX timing; the fear signal is coincident and not proven predictive; a fade-fear call is speculative.",
-      "falsifier": {
-        "text": "VIX spikes above 25 or the regime snap flips active (legs_up \u2265 3) within 20 days.",
-        "check": {
-          "kind": "level",
-          "subject_ticker": "_VIX",
-          "vs": null,
-          "op": ">",
-          "ref": "entry",
-          "horizon_d": 20,
-          "note": "FALSE if VIX makes a new high above the entry level within horizon"
-        }
-      },
-      "check_by": "2026-07-16"
-    }
-  ],
+  "regime_context": "As of 2026-06-18, the flow detector is display-only (VIX 16.4, calm regime) with no validated forward edge. Concentration appears in Consumer Discretionary and Industrials, but all sector cohesion is low or declining, directional confidence is low, and the dominant cluster (Consumer Discretionary, Industrials, Financials, Real Estate) exhibits high cross-pair correlation (0.86) with weak intra-sector synchrony\u2014a fragile, beta-driven grouping. No stress-conditional edge is active, and the detector provides no credible directional signal.",
+  "theses": [],
   "source_verdicts": {
     "flow": "display_only",
     "regime_snap": "coincident"
@@ -42,7 +14,7 @@
     "schema": "ai_desk_track_record.v1",
     "as_of": "2026-06-19",
     "scored_total": 0,
-    "open": 7,
+    "open": 8,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
@@ -96,153 +68,129 @@
     "recent": []
   },
   "confidence": "low",
-  "raw_text": "{\n  \"regime_context\": \"Flow detector is display-only with no validated directional edge; all sectors fail directional filters. The regime snap is dormant with fear rebuilding (fear_built 0.502) but no relief trigger; VIX at 16.4 (35.8th percentile). The cyclical cluster (Consumer Discretionary, Industrials, Financials, Real Estate) exhibits broad co-movement but no forward signal.\",\n  \"theses\": [\n    {\n      \"subject\": \"VIX\",\n      \"lean\": \"fade-fear\",\n      \"conviction\": \"low\",\n      \"horizon_d\": 20,\n      \"thesis\": \"VIX is near the 36th percentile while fear is rebuilding (fear_built 0.502) but the regime snap remains dormant with no relief trigger. The term structure (vix_term 0.838) suggests near-month fear premium is already priced, making a spike fade likely absent a genuine tail event.\",\n      \"evidence\": [\n        \"opportunity analyst: VIX at 35.8th percentile, dormant regime snap, fear building capped\",\n        \"skeptic analyst: fear already priced; fade-fear logical given no acute stress signal\",\n        \"regime_snap: status dormant, legs_up 1/7, vel_pctile 0.214\"\n      ],\n      \"dissent\": \"base-rate analyst: no validated directional edge for VIX timing; the fear signal is coincident and not proven predictive; a fade-fear call is speculative.\",\n      \"falsifier_text\": \"VIX spikes above 25 or the regime snap flips active (legs_up \u2265 3) within 20 days.\"\n    }\n  ],\n  \"confidence\": \"low\"\n}",
+  "raw_text": "{\n  \"regime_context\": \"As of 2026-06-18, the flow detector is display-only (VIX 16.4, calm regime) with no validated forward edge. Concentration appears in Consumer Discretionary and Industrials, but all sector cohesion is low or declining, directional confidence is low, and the dominant cluster (Consumer Discretionary, Industrials, Financials, Real Estate) exhibits high cross-pair correlation (0.86) with weak intra-sector synchrony\u2014a fragile, beta-driven grouping. No stress-conditional edge is active, and the detector provides no credible directional signal.\",\n  \"theses\": [],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "Flow is concentrating in cyclical clusters (Consumer Discretionary, Industrials, Materials, Financials, Real Estate) but NO sector passes directional filters\u2014all cohesion gates are low, all directional_confidence is low. The regime snap is dormant with fear rebuilding, offering no relief tailwind. This lens sees the glass as opaque\u2014no durable lean can be honestly argued.",
+      "stance": "Flow is concentrating in cyclical sectors (led by Industrials) with positive acceleration, while Energy is cooling with collapsing breadth. However, the 'display-only' lens lacks forward edge and cohesion is absent across all groups, making any directional lean highly tenuous.",
       "candidates": [
         {
           "subject": "Industrials",
-          "lean": "none",
-          "rationale": "Highest flow_score (1.152) in emerging sectors and top of the cluster pair with Consumer Discretionary (corr 0.86), but cohesion is falling (-0.051) and no directional signal exists.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Consumer Discretionary",
-          "lean": "none",
-          "rationale": "Top-ranked emerging sector by flow score (1.402) with strong accel_z (2.55), but cohesion is low (0.257) and declining (-0.072); clustered with Industrials but not validated.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Materials",
-          "lean": "none",
-          "rationale": "Third-highest flow_score among sectors (1.114), only emerging sector with cohesion improving (+0.025), rs_pctile (0.647) favorable\u2014yet still cohering:false and unvalidated.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Financials",
-          "lean": "none",
-          "rationale": "Part of dominant cluster and has high read_quality (0.69), but rs_pctile weak at 0.123, cohesion low and declining (-0.038), and directional confidence is low.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Real Estate",
-          "lean": "none",
-          "rationale": "Highest cohesion (0.356) among the clustered group and it is improving modestly (+0.017), but stage is quiet, rs_pctile is poor (0.27), and no directional validation exists.",
+          "lean": "overweight",
+          "rationale": "Strongest flow concentration (score 1.15, accel_z 2.19) within the dominant cyclical cluster, supported by high RS percentile (0.79) and broad leadership; but low cohesion (0.23) and non-directional regime severely limit confidence.",
           "strength": "weak"
         },
         {
           "subject": "Energy",
-          "lean": "none",
-          "rationale": "Only cooling sector (flow_score -1.29), breadh collapsing (0.101), and broading_z deeply negative (-2.436)\u2014the lens flags it as concentration draining, but this is descriptive, not predictive.",
-          "strength": "weak"
-        },
-        {
-          "subject": "VIX",
-          "lean": "fade-fear",
-          "rationale": "VIX at 16.4 (35th percentile), regime snap is dormant with no relief snap triggered; fear building signal (0.502) is present but capped and not acute\u2014fear premium overpriced relative to visible stress.",
+          "lean": "underweight",
+          "rationale": "Cooling stage with negative flow score (-1.29), collapsing breadth (0.10), and negative broadening (z -2.44), indicating flow is rotating away despite still-elevated RS.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A sudden VIX spike above ~25 would flip the regime snap active and potentially shift the cohesion signal to a stress-conditional dispersion event\u2014the current 'opaque' read is fragile to any sharp macro shock that forces rapid re-correlation across these uncoupling clusters."
+      "key_risk": "A VIX spike above 20 would invert the calm-regime assumptions under which flow concentration is read, as the lens's marginal edge is stress-conditional and breaks in elevated volatility."
     },
     "skeptic": {
-      "stance": "The flow lens is display-only with no forward edge; all high RS and emerging-stage signals are coincident and likely mean-reverting. The regime snap shows fear rebuilding but no relief trigger, making a long-fear call premature.",
+      "stance": "The flow lens is display-only and has no validated forward edge; the apparent concentration in Industrials, Materials, and Technology is coincident and likely to mean-revert in this low-VIX regime \u2014 these are traps, not investable themes.",
       "candidates": [
         {
           "subject": "Information Technology",
           "lean": "avoid",
-          "rationale": "RS pctile 0.976 implies extended; flow_score not predictive and likely a coincident peak prone to mean-reversion.",
-          "strength": "weak"
+          "rationale": "Extreme RS percentile (0.976) with low cohesion (0.189) and no directional signal makes a continuation bet purely speculative; the flow concentration is already priced in.",
+          "strength": "strong"
         },
         {
           "subject": "Industrials",
           "lean": "avoid",
-          "rationale": "High flow_score (1.152) and RS pctile (0.786) are concentration artifacts without forward edge, survivorship bias in leadership.",
-          "strength": "weak"
+          "rationale": "High RS (0.786), declining cohesion (-0.051), and absence of directional confidence indicate the emerging flow is a coincident artifact, not a durable trend.",
+          "strength": "moderate"
         },
         {
-          "subject": "VIX",
-          "lean": "fade-fear",
-          "rationale": "Fear rebuilding but relief snap is coincident and not triggered; VIX term structure (0.838) suggests fear already priced, a spike fades absent a genuine shock.",
-          "strength": "weak"
+          "subject": "Materials",
+          "lean": "avoid",
+          "rationale": "RS above median (0.647) but cohesion remains low (0.292) and the flow lens provides no forward edge; the recent strength is likely a mean-reversion candidate.",
+          "strength": "moderate"
         }
       ],
-      "key_risk": "A sudden VIX spike that activates the flow lens's stress-conditional edge would invalidate the mean-reversion read."
+      "key_risk": "A sudden spike in VIX that shifts the regime to high stress could activate the cohesion signal's conditional edge, potentially bailing out these extended sectors in the short term."
     },
     "base_rate": {
-      "stance": "Flow lens is display-only and has no validated forward edge; current concentration patterns are coincident and not predictive. Any relative-strength read reflects only the recent trajectory, not a durable signal.",
+      "stance": "Flow is concentrating in Consumer Discretionary, Industrials, and Materials, with co-movement among Consumer Discretionary, Industrials, Financials, and Real Estate. This is a display-only pattern; the lens has no validated forward edge, and all sector reads lack directional confidence.",
       "candidates": [
         {
-          "subject": "Information Technology",
-          "lean": "none",
-          "rationale": "Highest RS percentile (0.976) but cohesion is low and the lens carries no forward edge; elevated RS alone is not a reliable overweight signal.",
+          "subject": "Consumer Discretionary",
+          "lean": "overweight",
+          "rationale": "Highest emerging flow score (1.40) with broad leadership, but directional confidence low and cohesion not cohering.",
           "strength": "weak"
         },
         {
           "subject": "Industrials",
-          "lean": "none",
-          "rationale": "High RS percentile (0.786) and broad leadership, but no directional confidence and the lens is display-only; no grounded overweight case.",
+          "lean": "overweight",
+          "rationale": "High flow score (1.15), strong RS percentile (0.786), and part of the absorption cluster, but cohesion is low.",
           "strength": "weak"
         },
         {
           "subject": "Materials",
-          "lean": "none",
-          "rationale": "RS percentile 0.647 with emerging stage, yet cohesion fails to cohere and the edge is statistically fragile; avoid directional lean.",
+          "lean": "overweight",
+          "rationale": "Emerging flow score (1.11) with strong price leadership in a broad but small sector; cohesion gate remains low.",
           "strength": "weak"
         },
         {
           "subject": "Financials",
-          "lean": "none",
-          "rationale": "Part of the dominant cluster with broad participation, but cohesion is low and the flow lens lacks predictive power; no overweight signal.",
+          "lean": "overweight",
+          "rationale": "Part of the absorption cluster with strong single-name returns, but flow score is modest (0.37) and cohesion is declining.",
           "strength": "weak"
         },
         {
-          "subject": "Consumer Discretionary",
-          "lean": "none",
-          "rationale": "Top emerging sector by flow score, but that score ranks coincident concentration, not forward returns; no actionable lean from this lens.",
+          "subject": "Real Estate",
+          "lean": "overweight",
+          "rationale": "Highest sector cohesion (0.356) and part of the absorption cluster, but RS percentile only 0.27 and stage is quiet.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Energy",
+          "lean": "underweight",
+          "rationale": "Cooling stage with negative flow score (-1.29), very low breadth, and leadership showing small returns; cohesion still high.",
           "strength": "weak"
         },
         {
           "subject": "VIX",
           "lean": "none",
-          "rationale": "Fear is rebuilding (fear_built 0.502) but VIX is only at 35.8th percentile and no snap signal; a fade-fear or fear call would be speculative without a validated edge.",
+          "rationale": "Fear is rebuilding but VIX is not elevated, and the relief snap is dormant; no directional edge from the regime snap.",
           "strength": "weak"
         }
       ],
-      "key_risk": "A VIX spike into elevated territory would shift the lens into its stress-conditional regime where the IC rises, potentially invalidating this display-only reading and revealing a relative-strength edge."
+      "key_risk": "The concentration pattern has no forward edge; the next cross-section could show a completely different set of concentrating sectors, invalidating this snapshot entirely."
     },
     "structural": {
-      "stance": "The cross-group cluster map reveals a tight cyclical co-movement bundling Consumer Discretionary, Industrials, Financials, and Real Estate (top pair correlation 0.86). Leadership breadth is broad with low HHI across all four, confirming a genuine rotation into value/cyclicals rather than a single-name mirage.",
+      "stance": "The dominant cluster (Consumer Discretionary, Industrials, Financials, Real Estate) shows high cross-pair correlation (0.86) but low and declining intra-sector cohesion, suggesting a fragile, beta-driven grouping rather than a genuine supply-chain or theme spread. None of these sectors exhibit robust co-movement; the group is likely held together by common macro exposure rather than a distinct structural lead.",
       "candidates": [
-        {
-          "subject": "Industrials",
-          "lean": "none",
-          "rationale": "Highest relative strength within the cyclical cluster and deeply broad leadership, forming the core pair with Consumer Discretionary.",
-          "strength": "moderate"
-        },
         {
           "subject": "Consumer Discretionary",
           "lean": "none",
-          "rationale": "Broad participation and tight correlation with Industrials, though relative strength is lower.",
-          "strength": "weak"
+          "rationale": "High cross-correlation with Industrials but low cohesion (0.257) and falling (-0.072); broad participation masks weak internal synchrony, arguing against a thematic co-movement.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "none",
+          "rationale": "Strongest relative strength (RS pctile 0.786) in the cluster, yet cohesion is the lowest (0.226) and declining; leadership is broad but unsynchronized, preventing a reliable structural lead designation.",
+          "strength": "moderate"
         },
         {
           "subject": "Financials",
           "lean": "none",
-          "rationale": "Broad co-movement with the cyclical cluster despite low relative strength, adding to the theme's width.",
-          "strength": "weak"
+          "rationale": "Weak relative strength (RS pctile 0.123) despite broad breadth; low cohesion (0.299) and no stress-conditional cohering signal, reinforcing the view of a beta proxy rather than an independent theme.",
+          "strength": "moderate"
         },
         {
           "subject": "Real Estate",
           "lean": "none",
-          "rationale": "Broad-based and cohering with cyclicals, deepening the cluster beyond pure industrial exposure.",
-          "strength": "weak"
+          "rationale": "Highest cohesion (0.356) among cluster peers but still below thematic thresholds, with no cohesion gate trigger; broad-based gains but lacking a unifying supply-chain or policy linkage.",
+          "strength": "moderate"
         }
       ],
-      "key_risk": "A sharp rise in VIX above ~25 or a sudden spike in HHI within any cluster sector would fracture the broad co-movement and signal the theme is unwinding via single-name divergences."
+      "key_risk": "A sudden rise in sector cohesion (cohesion gate flipping to true) coincident with an identifiable catalyst (e.g., tariff relief, supply-chain rebuild program) would transform the cluster into a genuine structural theme and invalidate the beta-only read."
     }
   }
 }

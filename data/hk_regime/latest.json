@@ -33,10 +33,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 1.24,
+        "z": 1.2,
         "sign": -1,
         "risk": "off",
-        "level": 100.92
+        "level": 100.85
       },
       {
         "key": "vix",
@@ -57,7 +57,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.46,
+        "z": 1.45,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -291,7 +291,7 @@
     "dir_sign": -1,
     "confidence": "high",
     "confidence_zh": "\u9ad8",
-    "strength": 1.67,
+    "strength": 1.68,
     "dominance_ratio": 2.0,
     "agreement": 1.0,
     "runner_up": "southbound_appetite",
@@ -328,8 +328,8 @@
         "label": "China stimulus spillover",
         "label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
         "family": "growth",
-        "projection": -1.67,
-        "strength": 1.67,
+        "projection": -1.68,
+        "strength": 1.68,
         "direction": "China risk-off spilling into HK \u2014 H-shares & southbound lead down"
       },
       {
@@ -346,8 +346,8 @@
         "label": "US-rate repricing (via the peg)",
         "label_zh": "\u7f8e\u606f\u91cd\u5b9a\u4ef7\uff08\u7ecf\u8054\u6c47\uff09",
         "family": "rates",
-        "projection": 0.81,
-        "strength": 0.81,
+        "projection": 0.76,
+        "strength": 0.76,
         "direction": "US rates repricing higher \u2014 dollar & HIBOR up, the peg imports tightening"
       },
       {
@@ -355,8 +355,8 @@
         "label": "Global risk-on / risk-off",
         "label_zh": "\u5168\u7403\u98ce\u9669\u504f\u597d",
         "family": "risk",
-        "projection": 0.5,
-        "strength": 0.5,
+        "projection": 0.52,
+        "strength": 0.52,
         "direction": "global risk-ON \u2014 S&P up, VIX & dollar down, EM/copper bid (HK's dominant force)"
       },
       {
@@ -400,13 +400,13 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.071,
-      "roro_raw": -0.071,
+      "roro": -0.067,
+      "roro_raw": -0.067,
       "roro_state": "neutral",
-      "hk_roro_copper_gold": 1.58,
+      "hk_roro_copper_gold": 1.574,
       "hk_roro_spy": -0.321,
       "hk_roro_vix": 0.503,
-      "hk_roro_dxy": -1.245,
+      "hk_roro_dxy": -1.191,
       "hk_roro_eem": 0.974,
       "hk_roro_usdcny": 0.379,
       "hk_roro_southbound": -1.17,
@@ -420,7 +420,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.58,
+          "value": 1.574,
           "lean": "risk-on"
         },
         {
@@ -441,7 +441,7 @@
           "key": "dxy",
           "name_en": "US Dollar (20d)",
           "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-          "value": -1.245,
+          "value": -1.191,
           "lean": "risk-off"
         },
         {
@@ -2163,7 +2163,7 @@
           0.214,
           0.211,
           -0.04,
-          -0.071
+          -0.067
         ]
       },
       "recession": {
@@ -6903,7 +6903,7 @@
           68.3,
           68.1,
           49.0,
-          46.7
+          47.1
         ]
       }
     },
@@ -6914,14 +6914,14 @@
     "fe_score": 47,
     "band": "Neutral",
     "band_zh": "\u4e2d\u6027",
-    "roro": -0.071,
+    "roro": -0.067,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.58,
+        "value": 1.574,
         "pct": 98,
         "lean": "risk-on"
       },
@@ -6945,8 +6945,8 @@
         "key": "dxy",
         "name_en": "US Dollar (20d)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-        "value": -1.245,
-        "pct": 12,
+        "value": -1.191,
+        "pct": 13,
         "lean": "risk-off"
       },
       {
