@@ -203,11 +203,38 @@
     return out;
   }
 
+  // Intraday (hourly) bars from Polygon: [epochSec, o, h, l, c, v]. Time is a numeric
+  // UTC timestamp — LWC renders it on a time-of-day axis — distinct from the daily
+  // path's 'YYYY-MM-DD' strings, so a 4H render is never mixed with daily-stringed bars.
+  function normaliseIntra(data) {
+    return (data.bars || []).map(function (b) {
+      return { time: b[0], o: b[1], h: b[2], l: b[3], c: b[4], v: b[5] };
+    });
+  }
+  // 4-hour candles on a continuous UTC grid (TradingView-style, not session-reset):
+  // bucket hourly bars by floor(epoch / 4h); each bar is stamped at its bucket start.
+  function resample4H(rows) {
+    var out = [], cur = null, key = null, B = 4 * 3600;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i], k = Math.floor(r.time / B);
+      if (k !== key) { if (cur) out.push(cur); key = k; cur = { time: k * B, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v || 0 }; }
+      else { cur.h = Math.max(cur.h, r.h); cur.l = Math.min(cur.l, r.l); cur.c = r.c; cur.v += (r.v || 0); }
+    }
+    if (cur) out.push(cur);
+    return out;
+  }
+
   function priceFmt(last) {
     var prec = last >= 1 ? 2 : (last >= 0.1 ? 3 : 5);
     return { type: 'price', precision: prec, minMove: Math.pow(10, -prec) };
   }
   function fnum(x, p) { return (x == null || !isFinite(x)) ? '—' : x.toFixed(p == null ? 2 : p); }
+  function fmtTime(t) {   // daily bars carry 'YYYY-MM-DD' strings; intraday carries epoch seconds
+    if (typeof t !== 'number') return t;
+    var d = new Date(t * 1000), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getUTCFullYear() + '-' + p(d.getUTCMonth() + 1) + '-' + p(d.getUTCDate()) +
+           ' ' + p(d.getUTCHours()) + ':' + p(d.getUTCMinutes());
+  }
 
   // ---- the chart instance ---------------------------------------------------
   function Instance(host, ticker, opts) {
@@ -215,9 +242,14 @@
     // Per-market data location: US fetches ohlc/<T>.json; CN/CA/intl pass their own
     // dir (chinaohlc/…); HK passes opts.data inline (it already ships a close series).
     this.ohlcDir = this.opts.ohlcDir || 'ohlc';
+    // opts.intraday (US names with a Polygon intraday file) unlocks the 4H button;
+    // its hourly bars are lazy-fetched from intraday/<T>.json on first 4H select.
+    this.intraday = !!this.opts.intraday;
+    this.intradayRows = null;
     this.chart = null; this.S = {};            // series refs
     var pr = loadPrefs();
     this.tf = pr.tf || '1D';
+    if (this.tf === '4H') this.tf = '1D';      // 4H loads on demand, not at mount
     this.inds = new Set(pr.inds || ['rsi', 'stochrsi']);   // default: RSI + Stoch RSI
     this.ema = pr.ema !== false;               // EMA overlays default on
     this.rows = null; this.data = null;
@@ -265,10 +297,12 @@
     // toolbar
     var bar = document.createElement('div'); bar.className = 'bchart-bar';
     var seg = document.createElement('div'); seg.className = 'bchart-seg';
-    [['1D', '1D'], ['3D', '3D'], ['1W', tt('1W', '周')], ['1M', tt('1M', '月')]].forEach(function (tfp) {
+    var TFS = [['1D', '1D'], ['3D', '3D'], ['1W', tt('1W', '周')], ['1M', tt('1M', '月')]];
+    if (this.intraday) TFS.unshift(['4H', '4H']);   // intraday only where a Polygon file exists
+    TFS.forEach(function (tfp) {
       var b = document.createElement('button'); b.textContent = tfp[1]; b.dataset.tf = tfp[0];
       if (self.tf === tfp[0]) b.className = 'on';
-      b.onclick = function () { self.tf = tfp[0]; self.persist(); self.syncBar(); self.rerender(); };
+      b.onclick = function () { self.setTimeframe(tfp[0]); };
       seg.appendChild(b);
     });
     bar.appendChild(seg);
@@ -327,6 +361,25 @@
     if (this.wrap && this.wrap.classList.contains('bchart-full')) this.toggleFull();
   };
   Instance.prototype.rebuildUI = function () { if (this.rows) { this.buildUI(); this.rerender(); } };
+  // Timeframe switch. 4H lazy-loads its hourly intraday file once; daily-derived
+  // frames (1D/3D/1W/1M) just re-render. A failed/empty 4H fetch leaves the current
+  // frame in place (syncBar un-highlights 4H) — the button only shows for names we
+  // expect to have data, so this is a rare graceful no-op.
+  Instance.prototype.setTimeframe = function (tf) {
+    var self = this;
+    if (tf === '4H' && !this.intradayRows) {
+      fetch('intraday/' + safeName(this.ticker) + '.json')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (j && j.bars && j.bars.length) {
+            self.intradayRows = normaliseIntra(j);
+            self.tf = '4H'; self.persist(); self.syncBar(); self.rerender();
+          } else { self.syncBar(); }
+        }).catch(function () { self.syncBar(); });
+      return;
+    }
+    this.tf = tf; this.persist(); this.syncBar(); this.rerender();
+  };
   Instance.prototype.syncBar = function () {
     if (!this.bar) return; var self = this;
     this.bar.querySelectorAll('[data-tf]').forEach(function (b) { b.className = (self.tf === b.dataset.tf) ? 'on' : ''; });
@@ -381,14 +434,16 @@
         vertLine: { color: c.muted, width: 1, style: 3, labelBackgroundColor: c.link },
         horzLine: { color: c.muted, width: 1, style: 3, labelBackgroundColor: c.link } },
       rightPriceScale: { borderColor: c.line, scaleMargins: { top: 0.08, bottom: 0.08 } },
-      timeScale: { borderColor: c.line, rightOffset: 4, barSpacing: 8, minBarSpacing: 1.2, fixLeftEdge: false },
+      timeScale: { borderColor: c.line, rightOffset: 4, barSpacing: 8, minBarSpacing: 1.2, fixLeftEdge: false,
+        timeVisible: this.tf === '4H', secondsVisible: false },   // 4H needs a time-of-day axis
       handleScroll: { vertTouchDrag: false },   // let vertical swipes scroll the page
       handleScale: { axisPressedMouseMove: true }
     });
     this.chart = chart; this.S = {};
-    var rows = resample(this.rows, this.tf);
+    var rows = (this.tf === '4H') ? resample4H(this.intradayRows || []) : resample(this.rows, this.tf);
     this.view = rows;
-    var ohlc = this.data.o === 1;
+    if (!rows.length) { this.updateLegend(null); return; }   // safety: never build an empty chart
+    var ohlc = (this.tf === '4H') ? true : (this.data.o === 1);   // intraday is always OHLC
     var closes = rows.map(function (r) { return r.c; });
     var highs = rows.map(function (r) { return r.h; });
     var lows = rows.map(function (r) { return r.l; });
@@ -569,8 +624,8 @@
     var up = r.c >= prev, sgn = up ? 'up' : 'dn';
     var ch = r.c - prev, chp = prev ? (ch / prev * 100) : 0;
     var pp = (this.data.o === 1) ? 2 : 2;
-    var html = '<span class="t">' + this.ticker + '</span> <span class="k">' + r.time + '</span>';
-    if (this.data.o === 1) {
+    var html = '<span class="t">' + this.ticker + '</span> <span class="k">' + fmtTime(r.time) + '</span>';
+    if (this.tf === '4H' || this.data.o === 1) {
       html += '<div class="row">O<span class="v"> ' + fnum(r.o, pp) + '</span> H<span class="v"> ' + fnum(r.h, pp) +
               '</span> L<span class="v"> ' + fnum(r.l, pp) + '</span> C<span class="' + sgn + '"> ' + fnum(r.c, pp) + '</span> ' +
               '<span class="' + sgn + '">' + (up ? '+' : '') + fnum(chp, 2) + '%</span></div>';

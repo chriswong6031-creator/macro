@@ -226,6 +226,46 @@ def build_nonus(site: Path) -> dict[str, int]:
     return out
 
 
+INTRADAY_MAX_BARS = 1500   # ~6 months of US RTH hourly bars, with headroom
+
+
+def emit_intraday(site: Path) -> int:
+    """Emit site/intraday/<T>.json (hourly bars: [epochSec, o, h, l, c, v]) from
+    data/intraday/<T>.parquet (scripts/build_polygon_intraday). chart.js aggregates these
+    to 4-hour candles client-side for the US 4H timeframe. Intraday carries a true open
+    (Polygon), so 4H candles are real OHLC. No-op when the intraday store is absent."""
+    src = config.data_dir() / "intraday"
+    if not src.exists():
+        return 0
+    outdir = site / "intraday"
+    outdir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for p in sorted(src.glob("*.parquet")):
+        try:
+            df = pd.read_parquet(p)
+        except Exception as e:  # noqa: BLE001
+            log.warning("intraday %s unreadable (%s)", p.name, e)
+            continue
+        if df.empty or "close" not in df:
+            continue
+        df = df.tail(INTRADAY_MAX_BARS)
+        bars = []
+        for ts, row in df.iterrows():
+            c = row.get("close")
+            if c is None or pd.isna(c):
+                continue
+            v = row.get("volume")
+            bars.append([int(pd.Timestamp(ts).timestamp()),
+                         _round(row.get("open")), _round(row.get("high")),
+                         _round(row.get("low")), _round(c),
+                         None if v is None or pd.isna(v) else int(v)])
+        if bars:
+            (outdir / f"{_safe(p.stem)}.json").write_text(
+                json.dumps({"t": p.stem, "intraday": 1, "bars": bars}, separators=(",", ":")))
+            n += 1
+    return n
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -234,6 +274,7 @@ def main() -> None:
              written, candles, written - candles)
     for mkt, n in build_nonus(site).items():
         log.info("chart data: wrote %d %s ohlc files", n, mkt)
+    log.info("chart data: wrote %d US intraday (4H) files", emit_intraday(site))
 
 
 if __name__ == "__main__":
