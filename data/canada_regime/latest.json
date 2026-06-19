@@ -244,8 +244,8 @@
     "terms_of_trade": "deteriorating",
     "coupling": {
       "boc_rate": 2.25,
-      "goc_2y": 2.82,
-      "goc_10y": 3.42,
+      "goc_2y": 2.78,
+      "goc_10y": 3.38,
       "us_2y": null,
       "us_10y": null,
       "goc_minus_ust_2y": null,

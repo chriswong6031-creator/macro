@@ -99,9 +99,9 @@
     "label": "dominant",
     "name": "Housing Chain",
     "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
-    "rank": 11,
+    "rank": 12,
     "reco": "hold",
-    "score": 63
+    "score": 62
   },
   "mag7": {
     "label": "deteriorating",
@@ -147,7 +147,7 @@
     "label": "dominant",
     "name": "Nuclear & SMR Power",
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
-    "rank": 12,
+    "rank": 11,
     "reco": "accumulate",
     "score": 63
   },
