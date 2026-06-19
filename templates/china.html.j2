@@ -333,6 +333,7 @@
   .nav-dd:hover > .nav-dd-menu, .nav-dd:focus-within > .nav-dd-menu { opacity: 1; visibility: visible; transform: translateY(0); }
   .nav-dd-menu a { display: block; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--muted); text-decoration: none; white-space: nowrap; }
   .nav-dd-menu a:hover, .nav-dd-menu a.active { background: var(--panel2); color: var(--text); }
+{% include "_cmd_hero.css.j2" %}
 </style>
 </head>
 <body>
@@ -374,29 +375,73 @@
   {% endif %}
 
   {% if mode != 'stocks' %}
-  <!-- ===================== MACRO REGIME DASHBOARD (compact scorecard) ===================== -->
-  <div class="panel span12" id="regime-hero">
-    <h1>{{ t('China A-Share Regime', '中国A股周期') }}</h1>
-    <h2 style="margin-top:1px">{{ t('Macro Regime Dashboard', '宏观周期仪表盘') }} · {{ latest.date }}</h2>
-    <div class="hero">
-      <span class="quad-badge quad-{{ latest.quad }}">{{ td(latest.quad_name) }}</span>
-      <div class="metric"><span class="v {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span><span class="k">{{ t('Growth', '增长') }}</span></div>
-      <div class="metric"><span class="v {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.inflation_score) }}</span><span class="k">{{ t('Inflation', '通胀') }}</span></div>
-      <div class="metric"><span class="v">{{ (latest.confidence*100)|round|int }}%</span><span class="k">{{ t('Confidence', '置信度') }}</span></div>
-      <div class="metric"><span class="chip c-info">{{ t('PBoC', '央行') }} {{ td(latest.liquidity_overlay) }}</span><span class="k">{{ t('Liquidity', '流动性') }}</span></div>
-      <div class="metric"><span class="chip c-muted">{{ td(latest.cycle_tag) }}</span><span class="k">{{ t('Cycle', '周期阶段') }}</span></div>
+  <!-- ===================== CHINA A-SHARE REGIME — command-center hero ===================== -->
+  {% set _ol = {
+    'Q1': ('Falling inflation with steady growth — the friendliest backdrop for A-share quality &amp; growth. PBoC liquidity and the credit impulse set the cycle.', '通胀回落、增长平稳 — 对 A 股质量与成长最友好的环境。央行流动性与社融脉冲决定周期。'),
+    'Q2': ('Growth and inflation both firming — favour cyclicals, materials, energy and banks.', '增长与通胀同步走强 — 偏好周期股、材料、能源与银行。'),
+    'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital first.', '通胀粘性叠加增长放缓 — 最危险的周期；优先保住本金。'),
+    'Q4': ('A growth scare with cooling inflation — lean defensive; staples, utilities and bonds over high-beta.', '增长恐慌伴随通胀降温 — 偏防御；必需消费、公用与债券优于高贝塔。')
+  } %}
+  <div class="panel span12 cmd-hero" id="regime-radar">
+    <div class="hero-bar">
+      <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
+      <div class="hero-loc">
+        <div class="loc-axes"><span>{{ t('GROWTH','增长') }} ↑</span><span>{{ t('INFL','通胀') }} →</span></div>
+        <div class="qmini">
+          <span class="qm{{ ' on' if latest.quad == 'Q1' }}" style="--qc:var(--q1)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q2' }}" style="--qc:var(--q2)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q4' }}" style="--qc:var(--q4)"></span>
+          <span class="qm{{ ' on' if latest.quad == 'Q3' }}" style="--qc:var(--q3)"></span>
+        </div>
+      </div>
+      <!-- CENTER — headline regime + plain-English standfirst -->
+      <div class="hero-main">
+        <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('CHINA A-SHARE REGIME', '中国A股周期') }}
+          · <span class="num {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ t('G','增') }} {{ '%+.2f'|format(latest.growth_score) }}</span>
+          <span class="num {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ t('I','胀') }} {{ '%+.2f'|format(latest.inflation_score) }}</span>
+          {{ help("The four market regimes — combinations of growth and inflation DIRECTION (quadrants, not calendar quarters). GOLDILOCKS = growth↑ inflation↓ (best for quality & growth). REFLATION = both rising (cyclicals, materials, banks). STAGFLATION = inflation↑ growth↓ (the dangerous one). GROWTH SCARE = both falling (defensives & bonds). The label only changes after 7 straight days of evidence, so it doesn't flip-flop.", "四种市场周期 — 增长与通胀方向的组合（象限，而非日历季度）。理想增长＝增长↑通胀↓（最利好质量与成长）；再通胀＝双升（周期股、材料、银行）；滞胀＝通胀↑增长↓（最危险）；增长恐慌＝双降（防御与债券）。标签需连续 7 天证据一致才改变，故不反复横跳。") }}
+        </div>
+        <div class="hero-regime">
+          <span class="hr-dot" style="background:var(--q{{ latest.quad[1] }});box-shadow:0 0 14px var(--q{{ latest.quad[1] }})"></span>
+          <h1 class="hr-name">{{ td(latest.quad_name) }}</h1>
+        </div>
+        <p class="hero-says">{{ t(_ol[latest.quad][0], _ol[latest.quad][1]) }}</p>
+        {% if pb and pb.quad_meaning %}<p class="hero-says" style="margin-top:7px">{{ t(pb.quad_meaning.en, pb.quad_meaning.zh) }}</p>{% endif %}
+      </div>
+      <!-- RIGHT — vitals strip: China's native drivers -->
+      <div class="hero-vitals">
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('REGIME WATCH', '周期预警') }}</span>
+            {{ help("Is the current regime about to change? STABLE = no pending shift. BUILDING = evidence is stacking toward a new quadrant; the label flips only after 7 straight days, so this front-runs it.", "当前周期是否即将改变？稳定＝无待定切换。累积中＝证据正在向新象限堆积；标签需连续 7 天才翻转，故此处提前预示。") }}</div>
+          {% if latest.pending_quad in ['Q1','Q2','Q3','Q4'] and latest.pending_days %}
+          <span class="v-chip tone-warn">{{ t('BUILDING', '累积中') }} → {{ td({'Q1':'Goldilocks','Q2':'Reflation','Q3':'Stagflation','Q4':'Growth scare'}[latest.pending_quad]) }}</span>
+          <span class="v-mean">{{ latest.pending_days }}{{ t('d of 7 — evidence stacking', '/7 天 — 证据累积') }}</span>
+          {% else %}
+          <span class="v-chip">{{ t('STABLE', '稳定') }}</span>
+          <span class="v-mean">{{ t('no pending shift', '无待定切换') }}</span>
+          {% endif %}
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span>
+            {{ help("How many of the underlying indicators point the same way. Mixed (&lt;30%) = expect chop, size down. OK (30–45%). Solid (&gt;45%) = the regime call is well-supported.", "底层指标中有多少指向同一方向。分歧（&lt;30%）= 预期震荡，缩小仓位。尚可（30–45%）。扎实（&gt;45%）= 周期判断有充分支撑。") }}</div>
+          <span class="v-num num-lg">{{ (latest.confidence*100)|round|int }}<small>%</small></span>
+          <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('PBoC LIQUIDITY', '央行流动性') }}</span>
+            {{ help("The PBoC money tide — policy stance (RRR / OMO / rates) plus the credit impulse that historically leads A-share risk by ~2 quarters. Expanding = tailwind, contracting = headwind.", "央行资金潮 — 政策立场（降准／公开市场／利率）加上历史上领先 A 股风险约两个季度的社融脉冲。扩张＝顺风，收缩＝逆风。") }}</div>
+          <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
+          <span class="v-mean">{{ t('policy + credit impulse', '政策＋社融脉冲') }}</span>
+        </div>
+        <div class="vital">
+          <div class="v-top"><span class="v-label">{{ t('CYCLE', '商业周期') }}</span>
+            {{ help("Business-cycle position — the slower-moving multi-year backdrop. Context for patience, not a trade trigger.", "商业周期位置 — 变化更慢的多年期背景。决定耐心，而非交易触发。") }}</div>
+          <span class="v-chip">{{ td(latest.cycle_tag) }}</span>
+          <span class="v-mean">{{ t('multi-year backdrop', '多年期背景') }}</span>
+        </div>
+      </div>
     </div>
-    <div class="herogauges">
-      <div><div class="hg-l"><span>{{ t('Growth', '增长') }} <span class="muted" style="font-weight:400">{{ t('falling ↔ rising', '下行 ↔ 上行') }}</span></span><span class="hv {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</span></div><div class="gauge"><i style="left:{{ ((latest.growth_score+1)/2*100)|round(1) }}%"></i></div></div>
-      <div><div class="hg-l"><span>{{ t('Inflation', '通胀') }} <span class="muted" style="font-weight:400">{{ t('falling ↔ rising', '下行 ↔ 上行') }}</span></span><span class="hv {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.inflation_score) }}</span></div><div class="gauge"><i style="left:{{ ((latest.inflation_score+1)/2*100)|round(1) }}%"></i></div></div>
-    </div>
-    {% if pb and pb.quad_meaning %}<p class="qmeaning">{{ t(pb.quad_meaning.en, pb.quad_meaning.zh) }}</p>{% endif %}
-    {% if latest.pending_quad in ['Q1','Q2','Q3','Q4'] and latest.pending_days %}
-    <p class="regwatch">⚠️ {{ t('Regime watch', '周期预警') }}: {{ t('evidence is building toward', '证据正在累积，指向') }}
-      <b>{{ td({'Q1':'Goldilocks','Q2':'Reflation','Q3':'Stagflation','Q4':'Growth scare'}[latest.pending_quad]) }}</b>
-      ({{ latest.pending_days }}{{ t(' day(s) so far; the label flips after 7)', ' 天；标签将在第 7 天翻转）') }}</p>
-    {% endif %}
-    {% if latest.confirming %}<p class="note" style="margin:10px 0 0">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
+    {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
 
   <!-- ===================== FIRED ALERTS (today) ===================== -->
