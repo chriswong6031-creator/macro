@@ -109,3 +109,69 @@ def test_derisk_score_unit_range():
     if d is not None:
         dd = d.dropna()
         assert ((dd >= 0) & (dd <= 1)).all()
+
+
+def test_detail_metadata_shapes():
+    """The "how it works" explainer metadata that the flagship detail pages render."""
+    from engine import china_masterminds as M
+    # four conviction factors, weights match the engine's W_* and sum to 1
+    assert len(M.FACTORS) == 4
+    assert abs(sum(f["weight"] for f in M.FACTORS) - 1.0) < 1e-9
+    keys = {f["key"]: f["weight"] for f in M.FACTORS}
+    assert keys == {"regime": M.W_REGIME, "trend": M.W_TREND, "carry": M.W_CARRY, "xmom": M.W_XMOM}
+    assert keys["regime"] == max(keys.values())          # regime is the largest weight in China
+    for f in M.FACTORS:
+        assert {"icon", "name_en", "name_zh", "tag_en", "tag_zh", "desc_en", "desc_zh",
+                "src_en", "src_zh"} <= set(f)
+    # six-asset Mainland universe
+    assert sum(len(c["rows"]) for c in M.UNIVERSE) == 6
+    for c in M.UNIVERSE:
+        assert {"cls_en", "cls_zh", "icon", "rows"} <= set(c)
+    # sizing pipeline + per-profile blurb/goal (bilingual)
+    assert len(M.PIPELINE) == 6 and all({"icon", "en", "zh"} <= set(p) for p in M.PIPELINE)
+    for pk in ("conservative", "moderate", "aggressive"):
+        p = M.PROFILES[pk]
+        assert {"blurb_en", "blurb_zh", "goal_en", "goal_zh"} <= set(p)
+
+
+def test_regime_state_contract():
+    """The live credit/vol/margin regime layer exposed to the detail page."""
+    from engine import china_masterminds as M
+    P = M._prices()
+    if P.empty:
+        pytest.skip("china price store not present")
+    rs = M.regime_state(P)
+    if rs is None:
+        pytest.skip("no de-risk leg resolved locally")
+    assert {"blended", "tilt", "pct", "state_en", "state_zh", "tone", "legs", "asof"} <= set(rs)
+    assert 0.0 <= rs["blended"] <= 1.0 and 0 <= rs["pct"] <= 100
+    assert -1.0 <= rs["tilt"] <= 1.0 and rs["tone"] in ("off", "mixed", "on")
+    for lg in rs["legs"]:
+        assert lg["key"] in M._DERISK_W and 0.0 <= lg["value"] <= 1.0
+        assert lg["weight"] == M._DERISK_W[lg["key"]]
+        assert {"name_en", "name_zh", "src_en", "src_zh", "desc_en", "desc_zh"} <= set(lg)
+
+
+def test_detail_page_renders_rich_sections():
+    """The cnmm detail page now renders the rich mastermind template (hero + explainer +
+    live regime panel), bilingual, not the lean active_detail page."""
+    from engine import china_masterminds as M
+    from scripts import build_china_masterminds as B
+    P = M._prices()
+    if P.empty:
+        pytest.skip("china price store not present")
+    res = M.backtest("moderate", P)
+    regime = M.regime_state(P)
+    html = _env().get_template("mastermind_detail.html.j2").render(
+        **B._detail_vm("moderate", res, "now", regime), C=_C)
+    for needle in ("mm-stage", "How this strategy works", "four conviction factors",
+                   "The investable universe", "From conviction to position", "risk dials"):
+        assert needle in html, f"missing section: {needle}"
+    # China-tailored explainer copy (not the US "nine assets" text)
+    assert "Mainland-investible assets" in html and "nine assets across five classes" not in html
+    assert "regime-led four-factor conviction" in html
+    # bilingual: both language spans present for the China-specific copy
+    assert "体制主导" in html and "境内可投" in html
+    if regime:                                            # live regime panel when a leg resolves
+        assert "Live regime layer" in html and 'class="rg-leg"' in html
+        assert "Credit impulse" in html and "信用脉冲" in html

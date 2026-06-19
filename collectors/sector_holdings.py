@@ -130,35 +130,57 @@ class StockPriceAdapter(Adapter):
     def __init__(self) -> None:
         self.ycfg = config.load()["yahoo"]
 
+    def _needs_full(self, ticker: str) -> bool:
+        """A ticker whose stored history is missing volume for a meaningful share of
+        its rows needs a one-time full-history re-fetch (volume was added to this
+        adapter after the price history was first seeded). Self-heals the gap; once
+        coverage is restored the ticker falls back to the cheap daily window."""
+        old = store.read("stocks", ticker)
+        if old is None or old.empty or "volume" not in old.columns:
+            return True
+        return float(old["volume"].notna().mean()) < 0.95
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         import yfinance as yf
         tickers = top10_union()
         if not tickers:
             raise RuntimeError("no holdings stored yet — run sector_holdings first")
-        period = "max" if full_history else "1mo"
+        # daily runs fetch a short window, EXCEPT thin-volume tickers which get a
+        # full-history backfill so volume can never silently stay sparse.
+        if full_history:
+            groups = [("max", tickers)]
+        else:
+            heal = [t for t in tickers if self._needs_full(t)]
+            groups = [("1mo", [t for t in tickers if t not in heal])]
+            if heal:
+                log.info("stocks: full-history backfill for %d thin-volume tickers", len(heal))
+                groups.append(("max", heal))
         frames: dict[str, pd.DataFrame] = {}
         bs = self.ycfg["batch_size"]
-        for i in range(0, len(tickers), bs):
-            batch = tickers[i:i + bs]
-            for attempt in range(self.ycfg["retries"]):
-                try:
-                    df = yf.download(batch, period=period, auto_adjust=True,
-                                     progress=False, group_by="ticker", threads=True)
-                    break
-                except Exception as e:  # noqa: BLE001
-                    if attempt == self.ycfg["retries"] - 1:
-                        raise
-                    time.sleep(self.ycfg["backoff_base_s"] * (2 ** attempt))
-            for t in batch:
-                try:
-                    cols = [c for c in ["Close", "High", "Low", "Volume"] if c in df[t].columns]
-                    sub = df[t][cols].rename(columns={"Close": "close", "High": "high",
-                                                      "Low": "low", "Volume": "volume"})
-                    sub = sub.dropna(subset=["close"])
-                    if not sub.empty:
-                        frames[t] = sub
-                except KeyError:
-                    log.warning("stocks: no data for %s", t)
+        for period, tlist in groups:
+            for i in range(0, len(tlist), bs):
+                batch = tlist[i:i + bs]
+                if not batch:
+                    continue
+                for attempt in range(self.ycfg["retries"]):
+                    try:
+                        df = yf.download(batch, period=period, auto_adjust=True,
+                                         progress=False, group_by="ticker", threads=True)
+                        break
+                    except Exception as e:  # noqa: BLE001
+                        if attempt == self.ycfg["retries"] - 1:
+                            raise
+                        time.sleep(self.ycfg["backoff_base_s"] * (2 ** attempt))
+                for t in batch:
+                    try:
+                        cols = [c for c in ["Close", "High", "Low", "Volume"] if c in df[t].columns]
+                        sub = df[t][cols].rename(columns={"Close": "close", "High": "high",
+                                                          "Low": "low", "Volume": "volume"})
+                        sub = sub.dropna(subset=["close"])
+                        if not sub.empty:
+                            frames[t] = sub
+                    except KeyError:
+                        log.warning("stocks: no data for %s", t)
         if len(frames) < len(tickers) * 0.7:
             raise RuntimeError(f"stocks: only {len(frames)}/{len(tickers)} returned")
         return frames
