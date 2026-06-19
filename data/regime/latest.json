@@ -260,7 +260,14 @@
       "chg_20d_pct": 9.49
     }
   },
-  "alerts": [],
+  "alerts": [
+    {
+      "rule": "gex_flip_cross",
+      "severity": "warn",
+      "message": "GEX: net GEX changed sign (net -9bn, spot vs flip -7.7%)",
+      "message_zh": "GEX\uff1anet GEX changed sign\uff08\u51c0 -9bn\uff0c\u73b0\u4ef7\u76f8\u5bf9\u7ffb\u8f6c\u70b9 -7.7%\uff09"
+    }
+  ],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.505,
@@ -408,14 +415,19 @@
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
     "tone_score": 0.0,
-    "guidance_direction": "unknown",
+    "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "guidance_direction",
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -443,8 +455,8 @@
       "vix_front_future": 18.49,
       "vix_vs_front": 0.89,
       "vix_reliable": true,
-      "vix_intraday_high": 0.0,
-      "vix_wick_pct": -100.0,
+      "vix_intraday_high": 17.6,
+      "vix_wick_pct": 7.3,
       "vrp_pctile": 0.13,
       "capitulation_active": true,
       "capitulation_strong": false,
@@ -464,7 +476,7 @@
   "cross_asset": {
     "asof": "2026-06-18",
     "verdict": "concentrated",
-    "headline": "CONCENTRATED \u2014 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 7% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.",
+    "headline": "CONCENTRATED \u2014 3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 6% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.",
     "window_d": 63,
     "markets": [
       "US",
@@ -474,17 +486,17 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.436,
-    "absorption_pctile_5y": 0.93,
+    "absorption_ratio": 0.438,
+    "absorption_pctile_5y": 0.94,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.334,
+    "mean_abs_corr": 0.336,
     "pc1_loadings": {
-      "US": 0.54,
-      "Crypto": 0.32,
-      "China": 0.3,
+      "US": 0.53,
+      "Crypto": 0.33,
+      "China": 0.29,
       "HK": 0.28,
       "Commodities": 0.52,
-      "Dollar": 0.41
+      "Dollar": 0.42
     },
     "dominant_cluster": [
       "US",
@@ -510,29 +522,29 @@
       {
         "a": "US",
         "b": "Crypto",
-        "corr": 0.53
+        "corr": 0.51
       }
     ],
     "corr_matrix": {
       "US": {
         "US": 1.0,
-        "Crypto": 0.53,
+        "Crypto": 0.51,
         "China": 0.24,
         "HK": 0.22,
         "Commodities": 0.63,
         "Dollar": 0.59
       },
       "Crypto": {
-        "US": 0.53,
+        "US": 0.51,
         "Crypto": 1.0,
-        "China": -0.11,
-        "HK": -0.13,
-        "Commodities": 0.3,
-        "Dollar": 0.35
+        "China": -0.12,
+        "HK": -0.11,
+        "Commodities": 0.31,
+        "Dollar": 0.39
       },
       "China": {
         "US": 0.24,
-        "Crypto": -0.11,
+        "Crypto": -0.12,
         "China": 1.0,
         "HK": 0.69,
         "Commodities": 0.38,
@@ -540,7 +552,7 @@
       },
       "HK": {
         "US": 0.22,
-        "Crypto": -0.13,
+        "Crypto": -0.11,
         "China": 0.69,
         "HK": 1.0,
         "Commodities": 0.34,
@@ -548,7 +560,7 @@
       },
       "Commodities": {
         "US": 0.63,
-        "Crypto": 0.3,
+        "Crypto": 0.31,
         "China": 0.38,
         "HK": 0.34,
         "Commodities": 1.0,
@@ -556,7 +568,7 @@
       },
       "Dollar": {
         "US": 0.59,
-        "Crypto": 0.35,
+        "Crypto": 0.39,
         "China": -0.01,
         "HK": -0.02,
         "Commodities": 0.48,
@@ -609,7 +621,7 @@
     ],
     "invalidation": "Fades if oil (WTI) reverses and the rest of the inflation fingerprint stops confirming.",
     "invalidation_zh": "\u82e5\u539f\u6cb9(WTI)\u53cd\u8f6c\u3001\u4e14\u901a\u80c0\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
-    "absorption_pctile": 0.93,
+    "absorption_pctile": 0.94,
     "scores": [
       {
         "driver": "oil_shock",
@@ -661,8 +673,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": 0.54,
-        "strength": 0.54,
+        "projection": 0.26,
+        "strength": 0.26,
         "direction": "crypto liquidity surging \u2014 BTC/ETH lead up"
       },
       {
@@ -679,8 +691,8 @@
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
         "family": "liquidity",
-        "projection": -0.04,
-        "strength": 0.04,
+        "projection": -0.1,
+        "strength": 0.1,
         "direction": "net liquidity draining \u2014 risk headwind"
       },
       {
@@ -697,7 +709,7 @@
   },
   "portfolio": {
     "asof": "2026-06-18",
-    "headline": "Equal-weighting all 6 market views puts 38% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.427). Diversification ratio 1.71.",
+    "headline": "Equal-weighting all 6 market views puts 38% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.425). Diversification ratio 1.7.",
     "risk_budget": {
       "window_d": 126,
       "markets": [
@@ -719,16 +731,16 @@
           "Dollar": 0.167
         },
         "risk_contrib": {
-          "US": 0.126,
-          "Crypto": 0.381,
-          "China": 0.086,
+          "US": 0.125,
+          "Crypto": 0.382,
+          "China": 0.085,
           "HK": 0.098,
           "Commodities": 0.278,
           "Dollar": 0.031
         },
         "port_vol_ann": 0.133,
-        "diversification_ratio": 1.65,
-        "max_risk_contrib": 0.381
+        "diversification_ratio": 1.64,
+        "max_risk_contrib": 0.382
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
@@ -741,12 +753,12 @@
           "Dollar": 0.419
         },
         "risk_contrib": {
-          "US": 0.201,
-          "Crypto": 0.112,
+          "US": 0.199,
+          "Crypto": 0.113,
           "China": 0.158,
           "HK": 0.156,
           "Commodities": 0.207,
-          "Dollar": 0.166
+          "Dollar": 0.167
         },
         "port_vol_ann": 0.087,
         "diversification_ratio": 1.66,
@@ -755,12 +767,12 @@
       "erc": {
         "scheme": "erc",
         "weights": {
-          "US": 0.145,
+          "US": 0.146,
           "Crypto": 0.068,
-          "China": 0.16,
+          "China": 0.161,
           "HK": 0.134,
           "Commodities": 0.066,
-          "Dollar": 0.427
+          "Dollar": 0.425
         },
         "risk_contrib": {
           "US": 0.167,
@@ -771,7 +783,7 @@
           "Dollar": 0.167
         },
         "port_vol_ann": 0.086,
-        "diversification_ratio": 1.71,
+        "diversification_ratio": 1.7,
         "max_risk_contrib": 0.167
       }
     },
@@ -917,16 +929,16 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-19T09:02:59.899787+00:00",
+    "built": "2026-06-19T13:18:10.502036+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": null,
-      "m3": 3.76,
-      "m6": 3.96,
+      "m1": 3.63,
+      "m3": 3.77,
+      "m6": 3.98,
       "m12": 4.12
     },
     "implied_source_en": "ZQ fed-funds futures",
@@ -936,9 +948,9 @@
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.83,
-      "m6": 4.03,
-      "m12": 4.14
+      "m3": 3.84,
+      "m6": 4.04,
+      "m12": 4.15
     },
     "dots": [
       {
@@ -958,8 +970,8 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.8,
-      "market": 3.96,
-      "gap_bp": 17,
+      "market": 3.98,
+      "gap_bp": 18,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e"
     },
@@ -968,8 +980,8 @@
     "rate_exp_proxy": 0.57,
     "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% \u2192 4.12%)",
     "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f2\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 4.12%\uff09",
-    "read_en": "At end-2026 the market implies 3.96% vs the Fed's 3.80% median dot (+17bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.80pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.96% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+17\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.80\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "read_en": "At end-2026 the market implies 3.98% vs the Fed's 3.80% median dot (+18bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.80pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.98% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+18\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.80\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
@@ -979,17 +991,19 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -2.0,
-    "guidance": "unknown",
-    "market_vs_fed_bp": 17.0,
+    "guidance": "on_hold",
+    "market_vs_fed_bp": 18.0,
     "market_vs_fed_en": "market more hawkish than the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e",
     "drivers_en": [
       "market prices ~2.0 hike(s) over 12m",
-      "market more hawkish than the Fed (+17bp)"
+      "statement guidance on-hold",
+      "market more hawkish than the Fed (+18bp)"
     ],
     "drivers_zh": [
       "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea62.0\u6b21\u52a0\u606f",
-      "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+17bp\uff09"
+      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
+      "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+18bp\uff09"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -2528,7 +2542,7 @@
     "defer_to": null,
     "drivers": {
       "one_factor": true,
-      "absorption_pctile": 0.93,
+      "absorption_pctile": 0.94,
       "macro_shock": false,
       "primary": "oil_shock",
       "primary_label": "Oil shock",
@@ -3976,59 +3990,59 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4192.9,
+        "price": 4169.2,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -7.6,
-        "pct_vs_200dma": -5.6,
-        "rsi14": 37.0,
+        "pct_vs_50dma": -8.1,
+        "pct_vs_200dma": -6.2,
+        "rsi14": 36.0,
         "macd_pos": true,
-        "off_52w_high_pct": -21.2,
+        "off_52w_high_pct": -21.6,
         "season_this": "Jun: -0.8% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.8%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -4.2
+        "mom_60d_pct": -4.7
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 76.01,
+        "price": 76.42,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -18.8,
-        "pct_vs_200dma": 3.0,
-        "rsi14": 31.0,
+        "pct_vs_50dma": -18.3,
+        "pct_vs_200dma": 3.5,
+        "rsi14": 32.0,
         "macd_pos": false,
-        "off_52w_high_pct": -32.7,
+        "off_52w_high_pct": -32.3,
         "season_this": "Jun: +2.4% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.4%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -19.5
+        "mom_60d_pct": -19.1
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.36,
+        "price": 6.35,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 1.8,
-        "pct_vs_200dma": 13.8,
+        "pct_vs_50dma": 1.6,
+        "pct_vs_200dma": 13.6,
         "rsi14": 50.0,
         "macd_pos": false,
-        "off_52w_high_pct": -4.3,
-        "season_this": "Jun: -0.5% avg, up 58% of years (n=26)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c58% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 16.8
+        "off_52w_high_pct": -4.5,
+        "season_this": "Jun: -0.5% avg, up 54% of years (n=26)",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": 16.6
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 100.81,
+        "price": 100.78,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 1.8,
         "pct_vs_200dma": 2.1,
-        "rsi14": 70.0,
+        "rsi14": 69.0,
         "macd_pos": true,
-        "off_52w_high_pct": -0.0,
+        "off_52w_high_pct": -0.1,
         "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
         "mom_60d_pct": 0.9

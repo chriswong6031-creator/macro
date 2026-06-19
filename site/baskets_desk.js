@@ -89,6 +89,12 @@ function renderThemeDesk(){
 function renderMacroCtx(){
   if(!THEME) return;
   const m=THEME.macro_context||{};
+  const el=document.getElementById('macro-ctx');
+  // markets without a single macro-regime snapshot (e.g. the cross-country Intl book) carry no
+  // backdrop — hide the row rather than show a line of em-dashes.
+  const empty=!m.quad_name&&!m.quad&&(!m.fed_dir||m.fed_dir==='unknown')&&!m.nfci_state&&!m.cycle&&!m.dollar_regime&&!m.bond_cycle;
+  if(empty){ if(el) el.style.display='none'; return; }
+  if(el) el.style.display='';
   const item=(en,zh,v)=>`<span><span class="mc-k">${L(en,zh)}:</span> <b>${esc(v==null?'—':v)}</b></span>`;
   document.getElementById('macro-ctx').innerHTML=
     `<span>${L('Macro backdrop','宏观背景')}: <b>${esc(m.quad_name||m.quad||'—')}</b></span>`
@@ -131,7 +137,7 @@ function renderConcentration(){
   const adc=(en,zh,v)=>`<div class="adc"><div class="k">${L(en,zh)}</div><div class="v ${v==null?'muted':(v<1?'neg':'pos')}">${v==null?'—':(+v).toFixed(2)}</div></div>`;
   const narrow=`<div class="panel pad" style="border-left:3px solid ${vv[0]}">
     <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center">
-      <div><span class="muted sm">${L('S&P breadth','标普广度')}</span><div style="font-size:18px;font-weight:740;color:${vv[0]}">${L(vv[1],vv[2])}</div></div>
+      <div><span class="muted sm">${L((THEME.bench_label||'S&P')+' breadth',(THEME.bench_label_zh||'标普')+'广度')}</span><div style="font-size:18px;font-weight:740;color:${vv[0]}">${L(vv[1],vv[2])}</div></div>
       <div class="adgrid">${adc('A/D today','今日',mc.ad_ratio)}${adc('3-day','3日',mc.ad_3d)}${adc('weekly','周',mc.ad_w)}${adc('monthly','月',mc.ad_m)}</div>
       <div class="muted sm">${L('above 50d','站上50日')} <b>${mc.pct_above_50!=null?mc.pct_above_50+'%':'—'}</b> · ${L('above 200d','站上200日')} <b>${mc.pct_above_200!=null?mc.pct_above_200+'%':'—'}</b> · ${L('new hi/lo','新高/低')} <b class="pos">${mc.nh}</b>/<b class="neg">${mc.nl}</b></div>
     </div></div>`;
@@ -141,27 +147,83 @@ function renderConcentration(){
     + `<div class="rotwrap" style="margin-top:12px">${lead(THEME.breadth_leaders,'Owns the advance','主导上涨','▲')}${lead(THEME.breadth_laggards,'In the decline','处于下跌','▽')}</div>`
     + `<div class="rotwrap" style="margin-top:12px">${tlist(THEME.entries,'Clean entries (emerging)','干净入场（新兴）','entry')}${tlist(THEME.rollover,'Roll-over watch','回落观察','roll')}</div>`;
 }
+// ---- scorecard detail popups (click a scorecard → floating list of names) ---
+function _bbase(){ return window.BASKET_BASE||'basket/'; }
+function _scOverlay(){
+  let ov=document.getElementById('sc-modal');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='sc-modal'; ov.className='scmodal';
+    ov.innerHTML='<div class="scm-card" role="dialog" aria-modal="true"><button class="scm-x" aria-label="close">✕</button><div class="scm-hd"></div><div class="scm-sub"></div><div class="scm-bd"></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',e=>{ if(e.target===ov) scClose(); });
+    ov.querySelector('.scm-x').onclick=scClose;
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') scClose(); });
+  }
+  return ov;
+}
+function scClose(){ const ov=document.getElementById('sc-modal'); if(ov) ov.classList.remove('open'); }
+function _nmRow(x,withRet){
+  // name shows the human name where we have one, else the ticker; the ticker sub-label
+  // appears only in the language that actually has a name (else it would duplicate the ticker).
+  const nm=`<span class="l-en">${esc(x.n||x.t)}</span><span class="l-zh">${esc(x.n_zh||x.n||x.t)}</span>`;
+  const tk=`<span class="l-en">${x.n?`<span class="scm-tk">${esc(x.t)}</span>`:''}</span><span class="l-zh">${x.n_zh?`<span class="scm-tk">${esc(x.t)}</span>`:''}</span>`;
+  const th=x.tid?`<a class="scm-th" href="${_bbase()}${esc(x.tid)}.html" title="${esc(x.th||'')}">${L(esc(x.th||''),esc(x.th_zh||x.th||''))}</a>`:'';
+  const ret=withRet?`<span class="scm-r ${cls(x.r)}">${fmtPct(x.r)}</span>`:'';
+  return `<div class="scm-row"><span class="scm-nm">${nm}${tk}</span>${th}${ret}</div>`;
+}
+function _scCol(title,arr,withRet,tone){
+  const rows=(arr&&arr.length)?arr.map(x=>_nmRow(x,withRet)).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
+  return `<div class="scm-col"><div class="scm-colh ${tone||''}">${title} <b>${(arr||[]).length}</b></div>${rows}</div>`;
+}
+function openSc(kind){
+  if(!THEME) return;
+  const s=THEME.impulse_scorecard||{}, rc=THEME.recommendations||{};
+  const ov=_scOverlay(); let hd='',sub='',bd='';
+  if(kind==='impulse'){
+    hd=L('±3% daily impulse','±3% 当日脉冲');
+    sub=L('Every basket member that moved ≥3% today — the impulse / volatility tape.','今日波动≥3%的所有篮子成分 — 脉冲／波动一览。');
+    bd=`<div class="scm-2col">${_scCol(L('Surged ≥3%','涨≥3%'),s.up_names,true,'up')}${_scCol(L('Dropped ≥3%','跌≥3%'),s.down_names,true,'dn')}</div>`;
+  } else if(kind==='extremes'){
+    hd=L('52-week extremes','52周极值');
+    sub=L('Members printing a fresh 52-week high or low today.','今日创出52周新高或新低的成分。');
+    bd=`<div class="scm-2col">${_scCol(L('New 52-wk highs','创52周新高'),s.nh_names,false,'up')}${_scCol(L('New 52-wk lows','创52周新低'),s.nl_names,false,'dn')}</div>`;
+  } else if(kind==='reco'){
+    hd=L('Recommendation tally','建议统计');
+    sub=L('Where every theme lands on the desk read. Click a theme to open it.','每个主题的台面结论分布。点击主题可打开详情。');
+    const grp=(en,zh,keys,tone)=>{ const arr=[].concat(...keys.map(k=>rc[k]||[]));
+      const rows=arr.length?arr.map(t=>`<a class="scm-row" href="${_bbase()}${esc(t.id)}.html"><span class="scm-nm">${L(esc(t.name),esc(t.name_zh||t.name))}</span><span class="scm-th">${esc((t.label||'').toUpperCase())}</span><span class="scm-r">${t.score}</span></a>`).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
+      return `<div class="scm-col"><div class="scm-colh ${tone}">${L(en,zh)} <b>${arr.length}</b></div>${rows}</div>`; };
+    bd=`<div class="scm-3col">${grp('Enter / add','建仓／加仓',['enter','accumulate'],'up')}${grp('Hold','持有',['hold'],'')}${grp('Trim / avoid','减仓／回避',['trim','avoid'],'dn')}</div>`;
+  } else return;
+  ov.querySelector('.scm-hd').innerHTML=hd;
+  ov.querySelector('.scm-sub').innerHTML=sub;
+  ov.querySelector('.scm-bd').innerHTML=bd;
+  ov.classList.add('open');
+}
 function renderScorecards(){
   const sec=document.getElementById('impulse-section');
   if(!THEME||!THEME.impulse_scorecard){ if(sec) sec.style.display='none'; return; }
   const s=THEME.impulse_scorecard, rc=THEME.recommendations||{};
   const duo=(a,b)=>{const t=(a+b)||1;return `<div class="duo"><i style="width:${a/t*100}%;background:var(--up)"></i><i style="width:${b/t*100}%;background:var(--down)"></i></div>`;};
   const cnt=k=>(rc[k]||[]).length;
-  const c1=`<div class="scard"><div class="sk">${L('±3% daily impulse','±3% 当日脉冲')}</div>
+  const hint=`<div class="scm-hint">${L('Click for the names →','点击查看个股 →')}</div>`;
+  const c1=`<div class="scard clk" data-sc="impulse"><div class="sk">${L('±3% daily impulse','±3% 当日脉冲')}</div>
     <div class="bigrow"><div><div class="big up">${s.up3}</div><div class="sublbl">${L('up ≥3%','涨≥3%')}</div></div>
     <div><div class="big dn">${s.down3}</div><div class="sublbl">${L('down ≥3%','跌≥3%')}</div></div></div>
-    ${duo(s.up3,s.down3)}<div class="net">${L('net','净')} <b class="${cls(s.net)}">${s.net>=0?'+':''}${s.net}</b> ${L('of '+s.n+' names',' ／共 '+s.n+' 只')}</div></div>`;
-  const c2=`<div class="scard"><div class="sk">${L('52-week extremes','52周极值')}</div>
+    ${duo(s.up3,s.down3)}<div class="net">${L('net','净')} <b class="${cls(s.net)}">${s.net>=0?'+':''}${s.net}</b> ${L('of '+s.n+' names',' ／共 '+s.n+' 只')}</div>${hint}</div>`;
+  const c2=`<div class="scard clk" data-sc="extremes"><div class="sk">${L('52-week extremes','52周极值')}</div>
     <div class="bigrow"><div><div class="big up">${s.nh}</div><div class="sublbl">${L('new highs','新高')}</div></div>
     <div><div class="big dn">${s.nl}</div><div class="sublbl">${L('new lows','新低')}</div></div></div>
-    ${duo(s.nh,s.nl)}<div class="net">${L('net','净')} <b class="${cls(s.net_hl)}">${s.net_hl>=0?'+':''}${s.net_hl}</b></div></div>`;
-  const c3=`<div class="scard"><div class="sk">${L('recommendation tally','建议统计')}</div>
+    ${duo(s.nh,s.nl)}<div class="net">${L('net','净')} <b class="${cls(s.net_hl)}">${s.net_hl>=0?'+':''}${s.net_hl}</b></div>${hint}</div>`;
+  const c3=`<div class="scard clk" data-sc="reco"><div class="sk">${L('recommendation tally','建议统计')}</div>
     <div class="bigrow" style="gap:12px;flex-wrap:wrap">
       <div><div class="big up">${cnt('enter')+cnt('accumulate')}</div><div class="sublbl">${L('enter / add','建仓／加仓')}</div></div>
       <div><div class="big" style="color:var(--muted)">${cnt('hold')}</div><div class="sublbl">${L('hold','持有')}</div></div>
       <div><div class="big dn">${cnt('trim')+cnt('avoid')}</div><div class="sublbl">${L('trim / avoid','减仓／回避')}</div></div>
-    </div></div>`;
-  document.getElementById('scorecards').innerHTML=c1+c2+c3;
+    </div>${hint}</div>`;
+  const box=document.getElementById('scorecards');
+  box.innerHTML=c1+c2+c3;
+  box.querySelectorAll('.scard.clk').forEach(c=>c.onclick=()=>openSc(c.dataset.sc));
 }
 function openTheme(id){const d=document.getElementById('theme-'+id);if(!d)return;const det=d.querySelector('details');if(det)det.open=true;
   d.scrollIntoView({behavior:'smooth',block:'center'});d.style.transition='box-shadow .3s';d.style.boxShadow='0 0 0 2px var(--link)';setTimeout(()=>{d.style.boxShadow='';},1200);}

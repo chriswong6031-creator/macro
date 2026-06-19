@@ -11,7 +11,7 @@
     "label": "dominant",
     "name": "AI Neoclouds & HPC Hosting",
     "name_zh": "AI \u65b0\u4e91\u4e0e\u9ad8\u6027\u80fd\u7b97\u529b\u6258\u7ba1",
-    "rank": 4,
+    "rank": 5,
     "reco": "hold",
     "score": 70
   },
@@ -19,9 +19,9 @@
     "label": "dominant",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 6,
+    "rank": 4,
     "reco": "hold",
-    "score": 69
+    "score": 71
   },
   "ai_software": {
     "label": "deteriorating",
@@ -43,9 +43,9 @@
     "label": "neutral",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 14,
+    "rank": 16,
     "reco": "hold",
-    "score": 54
+    "score": 52
   },
   "data_center_power": {
     "label": "dominant",
@@ -83,7 +83,7 @@
     "label": "dominant",
     "name": "Housing Chain",
     "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
-    "rank": 10,
+    "rank": 11,
     "reco": "hold",
     "score": 63
   },
@@ -117,7 +117,7 @@
     "name_zh": "\u975eAI\u8f6f\u4ef6",
     "rank": 24,
     "reco": "avoid",
-    "score": 33
+    "score": 34
   },
   "non_ai_tech": {
     "label": "dominant",
@@ -131,9 +131,9 @@
     "label": "dominant",
     "name": "Nuclear & SMR Power",
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
-    "rank": 11,
+    "rank": 10,
     "reco": "accumulate",
-    "score": 63
+    "score": 64
   },
   "payments_fintech": {
     "label": "deteriorating",
@@ -171,7 +171,7 @@
     "label": "neutral",
     "name": "Retail",
     "name_zh": "\u96f6\u552e",
-    "rank": 16,
+    "rank": 15,
     "reco": "hold",
     "score": 52
   },
@@ -179,7 +179,7 @@
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 15,
+    "rank": 14,
     "reco": "hold",
     "score": 54
   },
@@ -195,7 +195,7 @@
     "label": "dominant",
     "name": "Travel & Experiences",
     "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
-    "rank": 5,
+    "rank": 6,
     "reco": "accumulate",
     "score": 69
   }
