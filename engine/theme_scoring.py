@@ -112,13 +112,22 @@ def _read_json(*parts) -> dict:
 
 
 # --------------------------------------------------------------------------- macro
-def _macro_context() -> dict:
+def _macro_context(region: str = "us") -> dict:
     """Fold the live cross-site snapshots (regime / bonds / forex / cross-asset) into one
     state read + a per-axis state vector for the macro leg. Display strings are bilingual;
-    policy is shown as CONTEXT-only and never scored."""
-    reg = _read_json("regime", "latest.json")
-    bonds = _read_json("bonds", "latest.json")
-    fx = _read_json("forex", "latest.json")
+    policy is shown as CONTEXT-only and never scored.
+
+    Region-aware: US reads regime/bonds/forex; CN/HK/CA read their own <region>_regime
+    snapshot. The US-specific Fed-path / NFCI / dollar signals don't apply abroad, so for
+    non-US the macro leg stays near-neutral and the trend/breadth/impulse/crowding legs carry
+    the score (a richer per-region macro overlay is a future enhancement)."""
+    if region == "us":
+        reg = _read_json("regime", "latest.json")
+        bonds = _read_json("bonds", "latest.json")
+        fx = _read_json("forex", "latest.json")
+    else:
+        reg = _read_json(f"{region}_regime", "latest.json")
+        bonds, fx = {}, {}
     cond = reg.get("conditions") or {}
     fc = cond.get("financial_conditions") or {}
     ra = cond.get("risk_appetite") or {}
@@ -352,17 +361,23 @@ _RECO_WHY = {
 def compute_theme_intel(region: str = "us") -> dict | None:
     """Score / label / recommend every basket + 5-day rotation + impulse scorecards.
 
-    region is accepted so CN/HK/CA can reuse this once group_flow._setup is regionalised;
-    today only the US setup is wired. Returns None on shortfall (additive caller)."""
-    s = group_flow._setup()
+    region drives the data plane: US uses group_flow._setup; CN/HK/CA reuse
+    engine.narrative_rotation._setup (same regional close/bench/membership loaders).
+    Returns None on shortfall (additive caller)."""
+    if region == "us":
+        s = group_flow._setup()
+    else:
+        from engine import narrative_rotation as _nr
+        cfg_r = _nr._region_cfg(region)
+        s = _nr._setup(cfg_r) if cfg_r else None
     if s is None:
         return None
     closes, rets, idx, bench = s["closes"], s["rets"], s["idx"], s["bench"]
     if len(idx) < 60:
         return None
     cfg = group_flow._cfg()
-    nm = _names_sectors()
-    mc = _macro_context()
+    nm = _names_sectors() if region == "us" else {}    # US GICS names; regions show tickers
+    mc = _macro_context(region)
     i = len(idx) - 1
     i5 = max(0, i - 5)
     ytd_anchor = idx[idx < pd.Timestamp(idx.max().year, 1, 1)].max() \
@@ -574,7 +589,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "nh": nh, "nl": nl, "net_hl": nh - nl,
             "up_thresh": UP_DAY, "hi_lo_window": HI_LO_WINDOW,
         },
-        "market_concentration": basket_score.market_concentration(),
+        "market_concentration": basket_score.market_concentration(region),
         "breadth_leaders": breadth_leaders,
         "breadth_laggards": breadth_laggards,
         "entries": entries,
