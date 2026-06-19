@@ -86,7 +86,7 @@
   var projection = d3.geoOrthographic().precision(0.4);
   var path = d3.geoPath(projection, ctx);
   var rot = [98, -38];      // [lambda, phi] — start centered on North America (98W, 38N)
-  var fitScale = 240, scale = 240, W = 0, H = 0, R = 0, dpr = 1;
+  var fitScale = 240, scale = 240, W = 0, H = 0, R = 0, dpr = 1, lastClipR = -1;
 
   function size() {
     // collapse the canvas first so the grid cell can shrink to its true width,
@@ -104,7 +104,19 @@
     fitScale = R; scale = scale === 240 ? R : Math.min(R * 1.35, Math.max(R * 0.8, scale));
     apply();
   }
-  function apply() { projection.rotate([rot[0], rot[1], 0]).scale(scale).translate([W / 2, H / 2]); }
+  function apply() { projection.rotate([rot[0], rot[1], 0]).scale(scale).translate([W / 2, H / 2]); clipHit(); }
+  // Limit the canvas's TOUCH/click region to the visible globe disc (+ glow), centered.
+  // clip-path clips hit-testing as well as painting, so swipes in the empty square
+  // corners fall through to the page and scroll normally instead of spinning the globe
+  // (the #1 mobile complaint). Radius tracks zoom; corners were always transparent, so
+  // there's no visual change. Re-applied via apply() on every scale change.
+  function clipHit() {
+    var r = scale * 1.13 + 4;                 // sphere + atmosphere halo + a small touch margin
+    if (Math.abs(r - lastClipR) < 0.5) return;
+    lastClipR = r;
+    var cp = "circle(" + r.toFixed(1) + "px at 50% 50%)";
+    canvas.style.clipPath = cp; canvas.style.webkitClipPath = cp;
+  }
 
   // ---- starfield (dark only, static) ---------------------------------------
   var stars = [];
