@@ -232,6 +232,119 @@ def test_spark_points_monotone() -> None:
     assert M._spark(None) == "" and M._spark(pd.Series([1.0])) == ""
 
 
+# --------------------------------------------------------------------------- #
+# forecast cones + recommendation engine (engine/btc_recommend.py)
+# --------------------------------------------------------------------------- #
+from engine import btc_recommend as RC  # noqa: E402
+
+
+def _rec_sig(n=1200, seed=11, bias="bear") -> pd.DataFrame:
+    """A signals frame with the columns forward_cones + recommend read."""
+    rng = np.random.default_rng(seed)
+    idx = pd.date_range("2019-01-01", periods=n, freq="D")
+    close = pd.Series(100 * np.exp(np.cumsum(rng.normal(0.0006, 0.03, n))), index=idx)
+    df = pd.DataFrame({"close": close}, index=idx)
+    # alternate regimes through history so cells are populated
+    states = np.where(np.arange(n) % 3 == 0, "RISK-ON", np.where(np.arange(n) % 3 == 1, "DISTRIBUTE", "NEUTRAL"))
+    df["composite_state"] = states
+    df["risk_index"] = pd.Series(np.clip(40 + 30 * np.sin(np.arange(n) / 50), 0, 100), index=idx)
+    df["sth_cost_basis"] = close * 1.05
+    df["alloc_optimal"] = 0.3
+    # live row tilt
+    if bias == "bull":
+        df.loc[df.index[-1], ["composite_state"]] = "ACCUMULATE"
+        df["valuation_state"] = "undervalued"; df["market_extreme"] = "capitulation"
+        df["mvrv_z"] = -0.5; df["mayer"] = 0.7; df["reserve_risk"] = 0.001
+        df["risk_regime"] = "low_risk"; df["momentum_state"] = "bull"
+    elif bias == "top":
+        df["valuation_state"] = "overvalued"; df["market_extreme"] = "euphoria"
+        df["mvrv_z"] = 4.0; df["mayer"] = 2.6; df["reserve_risk"] = 0.03
+        df["risk_regime"] = "high_risk"; df["momentum_state"] = "bull"
+    else:
+        df["valuation_state"] = "fair"; df["market_extreme"] = "normal"
+        df["mvrv_z"] = 1.5; df["mayer"] = 1.1; df["reserve_risk"] = 0.005
+        df["risk_regime"] = "high_risk"; df["momentum_state"] = "bear"
+    return df
+
+
+def test_forward_cones_quantiles_monotone() -> None:
+    c = RC.forward_cones(_rec_sig())
+    assert c["ok"]
+    for k in ("7d", "30d", "90d"):
+        h = c["horizons"][k]
+        assert h["p5"] <= h["p25"] <= h["p50"] <= h["p75"] <= h["p95"]   # quantiles cannot cross
+        assert 0.0 <= h["p_up"] <= 1.0 and 0.0 <= h["base_up"] <= 1.0
+        assert h["n"] > 0 and h["dd_tail"] <= h["dd_avg"] <= 0           # drawdowns are <= 0
+        assert h["h"] in (7, 30, 90)
+
+
+def test_forward_cones_widen_with_horizon() -> None:
+    c = RC.forward_cones(_rec_sig(seed=4))["horizons"]
+    w7 = c["7d"]["p95"] - c["7d"]["p5"]
+    w90 = c["90d"]["p95"] - c["90d"]["p5"]
+    assert w90 > w7   # the cone fans out with horizon
+
+
+def test_recommend_deep_value_is_accumulate_directional() -> None:
+    sig = _rec_sig(bias="bull")
+    r = RC.recommend(sig, {"score": 40, "drivers_pos": [], "drivers_neg": []},
+                     RC.forward_cones(sig), {"avg": -3.0, "tail": -12.0}, {"size_pct": 30})
+    assert "ACCUMULATE" in r["action"] and r["tone"] == "bull"
+    assert r["conviction"] == "HIGH" and r["directional"] is True
+    assert r["exposure_hi"] == 100 and r["exposure_lo"] >= 30
+
+
+def test_recommend_cycle_top_is_distribute() -> None:
+    sig = _rec_sig(bias="top")
+    r = RC.recommend(sig, {"score": -10, "drivers_pos": [], "drivers_neg": []},
+                     RC.forward_cones(sig), {"avg": -8.0, "tail": -30.0}, {"size_pct": 40})
+    assert "DISTRIBUTE" in r["action"] and r["tone"] == "bear"
+    assert r["conviction"] == "HIGH" and r["exposure_lo"] == 0
+
+
+def test_recommend_high_risk_reduces_and_is_drawdown_managed() -> None:
+    sig = _rec_sig(bias="bear")
+    master = {"score": -40, "drivers_pos": [{"label_en": "Miner", "label_zh": "矿工", "state_en": "Capit", "state_zh": "投降", "tone": "bull"}],
+              "drivers_neg": [{"label_en": "Momentum", "label_zh": "动量", "state_en": "Bearish", "state_zh": "看空", "tone": "bear"}]}
+    r = RC.recommend(sig, master, RC.forward_cones(sig), {"avg": -4.0, "tail": -17.0}, {"size_pct": 20})
+    assert r["tone"] == "bear" and r["directional"] is False     # coin-flip → drawdown-managed
+    assert r["key_risk_en"] and "Momentum" in r["key_risk_en"]
+    assert r["rationale"][0]["tone"] == "bear"                    # bearish action leads with cautionary driver
+    assert r["levels"]["upside_90"] and r["levels"]["downside_90"]
+
+
+def test_recommend_nan_safe() -> None:
+    assert RC.recommend(pd.DataFrame(), None, None, None, None) == {"ok": False}
+    assert RC.forward_cones(pd.DataFrame()) == {"ok": False}
+
+
+def test_recommend_thin_frame_no_crash() -> None:
+    # a frame shorter than the 30/90d horizons -> empty cone cells. forward_cones must
+    # emit None (strict-JSON-safe) and recommend() must NOT raise (the NaN-quantile bug).
+    import json
+    thin = _rec_sig(n=30)
+    c = RC.forward_cones(thin)
+    json.dumps(c, allow_nan=False)                       # would raise on NaN
+    assert c["horizons"]["90d"]["p50"] is None and c["horizons"]["90d"]["n"] == 0
+    r = RC.recommend(thin, None, c, None, None)
+    assert r["ok"] and isinstance(r["levels"]["upside_90"], (int, type(None)))
+
+
+def test_recommend_directional_only_at_strong_extremes() -> None:
+    # a SOFT-only value signal (valuation_state undervalued / capitulation but mvrv_z>=0)
+    # must NOT make a HIGH directional call — only the measured [BOTTOM]/[TOP] legs do.
+    sig = _rec_sig(bias="bear")
+    sig.loc[sig.index[-1:], "valuation_state"] = "undervalued"   # soft
+    sig.loc[sig.index[-1:], "market_extreme"] = "capitulation"   # soft
+    sig.loc[sig.index[-1:], "mvrv_z"] = 1.2                       # NOT the strong <0 leg
+    sig.loc[sig.index[-1:], "reserve_risk"] = 0.005
+    sig.loc[sig.index[-1:], "mayer"] = 1.0
+    sig.loc[sig.index[-1:], "risk_regime"] = "low_risk"
+    r = RC.recommend(sig, {"score": 5, "drivers_pos": [], "drivers_neg": []}, RC.forward_cones(sig),
+                     {"avg": -3.0, "tail": -12.0}, {"size_pct": 30})
+    assert r["directional"] is False and r["conviction"] != "HIGH"   # soft extreme -> not directional
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:

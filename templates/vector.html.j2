@@ -17,10 +17,14 @@
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
 :root{
-  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.r3}};
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r1:{{C.r1}}; --r2:{{C.r2}}; --r3:{{C.bear}};
   --r4:{{C.r4}}; --r5:{{C.r5}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
   --faint:{{C.faint}}; --red:{{C.red}}; --redfill:{{C.redfill}}; --amber:{{C.amber}};
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+  /* DIVERGING tone semantic: bull=blue (brand), bear=red, caution=amber, neutral=grey.
+     --r3 is remapped to red above so every legacy bear/down/risk element flips to red. */
+  --bull:var(--blue); --bull-soft:{{C.bull_soft}}; --bear:{{C.bear}}; --bear-soft:{{C.bear_soft}};
+  --warn:{{C.warn}}; --neutral:var(--muted);
 }
 *{box-sizing:border-box}
 /* language toggle: dual-emit text, hide the inactive language (blue/red palette
@@ -70,7 +74,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
 /* dark mode — toggled by html[data-theme="dark"]; light is the default. Page is
    var-based, so overriding the palette re-themes it (accents blue/red kept). */
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r1:#1b2740;--r2:#243352}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r1:#1b2740;--r2:#243352;--r3:{{C.bear_dk}};--bear:{{C.bear_dk}};--bear-soft:#3a1c1c;--bull-soft:#14233f}
 html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
 /* animated dark/light switch — light default = knob right + sun; dark = left + moon */
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
@@ -129,7 +133,7 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 .allocbar .cash{background:linear-gradient(90deg,#cfd4dc,#9aa4b2);display:flex;align-items:center;justify-content:center;color:#fff}
 /* chips */
 .chip{display:inline-block;padding:6px 14px;border-radius:10px;font-weight:700;font-size:14px}
-.chip-bull{background:var(--indigo);color:#fff} .chip-bear{background:var(--r2);color:#fff}
+.chip-bull{background:var(--bull);color:#fff} .chip-bear{background:var(--bear);color:#fff}
 .chip-ghost{background:var(--grid);color:var(--muted)}
 .chip-strategic{background:var(--blue);color:#fff} .chip-tactical{background:var(--redfill);color:var(--red)}
 /* probability bar */
@@ -141,8 +145,8 @@ html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
 /* conviction dots */
 .dots{display:inline-flex;gap:6px}
 .dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--r2);display:inline-block}
-.dots i.on{background:var(--blue);border-color:var(--blue)}
-.dots i.on.bear{background:var(--r2);border-color:var(--r2)}
+.dots i.on{background:var(--bull);border-color:var(--bull)}
+.dots i.on.bear{background:var(--bear);border-color:var(--bear)}
 /* cross-asset table */
 .catbl{width:100%;border-collapse:collapse}
 .catbl td{padding:9px 4px;border-bottom:1px solid var(--grid);font-size:14px}
@@ -359,7 +363,54 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     .brow .st{font-size:11.5px;color:var(--muted)}
     .brow .spk{grid-row:1/3;justify-self:end;width:62px;height:24px}
     .brow .spk polyline{fill:none;stroke-width:1.6;vector-effect:non-scaling-stroke}
-    .spk.bull polyline{stroke:var(--blue)} .spk.bear polyline{stroke:var(--r3)} .spk.neutral polyline{stroke:var(--muted)}
+    .spk.bull polyline{stroke:var(--bull)} .spk.bear polyline{stroke:var(--bear)} .spk.neutral polyline{stroke:var(--neutral)}
+    /* RECOMMENDATION card */
+    .reco{display:grid;grid-template-columns:1.1fr 1fr;gap:0;border:1px solid var(--grid);border-radius:18px;overflow:hidden;margin-top:14px}
+    @media(max-width:780px){.reco{grid-template-columns:1fr}}
+    .reco-l{padding:20px 22px;border-right:1px solid var(--grid)}
+    @media(max-width:780px){.reco-l{border-right:none;border-bottom:1px solid var(--grid)}}
+    .reco-r{padding:20px 22px;display:flex;flex-direction:column;gap:14px}
+    .reco-l.t-bull{background:linear-gradient(120% 140% at 0 0,var(--bull-soft),var(--card) 60%)}
+    .reco-l.t-bear{background:linear-gradient(120% 140% at 0 0,var(--bear-soft),var(--card) 60%)}
+    .reco-l.t-neutral{background:var(--card)}
+    .reco-k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+    .reco-act{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.08;margin:6px 0 8px}
+    .reco-act.t-bull{color:var(--bull)} .reco-act.t-bear{color:var(--bear)} .reco-act.t-neutral{color:var(--ink)}
+    .reco-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+    .reco-conv{font-size:11px;font-weight:800;padding:2px 9px;border-radius:7px;letter-spacing:.03em}
+    .conv-high{background:var(--bull);color:#fff} .conv-moderate{background:var(--warn);color:#fff} .conv-low{background:var(--grid);color:var(--muted)}
+    .reco-conv.bear.conv-high{background:var(--bear)}
+    .reco-exp-band{font-size:24px;font-weight:800;color:var(--ink);margin:2px 0 6px}
+    .exp-track{position:relative;height:12px;border-radius:7px;background:var(--grid)}
+    .exp-fill{position:absolute;top:0;bottom:0;border-radius:7px;background:color-mix(in srgb,var(--bull) 55%,var(--grid))}
+    .exp-fill.t-bear{background:color-mix(in srgb,var(--bear) 50%,var(--grid))}
+    .exp-kelly{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px}
+    .exp-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:4px}
+    .reco-lvls{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+    .reco-lvls .lv .k{font-size:11px;color:var(--muted);font-weight:600;display:block}
+    .reco-lvls .lv b{font-size:15px;color:var(--ink);font-weight:800}
+    .reco-lvls .lv b.up{color:var(--bull)} .reco-lvls .lv b.down{color:var(--bear)}
+    .reco-risk{font-size:12.5px;color:var(--bear);background:var(--bear-soft);border-radius:9px;padding:8px 11px;line-height:1.45}
+    .reco-rats{display:flex;flex-wrap:wrap;gap:6px}
+    .rchip{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--grid);color:var(--text)}
+    html[data-theme="dark"] .rchip{background:var(--grid)}
+    .rchip i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+    .rchip i.bull{background:var(--bull)} .rchip i.bear{background:var(--bear)} .rchip i.neutral{background:var(--neutral)}
+    /* FORECAST CONES */
+    .cone-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--grid)}
+    .cone-row:first-of-type{border-top:none}
+    .cone-h{width:34px;font-size:13px;font-weight:800;color:var(--ink);flex:none}
+    .cone-bar{position:relative;flex:1;height:22px}
+    .cone-axis{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--grid);transform:translateY(-50%)}
+    .cone-zero{position:absolute;top:2px;bottom:2px;width:1px;background:var(--muted);opacity:.55}
+    .cone-whisk{position:absolute;top:50%;height:2px;transform:translateY(-50%);border-radius:2px}
+    .cone-box{position:absolute;top:50%;height:13px;transform:translateY(-50%);border-radius:4px;opacity:.85}
+    .cone-box.bull{background:color-mix(in srgb,var(--bull) 60%,var(--card))} .cone-whisk.bull{background:color-mix(in srgb,var(--bull) 35%,var(--grid))}
+    .cone-box.bear{background:color-mix(in srgb,var(--bear) 55%,var(--card))} .cone-whisk.bear{background:color-mix(in srgb,var(--bear) 35%,var(--grid))}
+    .cone-med{position:absolute;top:50%;width:11px;height:11px;margin-left:-5.5px;transform:translateY(-50%);border-radius:50%;border:2px solid var(--card)}
+    .cone-med.bull{background:var(--bull)} .cone-med.bear{background:var(--bear)}
+    .cone-pup{width:118px;flex:none;text-align:right;font-size:11.5px;color:var(--muted)}
+    .cone-pup b{font-weight:800}
   </style>
   {% set tone_col = {'bull':'var(--blue)','bear':'var(--r3)','neutral':'var(--muted)'} %}
   {% set mcol = tone_col.get(master.tone,'var(--muted)') %}
@@ -411,6 +462,81 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       </div>
     </div>
   </div>
+  {# ---------------- THE RECOMMENDATION (the actionable decision) ---------------- #}
+  {% if rec and rec.ok %}
+  {% set rt = rec.tone %}
+  {% set L = rec.levels %}
+  <div class="reco">
+    <div class="reco-l t-{{ rt }}">
+      <div class="reco-k">▶ {{ t('Recommendation · strategic','建议 · 战略') }}</div>
+      <div class="reco-act t-{{ rt }}">{{ t(rec.action, rec.action_zh) }}</div>
+      <div class="reco-meta">
+        <span class="reco-conv {{ rt }} conv-{{ rec.conviction|lower }}">{{ t(rec.conviction ~ ' conviction', rec.conviction ~ ' 信心') }}</span>
+        <span>· {{ t(rec.basis_en, rec.basis_zh) }}</span>
+        <span>· {{ t(rec.horizon_en, rec.horizon_zh) }}</span>
+      </div>
+      {% if rec.directional %}<div class="reco-meta" style="margin-top:8px;color:var(--bull)"><b>{{ t('Directional call — measured at this extreme','方向性判断 — 该极值经实测') }}</b></div>
+      {% else %}<div class="reco-meta" style="margin-top:8px">{{ t('Direction is a coin-flip here — this is drawdown-managed sizing, not a price call.','此处方向接近抛硬币 — 这是按回撤管理的仓位，而非价格预测。') }}</div>{% endif %}
+      <div class="reco-rats" style="margin-top:12px">
+        {% for d in rec.rationale %}<span class="rchip"><i class="{{ d.tone }}"></i>{{ t(d.label_en, d.label_zh) }} · {{ t(d.state_en, d.state_zh) }}</span>{% endfor %}
+      </div>
+    </div>
+    <div class="reco-r">
+      <div>
+        <div class="reco-k">{{ t('Target BTC exposure','目标 BTC 仓位') }}</div>
+        <div class="reco-exp-band">{{ rec.exposure_lo }}–{{ rec.exposure_hi }}%</div>
+        <div class="exp-track">
+          <div class="exp-fill {{ 't-bear' if rt=='bear' else '' }}" style="left:{{ rec.exposure_lo }}%;width:{{ rec.exposure_hi - rec.exposure_lo }}%"></div>
+          {% if rec.kelly_pct is not none %}<div class="exp-kelly" style="left:{{ rec.kelly_pct }}%" title="Kelly-sized"></div>{% endif %}
+        </div>
+        <div class="exp-scale"><span>0% {{ t('cash','现金') }}</span><span>{{ t('Kelly','Kelly') }} {{ rec.kelly_pct }}%</span><span>100% {{ t('BTC','BTC') }}</span></div>
+      </div>
+      <div class="reco-lvls">
+        {% if L.accumulate_lo and L.accumulate_hi %}<div class="lv"><span class="k">{{ t('Accumulate zone','累积区间') }}</span><b>${{ '{:,}'.format(L.accumulate_lo) }}–${{ '{:,}'.format(L.accumulate_hi) }}</b></div>{% endif %}
+        {% if L.invalidation %}<div class="lv"><span class="k">{{ t(L.invalid_label_en, L.invalid_label_zh) }}</span><b>${{ '{:,}'.format(L.invalidation) }}</b></div>{% endif %}
+        {% if L.downside_90 and L.upside_90 %}<div class="lv" style="grid-column:1/3"><span class="k">{{ t('90-day range (cone p25→p75)','90 天区间（锥体 p25→p75）') }}</span><b class="down">${{ '{:,}'.format(L.downside_90) }}</b> → <b class="up">${{ '{:,}'.format(L.upside_90) }}</b></div>{% endif %}
+      </div>
+      {% if rec.key_risk_en %}<div class="reco-risk">⚠ {{ t(rec.key_risk_en, rec.key_risk_zh) }}</div>{% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ---------------- FORWARD OUTLOOK CONES (regime-conditioned distribution) ---------------- #}
+  {% if cones and cones.ok and cones.horizons %}
+  {% set ch = cones.horizons %}
+  {% set cvals = [] %}
+  {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and _h.p95 is not none and _h.p5 is not none %}{% set _ = cvals.append(_h.p95|abs) %}{% set _ = cvals.append(_h.p5|abs) %}{% endif %}{% endfor %}
+  {% set cscale = (cvals|max) if cvals else 50 %}
+  {% macro cpct(v) %}{{ [[(50 + 50*v/cscale), 2]|max, 98]|min }}{% endmacro %}
+  {# does any horizon fall back off the live regime cell, or run thin? surface it honestly #}
+  {% set degraded = [] %}
+  {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and (_h.thin or (_h.cond and _h.cond != cones.regime)) %}{% set _ = degraded.append(k) %}{% endif %}{% endfor %}
+  <div class="card" style="margin-top:14px;padding:18px 22px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">{{ t('Forward outlook · regime-conditioned cones','前瞻展望 · 按格局的收益锥') }}</h3>
+      <span class="faint" style="font-size:12px">{{ t('empirical, given regime:','基于历史，当前格局：') }} <b style="color:var(--ink)">{{ cones.regime or '—' }}</b></span>
+    </div>
+    <div style="margin-top:10px">
+    {% for k in ['7d','30d','90d'] %}{% set h = ch.get(k) %}{% if h and h.p50 is not none %}
+      {% set ht = 'bull' if h.p50 >= 0 else 'bear' %}
+      <div class="cone-row" {% if h.thin %}style="opacity:.6"{% endif %}>
+        <span class="cone-h">{{ k }}</span>
+        <div class="cone-bar">
+          <div class="cone-axis"></div>
+          <div class="cone-zero" style="left:{{ cpct(0) }}%"></div>
+          <div class="cone-whisk {{ ht }}" style="left:{{ cpct(h.p5) }}%;width:{{ cpct(h.p95)|float - cpct(h.p5)|float }}%"></div>
+          <div class="cone-box {{ ht }}" style="left:{{ cpct(h.p25) }}%;width:{{ cpct(h.p75)|float - cpct(h.p25)|float }}%"></div>
+          <div class="cone-med {{ ht }}" style="left:{{ cpct(h.p50) }}%"></div>
+        </div>
+        <span class="cone-pup">P↑ <b style="color:{{ 'var(--muted)' if h.thin else ('var(--bull)' if h.p_up>=h.base_up else 'var(--bear)') }}">{{ (h.p_up*100)|round|int }}%</b> <span class="faint">/ {{ (h.base_up*100)|round|int }}%{% if h.cond and h.cond != cones.regime %} · {{ h.cond }}{% endif %}{% if h.thin %} · {{ t('thin','样本少') }} n={{ h.n }}{% endif %}</span></span>
+      </div>
+    {% endif %}{% endfor %}
+    </div>
+    <div class="exp-scale" style="margin-top:2px"><span>−{{ cscale|round|int }}%</span><span>0</span><span>+{{ cscale|round|int }}%</span></div>
+    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Each bar is the EMPIRICAL forward-return distribution on days that shared the current regime — box = p25→p75, whiskers p5→p95, dot = median, P↑ = hit-rate vs the all-history base rate. Zero fitted weights; it shows the realized spread of outcomes, not a point forecast. Drawdown leads tactically; direction is only a call at the measured extremes.', '每根柱为历史上处于当前格局之日的实测前瞻收益分布 — 方框 = p25→p75，须线 p5→p95，圆点 = 中位数，P↑ = 上涨胜率对比全样本基准。无拟合权重；展示的是结果的实测分布，而非点预测。战术上以回撤为先；方向仅在实测极值处才作判断。') }}</div>
+  </div>
+  {% endif %}
+
   <div class="sub faint" style="margin:8px 4px 4px;font-size:12px">{{ t('A transparent weighted synthesis of every axis below (oriented by its MEASURED calibration sign; + = constructive). The score is the STRATEGIC regime tilt — short-horizon direction is a coin-flip, so the tactical read is the forward-drawdown card. Nothing here is a new alpha claim; it re-presents the gate-passed signals.', '对下方各维度的透明加权综合（按其实测校准方向定向；+ = 偏多）。该分数为战略格局倾向 — 近端方向接近抛硬币，故战术上以前瞻回撤卡片为准。此处并非新的阿尔法主张，仅重新呈现已通过校验的信号。') }}</div>
 
   <!-- ===================== SIGNAL BOARD ===================== -->
@@ -619,28 +745,23 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   <!-- ===================== RISK INDEX vs STRATEGY ===================== -->
   <div class="section-title">{{ t('Risk Index vs Strategy · backtested', '风险指数 vs 策略 · 已回测') }}</div>
   <div class="card">
-    <h3>{{ t('BTC price, Risk Index & allocation', 'BTC 价格、风险指数与仓位') }}</h3>
-    {{ charts.risk_strategy|safe }}
+    <h3>{{ t('BTC price, Risk Index & allocation', 'BTC 价格、风险指数与仓位') }} <span class="faint" style="font-size:13px;font-weight:600" id="vrc-variant-label">{{ t('· Optimal variant','· 最优变体') }}</span></h3>
+    <div id="vec-risk-chart" class="vchart-wrap" style="--vchart-h:500px"><div class="sub faint" style="padding:18px 0">{{ t('Loading interactive chart…','加载交互图表…') }}</div></div>
     <div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px">
-      <span style="opacity:.8">{{ t('Price shaded by allocation:', '价格按仓位着色：') }}</span>
-      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(34,170,94,0.45);vertical-align:-1px;margin-right:5px"></span>{{ t('Fully in (100%)', '满仓（100%）') }}</span>
-      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;background:rgba(245,173,66,0.55);vertical-align:-1px;margin-right:5px"></span>{{ t('Half (50%)', '半仓（50%）') }}</span>
-      <span><span style="display:inline-block;width:12px;height:11px;border-radius:2px;border:1px solid var(--grid);vertical-align:-1px;margin-right:5px"></span>{{ t('Out (0%)', '空仓（0%）') }}</span>
-      <span style="color:#1FA971;font-weight:600">▲ {{ t('buy / add', '买入 / 加仓') }}</span>
-      <span style="color:#D30B0B;font-weight:600">▼ {{ t('sell / trim', '卖出 / 减仓') }}</span>
+      <span><span style="display:inline-block;width:14px;height:2px;background:var(--faint);vertical-align:3px;margin-right:5px"></span>{{ t('BTC price (log)', 'BTC 价格（对数）') }}</span>
+      <span><span style="display:inline-block;width:14px;height:2px;background:var(--blue);vertical-align:3px;margin-right:5px"></span>{{ t('Strategy equity', '策略净值') }}</span>
+      <span style="color:var(--bull);font-weight:600">▲ {{ t('buy / add', '买入 / 加仓') }}</span>
+      <span style="color:var(--bear);font-weight:600">▼ {{ t('sell / trim', '卖出 / 减仓') }}</span>
+      <span>{{ t('lower panes:', '下方面板：') }} {{ t('Risk Index (blue<25 / red≥25)', '风险指数（蓝<25 / 红≥25）') }} · {{ t('allocation %', '仓位 %') }}</span>
     </div>
-    <div class="variant-tabs" style="margin-top:14px">
-      {% set variant_zh = {'conservative':'保守','moderate':'稳健','aggressive':'进取','optimal':'最优'} %}
-      {% for v in ['conservative','moderate','aggressive','optimal'] %}
-      <span class="t {{ 'active' if v=='optimal' else '' }}">{{ t(v|capitalize, variant_zh[v]) }}</span>{% endfor %}
+    <div class="score" style="margin-top:14px" id="vrc-score"
+         data-cards='{{ {"conservative":cards.conservative,"moderate":cards.moderate,"aggressive":cards.aggressive,"optimal":cards.optimal}|tojson }}'>
+      <div class="s"><div class="k">CAGR</div><div class="v" data-m="cagr">{{ cards.optimal.cagr }}%</div><div class="h">HODL {{ cards.optimal.hodl_cagr }}%</div></div>
+      <div class="s"><div class="k">Sharpe</div><div class="v" data-m="sharpe">{{ cards.optimal.sharpe }}</div><div class="h">HODL {{ cards.optimal.hodl_sharpe }}</div></div>
+      <div class="s"><div class="k">{{ t('Max Drawdown', '最大回撤') }}</div><div class="v" data-m="maxdd">{{ cards.optimal.maxdd }}%</div><div class="h">HODL {{ cards.optimal.hodl_maxdd }}%</div></div>
+      <div class="s"><div class="k">{{ t('Time in market', '在场时间') }}</div><div class="v" data-m="in_market">{{ cards.optimal.in_market }}%</div><div class="h" data-m="x_hodl">{{ cards.optimal.x_hodl }}× HODL</div></div>
     </div>
-    <div class="score">
-      <div class="s"><div class="k">CAGR</div><div class="v">{{ cards.optimal.cagr }}%</div><div class="h">HODL {{ cards.optimal.hodl_cagr }}%</div></div>
-      <div class="s"><div class="k">Sharpe</div><div class="v">{{ cards.optimal.sharpe }}</div><div class="h">HODL {{ cards.optimal.hodl_sharpe }}</div></div>
-      <div class="s"><div class="k">{{ t('Max Drawdown', '最大回撤') }}</div><div class="v">{{ cards.optimal.maxdd }}%</div><div class="h">HODL {{ cards.optimal.hodl_maxdd }}%</div></div>
-      <div class="s"><div class="k">{{ t('Time in market', '在场时间') }}</div><div class="v">{{ cards.optimal.in_market }}%</div><div class="h">{{ cards.optimal.x_hodl }}× HODL</div></div>
-    </div>
-    <div class="sub" style="margin-top:10px">{{ t('Long-only, acts next-day on the signal (no look-ahead). Every variant beats HODL\'s Sharpe', '仅做多，信号次日生效（无前视）。每个变体的 Sharpe 均优于 HODL') }} ({{ cards.optimal.hodl_sharpe }}){{ t(' and cuts max drawdown.', '，且降低了最大回撤。') }}</div>
+    <div class="sub" style="margin-top:10px">{{ t('Interactive: switch variant / timeframe / log·linear above, hover for point-in-time values. Long-only, acts next-day on the signal (no look-ahead). Every variant beats HODL\'s Sharpe', '可交互：上方切换变体 / 周期 / 对数·线性，悬停查看实时数值。仅做多，信号次日生效（无前视）。每个变体的 Sharpe 均优于 HODL') }} ({{ cards.optimal.hodl_sharpe }}){{ t(' and cuts max drawdown.', '，且降低了最大回撤。') }}</div>
   </div>
 
   <!-- ===================== CYCLE TIME MACHINE ===================== -->
@@ -1219,6 +1340,27 @@ window.__CHART_SWAP__ = {
 <script src="chart_i18n.js"></script>
 <script src="vector_timemachine.js"></script>
 <script src="aibrief.js"></script>
+<!-- interactive Risk-Index-vs-Strategy backtest chart (bespoke Lightweight Charts v5) -->
+<script src="lightweight-charts-v5.js"></script>
+<script src="vector_chart.js"></script>
+<script>
+(function(){
+  var el=document.getElementById('vec-risk-chart'); if(!el||!window.VectorChart) return;
+  var sc=document.getElementById('vrc-score'), lab=document.getElementById('vrc-variant-label');
+  var cards={}; try{cards=JSON.parse(sc.getAttribute('data-cards'));}catch(e){}
+  var zh=(document.documentElement.getAttribute('data-lang')==='zh');
+  var vname={conservative:zh?'保守':'Conservative',moderate:zh?'稳健':'Moderate',aggressive:zh?'进取':'Aggressive',optimal:zh?'最优':'Optimal'};
+  function sync(v){
+    var c=cards[v]; if(!c||!sc) return;
+    sc.querySelectorAll('[data-m]').forEach(function(n){
+      var m=n.getAttribute('data-m'), val=c[m];
+      n.textContent = (m==='cagr'||m==='maxdd'||m==='in_market')?(val+'%'):(m==='x_hodl')?(val+'× HODL'):val;
+    });
+    if(lab) lab.textContent='· '+(vname[v]||v)+(zh?' 变体':' variant');
+  }
+  window.VectorChart.mount(el,'vector_risk_strategy.json',{onVariant:sync});
+})();
+</script>
 <footer class="site-footer">
   <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
   <span class="dev">{{ t('Developed by', '开发者') }} Chris Wong</span>
