@@ -58,6 +58,17 @@
   .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
   footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
   .disc { font-size:11.5px; color:var(--muted); margin-top:6px; max-width:90ch; }
+  /* ---- cross-market narrative chip ---- */
+  .xm-hot { font-size:12.5px; margin:2px 0 10px; padding:7px 11px; border-radius:8px;
+    background:rgba(251,146,60,.10); border:1px solid rgba(251,146,60,.35); color:var(--text); }
+  .xm-row { display:flex; flex-wrap:wrap; gap:8px; }
+  .xm-chip { display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:inherit;
+    border:1px solid var(--line); border-radius:9px; padding:5px 10px; background:var(--panel2); transition:border-color .15s; }
+  .xm-chip:hover { border-color:var(--muted); }
+  .xm-flag { font-size:14px; line-height:1; }
+  .xm-nm { font-weight:600; max-width:24ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .xm-sc { font-weight:740; font-variant-numeric:tabular-nums; }
+  .xm-ar.pos { color:var(--up); } .xm-ar.neg { color:var(--down); } .xm-ar.muted { color:var(--muted); }
 </style>
 </head>
 <body>
@@ -109,6 +120,32 @@ function convCell(c){
   return `<span class="cv" style="background:${bg};color:${col}">${s}</span>`;
 }
 
+// ---- cross-market narrative cross-reference (display-only, gated; fetched once) ----
+let XM=null;
+function xmktHtml(){
+  if(!XM) return '';
+  const reg=DETAIL.region, bid=(DETAIL.basket||{}).id;
+  const link=(((XM.links||{})[reg])||{})[bid];
+  if(!link||!(link.others||[]).length) return '';
+  const RM=XM.regions||{}, dz=(XM.disclaimer||{});
+  const arrow=o=>o.accel>0.4?'▲':o.accel<-0.4?'▼':'·';
+  const chip=o=>{const rm=RM[o.region]||{}, lc=LABEL_COLOR[o.label]||LABEL_COLOR.neutral;
+    const cav=(o.regime_caveat?` <span title="different macro regime — read with care">⚠</span>`:'')
+            +(o.co_listed?` <span title="co-listed A/H names (largely the same companies)">⇄</span>`:'');
+    return `<a class="xm-chip" href="../${esc(rm.dir)}/${esc(o.bid)}.html" style="border-color:${lc[1]}" title="${esc(o.name)} · score ${o.score}">
+      <span class="xm-flag">${rm.flag||''}</span><span class="xm-nm">${L(esc(o.name),esc(o.name_zh||o.name))}</span>
+      <span class="xm-sc" style="color:${lc[2]}">${o.score==null?'—':o.score}</span>
+      <span class="xm-ar ${o.accel>0?'pos':o.accel<0?'neg':'muted'}">${arrow(o)}</span>${cav}</a>`;};
+  const hot=link.hotter_elsewhere||[];
+  const hotline=hot.length?`<div class="xm-hot">🔥 ${L('Heating up abroad','海外升温')}: ${hot.map(r=>(RM[r]||{}).flag+' '+L((RM[r]||{}).en,(RM[r]||{}).zh)).join(' · ')} — ${L('the same narrative is already dominant or emerging there','同一叙事在那里已主导或新兴')}</div>`:'';
+  return `<h2><span class="idx">◈</span>${L('Same narrative elsewhere','其他市场的同一叙事')} <span class="chip" title="${esc(dz.en||'')}">${L('display-only','仅展示')} ⓘ</span></h2>
+    <div class="panel">
+      <div class="muted sm" style="margin-bottom:9px">${L('The analog '+esc(link.canon_en)+' theme in other markets, with its live desk score — a cross-market read to spot a narrative early. Never a signal.','其他市场对应的'+esc(link.canon_zh)+'主题及其实时台面评分 — 用于尽早发现叙事的跨市场参考。绝非信号。')}</div>
+      ${hotline}
+      <div class="xm-row">${link.others.map(chip).join('')}</div>
+      <div class="disc">${L(esc(dz.en||''),esc(dz.zh||''))}</div>
+    </div>`;
+}
 function render(){
   const d=DETAIL, b=d.basket||{}, th=d.theme||{}, tx=th.textures||{};
   const SB=d.stock_base||'';   // per-stock link base ('' for markets with no per-stock page → plain ticker)
@@ -132,6 +169,9 @@ function render(){
       <div class="muted sm" style="margin-top:8px;max-width:42ch">${L(esc(th.reco_why_en||''),esc(th.reco_why_zh||''))}</div>
     </div>
   </div>`;
+
+  // ---- cross-market narrative cross-reference (same theme in other markets) ----
+  h+=xmktHtml();
 
   // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
   const an=d.act_now||{};
@@ -231,7 +271,14 @@ function sortHold(col){
   mem.sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
   DETAIL.members=mem; render();
 }
-if(document.readyState!=='loading') render(); else document.addEventListener('DOMContentLoaded',render);
+function boot(){
+  render();
+  // fetch the cross-market links once, then re-render so the "same narrative elsewhere" chip
+  // appears (display-only; absent file or no cross-ref simply leaves it out).
+  fetch('../crossmarketdata/links.json',{cache:'no-store'}).then(r=>r.ok?r.json():null)
+    .then(cm=>{ if(cm){ XM=cm; render(); } }).catch(()=>{});
+}
+if(document.readyState!=='loading') boot(); else document.addEventListener('DOMContentLoaded',boot);
 </script>
 <script src="../theme.js"></script>
 </body>

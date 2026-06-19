@@ -61,6 +61,7 @@ def main() -> int:
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
+        bench_en="S&P/TSX", bench_zh="标普/TSX",
         generated_utc=built)
     (site / "baskets_canada.html").write_text(html)
     try:

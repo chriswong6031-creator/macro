@@ -2467,6 +2467,18 @@ def main() -> int:
         _build_baskets_canada.main()
     except Exception as e:  # noqa: BLE001
         log.error("canada baskets (via build_vector) failed (%s)", e)
+    try:  # International (developed ex-US + India) thematic baskets — cross-country themes off
+          # the intl_search cache, benchmarked to a synthetic cap-weighted composite.
+        from scripts import build_baskets_intl as _build_baskets_intl
+        _build_baskets_intl.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("intl baskets (via build_vector) failed (%s)", e)
+    try:  # cross-market narrative cross-reference — runs LAST, after every market's theme_intel is
+          # built, so the per-theme "same narrative elsewhere" chip has complete data to fetch.
+        from scripts import build_crossmarket as _build_crossmarket
+        _build_crossmarket.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("crossmarket links (via build_vector) failed (%s)", e)
     build_landing(site, vm)
     return 0
 

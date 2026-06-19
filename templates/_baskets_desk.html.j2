@@ -51,6 +51,40 @@
   .duo { display:flex; height:9px; border-radius:6px; overflow:hidden; background:var(--line); margin-top:4px; }
   .duo i { height:100%; display:block; }
   .scard .net { font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:7px; }
+  .scard.clk { cursor:pointer; transition:border-color .15s, transform .08s; }
+  .scard.clk:hover { border-color:var(--muted); }
+  .scard.clk:active { transform:translateY(1px); }
+  .scm-hint { font-size:10.5px; color:var(--link); margin-top:9px; opacity:.9; }
+  /* ---- scorecard detail popup ---- */
+  .scmodal { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none;
+    align-items:flex-start; justify-content:center; padding:6vh 14px; }
+  .scmodal.open { display:flex; }
+  .scm-card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45); width:min(760px,96vw); max-height:84vh; overflow:auto;
+    padding:16px 18px 18px; position:relative; }
+  .scm-x { position:absolute; top:10px; right:12px; background:none; border:0; color:var(--muted);
+    font-size:17px; cursor:pointer; line-height:1; }
+  .scm-x:hover { color:var(--text); }
+  .scm-hd { font-size:16px; font-weight:740; margin:0 24px 2px 0; }
+  .scm-sub { font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .scm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .scm-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:620px){ .scm-2col,.scm-3col { grid-template-columns:1fr; } }
+  .scm-col { min-width:0; }
+  .scm-colh { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+    padding-bottom:6px; border-bottom:1px solid var(--line); margin-bottom:2px; }
+  .scm-colh b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .scm-colh.up { color:var(--up); } .scm-colh.dn { color:var(--down); }
+  .scm-row { display:flex; align-items:center; gap:8px; padding:5px 2px; border-bottom:1px solid var(--line); font-size:12.5px; color:inherit; }
+  .scm-row:last-child { border-bottom:0; }
+  a.scm-row:hover { background:var(--panel2); }
+  .scm-nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:620; }
+  .scm-tk { color:var(--muted); font-weight:400; font-size:11px; margin-left:5px; }
+  .scm-th { font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
+    padding:0 6px; white-space:nowrap; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
+  a.scm-th:hover { color:var(--link); border-color:var(--link); }
+  .scm-r { font-variant-numeric:tabular-nums; font-weight:700; min-width:46px; text-align:right; }
+  .scm-empty { color:var(--muted); font-size:12px; padding:8px 2px; }
 
   /* ---- bell dropdown ---- */
   .bell { position:relative; }
@@ -136,8 +170,8 @@
     <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
       <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
     <p class="sub">{{ t(
-      'Who moved this week — ranked by 5-day return relative to the S&P 500, with the change in 20-day relative-strength rank over the same 5 sessions. A fast read on which themes to lean into and which are losing the tape.',
-      '本周谁在动 — 以相对标普 500 的 5 日回报排名，并标注同期 20 日相对强度排名的变化。快速判断该倾向哪些主题、哪些正在失去走势。') }}</p>
+      'Who moved this week — ranked by 5-day return relative to the ' ~ (bench_en|default('S&P 500')) ~ ', with the change in 20-day relative-strength rank over the same 5 sessions. A fast read on which themes to lean into and which are losing the tape.',
+      '本周谁在动 — 以相对' ~ (bench_zh|default('标普 500')) ~ '的 5 日回报排名，并标注同期 20 日相对强度排名的变化。快速判断该倾向哪些主题、哪些正在失去走势。') }}</p>
     <div class="rotwrap" id="rotation"></div>
   </section>
 

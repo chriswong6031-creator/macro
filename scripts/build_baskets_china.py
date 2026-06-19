@@ -65,6 +65,7 @@ def main() -> int:
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
         theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
+        bench_en="CSI 300", bench_zh="沪深300",
         generated_utc=built)
     (site / "baskets_china.html").write_text(html)
     # per-theme detail pages (site/basket_china/<id>.html) + the shared desk renderer

@@ -43,6 +43,15 @@ def test_trend_leg_positive_with_outperformance():
     assert leg > 0
     assert any("20d" in w for w in why)
     assert any("accel" in w.lower() for w in why)
+    assert any("vs S&P" in w for w in why)                    # default benchmark label
+
+
+def test_trend_leg_reason_uses_region_benchmark_label():
+    # the 20d reason names the region's benchmark, not a hardcoded S&P (China bug fix)
+    perf = {"20d": {"rel": 0.06}}
+    _, why = ts._trend_leg(perf, {}, "CSI 300")
+    assert any("vs CSI 300" in w for w in why)
+    assert not any("S&P" in w for w in why)
 
 
 def test_macro_leg_uses_prior_and_sector_rs():
@@ -117,9 +126,10 @@ def test_compute_theme_intel_contract_when_data_present():
     ti = ts.compute_theme_intel()
     if ti is None:                                                  # caches absent in CI shard
         return
-    for k in ("as_of", "disclaimer", "macro_context", "themes",
-              "rotation_5d", "impulse_scorecard", "recommendations", "weights"):
+    for k in ("as_of", "bench_label", "bench_label_zh", "disclaimer", "macro_context",
+              "themes", "rotation_5d", "impulse_scorecard", "recommendations", "weights"):
         assert k in ti
+    assert ti["bench_label"] == "S&P 500"                      # US default
     assert ti["themes"], "expected at least one scored theme"
     th = ti["themes"][0]
     assert 0 <= th["score"] <= 100 and th["rank"] == 1
@@ -128,3 +138,11 @@ def test_compute_theme_intel_contract_when_data_present():
     sc = ti["impulse_scorecard"]
     assert sc["net"] == sc["up3"] - sc["down3"]
     assert sc["net_hl"] == sc["nh"] - sc["nl"]
+    # the click-to-open scorecard rosters: counts match the named lists (capped at 80)
+    for cnt, key, has_ret in ((sc["up3"], "up_names", True), (sc["down3"], "down_names", True),
+                              (sc["nh"], "nh_names", False), (sc["nl"], "nl_names", False)):
+        names = sc[key]
+        assert len(names) == min(cnt, 80)
+        for row in names:
+            assert "t" in row and "tid" in row                # ticker + home-theme id (for links)
+            assert ("r" in row) == has_ret                    # impulse rows carry the daily return

@@ -128,6 +128,64 @@
   .duo { display:flex; height:9px; border-radius:6px; overflow:hidden; background:var(--line); margin-top:4px; }
   .duo i { height:100%; display:block; }
   .scard .net { font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:7px; }
+  .scard.clk { cursor:pointer; transition:border-color .15s, transform .08s; }
+  .scard.clk:hover { border-color:var(--muted); }
+  .scard.clk:active { transform:translateY(1px); }
+  .scm-hint { font-size:10.5px; color:var(--link); margin-top:9px; opacity:.9; }
+  /* ---- scorecard detail popup ---- */
+  .scmodal { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:none;
+    align-items:flex-start; justify-content:center; padding:6vh 14px; }
+  .scmodal.open { display:flex; }
+  .scm-card { background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 24px 60px rgba(0,0,0,.45); width:min(760px,96vw); max-height:84vh; overflow:auto;
+    padding:16px 18px 18px; position:relative; }
+  .scm-x { position:absolute; top:10px; right:12px; background:none; border:0; color:var(--muted);
+    font-size:17px; cursor:pointer; line-height:1; }
+  .scm-x:hover { color:var(--text); }
+  .scm-hd { font-size:16px; font-weight:740; margin:0 24px 2px 0; }
+  .scm-sub { font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .scm-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  .scm-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  @media (max-width:620px){ .scm-2col,.scm-3col { grid-template-columns:1fr; } }
+  .scm-col { min-width:0; }
+  .scm-colh { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+    padding-bottom:6px; border-bottom:1px solid var(--line); margin-bottom:2px; }
+  .scm-colh b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .scm-colh.up { color:var(--up); } .scm-colh.dn { color:var(--down); }
+  .scm-row { display:flex; align-items:center; gap:8px; padding:5px 2px; border-bottom:1px solid var(--line); font-size:12.5px; color:inherit; }
+  .scm-row:last-child { border-bottom:0; }
+  a.scm-row:hover { background:var(--panel2); }
+  .scm-nm { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:620; }
+  .scm-tk { color:var(--muted); font-weight:400; font-size:11px; margin-left:5px; }
+  .scm-th { font-size:10.5px; color:var(--muted); border:1px solid var(--line); border-radius:5px;
+    padding:0 6px; white-space:nowrap; max-width:130px; overflow:hidden; text-overflow:ellipsis; }
+  a.scm-th:hover { color:var(--link); border-color:var(--link); }
+  .scm-r { font-variant-numeric:tabular-nums; font-weight:700; min-width:46px; text-align:right; }
+  .scm-empty { color:var(--muted); font-size:12px; padding:8px 2px; }
+  /* ---- flow lens ---- */
+  .fl-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; margin:11px 0 4px; }
+  .fl-tile { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
+  .fl-k { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:5px; }
+  .fl-meter { height:7px; background:var(--line); border-radius:4px; overflow:hidden; margin:3px 0 5px; }
+  .fl-meter span { display:block; height:100%; background:linear-gradient(90deg,var(--up),var(--warn)); }
+  .fl-v { font-size:12.5px; } .fl-v b { font-weight:700; font-variant-numeric:tabular-nums; }
+  .fl-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+  .fl-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--muted); margin-right:5px; vertical-align:middle; }
+  .fl-dot.warn { background:var(--warn); }
+  .fl-legend { font-size:11px; color:var(--muted); margin:12px 0 6px; }
+  .fl-cols { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:640px){ .fl-cols{ grid-template-columns:1fr; } }
+  .fl-colh { font-weight:660; font-size:12px; margin-bottom:5px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+  .fl-row { display:flex; align-items:center; gap:8px; margin:4px 0; }
+  .fl-stage { flex:0 0 13px; font-size:11px; text-align:center; }
+  .fl-nm { flex:1; font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .fl-bar { flex:0 0 64px; height:6px; background:var(--line); border-radius:4px; overflow:hidden; }
+  .fl-bar span { display:block; height:100%; background:var(--muted); }
+  .fl-rq { flex:0 0 28px; text-align:right; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .fl-foot { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 14px; margin-top:12px; padding-top:9px; border-top:1px solid var(--line); }
+  .fl-verdict { font-size:12.5px; }
+  .fl-more { font-size:11.5px; } .fl-more summary { color:var(--muted); cursor:pointer; }
+  .fl-more[open] summary { color:var(--text); }
 
   /* ---- bell dropdown ---- */
   .bell { position:relative; }
@@ -264,52 +322,64 @@
 
   {% if flow %}
   {% set SZH = {'Information Technology':'信息技术','Health Care':'医疗保健','Financials':'金融','Consumer Discretionary':'非必需消费','Communication Services':'通信服务','Industrials':'工业','Consumer Staples':'必需消费','Energy':'能源','Utilities':'公用事业','Real Estate':'房地产','Materials':'原材料'} %}
+  {% set STAGE = {'emerging':('▲','var(--up)'),'confirmed':('●','var(--link)'),'cooling':('▽','var(--down)'),'quiet':('·','var(--muted)')} %}
   <div class="panel pad" id="flow-lens" style="margin-top:10px;border-left:3px solid var(--muted)">
-    <h2 style="margin:0 0 4px"><span class="idx">00</span>🌐 {{ t('Flow lens — where rotation is concentrating', '资金流透视 — 轮动集中在哪里') }}
+    <h2 style="margin:0 0 2px"><span class="idx">00</span>🌐 {{ t('Flow lens — where rotation is concentrating', '资金流透视 — 轮动集中在哪里') }}
       <span class="chip" style="vertical-align:middle">{{ t('display-only', '仅展示') }}</span></h2>
-    <p class="tagline" style="margin-top:0">{{ t(
-      'A detection + description layer, NOT a forecast. It ranks where cross-sectional flow is concentrating across the unbiased point-in-time GICS sectors and the thematic baskets — rigorously validated to have NO forward edge (rank-IC ~0 on clean sectors; the basket "edge" was survivorship). Use it to focus attention; never to infer returns.',
-      '这是探测+描述层，并非预测。它在无偏的时点 GICS 行业与主题篮子中，排出资金横截面集中之处 — 经严格验证无前瞻优势（干净行业上 rank-IC≈0；篮子的"优势"实为幸存者偏差）。用于聚焦关注，绝不用于推断收益。') }}</p>
+    <p class="sub" style="margin:0">{{ t('A wide detector of where cross-sectional flow is clustering — focus, not forecast (no forward edge).', '探测资金横截面集中之处的"宽镜头" — 用于聚焦而非预测（无前瞻优势）。') }}</p>
 
-    {% if flow.cluster %}{% set CL = flow.cluster %}
-    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:6px 0;font-size:13px">
-      <b>{{ t('Cross-group structure', '跨组结构') }}</b> <span class="muted">{{ t('supply-chain / theme-spread read', '供应链／主题扩散读数') }}</span><br>
-      {{ t('co-movement', '共动度') }} <b>{{ (CL.absorption*100)|round|int }}%</b> ({{ t(CL.regime, {'concentrated':'高度集中','broad':'分散','mixed':'中等'}.get(CL.regime, CL.regime)) }})
-      · {{ t('dominant cluster', '主导集群') }}: {% for s in CL.dominant_cluster %}<span class="chip">{{ t(s, SZH.get(s, s)) }}</span>{% endfor %}
-      {% if CL.top_pair %}· {{ t('tightest pair', '最紧耦合') }} {{ t(CL.top_pair[0], SZH.get(CL.top_pair[0], CL.top_pair[0])) }} ↔ {{ t(CL.top_pair[1], SZH.get(CL.top_pair[1], CL.top_pair[1])) }} ({{ '%.2f'|format(CL.top_pair_corr) }}){% endif %}
+    <div class="fl-strip">
+      {% if flow.cluster %}{% set CL = flow.cluster %}
+      <div class="fl-tile">
+        <div class="fl-k">{{ t('Co-movement', '共动度') }}</div>
+        <div class="fl-meter"><span style="width:{{ (CL.absorption*100)|round|int }}%"></span></div>
+        <div class="fl-v"><b>{{ (CL.absorption*100)|round|int }}%</b> <span class="muted">· {{ t(CL.regime, {'concentrated':'高度集中','broad':'分散','mixed':'中等'}.get(CL.regime, CL.regime)) }}</span></div>
+      </div>
+      <div class="fl-tile">
+        <div class="fl-k">{{ t('Dominant cluster', '主导集群') }}</div>
+        <div class="fl-chips">{% for s in CL.dominant_cluster %}<span class="chip">{{ t(s, SZH.get(s, s)) }}</span>{% endfor %}</div>
+        {% if CL.top_pair %}<div class="fl-v muted" style="font-size:11px;margin-top:4px">{{ t('tightest', '最紧') }}: {{ t(CL.top_pair[0], SZH.get(CL.top_pair[0], CL.top_pair[0])) }} ↔ {{ t(CL.top_pair[1], SZH.get(CL.top_pair[1], CL.top_pair[1])) }} ({{ '%.2f'|format(CL.top_pair_corr) }})</div>{% endif %}
+      </div>
+      {% endif %}
+      {% set RG = flow.regime %}
+      {% set cohering = [] %}{% for g in (flow.sectors + flow.baskets) %}{% if g.cohesion_gate.stress_conditional %}{% set _ = cohering.append(g) %}{% endif %}{% endfor %}
+      <div class="fl-tile">
+        <div class="fl-k">{{ t('Cohesion gate', '共动门') }} <span title="the one measured-but-modest, stress-conditional signal">ⓘ</span></div>
+        {% if RG.elevated and cohering %}
+        <div class="fl-v"><span class="fl-dot warn"></span><b style="color:var(--warn)">{{ t('Active', '激活') }}</b> <span class="muted">{{ t('rotation may be forming', '轮动或在形成') }}</span></div>
+        <div class="fl-chips">{% for g in cohering %}<span class="chip">{{ t(g.name, g.name_zh) }}</span>{% endfor %}</div>
+        {% else %}
+        <div class="fl-v"><span class="fl-dot"></span><span class="muted">{{ t('inactive', '未激活') }} · VIX {% if RG.pctile is not none %}{{ (RG.pctile*100)|round|int }}%ile{% else %}—{% endif %}</span></div>
+        {% endif %}
+      </div>
     </div>
-    {% endif %}
 
-    <div class="story" style="margin:8px 0 2px">{{ t('Concentrating now', '当前集中') }}
-      <span class="muted" style="font-size:12px">— {{ t('descriptive flow + read-quality bar; sectors are unbiased, baskets are hindsight-curated (confidence-capped). Do not rank one type against the other.', '描述性资金流 + 读数质量条；行业无偏，篮子为事后筛选（置信度封顶）。勿跨类型排名。') }}</span></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="fl-legend">{{ t('▲ emerging · ● confirmed · ▽ cooling — bar = read-quality (data coherence), NOT directional confidence. Sectors are unbiased; baskets are hindsight-curated — don\'t rank one type against the other.', '▲ 新兴 · ● 确认 · ▽ 降温 — 长条为读数质量（数据一致性），并非方向置信度。行业无偏，篮子为事后筛选 — 勿跨类型排名。') }}</div>
+    <div class="fl-cols">
       {% for col, label, lzh in [(flow.sectors, 'GICS sectors (unbiased)', 'GICS 行业（无偏）'), (flow.baskets, 'Thematic baskets (capped)', '主题篮子（封顶）')] %}
-      <div>
-        <div style="font-weight:650;font-size:12px;margin-bottom:3px">{{ t(label, lzh) }}</div>
+      <div class="fl-col">
+        <div class="fl-colh">{{ t(label, lzh) }}</div>
         {% for g in col[:5] %}
-        <div style="display:flex;align-items:center;gap:7px;margin:3px 0">
-          <span style="flex:0 0 12px;font-size:11px" title="{{ g.stage }}">{{ {'emerging':'▲','confirmed':'●','cooling':'▽','quiet':'·'}.get(g.stage,'·') }}</span>
-          <span style="flex:1;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t(g.name, g.name_zh) }}{% if g.leadership.breadth=='narrow' %} <span class="chip" style="font-size:10px" title="one name dominates the move">⚠{{ t('narrow','集中') }}</span>{% endif %}</span>
-          <div style="flex:0 0 56px;height:6px;background:var(--line);border-radius:4px;overflow:hidden"><div style="height:100%;width:{{ (g.read_quality*100)|round|int }}%;background:var(--muted)"></div></div>
-          <span class="muted" style="flex:0 0 30px;text-align:right;font-size:10.5px">{{ '%.2f'|format(g.read_quality) }}</span>
+        <div class="fl-row">
+          <span class="fl-stage" style="color:{{ STAGE.get(g.stage,('·','var(--muted)'))[1] }}" title="{{ g.stage }}">{{ STAGE.get(g.stage,('·','var(--muted)'))[0] }}</span>
+          <span class="fl-nm">{{ t(g.name, g.name_zh) }}{% if g.leadership.breadth=='narrow' %} <span class="chip" style="font-size:10px" title="one name dominates the move">⚠{{ t('narrow','集中') }}</span>{% endif %}</span>
+          <div class="fl-bar"><span style="width:{{ (g.read_quality*100)|round|int }}%"></span></div>
+          <span class="fl-rq">{{ '%.2f'|format(g.read_quality) }}</span>
         </div>
         {% endfor %}
       </div>
       {% endfor %}
     </div>
 
-    {% set RG = flow.regime %}
-    {% set cohering = [] %}{% for g in (flow.sectors + flow.baskets) %}{% if g.cohesion_gate.stress_conditional %}{% set _ = cohering.append(g) %}{% endif %}{% endfor %}
-    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin:10px 0 4px;font-size:12.5px">
-      <b>{{ t('Cohesion gate', '共动门') }}</b> <span class="muted">({{ t('context only · the one measured-but-modest edge, stress-conditional, 20d', '仅上下文 · 唯一实测但有限的边际信号，压力条件下，20日') }})</span><br>
-      {% if RG.elevated and cohering %}⚠ {{ t('Stress regime AND groups cohering', '压力状态 且 多组共动') }}: {% for g in cohering %}<span class="chip">{{ t(g.name, g.name_zh) }}</span>{% endfor %} — {{ t('rotation may be forming (low confidence; a stress dispersion-recovery proxy, not inflows)', '轮动或在形成（低置信度；压力离散修复代理，并非资金流入）') }}
-      {% else %}{{ t('inactive', '未激活') }} — {{ t('VIX', 'VIX') }} {% if RG.pctile is not none %}{{ (RG.pctile*100)|round|int }}%ile{% else %}—{% endif %} ({{ t('not a stress regime; cohesion only carries signal under stress', '非压力状态；共动仅在压力下才有意义') }}){% endif %}
+    <div class="fl-foot">
+      <span class="fl-verdict">{{ t('Verdict', '结论') }}: <b>{{ flow.verdict }}</b></span>
+      <details class="fl-more"><summary>{{ t('What this is &amp; how it was validated', '这是什么 · 如何验证') }}</summary>
+        <p class="muted" style="font-size:11.5px;margin:6px 0 0;line-height:1.55;max-width:95ch">{{ t(
+          'A detection + description layer, NOT a forecast. It ranks where cross-sectional flow is concentrating across the unbiased point-in-time GICS sectors and the thematic baskets, and maps the cross-group cluster. Rigorously validated to have NO forward edge (rank-IC ~0 on clean sectors; the basket "edge" was survivorship) — the read-quality bar measures data/coherence, not directional confidence. The cohesion gate is the one measured-but-modest, stress-conditional signal (a dispersion-recovery proxy, not inflows). Built on a ~3y cache; reconfirm as data accrues. A wide detector that focuses a separate inference layer — never scored, never an axis.',
+          '这是探测+描述层，并非预测。它在无偏的时点 GICS 行业与主题篮子中排出资金横截面集中之处，并刻画跨组集群结构。经严格验证无前瞻优势（干净行业 rank-IC≈0；篮子的"优势"实为幸存者偏差）— 读数质量条衡量数据/一致性，而非方向置信度。共动门是唯一实测但有限、压力条件下的信号（压力离散修复代理，并非资金流入）。基于约3年缓存，随数据积累需复核。这是聚焦独立推断层的"宽探测器" — 从不评分、绝不入轴。') }}
+          <a href="#" onclick="return false" class="muted" style="text-decoration:underline" title="See data/group_flow/validation_meta.json">{{ t('validation meta', '验证元数据') }}</a></p>
+      </details>
     </div>
-
-    <div class="muted" style="font-size:11.5px;margin-top:6px">{{ t('Verdict', '结论') }}: <b>{{ flow.verdict }}</b> · {{ t(
-      'never scored, never an axis. The read-quality bar measures data/coherence, NOT directional confidence (there is none). Built on a ~3y cache; reconfirm as data accrues. This is the wide detector that focuses a separate inference layer — it does not draw conclusions itself.',
-      '从不评分、绝不入轴。读数质量条衡量数据/一致性，而非方向置信度（不存在）。基于约3年缓存；随数据积累需复核。这是用于聚焦独立推断层的"宽探测器"，本身不下结论。') }}
-      <a href="#" onclick="return false" class="muted" style="text-decoration:underline" title="See data/group_flow/validation_meta.json">{{ t('how this was validated', '验证方法') }}</a></div>
   </div>
   {% endif %}
 
@@ -664,7 +734,7 @@ function renderConcentration(){
   const adc=(en,zh,v)=>`<div class="adc"><div class="k">${L(en,zh)}</div><div class="v ${v==null?'muted':(v<1?'neg':'pos')}">${v==null?'—':(+v).toFixed(2)}</div></div>`;
   const narrow=`<div class="panel pad" style="border-left:3px solid ${vv[0]}">
     <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center">
-      <div><span class="muted sm">${L('S&P breadth','标普广度')}</span><div style="font-size:18px;font-weight:740;color:${vv[0]}">${L(vv[1],vv[2])}</div></div>
+      <div><span class="muted sm">${L((THEME.bench_label||'S&P')+' breadth',(THEME.bench_label_zh||'标普')+'广度')}</span><div style="font-size:18px;font-weight:740;color:${vv[0]}">${L(vv[1],vv[2])}</div></div>
       <div class="adgrid">${adc('A/D today','今日',mc.ad_ratio)}${adc('3-day','3日',mc.ad_3d)}${adc('weekly','周',mc.ad_w)}${adc('monthly','月',mc.ad_m)}</div>
       <div class="muted sm">${L('above 50d','站上50日')} <b>${mc.pct_above_50!=null?mc.pct_above_50+'%':'—'}</b> · ${L('above 200d','站上200日')} <b>${mc.pct_above_200!=null?mc.pct_above_200+'%':'—'}</b> · ${L('new hi/lo','新高/低')} <b class="pos">${mc.nh}</b>/<b class="neg">${mc.nl}</b></div>
     </div></div>`;
@@ -674,27 +744,83 @@ function renderConcentration(){
     + `<div class="rotwrap" style="margin-top:12px">${lead(THEME.breadth_leaders,'Owns the advance','主导上涨','▲')}${lead(THEME.breadth_laggards,'In the decline','处于下跌','▽')}</div>`
     + `<div class="rotwrap" style="margin-top:12px">${tlist(THEME.entries,'Clean entries (emerging)','干净入场（新兴）','entry')}${tlist(THEME.rollover,'Roll-over watch','回落观察','roll')}</div>`;
 }
+// ---- scorecard detail popups (click a scorecard → floating list of names) ---
+function _bbase(){ return window.BASKET_BASE||'basket/'; }
+function _scOverlay(){
+  let ov=document.getElementById('sc-modal');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='sc-modal'; ov.className='scmodal';
+    ov.innerHTML='<div class="scm-card" role="dialog" aria-modal="true"><button class="scm-x" aria-label="close">✕</button><div class="scm-hd"></div><div class="scm-sub"></div><div class="scm-bd"></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click',e=>{ if(e.target===ov) scClose(); });
+    ov.querySelector('.scm-x').onclick=scClose;
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') scClose(); });
+  }
+  return ov;
+}
+function scClose(){ const ov=document.getElementById('sc-modal'); if(ov) ov.classList.remove('open'); }
+function _nmRow(x,withRet){
+  // name shows the human name where we have one, else the ticker; the ticker sub-label
+  // appears only in the language that actually has a name (else it would duplicate the ticker).
+  const nm=`<span class="l-en">${esc(x.n||x.t)}</span><span class="l-zh">${esc(x.n_zh||x.n||x.t)}</span>`;
+  const tk=`<span class="l-en">${x.n?`<span class="scm-tk">${esc(x.t)}</span>`:''}</span><span class="l-zh">${x.n_zh?`<span class="scm-tk">${esc(x.t)}</span>`:''}</span>`;
+  const th=x.tid?`<a class="scm-th" href="${_bbase()}${esc(x.tid)}.html" title="${esc(x.th||'')}">${L(esc(x.th||''),esc(x.th_zh||x.th||''))}</a>`:'';
+  const ret=withRet?`<span class="scm-r ${cls(x.r)}">${fmtPct(x.r)}</span>`:'';
+  return `<div class="scm-row"><span class="scm-nm">${nm}${tk}</span>${th}${ret}</div>`;
+}
+function _scCol(title,arr,withRet,tone){
+  const rows=(arr&&arr.length)?arr.map(x=>_nmRow(x,withRet)).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
+  return `<div class="scm-col"><div class="scm-colh ${tone||''}">${title} <b>${(arr||[]).length}</b></div>${rows}</div>`;
+}
+function openSc(kind){
+  if(!THEME) return;
+  const s=THEME.impulse_scorecard||{}, rc=THEME.recommendations||{};
+  const ov=_scOverlay(); let hd='',sub='',bd='';
+  if(kind==='impulse'){
+    hd=L('±3% daily impulse','±3% 当日脉冲');
+    sub=L('Every basket member that moved ≥3% today — the impulse / volatility tape.','今日波动≥3%的所有篮子成分 — 脉冲／波动一览。');
+    bd=`<div class="scm-2col">${_scCol(L('Surged ≥3%','涨≥3%'),s.up_names,true,'up')}${_scCol(L('Dropped ≥3%','跌≥3%'),s.down_names,true,'dn')}</div>`;
+  } else if(kind==='extremes'){
+    hd=L('52-week extremes','52周极值');
+    sub=L('Members printing a fresh 52-week high or low today.','今日创出52周新高或新低的成分。');
+    bd=`<div class="scm-2col">${_scCol(L('New 52-wk highs','创52周新高'),s.nh_names,false,'up')}${_scCol(L('New 52-wk lows','创52周新低'),s.nl_names,false,'dn')}</div>`;
+  } else if(kind==='reco'){
+    hd=L('Recommendation tally','建议统计');
+    sub=L('Where every theme lands on the desk read. Click a theme to open it.','每个主题的台面结论分布。点击主题可打开详情。');
+    const grp=(en,zh,keys,tone)=>{ const arr=[].concat(...keys.map(k=>rc[k]||[]));
+      const rows=arr.length?arr.map(t=>`<a class="scm-row" href="${_bbase()}${esc(t.id)}.html"><span class="scm-nm">${L(esc(t.name),esc(t.name_zh||t.name))}</span><span class="scm-th">${esc((t.label||'').toUpperCase())}</span><span class="scm-r">${t.score}</span></a>`).join(''):`<div class="scm-empty">${L('none','无')}</div>`;
+      return `<div class="scm-col"><div class="scm-colh ${tone}">${L(en,zh)} <b>${arr.length}</b></div>${rows}</div>`; };
+    bd=`<div class="scm-3col">${grp('Enter / add','建仓／加仓',['enter','accumulate'],'up')}${grp('Hold','持有',['hold'],'')}${grp('Trim / avoid','减仓／回避',['trim','avoid'],'dn')}</div>`;
+  } else return;
+  ov.querySelector('.scm-hd').innerHTML=hd;
+  ov.querySelector('.scm-sub').innerHTML=sub;
+  ov.querySelector('.scm-bd').innerHTML=bd;
+  ov.classList.add('open');
+}
 function renderScorecards(){
   const sec=document.getElementById('impulse-section');
   if(!THEME||!THEME.impulse_scorecard){ if(sec) sec.style.display='none'; return; }
   const s=THEME.impulse_scorecard, rc=THEME.recommendations||{};
   const duo=(a,b)=>{const t=(a+b)||1;return `<div class="duo"><i style="width:${a/t*100}%;background:var(--up)"></i><i style="width:${b/t*100}%;background:var(--down)"></i></div>`;};
   const cnt=k=>(rc[k]||[]).length;
-  const c1=`<div class="scard"><div class="sk">${L('±3% daily impulse','±3% 当日脉冲')}</div>
+  const hint=`<div class="scm-hint">${L('Click for the names →','点击查看个股 →')}</div>`;
+  const c1=`<div class="scard clk" data-sc="impulse"><div class="sk">${L('±3% daily impulse','±3% 当日脉冲')}</div>
     <div class="bigrow"><div><div class="big up">${s.up3}</div><div class="sublbl">${L('up ≥3%','涨≥3%')}</div></div>
     <div><div class="big dn">${s.down3}</div><div class="sublbl">${L('down ≥3%','跌≥3%')}</div></div></div>
-    ${duo(s.up3,s.down3)}<div class="net">${L('net','净')} <b class="${cls(s.net)}">${s.net>=0?'+':''}${s.net}</b> ${L('of '+s.n+' names',' ／共 '+s.n+' 只')}</div></div>`;
-  const c2=`<div class="scard"><div class="sk">${L('52-week extremes','52周极值')}</div>
+    ${duo(s.up3,s.down3)}<div class="net">${L('net','净')} <b class="${cls(s.net)}">${s.net>=0?'+':''}${s.net}</b> ${L('of '+s.n+' names',' ／共 '+s.n+' 只')}</div>${hint}</div>`;
+  const c2=`<div class="scard clk" data-sc="extremes"><div class="sk">${L('52-week extremes','52周极值')}</div>
     <div class="bigrow"><div><div class="big up">${s.nh}</div><div class="sublbl">${L('new highs','新高')}</div></div>
     <div><div class="big dn">${s.nl}</div><div class="sublbl">${L('new lows','新低')}</div></div></div>
-    ${duo(s.nh,s.nl)}<div class="net">${L('net','净')} <b class="${cls(s.net_hl)}">${s.net_hl>=0?'+':''}${s.net_hl}</b></div></div>`;
-  const c3=`<div class="scard"><div class="sk">${L('recommendation tally','建议统计')}</div>
+    ${duo(s.nh,s.nl)}<div class="net">${L('net','净')} <b class="${cls(s.net_hl)}">${s.net_hl>=0?'+':''}${s.net_hl}</b></div>${hint}</div>`;
+  const c3=`<div class="scard clk" data-sc="reco"><div class="sk">${L('recommendation tally','建议统计')}</div>
     <div class="bigrow" style="gap:12px;flex-wrap:wrap">
       <div><div class="big up">${cnt('enter')+cnt('accumulate')}</div><div class="sublbl">${L('enter / add','建仓／加仓')}</div></div>
       <div><div class="big" style="color:var(--muted)">${cnt('hold')}</div><div class="sublbl">${L('hold','持有')}</div></div>
       <div><div class="big dn">${cnt('trim')+cnt('avoid')}</div><div class="sublbl">${L('trim / avoid','减仓／回避')}</div></div>
-    </div></div>`;
-  document.getElementById('scorecards').innerHTML=c1+c2+c3;
+    </div>${hint}</div>`;
+  const box=document.getElementById('scorecards');
+  box.innerHTML=c1+c2+c3;
+  box.querySelectorAll('.scard.clk').forEach(c=>c.onclick=()=>openSc(c.dataset.sc));
 }
 function openTheme(id){const d=document.getElementById('theme-'+id);if(!d)return;const det=d.querySelector('details');if(det)det.open=true;
   d.scrollIntoView({behavior:'smooth',block:'center'});d.style.transition='box-shadow .3s';d.style.boxShadow='0 0 0 2px var(--link)';setTimeout(()=>{d.style.boxShadow='';},1200);}
