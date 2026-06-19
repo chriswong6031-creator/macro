@@ -1909,7 +1909,8 @@
       "curated": "2026-06-18",
       "omitted": [
         "BLSH Bullish, GEMI Gemini, ETOR eToro, STRC (too-recent / illiquid — excluded)",
-        "BITF, WULF, CIFR, IREN, CORZ (secondary miners — excluded for liquidity)"
+        "BITF, WULF, CIFR, APLD, BTDR (secondary miners — excluded)",
+        "IREN, CORZ, HUT (removed 2026-06: bitcoin miners that pivoted to AI/HPC hyperscaler hosting and decoupled from BTC)"
       ],
       "members": [
         {
@@ -1963,24 +1964,30 @@
         {
           "ticker": "IREN",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "IREN (Iris Energy) — bitcoin miner pivoting to AI/HPC cloud"
+          "removed": "2026-06-17",
+          "rationale": "IREN (Iris Energy) — EXITED: pivoted to AI/HPC neocloud; BTC corr faded to ~0.47 (40d to IBIT), now trades as data-center beta not crypto"
         },
         {
           "ticker": "CORZ",
           "added": "2024-01-16",
-          "removed": null,
-          "rationale": "Core Scientific — miner + AI/HPC hosting (relisted 2024-01)"
+          "removed": "2026-06-17",
+          "rationale": "Core Scientific — EXITED: AI/HPC hosting (CoreWeave); BTC corr ~0.38 (40d), now correlates MORE to NVDA/CRWV than to bitcoin"
         },
         {
           "ticker": "HUT",
           "added": "2023-05-09",
+          "removed": "2026-06-17",
+          "rationale": "Hut 8 — EXITED: energy/AI-compute pivot; BTC corr ~0.33 (40d), now AI/neocloud beta not crypto"
+        },
+        {
+          "ticker": "ETHA",
+          "added": "2026-06-17",
           "removed": null,
-          "rationale": "Hut 8 — bitcoin miner + energy/compute infrastructure"
+          "rationale": "iShares Ethereum ETF — spot-ETH beta; ETH is the #2 crypto asset and tracks bitcoin closely (ρ≈0.8–0.9), broadening the basket beyond BTC-only"
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
-      "thesis": "Listed crypto-equity beta — the US exchange (COIN), retail brokerage (HOOD), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL), a crypto merchant bank (GLXY) and the bitcoin miners (MARA/RIOT/CLSK). The cleanest public sensor for the crypto regulatory & liquidity cycle — and by far the highest-beta basket here: it amplifies bitcoin both ways. Several members are 2025 IPOs, so their early history is partial. A regime sensor, not a buy list.",
+      "thesis": "Listed crypto-equity beta — the US exchange (COIN), retail brokerage (HOOD), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL), a crypto merchant bank (GLXY), spot-ETH via the iShares ETF (ETHA) and the pure-play bitcoin miners (MARA/RIOT/CLSK). Membership is screened to actually track bitcoin: miners that pivoted to AI/HPC hosting in the BTC bear market (IREN/CORZ/HUT) were removed once their BTC correlation collapsed and they began trading as data-center beta — keeping them would have polluted the basket's data and signals. The cleanest public sensor for the crypto regulatory & liquidity cycle — and by far the highest-beta basket here: it amplifies bitcoin both ways. A regime sensor, not a buy list.",
       "weighting": "equal",
       "changelog": [
         {
@@ -1992,6 +1999,16 @@
           "date": "2026-06-18",
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (3 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: IREN, CORZ, HUT."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "remove",
+          "note": "Removed IREN, CORZ, HUT — bitcoin miners that pivoted to AI/HPC hyperscaler hosting during the BTC bear market and decoupled from bitcoin (40d return-corr to IBIT: IREN 0.47, CORZ 0.38, HUT 0.33; CORZ/HUT now correlate MORE to NVDA/CoreWeave than to BTC). They were injecting AI-capex beta into the crypto basket's scores/signals. Kept the pure-play miners whose BTC beta still dominates (MARA 0.67, RIOT 0.51, CLSK 0.58)."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Added ETHA (iShares Ethereum ETF) — spot-ETH beta; ETH tracks bitcoin closely (ETH↔BTC daily-return corr ≈0.8–0.9) so it belongs, and broadens the basket beyond bitcoin-only."
         }
       ]
     }
