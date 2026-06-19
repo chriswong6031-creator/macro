@@ -191,6 +191,7 @@
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i], k;
       if (tf === '1W') k = isoWeek(r.time);
+      else if (tf === '1M') k = r.time.slice(0, 7);   // calendar month: YYYY-MM
       else k = Math.floor(i / 3);             // 3D = chunks of 3 sessions
       if (k !== key) { flush(); key = k; cur = { time: r.time, o: r.o, h: r.h, l: r.l, c: r.c, v: r.v || 0 }; }
       else {
@@ -264,7 +265,7 @@
     // toolbar
     var bar = document.createElement('div'); bar.className = 'bchart-bar';
     var seg = document.createElement('div'); seg.className = 'bchart-seg';
-    [['1D', '1D'], ['3D', '3D'], ['1W', tt('1W', '周')]].forEach(function (tfp) {
+    [['1D', '1D'], ['3D', '3D'], ['1W', tt('1W', '周')], ['1M', tt('1M', '月')]].forEach(function (tfp) {
       var b = document.createElement('button'); b.textContent = tfp[1]; b.dataset.tf = tfp[0];
       if (self.tf === tfp[0]) b.className = 'on';
       b.onclick = function () { self.tf = tfp[0]; self.persist(); self.syncBar(); self.rerender(); };
