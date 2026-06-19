@@ -13,7 +13,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -33,6 +35,64 @@ log = logging.getLogger("china_library")
 
 CSI300_ETF = "510300.SS"   # cap-weighted A-share market proxy for the residual-alpha leg
 JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's skip sentinel
+
+
+# ── per-ticker analyze() fan-out (mirrors build_stock_library's process pool) ──
+# The ~795-name China universe runs the GIL-bound engine.cycles.analyze per name;
+# fan it across processes so the daily build doesn't pay it serially. Knobs match
+# the US build: STOCK_LIB_WORKERS env (1 = force serial) > stock_search.workers >
+# cpu_count, capped at 8. The pool only carries the market-wide liquidity label
+# (the sole macro modifier threaded into the CN ladder); everything else stays
+# serial in main() after the analyses come back, so output is order-identical.
+_CN_SHARED: dict = {}
+
+
+def _library_workers() -> int:
+    n = os.environ.get("STOCK_LIB_WORKERS") or None
+    if n is None:
+        n = config.load().get("stock_search", {}).get("workers")
+    if n is None:
+        n = os.cpu_count() or 1
+    return max(1, min(int(n), 8))
+
+
+def _cn_winit(liq=None) -> None:
+    _CN_SHARED["liq"] = liq
+
+
+def _cn_one_task(item):
+    """Worker: one ticker's library record (or None). Mirrors the inline call +
+    its one-bad-ticker-can't-kill-the-library guard."""
+    ticker, close, high, name, sector = item
+    try:
+        return _one(ticker, close, high, name, sector, liquidity=_CN_SHARED.get("liq"))
+    except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
+        log.debug("china library %s failed: %s", ticker, e)
+        return None
+
+
+def _analyze_universe(uni, liq):
+    """Run _one over the universe, in parallel when the pool is worthwhile, else
+    serial. Returns recs aligned 1:1 with uni (None for skips/failures). Any pool
+    error degrades to the serial path — parallelism must never break the build."""
+    _cn_winit(liq)  # also primes the serial path
+    workers = _library_workers()
+    if workers > 1 and len(uni) > 50:
+        try:
+            from concurrent.futures import ProcessPoolExecutor
+            t0 = time.time()
+            with ProcessPoolExecutor(max_workers=workers, initializer=_cn_winit,
+                                     initargs=(liq,)) as ex:
+                recs = list(ex.map(_cn_one_task, uni, chunksize=8))
+            log.info("china library: analysed %d names in %.0fs (%d processes)",
+                     len(uni), time.time() - t0, workers)
+            return recs
+        except Exception as e:  # noqa: BLE001 — parallelism must never break the build
+            log.warning("parallel china library build failed (%s) — serial fallback", e)
+    t0 = time.time()
+    recs = [_cn_one_task(item) for item in uni]
+    log.info("china library: analysed %d names in %.0fs (serial)", len(uni), time.time() - t0)
+    return recs
 
 
 def tv_symbol(ticker: str) -> str:
@@ -509,12 +569,9 @@ def main(alpha: dict | None = None) -> dict | None:
     profiles: dict[str, dict] = {}
     disp_map: dict[str, dict] = {}
     to_write: list[tuple[str, dict]] = []
-    for ticker, close, high, name, sector in universe():
-        try:
-            rec = _one(ticker, close, high, name, sector, liquidity=liq)
-        except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
-            log.debug("china library %s failed: %s", ticker, e)
-            rec = None
+    uni = universe()
+    recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
+    for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
             failed += 1
             continue
