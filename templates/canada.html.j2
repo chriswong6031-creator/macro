@@ -93,6 +93,7 @@
   .help .tip { display:none; position:absolute; bottom:150%; left:50%; transform:translateX(-50%); width:300px; background:var(--panel); border:1px solid var(--line); padding:10px 12px; border-radius:9px; z-index:60; font-size:12px; line-height:1.5; color:var(--text); text-align:left; font-weight:400; text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
   .caveat { font-size:11.5px; color:var(--muted); font-style:italic; }
+{% include "_cmd_hero.css.j2" %}
 </style>
 </head>
 <body>
@@ -137,23 +138,67 @@
 </div>
 
 {% if mode != 'stocks' %}{# ===== macro-only sections (regime → action board) ===== #}
-<!-- ===== Regime hero ===== -->
-<div class="panel">
-  <div class="row" style="gap:18px">
-    <span class="quad q-{{ Q }}">{{ td(latest.quad_name) }}</span>
-    {% if quad_meaning %}<span class="muted small">{{ t(quad_meaning[0], quad_meaning[1]) }}</span>{% endif %}
-    <span style="flex:1"></span>
-    <div class="dial"><span class="lbl">{{ t('Growth', '增长') }}</span><b class="{{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.growth_score) }}</b></div>
-    <div class="dial"><span class="lbl">{{ t('Inflation', '通胀') }}</span><b class="{{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ '%+.2f'|format(latest.inflation_score) }}</b></div>
-    <div class="dial"><span class="lbl">{{ t('Confidence', '置信度') }}</span><b>{{ '%.0f'|format(latest.confidence*100) }}%</b></div>
-  </div>
-  <div class="row" style="margin-top:11px">
-    <span class="chip">{{ t('BoC stance', '央行立场') }}: <b>{{ td(latest.liquidity_overlay) }}</b>{{ help('Bank of Canada policy-rate direction over ~3 months (cuts = expanding, hikes = contracting), with a GoC-curve steepening tilt.', '加拿大央行政策利率约三个月方向（降息＝扩张，加息＝收缩），并叠加加债收益率曲线变陡的倾向。') }}</span>
-    <span class="chip">{{ t('Cycle', '周期阶段') }}: <b>{{ td(latest.cycle_tag) }}</b></span>
-    {% if latest.confirming %}<span class="chip on">✓ {{ latest.confirming|length }} {{ t('confirming', '确认') }}</span>{% endif %}
-    {% if latest.contradicting %}<span class="chip off">✗ {{ latest.contradicting|length }} {{ t('contradicting', '矛盾') }}</span>{% endif %}
-    <span style="flex:1"></span>
-    <a class="navbtn" href="canada_history.html">{{ t('Regime history →', '周期历史 →') }}</a>
+<!-- ===== Canada regime — command-center hero ===== -->
+{% set ov = overlay or {} %}
+{% set _ol = {
+  'Q1': ('Falling inflation with steady growth — supportive for quality and rate-sensitives. The TSX tape is set by commodities and the loonie.', '通胀回落、增长平稳 — 利好质量股与利率敏感股。多伦多大盘的盘面由大宗商品与加元决定。'),
+  'Q2': ('Growth and inflation both firming — favour energy, materials and financials, the heart of the TSX.', '增长与通胀同步走强 — 偏好能源、材料与金融，多伦多大盘的核心。'),
+  'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital, lean on gold and energy.', '通胀粘性叠加增长放缓 — 最危险的周期；保住本金，依靠黄金与能源。'),
+  'Q4': ('A growth scare with cooling inflation — lean defensive; bonds and staples over cyclicals.', '增长恐慌伴随通胀降温 — 偏防御；债券与必需消费优于周期股。')
+} %}
+<div class="panel cmd-hero" id="regime-radar">
+  <div class="hero-bar">
+    <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
+    <div class="hero-loc">
+      <div class="loc-axes"><span>{{ t('GROWTH','增长') }} ↑</span><span>{{ t('INFL','通胀') }} →</span></div>
+      <div class="qmini">
+        <span class="qm{{ ' on' if Q == 'Q1' }}" style="--qc:var(--q1)"></span>
+        <span class="qm{{ ' on' if Q == 'Q2' }}" style="--qc:var(--q2)"></span>
+        <span class="qm{{ ' on' if Q == 'Q4' }}" style="--qc:var(--q4)"></span>
+        <span class="qm{{ ' on' if Q == 'Q3' }}" style="--qc:var(--q3)"></span>
+      </div>
+    </div>
+    <!-- CENTER — headline regime + plain-English standfirst -->
+    <div class="hero-main">
+      <div class="hero-eyebrow"><span class="num">{{ latest.date }}</span> · {{ t('CANADA TSX REGIME', '加拿大 TSX 周期') }}
+        · <span class="num {{ 'pos' if latest.growth_score>=0 else 'neg' }}">{{ t('G','增') }} {{ '%+.2f'|format(latest.growth_score) }}</span>
+        <span class="num {{ 'pos' if latest.inflation_score>=0 else 'neg' }}">{{ t('I','胀') }} {{ '%+.2f'|format(latest.inflation_score) }}</span>
+        {{ help("The four market regimes — combinations of growth and inflation DIRECTION (quadrants, not calendar quarters). GOLDILOCKS = growth↑ inflation↓. REFLATION = both rising (energy, materials, financials — the heart of the TSX). STAGFLATION = inflation↑ growth↓ (the dangerous one). GROWTH SCARE = both falling (bonds & staples). The TSX is commodity-heavy, so read the regime alongside the commodity/CAD overlay below.", "四种市场周期 — 增长与通胀方向的组合（象限，而非日历季度）。理想增长＝增长↑通胀↓；再通胀＝双升（能源、材料、金融 — 多伦多大盘的核心）；滞胀＝通胀↑增长↓（最危险）；增长恐慌＝双降（债券与必需消费）。TSX 大宗商品权重高，故周期需与下方大宗商品／加元叠加同看。") }}
+      </div>
+      <div class="hero-regime">
+        <span class="hr-dot" style="background:var(--q{{ Q[1] }});box-shadow:0 0 14px var(--q{{ Q[1] }})"></span>
+        <h1 class="hr-name">{{ td(latest.quad_name) }}</h1>
+      </div>
+      <p class="hero-says">{{ t(_ol[Q][0], _ol[Q][1]) }}</p>
+      <p class="hero-says" style="margin-top:6px"><a class="navbtn" href="canada_history.html" style="font-size:12px">{{ t('Regime history →', '周期历史 →') }}</a></p>
+    </div>
+    <!-- RIGHT — vitals strip: Canada's native drivers -->
+    <div class="hero-vitals">
+      <div class="vital">
+        <div class="v-top"><span class="v-label">{{ t('BoC STANCE', '央行立场') }}</span>
+          {{ help('Bank of Canada policy-rate direction over ~3 months (cuts = expanding, hikes = contracting), with a GoC-curve steepening tilt.', '加拿大央行政策利率约三个月方向（降息＝扩张，加息＝收缩），并叠加加债收益率曲线变陡的倾向。') }}</div>
+        <span class="v-chip liq-{{ latest.liquidity_overlay }}">{{ td(latest.liquidity_overlay) }}</span>
+        <span class="v-mean">{{ t('policy-rate direction', '政策利率方向') }}</span>
+      </div>
+      <div class="vital">
+        <div class="v-top"><span class="v-label">{{ t('COMMODITIES', '大宗商品') }}</span>
+          {{ help('The TSX is commodity-heavy, so the concurrent commodity-and-currency risk gauge (WTI oil, gold, copper/gold, USD/CAD, S&P 500, VIX, DXY) is its #1 high-frequency driver. Risk-on = commodities firm + CAD strong. Terms of trade improving/deteriorating tracks the export-price tailwind. A concurrent state, not a forecast — see the overlay panel below.', 'TSX 大宗商品权重高，故同期的大宗与货币风险计（WTI 原油、黄金、铜金比、美元兑加元、标普500、VIX、美元指数）是其第一高频驱动。风险偏好＝大宗坚挺＋加元走强。贸易条件改善／恶化反映出口价格顺风。这是同期状态而非预测 — 详见下方叠加面板。') }}</div>
+        <span class="v-chip {{ 'tone-up' if ov.state=='Risk-on' else ('tone-down' if ov.state=='Risk-off' else '') }}">{{ td(ov.state or 'unknown') }}</span>
+        <span class="v-mean">{% if ov.terms_of_trade %}{{ t('terms of trade', '贸易条件') }} {{ td(ov.terms_of_trade) }}{% else %}{{ t('oil · gold · CAD', '原油 · 黄金 · 加元') }}{% endif %}</span>
+      </div>
+      <div class="vital">
+        <div class="v-top"><span class="v-label">{{ t('AGREEMENT', '一致度') }}</span>
+          {{ help('How many of the underlying indicators point the same way. Mixed (&lt;30%) = expect chop, size down. Solid (&gt;45%) = the regime call is well-supported.', '底层指标中有多少指向同一方向。分歧（&lt;30%）= 预期震荡，缩小仓位。扎实（&gt;45%）= 周期判断有充分支撑。') }}</div>
+        <span class="v-num num-lg">{{ '%.0f'|format(latest.confidence*100) }}<small>%</small></span>
+        <span class="v-meter" style="--p:{{ (latest.confidence*100)|round|int }}%;--mc:{{ 'var(--up)' if latest.confidence>=0.45 else ('var(--warn)' if latest.confidence>=0.30 else 'var(--down)') }}"></span>
+      </div>
+      <div class="vital">
+        <div class="v-top"><span class="v-label">{{ t('CYCLE', '商业周期') }}</span></div>
+        <span class="v-chip">{{ td(latest.cycle_tag) }}</span>
+        <span class="v-mean">
+          {%- if latest.confirming %}✓{{ latest.confirming|length }} {% endif %}{% if latest.contradicting %}✗{{ latest.contradicting|length }} {% endif %}{{ t('multi-year backdrop', '多年期背景') }}</span>
+      </div>
+    </div>
   </div>
 </div>
 

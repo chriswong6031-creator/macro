@@ -1,0 +1,97 @@
+  /* ===================== COMMAND-CENTER REGIME HERO (shared) =====================
+     The modern macro scorecard ported from the US macro terminal (dashboard.html.j2)
+     to China / HK / Canada. Scoped under .cmd-hero on the hero panel so it never
+     restyles the rest of the page; every colour routes through the existing theme
+     vars so dark/light + the zh Asia red/green swap propagate at paint. A 3-column
+     bar: 2x2 quadrant locator · headline regime + plain-English standfirst · a
+     vitals strip of the market's NATIVE drivers (LABEL · VALUE · MEANING). */
+  .cmd-hero {
+    --num: "SF Mono", ui-monospace, "Cascadia Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+    --hair: color-mix(in srgb, var(--line) 72%, transparent);
+    --tile: color-mix(in srgb, var(--panel2, var(--panel)) 86%, var(--panel));
+    --ink-1: var(--text);
+    --ink-2: color-mix(in srgb, var(--text) 64%, transparent);
+    --ink-3: var(--muted);
+    --rule: 1px;
+    padding: 19px 21px;
+  }
+  html[data-theme="light"] .cmd-hero {
+    --ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+    --hair: color-mix(in srgb, var(--line) 90%, transparent);
+  }
+  .cmd-hero .num, .cmd-hero .num-lg, .cmd-hero .v-num, .cmd-hero .v-chip {
+    font-family: var(--num); font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1; letter-spacing: -.01em; }
+  .cmd-hero .num-lg { font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--ink-1); }
+
+  .cmd-hero .hero-bar { display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 26px; }
+  .cmd-hero .hero-main { padding: 2px 28px; min-width: 0;
+    border-left: var(--rule) solid var(--hair); border-right: var(--rule) solid var(--hair); }
+
+  /* LEFT — 2x2 quadrant locator (growth↑ top, inflation→ right; lit cell only) */
+  .cmd-hero .hero-loc { display: grid; gap: 7px; justify-items: start; }
+  .cmd-hero .qmini { display: grid; grid-template-columns: repeat(2, 31px);
+    grid-template-rows: repeat(2, 31px); gap: 5px; }
+  .cmd-hero .qm { border-radius: 6px;
+    background: color-mix(in srgb, var(--qc) 14%, var(--tile));
+    border: var(--rule) solid color-mix(in srgb, var(--qc) 28%, var(--hair));
+    transition: box-shadow .2s ease; }
+  .cmd-hero .qm.on { background: var(--qc);
+    box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--qc),
+                0 0 18px color-mix(in srgb, var(--qc) 55%, transparent); }
+  .cmd-hero .loc-axes { display: flex; justify-content: space-between; width: 100%;
+    gap: 8px; font-family: var(--num); font-size: 8px; letter-spacing: .05em;
+    color: var(--ink-3); text-transform: uppercase; font-weight: 700; }
+
+  /* CENTER — the read */
+  .cmd-hero .hero-eyebrow { font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center;
+    gap: 7px; flex-wrap: wrap; }
+  .cmd-hero .hero-eyebrow .num { color: var(--ink-2); }
+  .cmd-hero .hero-regime { display: flex; align-items: center; gap: 12px; margin: 7px 0 6px; }
+  .cmd-hero .hr-dot { width: 13px; height: 13px; border-radius: 50%; flex: none; }
+  .cmd-hero h1.hr-name { font-size: 33px; font-weight: 800; letter-spacing: -.02em;
+    line-height: 1; color: var(--ink-1); margin: 0; }
+  html[data-lang="zh"] .cmd-hero h1.hr-name { font-size: 31px; letter-spacing: 0; }
+  .cmd-hero .hero-says { margin: 0; font-size: 14px; color: var(--ink-2);
+    max-width: 54ch; line-height: 1.5; }
+  .cmd-hero .hero-says b { color: var(--ink-1); font-weight: 700; }
+
+  /* RIGHT — vitals strip: 4 cells, each LABEL · VALUE · plain-English MEANING */
+  .cmd-hero .hero-vitals { display: grid;
+    grid-template-columns: repeat(2, minmax(124px, 1fr)); gap: 13px 20px; }
+  .cmd-hero .vital { display: grid; gap: 4px; align-content: start; }
+  .cmd-hero .v-top { display: flex; align-items: center; gap: 5px; }
+  .cmd-hero .v-label { font-family: var(--num); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .1em; color: var(--ink-3); text-transform: uppercase; }
+  .cmd-hero .v-num { color: var(--ink-1); }
+  .cmd-hero .v-num small { font-size: 14px; color: var(--ink-3); font-weight: 600; font-family: var(--num); }
+  .cmd-hero .v-mean { font-size: 11px; color: var(--ink-2); line-height: 1.35; }
+  .cmd-hero .v-meter { height: 4px; border-radius: 2px; background: var(--tile);
+    position: relative; overflow: hidden; }
+  .cmd-hero .v-meter::after { content: ""; position: absolute; inset: 0 auto 0 0;
+    width: var(--p, 0%); background: var(--mc, var(--ink-2)); border-radius: 2px; }
+  .cmd-hero .v-chip { font-size: 12.5px; font-weight: 700; padding: 3px 10px;
+    border-radius: 7px; width: max-content; border: var(--rule) solid var(--hair);
+    background: var(--tile); color: var(--ink-1); }
+  .cmd-hero .v-chip.tone-up, .cmd-hero .v-chip.liq-expanding { color: var(--up);
+    border-color: color-mix(in srgb, var(--up) 45%, var(--hair));
+    background: color-mix(in srgb, var(--up) 13%, var(--tile)); }
+  .cmd-hero .v-chip.tone-down, .cmd-hero .v-chip.liq-contracting { color: var(--down);
+    border-color: color-mix(in srgb, var(--down) 45%, var(--hair));
+    background: color-mix(in srgb, var(--down) 13%, var(--tile)); }
+  .cmd-hero .v-chip.tone-warn { color: var(--warn);
+    border-color: color-mix(in srgb, var(--warn) 45%, var(--hair));
+    background: color-mix(in srgb, var(--warn) 11%, var(--tile)); }
+  .cmd-hero .v-chip.tone-info { color: var(--info, var(--link));
+    border-color: color-mix(in srgb, var(--info, var(--link)) 45%, var(--hair));
+    background: color-mix(in srgb, var(--info, var(--link)) 11%, var(--tile)); }
+
+  @media (max-width: 900px) {
+    .cmd-hero .hero-bar { grid-template-columns: 1fr; gap: 16px; }
+    .cmd-hero .hero-main { border: 0; padding: 14px 0;
+      border-top: var(--rule) solid var(--hair); border-bottom: var(--rule) solid var(--hair); }
+    .cmd-hero h1.hr-name { font-size: 28px; }
+    .cmd-hero .hero-vitals { grid-template-columns: repeat(2, 1fr); }
+  }
