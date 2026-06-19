@@ -578,6 +578,77 @@ REGISTRY: list[dict] = [
          horizon="allocation (daily)", dsr=0.6842, sharpe=0.42, wired="not shipped — crisis-convexity context sleeve",
          extra=[("MaxDD", "−26.4% vs EW-long −81.7%"), ("DSR", "0.684 (n=12), monotone-fails any honest n_trials"),
                 ("leave-one-crisis-out", "INVERTS on COVID")]),
+
+    # ---- ROUND-2 EXPANSION (2026-06-18 — archetype ports + data-unblock; 0 cleared scored) ----
+    _row("ETH Vector — BTC-Vector optimal grid ported to ETH",
+         "以太坊向量 — BTC向量最优网格移植到ETH", "ETH", "confirmer",
+         why="Faithful port of the live BTC Vector builders (momentum × risk-index long/flat grid + drawdown brake) "
+             "to ETH price + a causal MVRV overlay. Drawdown protection is real and robust: MaxDD −46.8% vs HODL "
+             "−94.0% (2.01× cut), holds in every leave-one-crisis-out and both split-halves, and is NOT a pure "
+             "brake artifact (the raw grid alone cuts DD to −51.6% and out-Sharpes HODL). BUT it does NOT clear "
+             "scored like BTC: DSR 0.55 fails the haircut (vs BTC 0.9965), bootstrap P(Sharpe>0)=0.983 (not 1.0), "
+             "and a brake-matched 200dma TIES its Sharpe (0.82) — the incremental edge over a trivial trend filter "
+             "is DD-only and concentrated in the 2022 LUNA/3AC/FTX cascade (drop-2022 Sharpe edge → −0.04). ETH "
+             "starts 2017-11 (~2-3 cycles); direction is a coin-flip (never claimed). Crypto tail-insurance aligned "
+             "with the scored BTC Vector, not a 2nd scored sleeve.",
+         why_zh="将上线的 BTC 向量构件（动量×风险指数多/空网格+回撤刹车）忠实移植到 ETH。回撤保护真实稳健（−46.8% 对 HODL −94.0%，缩小2.01倍，"
+                "逐危机与两半均成立）。但不像 BTC 达到计分：DSR 0.55，刹车匹配的200日均线持平其夏普，增量仅回撤且集中于2022级联。"
+                "ETH 仅约2-3周期；方向掷硬币。与计分的 BTC 向量对齐的加密尾部保险，非第二个计分项。",
+         source="eth-vector-phase0.md (scripts/eth_vector_phase0.py); engine/btc_signals.py allocation()",
+         horizon="allocation (daily)", dsr=0.5546, sharpe=0.82, hit=0.551, n=3144,
+         wired="signal_lab confirmer — crypto tail-insurance (BTC-Vector aligned), not sized standalone",
+         extra=[("MaxDD", "−46.8% vs −94.0% HODL (2.01× cut)"), ("vs BTC DSR", "0.55 vs 0.9965"),
+                ("brake-matched 200dma", "TIES Sharpe 0.82"), ("drop-2022 Sharpe edge", "−0.04 (concentrated)"),
+                ("direction", "coin-flip — NOT claimed")]),
+    _row("Intl macro stress overlay (pooled JP/EZ/GB/KR)",
+         "国际宏观压力叠加（JP/EZ/GB/KR 合并）", "Intl macro", "confirmer",
+         why="Ported the S&P/Macro Vector de-risk gate (curve inversion + unemployment-Sahm + short-rate) to "
+             "JP/EZ/GB/KR + a pooled inverse-vol sleeve. The pool cuts the tail (MaxDD −39.2% vs B&H −55.4%, "
+             "Sharpe 0.72 vs 0.56) and is split-half stable (+0.70/+0.76) — BUT a plain 200dma long/flat DOMINATES "
+             "it on BOTH Sharpe AND MaxDD (0.80 / −19.6%) in every market and the pool, and even a dumb "
+             "curve-inversion gate beats it (0.78 / −42.5%). The macro gate gives up CAGR (JP 8.09→6.45%) to buy "
+             "drawdown insurance a moving average buys more cheaply. Honest-N ~4 shared crises (JP exactly 3). "
+             "Macro stress overlay, never a timed allocation.",
+         why_zh="将标普/宏观向量降险门控（曲线倒挂+失业Sahm+短端利率）移植到 JP/EZ/GB/KR 及合并组合。合并削减尾部（回撤 −39.2% 对 −55.4%），"
+                "但朴素200日均线在夏普与回撤上均压制它（各市场与合并皆然），且让出 CAGR。诚实样本约4次共享危机。仅作宏观压力叠加，非择时配置。",
+         source="intl-macro-sleeve-phase0.md (scripts/intl_macro_sleeve_phase0.py); data/intl_macro/",
+         horizon="allocation (daily)", sharpe=0.72,
+         wired="signal_lab confirmer — macro stress overlay (never sized standalone)",
+         extra=[("pooled MaxDD", "−39.2% vs −55.4% B&H"), ("dumb 200dma (dominates)", "Sharpe 0.80 / MaxDD −19.6%"),
+                ("binding fail", "beats-200dma — all 4 markets + pool"), ("split-half", "+0.70 / +0.76"),
+                ("honest-N", "~4 shared crises")]),
+    _row("Intl total-return ETF trend de-risk basket (EWJ/EWG/EWU/EWY/EWA/EWQ)",
+         "国际总回报ETF趋势降险篮子", "Intl ETF", "confirmer",
+         why="Tested whether real tradeable USD total-return country ETFs (EWJ/EWG/EWU/EWY/EWA/EWQ, 25.3y, "
+             "dividend-adjusted) rescue the intl trend overlay above confirmer — they do NOT. The pooled 200dma "
+             "de-risk basket is robust tail-insurance (MaxDD −61.9% → −23.9%, DD-reduction bootstrap CI "
+             "[6.2,25.8,50.4] excludes 0, cuts the tail in all 5 crises, leave-one-crisis-out holds) but gives up "
+             "CAGR (6.42% vs 7.91% B&H on a fair T-bill carry) and its Sharpe edge FAILS DSR (0.848<0.90 at honest "
+             "n_trials=17) AND fails same-sign split-half (+0.24 / −0.02 sign-flip). No single ETF clears scored "
+             "(nearest EWY/sma200 is DSR-knife-edge, N=1 country). Confirms the price-index finding: USD "
+             "total-return ETFs lack the secular bear the local indices had, so trend has less downside to exploit. "
+             "Tail-insurance, not scored alpha.",
+         why_zh="检验可交易的美元总回报国家 ETF（EWJ/EWG/EWU/EWY/EWA/EWQ，25.3年，含息）能否把国际趋势叠加提升到计分以上——不能。"
+                "合并200日降险篮子是稳健尾部保险（回撤 −61.9%→−23.9%，区间不含零），但让出 CAGR，夏普边际未过 DSR（0.848）且两半符号翻转。"
+                "美元总回报缺少本地指数的长期熊市，趋势可利用的下行更少。尾部保险，非计分阿尔法。",
+         source="intl-tr-trend-phase0.md (scripts/intl_tr_trend_phase0.py); EWJ/EWG/EWU/EWY/EWA/EWQ (collected)",
+         horizon="overlay (daily)", dsr=0.848, sharpe=0.575,
+         wired="signal_lab confirmer — de-risk basket (not a scored allocation)",
+         extra=[("pooled MaxDD", "−61.9% → −23.9%"), ("DD-reduction CI", "[6.2,25.8,50.4]pp excludes 0"),
+                ("DSR", "0.848 (<0.90, n=17)"), ("split-half Sharpe", "+0.24 / −0.02 (sign-flip)"),
+                ("CAGR give-up", "6.42% vs 7.91% B&H")]),
+    _row("Crypto vol-targeted risk-parity sleeve (BTC+ETH)",
+         "加密波动率目标风险平价组合（BTC+ETH）", "Crypto", "killed",
+         why="A Moreira-Muir vol-managed BTC+ETH sleeve (scale inversely to trailing realized vol, lev cap ~2×). "
+             "Measured and refused: DOMINATED by a dumb 200dma long/flat on BOTH Sharpe AND MaxDD, the "
+             "drawdown-reduction bootstrap CI straddles 0, and the split-half Sharpe sign-FLIPS. Vol-targeting cuts "
+             "crypto drawdown but adds no Sharpe over a trivial trend filter on the ~3-cycle sample. NO-GO.",
+         why_zh="Moreira-Muir 波动率管理的 BTC+ETH 组合。经测量后否决：在夏普与回撤上均被朴素200日均线压制，回撤削减区间跨零，两半夏普符号翻转。"
+                "波动率目标削减回撤但相对简单趋势无夏普增量。NO-GO。",
+         source="crypto-voltarget-phase0.md (scripts/crypto_voltarget_phase0.py)", horizon="allocation (daily)",
+         wired="not shipped",
+         extra=[("vs dumb 200dma", "dominated on Sharpe AND MaxDD"), ("DD-reduction CI", "straddles 0"),
+                ("split-half Sharpe", "sign-flip")]),
 ]
 
 
