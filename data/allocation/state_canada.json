@@ -1,0 +1,45 @@
+{
+  "cash": 0.233,
+  "crash": false,
+  "eligible": [
+    "ca_asset_mgrs",
+    "ca_banks",
+    "ca_base_metals",
+    "ca_consumer",
+    "ca_insurers",
+    "ca_materials",
+    "ca_oil_gas",
+    "ca_pipelines",
+    "ca_rails_ind",
+    "ca_reits",
+    "ca_silver_royalty",
+    "ca_telecom",
+    "ca_uranium",
+    "ca_utilities"
+  ],
+  "held": [
+    "ca_base_metals",
+    "ca_silver_royalty",
+    "ca_uranium",
+    "ca_banks"
+  ],
+  "leader": "ca_base_metals",
+  "names": {
+    "ca_asset_mgrs": "Asset Managers & Alternatives",
+    "ca_banks": "Big Banks",
+    "ca_base_metals": "Base Metals & Copper",
+    "ca_consumer": "Consumer Staples & Retail",
+    "ca_gold": "Gold Miners",
+    "ca_insurers": "Insurers",
+    "ca_materials": "Fertilizer, Chemicals & Forestry",
+    "ca_oil_gas": "Oil & Gas Producers",
+    "ca_pipelines": "Pipelines & Midstream",
+    "ca_rails_ind": "Rails & Industrials",
+    "ca_reits": "REITs",
+    "ca_silver_royalty": "Silver & Royalties",
+    "ca_tech": "Technology",
+    "ca_telecom": "Telecom",
+    "ca_uranium": "Uranium & Nuclear",
+    "ca_utilities": "Utilities & Renewables"
+  }
+}
