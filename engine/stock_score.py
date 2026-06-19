@@ -60,7 +60,7 @@ _SEL_KIND = {
     "US": ("event edge", "事件驱动优势"),
     "CA": ("event edge", "事件驱动优势"),
     "CN": ("mean-reversion", "均值回归"),
-    "HK": ("relative strength", "相对强度"),
+    "HK": ("flow · value · exposure", "资金 · 价值 · 敞口"),
 }
 
 # EDGE evidence weights (US/CA). The SHALLOW 2023-2025 audit ranked SUE first (IC .039, lone
@@ -143,8 +143,9 @@ def _regime_tilt(market: str, calm: float | None) -> dict | None:
 def trust_tier(market: str, gate_go: bool = False) -> dict:
     m = (market or "").upper()
     if m == "HK":
-        return {"tier": "screen", "en": "No stock-selection edge — relative-strength / exposure screen",
-                "zh": "无选股优势 — 相对强度／敞口筛选", "css": "tt-screen"}
+        return {"tier": "screen",
+                "en": "No selection alpha — southbound-flow + A/H-value + global-exposure screen",
+                "zh": "无选股阿尔法 — 南向资金＋A/H价值＋全球敞口筛选", "css": "tt-screen"}
     if m == "CN":
         return {"tier": "reversal", "en": "Reversal context — validated but high-variance, not a buy list",
                 "zh": "均值回归参考 — 已验证但高波动，非买入清单", "css": "tt-reversal"}
@@ -218,6 +219,8 @@ def _sel_kind(market: str, present: list[str]) -> tuple[str, str]:
     """The on-card label for the EDGE axis, derived from the legs that ACTUALLY
     contributed — so the validated event edge is named honestly and a residual-momentum
     fallback is never mislabeled."""
+    if market.upper() == "HK":            # HK edge = southbound flow + A/H value + beta-neutral RS
+        return _SEL_KIND["HK"]
     if any(k in present for k in ("sue", "insider", "revision")):
         return ("earnings · insider · revisions", "盈利 · 内部人 · 评级调整")
     if "rev_z" in present:
@@ -731,14 +734,32 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
         _lbl_zh = "盘面疲弱" if _lbl == "weak tape" else _i18n.tr(_lbl)
         _cau("cycle: " + _lbl, "周期：" + _lbl_zh)
 
-    # ---- HK: never a buy verb. Screen / exposure language only. -------------
+    # ---- HK: never a buy verb. Screen / exposure language only, but NAME the driver. ----
     if m == "HK":
+        lead = rec.get("hk_edge_lead")            # the dominant HK-native leg (set by the build)
+        # flow/value/exposure CONFIRMER language — never "buy", never a validated-pick claim.
+        # "standout" is reserved for the relative-strength lead (a price-leadership descriptor).
+        _HK_LEAD = {
+            "southbound": ("Mainland is accumulating — flow screen",
+                           "南向资金加仓 — 资金筛选"),
+            "ah_value": ("Cheap H vs its A twin — value screen",
+                         "H 较 A 股折价 — 价值筛选"),
+            "bnrs": ("Relative-strength standout — screen, not a validated pick",
+                     "相对强度突出 — 筛选项，非已验证买入"),
+            "fit": ("Well-positioned for the regime — exposure screen",
+                    "契合当前周期 — 敞口筛选"),
+        }
+        if sel_t == "low":
+            return _v("Lagging — relative weakness", "落后 — 相对弱势", drivers, cautions)
+        # only crown a named-lead screen when the overall selection actually leans positive
+        # (high/mid) — a flat-conviction name isn't a "screen pick" on one soft leg alone.
+        if sel_t in ("high", "mid") and lead in _HK_LEAD:
+            en, zh = _HK_LEAD[lead]
+            return _v(en, zh, drivers, cautions)
         if sel_t == "high":
             return _v("Relative-strength standout — screen, not a validated pick",
                       "相对强度突出 — 筛选项，非已验证买入", drivers, cautions)
-        if sel_t in ("mid", "flat"):
-            return _v("Exposure name — context only", "敞口标的 — 仅供参考", drivers, cautions)
-        return _v("Lagging — relative weakness", "落后 — 相对弱势", drivers, cautions)
+        return _v("Exposure name — context only", "敞口标的 — 仅供参考", drivers, cautions)
 
     # ---- cycle hard-block: never 'Buy' regardless of the composite ----------
     if cycle_blocked:

@@ -150,6 +150,29 @@
   .bell-item .bi-dt { font-size:10.5px; color:var(--muted); margin-top:2px; }
   .bell-empty { padding:14px 8px; color:var(--muted); font-size:12px; text-align:center; }
   .sect-tag { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  /* ---- card textures + detail link ---- */
+  .tcard .nm { color:inherit; } .tcard a.nm:hover { color:var(--link); }
+  .txrow { display:flex; flex-wrap:wrap; gap:4px 6px; margin:2px 0 6px; }
+  .tpill.warn { color:var(--warn); } .tpill.neg { color:var(--down); }
+  .tflag { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; }
+  .tflag.up { color:var(--up); border-color:var(--up); } .tflag.dn { color:var(--down); border-color:var(--down); } .tflag.wn { color:var(--warn); border-color:var(--warn); }
+  .detail-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--link); border-top:1px solid var(--line); padding-top:7px; width:100%; }
+  .detail-link:hover { text-decoration:underline; }
+  /* ---- concentration ---- */
+  .adgrid { display:flex; gap:14px; }
+  .adc { text-align:center; } .adc .k { font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .adc .v { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
+  /* ---- what to act on now ---- */
+  .anwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
+  .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
+  .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
+  .anrow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; }
+  .anrow:hover { background:var(--panel2); }
+  .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
+  .anrow .rn { font-weight:650; white-space:nowrap; }
+  .anwhy { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
 </style>
 </head>
 <body>
@@ -192,6 +215,15 @@
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation.json" data-page="allocation.html"></section>
 
+  <section id="actnow-section" style="margin-top:6px">
+    <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
+      <span class="sect-tag">{{ t('buy / add · reduce / avoid', '买入加仓 · 减仓回避') }}</span></h2>
+    <p class="sub">{{ t(
+      'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
+      '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+    <div id="actnow"></div>
+  </section>
+
   <section id="theme-desk-section" style="margin-top:6px">
     <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}
       <span class="sect-tag">{{ t('scored · labeled · actionable', '评分 · 标注 · 可执行') }}</span></h2>
@@ -201,6 +233,15 @@
     <div class="mctx" id="macro-ctx"></div>
     <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
     <div class="desk" id="theme-desk"></div>
+  </section>
+
+  <section id="concentration-section">
+    <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
+      <span class="sect-tag">{{ t('who owns the advance vs the decline', '谁主导上涨 vs 谁在下跌') }}</span></h2>
+    <p class="sub">{{ t(
+      'The tape can narrow — a few names carry the index while breadth rots underneath. This reads the broad-market advance-decline (daily → monthly), which THEMES own the advancers vs sit in the decline, and the clean entries vs roll-over watch — so you accumulate the right theme and step out of the topping one.',
+      '行情会变窄 — 少数个股拉动指数，而广度在底下恶化。此处读取大盘涨跌家数（日→月）、哪些主题主导上涨、哪些处于下跌，以及干净入场 vs 回落观察 — 帮助你加仓正确的主题、退出见顶的主题。') }}</p>
+    <div id="concentration"></div>
   </section>
 
   <section id="rotation-section">
@@ -459,7 +500,7 @@ function renderCards(){
         </div>`; }).join('');
     return cards?`<h3 class="cat">${esc(cat)}</h3><div class="cards">${cards}</div>`:'';
   }).join('');
-  el.querySelectorAll('.card').forEach(c=>c.onclick=()=>openBasket(c.dataset.id));
+  el.querySelectorAll('.card').forEach(c=>{ c.style.cursor='pointer'; c.onclick=()=>{ const id=c.dataset.id||''; if(/^[a-z0-9_-]+$/i.test(id)) location.href='basket/'+id+'.html'; }; });
 }
 function memRows(b){ return (b.members||[]).map(m=>`<tr><td><b>${esc(m.symbol)}</b> <span class="muted sm">${esc(m.name)}</span></td>
   <td class="why">${esc(m.rationale)}</td><td class="num muted sm">${esc(m.added)}</td>
@@ -480,9 +521,9 @@ function detailSection(b){
     </details></div>`;
 }
 function renderDetails(){
-  const el=document.getElementById('details');
-  el.innerHTML=(BASKETS.categories||[]).map(cat=>(BASKETS.baskets||[]).filter(b=>b.category===cat)
-    .sort((a,c)=>((c.perf?.[bhz]?.rel)??-9)-((a.perf?.[bhz]?.rel)??-9)).map(detailSection).join('')).join('');
+  // Per-theme holdings scoreboards + full member detail now live on the dedicated theme
+  // detail pages (basket/<id>.html) — reached by clicking any theme card above.
+  const el=document.getElementById('details'); if(el) el.innerHTML='';
 }
 function openBasket(id){ const d=document.getElementById('b-'+id); if(!d) return; const det=d.querySelector('details'); if(det) det.open=true; d.scrollIntoView({behavior:'smooth',block:'start'}); }
 
@@ -530,12 +571,20 @@ function themeCard(t){
   const lc=LABEL_COLOR[t.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[t.reco]||RECO_COLOR.hold;
   const r20=t.perf&&t.perf['20d']?t.perf['20d'].rel:null;
   const spk=sparkTail(ratio(CHART.baskets[t.id]||[]),40);
-  const b=t.breadth||{}, im=t.impulse||{};
+  const b=t.breadth||{}, im=t.impulse||{}, tx=t.textures||{};
+  const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
   const top=(t.leadership&&t.leadership.top)||[];
+  const obc = ob.value>=0.6?'neg':ob.value>=0.35?'warn':'';
+  const flags=[];
+  if(ce.flag) flags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
+  if(rr.band==='high'||rr.band==='elevated') flags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
+  const bullPill = ba.in_bull
+    ? `🐂 ${ba.approx_months!=null?ba.approx_months+'mo':''} ${L(ba.stage||'','')||esc(ba.stage_zh||'')}`
+    : `🐻 ${L('downtrend','下行')}`;
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
       ${badge('tlabel',lc,t.label_en,t.label_zh)}
-      <span class="nm">${L(esc(t.name),esc(t.name_zh))}</span>
+      <a class="nm" href="basket/${t.id}.html" title="open full theme detail">${L(esc(t.name),esc(t.name_zh))}</a>
       <span class="sc">${t.score}<small>/100</small></span>
     </div>
     <div class="subrow">
@@ -545,17 +594,23 @@ function themeCard(t){
       <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
     </div>
     ${compBar(t.components,(THEME&&THEME.weights)||{trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14})}
+    <div class="txrow">
+      <span class="tpill" title="bull-market age">${bullPill}</span>
+      <span class="tpill ${obc}" title="overbought / extension">${L('OB','超买')} ${esc(ob.band||'—')}</span>
+      ${flags.join('')}
+    </div>
     <div class="treason">${esc((t.reasons||[]).join(' · '))}</div>
     <div class="tstats">
       <span class="tpill">${L('above 50d','站上50日')} <b>${b.pct50==null?'—':Math.round(b.pct50*100)+'%'}</b></span>
       <span class="tpill">${L('+3% / −3%','+3% / −3%')} <b class="pos">${im.up3||0}</b>/<b class="neg">${im.down3||0}</b></span>
-      <span class="tpill">${L('new hi/lo','新高/低')} <b class="pos">${b.nh||0}</b>/<b class="neg">${b.nl||0}</b></span>
+      <span class="tpill">${L('adv/dec','涨/跌')} <b class="pos">${t.adv||0}</b>/<b class="neg">${t.dec||0}</b></span>
     </div>
     <details><summary>${L('why &amp; components','理由与分项')}</summary>
       <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
       ${compLegend(t.components)}
       ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
     </details>
+    <a class="detail-link" href="basket/${t.id}.html">${L('Full detail · holdings buy/avoid →','完整详情 · 成分可买/回避 →')}</a>
   </div>`;
 }
 function renderThemeDesk(){
@@ -579,11 +634,45 @@ function renderRotation(){
   if(!THEME||!THEME.rotation_5d){ if(sec) sec.style.display='none'; return; }
   const rot=THEME.rotation_5d;
   const row=t=>{const ar=t.rank_5d>0?'▲':t.rank_5d<0?'▼':'·'; const ac=t.rank_5d>0?'pos':t.rank_5d<0?'neg':'muted';
-    return `<div class="rotrow"><span class="rn"><a href="#theme-${t.id}" onclick="openTheme('${t.id}');return false">${L(esc(t.name),esc(t.name_zh))}</a></span>
+    return `<div class="rotrow"><span class="rn"><a href="basket/${encodeURIComponent(t.id)}.html">${L(esc(t.name),esc(t.name_zh))}</a></span>
       <span class="rv ${cls(t.delta_5d)}">${fmtPct(t.delta_5d)}</span>
       <span class="rk ${ac}" title="20d RS rank change">${ar}${t.rank_5d?Math.abs(t.rank_5d):''}</span></div>`;};
   const col=(en,zh,emo,arr)=>`<div class="rotcol"><h4>${emo} ${L(en,zh)}</h4>${arr.length?arr.map(row).join(''):`<div class="muted sm" style="padding:6px 0">${L('none','无')}</div>`}</div>`;
   document.getElementById('rotation').innerHTML=col('Weekly climbers','本周上升','▲',rot.climbers||[])+col('Weekly fallers','本周下降','▽',rot.fallers||[]);
+}
+function renderActNow(){
+  const sec=document.getElementById('actnow-section'); if(!THEME||!THEME.act_now){ if(sec) sec.style.display='none'; return; }
+  const a=THEME.act_now;
+  const ACT={enter:['ENTER','建仓','#16a34a'],accumulate:['ACCUMULATE','加仓','#22c55e'],trim:['TRIM','减仓','#f97316'],avoid:['AVOID','回避','#ef4444']};
+  const row=x=>{const ac=ACT[x.action]||['','',cssv('--muted')];
+    return `<a class="anrow" href="basket/${x.id}.html">
+      <span class="anverb" style="color:${ac[2]};border-color:${ac[2]}">${L(ac[0],ac[1])}</span>
+      <span class="rn">${L(esc(x.name),esc(x.name_zh))}</span>
+      <span class="anwhy muted sm">${esc((x.reasons||[]).join(' · '))}</span>
+      <span class="ansc">${x.score}</span></a>`;};
+  const buys=a.buy||[], red=a.reduce||[];
+  document.getElementById('actnow').innerHTML=`<div class="anwrap">
+    <div class="ancol"><h4 class="anh buy">✅ ${L('Buy / add now','现在买入 / 加仓')} <span class="muted sm">(${buys.length})</span></h4>${buys.length?buys.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('Nothing has a clean entry right now — patience.','当前无干净入场点 — 耐心等待。')}</div>`}</div>
+    <div class="ancol"><h4 class="anh red">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted sm">(${red.length})</span></h4>${red.length?red.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('none','无')}</div>`}</div>
+  </div>`;
+}
+function renderConcentration(){
+  const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }
+  const mc=THEME.market_concentration||{};
+  const vmap={narrow:['var(--down)','narrow','狭窄'],broad:['var(--up)','broad','广泛'],mixed:['var(--warn)','mixed','中性']};
+  const vv=vmap[mc.verdict]||vmap.mixed;
+  const adc=(en,zh,v)=>`<div class="adc"><div class="k">${L(en,zh)}</div><div class="v ${v==null?'muted':(v<1?'neg':'pos')}">${v==null?'—':(+v).toFixed(2)}</div></div>`;
+  const narrow=`<div class="panel pad" style="border-left:3px solid ${vv[0]}">
+    <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:center">
+      <div><span class="muted sm">${L('S&P breadth','标普广度')}</span><div style="font-size:18px;font-weight:740;color:${vv[0]}">${L(vv[1],vv[2])}</div></div>
+      <div class="adgrid">${adc('A/D today','今日',mc.ad_ratio)}${adc('3-day','3日',mc.ad_3d)}${adc('weekly','周',mc.ad_w)}${adc('monthly','月',mc.ad_m)}</div>
+      <div class="muted sm">${L('above 50d','站上50日')} <b>${mc.pct_above_50!=null?mc.pct_above_50+'%':'—'}</b> · ${L('above 200d','站上200日')} <b>${mc.pct_above_200!=null?mc.pct_above_200+'%':'—'}</b> · ${L('new hi/lo','新高/低')} <b class="pos">${mc.nh}</b>/<b class="neg">${mc.nl}</b></div>
+    </div></div>`;
+  const lead=(arr,en,zh,sign)=>`<div class="rotcol"><h4>${sign} ${L(en,zh)}</h4>${(arr||[]).map(x=>`<div class="rotrow"><span class="rn"><a href="basket/${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv ${x.net_ad>=0?'pos':'neg'}">${x.net_ad>=0?'+':''}${x.net_ad}</span><span class="rk muted">${x.adv}/${x.dec}</span></div>`).join('')}</div>`;
+  const tlist=(arr,en,zh,kind)=>`<div class="rotcol"><h4>${kind==='entry'?'✦':'⚠'} ${L(en,zh)}</h4>${(arr||[]).length?arr.map(x=>`<div class="rotrow"><span class="rn"><a href="basket/${x.id}.html">${L(esc(x.name),esc(x.name_zh))}</a></span><span class="rv">${kind==='entry'?Math.round(x.quality*100)+'%':esc(x.band)}</span></div>`).join(''):`<div class="muted sm" style="padding:6px 0">${L('none right now','暂无')}</div>`}</div>`;
+  document.getElementById('concentration').innerHTML = narrow
+    + `<div class="rotwrap" style="margin-top:12px">${lead(THEME.breadth_leaders,'Owns the advance','主导上涨','▲')}${lead(THEME.breadth_laggards,'In the decline','处于下跌','▽')}</div>`
+    + `<div class="rotwrap" style="margin-top:12px">${tlist(THEME.entries,'Clean entries (emerging)','干净入场（新兴）','entry')}${tlist(THEME.rollover,'Roll-over watch','回落观察','roll')}</div>`;
 }
 function renderScorecards(){
   const sec=document.getElementById('impulse-section');
@@ -630,7 +719,7 @@ function renderBell(){
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
-  renderMacroCtx(); renderThemeDesk(); renderRotation(); renderScorecards(); renderBell();
+  renderActNow(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
   renderStory();
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });

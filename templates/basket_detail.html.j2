@@ -1,0 +1,238 @@
+{% set nav_prefix = '../' %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ basket_name }} — {{ t('Theme detail', '主题详情') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0; }
+  h2 { font-size:15px; margin:26px 0 6px; display:flex; align-items:center; gap:8px; }
+  h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .back { font-size:12.5px; color:var(--muted); }
+  .back:hover { color:var(--link); }
+  .chip { display:inline-block; font-size:11px; padding:1px 8px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
+  .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+  .hero .lhs { flex:1; min-width:280px; }
+  .hero .thesis { font-size:13px; line-height:1.55; color:var(--text); opacity:.9; max-width:75ch; margin:8px 0 0; }
+  .scoreboxes { display:flex; gap:10px; flex-wrap:wrap; }
+  .sbx { background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:10px 14px; text-align:center; min-width:96px; }
+  .sbx .v { font-size:26px; font-weight:740; font-variant-numeric:tabular-nums; line-height:1; }
+  .sbx .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+  .tlabel { font-size:11px; font-weight:700; letter-spacing:.05em; padding:3px 9px; border-radius:7px; text-transform:uppercase; }
+  .treco { font-size:12px; font-weight:700; padding:3px 11px; border-radius:8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .tx { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,var(--muted)); border-radius:11px; padding:12px 14px; }
+  .tx .k { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .tx .v { font-size:20px; font-weight:720; font-variant-numeric:tabular-nums; margin:5px 0 3px; }
+  .tx .d { font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .cbar { display:flex; height:8px; border-radius:5px; overflow:hidden; background:var(--line); margin:8px 0; }
+  .cbar i { display:block; height:100%; }
+  .kpis { display:flex; flex-wrap:wrap; gap:16px; }
+  .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpis .v { font-size:16px; font-weight:680; font-variant-numeric:tabular-nums; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; text-align:right; cursor:pointer; user-select:none; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .ts { overflow-x:auto; }
+  .tk { font-weight:680; } .tk:hover { color:var(--link); }
+  .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
+  .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
+  .timeline .ev { display:flex; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .timeline .ev:first-child { border-top:0; }
+  .timeline .dt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
+  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:6px; max-width:90ch; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="{{ back_href | default('../baskets.html') }}">🧺 {{ t('All themes', '全部主题') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
+  </div>
+</nav>
+
+<a class="back" href="{{ back_href | default('../baskets.html') }}">← {{ t('Theme Rotation Desk', '主题轮动台') }}</a>
+<div id="app"></div>
+
+<footer>
+  {{ t(
+    'Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.',
+    '只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。') }}
+  {{ t('Generated', '生成于') }} <span>{{ generated_utc }}</span>.
+</footer>
+
+<script>
+const DETAIL = {{ detail_json|safe }};
+const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
+const cls = x => x==null?'muted':(x>=0?'pos':'neg');
+const LABEL_COLOR = {dominant:['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],emerging:['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],fading:['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],deteriorating:['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],neutral:['var(--panel2)','var(--line)','var(--muted)']};
+const RECO_COLOR = {enter:['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],accumulate:['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],hold:['var(--panel2)','var(--line)','var(--muted)'],trim:['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],avoid:['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444']};
+const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',crowding:'#fb7185'};
+const badge=(cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
+
+function spark(values,{w=160,h=34,color=''}={}){
+  const vs=(values||[]).map(v=>v&&v.value!=null?+v.value:null).filter(v=>v!=null);
+  if(vs.length<2) return `<span class="muted sm">${L('history accruing','历史累积中')}</span>`;
+  const mn=Math.min(...vs),mx=Math.max(...vs),sp=(mx-mn)||1;
+  const pts=vs.map((v,i)=>[i/(vs.length-1)*w,h-3-(v-mn)/sp*(h-7)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const col=color||(vs[vs.length-1]>=vs[0]?cssv('--up'):cssv('--down'));
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
+}
+
+function convCell(c){
+  if(!c||c.score==null) return `<span class="muted sm">${L('thin','数据稀疏')}</span>`;
+  const s=c.score; const col = s>=66?cssv('--up'):s>=40?cssv('--warn'):cssv('--down');
+  const bg = s>=66?'rgba(74,222,128,.14)':s>=40?'rgba(250,204,21,.14)':'rgba(248,113,113,.14)';
+  return `<span class="cv" style="background:${bg};color:${col}">${s}</span>`;
+}
+
+function render(){
+  const d=DETAIL, b=d.basket||{}, th=d.theme||{}, tx=th.textures||{};
+  const SB=d.stock_base||'';   // per-stock link base ('' for markets with no per-stock page → plain ticker)
+  const stk=(sym)=> SB ? `<a class="tk" href="${SB}${encodeURIComponent(sym)}">${esc(sym)}</a>` : `<span class="tk">${esc(sym)}</span>`;
+  const lc=LABEL_COLOR[th.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[th.reco]||RECO_COLOR.hold;
+  const tags=(b.tags||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join('');
+  // ---- hero ----
+  let h=`<div class="panel hero">
+    <div class="lhs">
+      <h1>${L(esc(b.name),esc(b.name_zh))}</h1>
+      <div style="margin:6px 0">${b.parent?`<span class="chip">${esc(b.parent)}</span>`:''}${b.category?`<span class="chip">${esc(b.category)}</span>`:''}${tags}</div>
+      <div class="thesis">${L(esc(b.thesis),esc(b.thesis))}</div>
+    </div>
+    <div>
+      <div class="scoreboxes">
+        <div class="sbx"><div class="v">${th.score!=null?th.score:'—'}</div><div class="k">${L('score','评分')}</div></div>
+        <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('tlabel',lc,th.label_en||(th.label||'—'),th.label_zh||'')}</div><div class="k">${L('lifecycle','生命周期')}</div></div>
+        <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('treco',rc,th.reco_en||(th.reco||'—'),th.reco_zh||'')}</div><div class="k">${L('action','结论')}</div></div>
+        <div class="sbx"><div class="v ${cls((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}">${fmtPct((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}</div><div class="k">${L('20d vs S&P','20日 vs 标普')}</div></div>
+      </div>
+      <div class="muted sm" style="margin-top:8px;max-width:42ch">${L(esc(th.reco_why_en||''),esc(th.reco_why_zh||''))}</div>
+    </div>
+  </div>`;
+
+  // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
+  const an=d.act_now||{};
+  h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
+  if(an.status==='ok' && (an.buys||[]).length){
+    h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
+    <div class="ts"><table><thead><tr><th>${L('Stock','个股')}</th><th class="num">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num">${L('Entry','入场')}</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>`+
+      an.buys.map(x=>`<tr><td>${stk(x.symbol)} <span class="muted sm">${esc(x.name||'')}</span></td>
+        <td class="num">${convCell({score:x.score})}</td>
+        <td>${x.verdict?L(esc(x.verdict),esc(x.verdict_zh||x.verdict)):'—'}</td>
+        <td class="num">${x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—'}</td>
+        <td class="num ${cls(x.ret_20d)}">${fmtPct(x.ret_20d)}</td>
+        <td class="num ${cls(x.ret_ytd)}">${fmtPct(x.ret_ytd)}</td></tr>`).join('')+
+      `</tbody></table></div>`;
+  } else {
+    const dn = an.status==='theme_out_of_favour';
+    h+=`<div style="display:flex;align-items:center;gap:11px"><span style="font-size:24px">${dn?'🚫':'⏳'}</span>
+      <div><div style="font-weight:680;color:${dn?'var(--down)':'var(--warn)'}">${dn?L('No buys — theme out of favour','无买入 — 主题暂不被青睐'):L('No clean entry right now','当前无干净入场点')}</div>
+      <div class="muted sm">${L(esc(an.note_en||'Nothing to act on right now.'),esc(an.note_zh||''))}</div></div></div>`;
+  }
+  h+=`<div class="disc">${L('Buy candidates use the per-stock Conviction Profile (buy/add verdict + entry axis), gated by theme health. Not an order — size and confirm yourself.','买入候选基于个股信念档案（买入/加仓结论 + 入场轴），并按主题健康度筛选。非下单指令 — 请自行确定仓位并确认。')}</div></div>`;
+
+  // ---- advanced textures ----
+  const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
+  const txcard=(c,k,kz,vhtml,d,dz)=>`<div class="tx" style="--c:${c}"><div class="k">${L(k,kz)}</div><div class="v">${vhtml}</div><div class="d">${L(d,dz)}</div></div>`;
+  h+=`<h2><span class="idx">01</span>${L('Timing &amp; risk textures','择时与风险纹理')} <span class="chip">${L('display-only','仅展示')}</span></h2>
+  <div class="cards">
+    ${txcard(ba.in_bull?cssv('--up'):cssv('--down'),'Bull-market age','牛市时长', ba.days!=null?(ba.approx_months+'mo'):'—', (ba.in_bull?('in uptrend '+ba.days+'d · '+(ba.stage||'')):'in a downtrend')+' · '+(ba.drawdown_from_peak!=null?(Math.round(ba.drawdown_from_peak*1000)/10+'% from peak'):''), '')}
+    ${txcard(ob.value>=0.6?cssv('--down'):ob.value>=0.35?cssv('--warn'):cssv('--muted'),'Overbought','超买度', (ob.band||'—'), 'RSI '+(ob.rsi!=null?ob.rsi:'—')+' · RS '+(ob.rs_pctile!=null?Math.round(ob.rs_pctile*100)+'%ile':'—'), '')}
+    ${txcard(ce.flag?cssv('--up'):cssv('--muted'),'Clean entry','干净入场', ce.flag?L('YES','是'):L('no','否'), (ce.reasons||[]).join(' · '), '')}
+    ${txcard(rr.band==='high'?cssv('--down'):rr.band==='elevated'?cssv('--warn'):cssv('--up'),'Roll-over risk','回落风险', (rr.band||'—'), (rr.reasons||[]).join(' · '), '')}
+  </div>`;
+
+  // ---- score composition + perf + breadth ----
+  const comp=th.components||{}, W={trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14};
+  const parts=['trend','breadth','impulse','macro'].map(k=>({k,v:Math.max(0,(comp[k]||0))*W[k]}));
+  parts.push({k:'crowding',v:(comp.crowding||0)*W.crowding});
+  const tot=parts.reduce((a,p)=>a+Math.abs(p.v),0)||1;
+  const bar=parts.filter(p=>Math.abs(p.v)>.001).map(p=>`<i style="width:${(Math.abs(p.v)/tot*100).toFixed(1)}%;background:${COMP_COLOR[p.k]};${p.k==='crowding'?'opacity:.55':''}"></i>`).join('');
+  const bd=th.breadth||{}, ref=b.reference;
+  h+=`<h2><span class="idx">02</span>${L('Score composition &amp; performance','评分构成与表现')}</h2>
+  <div class="panel">
+    <div class="cbar">${bar}</div>
+    <div class="muted sm">${['trend','breadth','impulse','macro','crowding'].map(k=>`<span style="margin-right:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${COMP_COLOR[k]};margin-right:3px"></span>${k} ${comp[k]==null?'—':(k==='crowding'?'−':(comp[k]>=0?'+':''))+Math.abs(comp[k]).toFixed(2)}</span>`).join('')}</div>
+    <div class="kpis" style="margin-top:12px">
+      ${['5d','20d','60d','ytd'].map(hz=>{const p=(th.perf||{})[hz]||{};return `<div><div class="k">${hz.toUpperCase()} vs S&P</div><div class="v ${cls(p.rel)}">${fmtPct(p.rel)}</div></div>`;}).join('')}
+      <div><div class="k">${L('above 50d','站上50日')}</div><div class="v">${bd.pct50==null?'—':Math.round(bd.pct50*100)+'%'}</div></div>
+      <div><div class="k">${L('new hi / lo','新高/低')}</div><div class="v"><span class="pos">${bd.nh||0}</span>/<span class="neg">${bd.nl||0}</span></div></div>
+      <div><div class="k">${L('adv / dec today','今日涨/跌')}</div><div class="v"><span class="pos">${th.adv||0}</span>/<span class="neg">${th.dec||0}</span></div></div>
+    </div>
+    ${ref?`<div class="muted sm" style="margin-top:10px">${L('Cross-checked vs','交叉验证')} <b>${esc(ref.label)}</b>: ${L('daily corr','日相关')} <b>${ref.corr}</b>, ${L('market-adjusted','剔除市场')} <b>${ref.rel_corr}</b> (${ref.n} ${L('sessions','日')})</div>`:''}
+  </div>`;
+
+  // ---- score history + change timeline ----
+  const tl=d.timeline||[];
+  h+=`<h2><span class="idx">03</span>${L('Score history &amp; changes','评分历史与变化')}</h2>
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div>${spark(d.history,{color:lc[2]})}</div><span class="muted sm">${L('daily theme score; accrues from the archive','每日主题评分；自归档累积')}</span></div>
+    <div class="timeline" style="margin-top:10px">${tl.length?tl.map(e=>`<div class="ev"><span class="dt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join(''):`<div class="muted sm">${L('No recorded score/recommendation changes yet.','尚无评分/建议变化记录。')}</div>`}</div>
+  </div>`;
+
+  // ---- holdings scoreboard ----
+  const mem=(d.members||[]).slice();
+  const rows=mem.map(m=>{const c=m.conviction;
+    return `<tr>
+      <td>${stk(m.symbol)} <span class="muted sm">${esc(m.name||'')}</span></td>
+      <td class="num">${convCell(c)}</td>
+      <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
+      <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
+      <td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td>
+      <td class="why">${esc(m.rationale||'')}</td>
+    </tr>`;}).join('');
+  h+=`<h2><span class="idx">04</span>${L('Holdings — buy/avoid by conviction','成分股 — 按信念可买/回避')} <span class="chip">${mem.length} ${L('names','只')}</span></h2>
+  <div class="panel"><div class="ts"><table id="hold">
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <div class="disc">${L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
+  </div>`;
+
+  // ---- changelog + flags ----
+  const warns=[]; if((b.missing||[]).length) warns.push(`<span class="chip">${L('excluded','已排除')}: ${b.missing.map(esc).join(', ')}</span>`);
+  (b.partial||[]).forEach(p=>warns.push(`<span class="chip">${esc(p.symbol)} ${L('enters','进入于')} ${esc(p.from)}</span>`));
+  const clog=(b.changelog||[]).map(c=>`<div class="ev"><span class="dt">${esc(c.date)}</span><span>${esc(c.action)}: ${esc(c.note)}</span></div>`).join('');
+  h+=`<h2><span class="idx">05</span>${L('Membership log','成分变更记录')}</h2>
+  <div class="panel"><div>${warns.join(' ')}</div><div class="timeline" style="margin-top:6px">${clog||('<span class="muted sm">'+L('—','—')+'</span>')}</div></div>`;
+
+  document.getElementById('app').innerHTML=h;
+  // sortable holdings
+  document.querySelectorAll('#hold th[data-s]').forEach(th2=>th2.onclick=()=>sortHold(th2.dataset.s));
+}
+let _sort={col:null,dir:-1};
+function sortHold(col){
+  const tb=document.querySelector('#hold tbody'); if(!tb) return;
+  _sort = _sort.col===col?{col,dir:-_sort.dir}:{col,dir:-1};
+  const mem=(DETAIL.members||[]).slice();
+  const key=m=>col==='conv'?((m.conviction||{}).score):col==='r20'?m.ret_20d:m.ret_ytd;
+  mem.sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
+  DETAIL.members=mem; render();
+}
+if(document.readyState!=='loading') render(); else document.addEventListener('DOMContentLoaded',render);
+</script>
+<script src="../theme.js"></script>
+</body>
+</html>

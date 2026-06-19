@@ -1,0 +1,271 @@
+"""Advanced per-theme TEXTURES for the Theme Rotation Desk (display-only).
+
+Refines the engine.theme_scoring read with the specific signals a user needs to time a
+theme: how long it has been in a bull market, how overbought/extended it is, whether it is
+an EMERGING clean entry, whether it is at ROLL-OVER risk — plus a market CONCENTRATION /
+narrowness block (the user's core concern: the tape can get narrow, low advance-decline).
+
+HONEST BY CONSTRUCTION: every texture carries `directional: False`. These DESCRIBE state
+(trend age, stretch, distribution) — they do NOT forecast returns. Cross-sectional theme
+momentum has ~0 rank-IC; the one validated edge is the absolute-trend (SMA-200) gate, which
+is drawdown-control, not alpha. Mirrors the theme_crowding / group_flow honesty contract.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from lib import config
+
+
+def _rsi(s: pd.Series, n: int = 14) -> float | None:
+    s = s.dropna()
+    if len(s) < n + 2:
+        return None
+    d = s.diff()
+    up = d.clip(lower=0).ewm(alpha=1 / n, adjust=False).mean()
+    dn = (-d.clip(upper=0)).ewm(alpha=1 / n, adjust=False).mean()
+    rs = up / dn.replace(0, np.nan)
+    v = (100 - 100 / (1 + rs)).iloc[-1]
+    return float(v) if np.isfinite(v) else None
+
+
+def bull_age(lvl: pd.Series) -> dict | None:
+    """Days the EW level has held above its 200d SMA (bull-market age) + drawdown from peak.
+
+    'How long has this theme been in a bull market' — the consecutive run above a rising
+    long trend, with a maturity stage (young → building → mature → aging) and the current
+    drawdown from the trailing peak / distance from the 52-week high."""
+    s = lvl.dropna()
+    if len(s) < 60:
+        return None
+    sma = s.rolling(200, min_periods=60).mean()
+    above = (s > sma).to_numpy()
+    days = 0
+    for k in range(len(above) - 1, -1, -1):
+        if above[k]:
+            days += 1
+        else:
+            break
+    in_bull = bool(above[-1])
+    peak = float(s.cummax().iloc[-1])
+    dd = float(s.iloc[-1] / peak - 1.0) if peak else None
+    w = min(252, len(s))
+    hi = float(s.iloc[-w:].max())
+    from_hi = float(s.iloc[-1] / hi - 1.0) if hi else None
+    if not in_bull:
+        stage, stage_zh = "downtrend", "下行"
+    elif days < 40:
+        stage, stage_zh = "young", "初期"
+    elif days < 130:
+        stage, stage_zh = "building", "上升中"
+    elif days < 300:
+        stage, stage_zh = "mature", "成熟"
+    else:
+        stage, stage_zh = "aging", "老化"
+    return {"in_bull": in_bull, "days": int(days), "approx_months": round(days / 21.0, 1),
+            "drawdown_from_peak": round(dd, 4) if dd is not None else None,
+            "from_52w_high": round(from_hi, 4) if from_hi is not None else None,
+            "stage": stage, "stage_zh": stage_zh, "directional": False}
+
+
+def overbought(lvl: pd.Series, rs_pctile: float | None, crowd: dict | None) -> dict:
+    """Basket-level RSI(14) + RS percentile + % members extended → an overbought band.
+
+    NOT a sell signal — high readings mean 'late / stretched / chase-risk', the asymmetric
+    down-size context from theme_crowding, never a short."""
+    rsi = _rsi(lvl)
+    ext = None
+    if isinstance(crowd, dict):
+        legs = crowd.get("legs") or {}
+        e = legs.get("extension") if isinstance(legs.get("extension"), dict) else {}
+        for k in ("pct_extended", "frac", "value", "share"):
+            if isinstance(e.get(k), (int, float)):
+                ext = float(e[k])
+                break
+    comps = []
+    if rsi is not None:
+        comps.append(min(max((rsi - 50) / 30.0, 0.0), 1.2))      # 50→0, 80→1
+    if rs_pctile is not None:
+        comps.append(min(max((rs_pctile - 0.5) / 0.4, 0.0), 1.2))  # .50→0, .90→1
+    if ext is not None:
+        comps.append(min(ext * 1.5, 1.2))
+    val = float(np.clip(np.mean(comps), 0.0, 1.2)) if comps else 0.0
+    if rsi is not None and rsi < 35:
+        band, band_zh = "oversold", "超卖"
+    elif val >= 0.9:
+        band, band_zh = "extreme", "极度超买"
+    elif val >= 0.6:
+        band, band_zh = "overbought", "超买"
+    elif val >= 0.35:
+        band, band_zh = "elevated", "偏高"
+    else:
+        band, band_zh = "neutral", "中性"
+    return {"rsi": round(rsi, 1) if rsi is not None else None,
+            "rs_pctile": round(rs_pctile, 3) if rs_pctile is not None else None,
+            "pct_extended": round(ext, 3) if ext is not None else None,
+            "value": round(val, 3), "band": band, "band_zh": band_zh, "directional": False}
+
+
+def clean_entry(lvl: pd.Series, fp: dict | None, breadth_d: dict | None,
+                rsi_val: float | None) -> dict:
+    """An EMERGING 'clean entry' — building momentum, NOT extended, NOT overbought, broad,
+    above trend, on a shallow pullback (a healthy entry, not a vertical chase)."""
+    s = lvl.dropna()
+    reasons, q = [], 0.0
+    accel = (fp or {}).get("accel_z")
+    rs_p = (fp or {}).get("rs_pctile")
+    if accel is not None and accel > 0.3:
+        q += 0.30; reasons.append("accelerating")
+    not_ext = (rs_p is None or rs_p < 0.75)
+    if not_ext:
+        q += 0.20; reasons.append("not extended")
+    if rsi_val is not None and rsi_val < 65:
+        q += 0.15; reasons.append("RSI room")
+    pct50 = (breadth_d or {}).get("pct50")
+    if pct50 is not None and pct50 >= 0.5:
+        q += 0.15; reasons.append("breadth supportive")
+    if len(s) >= 60:
+        sma200 = s.rolling(200, min_periods=60).mean().iloc[-1]
+        if pd.notna(sma200) and s.iloc[-1] > sma200:
+            q += 0.10; reasons.append("above 200d trend")
+    if len(s) >= 20:
+        w = min(20, len(s))
+        recent_dd = s.iloc[-1] / s.iloc[-w:].max() - 1.0
+        if -0.08 < recent_dd < -0.004:
+            q += 0.10; reasons.append("shallow pullback")
+    return {"flag": bool(q >= 0.6 and not_ext), "quality": round(min(q, 1.0), 3),
+            "reasons": reasons[:4], "directional": False}
+
+
+def rollover_risk(lvl: pd.Series, fp: dict | None, fp5: dict | None,
+                  breadth_d: dict | None, perf: dict | None) -> dict:
+    """Distribution / roll-over risk — was extended, momentum now decelerating off the high,
+    breadth deteriorating, below short trend. 'Risky right now, about to roll over.'"""
+    s = lvl.dropna()
+    reasons, r = [], 0.0
+    rs_p = (fp or {}).get("rs_pctile")
+    accel = (fp or {}).get("accel_z")
+    accel5 = (fp5 or {}).get("accel_z")
+    if rs_p is not None and rs_p >= 0.8:
+        r += 0.30; reasons.append("extended (RS " + str(round(rs_p * 100)) + "%ile)")
+    if accel is not None and accel5 is not None and accel < accel5 and accel < 0:
+        r += 0.25; reasons.append("momentum rolling over")
+    elif accel is not None and accel < -0.4:
+        r += 0.20; reasons.append("decelerating")
+    pct50 = (breadth_d or {}).get("pct50")
+    nh, nl = (breadth_d or {}).get("nh", 0), (breadth_d or {}).get("nl", 0)
+    if pct50 is not None and pct50 < 0.45:
+        r += 0.20; reasons.append("breadth weakening")
+    if nl > nh:
+        r += 0.10; reasons.append("more new lows")
+    if len(s) >= 50:
+        sma50 = s.rolling(50, min_periods=25).mean().iloc[-1]
+        if pd.notna(sma50) and s.iloc[-1] < sma50:
+            r += 0.15; reasons.append("below 50d")
+    d5 = (perf or {}).get("5d", {}).get("rel")
+    if d5 is not None and d5 < -0.01 and rs_p is not None and rs_p > 0.7:
+        r += 0.10; reasons.append("rolling off the high")
+    band, band_zh = ("high", "高") if r >= 0.6 else ("elevated", "升高") if r >= 0.35 else ("low", "低")
+    return {"risk": round(min(r, 1.0), 3), "band": band, "band_zh": band_zh,
+            "reasons": reasons[:4], "directional": False}
+
+
+def theme_textures(lvl: pd.Series, fp: dict | None, fp5: dict | None,
+                   crowd: dict | None, breadth_d: dict | None, perf: dict | None) -> dict:
+    """All four per-theme textures + the basket RSI (one call per basket)."""
+    rsi = _rsi(lvl)
+    rs_p = (fp or {}).get("rs_pctile")
+    return {
+        "bull_age": bull_age(lvl),
+        "overbought": overbought(lvl, rs_p, crowd),
+        "clean_entry": clean_entry(lvl, fp, breadth_d, rsi),
+        "rollover_risk": rollover_risk(lvl, fp, fp5, breadth_d, perf),
+    }
+
+
+def act_now_stocks(members: list, theme: dict) -> dict:
+    """WHAT TO ACT ON NOW (stock level) — the member stocks with a genuine buy entry RIGHT
+    NOW, GATED by theme health: if the theme is out of favour (deteriorating / fading /
+    avoid / trim / in a downtrend) it recommends NOTHING. Otherwise only members whose
+    per-stock Conviction Profile is a buy/add, with the cycle NOT blocking and a decent
+    entry-axis percentile (good price, not chasing). Honest: a focus list, never an order.
+
+    `members` carry a plucked `conviction` block (score, verdict, cycle_blocked, entry_pct)."""
+    label = (theme or {}).get("label")
+    reco = (theme or {}).get("reco")
+    tx = (theme or {}).get("textures") or {}
+    in_bull = (tx.get("bull_age") or {}).get("in_bull", True)
+    theme_bad = label in ("deteriorating", "fading") or reco in ("avoid", "trim") or in_bull is False
+    if theme_bad:
+        why = label or reco or "downtrend"
+        return {"status": "theme_out_of_favour", "buys": [],
+                "note_en": "Theme is out of favour (" + str(why) + ") — no stock buys recommended here right now.",
+                "note_zh": "主题暂不被青睐（" + str(why) + "）— 当前不建议买入该主题个股。"}
+    buys = []
+    for m in members or []:
+        c = m.get("conviction")
+        if not c or c.get("score") is None:
+            continue
+        v = (c.get("verdict") or "").lower()
+        is_buy = ("buy" in v or "add" in v) and not c.get("cycle_blocked")
+        ep = c.get("entry_pct")
+        good_entry = ep is None or ep >= 0.45
+        if is_buy and (c.get("score") or 0) >= 50 and good_entry:
+            buys.append({"symbol": m.get("symbol"), "name": m.get("name"),
+                         "score": c.get("score"), "verdict": c.get("verdict"),
+                         "verdict_zh": c.get("verdict_zh"), "entry_pct": ep,
+                         "ret_20d": m.get("ret_20d"), "ret_ytd": m.get("ret_ytd"),
+                         "rationale": m.get("rationale")})
+    buys.sort(key=lambda x: (-(x.get("entry_pct") or 0), -(x.get("score") or 0)))
+    if not buys:
+        return {"status": "no_clean_entries", "buys": [],
+                "note_en": "Theme is in favour, but no member has a clean entry right now — most are extended or mid-trend. Wait for a pullback.",
+                "note_zh": "主题尚可，但当前无成分股具备干净入场点 — 多数已延展或处于趋势中段。等待回调。"}
+    return {"status": "ok", "buys": buys[:12]}
+
+
+_BREADTH_DIR = {"us": "breadth", "china": "china_breadth",
+                "hk": "hk_breadth", "canada": "canada_breadth"}
+
+
+def market_concentration(region: str = "us") -> dict:
+    """Broad-market narrowness from the region's breadth tape (the user's 'market is narrow now').
+
+    Daily + 3-day + weekly + monthly advance-decline ratio, % above 50/200d, new-hi/lo, and a
+    broad/narrowing/narrow verdict. Read-only over data/<region>_breadth/breadth.parquet; {} on
+    miss (the section then hides)."""
+    try:
+        b = pd.read_parquet(config.data_dir() / _BREADTH_DIR.get(region, "breadth") / "breadth.parquet")
+    except Exception:  # noqa: BLE001
+        return {}
+    if b.empty:
+        return {}
+    last = b.iloc[-1]
+    def f(c):
+        try:
+            return float(last[c])
+        except Exception:  # noqa: BLE001
+            return None
+    adv, dec = f("adv"), f("dec")
+    ad = round(adv / dec, 2) if (adv is not None and dec) else None
+    out = {"adv": int(adv) if adv is not None else None,
+           "dec": int(dec) if dec is not None else None, "ad_ratio": ad,
+           "pct_above_50": round(f("pct_above_50"), 1) if f("pct_above_50") is not None else None,
+           "pct_above_200": round(f("pct_above_200"), 1) if f("pct_above_200") is not None else None,
+           "nh": int(f("nh")) if f("nh") is not None else None,
+           "nl": int(f("nl")) if f("nl") is not None else None,
+           "directional": False}
+    for lbl, n in (("ad_3d", 3), ("ad_w", 5), ("ad_m", 21)):
+        seg = b.iloc[-n:]
+        sa, sd = seg["adv"].sum(), seg["dec"].sum()
+        out[lbl] = round(float(sa / sd), 2) if sd else None
+    p50 = out["pct_above_50"]
+    if ad is not None and p50 is not None:
+        if ad < 0.95 and p50 < 45:
+            out["verdict"], out["verdict_zh"] = "narrow", "狭窄"
+        elif ad > 1.3 and p50 > 58:
+            out["verdict"], out["verdict_zh"] = "broad", "广泛"
+        else:
+            out["verdict"], out["verdict_zh"] = "mixed", "中性"
+    return out

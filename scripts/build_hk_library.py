@@ -128,6 +128,74 @@ def compute_hk_global_betas() -> dict | None:
     return out
 
 
+# ── HK-native signal feeds (the unique conviction system) ────────────────────
+def _closes_matrix() -> pd.DataFrame | None:
+    """The curated-constituent daily close matrix (date × ticker) the per-name legs run
+    on — the same breadth cache the universe + global-beta engine use."""
+    cache = config.data_dir() / "hk_breadth" / "_closes_cache.parquet"
+    if not cache.exists():
+        return None
+    try:
+        df = pd.read_parquet(cache).sort_index()
+        return df.loc[:, ~df.columns.duplicated()]
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _factor_ret() -> pd.Series | None:
+    """The global-risk return factor (S&P 500, lagged one day for the overnight US->HK
+    transmission) — the same factor the per-name global betas are measured against, so the
+    beta-neutral residual is internally consistent."""
+    spy = store.read("yahoo", "SPY")
+    if spy is None or "close" not in spy.columns:
+        return None
+    return spy["close"].pct_change(fill_method=None).shift(1)
+
+
+def _vhsi_pctile() -> float | None:
+    """VHSI (HK implied-vol 'fear') percentile vs its own history — feeds the conviction
+    risk overlay / calm. Best-effort: None when the series is missing."""
+    try:
+        v = store.read("hk", "_HSIL")
+        if v is None or "close" not in v.columns:
+            return None
+        s = v["close"].dropna()
+        if len(s) < 60:
+            return None
+        return round(float((s <= s.iloc[-1]).mean() * 100), 0)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _drawdown_band() -> str | None:
+    """The HK drawdown-risk band (uncalibrated context) from the regime snapshot — escalates
+    the conviction macro stress when HK is fragile."""
+    p = config.data_dir() / "hk_regime" / "latest.json"
+    if not p.exists():
+        return None
+    try:
+        co = (json.loads(p.read_text()).get("conditions") or {}).get("drawdown_risk") or {}
+        return co.get("band")
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _consensus_z_map(records: dict[str, dict]) -> dict[str, float]:
+    """Cross-sectional z of sell-side analyst UPSIDE (median target vs price) — the HK-unique
+    quality leg A-shares lack (engine/hk_fundamentals already attaches the consensus block).
+    Context only; fed to the conviction quality axis. {} when too few names carry coverage."""
+    import statistics
+    ups = {t: ((rec.get("fundamentals") or {}).get("consensus") or {}).get("upside_pct")
+           for t, rec in records.items()}
+    ups = {t: float(v) for t, v in ups.items() if v is not None}
+    if len(ups) < 6:
+        return {}
+    vals = list(ups.values())
+    mu = statistics.fmean(vals)
+    sd = statistics.pstdev(vals) or 1.0
+    return {t: float(max(-3.0, min(3.0, (v - mu) / sd))) for t, v in ups.items()}
+
+
 def chart_series(close: pd.Series, n: int = 504) -> dict:
     """Compact columnar close history for the client-side chart (the last ~2y of
     daily closes). TradingView's free embed gates HKEX data behind a login, so the
@@ -236,6 +304,23 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
     if not pt:
         return None
 
+    # HK-native enrichment legs — turns the one-number beta board into a real desk: the
+    # mainland southbound smart-money flow per name + the A/H value dislocation. Cheap
+    # (reads the cached snapshot / stored A+H closes); each degrades to absent.
+    sb_sig: dict = {}
+    ah_val: dict = {}
+    try:
+        from engine import hk_ah, hk_southbound_stocks, hk_stock_signals
+        # z-score southbound over the SAME canonical universe the conviction edge uses (the
+        # full analyzable close matrix, not just the beta'd subset), so a name's sb_z on the
+        # board matches its sb_z inside the conviction edge. Falls back to the beta universe.
+        cm = _closes_matrix()
+        sb_universe = list(cm.columns) if cm is not None else list(pt.keys())
+        sb_sig = hk_southbound_stocks.signal(tickers=sb_universe) or {}
+        ah_val = hk_stock_signals.ah_value_signal(hk_ah.ah_by_ticker()) or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk scoreboard flow/value legs unavailable (%s)", e)
+
     rows = []
     for ticker, gb in pt.items():
         safe = ticker.replace("=", "_").replace("^", "_")
@@ -249,6 +334,8 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
         lad = rec.get("ladder", {})
         cyc = lad.get("label") or lad.get("state")
         sec = rec.get("sector")
+        sb = sb_sig.get(ticker) or {}
+        av = ah_val.get(ticker) or {}
         rows.append({
             "ticker": ticker,
             "name": rec.get("name"),
@@ -262,6 +349,13 @@ def compute_hk_scoreboard(betas: dict | None = None) -> dict | None:
             "cycle": cyc,
             "cycle_zh": lad.get("label_zh") or (i18n.tr(cyc) if cyc else None),
             "cycle_dir": lad.get("dir"),
+            "sb_z": sb.get("accum_z"),            # southbound accumulation z
+            "sb_own": sb.get("own_pct"),          # mainland Connect % of issued shares
+            "sb_label": sb.get("label"),
+            "ah_z": av.get("z"),                  # A/H value z (dual-listed only)
+            "ah_prem": av.get("premium_pct"),
+            "conv": None,                         # conviction score (patched by standouts)
+            "edge_z": None,                       # unified HK edge z (patched by standouts)
         })
     if not rows:
         return None
@@ -350,22 +444,29 @@ def _fund_priors_map() -> dict[str, float]:
     return {t: (v - mu) / sd for t, v in scores.items()}
 
 
-def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 100, n_lag: int = 6) -> dict | None:
-    """Standout HK names ranked by cross-sectional RELATIVE STRENGTH — each name's
-    63-day (~3-month) return z-scored against the HK universe. HK has NO validated
-    stock-picking alpha (residual momentum is dead on a 40y panel); this is a
-    relative-strength / exposure READ surfaced as cards for parity with the US &
-    China dashboards, NOT a backtested selection edge. Reuses the per-stock library
-    JSON (price, off-52w-high, RSI, cycle, recent closes) and the global-beta
-    scoreboard rows, so no new data is fetched. Returns a setups-shaped dict."""
-    import statistics
+def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 6) -> dict | None:
+    """The HK Stock Desk — names ranked by a UNIFIED, regime-conditioned conviction that
+    fuses HK's three honest structural edges (engine/hk_stock_signals): southbound
+    smart-money FLOW, A/H VALUE dislocation, and BETA-NEUTRAL relative strength — NOT the
+    dead residual-momentum / raw-RS sort the old board used (which just re-discovered
+    global-risk beta and crowned an outlier). The live ``risk_state`` re-weights the blend
+    (Risk-off → flow + value + cushions; Risk-on → RS + amplifiers).
+
+    The fused edge z feeds the engine/stock_score selection axis; the entry brakes
+    (parabolic / over-200dma / lottery) and the macro risk overlay are armed so the size /
+    verb are meaningful. HK still has NO selection alpha, so trust_tier='HK'/'screen' and
+    the verdict never says "Buy". Board is ranked by the gated conviction composite and
+    split buy / watch (strong-but-blocked) / laggards. Returns a setups-shaped dict."""
     from collections import defaultdict
+    from engine import extension as ext_eng
+    from engine import hk_ah, hk_southbound_stocks, hk_stock_signals
 
     rows = ((scoreboard or {}).get("modes") or {}).get("all") or []
     if not rows:
         return None
     site = config.ROOT / config.load()["storage"]["site_dir"]
     hd = site / "hkstockdata"
+    risk_state = (scoreboard or {}).get("risk_state") or "neutral"
 
     enriched: list[dict] = []
     for r in rows:
@@ -397,22 +498,25 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 100, n_lag: int =
             "rsi": tech.get("rsi14"),
             "label": r.get("cycle"), "label_zh": r.get("cycle_zh"),
             "dir": r.get("cycle_dir") or "flat",
-            "_ret63": ret_63, "_chart": chart, "_rec": rec, "_path": f,
+            "beta": r.get("beta"), "role": r.get("role"), "tilt": r.get("tilt"),
+            "_ret63": ret_63, "_chart": chart, "_rec": rec, "_path": f, "_row": r,
         })
     if len(enriched) < 4:
         return None
 
+    # raw relative-strength z is kept as a DESCRIPTIVE chip (not the rank) so the card can
+    # still show "how it ranks on 3m return" beside the honest beta-neutral leg.
+    import statistics
     rets = [e["_ret63"] for e in enriched]
     mu = statistics.fmean(rets)
     sd = statistics.pstdev(rets) or 1.0
     for e in enriched:
-        e["alpha"] = round((e["_ret63"] - mu) / sd, 2)        # relative-strength z
+        e["alpha"] = round((e["_ret63"] - mu) / sd, 2)
         rsi = e.get("rsi")
         if rsi is not None and rsi >= 70:
-            e["alpha_entry"] = "extended"                      # stretched — reversal risk
+            e["alpha_entry"] = "extended"
         elif rsi is not None and rsi <= 55 and e["alpha"] > 0:
-            e["alpha_entry"] = "pullback"                      # strong name, cooled off
-
+            e["alpha_entry"] = "pullback"
     by_sec: dict = defaultdict(list)
     for e in enriched:
         by_sec[e.get("sector")].append(e)
@@ -421,13 +525,27 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 100, n_lag: int =
         for i, e in enumerate(lst, 1):
             e["sector_rank"], e["sector_n"] = i, len(lst)
 
+    # ---- HK-native conviction legs (the unique system) -----------------------
+    tickers = [e["ticker"] for e in enriched]
+    closes = _closes_matrix()
+    factor = _factor_ret()
+    betas_pt = {r["ticker"]: {"role": r.get("role"), "tilt": r.get("tilt"), "beta": r.get("beta")}
+                for r in rows}
+    betas = {t: v["beta"] for t, v in betas_pt.items() if v.get("beta") is not None}
+    southbound = hk_southbound_stocks.signal(tickers=list(closes.columns)) if closes is not None else {}
+    ah_value = hk_stock_signals.ah_value_signal(hk_ah.ah_by_ticker())
+    bnrs = (hk_stock_signals.beta_neutral_rs(closes, factor, betas)
+            if (closes is not None and factor is not None) else {})
+    ext_map = ext_eng.extension_signals(closes) if closes is not None else {}
+    lottery = hk_stock_signals.lottery_map(closes) if closes is not None else {}
+    edge = hk_stock_signals.hk_edge(tickers, southbound=southbound, ah_value=ah_value,
+                                    bnrs=bnrs, betas_pt=betas_pt, risk_state=risk_state)
+    vhsi_pct = _vhsi_pctile()
+    overlay = hk_stock_signals.hk_risk_overlay(risk_state, vhsi_pct, _drawdown_band())
+    calm = hk_stock_signals.hk_calm(risk_state, vhsi_pct)
+    consensus_z = _consensus_z_map({e["ticker"]: e["_rec"] for e in enriched})
+
     # ---- unified Conviction Profile (engine/stock_score), HK market ----------
-    # Profile EVERY enriched name so the per-stock detail page and these standout
-    # cards render the SAME block (they can never structurally disagree). HK has no
-    # validated stock-selection edge, so the SELECTION axis is the relative-strength
-    # z (framed as a screen) and trust_tier('HK')='screen' — the engine's verdict()
-    # never says "Buy". The cycle state is a HARD verb modifier. The shipped board
-    # rank STAYS the RS leg (below); the composite rides as the displayed profile.
     as_of = (scoreboard or {}).get("as_of")
     basket_tw = _basket_tailwind_map()
     fund_priors = _fund_priors_map()
@@ -435,48 +553,97 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 100, n_lag: int =
     for e in enriched:
         t = e["ticker"]
         rec = e["_rec"]
-        # the standout's RS z lands in the engine's selection slot via rs_z; the
-        # per-name pullback/extended tag rides on alpha_entry so the entry axis reads it.
+        ed = edge.get(t) or {}
+        e["edge_z"] = ed.get("z")
+        e["edge_basis"] = ed.get("basis")
+        e["southbound"] = southbound.get(t)
+        e["ah_value"] = ah_value.get(t)
+        # the FUSED HK edge lands in the selection slot (rs_z); falls back to the raw RS z
+        # only when no HK-native leg resolves. The pullback/extended tag rides on alpha_entry.
+        sel_z = ed.get("z") if ed.get("z") is not None else e["alpha"]
         rec_for_norm = {**rec, "alpha": {"entry": e.get("alpha_entry")}}
         norm = stock_score.normalize_rec(
-            rec_for_norm, "HK", rs_z=e["alpha"],
-            fund_priors_z=fund_priors.get(t), basket=basket_tw.get(t))
-        prof = stock_score.conviction_profile(norm, "HK", ctx={"as_of": as_of})
+            rec_for_norm, "HK", rs_z=sel_z,
+            fund_priors_z=fund_priors.get(t), quality_context_z=consensus_z.get(t),
+            basket=basket_tw.get(t), ext=ext_map.get(t), lottery_max=lottery.get(t))
+        # the dominant positive HK-native leg names the verdict ("mainland accumulating" /
+        # "cheap H vs A twin" / "relative-strength standout") — so the screen says WHY.
+        pos = [b for b in (ed.get("basis") or []) if b.get("z", 0) >= 0.6]
+        if pos:
+            norm["hk_edge_lead"] = max(pos, key=lambda b: b["z"])["leg"]
+        prof = stock_score.conviction_profile(
+            norm, "HK", ctx={"as_of": as_of, "risk_overlay": overlay,
+                             "regime": {"calm": calm}})
         profiles[t] = prof
         e["conviction"] = prof
     stock_score.attach_panel_scores(profiles)        # within-market percentile display score
-    # patch the (now percentile-scored) conviction block back into each per-stock
-    # JSON so hk_lookup.html renders the identical hero. The library wrote these
-    # JSONs already; this mirrors the fundamentals / A-H premium patch pattern.
+    # patch the (now percentile-scored) conviction + HK-native legs back into each per-stock
+    # JSON so hk_lookup.html renders the identical hero + flow/value chips.
     for e in enriched:
         rec, fp = e["_rec"], e["_path"]
         rec["conviction"] = profiles.get(e["ticker"])
+        if e.get("southbound"):
+            rec["southbound"] = e["southbound"]
+        if e.get("ah_value"):
+            rec["ah_value"] = e["ah_value"]
+        if e.get("edge_basis"):
+            rec["edge"] = {"z": e.get("edge_z"), "basis": e["edge_basis"], "regime": risk_state}
         try:
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001 — additive, never fatal
             continue
+        # write the conviction score + edge z back onto the scoreboard row (so the
+        # screener can sort by conviction, not just beta).
+        row = e.get("_row")
+        if row is not None:
+            row["conv"] = profiles[e["ticker"]].get("score")
+            row["edge_z"] = e.get("edge_z")
 
-    buys = sorted(enriched, key=lambda x: x["alpha"], reverse=True)[:n_buy]
-    laggards = sorted(enriched, key=lambda x: x["alpha"])[:n_lag]
-    for e in buys:
+    # ---- rank by the GATED conviction composite, split buy / watch / laggards ----
+    def comp(e: dict) -> float:
+        c = e.get("conviction") or {}
+        z = c.get("composite_z")
+        return z if z is not None else -9.0
+
+    def buyable(e: dict) -> bool:
+        c = e.get("conviction") or {}
+        if c.get("cycle_blocked"):
+            return False
+        ez = (c.get("axes") or {}).get("entry", {}).get("z")
+        return ez is None or ez > -0.1
+
+    ranked = sorted(enriched, key=comp, reverse=True)
+    buys = [e for e in ranked if buyable(e)][:n_buy]
+    buy_keys = {id(e) for e in buys}
+    # strong-but-blocked names (good edge, wrong tape / extended) -> a WATCH strip, not the
+    # buy list — the honest "wait for a base" demotion the old board lacked.
+    watch = [e for e in ranked if id(e) not in buy_keys and comp(e) > 0.2][:8]
+    laggards = sorted(enriched, key=comp)[:n_lag]
+
+    for e in buys + watch:
         col = ("var(--up)" if e["dir"] == "up" else
                "var(--down)" if e["dir"] == "down" else "var(--muted)")
         e["spark_svg"] = _spark_svg(e["_chart"][-64:], color=col)
+    # board-level fragility gauge over the top conviction cohort (display-only sizing context)
+    cohort = ext_eng.cohort_stretch([ext_map[e["ticker"]] for e in ranked[:24]
+                                     if e["ticker"] in ext_map])
     for e in enriched:                                          # drop bulky temp fields
-        e.pop("_chart", None); e.pop("_ret63", None)
-        e.pop("_rec", None); e.pop("_path", None)
-    out = {"as_of": as_of, "buy": buys, "laggards": laggards,
-           "eligible": sum(1 for e in enriched if e["alpha"] >= 0.5),
+        for k in ("_chart", "_ret63", "_rec", "_path", "_row"):
+            e.pop(k, None)
+    out = {"as_of": as_of, "risk_state": risk_state, "overlay": overlay,
+           "calm": calm, "cohort": cohort or None,
+           "buy": buys, "watch": watch, "laggards": laggards,
+           "southbound_summary": hk_southbound_stocks.market_summary(),
+           "eligible": sum(1 for e in enriched if comp(e) > 0),
            "universe": len(enriched)}
-    # persist the artifact so a transient build failure leaves a stale-but-present
-    # board (mirrors us_standouts.json — fixes the silent-vanish on a bad run).
+    # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"
         fdir.mkdir(parents=True, exist_ok=True)
         (fdir / "hk_standouts.json").write_text(
             json.dumps(out, separators=(",", ":"), default=str))
-        log.info("wrote hk_standouts.json (%d buy of %d eligible / %d universe)",
-                 len(buys), out["eligible"], out["universe"])
+        log.info("wrote hk_standouts.json (%d buy / %d watch of %d eligible / %d universe; %s)",
+                 len(buys), len(watch), out["eligible"], out["universe"], risk_state)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk_standouts.json persist skipped (%s)", e)
     return out
@@ -486,6 +653,18 @@ def main(betas: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "hkstockdata"
     outdir.mkdir(parents=True, exist_ok=True)
+
+    # warm the per-stock SOUTHBOUND smart-money store (collectors/hk_southbound_holdings
+    # refreshes + COMMITS it in the daily collect step; this only cold-start-fetches when
+    # the store is entirely absent, e.g. local dev before any collect). The conviction legs
+    # below read it; a flaky Eastmoney degrades to the last committed snapshot.
+    try:
+        from engine import hk_southbound_stocks
+        snap = hk_southbound_stocks.latest_holdings(allow_fetch=True)
+        log.info("hk southbound: %s names in store",
+                 "no" if snap is None else len(snap))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("hk southbound store warm-up skipped (%s)", e)
 
     # per-stock global-risk beta leg — computed here if not passed in by build_hk
     if betas is None:

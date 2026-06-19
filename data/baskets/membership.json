@@ -66,6 +66,12 @@
           "action": "create",
           "note": "Seeded Magnificent Seven — 7 equal-weight members from the S&P 1500 cache."
         }
+      ],
+      "parent": "Artificial Intelligence",
+      "tags": [
+        "ai",
+        "megacap",
+        "platforms"
       ]
     },
     "ai_infra": {
@@ -249,6 +255,13 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (10 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AMAT, LRCX, KLAC, QCOM, TER, APH, GLW, MPWR, MRVL, ARM."
         }
+      ],
+      "parent": "Artificial Intelligence",
+      "tags": [
+        "ai",
+        "infrastructure",
+        "compute",
+        "datacenter"
       ]
     },
     "ai_software": {
@@ -386,6 +399,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: INTU, IBM, WDAY, PANW, CRWD, APP, SNOW, NET."
         }
+      ],
+      "parent": "Software",
+      "tags": [
+        "ai",
+        "software",
+        "saas"
       ]
     },
     "defense": {
@@ -540,6 +559,11 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: GE, LDOS, TXT, CW, TDY, HEI."
         }
+      ],
+      "parent": "Industrials",
+      "tags": [
+        "defense",
+        "aerospace"
       ]
     },
     "power_grid": {
@@ -712,6 +736,13 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: DUK, SO, AEP, SRE, HUBB, GNRC, BWXT."
         }
+      ],
+      "parent": "Energy & Power",
+      "tags": [
+        "power",
+        "grid",
+        "electrification",
+        "utilities"
       ]
     },
     "reshoring": {
@@ -842,6 +873,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: HON, ITW, DOV, AME, IR, NDSN, GNRC."
         }
+      ],
+      "parent": "Industrials",
+      "tags": [
+        "reshoring",
+        "capex",
+        "manufacturing"
       ]
     },
     "regional_banks": {
@@ -966,6 +1003,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: PNC, WAL, EWBC, CFR, FHN, WTFC, WBS."
         }
+      ],
+      "parent": "Financials",
+      "tags": [
+        "banks",
+        "rates",
+        "credit"
       ]
     },
     "managed_care": {
@@ -1047,6 +1090,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (3 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: CVS, ALHC, OSCR."
         }
+      ],
+      "parent": "Healthcare",
+      "tags": [
+        "healthcare",
+        "insurers",
+        "managed-care"
       ]
     },
     "housing": {
@@ -1183,6 +1232,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: TOL, KBH, BLD, OC, FBIN, CARR, MHK, LII."
         }
+      ],
+      "parent": "Consumer",
+      "tags": [
+        "housing",
+        "rates",
+        "builders"
       ]
     },
     "payments_fintech": {
@@ -1298,6 +1353,24 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Toast — restaurant payments + software vertical"
+        },
+        {
+          "ticker": "HOOD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Robinhood — retail brokerage; equities, options & crypto"
+        },
+        {
+          "ticker": "UPST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Upstart — AI consumer-lending marketplace"
+        },
+        {
+          "ticker": "FUTU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Futu Holdings — digital brokerage (HK/US-listed)"
         }
       ],
       "etf_proxy_note": "",
@@ -1323,7 +1396,17 @@
           "date": "2026-06-18",
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: XYZ, FOUR, JKHY, WU, FI, AFRM, SOFI, TOST."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Added HOOD (from Crypto), UPST, FUTU — broadening the fintech/neobroker group."
         }
+      ],
+      "parent": "Financials",
+      "tags": [
+        "fintech",
+        "payments"
       ]
     },
     "energy_complex": {
@@ -1465,6 +1548,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: FANG, DVN, HAL, BKR, OKE, TRGP, EQT, LNG."
         }
+      ],
+      "parent": "Energy & Power",
+      "tags": [
+        "energy",
+        "oil",
+        "gas"
       ]
     },
     "defensives": {
@@ -1608,6 +1697,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (7 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: MO, PM, CHD, CLX, HSY, KDP, MKC."
         }
+      ],
+      "parent": "Defensives",
+      "tags": [
+        "staples",
+        "utilities",
+        "low-vol"
       ]
     },
     "travel": {
@@ -1760,6 +1855,12 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AAL, WYNN, CZR, H, WH, DKNG."
         }
+      ],
+      "parent": "Consumer",
+      "tags": [
+        "travel",
+        "leisure",
+        "airlines"
       ]
     },
     "retail": {
@@ -1897,6 +1998,11 @@
           "action": "add",
           "note": "Expanded membership with on-thesis, liquid names (8 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AZO, ORLY, ULTA, BJ, FIVE, BURL, DKS, TSCO."
         }
+      ],
+      "parent": "Consumer",
+      "tags": [
+        "retail",
+        "discretionary"
       ]
     },
     "crypto": {
@@ -1922,8 +2028,8 @@
         {
           "ticker": "HOOD",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Robinhood — retail brokerage with crypto leverage"
+          "removed": "2026-06-18",
+          "rationale": "HOOD — EXITED to Fintech (retail brokerage, not crypto)"
         },
         {
           "ticker": "MSTR",
@@ -1940,26 +2046,26 @@
         {
           "ticker": "GLXY",
           "added": "2025-05-16",
-          "removed": null,
-          "rationale": "Galaxy Digital — crypto merchant bank & trading"
+          "removed": "2026-06-18",
+          "rationale": "GLXY — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "MARA",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Marathon Digital — bitcoin miner; hashrate beta"
+          "removed": "2026-06-18",
+          "rationale": "MARA — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "RIOT",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "Riot Platforms — bitcoin miner; power + hashrate"
+          "removed": "2026-06-18",
+          "rationale": "RIOT — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "CLSK",
           "added": "2023-05-09",
-          "removed": null,
-          "rationale": "CleanSpark — bitcoin miner; low-cost power"
+          "removed": "2026-06-18",
+          "rationale": "CLSK — EXITED to AI Neoclouds (pivoted to AI/HPC hosting)"
         },
         {
           "ticker": "IREN",
@@ -1987,7 +2093,7 @@
         }
       ],
       "etf_proxy_note": "spot-BTC ETF",
-      "thesis": "Listed crypto-equity beta — the US exchange (COIN), retail brokerage (HOOD), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL), a crypto merchant bank (GLXY), spot-ETH via the iShares ETF (ETHA) and the pure-play bitcoin miners (MARA/RIOT/CLSK). Membership is screened to actually track bitcoin: miners that pivoted to AI/HPC hosting in the BTC bear market (IREN/CORZ/HUT) were removed once their BTC correlation collapsed and they began trading as data-center beta — keeping them would have polluted the basket's data and signals. The cleanest public sensor for the crypto regulatory & liquidity cycle — and by far the highest-beta basket here: it amplifies bitcoin both ways. A regime sensor, not a buy list.",
+      "thesis": "Pure crypto-asset beta — the US exchange (COIN), the bitcoin-treasury proxy (MSTR), the USDC stablecoin issuer (CRCL) and spot-ETH (ETHA). Miners that pivoted to AI/HPC moved to AI Neoclouds; the retail broker (HOOD) moved to Fintech. A regime sensor, not a buy list.",
       "weighting": "equal",
       "changelog": [
         {
@@ -2009,6 +2115,949 @@
           "date": "2026-06-18",
           "action": "add",
           "note": "Added ETHA (iShares Ethereum ETF) — spot-ETH beta; ETH tracks bitcoin closely (ETH↔BTC daily-return corr ≈0.8–0.9) so it belongs, and broadens the basket beyond bitcoin-only."
+        },
+        {
+          "date": "2026-06-18",
+          "action": "remove",
+          "note": "Moved RIOT/CLSK/MARA/GLXY to AI Neoclouds (all now AI/HPC hyperscalers) and HOOD to Payments & Fintech (retail brokerage). Crypto now = COIN/MSTR/CRCL/ETHA."
+        }
+      ],
+      "parent": "Crypto",
+      "tags": [
+        "crypto",
+        "bitcoin",
+        "ethereum"
+      ]
+    },
+    "ai_neoclouds": {
+      "name": "AI Neoclouds & HPC Hosting",
+      "name_zh": "AI 新云与高性能算力托管",
+      "theme": "GPU cloud / AI-HPC datacenter hosting pure-plays, including ex-bitcoin miners that pivoted power and datacenter assets into AI compute leasing",
+      "category": "Artificial Intelligence",
+      "parent": "Artificial Intelligence",
+      "tags": [
+        "ai",
+        "gpu-cloud",
+        "datacenter",
+        "hpc",
+        "neocloud",
+        "compute"
+      ],
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "CRWV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CoreWeave — pure-play GPU neocloud; rents large Nvidia clusters to AI labs and hyperscalers"
+        },
+        {
+          "ticker": "NBIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nebius — Yandex-spinout neocloud building Nvidia-GPU AI cloud across US/EU datacenters"
+        },
+        {
+          "ticker": "CORZ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Core Scientific — ex-bitcoin miner now leasing datacenter/power capacity for HPC and AI compute"
+        },
+        {
+          "ticker": "IREN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IREN (Iris Energy) — bitcoin miner pivoting owned power sites into Nvidia GPU AI-cloud hosting"
+        },
+        {
+          "ticker": "HUT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hut 8 — miner-turned-energy/compute operator allocating power assets to AI and HPC hosting"
+        },
+        {
+          "ticker": "APLD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Applied Digital — builds and leases purpose-built HPC/AI datacenters and GPU cloud capacity"
+        },
+        {
+          "ticker": "WULF",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "TeraWulf — bitcoin miner converting low-cost nuclear/grid power sites to AI-HPC hosting leases"
+        },
+        {
+          "ticker": "CIFR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cipher Mining — bitcoin miner repurposing power-rich datacenter sites toward HPC/AI compute"
+        },
+        {
+          "ticker": "BTDR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Bitdeer — mining-tech firm expanding into AI cloud and GPU datacenter hosting capacity"
+        },
+        {
+          "ticker": "RIOT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Riot Platforms — bitcoin miner converting power/datacenters to AI-HPC hosting"
+        },
+        {
+          "ticker": "CLSK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CleanSpark — miner repurposing low-cost power sites toward HPC/AI compute"
+        },
+        {
+          "ticker": "MARA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "MARA Holdings — miner/BTC-treasury expanding into AI-HPC datacenter hosting"
+        },
+        {
+          "ticker": "GLXY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Galaxy Digital — Helios datacenter converted to AI/HPC (CoreWeave lease)"
+        }
+      ],
+      "thesis": "A basket of GPU-cloud and AI-HPC hosting pure-plays — \"neoclouds\" renting Nvidia capacity to AI labs plus ex-bitcoin miners converting power and datacenter shells into compute leases — driven by hyperscaler capex, GPU supply, power availability, and signed take-or-pay contracts. Treat it as a monitoring lens on the AI compute buildout, not a buy list: names are early-stage, capital-intensive, lease-concentrated, and highly volatile.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded AI Neoclouds & HPC Hosting — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPU cloud / AI-HPC datacenter hosting pure-plays, including ex-bitcoin miners that pivoted power and datacenter assets into AI compute leasing"
+        },
+        {
+          "date": "2026-06-18",
+          "action": "add",
+          "note": "Added RIOT/CLSK/MARA/GLXY — bitcoin miners + Galaxy that pivoted to AI/HPC hosting (from Crypto)."
+        }
+      ]
+    },
+    "non_ai_software": {
+      "name": "Non-AI Software",
+      "name_zh": "非AI软件",
+      "theme": "Enterprise SaaS / application & infra software whose thesis is NOT primarily the AI narrative",
+      "category": "Software",
+      "parent": "Software",
+      "tags": [
+        "saas",
+        "enterprise-software",
+        "subscription",
+        "cloud",
+        "non-ai",
+        "application-software"
+      ],
+      "etf_proxy": "IGV",
+      "etf_proxy_note": "loose — basket is a subset",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "CRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Salesforce — CRM/sales-cloud SaaS incumbent; bellwether for seat-based enterprise software"
+        },
+        {
+          "ticker": "ADBE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Adobe — Creative Cloud + Document Cloud subscription suite; digital-media software annuity"
+        },
+        {
+          "ticker": "INTU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Intuit — QuickBooks + TurboTax SMB/consumer finance software; sticky tax-season cash engine"
+        },
+        {
+          "ticker": "NOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "ServiceNow — IT/workflow automation platform; enterprise digital-workflow system of record"
+        },
+        {
+          "ticker": "WDAY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Workday — cloud HCM + financials suite; back-office HR/finance SaaS standard"
+        },
+        {
+          "ticker": "TEAM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Atlassian — Jira/Confluence dev & team collaboration tools; bottoms-up SaaS land-and-expand"
+        },
+        {
+          "ticker": "HUBS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "HubSpot — inbound marketing/CRM platform for SMBs; mid-market go-to-market software"
+        },
+        {
+          "ticker": "DDOG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Datadog — cloud observability/monitoring; usage-based infra-software on workload growth"
+        },
+        {
+          "ticker": "SNOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Snowflake — cloud data warehouse/platform; consumption-based data-infrastructure software"
+        },
+        {
+          "ticker": "MDB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "MongoDB — developer document database (Atlas); consumption-based database infrastructure"
+        },
+        {
+          "ticker": "DOCU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "DocuSign — e-signature + agreement management; transaction-tied workflow SaaS"
+        },
+        {
+          "ticker": "PCOR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Procore — cloud construction-management platform; vertical SaaS tied to building activity"
+        },
+        {
+          "ticker": "GTLB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "GitLab — DevSecOps platform / code system of record; developer-tooling subscription software"
+        }
+      ],
+      "thesis": "Enterprise application and infrastructure SaaS franchises whose value rests on seat growth, net-revenue retention and durable subscription economics rather than the AI story — driven by software budgets, deal cycles, rates (long-duration multiples) and the SaaS net-retention regime. A monitoring lens on classic-software leadership, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Non-AI Software — 13 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Enterprise SaaS / application & infra software whose thesis is NOT primarily the AI narrative"
+        }
+      ]
+    },
+    "non_ai_tech": {
+      "name": "Non-AI Tech & Hardware",
+      "name_zh": "非AI科技与硬件",
+      "theme": "Legacy / diversified tech hardware, networking and non-AI analog/MCU semiconductors.",
+      "category": "Semiconductors & Hardware",
+      "parent": "Semiconductors & Hardware",
+      "tags": [
+        "hardware",
+        "networking",
+        "analog",
+        "mcu",
+        "enterprise-it",
+        "connectors"
+      ],
+      "etf_proxy": "XLK",
+      "etf_proxy_note": "loose — basket is a subset of XLK",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "CSCO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cisco — enterprise networking incumbent; switches, routers, security and software"
+        },
+        {
+          "ticker": "IBM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IBM — hybrid-cloud, consulting, mainframes and software; legacy enterprise IT"
+        },
+        {
+          "ticker": "HPQ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "HP Inc — PCs and printers; consumer/commercial hardware, no datacenter AI"
+        },
+        {
+          "ticker": "DELL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Dell — PCs and enterprise servers/storage; AI-server upside but broad-line hardware core"
+        },
+        {
+          "ticker": "GLW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Corning — specialty glass and optical fiber; display, telecom and datacenter fiber"
+        },
+        {
+          "ticker": "APH",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Amphenol — broad-line connectors and interconnect across auto, industrial, comms"
+        },
+        {
+          "ticker": "TEL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "TE Connectivity — connectors and sensors levered to auto, industrial and energy"
+        },
+        {
+          "ticker": "TXN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Texas Instruments — broad-line analog and embedded MCUs; industrial/auto cyclical"
+        },
+        {
+          "ticker": "ADI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Analog Devices — high-performance analog, mixed-signal and power; industrial/auto"
+        },
+        {
+          "ticker": "MCHP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Microchip — microcontrollers and analog for embedded industrial/auto; inventory-cycle"
+        },
+        {
+          "ticker": "ON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "ON Semiconductor — power semis, SiC and image sensors; auto and industrial power"
+        },
+        {
+          "ticker": "NXPI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NXP — automotive, edge MCUs and secure connectivity; auto/industrial demand"
+        }
+      ],
+      "thesis": "Diversified legacy tech: enterprise IT, networking gear, connectors and broad-line analog/MCU/power chips whose demand rides industrial, auto and datacenter capex rather than the AI-accelerator boom. Driven by inventory normalization, the industrial/auto cycle and infrastructure spend — a monitoring lens on the non-AI side of tech, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Non-AI Tech & Hardware — 12 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Legacy / diversified tech hardware, networking and non-AI analog/MCU semiconductors."
+        }
+      ]
+    },
+    "ai_semiconductors": {
+      "name": "AI Semiconductors",
+      "name_zh": "AI半导体",
+      "theme": "GPUs, AI accelerators, AI networking silicon and custom-ASIC names.",
+      "category": "Semiconductors",
+      "parent": "Semiconductors",
+      "tags": [
+        "gpu",
+        "accelerators",
+        "custom-asic",
+        "ai-networking",
+        "datacenter",
+        "compute"
+      ],
+      "etf_proxy": "SMH",
+      "etf_proxy_note": "loose — basket is an AI-compute subset of SMH",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nvidia — dominant AI GPU maker; CUDA + datacenter accelerators anchor the AI-compute stack"
+        },
+        {
+          "ticker": "AVGO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Broadcom — custom AI ASIC partner to hyperscalers plus AI datacenter networking silicon"
+        },
+        {
+          "ticker": "AMD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AMD — #2 merchant AI GPU (Instinct/MI series) plus EPYC server CPUs for AI hosts"
+        },
+        {
+          "ticker": "QCOM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Qualcomm — on-device/edge AI inference chips; pushing into datacenter AI accelerators"
+        },
+        {
+          "ticker": "MRVL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Marvell — custom AI ASIC silicon plus optical/DCI interconnect for AI datacenters"
+        },
+        {
+          "ticker": "MPWR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Monolithic Power — power-management chips feeding GPU/accelerator boards and AI servers"
+        },
+        {
+          "ticker": "ANET",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Arista — high-speed Ethernet switches networking AI/GPU clusters in datacenters"
+        },
+        {
+          "ticker": "SMCI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Super Micro — GPU server and rack systems; integrates accelerators into AI datacenters"
+        },
+        {
+          "ticker": "ARM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Arm Holdings — CPU IP/architecture licensed into AI accelerators, servers and edge silicon"
+        },
+        {
+          "ticker": "ALAB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Astera Labs — connectivity silicon (PCIe/CXL retimers) linking GPUs, CPUs and memory"
+        },
+        {
+          "ticker": "CRDO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Credo — high-speed SerDes and active electrical cables for AI cluster interconnect"
+        }
+      ],
+      "thesis": "AI Semiconductors tracks the silicon supply chain behind AI compute — merchant GPUs, custom training/inference ASICs, the networking chips that lash accelerators together, and the power and server hardware around them — driven by hyperscaler and enterprise capex on training and inference buildouts. It is a monitoring lens on the AI-compute cycle, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded AI Semiconductors — 11 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPUs, AI accelerators, AI networking silicon and custom-ASIC names."
+        }
+      ]
+    },
+    "semicap_equipment": {
+      "name": "Semiconductor Equipment (WFE)",
+      "name_zh": "半导体设备（晶圆厂设备）",
+      "theme": "Wafer-fab equipment, metrology and subsystem suppliers — the AI-capex pick-and-shovel layer.",
+      "category": "Semiconductors",
+      "parent": "Semiconductors",
+      "tags": [
+        "wfe",
+        "semicap",
+        "ai-capex",
+        "metrology",
+        "subsystems"
+      ],
+      "etf_proxy": "SMH",
+      "etf_proxy_note": "loose — SMH is broad semis; this basket is the WFE/equipment subset",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "AMAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Applied Materials — largest WFE vendor; deposition, etch, CMP, ion implant tools"
+        },
+        {
+          "ticker": "LRCX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Lam Research — etch and deposition leader; key to 3D NAND and advanced DRAM"
+        },
+        {
+          "ticker": "KLAC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "KLA — process-control and inspection/metrology near-monopoly for defect detection"
+        },
+        {
+          "ticker": "ENTG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Entegris — advanced materials, filtration and fluid handling consumed per wafer"
+        },
+        {
+          "ticker": "MKSI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "MKS Instruments — vacuum, RF power, photonics subsystems inside fab tools"
+        },
+        {
+          "ticker": "ONTO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Onto Innovation — optical metrology and inspection, strong in advanced packaging"
+        },
+        {
+          "ticker": "ACLS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Axcelis — ion implant systems; levered to mature-node and silicon-carbide power"
+        },
+        {
+          "ticker": "COHU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cohu — back-end test handlers, contactors and inspection for chip packaging"
+        },
+        {
+          "ticker": "FORM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "FormFactor — probe cards and test systems for wafer-level chip testing"
+        },
+        {
+          "ticker": "ICHR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ichor — fluid-delivery gas/liquid subsystems built for WFE OEMs like Lam"
+        },
+        {
+          "ticker": "AEIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Advanced Energy — precision RF and DC power supplies for plasma fab tools"
+        },
+        {
+          "ticker": "UCTT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ultra Clean Holdings — outsourced critical subsystems and gas modules for OEMs"
+        },
+        {
+          "ticker": "NVMI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nova — optical and X-ray metrology for process and advanced-packaging control"
+        }
+      ],
+      "thesis": "Wafer-fab equipment (WFE) and metrology vendors are the pick-and-shovel layer of the AI build-out, selling the deposition, etch, litho-adjacent and inspection tools plus subsystems that enable leading-edge logic, HBM/DRAM and advanced packaging; the cycle is driven by fab capex, foundry/memory utilization and China localization spend. This is a monitoring lens for capex-cycle and AI-supply-chain breadth, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Semiconductor Equipment (WFE) — 13 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Wafer-fab equipment, metrology and subsystem suppliers — the AI-capex pick-and-shovel layer."
+        }
+      ]
+    },
+    "memory_storage": {
+      "name": "Memory, HBM & Storage",
+      "name_zh": "内存、HBM 与存储",
+      "theme": "DRAM/HBM, NAND and enterprise storage — the AI-memory cycle.",
+      "category": "Semiconductors",
+      "parent": "Semiconductors",
+      "tags": [
+        "memory",
+        "hbm",
+        "dram",
+        "nand",
+        "storage",
+        "ai-infrastructure"
+      ],
+      "etf_proxy": "SMH",
+      "etf_proxy_note": "loose — SMH is broad semis; this is a memory/storage subset",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "MU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Micron — DRAM/NAND maker; HBM3E supplier to Nvidia GPUs, the prime AI-memory play"
+        },
+        {
+          "ticker": "WDC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Western Digital — post-spinoff pure HDD maker; nearline drives for hyperscaler storage"
+        },
+        {
+          "ticker": "STX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Seagate — HDD leader; HAMR high-capacity nearline drives for AI data-center storage"
+        },
+        {
+          "ticker": "SNDK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "SanDisk — NAND/SSD pure-play spun from WDC in 2025; flash for AI and enterprise"
+        },
+        {
+          "ticker": "NTAP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NetApp — enterprise data-storage systems and software; AI data-pipeline storage demand"
+        }
+      ],
+      "thesis": "This basket tracks the AI-memory cycle: DRAM and high-bandwidth memory (HBM) for accelerators, NAND flash, and the enterprise HDD/SSD storage that AI data buildout demands. It is driven by memory pricing cycles, HBM capacity sold to GPU makers, and hyperscaler storage capex — a monitoring lens on the cycle, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Memory, HBM & Storage — 5 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). DRAM/HBM, NAND and enterprise storage — the AI-memory cycle."
+        }
+      ]
+    },
+    "data_center_power": {
+      "name": "Data-Center Power & Cooling",
+      "name_zh": "数据中心电力与散热",
+      "theme": "Electrical, thermal and power infrastructure feeding AI datacenters.",
+      "category": "Energy & Power",
+      "parent": "Energy & Power",
+      "tags": [
+        "data center",
+        "power",
+        "cooling",
+        "electrification",
+        "ai infrastructure",
+        "grid"
+      ],
+      "etf_proxy": "XLU",
+      "etf_proxy_note": "loose — XLU is utilities, basket is power/cooling equipment suppliers",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "VRT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Vertiv — data-center thermal/liquid cooling and power management; core AI-rack infra supplier"
+        },
+        {
+          "ticker": "ETN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Eaton — electrical power-management gear (switchgear, busway, UPS) for data-center buildouts"
+        },
+        {
+          "ticker": "POWL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Powell Industries — MV/LV switchgear and E-houses taking grid power into data centers"
+        },
+        {
+          "ticker": "NXT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nextracker — solar trackers; powers behind-the-meter/renewable supply feeding data-center load"
+        },
+        {
+          "ticker": "AEIS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Advanced Energy — precision power conversion; new 800V DC-DC converters for AI racks"
+        },
+        {
+          "ticker": "NVT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "nVent Electric — electrical enclosures, connections and liquid-cooling for data-center racks"
+        },
+        {
+          "ticker": "HUBB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hubbell — electrical/grid connectors and components for utility and data-center power"
+        },
+        {
+          "ticker": "GEV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "GE Vernova — gas turbines, grid equipment and transformers supplying power to data centers"
+        }
+      ],
+      "thesis": "The picks-and-shovels of the AI buildout: switchgear, transformers, busways, power-conversion and liquid-cooling gear that moves megawatts from the grid into GPU racks, driven by surging hyperscaler capex and grid-electrification demand. A monitoring lens on the power bottleneck of AI, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Data-Center Power & Cooling — 8 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Electrical, thermal and power infrastructure feeding AI datacenters."
+        }
+      ]
+    },
+    "cybersecurity": {
+      "name": "Cybersecurity",
+      "name_zh": "网络安全",
+      "theme": "Endpoint, network, identity and cloud security software.",
+      "category": "Software",
+      "parent": "Software",
+      "tags": [
+        "cybersecurity",
+        "software",
+        "cloud",
+        "identity",
+        "endpoint"
+      ],
+      "etf_proxy": "CIBR",
+      "etf_proxy_note": "loose — basket is a subset of CIBR's holdings",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "CRWD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "CrowdStrike — cloud-native endpoint/XDR leader on the Falcon platform"
+        },
+        {
+          "ticker": "PANW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Palo Alto Networks — next-gen firewalls plus SASE/cloud/SecOps platform consolidation"
+        },
+        {
+          "ticker": "FTNT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Fortinet — firewall/SD-WAN scale player with custom-ASIC network security"
+        },
+        {
+          "ticker": "OKTA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Okta — identity and access management; workforce and customer SSO/auth"
+        },
+        {
+          "ticker": "QLYS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Qualys — cloud-based vulnerability management and compliance scanning"
+        },
+        {
+          "ticker": "NSSC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Napco Security — physical security hardware: alarms, access control, locking"
+        },
+        {
+          "ticker": "YOU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Clear Secure — identity verification and biometric airport/venue screening"
+        },
+        {
+          "ticker": "ZS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Zscaler — zero-trust secure web gateway and cloud SASE proxy"
+        },
+        {
+          "ticker": "S",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "SentinelOne — AI-driven autonomous endpoint/XDR; CrowdStrike challenger"
+        },
+        {
+          "ticker": "NET",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cloudflare — edge network with WAF, DDoS, Zero Trust access security"
+        },
+        {
+          "ticker": "RBRK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Rubrik — cyber-resilience and data security; backup/recovery vs ransomware"
+        },
+        {
+          "ticker": "TENB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Tenable — exposure management and vulnerability scanning (Nessus)"
+        }
+      ],
+      "thesis": "Pure-play security software spanning endpoint, network firewalls, identity/access, vulnerability management and cloud-native protection, driven by ransomware/breach risk, AI-attack escalation, zero-trust adoption and platform consolidation onto fewer vendors. This is a monitoring lens on the theme's relative strength and dispersion, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Cybersecurity — 12 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Endpoint, network, identity and cloud security software."
+        }
+      ]
+    },
+    "nuclear_power": {
+      "name": "Nuclear & SMR Power",
+      "name_zh": "核电与小型模块化反应堆",
+      "theme": "Nuclear utilities, SMR developers and the nuclear fuel/services chain — AI baseload power.",
+      "category": "Energy & Power",
+      "parent": "Energy & Power",
+      "tags": [
+        "nuclear",
+        "smr",
+        "baseload",
+        "ai-power",
+        "utilities",
+        "fuel-cycle"
+      ],
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "CEG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Constellation Energy — largest US nuclear fleet operator; signs hyperscaler PPAs for AI load"
+        },
+        {
+          "ticker": "VST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Vistra — IPP with large nuclear+gas fleet (Comanche Peak); powers data-center demand"
+        },
+        {
+          "ticker": "TLN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Talen Energy — owns Susquehanna nuclear plant; struck Amazon AWS data-center power deal"
+        },
+        {
+          "ticker": "NRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NRG Energy — retail+generation IPP; nuclear/gas baseload exposure to surging power demand"
+        },
+        {
+          "ticker": "BWXT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "BWX Technologies — nuclear reactor components, naval reactors and SMR fuel manufacturer"
+        },
+        {
+          "ticker": "GEV",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "GE Vernova — power-equipment OEM; BWRX-300 small modular reactor developer plus grid/gas"
+        },
+        {
+          "ticker": "OKLO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Oklo — Aurora microreactor developer; Sam Altman-backed, large data-center power pipeline"
+        },
+        {
+          "ticker": "SMR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NuScale Power — NRC-certified light-water SMR (NuScale Power Module) developer"
+        },
+        {
+          "ticker": "NNE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nano Nuclear Energy — pre-revenue ZEUS/ODIN microreactor and nuclear-fuel-transport developer"
+        }
+      ],
+      "thesis": "Nuclear power as the carbon-free baseload bet on surging AI-datacenter electricity demand, spanning reactor-owning utilities, early-stage SMR/microreactor developers, and the fuel-and-services chain that supplies them. Driven by hyperscaler power-purchase deals, pro-nuclear policy, and grid scarcity — this is a monitoring lens on the theme, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Nuclear & SMR Power — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Nuclear utilities, SMR developers and the nuclear fuel/services chain — AI baseload power."
+        }
+      ]
+    },
+    "robotics_automation": {
+      "name": "Robotics & Automation",
+      "name_zh": "机器人与自动化",
+      "theme": "Factory automation, machine vision, surgical robotics and industrial controls.",
+      "category": "Industrials",
+      "parent": "Industrials",
+      "tags": [
+        "automation",
+        "robotics",
+        "machine-vision",
+        "industrial",
+        "capex"
+      ],
+      "etf_proxy": "BOTZ",
+      "etf_proxy_note": "loose — basket is US-centric subset of a global robotics fund",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "members": [
+        {
+          "ticker": "ROK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Rockwell Automation — pure-play factory automation: PLCs, drives, industrial software"
+        },
+        {
+          "ticker": "ISRG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Intuitive Surgical — da Vinci surgical robots; razor-and-blade instrument model"
+        },
+        {
+          "ticker": "TER",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Teradyne — semiconductor test gear plus Universal Robots collaborative arms"
+        },
+        {
+          "ticker": "CGNX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cognex — machine vision sensors and barcode readers for factory inspection"
+        },
+        {
+          "ticker": "NOVT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Novanta — precision photonics, motion control and laser components for robots"
+        },
+        {
+          "ticker": "TRMB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Trimble — positioning, GNSS and field automation across construction and ag"
+        },
+        {
+          "ticker": "ZBRA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Zebra Technologies — barcode scanning, RFID and warehouse automation hardware"
+        },
+        {
+          "ticker": "PTC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "PTC — industrial CAD/PLM and IoT software digitizing factory operations"
+        },
+        {
+          "ticker": "NDSN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nordson — precision dispensing and fluid-control systems for automated lines"
+        }
+      ],
+      "thesis": "Robotics & Automation captures companies building the machine vision, motion control, surgical robots and factory software that drive industrial productivity, geared to capex cycles, labor costs and reshoring. Treat it as a monitoring lens on the automation theme, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Robotics & Automation — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Factory automation, machine vision, surgical robotics and industrial controls."
         }
       ]
     }

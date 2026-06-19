@@ -27,6 +27,83 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_baskets")
 
 
+def _write_score_snapshot(ti: dict) -> None:
+    """Slim per-theme score snapshot -> data/baskets/latest.json (archived daily by
+    scripts.archive_signals into the 'baskets' stream → detail-page score history)."""
+    slim = {"as_of": ti.get("as_of"), "themes": []}
+    for t in ti.get("themes", []):
+        tx = t.get("textures") or {}
+        slim["themes"].append({
+            "id": t["id"], "name": t.get("name"), "score": t.get("score"),
+            "label": t.get("label"), "reco": t.get("reco"), "rank": t.get("rank"),
+            "net_ad": t.get("net_ad"), "components": t.get("components"),
+            "bull_days": (tx.get("bull_age") or {}).get("days"),
+            "overbought": (tx.get("overbought") or {}).get("value"),
+            "clean_entry": (tx.get("clean_entry") or {}).get("flag"),
+            "rollover": (tx.get("rollover_risk") or {}).get("risk"),
+        })
+    p = config.data_dir() / "baskets" / "latest.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(slim, separators=(",", ":"), default=str))
+
+
+_CONV_CACHE: dict = {}
+
+
+def _member_conviction(ticker: str) -> dict | None:
+    """Pluck the per-stock Conviction Profile from site/stockdata/<T>.json (already computed
+    by build_stock_library). None if the name has no library record (off-index / thin)."""
+    if ticker in _CONV_CACHE:
+        return _CONV_CACHE[ticker]
+    val = None
+    p = config.ROOT / "site" / "stockdata" / (ticker + ".json")
+    if p.exists():
+        try:
+            c = json.loads(p.read_text()).get("conviction") or {}
+            if c:
+                val = {"score": c.get("score"), "band": c.get("band"),
+                       "band_zh": c.get("band_zh"),
+                       "verdict": c.get("verdict") if isinstance(c.get("verdict"), str) else None,
+                       "verdict_zh": c.get("verdict_zh"),
+                       "cycle_blocked": bool(c.get("cycle_blocked")),
+                       "entry_pct": ((c.get("axes") or {}).get("entry") or {}).get("pct"),
+                       "trust": (c.get("trust_tier") or {}).get("tier")}
+        except Exception:  # noqa: BLE001
+            val = None
+    _CONV_CACHE[ticker] = val
+    return val
+
+
+def _build_detail_pages(data: dict, site: Path, env) -> int:
+    """One site/basket/<id>.html per theme: holdings scoreboard w/ per-member conviction,
+    advanced textures, signals, score history + change timeline. Additive."""
+    from engine import basket_history, basket_score
+    ti = data.get("theme_intel") or {}
+    tmap = {t["id"]: t for t in ti.get("themes", [])}
+    out_dir = site / "basket"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    tmpl = env.get_template("basket_detail.html.j2")
+    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    n = 0
+    for b in data.get("baskets", []):
+        bid = b["id"]
+        members = [{**m, "conviction": _member_conviction(m["symbol"])} for m in b.get("members", [])]
+        detail = {
+            "basket": b, "members": members, "theme": tmap.get(bid, {}),
+            "act_now": basket_score.act_now_stocks(members, tmap.get(bid, {})),
+            "history": basket_history.score_series(bid, "score"),
+            "timeline": basket_history.change_timeline(bid),
+            "as_of": ti.get("as_of") or b.get("created"),
+            "market_concentration": ti.get("market_concentration") or {},
+        }
+        html = tmpl.render(detail_json=json.dumps(detail, separators=(",", ":"), default=str),
+                           basket_name=b.get("name", bid), generated_utc=built)
+        (out_dir / (bid + ".html")).write_text(html)
+        n += 1
+    log.info("wrote %d theme detail pages -> %s/basket/", n, site)
+    return n
+
+
 def main() -> int:
     site = config.ROOT / "site"
     try:
@@ -53,6 +130,7 @@ def main() -> int:
             from engine import theme_alerts
             theme_alerts.rebuild(ti)
             theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get("as_of"))
+            _write_score_snapshot(ti)            # data/baskets/latest.json → score-history archive
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme rotation desk failed: %s", e)
 
@@ -95,6 +173,13 @@ def main() -> int:
         flow=flow,
         generated_utc=built)
     (site / "baskets.html").write_text(html)
+    # PER-THEME DETAIL PAGES (one site/basket/<id>.html each) — needs `data` (with
+    # theme_intel + members) and the env; chart already split off above. Additive.
+    try:
+        from scripts.build_theme_detail import build_detail_pages
+        build_detail_pages(data, site, env, "us")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme detail pages failed: %s", e)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
     lwc = config.ROOT / "templates" / "lightweight-charts.js"
     if lwc.exists():

@@ -51,6 +51,12 @@ class IntlPriceAdapter(Adapter):
         optional = [t for t in dict.fromkeys(optional) if t not in core]
         return core, optional
 
+    @staticmethod
+    def _safe(t: str) -> str:
+        """Match lib.store._path's filename sanitisation so config tickers can be
+        compared against stored_series() stems (^N225 -> _N225, EURUSD=X -> EURUSD_X)."""
+        return t.replace("^", "_").replace("=", "_").replace("/", "_").replace(" ", "_")
+
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         core, optional = self._ticker_sets()
         tickers = core + optional
@@ -60,11 +66,35 @@ class IntlPriceAdapter(Adapter):
         # country_record() comes back empty and build_intl skips the page. Once seeded,
         # store.upsert merges the daily 1mo window onto the archive. (intl_macro fetches
         # full FRED history every run, so only this price plane needs the cold check.)
-        cold_start = not self.stored_series()
+        stored = set(self.stored_series())
+        cold_start = not stored
         period = "max" if (full_history or cold_start) else "1mo"
         if cold_start and not full_history:
             log.info("intl_prices: cold store — seeding full history (period=max)")
+        # New configured series (a market just added to config on an already-warm
+        # store) must ALSO deep-seed — the 1mo incremental window is too shallow for
+        # the regime engine, so a new market would otherwise never accumulate enough
+        # history to build. Mirrors intl_universe's new-ticker handling.
+        new = [] if (cold_start or full_history) else [t for t in tickers
+                                                       if self._safe(t) not in stored]
+        if new:
+            log.info("intl_prices: %d new series — seeding full history: %s",
+                     len(new), ",".join(new))
+
         frames: dict[str, pd.DataFrame] = {}
+        self._collect(tickers, period, frames)
+        if new:                       # re-fetch the new series deep, overwriting the shallow window
+            self._collect(new, "max", frames)
+        got_core = sum(1 for t in core if t in frames)
+        if got_core < len(core) * 0.7:
+            raise RuntimeError(f"intl_prices: core coverage too low {got_core}/{len(core)}")
+        log.info("intl_prices: %d/%d tickers (core %d/%d)", len(frames), len(tickers),
+                 got_core, len(core))
+        return frames
+
+    def _collect(self, tickers: list[str], period: str,
+                 frames: dict[str, pd.DataFrame]) -> None:
+        """Batch-download `tickers` for `period` and merge close/volume into frames."""
         bs = self.ycfg["batch_size"]
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
@@ -80,12 +110,6 @@ class IntlPriceAdapter(Adapter):
                         frames[t] = sub
                 except KeyError:
                     log.warning("intl_prices: no data for %s", t)
-        got_core = sum(1 for t in core if t in frames)
-        if got_core < len(core) * 0.7:
-            raise RuntimeError(f"intl_prices: core coverage too low {got_core}/{len(core)}")
-        log.info("intl_prices: %d/%d tickers (core %d/%d)", len(frames), len(tickers),
-                 got_core, len(core))
-        return frames
 
     def _download(self, batch: list[str], period: str) -> pd.DataFrame | None:
         for attempt in range(self.ycfg["retries"]):

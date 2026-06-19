@@ -39,6 +39,11 @@ MANIFEST: list[tuple[str, str, str | None]] = [
     ("intl_regime",   "intl/latest.json",          "date"),
     ("forex",         "forex/latest.json",         "date"),
     ("commodity",     "commodity/latest.json",     "date"),
+    ("baskets",       "baskets/latest.json",       "as_of"),   # per-theme score history (build_baskets)
+    ("allocation_us",     "allocation/latest_us.json",     "as_of"),  # rotation playbook risk-over-time
+    ("allocation_china",  "allocation/latest_china.json",  "as_of"),
+    ("allocation_hk",     "allocation/latest_hk.json",     "as_of"),
+    ("allocation_canada", "allocation/latest_canada.json", "as_of"),
 ]
 
 

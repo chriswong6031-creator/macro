@@ -37,6 +37,19 @@ def main() -> int:
         log.warning("no hk baskets (need data/baskets_hk/membership.json + hk_search cache) — skipping")
         return 0
 
+    # THEME ROTATION DESK (regionalized) + region alerts (additive)
+    theme_alerts_recent = []
+    try:
+        from engine.theme_scoring import compute_theme_intel
+        ti = compute_theme_intel('hk')
+        if ti:
+            data['theme_intel'] = ti
+            from engine import theme_alerts
+            theme_alerts.rebuild(ti, 'hk')
+            theme_alerts_recent = theme_alerts.recent(30, as_of=ti.get('as_of'), region='hk')
+    except Exception as e:  # noqa: BLE001
+        log.error('hk theme desk failed: %s', e)
+
     fdir = site / "hkbasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
@@ -47,8 +60,17 @@ def main() -> int:
     html = env.get_template("baskets_hk.html.j2").render(
         baskets_json=json.dumps(data, separators=(",", ":"), ensure_ascii=False),
         chart_json=json.dumps(chart, separators=(",", ":")),
+        theme_alerts_json=json.dumps(theme_alerts_recent, separators=(",", ":")),
         generated_utc=built)
     (site / "baskets_hk.html").write_text(html)
+    try:
+        from scripts.build_theme_detail import build_detail_pages
+        build_detail_pages(data, site, env, 'hk')
+        deskjs = config.ROOT / 'templates' / 'baskets_desk.js'
+        if deskjs.exists():
+            (site / 'baskets_desk.js').write_text(deskjs.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.error('hk theme detail pages failed: %s', e)
     lwc = config.ROOT / "templates" / "lightweight-charts.js"
     if lwc.exists():
         (site / "lightweight-charts.js").write_text(lwc.read_text())

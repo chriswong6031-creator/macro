@@ -70,6 +70,14 @@ def _detail_vm(prof_key: str, res: dict, built: str) -> dict:
         "factors_detail": _factors_vm(), "universe": _universe_vm(), "pipeline": M.PIPELINE,
         "profiles_cmp": _profiles_cmp_vm(prof_key),
         "blurb_en": prof["blurb_en"], "blurb_zh": prof["blurb_zh"],
+        # "how it works" explainer fragments (the <b>…</b> in the middle stays bold)
+        "engine_a_en": "Every Mastermind profile runs the SAME engine. It scores all nine assets on a",
+        "engine_a_zh": "每个操盘大师风险档都运行同一台引擎。它用一个",
+        "engine_b_en": "four-factor conviction", "engine_b_zh": "四因子信念",
+        "engine_c_en": ", sizes them by risk, scales the whole book to a target volatility, and rebalances weekly. The three profiles differ ONLY in how much risk they target and how much leverage they will use — same signals, three risk dials.",
+        "engine_c_zh": "为全部九个资产打分，按风险定仓，将整个组合缩放至目标波动率，并每周再平衡。三个档位之间唯一的差别，是它们瞄准多大的风险、使用多大的杠杆——相同信号，三档风险旋钮。",
+        "universe_sub_en": "nine assets across five classes — full cross-asset freedom",
+        "universe_sub_zh": "五大类、九个资产——完全跨资产自由",
     }
 
 

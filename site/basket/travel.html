@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Travel &amp; Experiences — <span class="l-en">Theme detail</span><span class="l-zh">主题详情</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0; }
+  h2 { font-size:15px; margin:26px 0 6px; display:flex; align-items:center; gap:8px; }
+  h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .back { font-size:12.5px; color:var(--muted); }
+  .back:hover { color:var(--link); }
+  .chip { display:inline-block; font-size:11px; padding:1px 8px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
+  .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+  .hero .lhs { flex:1; min-width:280px; }
+  .hero .thesis { font-size:13px; line-height:1.55; color:var(--text); opacity:.9; max-width:75ch; margin:8px 0 0; }
+  .scoreboxes { display:flex; gap:10px; flex-wrap:wrap; }
+  .sbx { background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:10px 14px; text-align:center; min-width:96px; }
+  .sbx .v { font-size:26px; font-weight:740; font-variant-numeric:tabular-nums; line-height:1; }
+  .sbx .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+  .tlabel { font-size:11px; font-weight:700; letter-spacing:.05em; padding:3px 9px; border-radius:7px; text-transform:uppercase; }
+  .treco { font-size:12px; font-weight:700; padding:3px 11px; border-radius:8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .tx { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,var(--muted)); border-radius:11px; padding:12px 14px; }
+  .tx .k { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .tx .v { font-size:20px; font-weight:720; font-variant-numeric:tabular-nums; margin:5px 0 3px; }
+  .tx .d { font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .cbar { display:flex; height:8px; border-radius:5px; overflow:hidden; background:var(--line); margin:8px 0; }
+  .cbar i { display:block; height:100%; }
+  .kpis { display:flex; flex-wrap:wrap; gap:16px; }
+  .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpis .v { font-size:16px; font-weight:680; font-variant-numeric:tabular-nums; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; text-align:right; cursor:pointer; user-select:none; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .ts { overflow-x:auto; }
+  .tk { font-weight:680; } .tk:hover { color:var(--link); }
+  .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
+  .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
+  .timeline .ev { display:flex; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .timeline .ev:first-child { border-top:0; }
+  .timeline .dt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
+  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:6px; max-width:90ch; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    <a class="nav-link" href="../index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="../macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="../us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="../anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="../strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="../ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="../baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="../allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="../alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="../gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="../etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="../china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="../china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="../baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="../allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="../hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="../baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="../allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="../canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="../baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="../allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="../intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="../vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="../commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="../spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="../forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="../bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="../policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="../transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="../crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="../signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="../factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="../baskets.html">🧺 <span class="l-en">All themes</span><span class="l-zh">全部主题</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
+  </div>
+</nav>
+
+<a class="back" href="../baskets.html">← <span class="l-en">Theme Rotation Desk</span><span class="l-zh">主题轮动台</span></a>
+<div id="app"></div>
+
+<footer>
+  <span class="l-en">Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.</span><span class="l-zh">只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。</span>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-06-19 08:16 UTC</span>.
+</footer>
+
+<script>
+const DETAIL = {"basket":{"id":"travel","name":"Travel & Experiences","name_zh":"\u65c5\u884c\u4e0e\u4f53\u9a8c","category":"Consumer Cyclical","thesis":"Travel and experiences \u2014 airlines, cruises, lodging and gaming. The 'experiences over goods' consumer trade; high operating leverage cuts both ways and it's first to roll over on a consumer slowdown.","weighting":"equal","created":"2023-05-09","n_members":20,"members":[{"symbol":"MGM","name":"MGM Resorts","added":"2023-05-09","rationale":"Vegas + digital-gaming optionality","last":46.84,"ret_20d":0.2829,"ret_ytd":0.2836},{"symbol":"NCLH","name":"Norwegian Cruise Line Hold","added":"2023-05-09","rationale":"Premium cruise; balance-sheet beta","last":20.44,"ret_20d":0.2751,"ret_ytd":-0.0842},{"symbol":"RCL","name":"Royal Caribbean Group","added":"2023-05-09","rationale":"Cruise demand + pricing recovery","last":312.51,"ret_20d":0.2373,"ret_ytd":0.1322},{"symbol":"AAL","name":"American Airlines Group","added":"2023-05-09","rationale":"American Airlines \u2014 network carrier; balance-sheet beta","last":15.99,"ret_20d":0.2347,"ret_ytd":0.0431},{"symbol":"LUV","name":"Southwest Airlines","added":"2023-05-09","rationale":"Domestic low-cost; margin reset","last":47.97,"ret_20d":0.2136,"ret_ytd":0.1708},{"symbol":"UAL","name":"United Airlines Holdings","added":"2023-05-09","rationale":"International recovery airline","last":118.32,"ret_20d":0.2071,"ret_ytd":0.0581},{"symbol":"CCL","name":"Carnival Corporation","added":"2023-05-09","rationale":"Cruise deleveraging turnaround","last":30.87,"ret_20d":0.1859,"ret_ytd":0.0217},{"symbol":"H","name":"Hyatt","added":"2023-05-09","rationale":"Hyatt \u2014 asset-light luxury/resort lodging mix","last":202.09,"ret_20d":0.1678,"ret_ytd":0.2627},{"symbol":"DAL","name":"Delta Air Lines","added":"2023-05-09","rationale":"Premium-cabin + loyalty airline","last":84.18,"ret_20d":0.1357,"ret_ytd":0.2195},{"symbol":"EXPE","name":"Expedia Group","added":"2023-05-09","rationale":"OTA turnaround + B2B","last":240.9,"ret_20d":0.1095,"ret_ytd":-0.146},{"symbol":"BKNG","name":"Booking Holdings","added":"2023-05-09","rationale":"Online-travel agency network + margins","last":171.78,"ret_20d":0.0972,"ret_ytd":-0.1942},{"symbol":"HLT","name":"Hilton Worldwide","added":"2023-05-09","rationale":"Asset-light lodging; loyalty engine","last":348.84,"ret_20d":0.0776,"ret_ytd":0.2156},{"symbol":"WYNN","name":"Wynn Resorts","added":"2023-05-09","rationale":"Wynn Resorts \u2014 Macau + Vegas premium gaming","last":105.53,"ret_20d":0.0762,"ret_ytd":-0.1188},{"symbol":"MAR","name":"Marriott International","added":"2023-05-09","rationale":"Asset-light lodging franchise fees","last":396.2,"ret_20d":0.0736,"ret_ytd":0.2821},{"symbol":"CZR","name":"Caesars Entertainment","added":"2023-05-09","rationale":"Caesars \u2014 US regional gaming + digital optionality","last":29.22,"ret_20d":0.0606,"ret_ytd":0.2493},{"symbol":"DKNG","name":"DKNG","added":"2023-05-09","rationale":"DraftKings \u2014 online sports-betting/iGaming; experiences-spend beta","last":26.39,"ret_20d":0.0552,"ret_ytd":-0.2342},{"symbol":"ABNB","name":"Airbnb","added":"2023-05-09","rationale":"Alternative-accommodation platform","last":142.41,"ret_20d":0.0506,"ret_ytd":0.0493},{"symbol":"WH","name":"Wyndham Hotels & Resorts","added":"2023-05-09","rationale":"Wyndham \u2014 economy/midscale franchised lodging","last":84.2,"ret_20d":0.0465,"ret_ytd":0.1204},{"symbol":"LYV","name":"Live Nation Entertainment","added":"2023-05-09","rationale":"Live Nation \u2014 concerts & ticketing; the purest 'experiences over goods' name","last":171.24,"ret_20d":0.0414,"ret_ytd":0.2017},{"symbol":"LVS","name":"Las Vegas Sands","added":"2023-05-09","rationale":"Macau/Singapore gaming recovery","last":48.72,"ret_20d":-0.0181,"ret_ytd":-0.2432}],"changelog":[{"date":"2023-05-09","action":"create","note":"Seeded Travel & Experiences \u2014 13 equal-weight members from the S&P 1500 cache."},{"date":"2026-06-15","action":"add","note":"Added LYV (Live Nation) \u2014 the live-entertainment expression the thesis was missing."},{"date":"2026-06-18","action":"add","note":"Expanded membership with on-thesis, liquid names (6 added) and moved baskets onto the deep (~3y) close store so large-cap members no longer stub at ~15 months. Added: AAL, WYNN, CZR, H, WH, DKNG."}],"reference":null,"missing":[],"partial":[],"perf":{"1d":{"ret":0.01419469975762322,"rel":0.0037977073156636454},"5d":{"ret":0.031869952081422515,"rel":0.017090415901468203},"20d":{"ret":0.13222516083922153,"rel":0.12222345446911143},"60d":{"ret":0.16427286893909754,"rel":0.02103517242711339},"mtd":{"ret":0.06364572802325674,"rel":0.073978092822097},"ytd":{"ret":0.07915336284816465,"rel":-0.01889236406194361},"full":{"ret":0.9321202862942346,"rel":0.04061473090144041}}},"members":[{"symbol":"MGM","name":"MGM Resorts","added":"2023-05-09","rationale":"Vegas + digital-gaming optionality","last":46.84,"ret_20d":0.2829,"ret_ytd":0.2836,"conviction":{"score":59,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Hold off \u2014 timing against you","verdict_zh":"\u6682\u7f13 \u2014 \u65f6\u673a\u4e0d\u5229","cycle_blocked":true,"entry_pct":42,"trust":"event-edge"}},{"symbol":"NCLH","name":"Norwegian Cruise Line Hold","added":"2023-05-09","rationale":"Premium cruise; balance-sheet beta","last":20.44,"ret_20d":0.2751,"ret_ytd":-0.0842,"conviction":{"score":20,"band":"low","band_zh":"\u504f\u5f31","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":48,"trust":"event-edge"}},{"symbol":"RCL","name":"Royal Caribbean Group","added":"2023-05-09","rationale":"Cruise demand + pricing recovery","last":312.51,"ret_20d":0.2373,"ret_ytd":0.1322,"conviction":{"score":61,"band":"constructive","band_zh":"\u5efa\u8bbe\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":53,"trust":"event-edge"}},{"symbol":"AAL","name":"American Airlines Group","added":"2023-05-09","rationale":"American Airlines \u2014 network carrier; balance-sheet beta","last":15.99,"ret_20d":0.2347,"ret_ytd":0.0431,"conviction":{"score":71,"band":"constructive","band_zh":"\u5efa\u8bbe\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":57,"trust":"event-edge"}},{"symbol":"LUV","name":"Southwest Airlines","added":"2023-05-09","rationale":"Domestic low-cost; margin reset","last":47.97,"ret_20d":0.2136,"ret_ytd":0.1708,"conviction":{"score":85,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":51,"trust":"event-edge"}},{"symbol":"UAL","name":"United Airlines Holdings","added":"2023-05-09","rationale":"International recovery airline","last":118.32,"ret_20d":0.2071,"ret_ytd":0.0581,"conviction":{"score":78,"band":"constructive","band_zh":"\u5efa\u8bbe\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":57,"trust":"event-edge"}},{"symbol":"CCL","name":"Carnival Corporation","added":"2023-05-09","rationale":"Cruise deleveraging turnaround","last":30.87,"ret_20d":0.1859,"ret_ytd":0.0217,"conviction":{"score":55,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":54,"trust":"event-edge"}},{"symbol":"H","name":"Hyatt","added":"2023-05-09","rationale":"Hyatt \u2014 asset-light luxury/resort lodging mix","last":202.09,"ret_20d":0.1678,"ret_ytd":0.2627,"conviction":{"score":82,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Hold off \u2014 timing against you","verdict_zh":"\u6682\u7f13 \u2014 \u65f6\u673a\u4e0d\u5229","cycle_blocked":true,"entry_pct":41,"trust":"event-edge"}},{"symbol":"DAL","name":"Delta Air Lines","added":"2023-05-09","rationale":"Premium-cabin + loyalty airline","last":84.18,"ret_20d":0.1357,"ret_ytd":0.2195,"conviction":{"score":31,"band":"low","band_zh":"\u504f\u5f31","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":53,"trust":"event-edge"}},{"symbol":"EXPE","name":"Expedia Group","added":"2023-05-09","rationale":"OTA turnaround + B2B","last":240.9,"ret_20d":0.1095,"ret_ytd":-0.146,"conviction":{"score":86,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":53,"trust":"event-edge"}},{"symbol":"BKNG","name":"Booking Holdings","added":"2023-05-09","rationale":"Online-travel agency network + margins","last":171.78,"ret_20d":0.0972,"ret_ytd":-0.1942,"conviction":{"score":70,"band":"constructive","band_zh":"\u5efa\u8bbe\u6027","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":50,"trust":"event-edge"}},{"symbol":"HLT","name":"Hilton Worldwide","added":"2023-05-09","rationale":"Asset-light lodging; loyalty engine","last":348.84,"ret_20d":0.0776,"ret_ytd":0.2156,"conviction":{"score":94,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":57,"trust":"event-edge"}},{"symbol":"WYNN","name":"Wynn Resorts","added":"2023-05-09","rationale":"Wynn Resorts \u2014 Macau + Vegas premium gaming","last":105.53,"ret_20d":0.0762,"ret_ytd":-0.1188,"conviction":{"score":17,"band":"low","band_zh":"\u504f\u5f31","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":53,"trust":"event-edge"}},{"symbol":"MAR","name":"Marriott International","added":"2023-05-09","rationale":"Asset-light lodging franchise fees","last":396.2,"ret_20d":0.0736,"ret_ytd":0.2821,"conviction":{"score":97,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Constructive \u2014 building a base","verdict_zh":"\u5efa\u8bbe\u6027 \u2014 \u6b63\u5728\u7b51\u5e95","cycle_blocked":false,"entry_pct":57,"trust":"event-edge"}},{"symbol":"CZR","name":"Caesars Entertainment","added":"2023-05-09","rationale":"Caesars \u2014 US regional gaming + digital optionality","last":29.22,"ret_20d":0.0606,"ret_ytd":0.2493,"conviction":{"score":42,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Hold off \u2014 timing against you","verdict_zh":"\u6682\u7f13 \u2014 \u65f6\u673a\u4e0d\u5229","cycle_blocked":true,"entry_pct":45,"trust":"event-edge"}},{"symbol":"DKNG","name":"DKNG","added":"2023-05-09","rationale":"DraftKings \u2014 online sports-betting/iGaming; experiences-spend beta","last":26.39,"ret_20d":0.0552,"ret_ytd":-0.2342,"conviction":null},{"symbol":"ABNB","name":"Airbnb","added":"2023-05-09","rationale":"Alternative-accommodation platform","last":142.41,"ret_20d":0.0506,"ret_ytd":0.0493,"conviction":{"score":95,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":49,"trust":"event-edge"}},{"symbol":"WH","name":"Wyndham Hotels & Resorts","added":"2023-05-09","rationale":"Wyndham \u2014 economy/midscale franchised lodging","last":84.2,"ret_20d":0.0465,"ret_ytd":0.1204,"conviction":{"score":51,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Neutral \u2014 no clear edge","verdict_zh":"\u4e2d\u6027 \u2014 \u65e0\u660e\u663e\u4f18\u52bf","cycle_blocked":false,"entry_pct":56,"trust":"event-edge"}},{"symbol":"LYV","name":"Live Nation Entertainment","added":"2023-05-09","rationale":"Live Nation \u2014 concerts & ticketing; the purest 'experiences over goods' name","last":171.24,"ret_20d":0.0414,"ret_ytd":0.2017,"conviction":{"score":43,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":false,"entry_pct":64,"trust":"event-edge"}},{"symbol":"LVS","name":"Las Vegas Sands","added":"2023-05-09","rationale":"Macau/Singapore gaming recovery","last":48.72,"ret_20d":-0.0181,"ret_ytd":-0.2432,"conviction":{"score":44,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Hold off \u2014 timing against you","verdict_zh":"\u6682\u7f13 \u2014 \u65f6\u673a\u4e0d\u5229","cycle_blocked":true,"entry_pct":37,"trust":"event-edge"}}],"theme":{"id":"travel","name":"Travel & Experiences","name_zh":"\u65c5\u884c\u4e0e\u4f53\u9a8c","category":"Consumer Cyclical","score":69,"components":{"trend":0.51,"breadth":0.623,"impulse":0.462,"macro":0.075,"crowding":0.0},"label":"dominant","label_en":"DOMINANT","label_zh":"\u4e3b\u5bfc","reco":"accumulate","reco_en":"ACCUMULATE","reco_zh":"\u52a0\u4ed3","reco_why_en":"Leading and still broad \u2014 room to add on the trend.","reco_why_zh":"\u9886\u6da8\u4e14\u4ecd\u7136\u5206\u6563 \u2014 \u8d8b\u52bf\u4e2d\u53ef\u52a0\u4ed3\u3002","reasons":["20d +12.2% vs S&P","accelerating","macro tailwind (hiking, NFCI loose)","home sector XLY RS weak"],"rs_pctile":0.667,"accel_z":1.95,"perf":{"5d":{"rel":0.0171,"ret":0.0319},"20d":{"rel":0.1222,"ret":0.1322},"60d":{"rel":0.0208,"ret":0.164},"ytd":{"rel":-0.0191,"ret":0.0789}},"breadth":{"pct50":0.95,"pct200":0.75,"nh":2,"nl":0,"n":20},"impulse":{"up3":5,"down3":0,"net":5,"n":20},"leadership":{"breadth":"broad","top":[{"ticker":"MGM","name":"MGM Resorts","ret_20d":0.283,"share":0.11,"alpha":null},{"ticker":"NCLH","name":"Norwegian Cruise Line ","ret_20d":0.275,"share":0.1,"alpha":null},{"ticker":"RCL","name":"Royal Caribbean Group","ret_20d":0.237,"share":0.09,"alpha":null}]},"n_members":20,"textures":{"bull_age":{"in_bull":true,"days":21,"approx_months":1.0,"drawdown_from_peak":-0.0042,"from_52w_high":-0.0042,"stage":"young","stage_zh":"\u521d\u671f","directional":false},"overbought":{"rsi":65.3,"rs_pctile":0.667,"pct_extended":null,"value":0.463,"band":"elevated","band_zh":"\u504f\u9ad8","directional":false},"clean_entry":{"flag":true,"quality":0.85,"reasons":["accelerating","not extended","breadth supportive","above 200d trend"],"directional":false},"rollover_risk":{"risk":0.0,"band":"low","band_zh":"\u4f4e","reasons":[],"directional":false}},"adv":17,"dec":3,"net_ad":14,"parent":"Consumer","tags":["travel","leisure","airlines"],"rank":5,"rank_5d":-2,"delta_5d":0.0171},"act_now":{"status":"no_clean_entries","buys":[],"note_en":"Theme is in favour, but no member has a clean entry right now \u2014 most are extended or mid-trend. Wait for a pullback.","note_zh":"\u4e3b\u9898\u5c1a\u53ef\uff0c\u4f46\u5f53\u524d\u65e0\u6210\u5206\u80a1\u5177\u5907\u5e72\u51c0\u5165\u573a\u70b9 \u2014 \u591a\u6570\u5df2\u5ef6\u5c55\u6216\u5904\u4e8e\u8d8b\u52bf\u4e2d\u6bb5\u3002\u7b49\u5f85\u56de\u8c03\u3002"},"history":[],"timeline":[],"as_of":"2026-06-18","market_concentration":{"adv":264,"dec":238,"ad_ratio":1.11,"pct_above_50":55.6,"pct_above_200":60.4,"nh":19,"nl":22,"directional":false,"ad_3d":0.68,"ad_w":1.02,"ad_m":1.09,"verdict":"mixed","verdict_zh":"\u4e2d\u6027"}};
+const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
+const cls = x => x==null?'muted':(x>=0?'pos':'neg');
+const LABEL_COLOR = {dominant:['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],emerging:['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],fading:['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],deteriorating:['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],neutral:['var(--panel2)','var(--line)','var(--muted)']};
+const RECO_COLOR = {enter:['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],accumulate:['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],hold:['var(--panel2)','var(--line)','var(--muted)'],trim:['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],avoid:['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444']};
+const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',crowding:'#fb7185'};
+const badge=(cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
+
+function spark(values,{w=160,h=34,color=''}={}){
+  const vs=(values||[]).map(v=>v&&v.value!=null?+v.value:null).filter(v=>v!=null);
+  if(vs.length<2) return `<span class="muted sm">${L('history accruing','历史累积中')}</span>`;
+  const mn=Math.min(...vs),mx=Math.max(...vs),sp=(mx-mn)||1;
+  const pts=vs.map((v,i)=>[i/(vs.length-1)*w,h-3-(v-mn)/sp*(h-7)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const col=color||(vs[vs.length-1]>=vs[0]?cssv('--up'):cssv('--down'));
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
+}
+
+function convCell(c){
+  if(!c||c.score==null) return `<span class="muted sm">${L('thin','数据稀疏')}</span>`;
+  const s=c.score; const col = s>=66?cssv('--up'):s>=40?cssv('--warn'):cssv('--down');
+  const bg = s>=66?'rgba(74,222,128,.14)':s>=40?'rgba(250,204,21,.14)':'rgba(248,113,113,.14)';
+  return `<span class="cv" style="background:${bg};color:${col}">${s}</span>`;
+}
+
+function render(){
+  const d=DETAIL, b=d.basket||{}, th=d.theme||{}, tx=th.textures||{};
+  const lc=LABEL_COLOR[th.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[th.reco]||RECO_COLOR.hold;
+  const tags=(b.tags||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join('');
+  // ---- hero ----
+  let h=`<div class="panel hero">
+    <div class="lhs">
+      <h1>${L(esc(b.name),esc(b.name_zh))}</h1>
+      <div style="margin:6px 0">${b.parent?`<span class="chip">${esc(b.parent)}</span>`:''}${b.category?`<span class="chip">${esc(b.category)}</span>`:''}${tags}</div>
+      <div class="thesis">${L(esc(b.thesis),esc(b.thesis))}</div>
+    </div>
+    <div>
+      <div class="scoreboxes">
+        <div class="sbx"><div class="v">${th.score!=null?th.score:'—'}</div><div class="k">${L('score','评分')}</div></div>
+        <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('tlabel',lc,th.label_en||(th.label||'—'),th.label_zh||'')}</div><div class="k">${L('lifecycle','生命周期')}</div></div>
+        <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('treco',rc,th.reco_en||(th.reco||'—'),th.reco_zh||'')}</div><div class="k">${L('action','结论')}</div></div>
+        <div class="sbx"><div class="v ${cls((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}">${fmtPct((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}</div><div class="k">${L('20d vs S&P','20日 vs 标普')}</div></div>
+      </div>
+      <div class="muted sm" style="margin-top:8px;max-width:42ch">${L(esc(th.reco_why_en||''),esc(th.reco_why_zh||''))}</div>
+    </div>
+  </div>`;
+
+  // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
+  const an=d.act_now||{};
+  h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
+  if(an.status==='ok' && (an.buys||[]).length){
+    h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
+    <div class="ts"><table><thead><tr><th>${L('Stock','个股')}</th><th class="num">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num">${L('Entry','入场')}</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>`+
+      an.buys.map(x=>`<tr><td><a class="tk" href="../stock.html#${esc(x.symbol)}">${esc(x.symbol)}</a> <span class="muted sm">${esc(x.name||'')}</span></td>
+        <td class="num">${convCell({score:x.score})}</td>
+        <td>${x.verdict?L(esc(x.verdict),esc(x.verdict_zh||x.verdict)):'—'}</td>
+        <td class="num">${x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—'}</td>
+        <td class="num ${cls(x.ret_20d)}">${fmtPct(x.ret_20d)}</td>
+        <td class="num ${cls(x.ret_ytd)}">${fmtPct(x.ret_ytd)}</td></tr>`).join('')+
+      `</tbody></table></div>`;
+  } else {
+    const dn = an.status==='theme_out_of_favour';
+    h+=`<div style="display:flex;align-items:center;gap:11px"><span style="font-size:24px">${dn?'🚫':'⏳'}</span>
+      <div><div style="font-weight:680;color:${dn?'var(--down)':'var(--warn)'}">${dn?L('No buys — theme out of favour','无买入 — 主题暂不被青睐'):L('No clean entry right now','当前无干净入场点')}</div>
+      <div class="muted sm">${L(esc(an.note_en||'Nothing to act on right now.'),esc(an.note_zh||''))}</div></div></div>`;
+  }
+  h+=`<div class="disc">${L('Buy candidates use the per-stock Conviction Profile (buy/add verdict + entry axis), gated by theme health. Not an order — size and confirm yourself.','买入候选基于个股信念档案（买入/加仓结论 + 入场轴），并按主题健康度筛选。非下单指令 — 请自行确定仓位并确认。')}</div></div>`;
+
+  // ---- advanced textures ----
+  const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
+  const txcard=(c,k,kz,vhtml,d,dz)=>`<div class="tx" style="--c:${c}"><div class="k">${L(k,kz)}</div><div class="v">${vhtml}</div><div class="d">${L(d,dz)}</div></div>`;
+  h+=`<h2><span class="idx">01</span>${L('Timing &amp; risk textures','择时与风险纹理')} <span class="chip">${L('display-only','仅展示')}</span></h2>
+  <div class="cards">
+    ${txcard(ba.in_bull?cssv('--up'):cssv('--down'),'Bull-market age','牛市时长', ba.days!=null?(ba.approx_months+'mo'):'—', (ba.in_bull?('in uptrend '+ba.days+'d · '+(ba.stage||'')):'in a downtrend')+' · '+(ba.drawdown_from_peak!=null?(Math.round(ba.drawdown_from_peak*1000)/10+'% from peak'):''), '')}
+    ${txcard(ob.value>=0.6?cssv('--down'):ob.value>=0.35?cssv('--warn'):cssv('--muted'),'Overbought','超买度', (ob.band||'—'), 'RSI '+(ob.rsi!=null?ob.rsi:'—')+' · RS '+(ob.rs_pctile!=null?Math.round(ob.rs_pctile*100)+'%ile':'—'), '')}
+    ${txcard(ce.flag?cssv('--up'):cssv('--muted'),'Clean entry','干净入场', ce.flag?L('YES','是'):L('no','否'), (ce.reasons||[]).join(' · '), '')}
+    ${txcard(rr.band==='high'?cssv('--down'):rr.band==='elevated'?cssv('--warn'):cssv('--up'),'Roll-over risk','回落风险', (rr.band||'—'), (rr.reasons||[]).join(' · '), '')}
+  </div>`;
+
+  // ---- score composition + perf + breadth ----
+  const comp=th.components||{}, W={trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14};
+  const parts=['trend','breadth','impulse','macro'].map(k=>({k,v:Math.max(0,(comp[k]||0))*W[k]}));
+  parts.push({k:'crowding',v:(comp.crowding||0)*W.crowding});
+  const tot=parts.reduce((a,p)=>a+Math.abs(p.v),0)||1;
+  const bar=parts.filter(p=>Math.abs(p.v)>.001).map(p=>`<i style="width:${(Math.abs(p.v)/tot*100).toFixed(1)}%;background:${COMP_COLOR[p.k]};${p.k==='crowding'?'opacity:.55':''}"></i>`).join('');
+  const bd=th.breadth||{}, ref=b.reference;
+  h+=`<h2><span class="idx">02</span>${L('Score composition &amp; performance','评分构成与表现')}</h2>
+  <div class="panel">
+    <div class="cbar">${bar}</div>
+    <div class="muted sm">${['trend','breadth','impulse','macro','crowding'].map(k=>`<span style="margin-right:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${COMP_COLOR[k]};margin-right:3px"></span>${k} ${comp[k]==null?'—':(k==='crowding'?'−':(comp[k]>=0?'+':''))+Math.abs(comp[k]).toFixed(2)}</span>`).join('')}</div>
+    <div class="kpis" style="margin-top:12px">
+      ${['5d','20d','60d','ytd'].map(hz=>{const p=(th.perf||{})[hz]||{};return `<div><div class="k">${hz.toUpperCase()} vs S&P</div><div class="v ${cls(p.rel)}">${fmtPct(p.rel)}</div></div>`;}).join('')}
+      <div><div class="k">${L('above 50d','站上50日')}</div><div class="v">${bd.pct50==null?'—':Math.round(bd.pct50*100)+'%'}</div></div>
+      <div><div class="k">${L('new hi / lo','新高/低')}</div><div class="v"><span class="pos">${bd.nh||0}</span>/<span class="neg">${bd.nl||0}</span></div></div>
+      <div><div class="k">${L('adv / dec today','今日涨/跌')}</div><div class="v"><span class="pos">${th.adv||0}</span>/<span class="neg">${th.dec||0}</span></div></div>
+    </div>
+    ${ref?`<div class="muted sm" style="margin-top:10px">${L('Cross-checked vs','交叉验证')} <b>${esc(ref.label)}</b>: ${L('daily corr','日相关')} <b>${ref.corr}</b>, ${L('market-adjusted','剔除市场')} <b>${ref.rel_corr}</b> (${ref.n} ${L('sessions','日')})</div>`:''}
+  </div>`;
+
+  // ---- score history + change timeline ----
+  const tl=d.timeline||[];
+  h+=`<h2><span class="idx">03</span>${L('Score history &amp; changes','评分历史与变化')}</h2>
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div>${spark(d.history,{color:lc[2]})}</div><span class="muted sm">${L('daily theme score; accrues from the archive','每日主题评分；自归档累积')}</span></div>
+    <div class="timeline" style="margin-top:10px">${tl.length?tl.map(e=>`<div class="ev"><span class="dt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join(''):`<div class="muted sm">${L('No recorded score/recommendation changes yet.','尚无评分/建议变化记录。')}</div>`}</div>
+  </div>`;
+
+  // ---- holdings scoreboard ----
+  const mem=(d.members||[]).slice();
+  const rows=mem.map(m=>{const c=m.conviction;
+    return `<tr>
+      <td><a class="tk" href="../stock.html#${esc(m.symbol)}">${esc(m.symbol)}</a> <span class="muted sm">${esc(m.name||'')}</span></td>
+      <td class="num">${convCell(c)}</td>
+      <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
+      <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
+      <td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td>
+      <td class="why">${esc(m.rationale||'')}</td>
+    </tr>`;}).join('');
+  h+=`<h2><span class="idx">04</span>${L('Holdings — buy/avoid by conviction','成分股 — 按信念可买/回避')} <span class="chip">${mem.length} ${L('names','只')}</span></h2>
+  <div class="panel"><div class="ts"><table id="hold">
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <div class="disc">${L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
+  </div>`;
+
+  // ---- changelog + flags ----
+  const warns=[]; if((b.missing||[]).length) warns.push(`<span class="chip">${L('excluded','已排除')}: ${b.missing.map(esc).join(', ')}</span>`);
+  (b.partial||[]).forEach(p=>warns.push(`<span class="chip">${esc(p.symbol)} ${L('enters','进入于')} ${esc(p.from)}</span>`));
+  const clog=(b.changelog||[]).map(c=>`<div class="ev"><span class="dt">${esc(c.date)}</span><span>${esc(c.action)}: ${esc(c.note)}</span></div>`).join('');
+  h+=`<h2><span class="idx">05</span>${L('Membership log','成分变更记录')}</h2>
+  <div class="panel"><div>${warns.join(' ')}</div><div class="timeline" style="margin-top:6px">${clog||('<span class="muted sm">'+L('—','—')+'</span>')}</div></div>`;
+
+  document.getElementById('app').innerHTML=h;
+  // sortable holdings
+  document.querySelectorAll('#hold th[data-s]').forEach(th2=>th2.onclick=()=>sortHold(th2.dataset.s));
+}
+let _sort={col:null,dir:-1};
+function sortHold(col){
+  const tb=document.querySelector('#hold tbody'); if(!tb) return;
+  _sort = _sort.col===col?{col,dir:-_sort.dir}:{col,dir:-1};
+  const mem=(DETAIL.members||[]).slice();
+  const key=m=>col==='conv'?((m.conviction||{}).score):col==='r20'?m.ret_20d:m.ret_ytd;
+  mem.sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
+  DETAIL.members=mem; render();
+}
+if(document.readyState!=='loading') render(); else document.addEventListener('DOMContentLoaded',render);
+</script>
+<script src="../theme.js"></script>
+</body>
+</html>

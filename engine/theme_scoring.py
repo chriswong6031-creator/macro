@@ -28,7 +28,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine import group_flow
+from engine import basket_score, group_flow
 from engine.baskets import _ew_level, _mtd_anchor, _perf
 from engine.equity_factors import _names_sectors
 from lib import config
@@ -112,13 +112,22 @@ def _read_json(*parts) -> dict:
 
 
 # --------------------------------------------------------------------------- macro
-def _macro_context() -> dict:
+def _macro_context(region: str = "us") -> dict:
     """Fold the live cross-site snapshots (regime / bonds / forex / cross-asset) into one
     state read + a per-axis state vector for the macro leg. Display strings are bilingual;
-    policy is shown as CONTEXT-only and never scored."""
-    reg = _read_json("regime", "latest.json")
-    bonds = _read_json("bonds", "latest.json")
-    fx = _read_json("forex", "latest.json")
+    policy is shown as CONTEXT-only and never scored.
+
+    Region-aware: US reads regime/bonds/forex; CN/HK/CA read their own <region>_regime
+    snapshot. The US-specific Fed-path / NFCI / dollar signals don't apply abroad, so for
+    non-US the macro leg stays near-neutral and the trend/breadth/impulse/crowding legs carry
+    the score (a richer per-region macro overlay is a future enhancement)."""
+    if region == "us":
+        reg = _read_json("regime", "latest.json")
+        bonds = _read_json("bonds", "latest.json")
+        fx = _read_json("forex", "latest.json")
+    else:
+        reg = _read_json(f"{region}_regime", "latest.json")
+        bonds, fx = {}, {}
     cond = reg.get("conditions") or {}
     fc = cond.get("financial_conditions") or {}
     ra = cond.get("risk_appetite") or {}
@@ -352,17 +361,23 @@ _RECO_WHY = {
 def compute_theme_intel(region: str = "us") -> dict | None:
     """Score / label / recommend every basket + 5-day rotation + impulse scorecards.
 
-    region is accepted so CN/HK/CA can reuse this once group_flow._setup is regionalised;
-    today only the US setup is wired. Returns None on shortfall (additive caller)."""
-    s = group_flow._setup()
+    region drives the data plane: US uses group_flow._setup; CN/HK/CA reuse
+    engine.narrative_rotation._setup (same regional close/bench/membership loaders).
+    Returns None on shortfall (additive caller)."""
+    if region == "us":
+        s = group_flow._setup()
+    else:
+        from engine import narrative_rotation as _nr
+        cfg_r = _nr._region_cfg(region)
+        s = _nr._setup(cfg_r) if cfg_r else None
     if s is None:
         return None
     closes, rets, idx, bench = s["closes"], s["rets"], s["idx"], s["bench"]
     if len(idx) < 60:
         return None
     cfg = group_flow._cfg()
-    nm = _names_sectors()
-    mc = _macro_context()
+    nm = _names_sectors() if region == "us" else {}    # US GICS names; regions show tickers
+    mc = _macro_context(region)
     i = len(idx) - 1
     i5 = max(0, i - 5)
     ytd_anchor = idx[idx < pd.Timestamp(idx.max().year, 1, 1)].max() \
@@ -436,6 +451,13 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         reco = _reco(label, macro, crowd_pen, fp)
         reasons = (t_why + m_why + c_why)[:4] or ["mixed signals"]
 
+        # advanced display-only textures (bull age / overbought / clean entry / roll-over)
+        textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf)
+        # this theme's advance/decline today (live members) — feeds the breadth-leadership read
+        day_live = rets[present].where(mask).iloc[i].dropna()
+        adv_i = int((day_live > 0).sum())
+        dec_i = int((day_live < 0).sum())
+
         # new-high/low already counted in breadth_d; impulse counts in impulse_d
         for t in mc_closes.iloc[i].dropna().index:
             uni_live.add(t)
@@ -459,6 +481,10 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "impulse": impulse_d,
             "leadership": {"breadth": lead.get("breadth"), "top": (lead.get("top") or [])[:3]},
             "n_members": breadth_d["n"],
+            "textures": textures,
+            "adv": adv_i, "dec": dec_i, "net_ad": adv_i - dec_i,
+            "parent": b.get("parent", b.get("category", "Other")),
+            "tags": b.get("tags", []),
             "_r20_now": _ret_rel(lvl, bench, i, 20),
             "_r20_prev": _ret_rel(lvl, bench, i5, 20),
         })
@@ -504,6 +530,45 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         recos[th["reco"]].append({"id": th["id"], "name": th["name"], "name_zh": th["name_zh"],
                                   "score": th["score"], "label": th["label"]})
 
+    # breadth leadership across themes — who OWNS the advance vs who is in the decline
+    def _slim(th):
+        return {"id": th["id"], "name": th["name"], "name_zh": th["name_zh"],
+                "net_ad": th["net_ad"], "adv": th["adv"], "dec": th["dec"], "score": th["score"]}
+    by_ad = sorted(themes, key=lambda x: x["net_ad"], reverse=True)
+    breadth_leaders = [_slim(t) for t in by_ad[:6]]
+    breadth_laggards = [_slim(t) for t in by_ad[::-1][:6]]
+
+    # clean-entry candidates + roll-over watch (the two timing lists)
+    entries = sorted([t for t in themes if (t["textures"].get("clean_entry") or {}).get("flag")],
+                     key=lambda x: -(x["textures"]["clean_entry"]["quality"]))
+    entries = [{"id": t["id"], "name": t["name"], "name_zh": t["name_zh"], "score": t["score"],
+                "quality": t["textures"]["clean_entry"]["quality"],
+                "reasons": t["textures"]["clean_entry"]["reasons"]} for t in entries[:6]]
+    rollover = sorted([t for t in themes if (t["textures"].get("rollover_risk") or {}).get("band") in ("elevated", "high")],
+                      key=lambda x: -(x["textures"]["rollover_risk"]["risk"]))
+    rollover = [{"id": t["id"], "name": t["name"], "name_zh": t["name_zh"], "score": t["score"],
+                 "risk": t["textures"]["rollover_risk"]["risk"], "band": t["textures"]["rollover_risk"]["band"],
+                 "reasons": t["textures"]["rollover_risk"]["reasons"]} for t in rollover[:6]]
+    n_bull = sum(1 for t in themes if (t["textures"].get("bull_age") or {}).get("in_bull"))
+
+    # WHAT TO ACT ON NOW — the prioritized theme-level BUY list (enter the emerging clean
+    # ones first, then accumulate the dominant-not-extended), plus the reduce/avoid side.
+    # Display-only: a focus list, not an order. If nothing qualifies the UI says "patience".
+    def _act(th, action):
+        ce = th["textures"].get("clean_entry") or {}
+        return {"id": th["id"], "name": th["name"], "name_zh": th["name_zh"],
+                "score": th["score"], "action": action,
+                "action_en": RECOS[action][0], "action_zh": RECOS[action][1],
+                "label": th["label"], "entry_quality": ce.get("quality"),
+                "reasons": (th.get("reasons") or [])[:2]}
+    enter_buys = sorted([_act(t, "enter") for t in themes if t["reco"] == "enter"],
+                        key=lambda x: -(x["entry_quality"] or 0))
+    acc_buys = sorted([_act(t, "accumulate") for t in themes if t["reco"] == "accumulate"],
+                      key=lambda x: -x["score"])
+    reduce_ = sorted([_act(t, t["reco"]) for t in themes if t["reco"] in ("trim", "avoid")],
+                     key=lambda x: x["score"])
+    act_now = {"buy": enter_buys + acc_buys, "reduce": reduce_}
+
     return {
         "as_of": idx.max().strftime("%Y-%m-%d"),
         "disclaimer": {
@@ -524,6 +589,14 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "nh": nh, "nl": nl, "net_hl": nh - nl,
             "up_thresh": UP_DAY, "hi_lo_window": HI_LO_WINDOW,
         },
+        "market_concentration": basket_score.market_concentration(region),
+        "breadth_leaders": breadth_leaders,
+        "breadth_laggards": breadth_laggards,
+        "entries": entries,
+        "rollover": rollover,
+        "act_now": act_now,
+        "n_bull": n_bull,
+        "n_themes": len(themes),
         "recommendations": recos,
     }
 

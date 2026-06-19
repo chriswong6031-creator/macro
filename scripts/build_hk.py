@@ -723,26 +723,32 @@ def main() -> int:
             log.error("hk global-beta / stock library build failed (%s); skipping", e)
             vm["betas"] = None
 
-        # consolidated SCOREBOARD — the HK parallel of the China screener: ONE toggle
-        # (Amplifiers / Cushions / All) over the validated global-risk-beta read, each
-        # row enriched with price + cycle. Built after the library so hkstockdata/ exists.
+        # consolidated SCOREBOARD — the HK Stock Desk: ONE toggle (Amplifiers / Cushions /
+        # All) over the validated global-risk-beta read, each row enriched with price,
+        # cycle, southbound smart-money flow + A/H value. Built after the library so
+        # hkstockdata/ exists.
         try:
             sb = build_hk_library.compute_hk_scoreboard(betas)
             vm["hk_scoreboard"] = sb
-            if sb:
-                (site / "factordata" / "hk_scoreboard.json").write_text(
-                    json.dumps(sb, separators=(",", ":"), default=str))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk scoreboard build failed (%s); skipping", e)
             vm["hk_scoreboard"] = None
 
-        # standout cards — HK names ranked by cross-sectional relative strength (NOT a
-        # validated alpha; relative-strength/exposure context for US/China parity).
+        # standout cards + the unified, regime-conditioned HK conviction (southbound flow +
+        # A/H value + beta-neutral RS). This also patches the conviction score + edge z back
+        # onto the scoreboard rows, so the scoreboard JSON is persisted AFTER it runs.
         try:
             vm["setups"] = build_hk_library.compute_hk_standouts(vm.get("hk_scoreboard"))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("hk standouts build failed (%s); skipping", e)
             vm["setups"] = None
+        try:
+            if vm.get("hk_scoreboard"):
+                (site / "factordata").mkdir(parents=True, exist_ok=True)
+                (site / "factordata" / "hk_scoreboard.json").write_text(
+                    json.dumps(vm["hk_scoreboard"], separators=(",", ":"), default=str))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk scoreboard persist failed (%s); skipping", e)
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
