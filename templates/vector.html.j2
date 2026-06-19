@@ -925,6 +925,11 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <h3>{{ t('Implied volatility', '隐含波动率') }}</h3>
       <div class="mini"><div class="lab"><span>{{ t('DVOL (crypto VIX)','DVOL（加密 VIX）') }}</span><span><b>{{ options.dvol if options.dvol is not none else '—' }}</b>{% if options.dvol_pctile is not none %} <span class="faint">({{ options.dvol_pctile }}%ile)</span>{% endif %}</span></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Variance risk premium (IV−RV)','方差风险溢价（IV−RV）') }}</span><span><b>{{ options.vrp if options.vrp is not none else '—' }}</b></span></div></div>
+      {% if options.vrp_state %}
+      {% set vs = {'vol_rich':['Vol rich (sell-vol bias)','波动偏贵（卖波倾向）','var(--r3)'],'vol_cheap':['Vol cheap (expansion risk)','波动偏便宜（扩张风险）','var(--amber)'],'vol_fair':['Vol fair','波动合理','var(--muted)']} %}
+      <div class="mini"><div class="lab"><span>{{ t('VRP regime','VRP 状态') }}</span><span><b style="color:{{ vs.get(options.vrp_state,['','','var(--muted)'])[2] }}">{{ t(vs.get(options.vrp_state,['—'])[0], vs.get(options.vrp_state,['—','—'])[1]) }}</b>{% if options.vrp_z is not none %} <span class="faint">(z {{ '%+0.1f'|format(options.vrp_z) }})</span>{% endif %}</span></div></div>{% endif %}
+      {% if options.em_pct is not none %}
+      <div class="mini"><div class="lab"><span>{{ t('Implied 30d expected move (±1σ)','隐含 30 天预期波动（±1σ）') }}</span><span><b>±{{ options.em_pct }}%</b> <span class="faint">({{ options.em_lower|money }}–{{ options.em_upper|money }})</span></span></div></div>{% endif %}
       <div class="mini"><div class="lab"><span>{{ t('ATM IV 30d / term slope','平值 30 天 IV / 期限斜率') }}</span><span><b>{{ options.atm_iv_30d if options.atm_iv_30d is not none else '—' }}</b> / {{ options.term_slope if options.term_slope is not none else '—' }}</span></div></div>
       {% if options.rv_cone_pctile is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Realized-vol cone (full history)','已实现波动锥（全历史）') }}</span><span><b>{{ options.rv_realized }}%</b> <span class="faint">({{ options.rv_cone_pctile }}%ile · {{ t('vol-of-vol','波动的波动') }} {{ options.vov_pctile }}%ile)</span></span></div></div>{% endif %}
@@ -944,6 +949,9 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('Futures basis (annualized)','期货基差（年化）') }}</span><span><b style="color:{{ 'var(--r3)' if options.basis_ann>15 else ('var(--blue)' if options.basis_ann>=0 else 'var(--r3)') }}">{{ '%+0.1f'|format(options.basis_ann) }}%</b> <span class="faint">{{ t('(>15 froth, <0 stress)','（>15 过热，<0 承压）') }}</span></span></div></div>{% endif %}
       {% if options.skew_term is not none %}
       <div class="mini"><div class="lab"><span>{{ t('Skew term (7d−90d)','偏斜期限（7天−90天）') }}</span><span><b>{{ '%+0.3f'|format(options.skew_term) }}</b> <span class="faint">{{ t('(>0 = acute near-term fear)','（>0 = 近端急性恐慌）') }}</span></span></div></div>{% endif %}
+      {% if options.iv_term_state %}
+      {% set its = {'contango':['Contango (calm)','正向（平静）','var(--blue)'],'backwardation':['Backwardation (front-end stress)','逆向（近端承压）','var(--r3)'],'flat':['Flat','持平','var(--muted)']} %}
+      <div class="mini"><div class="lab"><span>{{ t('IV term structure','IV 期限结构') }}</span><span><b style="color:{{ its.get(options.iv_term_state,['','','var(--muted)'])[2] }}">{{ t(its.get(options.iv_term_state,['—'])[0], its.get(options.iv_term_state,['—','—'])[1]) }}</b>{% if options.iv_term_spread is not none %} <span class="faint">({{ '%+0.1f'|format(options.iv_term_spread) }}pt 90d−30d)</span>{% endif %}</span></div></div>{% endif %}
       <div class="sub" style="margin-top:10px">{{ t('Rebuilt from the free Deribit chain (what Laevitas sells) — now incl. the futures-basis curve (leverage demand) and the skew term structure (near-term vs structural fear). The per-strike snapshot accumulates daily — context until ~6–12mo of history enables calibration.', '基于免费的 Deribit 期权链重建（即 Laevitas 所售）— 现含期货基差曲线（杠杆需求）与偏斜期限结构（近端 vs 结构性恐慌）。逐行权价快照每日累积 — 在约 6–12 个月历史前仅作背景。') }}</div>
     </div>
   </div>
@@ -968,6 +976,10 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="mini"><div class="lab"><span>{{ t('CME basis (regulated carry)','CME 基差（受监管套利）') }}</span><span><b>{{ '%+0.2f'|format(leverage.cme_basis) }}%</b> <span class="faint">(~{{ '%+0.0f'|format(leverage.cme_basis_ann) }}%/yr · {{ leverage.cme_basis_pctile }}%ile · <span style="color:{{ creg.get(leverage.cme_basis_regime,'var(--muted)') }}">{{ td(leverage.cme_basis_regime) }}</span>)</span></span></div></div>{% endif %}
       {% if leverage.oi_divergence is not none %}
       <div class="mini"><div class="lab"><span>{{ t('OI vs price divergence (14d)','持仓 vs 价格背离（14 天）') }}</span><span><b>{{ '%+0.1f'|format(leverage.oi_divergence) }}%</b></span></div></div>{% endif %}
+      {% if leverage.carry_state %}
+      {% set fcs = {'froth':['Froth (longs paying up)','过热（多头付溢价）','var(--r3)'],'stress':['Stress (deleveraging)','承压（去杠杆）','var(--blue)'],'neutral':['Neutral','中性','var(--muted)']} %}
+      <div class="mini"><div class="lab"><span>{{ t('Consolidated futures carry','综合期货套利') }}</span><span><b style="color:{{ fcs.get(leverage.carry_state,['','','var(--muted)'])[2] }}">{{ t(fcs.get(leverage.carry_state,['—'])[0], fcs.get(leverage.carry_state,['—','—'])[1]) }}</b>{% if leverage.carry_z is not none %} <span class="faint">(z {{ '%+0.1f'|format(leverage.carry_z) }})</span>{% endif %}</span></div>
+        <div class="sub faint" style="margin-top:4px;font-size:11px">{{ t('CME + perp funding + Deribit basis, each z-scored vs 1y then weight-blended into one leverage-cycle read. Context (~0 forward edge measured), like CME basis alone.','CME + 永续资金费率 + Deribit 基差，各自对 1 年 z 标准化后加权为单一杠杆周期读数。背景（实测前瞻优势约为零），与单独 CME 基差一致。') }}</div></div>{% endif %}
       <div class="sub" style="margin-top:10px">{{ t('Rebuilt from 15-exchange BGeometrics OI + funding (what CoinGlass aggregates). Calibrated (2022→, confirmation): funding-z below −1 (crowded shorts) preceded +18%/90d at 70% hit; OI building faster than price drags forward returns.', '基于 15 家交易所 BGeometrics 持仓 + 资金费率重建（即 CoinGlass 所聚合）。已校准（2022 起，确认）：资金费率 z 低于 −1（空头拥挤）未来 90 天 +18%、胜率 70%；持仓增速快于价格则拖累未来收益。') }}</div>
     </div>
     <div class="card">
@@ -1050,10 +1062,14 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   <div class="section-title">{{ t('On-Chain Demand · CryptoQuant-style (free reproduction)', '链上需求 · CryptoQuant 风格（免费复刻）') }}</div>
   <div class="grid cols-2">
     <div class="card">
+      {% set ps = {'overheated':['OVERHEATED','过热','var(--r3)'],'premium':['PREMIUM · US bid','溢价 · 美国买盘','var(--blue)'],'neutral':['NEUTRAL','中性','var(--muted)'],'discount':['DISCOUNT','折价','var(--amber)'],'deep_discount':['DEEP DISCOUNT','深度折价','var(--r3)']} %}
       <h3>{{ t('Coinbase Premium', 'Coinbase 溢价') }}
-        {% if onchain.premium_hot %}<b style="color:var(--r3)"> · {{ t('EUPHORIC TOP','亢奋顶部') }}</b>{% endif %}</h3>
-      <div class="mini"><div class="lab"><span>{{ t('Premium (Coinbase − Binance, 7d)','溢价（Coinbase − Binance，7 天）') }}</span><span><b style="color:{{ 'var(--blue)' if (onchain.premium is not none and onchain.premium>=0) else 'var(--r3)' }}">{{ ('%+0.2f%%'|format(onchain.premium)) if onchain.premium is not none else '—' }}</b></span></div></div>
-      <div class="sub" style="margin-top:8px">{{ t('US/institutional demand proxy. CONTRARIAN at the extreme: a premium above +1.5% (FOMO) preceded −5.9%/90d at 36% hit — a measured TOP signal; 0 to +1.5% is the healthy-demand zone.', '美国/机构需求代理。极端时为反向信号：溢价高于 +1.5%（追高）后未来 90 天 −5.9%、胜率 36% — 实测的顶部信号；0 至 +1.5% 为健康需求区。') }}</div>
+        {% if onchain.premium_state %}<b style="color:{{ ps.get(onchain.premium_state,['','','var(--muted)'])[2] }}"> · {{ t(ps.get(onchain.premium_state,['—'])[0], ps.get(onchain.premium_state,['—','—'])[1]) }}</b>{% endif %}
+        <span class="verdict v-dir" style="font-size:10px;vertical-align:middle">{{ t('measured · both halves','实测 · 双半段') }}</span></h3>
+      <div class="mini"><div class="lab"><span>{{ t('Premium (Coinbase USD − OKX USDT, 7d)','溢价（Coinbase USD − OKX USDT，7 天）') }}</span><span><b style="color:{{ 'var(--blue)' if (onchain.premium is not none and onchain.premium>=0) else 'var(--r3)' }}">{{ ('%+0.2f%%'|format(onchain.premium)) if onchain.premium is not none else '—' }}</b>{% if onchain.premium_pctile is not none %} <span class="faint">(z {{ '%+0.1f'|format(onchain.premium_z) if onchain.premium_z is not none else '—' }} · {{ onchain.premium_pctile }}%ile)</span>{% endif %}</span></div></div>
+      {% if onchain.premium_div and onchain.premium_div!='aligned' %}
+      <div class="mini"><div class="lab"><span>{{ t('Smart-money divergence','聪明钱背离') }}</span><span><b style="color:{{ 'var(--r3)' if onchain.premium_div=='distribution' else 'var(--blue)' }}">{{ t('US selling strength','美国逢高卖出') if onchain.premium_div=='distribution' else t('US buying weakness','美国逢低买入') }}</b></span></div></div>{% endif %}
+      <div class="sub" style="margin-top:8px">{{ t('US-institutional demand spread, now SELF-COMPUTED from our own Coinbase-USD vs OKX-USDT prices (fresh daily, 2018→) and spliced with the bgeo index. Two measured reads: the extremity z carries a forward-return edge in BOTH market halves (rank-IC +0.08/7d → +0.18/90d, demand confirmation — the strongest new model), while an extreme overheated premium (>~1.5% FOMO) is the CONTRARIAN top tail (−5.9%/90d at 36% hit). The divergence flags when price and US demand disagree.', '美国机构需求价差，现由我们自有的 Coinbase-USD 与 OKX-USDT 价格自算（每日更新，2018 起），并与 bgeo 指数拼接。两个实测读数：极端 z 在两个市场半段均具前瞻收益优势（秩相关 IC：7 天 +0.08 → 90 天 +0.18，需求确认 — 新增模型中最强），而极端过热溢价（>约 1.5% 追高）为反向顶部尾部（90 天 −5.9%、胜率 36%）。背离用于提示价格与美国需求出现分歧。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('Dry powder & miners (context)', '场外资金与矿工（背景）') }}</h3>
@@ -1064,7 +1080,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </div>
 
   <!-- ===================== BTC SPOT-ETF NET FLOWS ===================== -->
-  {% if etf.present %}
+  {% if etf.present or etf.usd_present %}
   <div class="section-title">{{ t('Spot-ETF Net Flows · the institutional bid (since 2024)', '现货 ETF 净流入 · 机构买盘（2024 起）') }}</div>
   <div class="card">
     <h3>{{ t('Risk Index & ETF Net Flows', '风险指数与 ETF 净流入') }}
@@ -1072,6 +1088,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <b style="color:{{ 'var(--blue)' if _st=='accumulation' else ('var(--r3)' if _st=='distribution' else 'var(--muted)') }}"> · {{ (t('ACCUMULATION','吸筹') if _st=='accumulation' else (t('DISTRIBUTION','派发') if _st=='distribution' else t('NEUTRAL','中性'))) }}</b>
       {% if etf.asof %}<span class="faint" style="font-size:12px;font-weight:400"> · {{ t('as of','截至') }} {{ etf.asof }}</span>{% endif %}
     </h3>
+    {% if etf.present %}
     {{ charts.etf_flow|safe }}
     <div class="sub" style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12px">
       <span style="opacity:.8">{{ t('Price shaded by flow regime:', '价格按资金流状态着色：') }}</span>
@@ -1086,6 +1103,33 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="s"><div class="k">{{ t('Net since launch','上线以来净流入') }}</div><div class="v" style="font-size:18px">${{ etf.cum_usd_bn }}B</div><div class="h">{{ etf.cum_btc_str }}</div></div>
     </div>
     <div class="sub" style="margin-top:10px">{{ t('Measured (2024→, ETF era only — so CONFIRMATION-grade, not a both-halves anchor): strong net inflows (flow z 0.25–0.75) preceded +5.0%/30d and +12.2%/90d at 65% hit, while strong outflows (z below −0.75) preceded −2.9%/30d. The relationship is intuitive and DIRECTIONAL, but only ~2.4 years exist, so it confirms the risk read rather than leading it. An integration A/B (reports/vector-integration-candidates.md) keeps it here as risk context, NOT in the allocation math — the continuous flow-z is the cleaner drawdown read, and wiring the discrete accumulation/distribution state into the strategy did not survive the both-halves test. Glassnode-sourced via BGeometrics, free.', '实测（2024 起，仅 ETF 时代 — 故为确认级，而非双半段锚点）：强净流入（资金流 z 0.25–0.75）后 30 天 +5.0%、90 天 +12.2%、胜率 65%；强净流出（z 低于 −0.75）后 30 天 −2.9%。关系直观且具方向性，但仅约 2.4 年样本，故用于确认风险判断而非领先。一项整合 A/B（reports/vector-integration-candidates.md）将其保留为风险背景，而非并入仓位计算 — 连续的资金流 z 是更干净的回撤读数，而将离散的吸筹/派发状态写入策略未能通过双半段检验。数据经 BGeometrics 源自 Glassnode，免费。') }}</div>
+    {% endif %}
+    {% if etf.usd_present %}
+    <div class="score" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:14px">
+      <div class="s"><div class="k">{{ t('Net flow (USD, latest)','净流入（美元，最新）') }}</div><div class="v" style="font-size:18px">{{ etf.total_usd_str }}</div><div class="h">{% if etf.usd_asof %}{{ t('as of','截至') }} {{ etf.usd_asof }}{% endif %}</div></div>
+      <div class="s"><div class="k">{{ t('5-day net (USD)','5 日净流入（美元）') }}</div><div class="v" style="font-size:18px">{{ etf.usd_5d_str }}</div><div class="h">z {{ '%+0.2f'|format(etf.usd_z) if etf.usd_z is not none else '—' }}</div></div>
+      <div class="s"><div class="k">{{ t('Net $ since launch','上线以来净流入') }}</div><div class="v" style="font-size:18px">{% if etf.usd_cum_bn is not none %}${{ etf.usd_cum_bn }}B{% else %}—{% endif %}</div><div class="h">{% if etf.exgbtc_cum_bn is not none %}{{ t('ex-GBTC','剔除 GBTC') }} ${{ etf.exgbtc_cum_bn }}B{% endif %}</div></div>
+      <div class="s"><div class="k">{{ t('Issuer concentration','发行人集中度') }}</div><div class="v" style="font-size:18px">{% if etf.concentration is not none %}{{ etf.concentration }}%{% else %}—{% endif %}</div><div class="h">{{ t('top-fund share (21d)','头部基金占比（21天）') }}</div></div>
+    </div>
+    {% if etf.divergence and etf.divergence!='aligned' %}
+    <div class="mini" style="margin-top:8px"><div class="lab"><span>{{ t('Price vs flow divergence','价格 vs 资金流背离') }}</span><span><b style="color:{{ 'var(--r3)' if etf.divergence=='distribution' else 'var(--blue)' }}">{{ t('price up, flows fading','价格上行，资金流减弱') if etf.divergence=='distribution' else t('price down, flows building','价格下行，资金流增强') }}</b></span></div></div>{% endif %}
+    {% if etf.funds %}
+    <div style="margin-top:14px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="color:var(--muted)"><th style="text-align:left;padding:4px 8px">{{ t('Issuer','发行人') }}</th><th style="text-align:right;padding:4px 8px">{{ t('5-day ($m)','5 日（百万）') }}</th><th style="text-align:right;padding:4px 8px">{{ t('Since launch ($m)','上线以来（百万）') }}</th></tr></thead>
+        <tbody>
+        {% for f in etf.funds %}
+          <tr style="border-top:1px solid var(--grid)">
+            <td style="text-align:left;padding:4px 8px">{{ f.name }}</td>
+            <td style="text-align:right;padding:4px 8px;color:{{ 'var(--blue)' if f.recent>=0 else 'var(--r3)' }}">{{ '{:+,.0f}'.format(f.recent) }}</td>
+            <td style="text-align:right;padding:4px 8px;color:{{ 'var(--blue)' if f.cum>=0 else 'var(--r3)' }}">{{ '{:+,.0f}'.format(f.cum) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>{% endif %}
+    <div class="sub" style="margin-top:10px">{{ t('Per-issuer detail from Farside Investors (US$m, since 2024-01-11) — fresher and per-fund vs the aggregate above, our own dedicated collector (no longer quota-limited). The ex-GBTC net strips Grayscale\'s one-way unlock outflows; concentration shows how few funds carry the bid (IBIT dominates). ETF-era only (~2.4y) → CONTEXT, not a both-halves anchor.','按发行人明细，来自 Farside Investors（百万美元，2024-01-11 起）— 较上方汇总更新且分基金，为我们自有的专用采集器（不再受配额限制）。剔除 GBTC 的净额去除了 Grayscale 的单向解锁流出；集中度显示买盘由多少只基金承载（IBIT 主导）。仅 ETF 时代（约 2.4 年）→ 背景，而非双半段锚点。') }}</div>
+    {% endif %}
   </div>
   {% endif %}
 
