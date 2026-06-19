@@ -39,7 +39,7 @@ _INDEX_BANDS = ("calm", "elevated", "high", "extreme")
 # purpose — no free history to validate; it can only be a live display-only chip.
 MACRO_LEGS = ["m_vix", "m_vix_term", "m_move", "m_hy_oas", "m_hy_vel", "m_curve_inv",
               "m_dollar_vel", "m_netliq_vel", "m_nfci", "m_gpr", "m_gpr_act",
-              "m_epu", "m_breadth_vel"]
+              "m_epu", "m_breadth_vel", "m_skew"]   # m_skew: options-implied tail (CBOE SKEW), candidate
 
 
 def load_gate(asset_class: str = "US") -> dict:
@@ -109,6 +109,14 @@ def macro_legs_frame() -> pd.DataFrame:
     except Exception:
         return pd.DataFrame()
 
+    # CBOE SKEW (1990-): the slope of OTM-put demand — an options-implied TAIL gauge,
+    # distinct from the VIX *level* (m_vix). Loaded defensively so its absence degrades
+    # only m_skew, never the whole frame. Higher SKEW = more tail fear = more dangerous.
+    try:
+        skew = R(clean(pd.read_parquet("data/cboe/skew.parquet")["skew"]))
+    except Exception:
+        skew = pd.Series(np.nan, index=idx)
+
     def pctl(s, w=252):
         return s.rolling(w, min_periods=w // 2).rank(pct=True)
 
@@ -131,6 +139,7 @@ def macro_legs_frame() -> pd.DataFrame:
     M["m_gpr_act"] = pctl(gpr_act)
     M["m_epu"] = pctl(epu)
     M["m_breadth_vel"] = -sl(brd)
+    M["m_skew"] = pctl(skew)              # higher percentile = richer tail pricing = more dangerous
     return M
 
 
@@ -204,6 +213,7 @@ _DRIVER_LABEL = {
     "m_nfci": ("Financial conditions tightening", "金融条件收紧"),
     "m_vix": ("Market fear (VIX)", "市场恐慌（VIX）"),
     "m_gpr": ("Geopolitical risk", "地缘政治风险"),
+    "m_skew": ("Tail-risk pricing (CBOE SKEW)", "尾部风险定价（SKEW）"),
 }
 
 
