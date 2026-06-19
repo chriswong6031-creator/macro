@@ -435,6 +435,19 @@
   .ts-ins { font-weight: 800; font-size: 10px; color: var(--up); white-space: nowrap;
             padding: 0 4px; border-radius: 6px;
             background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
+  /* theme/sector SPOTLIGHT tilt chip (engine.spotlight) — narrative alignment of the pick.
+     A small, declared nudge: it re-orders within a tier, never overrides the risk vetoes. */
+  .nb-spot { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700;
+             padding: 1px 6px; border-radius: 7px; margin: 3px 0 0; white-space: nowrap; max-width: 100%;
+             overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
+             color: var(--muted); background: var(--panel); text-decoration: none; }
+  a.nb-spot { cursor: pointer; }
+  a.nb-spot:hover { filter: brightness(1.08); border-color: currentColor; }
+  .nb-spot.spot-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
+                     background: color-mix(in srgb, var(--up) 11%, var(--panel)); }
+  .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+                     background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
+  .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -2322,6 +2335,20 @@
             {% if n.get('price') is not none %}<span class="nb-px">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+          {% set sp = c.spotlight if c else none %}
+          {% if sp and sp.dir and sp.dir != 'neutral' %}
+            {% set _th = sp.theme or {} %}{% set _sc = sp.sector or {} %}
+            {% set _en = (_th.name or _sc.name or _sc.etf)|e %}{% set _zh = (_th.name_zh or _th.name or _sc.name or _sc.etf)|e %}
+            {% set _spcls = 'spot-up' if sp.dir == 'tailwind' else 'spot-dn' %}
+            {# data values are |e-escaped (the build Environment has autoescape off) so theme names
+               with & / < / " can't corrupt the attribute. L()/t() must never appear in an attr. #}
+            {% set _sptip = ('Theme/sector spotlight tilt (×' ~ ('%.2f'|format(sp.mult)) ~ ') — a small narrative nudge to rank; never overrides extension or risk vetoes.' ~ ((' Theme: ' ~ _th.name ~ ((' (' ~ _th.reco_en ~ ')') if _th.reco_en else '') ~ '.') if _th.name else '') ~ ((' Sector: ' ~ (_sc.name or _sc.etf) ~ ' — ' ~ _sc.stage ~ (', extended/do not chase' if _sc.extended else '') ~ '.') if _sc.etf else ''))|e %}
+            {% if _th.slug %}
+            <a class="nb-spot {{ _spcls }}" href="basket/{{ _th.slug|e }}.html" title="{{ _sptip }} Open the theme →"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></a>
+            {% else %}
+            <div class="nb-spot {{ _spcls }}" title="{{ _sptip }}"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></div>
+            {% endif %}
+          {% endif %}
           {{ n.spark_svg }}
           {% if c %}
           <div class="nb-conv">

@@ -527,6 +527,57 @@ def _basket_membership_map() -> dict[str, list[dict]]:
     return out
 
 
+def _spotlight_context() -> dict:
+    """Heavy, once-per-build prep for the per-name SPOTLIGHT tilt: the live thematic-basket
+    intel (engine.theme_scoring — score/label/reco per basket, keyed by slug) + the live
+    sector playbook stage table (engine.playbook — stage/extended/RS-pctile per SPDR ETF).
+    Recomputed in-process here (same pattern as _basket_tailwind_map) because build_baskets /
+    build_allocation run AFTER this in the daily pipeline, so their JSON isn't on disk yet
+    (~3s total — measured). Best-effort: either channel can be empty; the per-name blend
+    simply skips a missing one (the engine never reads a missing leg as neutral)."""
+    theme_by_id: dict[str, dict] = {}
+    try:
+        from engine import theme_scoring
+        ti = theme_scoring.compute_theme_intel("us") or {}
+        for t in (ti.get("themes") or []):
+            if t.get("id"):
+                theme_by_id[t["id"]] = t
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("spotlight theme intel unavailable (%s)", e)
+    sector_by_etf: dict[str, dict] = {}
+    try:
+        from engine import playbook
+        from engine.inputs import yahoo_closes
+        st = playbook.stage_table(yahoo_closes())
+        for etf, row in st.iterrows():
+            pc = row.get("pctile_252d")
+            sector_by_etf[etf] = {
+                "stage": row.get("stage"), "extended": bool(row.get("extended")),
+                "pctile_252d": float(pc) if pc is not None and pd.notna(pc) else None,
+                "name": row.get("name")}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("spotlight sector stage table unavailable (%s)", e)
+    log.info("spotlight context: %d scored themes · %d sector stages",
+             len(theme_by_id), len(sector_by_etf))
+    return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf, "unmapped": set()}
+
+
+def _spotlight_for(sector: str | None, memberships: list[dict] | None,
+                   ctx: dict | None) -> dict | None:
+    """Per-name spotlight tilt: the strongest theme (by |tilt|) the name belongs to, blended
+    with its sector's playbook stage (GICS->ETF bridged). None when neither channel fires."""
+    if not ctx:
+        return None
+    from engine import spotlight as _sp
+    sec = (sector or "").strip()
+    etf = _sp.GICS_TO_ETF.get(sec) if sec else None
+    if sec and etf is None:
+        ctx.setdefault("unmapped", set()).add(sec)
+    sector_row = (ctx.get("sector_by_etf") or {}).get(etf) if etf else None
+    return _sp.compute(memberships, ctx.get("theme_by_id") or {},
+                       sector_etf=etf, sector_row=sector_row)
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
@@ -656,6 +707,7 @@ def main() -> int:
     fragility_map = compute_fragility()
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
+    spotlight_ctx = _spotlight_context()        # theme intel + sector stage for the spotlight tilt
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -827,10 +879,11 @@ def main() -> int:
         ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
         if ext_map.get(ticker):
             rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
+        spot = _spotlight_for(sector, bsk_mem.get(ticker), spotlight_ctx)
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
-            lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
+            spotlight=spot, lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
         prof = stock_score.conviction_profile(
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
@@ -876,6 +929,12 @@ def main() -> int:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
         built += 1
+    # surface any GICS sector strings the spotlight sector-channel couldn't bridge to an SPDR
+    # ETF (the theme channel still fires for these names) so the alias map can be widened.
+    _unmapped = spotlight_ctx.get("unmapped") if spotlight_ctx else None
+    if _unmapped:
+        log.warning("spotlight: %d unmapped sector(s) -> add to engine.spotlight.GICS_TO_ETF: %s",
+                    len(_unmapped), sorted(_unmapped))
     # within-market percentile display score (mutates the conviction blocks in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)

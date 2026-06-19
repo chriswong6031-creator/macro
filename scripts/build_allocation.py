@@ -72,6 +72,27 @@ def _alloc_history(region: str) -> list[dict]:
     return out
 
 
+def _standouts_per_theme(region: str, site) -> dict:
+    """{theme_id -> count of its members on the US standout BUY board} — the allocation→stock
+    bridge so a held theme can show how many individual standouts back it. US only (the board
+    is US); reads the already-built us_standouts.json + basketdata/baskets.json. Empty on any
+    shortfall — additive, never fatal."""
+    if region != "us":
+        return {}
+    try:
+        su = json.loads((site / "factordata" / "us_standouts.json").read_text())
+        board = {r.get("ticker") for r in (su.get("buy") or []) if r.get("ticker")}
+        bk = json.loads((site / "basketdata" / "baskets.json").read_text())
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return {}
+    out: dict = {}
+    for b in (bk.get("baskets") or []):
+        n = sum(1 for m in (b.get("members") or []) if m.get("symbol") in board)
+        if n:
+            out[b.get("id")] = n
+    return out
+
+
 def _theme_act_now(region: str, site) -> dict | None:
     """The theme-level WHAT-TO-ACT-ON-NOW (buy/add vs reduce/avoid) from the baskets desk —
     US only (theme_intel is US). Read from the already-built basketdata/baskets.json."""
@@ -112,11 +133,13 @@ def build_region(region: str, env, built: str, site) -> bool:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("[%s] rotation alerts/history failed: %s", region, e)
     act_now = _theme_act_now(region, site)
+    standouts = _standouts_per_theme(region, site)
     html = env.get_template("allocation.html.j2").render(
         d=data, data_json=json.dumps(data, separators=(",", ":")),
         rotation_alerts_json=json.dumps(rot_alerts, separators=(",", ":")),
         risk_history_json=json.dumps(hist, separators=(",", ":")),
         act_now_json=json.dumps(act_now, separators=(",", ":"), default=str),
+        standouts_json=json.dumps(standouts, separators=(",", ":")),
         generated_utc=built)
     (site / page).write_text(html)
     log.info("[%s] wrote %s (%d themes, headline=%s)", region, page,
