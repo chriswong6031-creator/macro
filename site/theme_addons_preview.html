@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme add-ons preview</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { max-width: 960px; margin: 0 auto; padding: 18px; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .pv-bar { display:flex; gap:8px; margin-bottom:14px; }
+  .pv-bar button { font:inherit; padding:4px 10px; border:1px solid var(--line); background:var(--panel2);
+                   color:var(--text); border-radius:6px; cursor:pointer; }
+  .pv-region { display:flex; gap:6px; margin:0 0 12px; }
+</style>
+</head>
+<body>
+  <h1 style="font-size:18px">Theme Rotation Desk — add-ons preview</h1>
+  <p style="color:var(--muted);font-size:13px">Standalone verification of <code>theme_addons.js</code> against the
+     built <code>basketdata/*.json</code>. Not a shipped page — the panel below is the drop-in
+     <code>_theme_addons.html.j2</code> include.</p>
+  <div class="pv-bar">
+    <button id="pv-theme">Toggle light/dark</button>
+    <button id="pv-lang">Toggle EN/中文</button>
+  </div>
+  <div class="pv-region">
+    <button data-region="us">US</button><button data-region="cn">China</button>
+    <button data-region="hk">HK</button><button data-region="ca">Canada</button>
+  </div>
+
+  <section id="theme-addons" class="panel pad"></section>
+
+  <script src="theme_addons.js"></script>
+  <script>
+    var H = document.documentElement;
+    document.getElementById("pv-theme").onclick = function () {
+      H.dataset.theme = H.dataset.theme === "dark" ? "light" : "dark";
+    };
+    document.getElementById("pv-lang").onclick = function () {
+      H.dataset.lang = H.dataset.lang === "zh" ? "en" : "zh";
+    };
+    function load(region) { renderThemeAddons({ base: "basketdata/", region: region }); }
+    document.querySelectorAll(".pv-region button").forEach(function (b) {
+      b.onclick = function () { load(b.dataset.region); };
+    });
+    load("us");
+  </script>
+</body>
+</html>
