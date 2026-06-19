@@ -319,7 +319,7 @@
         s_en: "Moves tend to feed on themselves — expect bigger swings and air-pockets, and don't count on dips getting bought back the way they do in calm tape.",
         s_zh: "走势倾向自我强化 — 预期更大的波动与急跌，且别指望像平静行情那样回调会自动被买回。" };
     } else if (regime === "neutral") {
-      V = { cls: "gp-neutral", icon: "⚖", h_en: "No strong pull", h_zh: "无明显牵引",
+      V = { cls: "gp-neutral", icon: "⚖️", h_en: "No strong pull", h_zh: "无明显牵引",
         s_en: "Dealer hedging isn't leaning either way today, so the levels below matter less than usual — trade the chart, not the gamma.",
         s_zh: "今日做市商对冲无明显倾向，下方价位的作用弱于平常 — 看图表，而非Gamma。" };
     } else if (st === "COILED_UP") {
@@ -357,10 +357,10 @@
         "“看涨墙” — 现价之上做市商Gamma最重的行权价。上涨常在此停滞；日线突破可能加速上行。是价位，非目标。"));
     } else if (s.magnet_up != null) {
       rows.push(lvlRow("🟢", "Resistance", "上方阻力", s.magnet_up,
-        "Heaviest open interest above price — a soft ceiling.",
-        "现价之上未平仓最重处 — 软上沿。",
-        "The strike with the most open interest above spot — a softer ceiling than a true call wall.",
-        "现价之上未平仓量最大的行权价 — 比真正看涨墙更软的上沿。"));
+        "Heaviest dealer gamma above price — a soft ceiling.",
+        "现价之上做市商Gamma最重处 — 软上沿。",
+        "The strike with the most dealer gamma above spot — a softer ceiling than a true call wall.",
+        "现价之上做市商Gamma最大的行权价 — 比真正看涨墙更软的上沿。"));
     }
     var magVal = s.max_pain != null ? s.max_pain : s.gamma_flip;
     if (magVal != null) {
@@ -368,9 +368,15 @@
       if (regime === "short") { mt_en = "Magnet pull is weak in this jumpy regime."; mt_zh = "跳动体制下磁吸作用较弱。"; }
       else if (s.max_pain != null) { mt_en = "On quiet days price tends to drift toward " + price(s.max_pain) + " (where the most options expire worthless)."; mt_zh = "平静日价格倾向漂向 " + price(s.max_pain) + "（最多期权到期作废之处）。"; }
       else { mt_en = "On quiet days price tends to drift toward the " + price(s.gamma_flip) + " flip — the line between calm and jumpy."; mt_zh = "平静日价格倾向漂向 " + price(s.gamma_flip) + " 翻转 — 平静与跳动的分界。"; }
-      rows.push(lvlRow("🧲", "Magnet", "磁吸位", magVal, mt_en, mt_zh,
-        "“Max pain” — the price where the most options expire worthless, so hedging gently pulls price toward it on quiet days. Not a forecast.",
-        "“最大痛点” — 最多期权到期作废的价格，平静日对冲会温和地把价格拉向它。并非预测。"));
+      var mh_en, mh_zh;
+      if (s.max_pain != null) {
+        mh_en = "“Max pain” — the price where the most options expire worthless, so hedging gently pulls price toward it on quiet days. Not a forecast.";
+        mh_zh = "“最大痛点” — 最多期权到期作废的价格，平静日对冲会温和地把价格拉向它。并非预测。";
+      } else {
+        mh_en = "The gamma flip — the line between the calm and jumpy regimes; on quiet days price tends to drift toward it. A level, not a forecast.";
+        mh_zh = "Gamma翻转 — 平静与跳动体制的分界；平静日价格倾向漂向它。是价位，非预测。";
+      }
+      rows.push(lvlRow("🧲", "Magnet", "磁吸位", magVal, mt_en, mt_zh, mh_en, mh_zh));
     }
     if (s.put_wall != null) {
       var ft_en = "Heavy put positioning cushions selloffs here. A daily CLOSE below " + price(s.put_wall) + " opens downside.";
@@ -384,10 +390,10 @@
         "“看跌墙” — 现价之下做市商Gamma最重的行权价。下跌常在此放缓；日线突破可能加速下行。"));
     } else if (s.magnet_down != null) {
       rows.push(lvlRow("🔴", "Support", "下方支撑", s.magnet_down,
-        "Heaviest open interest below price — a soft floor.",
-        "现价之下未平仓最重处 — 软下沿。",
-        "The strike with the most open interest below spot — a softer floor than a true put wall.",
-        "现价之下未平仓量最大的行权价 — 比真正看跌墙更软的下沿。"));
+        "Heaviest dealer gamma below price — a soft floor.",
+        "现价之下做市商Gamma最重处 — 软下沿。",
+        "The strike with the most dealer gamma below spot — a softer floor than a true put wall.",
+        "现价之下做市商Gamma最大的行权价 — 比真正看跌墙更软的下沿。"));
     }
     var weakNote = (regime === "neutral" && rows.length)
       ? '<div class="gp-weak">' + esc(lz("Walls are weak guides today.", "今日墙的指引较弱。")) + "</div>" : "";
@@ -406,8 +412,8 @@
     }
 
     // ---- single-name caveat (the dealer sign is fragile off the indices/ETFs) ----
-    var chip = "";
-    if (meta.grp !== "Index" && meta.grp.indexOf("ETF") < 0) {
+    var chip = "", grp = meta.grp || "";
+    if (grp !== "Index" && grp.indexOf("ETF") < 0) {
       chip = '<div class="gp-chip">⚠ ' + esc(lz(
         "Single stock — the dealer-positioning sign here is an assumption and can be wrong (covered-call funds or heavy retail call-buying can flip it). Treat these levels as loose context, not lines to trade against.",
         "个股 — 此处做市商持仓符号为假设、可能出错（备兑基金或散户大量买看涨可使其翻转）。这些价位仅作宽松背景，切勿据此逆向交易。")) + "</div>";
@@ -893,8 +899,8 @@
   }
 
   function caveatHTML() {
-    var s = cur.summary, meta = cur.meta || {};
-    if (meta.grp === "Index" || meta.grp.indexOf("ETF") >= 0) return "";
+    var s = cur.summary, meta = cur.meta || {}, grp = meta.grp || "";
+    if (grp === "Index" || grp.indexOf("ETF") >= 0) return "";
     return '<div class="panel"><p class="muted xs note" style="margin:0">' + lz(
       "Single-name caveat: the dealer long-call / short-put sign is FRAGILE here — concentration, covered-call ETFs or heavy retail call-buying can flip the true positioning. Top-strike OI share " + (s.top_oi_share == null ? "—" : s.top_oi_share) + ", chain tier “" + s.tier + "”. Read these as loose context, never a level to trade against.",
       "个股提示：此处“多头看涨/空头看跌”的做市商符号脆弱 — 集中度、备兑ETF或散户大量买看涨可翻转真实持仓。最大行权价OI占比 " + (s.top_oi_share == null ? "—" : s.top_oi_share) + "，链路等级“" + s.tier + "”。仅作宽松背景，切勿据此逆向交易。") + "</p></div>";
@@ -910,6 +916,6 @@
   ["langchange", "themechange"].forEach(function (e) {
     document.addEventListener(e, function () { renderBoard(); if (cur) renderDetail(); });
   });
-  window.addEventListener("resize", function () { hideTip(); });
+  window.addEventListener("resize", function () { hideTip(); hideHelp(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
