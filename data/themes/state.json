@@ -13,7 +13,7 @@
     "name_zh": "AI \u65b0\u4e91\u4e0e\u9ad8\u6027\u80fd\u7b97\u529b\u6258\u7ba1",
     "rank": 4,
     "reco": "hold",
-    "score": 71
+    "score": 70
   },
   "ai_semiconductors": {
     "label": "dominant",
@@ -35,17 +35,17 @@
     "label": "neutral",
     "name": "Crypto & Digital Assets",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-    "rank": 12,
+    "rank": 20,
     "reco": "hold",
-    "score": 61
+    "score": 47
   },
   "cybersecurity": {
-    "label": "fading",
+    "label": "neutral",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 15,
-    "reco": "trim",
-    "score": 55
+    "rank": 14,
+    "reco": "hold",
+    "score": 54
   },
   "data_center_power": {
     "label": "dominant",
@@ -99,7 +99,7 @@
     "label": "fading",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 18,
+    "rank": 17,
     "reco": "trim",
     "score": 51
   },
@@ -107,7 +107,7 @@
     "label": "dominant",
     "name": "Memory, HBM & Storage",
     "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
-    "rank": 3,
+    "rank": 2,
     "reco": "hold",
     "score": 76
   },
@@ -139,15 +139,15 @@
     "label": "deteriorating",
     "name": "Payments & Fintech",
     "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
-    "rank": 20,
+    "rank": 18,
     "reco": "avoid",
-    "score": 48
+    "score": 51
   },
   "power_grid": {
     "label": "emerging",
     "name": "Power & Grid Buildout",
     "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
-    "rank": 14,
+    "rank": 13,
     "reco": "hold",
     "score": 59
   },
@@ -155,7 +155,7 @@
     "label": "neutral",
     "name": "Regional Banks",
     "name_zh": "\u533a\u57df\u94f6\u884c",
-    "rank": 13,
+    "rank": 12,
     "reco": "hold",
     "score": 60
   },
@@ -171,7 +171,7 @@
     "label": "neutral",
     "name": "Retail",
     "name_zh": "\u96f6\u552e",
-    "rank": 17,
+    "rank": 16,
     "reco": "hold",
     "score": 52
   },
@@ -179,7 +179,7 @@
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 16,
+    "rank": 15,
     "reco": "hold",
     "score": 54
   },
@@ -187,9 +187,9 @@
     "label": "dominant",
     "name": "Semiconductor Equipment (WFE)",
     "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
-    "rank": 2,
+    "rank": 3,
     "reco": "hold",
-    "score": 76
+    "score": 73
   },
   "travel": {
     "label": "dominant",

@@ -1,0 +1,322 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>China Tech &amp; Internet — <span class="l-en">Theme detail</span><span class="l-zh">主题详情</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:24px max(34px,calc((100vw - 1340px)/2)); } }
+  a { text-decoration:none; color:inherit; }
+  h1 { font-size:22px; margin:0; }
+  h2 { font-size:15px; margin:26px 0 6px; display:flex; align-items:center; gap:8px; }
+  h2 .idx { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  .muted { color:var(--muted); } .sm { font-size:12px; }
+  .pos { color:var(--up); } .neg { color:var(--down); }
+  .back { font-size:12.5px; color:var(--muted); }
+  .back:hover { color:var(--link); }
+  .chip { display:inline-block; font-size:11px; padding:1px 8px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:10px; }
+  .hero { display:flex; flex-wrap:wrap; gap:18px; align-items:flex-start; }
+  .hero .lhs { flex:1; min-width:280px; }
+  .hero .thesis { font-size:13px; line-height:1.55; color:var(--text); opacity:.9; max-width:75ch; margin:8px 0 0; }
+  .scoreboxes { display:flex; gap:10px; flex-wrap:wrap; }
+  .sbx { background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:10px 14px; text-align:center; min-width:96px; }
+  .sbx .v { font-size:26px; font-weight:740; font-variant-numeric:tabular-nums; line-height:1; }
+  .sbx .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+  .tlabel { font-size:11px; font-weight:700; letter-spacing:.05em; padding:3px 9px; border-radius:7px; text-transform:uppercase; }
+  .treco { font-size:12px; font-weight:700; padding:3px 11px; border-radius:8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .tx { background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--c,var(--muted)); border-radius:11px; padding:12px 14px; }
+  .tx .k { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .tx .v { font-size:20px; font-weight:720; font-variant-numeric:tabular-nums; margin:5px 0 3px; }
+  .tx .d { font-size:11.5px; color:var(--muted); line-height:1.4; }
+  .cbar { display:flex; height:8px; border-radius:5px; overflow:hidden; background:var(--line); margin:8px 0; }
+  .cbar i { display:block; height:100%; }
+  .kpis { display:flex; flex-wrap:wrap; gap:16px; }
+  .kpis .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .kpis .v { font-size:16px; font-weight:680; font-variant-numeric:tabular-nums; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th,td { padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { color:var(--muted); font-weight:500; text-align:right; cursor:pointer; user-select:none; }
+  th:first-child,td:first-child { text-align:left; }
+  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .ts { overflow-x:auto; }
+  .tk { font-weight:680; } .tk:hover { color:var(--link); }
+  .cv { font-weight:700; border-radius:6px; padding:1px 7px; font-size:12px; }
+  .why { color:var(--muted); font-size:11.5px; white-space:normal; max-width:42ch; }
+  .timeline .ev { display:flex; gap:8px; padding:6px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .timeline .ev:first-child { border-top:0; }
+  .timeline .dt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
+  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  footer { color:var(--muted); font-size:11.5px; margin-top:28px; border-top:1px solid var(--line); padding-top:12px; max-width:95ch; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:6px; max-width:90ch; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    <a class="nav-link" href="../index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="../macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="../us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="../anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="../strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="../ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="../baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="../allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="../alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="../gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="../etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="../china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="../china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="../baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="../allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="../hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="../baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="../allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="../canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="../baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="../allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="../intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="../intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="../vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="../commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="../commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="../commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="../spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="../forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="../bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="../reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="../policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="../transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="../crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="../signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="../factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="../baskets_hk.html">🧺 <span class="l-en">All themes</span><span class="l-zh">全部主题</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
+  </div>
+</nav>
+
+<a class="back" href="../baskets_hk.html">← <span class="l-en">Theme Rotation Desk</span><span class="l-zh">主题轮动台</span></a>
+<div id="app"></div>
+
+<footer>
+  <span class="l-en">Read-only analytics — not investment advice. Theme scores and textures are a transparent focus/structure lens, NOT a validated forward-edge buy list: cross-sectional theme momentum has ~0 rank-IC and the baskets are hindsight-curated. Per-member conviction is the same per-stock Conviction Profile used on the stock dashboard, shown with its honest trust tier; it is an event-edge screen, never an order.</span><span class="l-zh">只读分析 — 非投资建议。主题评分与纹理是透明的聚焦/结构透镜，并非经验证的前瞻买入清单：横截面主题动量 rank-IC≈0，且篮子为事后筛选。成分股信念采用股票看板同一套信念档案，附带诚实的信任层级；它是事件型筛选，绝非下单指令。</span>
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span>2026-06-19 09:28 UTC</span>.
+</footer>
+
+<script>
+const DETAIL = {"basket":{"id":"hk_china_tech","name":"China Tech & Internet","name_zh":"\u4e2d\u8d44\u79d1\u6280\u4e0e\u4e92\u8054\u7f51","category":"Tech & Internet","category_zh":"\u79d1\u6280\u4e0e\u4e92\u8054\u7f51","thesis":"The mega-cap China internet & hardware complex that dominates the Hang Seng \u2014 platforms, e-commerce, devices and the domestic foundry. The single biggest driver of HK index returns and the core southbound-flow target; levered to China consumption, AI capex and regulatory sentiment.","thesis_zh":"\u4e3b\u5bfc\u6052\u6307\u7684\u4e2d\u8d44\u4e92\u8054\u7f51\u4e0e\u786c\u4ef6\u5de8\u5934 \u2014 \u5e73\u53f0\u3001\u7535\u5546\u3001\u7ec8\u7aef\u4e0e\u672c\u571f\u4ee3\u5de5\u3002\u9999\u6e2f\u6307\u6570\u56de\u62a5\u7684\u6700\u5927\u9a71\u52a8\u529b\uff0c\u4e5f\u662f\u5357\u5411\u8d44\u91d1\u7684\u6838\u5fc3\u6807\u7684\uff1b\u53d7\u4e2d\u56fd\u6d88\u8d39\u3001AI \u8d44\u672c\u5f00\u652f\u4e0e\u76d1\u7ba1\u60c5\u7eea\u7275\u52a8\u3002","weighting":"equal","created":"2021-06-15","n_members":19,"members":[{"symbol":"0992.HK","name":"Lenovo","added":"2021-06-15","rationale":"Lenovo \u2014 global PC + AI servers","last":22.34,"ret_20d":0.7106,"ret_ytd":1.4125},{"symbol":"2382.HK","name":"Sunny Optical","added":"2021-06-15","rationale":"Sunny Optical \u2014 smartphone + auto optics leader","last":77.25,"ret_20d":0.2494,"ret_ytd":0.196},{"symbol":"1347.HK","name":"Hua Hong Semiconductor","added":"2021-06-15","rationale":"Hua Hong Semiconductor \u2014 mature-node foundry","last":162.9,"ret_20d":0.2267,"ret_ytd":1.1984},{"symbol":"9999.HK","name":"NetEase","added":"2021-06-15","rationale":"NetEase \u2014 gaming + music; the #2 China game publisher","last":192.0,"ret_20d":0.0651,"ret_ytd":-0.1052},{"symbol":"3888.HK","name":"Kingsoft","added":"2021-06-15","rationale":"Kingsoft \u2014 office software (WPS) + games + cloud","last":22.56,"ret_20d":0.0384,"ret_ytd":-0.2002},{"symbol":"0763.HK","name":"ZTE Corporation","added":"2021-06-15","rationale":"ZTE \u2014 telecom equipment + 5G/networking","last":25.22,"ret_20d":0.0252,"ret_ytd":-0.0694},{"symbol":"0700.HK","name":"Tencent","added":"2021-06-15","rationale":"Tencent \u2014 gaming + WeChat super-app + cloud","last":463.6,"ret_20d":0.0191,"ret_ytd":-0.217},{"symbol":"0981.HK","name":"SMIC","added":"2021-06-15","rationale":"SMIC \u2014 the mainland foundry champion","last":71.65,"ret_20d":0.0021,"ret_ytd":0.0042},{"symbol":"0285.HK","name":"BYD Electronic","added":"2021-06-15","rationale":"BYD Electronic \u2014 handset/EV electronics assembly","last":23.58,"ret_20d":-0.0895,"ret_ytd":-0.2941},{"symbol":"3690.HK","name":"Meituan","added":"2021-06-15","rationale":"Meituan \u2014 local-services / food-delivery leader","last":77.9,"ret_20d":-0.091,"ret_ytd":-0.2422},{"symbol":"9626.HK","name":"Bilibili","added":"2021-06-15","rationale":"Bilibili \u2014 Gen-Z video community + games","last":135.1,"ret_20d":-0.0915,"ret_ytd":-0.2964},{"symbol":"1024.HK","name":"Kuaishou","added":"2021-06-15","rationale":"Kuaishou \u2014 short-video + live commerce","last":45.88,"ret_20d":-0.0977,"ret_ytd":-0.2803},{"symbol":"9618.HK","name":"JD.com","added":"2021-06-15","rationale":"JD.com \u2014 self-operated e-commerce + logistics","last":112.6,"ret_20d":-0.1345,"ret_ytd":0.0153},{"symbol":"0772.HK","name":"China Literature","added":"2021-06-15","rationale":"China Literature \u2014 online literature / IP (Tencent)","last":20.46,"ret_20d":-0.1683,"ret_ytd":-0.3781},{"symbol":"1810.HK","name":"Xiaomi","added":"2021-06-15","rationale":"Xiaomi \u2014 smartphones + IoT + EV","last":26.2,"ret_20d":-0.174,"ret_ytd":-0.3316},{"symbol":"9888.HK","name":"Baidu","added":"2021-06-15","rationale":"Baidu \u2014 search + AI / autonomous driving","last":115.6,"ret_20d":-0.1796,"ret_ytd":-0.1202},{"symbol":"0268.HK","name":"Kingdee International","added":"2021-06-15","rationale":"Kingdee \u2014 enterprise SaaS / cloud ERP","last":6.45,"ret_20d":-0.1877,"ret_ytd":-0.5147},{"symbol":"9988.HK","name":"Alibaba","added":"2021-06-15","rationale":"Alibaba \u2014 e-commerce + cloud + AI","last":110.2,"ret_20d":-0.2,"ret_ytd":-0.2274},{"symbol":"9698.HK","name":"GDS Holdings","added":"2021-06-15","rationale":"GDS Holdings \u2014 China data-center / AI capacity","last":31.5,"ret_20d":-0.2037,"ret_ytd":-0.0653}],"changelog":[{"date":"2021-06-15","action":"create","note":"Seeded China Tech & Internet \u2014 equal-weight HK members."},{"date":"2026-06-18","action":"expand","note":"Expanded to 19 members (deep cache widened to ~157 HK names)."}],"reference":{"label":"3033.HK","name":"HS TECH ETF","corr":0.97,"rel_corr":0.87,"n":1229},"missing":[],"partial":[],"perf":{"1d":{"ret":-0.019869381149362653,"rel":-0.003937040835479744},"5d":{"ret":-0.01767993019733194,"rel":-0.00429898056253275},"20d":{"ret":-0.021803901639886103,"rel":0.0454956412878903},"60d":{"ret":-0.015659050491419135,"rel":0.046134427398981215},"mtd":{"ret":-0.05076733015905743,"rel":-0.000828462286976861},"ytd":{"ret":-0.0849658838997216,"rel":-0.018415254142555515},"full":{"ret":-0.08646337333089849,"rel":0.07220507652734831}}},"members":[{"symbol":"0992.HK","name":"Lenovo","added":"2021-06-15","rationale":"Lenovo \u2014 global PC + AI servers","last":22.34,"ret_20d":0.7106,"ret_ytd":1.4125,"conviction":{"score":29,"band":"low","band_zh":"\u504f\u5f31","verdict":"Relative-strength standout \u2014 screen, not a validated pick","verdict_zh":"\u76f8\u5bf9\u5f3a\u5ea6\u7a81\u51fa \u2014 \u7b5b\u9009\u9879\uff0c\u975e\u5df2\u9a8c\u8bc1\u4e70\u5165","cycle_blocked":true,"entry_pct":43,"trust":"screen"}},{"symbol":"2382.HK","name":"Sunny Optical","added":"2021-06-15","rationale":"Sunny Optical \u2014 smartphone + auto optics leader","last":77.25,"ret_20d":0.2494,"ret_ytd":0.196,"conviction":null},{"symbol":"1347.HK","name":"Hua Hong Semiconductor","added":"2021-06-15","rationale":"Hua Hong Semiconductor \u2014 mature-node foundry","last":162.9,"ret_20d":0.2267,"ret_ytd":1.1984,"conviction":null},{"symbol":"9999.HK","name":"NetEase","added":"2021-06-15","rationale":"NetEase \u2014 gaming + music; the #2 China game publisher","last":192.0,"ret_20d":0.0651,"ret_ytd":-0.1052,"conviction":null},{"symbol":"3888.HK","name":"Kingsoft","added":"2021-06-15","rationale":"Kingsoft \u2014 office software (WPS) + games + cloud","last":22.56,"ret_20d":0.0384,"ret_ytd":-0.2002,"conviction":null},{"symbol":"0763.HK","name":"ZTE Corporation","added":"2021-06-15","rationale":"ZTE \u2014 telecom equipment + 5G/networking","last":25.22,"ret_20d":0.0252,"ret_ytd":-0.0694,"conviction":null},{"symbol":"0700.HK","name":"Tencent","added":"2021-06-15","rationale":"Tencent \u2014 gaming + WeChat super-app + cloud","last":463.6,"ret_20d":0.0191,"ret_ytd":-0.217,"conviction":{"score":96,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":false,"entry_pct":48,"trust":"screen"}},{"symbol":"0981.HK","name":"SMIC","added":"2021-06-15","rationale":"SMIC \u2014 the mainland foundry champion","last":71.65,"ret_20d":0.0021,"ret_ytd":0.0042,"conviction":{"score":100,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Relative-strength standout \u2014 screen, not a validated pick","verdict_zh":"\u76f8\u5bf9\u5f3a\u5ea6\u7a81\u51fa \u2014 \u7b5b\u9009\u9879\uff0c\u975e\u5df2\u9a8c\u8bc1\u4e70\u5165","cycle_blocked":false,"entry_pct":56,"trust":"screen"}},{"symbol":"0285.HK","name":"BYD Electronic","added":"2021-06-15","rationale":"BYD Electronic \u2014 handset/EV electronics assembly","last":23.58,"ret_20d":-0.0895,"ret_ytd":-0.2941,"conviction":null},{"symbol":"3690.HK","name":"Meituan","added":"2021-06-15","rationale":"Meituan \u2014 local-services / food-delivery leader","last":77.9,"ret_20d":-0.091,"ret_ytd":-0.2422,"conviction":{"score":27,"band":"low","band_zh":"\u504f\u5f31","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":35,"trust":"screen"}},{"symbol":"9626.HK","name":"Bilibili","added":"2021-06-15","rationale":"Bilibili \u2014 Gen-Z video community + games","last":135.1,"ret_20d":-0.0915,"ret_ytd":-0.2964,"conviction":null},{"symbol":"1024.HK","name":"Kuaishou","added":"2021-06-15","rationale":"Kuaishou \u2014 short-video + live commerce","last":45.88,"ret_20d":-0.0977,"ret_ytd":-0.2803,"conviction":{"score":99,"band":"high","band_zh":"\u9ad8\u786e\u4fe1","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":false,"entry_pct":55,"trust":"screen"}},{"symbol":"9618.HK","name":"JD.com","added":"2021-06-15","rationale":"JD.com \u2014 self-operated e-commerce + logistics","last":112.6,"ret_20d":-0.1345,"ret_ytd":0.0153,"conviction":{"score":75,"band":"constructive","band_zh":"\u5efa\u8bbe\u6027","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":44,"trust":"screen"}},{"symbol":"0772.HK","name":"China Literature","added":"2021-06-15","rationale":"China Literature \u2014 online literature / IP (Tencent)","last":20.46,"ret_20d":-0.1683,"ret_ytd":-0.3781,"conviction":null},{"symbol":"1810.HK","name":"Xiaomi","added":"2021-06-15","rationale":"Xiaomi \u2014 smartphones + IoT + EV","last":26.2,"ret_20d":-0.174,"ret_ytd":-0.3316,"conviction":{"score":44,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":33,"trust":"screen"}},{"symbol":"9888.HK","name":"Baidu","added":"2021-06-15","rationale":"Baidu \u2014 search + AI / autonomous driving","last":115.6,"ret_20d":-0.1796,"ret_ytd":-0.1202,"conviction":{"score":47,"band":"neutral","band_zh":"\u4e2d\u6027","verdict":"Exposure name \u2014 context only","verdict_zh":"\u655e\u53e3\u6807\u7684 \u2014 \u4ec5\u4f9b\u53c2\u8003","cycle_blocked":true,"entry_pct":37,"trust":"screen"}},{"symbol":"0268.HK","name":"Kingdee International","added":"2021-06-15","rationale":"Kingdee \u2014 enterprise SaaS / cloud ERP","last":6.45,"ret_20d":-0.1877,"ret_ytd":-0.5147,"conviction":null},{"symbol":"9988.HK","name":"Alibaba","added":"2021-06-15","rationale":"Alibaba \u2014 e-commerce + cloud + AI","last":110.2,"ret_20d":-0.2,"ret_ytd":-0.2274,"conviction":{"score":23,"band":"low","band_zh":"\u504f\u5f31","verdict":"Lagging \u2014 relative weakness","verdict_zh":"\u843d\u540e \u2014 \u76f8\u5bf9\u5f31\u52bf","cycle_blocked":true,"entry_pct":35,"trust":"screen"}},{"symbol":"9698.HK","name":"GDS Holdings","added":"2021-06-15","rationale":"GDS Holdings \u2014 China data-center / AI capacity","last":31.5,"ret_20d":-0.2037,"ret_ytd":-0.0653,"conviction":null}],"theme":{"id":"hk_china_tech","name":"China Tech & Internet","name_zh":"\u4e2d\u8d44\u79d1\u6280\u4e0e\u4e92\u8054\u7f51","category":"Tech & Internet","score":46,"components":{"trend":0.177,"breadth":-0.434,"impulse":-0.537,"macro":0.0,"crowding":0.0},"label":"neutral","label_en":"NEUTRAL","label_zh":"\u4e2d\u6027","reco":"hold","reco_en":"HOLD","reco_zh":"\u6301\u6709","reco_why_en":"In play but no fresh edge here \u2014 keep, don't chase.","reco_why_zh":"\u4ecd\u5728\u8fd0\u884c\u4f46\u6b64\u5904\u65e0\u65b0\u4f18\u52bf \u2014 \u6301\u6709\u52ff\u8ffd\u3002","reasons":["20d +4.5% vs S&P"],"rs_pctile":0.433,"accel_z":0.161,"perf":{"5d":{"rel":-0.0043,"ret":-0.0177},"20d":{"rel":0.0455,"ret":-0.0218},"60d":{"rel":0.0461,"ret":-0.0157},"ytd":{"rel":-0.0184,"ret":-0.085}},"breadth":{"pct50":0.3,"pct200":0.2,"nh":0,"nl":3,"n":10},"impulse":{"up3":0,"down3":3,"net":-3,"n":10},"leadership":{"breadth":"broad","top":[{"ticker":"2382.HK","name":"2382.HK","ret_20d":0.249,"share":0.19,"alpha":null},{"ticker":"1347.HK","name":"1347.HK","ret_20d":0.227,"share":0.17,"alpha":null},{"ticker":"9999.HK","name":"9999.HK","ret_20d":0.065,"share":0.05,"alpha":null}]},"n_members":10,"textures":{"bull_age":{"in_bull":false,"days":0,"approx_months":0.0,"drawdown_from_peak":-0.2517,"from_52w_high":-0.2517,"stage":"downtrend","stage_zh":"\u4e0b\u884c","directional":false},"overbought":{"rsi":42.1,"rs_pctile":0.433,"pct_extended":null,"value":0.0,"band":"neutral","band_zh":"\u4e2d\u6027","directional":false},"clean_entry":{"flag":false,"quality":0.35,"reasons":["not extended","RSI room"],"directional":false},"rollover_risk":{"risk":0.45,"band":"elevated","band_zh":"\u5347\u9ad8","reasons":["breadth weakening","more new lows","below 50d"],"directional":false}},"adv":1,"dec":9,"net_ad":-8,"parent":"Tech & Internet","tags":[],"rank":3,"rank_5d":1,"delta_5d":-0.0043},"act_now":{"status":"theme_out_of_favour","buys":[],"note_en":"Theme is out of favour (neutral) \u2014 no stock buys recommended here right now.","note_zh":"\u4e3b\u9898\u6682\u4e0d\u88ab\u9752\u7750\uff08neutral\uff09\u2014 \u5f53\u524d\u4e0d\u5efa\u8bae\u4e70\u5165\u8be5\u4e3b\u9898\u4e2a\u80a1\u3002"},"history":[],"timeline":[],"as_of":"2026-06-18","market_concentration":{"adv":29,"dec":126,"ad_ratio":0.23,"pct_above_50":15.1,"pct_above_200":34.2,"nh":1,"nl":17,"directional":false,"ad_3d":0.2,"ad_w":0.61,"ad_m":0.62,"verdict":"narrow","verdict_zh":"\u72ed\u7a84"},"stock_base":"","back":"../baskets_hk.html"};
+const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
+const cls = x => x==null?'muted':(x>=0?'pos':'neg');
+const LABEL_COLOR = {dominant:['rgba(250,204,21,.16)','rgba(250,204,21,.55)','#eab308'],emerging:['rgba(74,222,128,.15)','rgba(74,222,128,.5)','#22c55e'],fading:['rgba(251,146,60,.15)','rgba(251,146,60,.5)','#f97316'],deteriorating:['rgba(248,113,113,.15)','rgba(248,113,113,.5)','#ef4444'],neutral:['var(--panel2)','var(--line)','var(--muted)']};
+const RECO_COLOR = {enter:['rgba(34,197,94,.20)','rgba(34,197,94,.65)','#16a34a'],accumulate:['rgba(74,222,128,.14)','rgba(74,222,128,.5)','#22c55e'],hold:['var(--panel2)','var(--line)','var(--muted)'],trim:['rgba(251,146,60,.15)','rgba(251,146,60,.55)','#f97316'],avoid:['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444']};
+const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',crowding:'#fb7185'};
+const badge=(cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
+
+function spark(values,{w=160,h=34,color=''}={}){
+  const vs=(values||[]).map(v=>v&&v.value!=null?+v.value:null).filter(v=>v!=null);
+  if(vs.length<2) return `<span class="muted sm">${L('history accruing','历史累积中')}</span>`;
+  const mn=Math.min(...vs),mx=Math.max(...vs),sp=(mx-mn)||1;
+  const pts=vs.map((v,i)=>[i/(vs.length-1)*w,h-3-(v-mn)/sp*(h-7)]);
+  const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const col=color||(vs[vs.length-1]>=vs[0]?cssv('--up'):cssv('--down'));
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="${d}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
+}
+
+function convCell(c){
+  if(!c||c.score==null) return `<span class="muted sm">${L('thin','数据稀疏')}</span>`;
+  const s=c.score; const col = s>=66?cssv('--up'):s>=40?cssv('--warn'):cssv('--down');
+  const bg = s>=66?'rgba(74,222,128,.14)':s>=40?'rgba(250,204,21,.14)':'rgba(248,113,113,.14)';
+  return `<span class="cv" style="background:${bg};color:${col}">${s}</span>`;
+}
+
+function render(){
+  const d=DETAIL, b=d.basket||{}, th=d.theme||{}, tx=th.textures||{};
+  const SB=d.stock_base||'';   // per-stock link base ('' for markets with no per-stock page → plain ticker)
+  const stk=(sym)=> SB ? `<a class="tk" href="${SB}${encodeURIComponent(sym)}">${esc(sym)}</a>` : `<span class="tk">${esc(sym)}</span>`;
+  const lc=LABEL_COLOR[th.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[th.reco]||RECO_COLOR.hold;
+  const tags=(b.tags||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join('');
+  // ---- hero ----
+  let h=`<div class="panel hero">
+    <div class="lhs">
+      <h1>${L(esc(b.name),esc(b.name_zh))}</h1>
+      <div style="margin:6px 0">${b.parent?`<span class="chip">${esc(b.parent)}</span>`:''}${b.category?`<span class="chip">${esc(b.category)}</span>`:''}${tags}</div>
+      <div class="thesis">${L(esc(b.thesis),esc(b.thesis))}</div>
+    </div>
+    <div>
+      <div class="scoreboxes">
+        <div class="sbx"><div class="v">${th.score!=null?th.score:'—'}</div><div class="k">${L('score','评分')}</div></div>
+        <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('tlabel',lc,th.label_en||(th.label||'—'),th.label_zh||'')}</div><div class="k">${L('lifecycle','生命周期')}</div></div>
+        <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('treco',rc,th.reco_en||(th.reco||'—'),th.reco_zh||'')}</div><div class="k">${L('action','结论')}</div></div>
+        <div class="sbx"><div class="v ${cls((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}">${fmtPct((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}</div><div class="k">${L('20d vs S&P','20日 vs 标普')}</div></div>
+      </div>
+      <div class="muted sm" style="margin-top:8px;max-width:42ch">${L(esc(th.reco_why_en||''),esc(th.reco_why_zh||''))}</div>
+    </div>
+  </div>`;
+
+  // ---- WHAT TO ACT ON NOW (stock level, gated by theme health) ----
+  const an=d.act_now||{};
+  h+=`<h2><span class="idx">★</span>${L('What to act on now','现在该做什么')} <span class="chip">${L('gated by theme health','按主题健康度筛选')}</span></h2><div class="panel">`;
+  if(an.status==='ok' && (an.buys||[]).length){
+    h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
+    <div class="ts"><table><thead><tr><th>${L('Stock','个股')}</th><th class="num">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num">${L('Entry','入场')}</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>`+
+      an.buys.map(x=>`<tr><td>${stk(x.symbol)} <span class="muted sm">${esc(x.name||'')}</span></td>
+        <td class="num">${convCell({score:x.score})}</td>
+        <td>${x.verdict?L(esc(x.verdict),esc(x.verdict_zh||x.verdict)):'—'}</td>
+        <td class="num">${x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—'}</td>
+        <td class="num ${cls(x.ret_20d)}">${fmtPct(x.ret_20d)}</td>
+        <td class="num ${cls(x.ret_ytd)}">${fmtPct(x.ret_ytd)}</td></tr>`).join('')+
+      `</tbody></table></div>`;
+  } else {
+    const dn = an.status==='theme_out_of_favour';
+    h+=`<div style="display:flex;align-items:center;gap:11px"><span style="font-size:24px">${dn?'🚫':'⏳'}</span>
+      <div><div style="font-weight:680;color:${dn?'var(--down)':'var(--warn)'}">${dn?L('No buys — theme out of favour','无买入 — 主题暂不被青睐'):L('No clean entry right now','当前无干净入场点')}</div>
+      <div class="muted sm">${L(esc(an.note_en||'Nothing to act on right now.'),esc(an.note_zh||''))}</div></div></div>`;
+  }
+  h+=`<div class="disc">${L('Buy candidates use the per-stock Conviction Profile (buy/add verdict + entry axis), gated by theme health. Not an order — size and confirm yourself.','买入候选基于个股信念档案（买入/加仓结论 + 入场轴），并按主题健康度筛选。非下单指令 — 请自行确定仓位并确认。')}</div></div>`;
+
+  // ---- advanced textures ----
+  const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
+  const txcard=(c,k,kz,vhtml,d,dz)=>`<div class="tx" style="--c:${c}"><div class="k">${L(k,kz)}</div><div class="v">${vhtml}</div><div class="d">${L(d,dz)}</div></div>`;
+  h+=`<h2><span class="idx">01</span>${L('Timing &amp; risk textures','择时与风险纹理')} <span class="chip">${L('display-only','仅展示')}</span></h2>
+  <div class="cards">
+    ${txcard(ba.in_bull?cssv('--up'):cssv('--down'),'Bull-market age','牛市时长', ba.days!=null?(ba.approx_months+'mo'):'—', (ba.in_bull?('in uptrend '+ba.days+'d · '+(ba.stage||'')):'in a downtrend')+' · '+(ba.drawdown_from_peak!=null?(Math.round(ba.drawdown_from_peak*1000)/10+'% from peak'):''), '')}
+    ${txcard(ob.value>=0.6?cssv('--down'):ob.value>=0.35?cssv('--warn'):cssv('--muted'),'Overbought','超买度', (ob.band||'—'), 'RSI '+(ob.rsi!=null?ob.rsi:'—')+' · RS '+(ob.rs_pctile!=null?Math.round(ob.rs_pctile*100)+'%ile':'—'), '')}
+    ${txcard(ce.flag?cssv('--up'):cssv('--muted'),'Clean entry','干净入场', ce.flag?L('YES','是'):L('no','否'), (ce.reasons||[]).join(' · '), '')}
+    ${txcard(rr.band==='high'?cssv('--down'):rr.band==='elevated'?cssv('--warn'):cssv('--up'),'Roll-over risk','回落风险', (rr.band||'—'), (rr.reasons||[]).join(' · '), '')}
+  </div>`;
+
+  // ---- score composition + perf + breadth ----
+  const comp=th.components||{}, W={trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14};
+  const parts=['trend','breadth','impulse','macro'].map(k=>({k,v:Math.max(0,(comp[k]||0))*W[k]}));
+  parts.push({k:'crowding',v:(comp.crowding||0)*W.crowding});
+  const tot=parts.reduce((a,p)=>a+Math.abs(p.v),0)||1;
+  const bar=parts.filter(p=>Math.abs(p.v)>.001).map(p=>`<i style="width:${(Math.abs(p.v)/tot*100).toFixed(1)}%;background:${COMP_COLOR[p.k]};${p.k==='crowding'?'opacity:.55':''}"></i>`).join('');
+  const bd=th.breadth||{}, ref=b.reference;
+  h+=`<h2><span class="idx">02</span>${L('Score composition &amp; performance','评分构成与表现')}</h2>
+  <div class="panel">
+    <div class="cbar">${bar}</div>
+    <div class="muted sm">${['trend','breadth','impulse','macro','crowding'].map(k=>`<span style="margin-right:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${COMP_COLOR[k]};margin-right:3px"></span>${k} ${comp[k]==null?'—':(k==='crowding'?'−':(comp[k]>=0?'+':''))+Math.abs(comp[k]).toFixed(2)}</span>`).join('')}</div>
+    <div class="kpis" style="margin-top:12px">
+      ${['5d','20d','60d','ytd'].map(hz=>{const p=(th.perf||{})[hz]||{};return `<div><div class="k">${hz.toUpperCase()} vs S&P</div><div class="v ${cls(p.rel)}">${fmtPct(p.rel)}</div></div>`;}).join('')}
+      <div><div class="k">${L('above 50d','站上50日')}</div><div class="v">${bd.pct50==null?'—':Math.round(bd.pct50*100)+'%'}</div></div>
+      <div><div class="k">${L('new hi / lo','新高/低')}</div><div class="v"><span class="pos">${bd.nh||0}</span>/<span class="neg">${bd.nl||0}</span></div></div>
+      <div><div class="k">${L('adv / dec today','今日涨/跌')}</div><div class="v"><span class="pos">${th.adv||0}</span>/<span class="neg">${th.dec||0}</span></div></div>
+    </div>
+    ${ref?`<div class="muted sm" style="margin-top:10px">${L('Cross-checked vs','交叉验证')} <b>${esc(ref.label)}</b>: ${L('daily corr','日相关')} <b>${ref.corr}</b>, ${L('market-adjusted','剔除市场')} <b>${ref.rel_corr}</b> (${ref.n} ${L('sessions','日')})</div>`:''}
+  </div>`;
+
+  // ---- score history + change timeline ----
+  const tl=d.timeline||[];
+  h+=`<h2><span class="idx">03</span>${L('Score history &amp; changes','评分历史与变化')}</h2>
+  <div class="panel">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div>${spark(d.history,{color:lc[2]})}</div><span class="muted sm">${L('daily theme score; accrues from the archive','每日主题评分；自归档累积')}</span></div>
+    <div class="timeline" style="margin-top:10px">${tl.length?tl.map(e=>`<div class="ev"><span class="dt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join(''):`<div class="muted sm">${L('No recorded score/recommendation changes yet.','尚无评分/建议变化记录。')}</div>`}</div>
+  </div>`;
+
+  // ---- holdings scoreboard ----
+  const mem=(d.members||[]).slice();
+  const rows=mem.map(m=>{const c=m.conviction;
+    return `<tr>
+      <td>${stk(m.symbol)} <span class="muted sm">${esc(m.name||'')}</span></td>
+      <td class="num">${convCell(c)}</td>
+      <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
+      <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
+      <td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td>
+      <td class="why">${esc(m.rationale||'')}</td>
+    </tr>`;}).join('');
+  h+=`<h2><span class="idx">04</span>${L('Holdings — buy/avoid by conviction','成分股 — 按信念可买/回避')} <span class="chip">${mem.length} ${L('names','只')}</span></h2>
+  <div class="panel"><div class="ts"><table id="hold">
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <div class="disc">${L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
+  </div>`;
+
+  // ---- changelog + flags ----
+  const warns=[]; if((b.missing||[]).length) warns.push(`<span class="chip">${L('excluded','已排除')}: ${b.missing.map(esc).join(', ')}</span>`);
+  (b.partial||[]).forEach(p=>warns.push(`<span class="chip">${esc(p.symbol)} ${L('enters','进入于')} ${esc(p.from)}</span>`));
+  const clog=(b.changelog||[]).map(c=>`<div class="ev"><span class="dt">${esc(c.date)}</span><span>${esc(c.action)}: ${esc(c.note)}</span></div>`).join('');
+  h+=`<h2><span class="idx">05</span>${L('Membership log','成分变更记录')}</h2>
+  <div class="panel"><div>${warns.join(' ')}</div><div class="timeline" style="margin-top:6px">${clog||('<span class="muted sm">'+L('—','—')+'</span>')}</div></div>`;
+
+  document.getElementById('app').innerHTML=h;
+  // sortable holdings
+  document.querySelectorAll('#hold th[data-s]').forEach(th2=>th2.onclick=()=>sortHold(th2.dataset.s));
+}
+let _sort={col:null,dir:-1};
+function sortHold(col){
+  const tb=document.querySelector('#hold tbody'); if(!tb) return;
+  _sort = _sort.col===col?{col,dir:-_sort.dir}:{col,dir:-1};
+  const mem=(DETAIL.members||[]).slice();
+  const key=m=>col==='conv'?((m.conviction||{}).score):col==='r20'?m.ret_20d:m.ret_ytd;
+  mem.sort((a,b)=>{const x=key(a),y=key(b); if(x==null)return 1; if(y==null)return -1; return (x-y)*_sort.dir;});
+  DETAIL.members=mem; render();
+}
+if(document.readyState!=='loading') render(); else document.addEventListener('DOMContentLoaded',render);
+</script>
+<script src="../theme.js"></script>
+</body>
+</html>

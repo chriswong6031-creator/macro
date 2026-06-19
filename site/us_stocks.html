@@ -730,6 +730,77 @@
   @media (prefers-reduced-motion: reduce) {
     body.page-macro .qm { transition: none; }
   }
+
+  /* ===== HERO enlargement + "New here?" tuck (desktop) ===== */
+  body.page-macro #regime-radar { position: relative; }
+  body.page-macro .qmini { grid-template-columns: repeat(2, 41px); grid-template-rows: repeat(2, 41px); gap: 6px; }
+  body.page-macro h1.hr-name { font-size: 42px; }
+  body.page-macro .hr-dot { width: 15px; height: 15px; }
+  body.page-macro .hero-says { font-size: 14.5px; max-width: 52ch; }
+  /* "New here?" → compact, de-emphasised, right-tucked so the hero is the star;
+     it expands in place (a thin help line), never crowding the locator/headline */
+  body.page-macro #regime-radar > .howto { margin: 11px 0 0; text-align: right; }
+  body.page-macro #regime-radar > .howto > summary { display: inline-block; font-size: 12px;
+    font-weight: 600; color: var(--ink-3); }
+  body.page-macro #regime-radar > .howto > summary:hover { color: var(--link); }
+  body.page-macro #regime-radar > .howto[open] > div { text-align: left; }
+
+  /* ===== Foldable panel (Data health, dormant Dislocation): click header to open/close ===== */
+  body.page-macro details.fold > summary { list-style: none; cursor: pointer; display: flex;
+    align-items: center; gap: 9px; font-size: 14px; font-weight: 700; color: var(--ink-1);
+    line-height: 1.35; }
+  body.page-macro details.fold > summary::-webkit-details-marker { display: none; }
+  body.page-macro details.fold > summary::before { content: ""; flex: none; width: 3px; height: 14px;
+    border-radius: 1.5px; background: var(--link); }
+  body.page-macro details.fold > summary .fold-stat { font-weight: 500; color: var(--ink-2);
+    font-size: 12.5px; }
+  body.page-macro details.fold > summary .fold-caret { margin-left: auto; flex: none; font-size: 11px;
+    color: var(--ink-3); transition: transform .22s ease; }
+  body.page-macro details.fold[open] > summary .fold-caret { transform: rotate(180deg); }
+  body.page-macro details.fold[open] > summary { margin-bottom: 13px; padding-bottom: 11px;
+    border-bottom: var(--rule) solid var(--hair); }
+  body.page-macro details.fold > summary:hover .fold-caret { color: var(--link); }
+
+  /* ===== Combined "Now" board — pure-CSS radio tabs (no JS) ===== */
+  body.page-macro .cb-tabs { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin-top: 2px; }
+  body.page-macro .cb-radio { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  body.page-macro .cb-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px;
+    border-radius: 9px; border: var(--rule) solid var(--hair); background: var(--panel);
+    cursor: pointer; font-size: 13px; font-weight: 700; color: var(--ink-2); user-select: none;
+    transition: color .15s, background .15s, border-color .15s; }
+  body.page-macro .cb-tab:hover { color: var(--ink-1); border-color: color-mix(in srgb, var(--link) 45%, var(--hair)); }
+  body.page-macro .cb-radio:checked + .cb-tab { color: var(--ink-1); background: var(--tile);
+    border-color: color-mix(in srgb, var(--link) 55%, var(--hair));
+    box-shadow: inset 0 -2px 0 0 var(--link); }
+  body.page-macro .cb-radio:focus-visible + .cb-tab { outline: 2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset: 2px; }
+  /* a full-width hairline divider that wraps right after the tab row, above the panes */
+  body.page-macro .cb-tabs::after { content: ""; order: 1; flex-basis: 100%; height: var(--rule);
+    background: var(--hair); margin: 9px 0 0; }
+  body.page-macro .cb-pane { order: 2; display: none; flex-basis: 100%; width: 100%; min-width: 0; padding-top: 14px; }
+  body.page-macro #cb-alerts:checked ~ .cb-p-alerts,
+  body.page-macro #cb-news:checked ~ .cb-p-news,
+  body.page-macro #cb-relief:checked ~ .cb-p-relief { display: block; }
+  body.page-macro .cb-count { font-size: 11px; font-weight: 800; padding: 0 7px; border-radius: 8px;
+    background: color-mix(in srgb, var(--act) 18%, var(--tile)); color: var(--act);
+    font-family: var(--num); font-variant-numeric: tabular-nums; }
+  body.page-macro .cb-live { width: 8px; height: 8px; border-radius: 50%; background: var(--up);
+    box-shadow: 0 0 8px var(--up); flex: none; }
+  body.page-macro .cb-sub { font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 0 0 9px;
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  body.page-macro .cb-sub a { margin-left: auto; }
+  /* dislocation surfaced into the alerts pane when active */
+  body.page-macro .alert.alert-dislocation { border-left-color: var(--act); }
+  /* when a dislocation is active its panel renders (only then) and floats to the very
+     top of the page — a rare, urgent risk banner above the regime hero. Hidden (not
+     rendered at all) when dormant, so it never occupies prime space on normal days. */
+  body.page-macro #dislocation { order: -1; scroll-margin-top: 16px; }
+
+  @media (max-width: 900px) {
+    body.page-macro .qmini { grid-template-columns: repeat(2, 34px); grid-template-rows: repeat(2, 34px); }
+    body.page-macro h1.hr-name { font-size: 30px; }
+    body.page-macro #regime-radar > .howto { text-align: left; }
+    body.page-macro .cb-tab { padding: 7px 12px; font-size: 12.5px; }
+  }
 </style>
 </head>
 <body class="page-stocks">
@@ -856,9 +927,6 @@
   </div>
   
 
-  
-
-  <!-- ===== REGIME SNAP / RELIEF RADAR (display-only velocity complement) ===== -->
   
 
   <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
@@ -1792,7 +1860,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,33.3 3.8,34.4 7.6,41.0 11.4,39.4 15.2,38.0 19.0,38.6 22.9,40.3 26.7,40.0 30.5,38.0 34.3,36.7 38.1,35.0 41.9,35.4 45.7,36.5 49.5,34.1 53.3,36.1 57.1,38.1 61.0,37.2 64.8,36.0 68.6,37.0 72.4,33.6 76.2,33.3 80.0,31.0 83.8,29.0 87.6,32.0 91.4,30.5 95.2,33.0 99.0,32.4 102.9,33.2 106.7,31.6 110.5,32.6 114.3,33.4 118.1,42.0 121.9,26.6 125.7,28.7 129.5,28.0 133.3,22.5 137.1,23.8 141.0,25.1 144.8,23.5 148.6,26.0 152.4,23.9 156.2,22.4 160.0,21.4 163.8,20.5 167.6,21.9 171.4,20.4 175.2,17.9 179.0,16.9 182.9,19.9 186.7,21.0 190.5,17.7 194.3,20.2 198.1,19.2 201.9,17.6 205.7,17.2 209.5,13.8 213.3,10.4 217.1,12.3 221.0,10.3 224.8,10.1 228.6,14.0 232.4,13.1 236.2,17.0 240.0,16.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,33.3 3.8,34.4 7.6,41.0 11.4,39.4 15.2,38.0 19.0,38.6 22.9,40.3 26.7,40.0 30.5,38.0 34.3,36.7 38.1,35.0 41.9,35.4 45.7,36.5 49.5,34.1 53.3,36.1 57.1,38.1 61.0,37.2 64.8,36.0 68.6,37.0 72.4,33.6 76.2,33.3 80.0,31.0 83.8,29.0 87.6,32.0 91.4,30.5 95.2,33.0 99.0,32.4 102.9,33.2 106.7,31.6 110.5,32.6 114.3,33.4 118.1,42.0 121.9,26.6 125.7,28.7 129.5,28.0 133.3,22.5 137.1,23.8 141.0,25.1 144.8,23.5 148.6,26.0 152.4,23.9 156.2,22.4 160.0,21.4 163.8,20.5 167.6,21.9 171.4,20.4 175.2,17.9 179.0,16.9 182.9,19.9 186.7,21.0 190.5,17.7 194.3,20.2 198.1,19.2 201.9,17.6 205.7,17.2 209.5,13.8 213.3,10.4 217.1,12.3 221.0,10.3 224.8,10.1 228.6,14.0 232.4,13.1 236.2,17.0 240.0,16.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">99</span>
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">98</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           <div class="nb-axes">
@@ -6933,7 +7001,7 @@
           <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><polyline points="0,42 0.0,26.0 3.8,28.0 7.6,27.0 11.4,26.1 15.2,24.7 19.0,24.7 22.9,28.3 26.7,26.2 30.5,21.5 34.3,19.3 38.1,17.2 41.9,17.7 45.7,14.8 49.5,11.9 53.3,16.4 57.1,18.3 61.0,16.5 64.8,12.1 68.6,12.4 72.4,13.1 76.2,11.9 80.0,10.1 83.8,13.3 87.6,14.8 91.4,42.0 95.2,38.0 99.0,35.4 102.9,38.2 106.7,37.2 110.5,36.0 114.3,36.3 118.1,36.4 121.9,33.3 125.7,34.1 129.5,33.7 133.3,34.8 137.1,36.4 141.0,35.8 144.8,34.8 148.6,35.9 152.4,36.8 156.2,35.6 160.0,35.7 163.8,35.3 167.6,33.3 171.4,32.7 175.2,33.6 179.0,33.8 182.9,29.1 186.7,29.3 190.5,28.3 194.3,29.7 198.1,28.4 201.9,26.6 205.7,27.6 209.5,26.8 213.3,24.7 217.1,24.9 221.0,22.7 224.8,24.5 228.6,24.5 232.4,25.9 236.2,26.9 240.0,26.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,26.0 3.8,28.0 7.6,27.0 11.4,26.1 15.2,24.7 19.0,24.7 22.9,28.3 26.7,26.2 30.5,21.5 34.3,19.3 38.1,17.2 41.9,17.7 45.7,14.8 49.5,11.9 53.3,16.4 57.1,18.3 61.0,16.5 64.8,12.1 68.6,12.4 72.4,13.1 76.2,11.9 80.0,10.1 83.8,13.3 87.6,14.8 91.4,42.0 95.2,38.0 99.0,35.4 102.9,38.2 106.7,37.2 110.5,36.0 114.3,36.3 118.1,36.4 121.9,33.3 125.7,34.1 129.5,33.7 133.3,34.8 137.1,36.4 141.0,35.8 144.8,34.8 148.6,35.9 152.4,36.8 156.2,35.6 160.0,35.7 163.8,35.3 167.6,33.3 171.4,32.7 175.2,33.6 179.0,33.8 182.9,29.1 186.7,29.3 190.5,28.3 194.3,29.7 198.1,28.4 201.9,26.6 205.7,27.6 209.5,26.8 213.3,24.7 217.1,24.9 221.0,22.7 224.8,24.5 228.6,24.5 232.4,25.9 236.2,26.9 240.0,26.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="26.2" r="2.6" fill="var(--up)"/></svg>
           
           <div class="nb-conv">
-            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">89</span>
+            <span class="nb-cscore band-high" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">88</span>
             <span class="nb-verdict"><span class="l-en">Constructive — building a base</span><span class="l-zh">建设性 — 正在筑底</span></span>
           </div>
           <div class="nb-axes">
