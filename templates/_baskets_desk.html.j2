@@ -1,0 +1,152 @@
+{# Shared Theme Rotation Desk — CSS + section containers (rendered client-side by baskets_desk.js). #}
+<style>
+  /* ---- Theme Rotation Desk ---- */
+  .mctx { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; font-size:12.5px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:8px 12px; margin:6px 0 12px; }
+  .mctx b { font-weight:650; }
+  .mctx .mc-k { color:var(--muted); }
+  .desk { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:13px; }
+  .tcard { background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--tc,#888);
+    border-radius:11px; padding:12px 13px 11px; scroll-margin-top:14px; transition:border-color .15s; }
+  .tcard:hover { border-color:var(--muted); }
+  .tcard .top { display:flex; align-items:center; gap:8px; }
+  .tcard .nm { font-weight:660; font-size:14.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tcard .sc { font-size:23px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
+  .tcard .sc small { font-size:11px; color:var(--muted); font-weight:500; }
+  .tlabel { font-size:10px; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:6px; text-transform:uppercase; white-space:nowrap; }
+  .treco { font-size:11px; font-weight:700; letter-spacing:.03em; padding:2px 9px; border-radius:7px; white-space:nowrap; }
+  .tcard .subrow { display:flex; align-items:center; gap:10px; margin:8px 0 7px; font-size:12px; color:var(--muted); }
+  .tcard .subrow .spark { margin-left:auto; }
+  .cbar { display:flex; height:7px; border-radius:5px; overflow:hidden; background:var(--line); margin:7px 0 6px; }
+  .cbar i { display:block; height:100%; }
+  .clegend { display:flex; flex-wrap:wrap; gap:3px 11px; font-size:10.5px; color:var(--muted); margin-bottom:6px; }
+  .clegend span b { color:var(--text); font-variant-numeric:tabular-nums; font-weight:600; }
+  .clegend .sw { display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:3px; vertical-align:middle; }
+  .treason { font-size:11.5px; color:var(--text); opacity:.85; line-height:1.4; margin:2px 0 6px; }
+  .tstats { display:flex; flex-wrap:wrap; gap:4px 6px; font-size:10.5px; }
+  .tpill { background:var(--panel2); border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .tpill b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .tcard details > summary { font-size:11.5px; margin:6px 0 0; }
+  .tcard .why { font-size:11.5px; color:var(--muted); margin:5px 0 0; max-width:none; }
+
+  /* ---- 5-day rotation ---- */
+  .rotwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px){ .rotwrap{ grid-template-columns:1fr; } }
+  .rotcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 12px; }
+  .rotcol h4 { margin:0 0 6px; font-size:13px; display:flex; align-items:center; gap:6px; }
+  .rotrow { display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .rotrow:first-of-type { border-top:0; }
+  .rotrow .rn { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rotrow .rv { font-variant-numeric:tabular-nums; font-weight:650; }
+  .rotrow .rk { font-size:10.5px; color:var(--muted); width:34px; text-align:right; }
+
+  /* ---- impulse / extremes scorecards ---- */
+  .scards { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:13px; }
+  .scard { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:13px 15px; }
+  .scard .sk { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .scard .bigrow { display:flex; align-items:baseline; gap:14px; margin:7px 0 8px; }
+  .scard .big { font-size:30px; font-weight:720; font-variant-numeric:tabular-nums; line-height:1; }
+  .scard .big.dn { color:var(--down); } .scard .big.up { color:var(--up); }
+  .scard .sublbl { font-size:11px; color:var(--muted); }
+  .duo { display:flex; height:9px; border-radius:6px; overflow:hidden; background:var(--line); margin-top:4px; }
+  .duo i { height:100%; display:block; }
+  .scard .net { font-size:12.5px; font-variant-numeric:tabular-nums; margin-top:7px; }
+
+  /* ---- bell dropdown ---- */
+  .bell { position:relative; }
+  .bell-btn { background:var(--panel); border:1px solid var(--line); border-radius:9px; cursor:pointer;
+    font-size:15px; line-height:1; padding:6px 9px; color:var(--text); position:relative; }
+  .bell-btn:hover { border-color:var(--muted); }
+  .bell-badge { position:absolute; top:-6px; right:-6px; background:var(--down); color:#fff; font-size:10px;
+    font-weight:700; min-width:16px; height:16px; border-radius:9px; padding:0 4px; display:none;
+    align-items:center; justify-content:center; }
+  .bell-badge.on { display:flex; }
+  .bell-menu { position:absolute; right:0; top:calc(100% + 8px); width:340px; max-width:86vw; max-height:60vh;
+    overflow-y:auto; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    box-shadow:0 18px 44px rgba(0,0,0,.34); padding:8px; z-index:60; display:none; }
+  .bell-menu.open { display:block; }
+  .bell-menu .bhd { font-size:12px; font-weight:650; padding:4px 6px 7px; display:flex; align-items:center; gap:6px; border-bottom:1px solid var(--line); }
+  .bell-item { display:block; padding:8px 7px; border-radius:8px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .bell-item:last-child { border-bottom:0; }
+  .bell-item:hover { background:var(--panel2); }
+  .bell-item .bi-hl { font-size:12.5px; font-weight:600; line-height:1.35; }
+  .bell-item .bi-dt { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .bell-empty { padding:14px 8px; color:var(--muted); font-size:12px; text-align:center; }
+  .sect-tag { font-size:11px; color:var(--muted); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-weight:600; }
+  /* ---- card textures + detail link ---- */
+  .tcard .nm { color:inherit; } .tcard a.nm:hover { color:var(--link); }
+  .txrow { display:flex; flex-wrap:wrap; gap:4px 6px; margin:2px 0 6px; }
+  .tpill.warn { color:var(--warn); } .tpill.neg { color:var(--down); }
+  .tflag { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; }
+  .tflag.up { color:var(--up); border-color:var(--up); } .tflag.dn { color:var(--down); border-color:var(--down); } .tflag.wn { color:var(--warn); border-color:var(--warn); }
+  .detail-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--link); border-top:1px solid var(--line); padding-top:7px; width:100%; }
+  .detail-link:hover { text-decoration:underline; }
+  /* ---- concentration ---- */
+  .adgrid { display:flex; gap:14px; }
+  .adc { text-align:center; } .adc .k { font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .adc .v { font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; }
+  /* ---- what to act on now ---- */
+  .anwrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:680px){ .anwrap{ grid-template-columns:1fr; } }
+  .ancol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
+  .anh { margin:0 0 4px; font-size:13px; } .anh.buy { color:var(--up); } .anh.red { color:var(--down); }
+  .anrow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); border-radius:7px; color:inherit; }
+  .anrow:hover { background:var(--panel2); }
+  .anverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
+  .anrow .rn { font-weight:650; white-space:nowrap; }
+  .anwhy { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
+</style>
+<div class="nav-ctrls" style="justify-content:flex-end;margin:4px 0 0">
+    <div class="bell" id="theme-bell">
+      <button class="bell-btn" id="bell-btn" aria-label="Theme alerts" title="Theme rotation alerts">🔔<span class="bell-badge" id="bell-badge"></span></button>
+      <div class="bell-menu" id="bell-menu" role="menu"></div>
+    </div>
+</div>
+  <section id="actnow-section" style="margin-top:6px">
+    <h2><span class="idx">★</span>✅ {{ t('What to act on now', '现在该做什么') }}
+      <span class="sect-tag">{{ t('buy / add · reduce / avoid', '买入加仓 · 减仓回避') }}</span></h2>
+    <p class="sub">{{ t(
+      'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
+      '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+    <div id="actnow"></div>
+  </section>
+
+  <section id="theme-desk-section" style="margin-top:6px">
+    <h2><span class="idx">★</span>🧭 {{ t('Theme Rotation Desk', '主题轮动台') }}
+      <span class="sect-tag">{{ t('scored · labeled · actionable', '评分 · 标注 · 可执行') }}</span></h2>
+    <p class="sub">{{ t(
+      'Every theme scored 0–100 from transparent legs — trend, breadth, ±3% impulse, macro tailwind and a crowding penalty — then labeled (dominant / emerging / fading / deteriorating) with an actionable read. The verb accounts for dominant themes topping out vs less-dominant themes just emerging.',
+      '每个主题以透明分项打分 0–100 — 趋势、广度、±3% 脉冲、宏观顺风与拥挤惩罚 — 并标注（主导／新兴／退潮／走弱）及可执行结论。结论会区分见顶的主导主题与刚刚新兴的次主导主题。') }}</p>
+    <div class="mctx" id="macro-ctx"></div>
+    <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
+    <div class="desk" id="theme-desk"></div>
+  </section>
+
+  <section id="concentration-section">
+    <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
+      <span class="sect-tag">{{ t('who owns the advance vs the decline', '谁主导上涨 vs 谁在下跌') }}</span></h2>
+    <p class="sub">{{ t(
+      'The tape can narrow — a few names carry the index while breadth rots underneath. This reads the broad-market advance-decline (daily → monthly), which THEMES own the advancers vs sit in the decline, and the clean entries vs roll-over watch — so you accumulate the right theme and step out of the topping one.',
+      '行情会变窄 — 少数个股拉动指数，而广度在底下恶化。此处读取大盘涨跌家数（日→月）、哪些主题主导上涨、哪些处于下跌，以及干净入场 vs 回落观察 — 帮助你加仓正确的主题、退出见顶的主题。') }}</p>
+    <div id="concentration"></div>
+  </section>
+
+  <section id="rotation-section">
+    <h2><span class="idx">★</span>📆 {{ t('5-Day Theme Rotation', '5日主题轮动') }}
+      <span class="sect-tag">{{ t('weekly climbers & fallers', '本周上升与下降') }}</span></h2>
+    <p class="sub">{{ t(
+      'Who moved this week — ranked by 5-day return relative to the S&P 500, with the change in 20-day relative-strength rank over the same 5 sessions. A fast read on which themes to lean into and which are losing the tape.',
+      '本周谁在动 — 以相对标普 500 的 5 日回报排名，并标注同期 20 日相对强度排名的变化。快速判断该倾向哪些主题、哪些正在失去走势。') }}</p>
+    <div class="rotwrap" id="rotation"></div>
+  </section>
+
+  <section id="impulse-section">
+    <h2><span class="idx">★</span>⚡ {{ t('Impulse & Extremes', '脉冲与极值') }}
+      <span class="sect-tag">{{ t('across the thematic universe', '覆盖全部主题成分') }}</span></h2>
+    <p class="sub">{{ t(
+      'Breadth of the daily move across every name in the baskets: how many jumped ≥3% vs fell ≥3% (impulse / volatility), and how many printed a fresh 52-week high vs low. Net counts read the tape\'s pressure at a glance.',
+      '篮子内所有个股当日波动的广度：多少只上涨≥3%、多少只下跌≥3%（脉冲／波动），以及多少只创 52 周新高对新低。净数一眼读出走势压力。') }}</p>
+    <div class="scards" id="scorecards"></div>
+  </section>
+

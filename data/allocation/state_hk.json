@@ -1,0 +1,31 @@
+{
+  "cash": 0.25,
+  "crash": false,
+  "eligible": [
+    "hk_banks",
+    "hk_dividend",
+    "hk_industrials"
+  ],
+  "held": [
+    "hk_banks",
+    "hk_dividend",
+    "hk_industrials"
+  ],
+  "leader": "hk_banks",
+  "names": {
+    "hk_banks": "Banks (H + HK)",
+    "hk_biotech": "Biotech, Pharma & CXO",
+    "hk_china_tech": "China Tech & Internet",
+    "hk_conglo": "Conglomerates & Exchange",
+    "hk_consumer": "China Consumer Brands",
+    "hk_dividend": "High-Dividend Blue Chips",
+    "hk_energy": "Energy (H-shares)",
+    "hk_ev": "China EV & Autos",
+    "hk_gaming": "Macau Gaming",
+    "hk_industrials": "Industrials & Infrastructure",
+    "hk_insurers": "Insurers",
+    "hk_materials": "Materials & Metals",
+    "hk_property": "Property & REITs",
+    "hk_telco_util": "Telecom & Utilities"
+  }
+}
