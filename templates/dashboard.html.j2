@@ -800,6 +800,10 @@
   body.page-macro .cb-sub a { margin-left: auto; }
   /* dislocation surfaced into the alerts pane when active */
   body.page-macro .alert.alert-dislocation { border-left-color: var(--act); }
+  /* when a dislocation is active its panel renders (only then) and floats to the very
+     top of the page — a rare, urgent risk banner above the regime hero. Hidden (not
+     rendered at all) when dormant, so it never occupies prime space on normal days. */
+  body.page-macro #dislocation { order: -1; scroll-margin-top: 16px; }
 
   @media (max-width: 900px) {
     body.page-macro .qmini { grid-template-columns: repeat(2, 34px); grid-template-rows: repeat(2, 34px); }
@@ -1391,12 +1395,11 @@
   {% set DL = latest.dislocation %}
   {% set DI = DL.inputs %}
   {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
-  <details class="panel span12 fold{% if DL.dislocation_active %} dislo-lit{% endif %}" id="dislocation"{% if DL.dislocation_active %} open style="--lit:{{ vcolor }}"{% endif %}>
-    <summary>🚦 {{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
+  {% if DL.dislocation_active %}{# only renders when a real dislocation is firing; CSS floats it to the very top #}
+  <div class="panel span12 dislo-lit" id="dislocation" style="--lit:{{ vcolor }}">
+    <h2>🚦 {{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
       {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). The whole edge is in REFUSING the falling knife (2000/2008/2022), not in catching the bounce — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。全部优势在于拒绝接飞刀（2000／2008／2022），而非抄到反弹 — 基于标普 1997-2026 实测。") }}
-      <span class="fold-stat">{% if DL.dislocation_active %}<b style="color:{{ vcolor }}">{% if DL.verdict=='buyable_washout' %}{{ t('ACTIVE · buyable washout', '活跃 · 可买入错杀') }}{% elif DL.verdict=='stand_aside' %}{{ t('ACTIVE · stand aside (falling knife)', '活跃 · 观望（接飞刀）') }}{% else %}{{ t('ACTIVE', '活跃') }}{% endif %}</b>{% else %}{{ t('dormant — no acute washout', '休眠 — 无急性抛售') }}{% endif %} · {{ t('Fed put', '美联储托底') }} {{ t('present', '在位') if DL.fed_put else t('absent', '缺失') }}</span>
-      <span class="fold-caret">▾</span>
-    </summary>
+    </h2>
     <p class="muted sm" style="margin:-4px 0 10px">{{ t('A risk filter, not a buy signal. The edge is in refusing the knife, not catching the bounce — judged on drawdown, not return.', '这是风险过滤器而非买入信号。优势在于拒绝接飞刀，而非抄到反弹 — 以回撤而非回报衡量。') }}</p>
     <div class="grid">
 
@@ -1503,8 +1506,9 @@
       </div>
 
     </div>
-  </details>
-  {% endif %}
+  </div>
+  {% endif %}{# /dislocation panel — only when active #}
+  {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
 
   {# AI Master Brief — cross-asset LLM synthesis (engine/master_brain.py). Client-
      fetched from master_brief.json so it never depends on build order; hidden until
