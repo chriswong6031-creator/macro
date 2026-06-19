@@ -84,7 +84,8 @@
   .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text); border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
   .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
-  .ae-laggard,.ae-neutral { background:var(--panel2); color:var(--muted); }
+  .ae-laggard { background:color-mix(in srgb,var(--down) 14%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .ae-neutral { background:var(--panel2); color:var(--muted); }
   .bcbox { margin:9px 0 6px; padding:9px 12px; border-radius:9px; background:var(--panel2);
            border-left:4px solid var(--muted); cursor:help; }
   .bc-head { display:flex; align-items:baseline; gap:9px; }
@@ -143,6 +144,21 @@
   #stock-brief .sb-list { margin:4px 0 0 18px; padding:0; }
   #stock-brief .sb-list li { margin:3px 0; }
   #stock-brief .sb-foot { margin-top:12px; color:var(--muted); font-size:12px; }
+  /* accountable AI-judgment lean panel (engine/stock_desk.py) */
+  #ai-lean { border-left:3px solid #8b5cf6; }
+  #ai-lean h2 { color:#8b5cf6; }
+  #ai-lean .aj-top { display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap; }
+  #ai-lean .aj-chip { font-weight:700; font-size:13px; padding:3px 10px; border-radius:999px;
+                      color:#fff; letter-spacing:.02em; }
+  #ai-lean .aj-chip.constructive { background:#16a34a; }
+  #ai-lean .aj-chip.neutral { background:var(--muted); }
+  #ai-lean .aj-chip.cautious { background:#d97706; }
+  #ai-lean .aj-chip.avoid { background:#dc2626; }
+  #ai-lean .aj-meta { color:var(--muted); font-size:12.5px; }
+  #ai-lean .aj-sec { margin:7px 0; font-size:14px; line-height:1.5; }
+  #ai-lean .aj-sec .aj-h { font-weight:600; color:#8b5cf6; }
+  #ai-lean .aj-bear .aj-h { color:var(--muted); }
+  #ai-lean .aj-foot { margin-top:12px; color:var(--muted); font-size:11.5px; line-height:1.45; }
   /* tooltip (the help() macro) — mirrors the dashboard's inline rules; stock.html
      never used help() before, so these were missing and the tip leaked as text */
   .help { display: inline-flex; align-items: center; justify-content: center;
@@ -365,6 +381,10 @@
       <div id="ant_cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px"></div>
       <p class="muted" style="font-size:11.5px;margin:8px 0 0" id="ant_note"></p>
     </div>
+    <div class="panel" id="ai-lean" style="display:none">
+      <h2>⚖️ {{ t('AI judgment — accountable lean', 'AI 研判 — 可问责判断') }}</h2>
+      <div id="ai-lean-body"></div>
+    </div>
     <div class="panel" id="stock-brief" style="display:none">
       <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
       <div id="stock-brief-body"></div>
@@ -500,6 +520,7 @@
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
 <script src="stockbrief.js"></script>
+<script src="aidesk_lean.js"></script>
 <script>
 (function () {
   var cal = null;  // calibration table data (the nav search bar drives navigation now)
@@ -1048,7 +1069,10 @@
       szbar = '<div class="cv-size" style="color:' + sc[0] + '"><span class="cv-szk">' +
         lz('Suggested size', '建议仓位') + '</span><span class="cv-szv">' + esc(lz(sc[1], sc[2])) +
         (sz.pct != null && sz.bucket !== 'avoid' ? ' · ' + sz.pct + '%' : '') + '</span>' +
-        (rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
+        // when the cycle/timing read holds the size below what risk alone allows, say so —
+        // otherwise a HALF SIZE entry beside a "Full size" budget reads as a contradiction.
+        (sz.capped_by_entry ? '<span class="cv-szt">' + lz('held to entry conviction', '按入场信心封顶') + '</span>' :
+          rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
           (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
         '</div>';
     }
@@ -1193,6 +1217,7 @@
   function load(t) {
     var safe = t.replace('=', '_').replace('^', '_');
     if (window.loadStockBrief) window.loadStockBrief(safe);   // 🧠 AI brief (hidden if absent)
+    if (window.loadAiLean) window.loadAiLean(t);              // ⚖️ accountable lean (top picks only)
     fetch('stockdata/' + safe + '.json').then(function (r) {
       if (!r.ok) throw new Error('not in library');
       return r.json();
@@ -1497,7 +1522,7 @@
   function tvLoad(d) {
     var box = document.getElementById('tvbox');
     if (!box || !window.StockChart) return;
-    try { window.StockChart.mount(box, d.ticker, {name: d.name}); }
+    try { window.StockChart.mount(box, d.ticker, {name: d.name, intraday: !!d.has_intraday}); }
     catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
 

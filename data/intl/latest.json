@@ -9,7 +9,7 @@
     "dominant_quad": "Goldilocks",
     "recession_watch": 0,
     "drawdown_watch": 0,
-    "avg_recession": 5.0
+    "avg_recession": 6.0
   },
   "records": [
     {
@@ -25,7 +25,7 @@
       "inflation_score": -0.5,
       "confidence": 0.607,
       "liquidity": "neutral",
-      "recession_score": 1.0,
+      "recession_score": 2.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 2.65,
@@ -40,10 +40,10 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.1,
         "m2_yoy": 4.22,
-        "fx": 161.119,
-        "fx_strength_3m": -1.67,
-        "realvol": 32.1,
-        "drawdown": 0.0
+        "fx": 161.431,
+        "fx_strength_3m": -1.86,
+        "realvol": 32.3,
+        "drawdown": -0.5
       },
       "macro_asof": {
         "cpi_yoy": "2021-06",
@@ -52,15 +52,15 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 71313.37,
-        "off_52w_high": 0.0,
+        "price": 70672.21,
+        "off_52w_high": -0.5,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 32.1,
-        "rsi": 71.0,
-        "ext_z": 1.96,
+        "realvol": 32.3,
+        "rsi": 68.0,
+        "ext_z": 1.81,
         "ext_grade": "stretched",
-        "drawdown_risk": 14.0,
+        "drawdown_risk": 15.0,
         "drawdown_band": "low",
         "bubble_flag": true
       },
@@ -79,7 +79,7 @@
       "inflation_score": -0.5,
       "confidence": 0.298,
       "liquidity": "neutral",
-      "recession_score": 3.0,
+      "recession_score": 6.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.08,
@@ -94,10 +94,10 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.5,
         "m2_yoy": 5.73,
-        "fx": 1536.88,
-        "fx_strength_3m": -3.47,
-        "realvol": 64.8,
-        "drawdown": 0.0
+        "fx": 1538.08,
+        "fx_strength_3m": -3.55,
+        "realvol": 65.6,
+        "drawdown": -1.9
       },
       "macro_asof": {
         "cpi_yoy": "2023-11",
@@ -106,15 +106,15 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 9259.32,
-        "off_52w_high": 0.0,
+        "price": 8891.69,
+        "off_52w_high": -1.9,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 64.8,
-        "rsi": 68.0,
-        "ext_z": 2.51,
+        "realvol": 65.6,
+        "rsi": 63.0,
+        "ext_z": 2.1,
         "ext_grade": "parabolic",
-        "drawdown_risk": 20.0,
+        "drawdown_risk": 24.0,
         "drawdown_band": "low",
         "bubble_flag": true
       },
@@ -299,13 +299,13 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": 3.0
+          "value": 6.0
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": 1.0
+          "value": 2.0
         },
         {
           "cc": "EZ",
@@ -330,13 +330,13 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": 20.0
+          "value": 24.0
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": 14.0
+          "value": 15.0
         },
         {
           "cc": "TW",
@@ -417,13 +417,13 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": -3.47
+          "value": -3.55
         },
         {
           "cc": "JP",
           "flag": "\ud83c\uddef\ud83c\uddf5",
           "name": "Japan",
-          "value": -1.67
+          "value": -1.86
         },
         {
           "cc": "EZ",

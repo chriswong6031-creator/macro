@@ -1,20 +1,20 @@
 # Anticipation Engine — Phase-0 results
 
-Universe: 111 US large-caps + 11 SPDR sectors + SPY/QQQ. Pooled rows: 1,175,039. Gauge horizon: 5td. Drawdown = forward worst dip (MAE). Every leg oriented so higher = more dangerous; want = NEGATIVE rank-IC vs forward MAE. GO = sign(IC)=want AND stable in both date-halves AND robust across calendar-blocked purged CV folds.
+Universe: 111 US large-caps + 11 SPDR sectors + SPY/QQQ. Pooled rows: 1,175,398. Gauge horizon: 5td. Drawdown = forward worst dip (MAE). Every leg oriented so higher = more dangerous; want = NEGATIVE rank-IC vs forward MAE. GO = sign(IC)=want AND stable in both date-halves AND robust across calendar-blocked purged CV folds.
 
 ## Per-name forward-drawdown legs
 
 | leg | rank-IC | both halves | calendar-CV robust | monotone dd | tail danger/safe % | verdict |
 |---|---|---|---|---|---|---|
-| `det_z` | -0.0114 | — (0.0033/-0.0262) | — | ✓ | -8.5/-7.1 | **display-only** |
-| `confluence` | -0.0356 | ✓ (-0.0265/-0.0442) | ✓ | ✓ | -8.7/-6.7 | **GO** |
-| `neg_trend_vel` | -0.0276 | ✓ (-0.0121/-0.0427) | ✓ | ✓ | -9.0/-6.6 | **GO** |
-| `neg_trend_accel` | 0.0073 | — (0.0216/-0.0071) | — | — | -7.8/-7.5 | **display-only** |
-| `neg_rs_vel` | 0.0004 | — (0.0137/-0.0081) | — | ✓ | -8.1/-7.6 | **display-only** |
-| `neg_impulse` | 0.0054 | — (0.0217/-0.0109) | — | — | -8.0/-7.3 | **display-only** |
-| `rvar_vel` | -0.0152 | ✓ (-0.0158/-0.014) | ✓ | ✓ | -8.1/-7.3 | **GO** |
-| `ext_z` | 0.0333 | — (0.0152/0.0509) | — | — | -6.8/-9.4 | **display-only** |
-| `vol_pct` | -0.0583 | ✓ (-0.0436/-0.0724) | ✓ | ✓ | -9.4/-6.4 | **GO** |
+| `det_z` | -0.0114 | — (0.0033/-0.0261) | — | ✓ | -8.5/-7.1 | **display-only** |
+| `confluence` | -0.0356 | ✓ (-0.0266/-0.044) | ✓ | ✓ | -8.7/-6.7 | **GO** |
+| `neg_trend_vel` | -0.0275 | ✓ (-0.0121/-0.0426) | ✓ | ✓ | -9.0/-6.6 | **GO** |
+| `neg_trend_accel` | 0.0074 | — (0.0216/-0.0069) | — | — | -7.8/-7.5 | **display-only** |
+| `neg_rs_vel` | 0.0004 | — (0.0137/-0.008) | — | ✓ | -8.1/-7.6 | **display-only** |
+| `neg_impulse` | 0.0054 | — (0.0217/-0.0108) | — | — | -8.0/-7.3 | **display-only** |
+| `rvar_vel` | -0.0151 | ✓ (-0.0158/-0.0139) | ✓ | ✓ | -8.1/-7.3 | **GO** |
+| `ext_z` | 0.0332 | — (0.0151/0.0507) | — | — | -6.8/-9.4 | **display-only** |
+| `vol_pct` | -0.0582 | ✓ (-0.0436/-0.0722) | ✓ | ✓ | -9.4/-6.4 | **GO** |
 
 ## Market overlay legs — cross-asset / macro / geopolitical
 
@@ -22,19 +22,20 @@ Universe: 111 US large-caps + 11 SPDR sectors + SPY/QQQ. Pooled rows: 1,175,039.
 
 | leg | rank-IC | both halves | calendar-CV robust | monotone dd | tail danger/safe % | verdict |
 |---|---|---|---|---|---|---|
-| `m_vix` | -0.049 | ✓ (-0.026/-0.0638) | — | ✓ | -10.1/-6.3 | **display-only** |
-| `m_vix_term` | -0.0176 | — (None/-0.0176) | ✓ | — | -9.4/-6.4 | **display-only** |
-| `m_move` | -0.0469 | — (0.0132/-0.0482) | ✓ | ✓ | -8.9/-5.9 | **display-only** |
-| `m_hy_oas` | -0.1056 | ✓ (-0.1273/-0.0871) | ✓ | ✓ | -11.1/-5.7 | **GO** |
-| `m_hy_vel` | -0.043 | ✓ (-0.0318/-0.0465) | ✓ | ✓ | -10.2/-6.7 | **GO** |
-| `m_curve_inv` | 0.0127 | — (-0.0218/0.0273) | — | — | -7.7/-8.2 | **display-only** |
-| `m_dollar_vel` | -0.0186 | — (0.0961/-0.0193) | ✓ | — | -8.5/-6.8 | **display-only** |
-| `m_netliq_vel` | -0.0145 | ✓ (-0.0134/-0.0121) | — | — | -7.4/-6.5 | **display-only** |
-| `m_nfci` | -0.0853 | ✓ (-0.0626/-0.1093) | ✓ | ✓ | -10.0/-6.1 | **GO** |
+| `m_vix` | -0.0489 | ✓ (-0.026/-0.0637) | — | ✓ | -10.1/-6.3 | **display-only** |
+| `m_vix_term` | -0.0175 | — (None/-0.0175) | ✓ | — | -9.4/-6.4 | **display-only** |
+| `m_move` | -0.0468 | — (0.0138/-0.0483) | ✓ | ✓ | -8.9/-5.9 | **display-only** |
+| `m_hy_oas` | -0.1056 | ✓ (-0.127/-0.0872) | ✓ | ✓ | -11.1/-5.7 | **GO** |
+| `m_hy_vel` | -0.0429 | ✓ (-0.0318/-0.0465) | ✓ | ✓ | -10.2/-6.7 | **GO** |
+| `m_curve_inv` | 0.0128 | — (-0.0218/0.0274) | — | — | -7.7/-8.2 | **display-only** |
+| `m_dollar_vel` | -0.0185 | — (0.113/-0.0193) | ✓ | — | -8.5/-6.8 | **display-only** |
+| `m_netliq_vel` | -0.0145 | ✓ (-0.012/-0.0122) | — | — | -7.3/-6.5 | **display-only** |
+| `m_nfci` | -0.0852 | ✓ (-0.0625/-0.1094) | ✓ | ✓ | -10.0/-6.1 | **GO** |
 | `m_gpr` | -0.0003 | — (-0.0137/0.0058) | — | — | -7.5/-7.8 | **display-only** |
-| `m_gpr_act` | 0.0064 | — (0.0046/0.0059) | — | — | -7.6/-7.7 | **display-only** |
-| `m_epu` | -0.02 | ✓ (-0.0103/-0.0289) | — | ✓ | -9.1/-6.9 | **display-only** |
-| `m_breadth_vel` | -0.0161 | ✓ (-0.0121/-0.0186) | — | ✓ | -9.0/-7.0 | **display-only** |
+| `m_gpr_act` | 0.0064 | — (0.0047/0.0057) | — | — | -7.6/-7.7 | **display-only** |
+| `m_epu` | -0.0201 | ✓ (-0.0103/-0.0291) | — | ✓ | -9.1/-6.9 | **display-only** |
+| `m_breadth_vel` | -0.0161 | ✓ (-0.0119/-0.0188) | — | ✓ | -9.0/-7.0 | **display-only** |
+| `m_skew` | 0.0263 | — (0.0463/0.01) | — | — | -7.4/-8.5 | **display-only** |
 
 ## De-risk overlay (PIT — drawdown control, the validated edge type)
 
@@ -42,7 +43,7 @@ Universe: 111 US large-caps + 11 SPDR sectors + SPY/QQQ. Pooled rows: 1,175,039.
 |---|---|---|---|---|
 | `det_z` long/flat | 12.0% / 1.02 / -42.5% | 17.9% / 1.07 / -49.5% | +7.0pp | 1.0 (SURVIVES multiple-testing (DSR≥0.95)) |
 | `confluence` long/flat | 12.9% / 1.06 / -39.5% | 17.9% / 1.07 / -49.5% | +10.0pp | 1.0 (SURVIVES multiple-testing (DSR≥0.95)) |
-| macro timing (3 legs) | 17.1% / 1.18 / -48.2% | 17.9% / 1.07 / -49.5% | +1.3pp | 1.0 (SURVIVES multiple-testing (DSR≥0.95)) |
+| macro timing (3 legs) | 17.1% / 1.17 / -48.2% | 17.9% / 1.07 / -49.5% | +1.3pp | 1.0 (SURVIVES multiple-testing (DSR≥0.95)) |
 
 ## Direction (the honesty anchor)
 

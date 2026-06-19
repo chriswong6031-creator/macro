@@ -261,6 +261,14 @@ polygon:
     contract_multiplier: 100
     pct_move: 0.01
     r: 0.043
+  intraday:
+    # Hourly US bars -> data/intraday/<T>.parquet (scripts/build_polygon_intraday),
+    # shipped as site/intraday/<T>.json and aggregated to 4H client-side by chart.js.
+    # Universe = deep-history US names (data/stocks/*) + sector/factor ETFs. US-only.
+    multiplier: 1
+    timespan: hour
+    lookback_days: 180           # ~6 months of hourly bars (small per-ticker JSON)
+    sleep: 0.06                  # polite pacing between per-ticker aggregate calls
   # per-underlying dividend yields for the compute_gex summary (single names -> 0)
   div_yield: {SPY: 0.013, QQQ: 0.006, IWM: 0.013, DIA: 0.018}
 
@@ -898,6 +906,13 @@ defillama:
   peg_majors: [tether, usd-coin, dai]   # ALIVE systemic majors only; dead coins (UST/BUSD) sit at ~0 forever and would false-trigger — their collapses show in the supply tide instead
   peg_watch_bps: 50              # max |price-1| across majors: >=50bps = watch (normal noise is ~4-40bps)
   peg_break_bps: 150             # >=150bps = peg BREAK / risk veto (USDC+DAI SVB hit ~390bps; this is event-driven, not a calibrated factor)
+  retries: 3
+
+wikipedia:                        # keyless retail-attention axis (Wikimedia REST pageviews, 2015-07->)
+  pageviews_url: https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/all-agents/{article}/daily/{start}/{end}
+  article: Bitcoin
+  earliest: "2015070100"          # first day Wikimedia serves daily per-article views
+  user_agent: "macro-dashboard research (chriswong6031-creator) macro-dashboard@users.noreply.github.com"
   retries: 3
 
 mempool:
@@ -2024,6 +2039,29 @@ ai_desk:
                                  # false = single analyst (cheaper: 1 LLM call vs 5).
 
 # =============================================================================
+# Stock desk — accountable AI JUDGMENT layer on the US standout top-picks
+# (engine/stock_desk.py; T9). The per-stock sibling of ai_desk: turns each top pick's
+# deterministic Conviction profile into a FALSIFIABLE LEAN (constructive/neutral/
+# cautious/avoid vs SPY over a horizon) that is SCORED against realized returns into a
+# track record. HONEST: the cross-sectional rank has no validated forward edge (the
+# deep+PIT event gate is NEUTRAL — reports/sue-insider-deep-phase0.md) — this is
+# accountability/explainability, not alpha. The model may NEVER overrule the risk reshape
+# (a name flagged extended/avoid or cycle_blocked is clamped out of 'constructive'); it
+# NEVER gives a size. One LLM call/build, gated. Run: `python -m engine.stock_desk --force`.
+# =============================================================================
+stock_desk:
+  enabled: true                   # MASTER SWITCH — nothing calls the model unless true
+  interval_days: 1                # regenerate leans every N days (1..7); 1 = every build
+  api_key_env: DEEPSEEK_API_KEY
+  llm_base_url: https://api.deepseek.com/anthropic
+  llm_model: deepseek-v4-pro      # reasoning tier; swap to claude-opus-4-8 later
+  max_tokens: 8000                # reasoning model — thinking tokens count vs cap
+  max_picks: 6                    # judge the top N board names (1..12; honesty over breadth)
+  default_horizon_d: 21           # trading-day horizon when the model omits one
+  falsifier_defaults:
+    rel_return: 0.05              # ±5% name-vs-SPY move = the wrong-way threshold
+
+# =============================================================================
 # Policy Intent Desk — the realpolitik LLM layer on the Fed/Admin intel substrate
 # (engine/policy_intent_desk.py). LEAF · NEVER-SCORED · no-op without DEEPSEEK_API_KEY.
 # Reads data/policy/intel.json + live market state -> dated, FALSIFIABLE intent leans
@@ -2610,6 +2648,34 @@ vector:
   positioning:                    # CME COT net-spec (already collected, now wired)
     z_window_d: 730               # ~2y z-score of net_spec_pct_oi (crowding extremes)
     ffill_limit_d: 10             # weekly report -> carry forward
+
+  # --- Mastermind upgrade (research/VECTOR_FACTOR_ROADMAP_2026) ----------------
+  miner_econ:                     # hashprice (USD revenue per unit hashrate) + flush — deep 2010-> anchor
+    pctile_lookback_d: 1460       # ~4y rolling percentile of hashprice (margin position)
+    z_window_d: 365               # z-score window on log-hashprice
+    shock_window_d: 14            # hashrate %-change window (a flush = forced shutdown)
+    shock_full: 15.0              # -15% hashrate in the window = a full capitulation flush
+    capit_pctile: 15             # hashprice below this percentile = miner capitulation / bottoming
+    euphoria_pctile: 85          # ...above this = miner euphoria
+  conditional_beta:               # downside-vs-upside beta to NDX(QQQ)/gold — pure compute, deep
+    beta_window_d: 90             # rolling regression window
+    min_periods_d: 20             # min up/down days in the window before a beta is estimable
+    pctile_lookback_d: 730        # 2y percentile of the downside beta
+    high_down_beta_pctile: 70     # above this = "drawdown amplifier" regime
+    decoupled_beta: 0.15          # downside beta below this = "diversifier" regime
+  holder_spread:                  # STH-vs-LTH realization spread — bgeo ~1 cycle, CONTEXT
+    smooth_d: 7
+    dist_thresh: 0.02             # STH-SOPR minus LTH-SOPR above this = distribution tilt
+    accum_thresh: -0.02           # ...below this = accumulation tilt
+  attention:                      # Wikipedia pageviews — keyless attention axis, EXTREMES-only
+    smooth_d: 7
+    z_window_d: 365               # z-score of log-pageviews
+    mania_z: 2.0                  # attention z above this = mania / blow-off froth
+    apathy_z: -1.0                # ...below this = disinterest / apathy bottoms
+  taker_flow:                     # OKX taker aggressor CVD — shallow, DISPLAY/accrue-forward
+    cvd_window_d: 30              # rolling-sum window for the (buy-share - 0.5) lean
+    z_window_d: 90
+    div_window_d: 14             # price-vs-CVD divergence lookback
 
   cross_asset:                    # BTC rolling correlation regime (2nd-moment, FREE)
     corr_window_d: 90             # rolling Pearson window of daily returns

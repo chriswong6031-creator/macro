@@ -35,6 +35,12 @@ C = {
     "r1": "#E2E7FC", "r2": "#B8C6FA", "r3": "#8FA5F6", "r4": "#6888FB", "r5": "#285FFF",
     "ink": "#0B1733", "text": "#344054", "muted": "#6F6F6F", "faint": "#A0A0A0",
     "red": "#D30B0B", "redfill": "#FEB5B5", "amber": "#F5AD42",
+    # diverging BULL/BEAR tone semantic actually shipped: bull=BLUE (the brand accent),
+    # bear=RED (distinct from the saturated alert --red), warn=amber. So direction reads
+    # blue(up)/red(down) — a proper diverging pair, not the old all-blue. (`bull` green hex
+    # below is kept available but unused; --bull is mapped to var(--blue) in the templates.)
+    "bull": "#1F9D6B", "bull_soft": "#DCE6FF", "bear": "#D14343", "bear_soft": "#FBE0E0",
+    "bear_dk": "#F1736B", "warn": "#E0922E",
     "grid": "#EAECF0", "card": "#FFFFFF", "bg": "#F7F8FA", "priceln": "#9AA4B2",
 }
 PLOT = dict(
@@ -105,6 +111,46 @@ def _dx(index):
     every x array while still rendering on a normal plotly date axis (sparse
     Timestamp shapes/markers serialize as ISO and land on the same date scale)."""
     return [t.strftime("%Y-%m-%d") for t in index]
+
+
+# --------------------------------------------------------------------------- #
+# Lightweight-Charts v5 data emitter for the Risk-Index-vs-Strategy chart
+# (replaces the Plotly fig with the bespoke interactive chart system; site/vector_chart.js)
+# --------------------------------------------------------------------------- #
+def emit_risk_strategy_json(site: Path, sig: pd.DataFrame) -> None:
+    """Emit site/vector_risk_strategy.json — the compact columnar feed for the interactive
+    Lightweight-Charts v5 backtest chart. Per day: price, risk_index, and per-variant
+    allocation + strategy equity; plus de-noised buy/sell markers per variant. All four
+    variants ship so the variant tabs can switch the shaded regime + equity curve client-
+    side. Daily full-res (LWC is canvas — no SVG-per-point cost). No look-ahead."""
+    close = sig["close"]
+    dates = [d.strftime("%Y-%m-%d") for d in sig.index]
+    variants = [v for v in ("optimal", "conservative", "moderate", "aggressive")
+                if f"alloc_{v}" in sig.columns]
+    alloc, equity, markers = {}, {}, {}
+    hodl = (1 + close.pct_change().fillna(0)).cumprod()
+    for v in variants:
+        a = sig[f"alloc_{v}"].fillna(0.0)
+        alloc[v] = [round(float(x), 3) for x in a]
+        equity[v] = [round(float(x), 4) for x in alloc_equity(close, a)]
+        # markers only where the allocation MATERIALLY changes (de-noise the continuous grid)
+        d = a.diff().fillna(0.0)
+        mk = []
+        for i in range(len(a)):
+            if abs(float(d.iloc[i])) >= 0.10:
+                mk.append({"t": dates[i], "dir": "buy" if d.iloc[i] > 0 else "sell",
+                           "to": round(float(a.iloc[i]), 2)})
+        markers[v] = mk
+    payload = {
+        "dates": dates,
+        "price": [round(float(x)) for x in close],
+        "risk": [round(float(x)) if pd.notna(x) else None for x in sig.get("risk_index", pd.Series(index=sig.index))],
+        "alloc": alloc, "equity": equity, "markers": markers,
+        "hodl": [round(float(x), 4) for x in hodl],
+        "variants": variants,
+    }
+    (site / "vector_risk_strategy.json").write_text(json.dumps(payload, separators=(",", ":")))
+    log.info("wrote %s/vector_risk_strategy.json (%d days x %d variants)", site, len(dates), len(variants))
 
 
 # --------------------------------------------------------------------------- #
@@ -1790,9 +1836,14 @@ def chart_ethbtc(ratio: pd.Series, ma: pd.Series | None, cfg: dict) -> str:
 
 
 def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
-                          mtf_a: dict, verdict: dict) -> None:
-    """The allocation deep-dive page: strategy variants + backtests, AND the
-    altcoin-cycle / ETH allocation keyed to (cycle regime x alt-season x risk)."""
+                          mtf_a: dict, verdict: dict, master: dict | None = None,
+                          recommend_d: dict | None = None, cones: dict | None = None,
+                          sizing: dict | None = None, catalyst: dict | None = None,
+                          breadth: dict | None = None, env_d: dict | None = None,
+                          **_ignored) -> None:
+    """The allocation deep-dive page: the Master Signal recommendation + Kelly sizing +
+    forward cones (shared with vector.html), AND the altcoin-cycle / ETH allocation keyed
+    to (cycle regime x alt-season x risk). New context is optional (back-compatible)."""
     from engine import alt_cycle
     cfg = config.load()["vector"]["alt_cycle"]
     close = sig["close"]
@@ -1828,6 +1879,15 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
         "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
         "alloc_pct": alloc_pct,
         "cards": cards,
+        # shared command-center decision layer (reused from vector.html). NOTE: the local
+        # `rec` above is the BTC/ETH/alts/cash SPLIT — the recommendation is `recommend_d`.
+        "master": master or {"ok": False},
+        "rec": recommend_d or {"ok": False},
+        "cones": cones or {"ok": False},
+        "sizing": sizing,
+        "catalyst": catalyst,
+        "breadth": breadth or {},
+        "env": env_d or {},
         "alt": {
             "ethbtc": _r(eb.get("level"), 4) if eb else None,
             "ethbtc_pctile": eb.get("pctile") if eb else None,
@@ -1997,6 +2057,63 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — breadth card is optional context
         log.warning("crypto breadth view failed (%s)", e)
         breadth = {}
+
+    # Master Signal — the command-center synthesis (engine/btc_master.py). Transparent
+    # weighted regime read + the scannable Signal Board (every axis -> state + tone +
+    # MEASURED calibration grade + sparkline). Presentation-only; never break the build.
+    try:
+        from engine import btc_master
+        master = btc_master.synthesize(sig, calib)
+    except Exception as e:  # noqa: BLE001 — synthesis is optional; page renders without it
+        log.warning("master signal synthesis failed (%s)", e)
+        master = {"ok": False}
+
+    # Forward-return CONES (empirical, regime-conditioned) + the RECOMMENDATION engine —
+    # the command-center decision layer (engine/btc_recommend.py). Never break the build.
+    try:
+        from engine import btc_recommend
+        cones = btc_recommend.forward_cones(sig)
+        recommendation = btc_recommend.recommend(sig, master, cones, envd.get("risk"), sizing)
+    except Exception as e:  # noqa: BLE001 — decision layer is optional
+        log.warning("recommendation engine failed (%s)", e)
+        cones, recommendation = {"ok": False}, {"ok": False}
+
+    # New mastermind-upgrade factor panels (research/VECTOR_FACTOR_ROADMAP_2026).
+    newf = {
+        "miner": {
+            "hashprice": _r(last.get("hashprice"), 4),
+            "hashprice_pctile": _r(last.get("hashprice_pctile"), 0),
+            "hashprice_z": _r(last.get("hashprice_z"), 2),
+            "hashrate_shock": _r(last.get("hashrate_shock"), 1),
+            "difficulty_shock": _r(last.get("difficulty_shock"), 1),
+            "stress": _r(last.get("miner_stress"), 0),
+            "state": last.get("miner_econ_state"),
+        },
+        "cbeta": {
+            "down_beta": _r(last.get("down_beta"), 2),
+            "up_beta": _r(last.get("up_beta"), 2),
+            "asym": _r(last.get("beta_asym"), 2),
+            "down_beta_pctile": _r(last.get("down_beta_pctile"), 0),
+            "down_beta_gold": _r(last.get("down_beta_gold"), 2),
+            "regime": last.get("beta_regime"),
+        },
+        "holders": {
+            "sopr_spread": _r(last.get("sth_lth_sopr_spread"), 3),
+            "realized_premium": _r(last.get("sth_realized_premium"), 1),
+            "state": last.get("holder_state"),
+        },
+        "attention": {
+            "views": _r(last.get("wiki_views"), 0),
+            "z": _r(last.get("wiki_views_z"), 1),
+            "state": last.get("attention_state"),
+        },
+        "taker": {
+            "buy_share": _r(last.get("taker_buy_share"), 3),
+            "cvd": _r(last.get("taker_cvd"), 2),
+            "z": _r(last.get("taker_buy_z"), 1),
+            "divergence": last.get("taker_divergence"),
+        },
+    }
 
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
@@ -2183,6 +2300,10 @@ def main() -> int:
             "flow": round(100 * last["flow_pctile"]) if pd.notna(last["flow_pctile"]) else 50,
         },
         "breadth": breadth,
+        "master": master,
+        "cones": cones,
+        "rec": recommendation,
+        "newf": newf,
         "env": envd,
         "scn": scnd,
         "sizing": sizing,
@@ -2194,7 +2315,6 @@ def main() -> int:
         "timeline_days": acfg["timeline_days"],
         "n_alerts": sum(len(d["events"]) for d in timeline),
         "charts": {
-            "risk_strategy": chart_risk_vs_strategy(sig, eq, hodl),
             "momentum": chart_oscillator(sig["momentum"], close, "Momentum"),
             "structure": chart_oscillator(sig["structure"], close, "Structure Shift"),
             "bfi": chart_bfi(sig),
@@ -2218,13 +2338,19 @@ def main() -> int:
     site = Path(config.load()["storage"]["site_dir"])
     (site / "vector.html").write_text(html)
     log.info("wrote %s/vector.html (%d KB)", site, len(html) // 1024)
+    try:  # interactive Lightweight-Charts backtest feed — never break the build
+        emit_risk_strategy_json(site, sig)
+    except Exception as e:  # noqa: BLE001
+        log.error("risk/strategy chart json failed (%s)", e)
     # the AI brief panel fetches aibrief.js at runtime — ship it alongside the page
     # (build_site copies it too; done here so a standalone vector rebuild is complete).
     _ab = config.ROOT / "templates" / "aibrief.js"
     if _ab.exists():
         (site / "aibrief.js").write_text(_ab.read_text())
     try:
-        build_allocation_page(env, site, sig, cards, mtf_a, verdict)
+        build_allocation_page(env, site, sig, cards, mtf_a, verdict,
+                              master=master, recommend_d=recommendation, cones=cones,
+                              sizing=sizing, catalyst=catalyst, breadth=breadth, env_d=envd)
     except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
         log.error("allocation page failed (%s)", e)
     try:

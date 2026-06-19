@@ -519,12 +519,26 @@ def _event_risk(rec: dict) -> float:
 
 
 _SIZE_BUCKETS = [(0.66, "quarter", 25), (0.40, "half", 50), (0.20, "three-quarter", 75)]
+# canonical size ladder, for mapping a conviction-capped pct back to a bucket label
+_PCT_BUCKET = {0: "avoid", 25: "quarter", 50: "half", 75: "three-quarter", 100: "full"}
+# The cycle/timing call is the BINDING cap on size. A partial-conviction entry
+# (HALF SIZE = the daily turn is in but the weekly hasn't confirmed) — or a
+# not-yet-triggered watch/wait — must never display a fuller size than the entry
+# itself implies, even when the name's risk budget alone would allow more. This is
+# the contradiction users hit: "Suggested size · Full size 100%" beside a
+# "HALF SIZE" entry tag. Subtract-only, like every other size gate here.
+_ENTRY_SIZE_CAP = {"HALF SIZE": 50, "BUY SOON": 50, "WATCH": 50, "WAIT": 25,
+                   "TAKE PROFITS": 25, "UNCONFIRMED — HIGH RISK": 25}
 
 
 def _suggested_size(risk_total: float, *, blocked: bool, market: str,
-                    validated: bool) -> dict:
+                    validated: bool, conviction_cap: int | None = None) -> dict:
     """Bounded, monotone-decreasing-in-risk position-size guidance. All gates SUBTRACT from
-    full; none inflate. Honest: 'context' (risk-budgeting), not a claimed alpha bet."""
+    full; none inflate. Honest: 'context' (risk-budgeting), not a claimed alpha bet.
+
+    ``conviction_cap`` is the cycle/timing read's ceiling (e.g. a weekly-unconfirmed
+    HALF SIZE → 50): the risk budget can size DOWN from it but never above it, so the
+    suggested size and the entry call can't contradict each other."""
     if blocked:
         return {"bucket": "avoid", "pct": 0, "risk": round(risk_total, 2),
                 "note": "cycle/extension blocks a buy"}
@@ -535,8 +549,15 @@ def _suggested_size(risk_total: float, *, blocked: bool, market: str,
             break
     if market.upper() == "HK" and pct > 50:          # HK is a screen, never a full buy
         bucket, pct = "half", 50
-    return {"bucket": bucket, "pct": pct, "risk": round(risk_total, 2),
-            "tier": "validated" if validated else "context"}
+    out = {"bucket": bucket, "pct": pct, "risk": round(risk_total, 2),
+           "tier": "validated" if validated else "context"}
+    # the cycle/timing read caps the size: never show a fuller position than the
+    # entry call (e.g. a weekly-unconfirmed HALF SIZE) actually warrants.
+    if conviction_cap is not None and pct > conviction_cap:
+        out["bucket"] = _PCT_BUCKET.get(conviction_cap, out["bucket"])
+        out["pct"] = conviction_cap
+        out["capped_by_entry"] = True
+    return out
 
 
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
@@ -860,8 +881,11 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
                  "macro_tax": round(rtax, 3) if rtax > 0 else None,
                  "idio_tax": round(idio_tax, 3) if idio_tax > 0 else None,
                  "drivers": overlay.get("drivers") if stress > 0 else None},
-        "size": _suggested_size(risk_total, blocked=blocked, market=m,
-                                validated=bool(ctx.get("gate_go"))),
+        "size": _suggested_size(
+            risk_total, blocked=blocked, market=m,
+            validated=bool(ctx.get("gate_go")),
+            conviction_cap=_ENTRY_SIZE_CAP.get(
+                ((rec.get("ladder") or {}).get("entry") or {}).get("tag"))),
         "verdict": vb["verdict"], "verdict_zh": vb["verdict_zh"],
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),

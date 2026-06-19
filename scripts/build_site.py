@@ -2548,7 +2548,8 @@ def main() -> int:
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
-                  "masterbrief.js", "aibrief.js", "stockbrief.js", "lightweight-charts.js",
+                  "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
+                  "lightweight-charts.js",
                   "allocation_scorecard.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
@@ -2849,8 +2850,10 @@ def main() -> int:
         # never break the build if it fails; charts just degrade to "no data".
         try:
             from scripts.build_chart_data import build_us as build_chart_data
+            from scripts.build_chart_data import emit_intraday
             n_chart, n_candle = build_chart_data(site)
             log.info("chart data: %d ohlc files (%d candle-capable)", n_chart, n_candle)
+            log.info("chart data: %d US intraday (4H) files", emit_intraday(site))
         except Exception as e:  # noqa: BLE001
             log.warning("chart data step failed (%s); stock charts degrade to no-data", e)
 

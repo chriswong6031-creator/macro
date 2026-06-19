@@ -397,6 +397,258 @@ REGISTRY: list[dict] = [
                 "且相对 VIX 的增量不显著。不作为计分调节器；作为展示横幅，门控乘数固定为 1.0。",
          source="narrative-regime-phase0.md", horizon="fwd vol",
          wired="macro.html banner (×1.0)"),
+
+    # ---- SIGNAL-LAB EXPANSION (validated 2026-06 — research + adversarial-verify workflows) ----
+    _row("Bitcoin Vector — `optimal` momentum×risk allocation",
+         "比特币向量 — optimal 动量×风险配置", "BTC", "scored",
+         why="The one NEW scored win — a fully-wired live BTC allocation whose drawdown/Sharpe payoff survives "
+             "every fatal-mode attack. Mechanical (momentum + on-chain risk_index) long/flat grid: Sharpe 1.44 "
+             "vs HODL 1.03, MaxDD −37.5% vs −83.8% (2.23× cut), net 10bps 2015-2026. DSR 0.9965 (n=50; 0.9953 at "
+             "live n=65), bootstrap P(Sharpe>0)=1.0 (CI [0.79,1.45,2.07]), DD-cut holds in BOTH split-halves "
+             "(+46/+45pp) and every leave-one-crisis-out, and it beats a brake-matched 200dma on BOTH Sharpe "
+             "(1.44>1.13) and DD. Decomposition proves it is NOT a brake artifact (the momentum,risk grid alone = "
+             "1.39/−42.5%). SCORE THE DRAWDOWN/SHARPE ONLY — raw CAGR is near-flat (61.6 vs 59.1%) and direction "
+             "is a coin-flip (P(7d up|long) 0.579 vs 0.546). Honest-N ~4 crash episodes.",
+         why_zh="本轮唯一新增计分项——已上线的比特币配置，其回撤/夏普收益经全部致命检验仍成立。夏普 1.44 对 HODL 1.03，"
+                "最大回撤 −37.5% 对 −83.8%（缩小2.23倍），DSR 0.9965，自举 P(夏普>0)=1.0，两半与逐危机均成立，"
+                "且在夏普与回撤上均跑赢刹车匹配的200日均线。仅计回撤/夏普；方向为掷硬币。诚实样本约4次崩盘。",
+         source="btc-vector-optimal-phase0.md (scripts/btc_vector_optimal_phase0.py); engine/btc_signals.py allocation()",
+         horizon="allocation (daily)", dsr=0.9965, sharpe=1.44, n=4187,
+         wired="vector.html / vector_allocation — alloc_optimal (LIVE)",
+         extra=[("MaxDD", "−37.5% vs −83.8% (2.23× cut)"), ("bootstrap P(Sh>0)", "1.0 · CI [0.79,1.45,2.07]"),
+                ("split-half DD cut", "+46 / +45pp"), ("direction", "coin-flip — NOT scored"),
+                ("honest-N", "~4 crash episodes")]),
+    _row("Mastermind GTAA (Moderate) — diversified-leverage book",
+         "Mastermind 全球配置（均衡）— 多元杠杆组合", "Multi-asset", "confirmer",
+         why="Live levered vol-targeted cross-asset GTAA (~1.21× lev) beats SPY on risk-adjusted terms over 19.1y: "
+             "Sharpe 1.07 vs SPY 0.62 / 60-40 0.77, MaxDD −24.1% vs −55.2% / −31.4%, DSR 0.9999, bootstrap "
+             "P(Sharpe>0)=1.0, purged-CV 5/5, leave-one-crisis-out 6/6. BUT the adversarial incrementality test "
+             "caps it at confirmer: the IDENTICAL chassis (inverse-vol + 12% vol-target + 1.6× cap) with "
+             "conviction=1 (NO trend/carry/regime signal) already gives Sharpe 1.03 / MaxDD −27.5% — the "
+             "four-factor conviction adds only +0.04 Sharpe / +3.4pp DD and loses in 2/5 folds and ex-2008. It "
+             "credits the diversification+vol-target+leverage TRANSFORM, not timing alpha; raw-CAGR beat also "
+             "flips OOS (H2 12.8 < SPY 15.4%).",
+         why_zh="已上线的杠杆波动率目标跨资产全球配置，19.1年风险调整后跑赢标普（夏普 1.07 对 0.62，回撤 −24.1% 对 −55.2%）。"
+                "但对照检验定为确认项：同一底盘信号=1已得夏普 1.03，四因子信号仅增 +0.04 夏普——计入的是分散+波动率目标+杠杆变换，非择时阿尔法。",
+         source="mastermind-moderate-phase0.md; engine/masterminds.py", horizon="GTAA allocation (weekly)",
+         dsr=0.9999, sharpe=1.07, wired="masterminds.html / strategy_mm_moderate (LIVE)",
+         extra=[("MaxDD", "−24.1% vs SPY −55.2% / 60-40 −31.4%"),
+                ("increment over no-signal chassis", "+0.04 Sharpe / +3.4pp DD (loses 2/5 folds, ex-2008)"),
+                ("OOS CAGR", "flips (H2 12.8 < SPY 15.4%)")]),
+    _row("Active levered commodity (silver & copper)",
+         "主动杠杆商品（白银与铜）", "Commodity", "confirmer",
+         why="Vol-targeted leverage-capable models that beat same-asset B&H on CAGR & Sharpe in BOTH split-halves "
+             "(silver 16.25 vs 10.80% CAGR / 0.69 vs 0.48 Sharpe; copper 9.66 vs 7.98 / 0.54 vs 0.42) and beat a "
+             "dumb 200dma. BUT the levered DSR gate is not cleanly met: silver DSR 0.919 (marginal, dies n≥40), "
+             "copper 0.745 (fails every n + fails leave-one-crisis-out, 2008-dependent), and the active-minus-B&H "
+             "Sharpe-diff 95% CI straddles zero for BOTH legs (silver [−0.21,+0.50] P=0.77; copper [−0.37,+0.39] "
+             "P=0.53) — the textbook confirmer signature. The parameter-insensitive driver is a gold/silver-ratio "
+             "mean-reversion leg (~0.61 Sharpe). Commodity-uptrend confirmation, not a sized signal; gold stays display.",
+         why_zh="波动率目标杠杆模型在两半样本外均跑赢同资产买入持有（白银/铜 CAGR 与夏普），也跑赢200日均线。"
+                "但杠杆 DSR 未达标（白银 0.919 临界、铜 0.745 失败且依赖2008），主动减买入持有的夏普差 95%区间跨零——确认项特征。",
+         source="active-commodity-lev-phase0.md; engine/active_commodity.py evaluate()", horizon="allocation (daily)",
+         dsr=0.919, sharpe=0.69, wired="commodity_strategies.html active cards (LIVE) — uptrend confirmer",
+         extra=[("silver / copper DSR", "0.919 (marginal) / 0.745 (fail)"),
+                ("active−B&H Sharpe-diff CI", "straddles 0 both legs"), ("driver", "gold/silver-ratio reversion ~0.61")]),
+    _row("Credit-carry & duration-timing yield harvesters",
+         "信用套息与久期择时收益收割", "US rates / credit", "display",
+         why="Drawdown-context yield timers, downgraded to display. Credit Carry cuts MaxDD −14.7% vs −34.2% B&H "
+             "(DSR 0.96 survives) but a dumb 150-250d SMA on HY DOMINATES it on Sharpe (overlay 0.745 < naive "
+             "0.822) — a redundancy kill, its drawdown claim is subsumed. Duration Timing alone would merit "
+             "confirmer (MaxDD −18.1% vs −48.4%, beats baselines, survives leave-one-crisis-out) but DSR 0.83<0.90 "
+             "and it is a one-crisis-2022 story. BOTH give up CAGR vs B&H (excess return negative) — left-tail "
+             "context only, honest-N ~5-6 crises not 5-6k autocorrelated rows.",
+         why_zh="回撤情景的收益择时器，降级为仅展示。信用套息被一条朴素 HY 均线在夏普上压制（冗余否决）；久期 DSR 0.83 且仅2022单一危机。"
+                "两者相对买入持有都让出 CAGR——仅作左尾情景。",
+         source="credit-duration-verify-phase0.md (+ adversarial-refutation); reports/{credit-carry,duration-timing}-phase0.md",
+         horizon="allocation (daily)", wired="strategies.html cards (LIVE) — display/research lens",
+         extra=[("Credit DSR / Sharpe", "0.96 but 0.745 < dumb-200dma 0.822 (LOSES)"),
+                ("Duration DSR", "0.83 (<0.90), one-crisis 2022"), ("both", "give up CAGR vs B&H")]),
+    _row("Turn-of-month equity seasonal",
+         "月末换月季节性", "US equity", "display",
+         why="The famous turn-of-month calendar effect (hold last trading day + first 3, bills otherwise). Real on "
+             "the 1927-2026 _GSPC full sample (Sharpe 0.93 vs 0.42, MaxDD −32% vs −86%, DSR ~1.0, beats 200dma + "
+             "placebos) — but that full-sample DSR is a classic pre-publication DATA-MINED artifact: the edge "
+             "concentrated PRE-2000 and decayed post-publication (Ariel/Lakonishok-Smidt/McConnell-Xu). Post-2010 "
+             "SPY TOM LOSES on Sharpe (0.65 vs 0.86) and surrenders ~9pp CAGR; on tradeable SPY it fails "
+             "leave-one-crisis-out and both-halves-beat-B&H, modern Sharpe inside the 73-89th-pctile noise band. "
+             "The only surviving modern benefit is unconditional drawdown reduction from sitting in bills ~81% of "
+             "days — not a forward edge. Display calendar curiosity.",
+         why_zh="著名的月末换月效应。1927-2026 全样本看似强（夏普 0.93 对 0.42，DSR≈1.0），但这是发表前数据挖掘的产物——边际集中于2000年前并在发表后衰减。"
+                "2010年后在可交易的 SPY 上夏普反而落后、CAGR 让出约9pp。唯一现代收益是空仓约81%带来的回撤下降，并非前瞻边际。",
+         source="turn-of-month-phase0.md (scripts/turn_of_month_phase0.py); data/yahoo/_GSPC.parquet",
+         horizon="seasonal (calendar)", wired="not shipped — display-only seasonal lens",
+         extra=[("DSR", "1.0 full (artifact) / 0.836 post-2000 (FAILS)"),
+                ("post-2010 SPY", "Sharpe 0.65 < B&H 0.86, CAGR −9pp"), ("modern", "noise-band 73-89th pctile")]),
+    _row("Foreign-index trend de-risk basket (JP/DE/FR/KR/TW)",
+         "海外指数趋势降险篮子", "International", "confirmer",
+         why="A 200d-SMA trend overlay on FOREIGN PRICE indices — the US equity-trend kill is US-/total-return-"
+             "specific (net-liquidity subsumes it; foreign price indices have secular bears + no dividend cushion). "
+             "It cut the within-crisis drawdown in 5/5 global crises (Asian-97 +19, Dotcom +40, GFC +43, COVID +25, "
+             "2022 +12pp); pooled MaxDD −57% → −18.5% (1997-2026, 5bps), and the DD-reduction is SKILL not "
+             "mechanical: bootstrap CI [+5.9,+25.1,+48.1]pp excludes 0 (P=0.995) and sits above a random-overlay "
+             "placebo band. HONEST: tail-insurance, NOT scored alpha — CAGR 4.77 vs 4.97 (gives up return), the "
+             "Sharpe edge FAILS split-half (2H 0.57<0.85) and evaporates ex-1998-2003, DSR marginal (0.93→0.87 at "
+             "n=24), edge gone by 15bps cost. Crash-avoidance risk-overlay; there is no intl scored row.",
+         why_zh="对海外价格指数（无股息缓冲、有长期熊市）的200日趋势降险叠加——美式趋势否决是美国/全收益特有的。"
+                "五次全球危机均削减回撤（合计 −57%→−18.5%，自举区间不含零），但属尾部保险而非计分阿尔法：让出 CAGR，夏普未过两半检验，成本15bps即消失。",
+         source="intl-trend-overlay-phase0.md (scripts/intl_trend_overlay_phase0.py); data/intl/",
+         horizon="overlay (daily)", sharpe=0.574, wired="not shipped — crash-avoidance risk-overlay",
+         extra=[("pooled MaxDD", "−18.5% vs −57.0%"), ("DD-reduction CI", "[+5.9,+25.1,+48.1]pp P=0.995"),
+                ("Sharpe edge", "FAILS split-half (2H 0.57<0.85); gone by 15bps cost")]),
+    _row("Capitulation bounce overlay (Fed-put gated)",
+         "投降式反弹叠加（美联储看跌期权门控）", "US equity", "confirmer",
+         why="The capitulation gauge (VRP-extreme + VIX>30 + COT-washout) is a real FDR-validated bounce ALERT "
+             "(63d P-up 75% vs 72% base; book-minus-base +0.66 bps/day, NW t 2.44, p 0.015; split-half + "
+             "leave-one-fire pass). BUT a timed +0.5×/63d Fed-put-gated SPY-overweight does NOT clear the tradeable "
+             "scored bar: the marginal-stream DSR is 0.737 (<0.90), it ties a one-line dumb buy-VIX>30 leg (paired "
+             "NW t −0.64, p 0.52), the book-DSR 0.990 is a red herring (base SPY already 0.992), honest cluster "
+             "count is 21 not 54, and the Fed-put gate LOWERS timed CAGR (12.5→12.0) — a drawdown-risk filter, not "
+             "a return signal. Keep as a confirmer/attention signal feeding the dislocation gate.",
+         why_zh="投降量表（VRP极值+VIX>30+COT洗盘）是经 FDR 验证的反弹预警（63日上涨概率 75% 对基线 72%，t 2.44）。"
+                "但门控择时的 +0.5×/63日超配未达可交易计分线：边际 DSR 0.737，与朴素 VIX>30 持平，门控反而降低择时 CAGR——作为确认/关注信号喂给错位门控。",
+         source="capitulation-overlay-phase0.md (scripts/capitulation_overlay_phase0.py); engine/conditions.py capitulation",
+         horizon="63d (event-timed)", hit=0.75, wired="feeds dislocation drawdown gate (attention signal)",
+         extra=[("timed DSR", "0.737 (FAIL; book-DSR 0.990 ≈ base SPY 0.992)"),
+                ("vs dumb VIX>30", "ties (paired p 0.52)"), ("Fed-put gate", "LOWERS timed CAGR 12.5→12.0")]),
+    _row("BTC on-chain valuation drawdown gauge (MVRV + Reserve-Risk)",
+         "比特币链上估值回撤量表（MVRV+储备风险）", "BTC", "confirmer",
+         why="Rolling-4y percentile of MVRV + Reserve Risk → forward BTC max-drawdown carries genuine sign-stable "
+             "tail-risk content: Spearman −0.089/−0.134/−0.166 at 21/63/126d (monotone, correct sign — rich "
+             "valuation precedes deeper drawdowns), split-half −0.105/−0.169 same-sign AND same-magnitude (rare), "
+             "leave-one-crisis-out {2013,18,22} all hold, FDR q=0, causal (no look-ahead). Reserve Risk is the "
+             "load-bearing leg (−0.267 vs MVRV −0.082). NOT scored: a dumb 200dma trend filter dominates it "
+             "standalone and DSR fails the honest haircut (0.91 at n=18 → 0.78-0.87 at honest 30-72). What keeps it "
+             "a confirmer: the partial-Spearman controlling for BOTH vol-pct AND 200dma is −0.145/−0.232 (genuine "
+             "incremental forward-dd content). A contextual tail-risk / valuation-richness flag, never a sizer.",
+         why_zh="MVRV+储备风险的滚动4年分位→前瞻 BTC 最大回撤，具备符号稳定的尾部风险内容（21/63/126日 单调正确符号，两半同号同量级，逐危机均成立，q=0）。"
+                "但被朴素200日趋势单独压制、DSR 不过诚实折扣；保留为确认项因其在控制波动率与趋势后仍有增量（偏相关 −0.145/−0.232）。作为情景尾部风险标记，非定仓。",
+         source="btc-onchain-dd-phase0.md (scripts/btc_onchain_dd_phase0.py); data/coinmetrics + data/checkonchain",
+         horizon="forward drawdown (21/63/126d)", ic=-0.166, wired="contextual tail-risk / valuation flag (not sized)",
+         extra=[("split-half IC", "−0.105 / −0.169 (same-sign+magnitude)"),
+                ("partial-IC over vol+trend", "−0.145 / −0.232 (incremental)"),
+                ("standalone", "dumb 200dma dominates; DSR fails honest haircut")]),
+    _row("NAAIM manager-exposure de-risk overlay",
+         "NAAIM 经理仓位降险叠加", "US equity", "confirmer",
+         why="De-risking confirmer, NOT alpha. alloc=clip(NAAIM/100,0,1) cuts SPY MaxDD −55.2% → −20.2% "
+             "(block-bootstrap CI [+7.0,+34.2]pp excludes 0, same-sign both halves) and lifts Sharpe over B&H "
+             "(0.78 vs 0.65); the trend-following sign is confirmed (Spearman NAAIM-z vs fwd-63d drawdown +0.218 — "
+             "high exposure precedes SHALLOWER drawdowns, the contrarian read is backwards). BUT it FAILS the "
+             "beats-dumb-baseline gate: it TIES the free 200dma on drawdown (−20.2 vs −20.6) and LOSES on CAGR "
+             "(7.97 vs 8.67), the paired Sharpe-diff vs 200dma is a coin flip (P=0.52), and the edge over B&H leans "
+             "on 2008. A noisy weekly proxy for the same trend a daily SMA captures more cheaply. Lead with "
+             "drawdown-reduction vs B&H, never alpha.",
+         why_zh="降险确认项，非阿尔法。按 NAAIM 仓位削减回撤（−55.2%→−20.2%，自举区间不含零），夏普高于买入持有；趋势跟随符号确认（+0.218）。"
+                "但未过朴素基线：在回撤上与200日均线持平、CAGR 落后，相对200日均线的夏普差为掷硬币。仅以相对买入持有的回撤下降为主。",
+         source="naaim-overlay-phase0.md (scripts/naaim_overlay_phase0.py); data/sentiment/naaim.parquet",
+         horizon="overlay (daily)", ic=0.218, sharpe=0.784, wired="de-risk confirmer vs B&H (not sized over an SMA)",
+         extra=[("MaxDD", "−20.2% vs B&H −55.2% (ties 200dma −20.6%)"),
+                ("vs dumb 200dma", "LOSES CAGR (7.97 vs 8.67); Sharpe-diff coin-flip"),
+                ("edge over B&H", "vanishes ex-2008")]),
+    _row("Stationarized HY-OAS 252d-z de-risk timer",
+         "平稳化 HY-OAS 252日 z 降险择时", "US macro / credit", "display",
+         why="A stationary 252d rolling-z of the HY-OAS de-risk overlay. Split-half stable, DSR 0.978, FDR q=0 — "
+             "but those are COINCIDENT-credit artifacts (HY-OAS is ~0.6-0.7 contemporaneously rank-correlated with "
+             "realized drawdown, so ANY transform survives). REDUNDANT with the incumbent HY-OAS LEVEL pct-rank: "
+             "partial-IC(z252 | LEVEL) = −0.013 (~zero residual) vs partial-IC(LEVEL | z252) = −0.316, and strictly "
+             "WORSE on every axis (Sharpe 0.65<0.77, MaxDD −50.8%>−22.5%). The z normalizes away the persistence "
+             "that defines a credit crisis → de-risk benefit is ~entirely the single 2008 episode (fails "
+             "leave-one-crisis-out, honest-N ~1), and a truly-causal expanding-quantile variant makes the benefit "
+             "VANISH (the docstring's causal claim was an in-sample-threshold lookahead artifact). The level, not "
+             "its z-score, carries the signal.",
+         why_zh="HY-OAS 的平稳 252日 z 降险叠加。看似稳健（DSR 0.978、q=0），但属同期信用伪迹（任意变换都能过）。"
+                "与现有 LEVEL 分位冗余（残差偏相关 ≈0）且各维更差；其降险几乎全靠2008单一危机，真正因果分位变体下收益消失。是水平而非其 z 携带信号。",
+         source="hyoas-z-timer-phase0.md (scripts/hyoas_z_timer_phase0.py); data/archive/BAMLH0A0HYM2.parquet",
+         horizon="overlay (daily)", ic=-0.301, wired="not shipped — graveyard/research lens (redundant with level)",
+         extra=[("partial-IC over incumbent", "≈0 (−0.013)"), ("vs incumbent", "Sharpe 0.65<0.77, MaxDD −50.8%>−22.5%"),
+                ("de-risk", "~one 2008 crisis; causal variant VANISHES")]),
+    _row("Diversified commodity TSMOM book (gold/silver/copper/crude + USD)",
+         "多元商品时间序列动量组合", "Commodity", "confirmer",
+         why="Crisis-convexity context, NOT standalone alpha. A 5-leg 12-1m vol-targeted TSMOM book over 25.5y: "
+             "Sharpe 0.42 / MaxDD −26.4% vs EW-long-commodity B&H 0.34 / −81.7% and each-leg 200dma 0.20 / −36.8% "
+             "— beats both dumb baselines full-sample and pays in crises (2014-16 oil bust +25.5%, 2020 COVID "
+             "+15.7% vs EW −26.5/−73.7%), no purged fold flips negative. BUT the +0.087 Sharpe edge does NOT "
+             "survive the multiple-testing haircut: DSR 0.684 at n=12 and monotone-decreasing in n_trials (never "
+             ">0.90 under any honest count); leave-one-crisis-out INVERTS on COVID (dSharpe +0.087→−0.31), the "
+             "first split-half fails to beat EW-long, and the DD-reduction CI includes 0. Descriptive "
+             "crisis-convexity context.",
+         why_zh="危机凸性情景，非独立阿尔波。5腿12-1月波动率目标 TSMOM 组合（25.5年）：夏普 0.42 对等权多头 0.34，回撤 −26.4% 对 −81.7%，危机中盈利。"
+                "但 +0.087 的夏普边际不过多重检验折扣（DSR 0.684 且随试验数单调下降），逐危机在COVID翻负，首半样本未跑赢——仅作危机凸性情景。",
+         source="commodity-tsmom-phase0.md (scripts/commodity_tsmom_phase0.py); data/yahoo futures",
+         horizon="allocation (daily)", dsr=0.6842, sharpe=0.42, wired="not shipped — crisis-convexity context sleeve",
+         extra=[("MaxDD", "−26.4% vs EW-long −81.7%"), ("DSR", "0.684 (n=12), monotone-fails any honest n_trials"),
+                ("leave-one-crisis-out", "INVERTS on COVID")]),
+
+    # ---- ROUND-2 EXPANSION (2026-06-18 — archetype ports + data-unblock; 0 cleared scored) ----
+    _row("ETH Vector — BTC-Vector optimal grid ported to ETH",
+         "以太坊向量 — BTC向量最优网格移植到ETH", "ETH", "confirmer",
+         why="Faithful port of the live BTC Vector builders (momentum × risk-index long/flat grid + drawdown brake) "
+             "to ETH price + a causal MVRV overlay. Drawdown protection is real and robust: MaxDD −46.8% vs HODL "
+             "−94.0% (2.01× cut), holds in every leave-one-crisis-out and both split-halves, and is NOT a pure "
+             "brake artifact (the raw grid alone cuts DD to −51.6% and out-Sharpes HODL). BUT it does NOT clear "
+             "scored like BTC: DSR 0.55 fails the haircut (vs BTC 0.9965), bootstrap P(Sharpe>0)=0.983 (not 1.0), "
+             "and a brake-matched 200dma TIES its Sharpe (0.82) — the incremental edge over a trivial trend filter "
+             "is DD-only and concentrated in the 2022 LUNA/3AC/FTX cascade (drop-2022 Sharpe edge → −0.04). ETH "
+             "starts 2017-11 (~2-3 cycles); direction is a coin-flip (never claimed). Crypto tail-insurance aligned "
+             "with the scored BTC Vector, not a 2nd scored sleeve.",
+         why_zh="将上线的 BTC 向量构件（动量×风险指数多/空网格+回撤刹车）忠实移植到 ETH。回撤保护真实稳健（−46.8% 对 HODL −94.0%，缩小2.01倍，"
+                "逐危机与两半均成立）。但不像 BTC 达到计分：DSR 0.55，刹车匹配的200日均线持平其夏普，增量仅回撤且集中于2022级联。"
+                "ETH 仅约2-3周期；方向掷硬币。与计分的 BTC 向量对齐的加密尾部保险，非第二个计分项。",
+         source="eth-vector-phase0.md (scripts/eth_vector_phase0.py); engine/btc_signals.py allocation()",
+         horizon="allocation (daily)", dsr=0.5546, sharpe=0.82, hit=0.551, n=3144,
+         wired="signal_lab confirmer — crypto tail-insurance (BTC-Vector aligned), not sized standalone",
+         extra=[("MaxDD", "−46.8% vs −94.0% HODL (2.01× cut)"), ("vs BTC DSR", "0.55 vs 0.9965"),
+                ("brake-matched 200dma", "TIES Sharpe 0.82"), ("drop-2022 Sharpe edge", "−0.04 (concentrated)"),
+                ("direction", "coin-flip — NOT claimed")]),
+    _row("Intl macro stress overlay (pooled JP/EZ/GB/KR)",
+         "国际宏观压力叠加（JP/EZ/GB/KR 合并）", "Intl macro", "confirmer",
+         why="Ported the S&P/Macro Vector de-risk gate (curve inversion + unemployment-Sahm + short-rate) to "
+             "JP/EZ/GB/KR + a pooled inverse-vol sleeve. The pool cuts the tail (MaxDD −39.2% vs B&H −55.4%, "
+             "Sharpe 0.72 vs 0.56) and is split-half stable (+0.70/+0.76) — BUT a plain 200dma long/flat DOMINATES "
+             "it on BOTH Sharpe AND MaxDD (0.80 / −19.6%) in every market and the pool, and even a dumb "
+             "curve-inversion gate beats it (0.78 / −42.5%). The macro gate gives up CAGR (JP 8.09→6.45%) to buy "
+             "drawdown insurance a moving average buys more cheaply. Honest-N ~4 shared crises (JP exactly 3). "
+             "Macro stress overlay, never a timed allocation.",
+         why_zh="将标普/宏观向量降险门控（曲线倒挂+失业Sahm+短端利率）移植到 JP/EZ/GB/KR 及合并组合。合并削减尾部（回撤 −39.2% 对 −55.4%），"
+                "但朴素200日均线在夏普与回撤上均压制它（各市场与合并皆然），且让出 CAGR。诚实样本约4次共享危机。仅作宏观压力叠加，非择时配置。",
+         source="intl-macro-sleeve-phase0.md (scripts/intl_macro_sleeve_phase0.py); data/intl_macro/",
+         horizon="allocation (daily)", sharpe=0.72,
+         wired="signal_lab confirmer — macro stress overlay (never sized standalone)",
+         extra=[("pooled MaxDD", "−39.2% vs −55.4% B&H"), ("dumb 200dma (dominates)", "Sharpe 0.80 / MaxDD −19.6%"),
+                ("binding fail", "beats-200dma — all 4 markets + pool"), ("split-half", "+0.70 / +0.76"),
+                ("honest-N", "~4 shared crises")]),
+    _row("Intl total-return ETF trend de-risk basket (EWJ/EWG/EWU/EWY/EWA/EWQ)",
+         "国际总回报ETF趋势降险篮子", "Intl ETF", "confirmer",
+         why="Tested whether real tradeable USD total-return country ETFs (EWJ/EWG/EWU/EWY/EWA/EWQ, 25.3y, "
+             "dividend-adjusted) rescue the intl trend overlay above confirmer — they do NOT. The pooled 200dma "
+             "de-risk basket is robust tail-insurance (MaxDD −61.9% → −23.9%, DD-reduction bootstrap CI "
+             "[6.2,25.8,50.4] excludes 0, cuts the tail in all 5 crises, leave-one-crisis-out holds) but gives up "
+             "CAGR (6.42% vs 7.91% B&H on a fair T-bill carry) and its Sharpe edge FAILS DSR (0.848<0.90 at honest "
+             "n_trials=17) AND fails same-sign split-half (+0.24 / −0.02 sign-flip). No single ETF clears scored "
+             "(nearest EWY/sma200 is DSR-knife-edge, N=1 country). Confirms the price-index finding: USD "
+             "total-return ETFs lack the secular bear the local indices had, so trend has less downside to exploit. "
+             "Tail-insurance, not scored alpha.",
+         why_zh="检验可交易的美元总回报国家 ETF（EWJ/EWG/EWU/EWY/EWA/EWQ，25.3年，含息）能否把国际趋势叠加提升到计分以上——不能。"
+                "合并200日降险篮子是稳健尾部保险（回撤 −61.9%→−23.9%，区间不含零），但让出 CAGR，夏普边际未过 DSR（0.848）且两半符号翻转。"
+                "美元总回报缺少本地指数的长期熊市，趋势可利用的下行更少。尾部保险，非计分阿尔法。",
+         source="intl-tr-trend-phase0.md (scripts/intl_tr_trend_phase0.py); EWJ/EWG/EWU/EWY/EWA/EWQ (collected)",
+         horizon="overlay (daily)", dsr=0.848, sharpe=0.575,
+         wired="signal_lab confirmer — de-risk basket (not a scored allocation)",
+         extra=[("pooled MaxDD", "−61.9% → −23.9%"), ("DD-reduction CI", "[6.2,25.8,50.4]pp excludes 0"),
+                ("DSR", "0.848 (<0.90, n=17)"), ("split-half Sharpe", "+0.24 / −0.02 (sign-flip)"),
+                ("CAGR give-up", "6.42% vs 7.91% B&H")]),
+    _row("Crypto vol-targeted risk-parity sleeve (BTC+ETH)",
+         "加密波动率目标风险平价组合（BTC+ETH）", "Crypto", "killed",
+         why="A Moreira-Muir vol-managed BTC+ETH sleeve (scale inversely to trailing realized vol, lev cap ~2×). "
+             "Measured and refused: DOMINATED by a dumb 200dma long/flat on BOTH Sharpe AND MaxDD, the "
+             "drawdown-reduction bootstrap CI straddles 0, and the split-half Sharpe sign-FLIPS. Vol-targeting cuts "
+             "crypto drawdown but adds no Sharpe over a trivial trend filter on the ~3-cycle sample. NO-GO.",
+         why_zh="Moreira-Muir 波动率管理的 BTC+ETH 组合。经测量后否决：在夏普与回撤上均被朴素200日均线压制，回撤削减区间跨零，两半夏普符号翻转。"
+                "波动率目标削减回撤但相对简单趋势无夏普增量。NO-GO。",
+         source="crypto-voltarget-phase0.md (scripts/crypto_voltarget_phase0.py)", horizon="allocation (daily)",
+         wired="not shipped",
+         extra=[("vs dumb 200dma", "dominated on Sharpe AND MaxDD"), ("DD-reduction CI", "straddles 0"),
+                ("split-half Sharpe", "sign-flip")]),
 ]
 
 

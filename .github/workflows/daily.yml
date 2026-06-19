@@ -54,6 +54,15 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache
+        # Polygon hourly bars: regenerable + daily-changing, so cached cross-job (like the
+        # breadth caches) instead of committed, to keep the repo from bloating. The collect
+        # job populates it; the engine job restores it to emit site/intraday.
+        uses: actions/cache@v4
+        with:
+          path: data/intraday
+          key: intraday-${{ github.run_id }}
+          restore-keys: intraday-
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -121,6 +130,12 @@ jobs:
           path: data/hk_breadth/_closes_cache.parquet
           key: hk-breadth-closes-engine-${{ github.run_id }}
           restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache (build_chart_data emits site/intraday from it)
+        uses: actions/cache@v4
+        with:
+          path: data/intraday
+          key: intraday-engine-${{ github.run_id }}
+          restore-keys: intraday-
       - name: run regime engine + build dashboard + daily brief (resilient)
         # Self-diagnosing + deploy-resilient: each builder runs isolated; a failure
         # is surfaced as a ::error:: annotation (readable on the run page + via the
@@ -134,6 +149,14 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           set +e
+          # Marker for the libraries-rebuild guard further down. The four non-US search
+          # libraries are each built by their dashboard step (build_china / build_hk, and
+          # build_canada / build_intl via build_vector) AND again by the resilient rebuild
+          # step at the end — duplicate per-name analyze() work (~11m/run). Any
+          # <mkt>stockdata/index.json newer than this marker was (re)built FRESH this run,
+          # so the rebuild step skips it; a market whose dashboard failed keeps its older
+          # (pulled) index.json and is still rebuilt. Set BEFORE any builder runs.
+          touch /tmp/engine_libs_marker
           run_py() {
             local label="$1"; local mod="$2"
             echo "::group::$label"
@@ -322,7 +345,26 @@ jobs:
         # aborting the deploy. Idempotent.
         run: |
           set +e
+          libdir() {
+            case "$1" in
+              scripts.build_china_library) echo site/chinastockdata;;
+              scripts.build_hk_library) echo site/hkstockdata;;
+              scripts.build_canada_library) echo site/canadastockdata;;
+              scripts.build_intl_library) echo site/intlstockdata;;
+            esac
+          }
           for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
+            idx="$(libdir "$mod")/index.json"
+            # Skip a market whose dashboard step already built its library FRESH this run
+            # (index.json newer than the job-start marker). This rebuild is a FAILURE-PATH
+            # safety net — on the success path the same heavy analyze() over the whole
+            # universe already ran, so rebuilding is pure duplicate work. A dashboard that
+            # swallowed an error leaves an older (pulled) index.json => marker is newer =>
+            # we still rebuild and the library ships.
+            if [ -f /tmp/engine_libs_marker ] && [ "$idx" -nt /tmp/engine_libs_marker ]; then
+              echo "::notice::$mod — already built fresh this run ($idx); skipping redundant rebuild"
+              continue
+            fi
             echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; rc=$?; cat /tmp/lib.log; echo "::endgroup::"
             if [ "$rc" -ne 0 ]; then
               echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
@@ -374,6 +416,9 @@ jobs:
           # gitignore + force-add situation as their stockdata libraries (HK needs none —
           # its per-stock JSON carries the chart series inline).
           git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
+          # US 4H intraday chart data (built by build_site -> build_chart_data.emit_intraday
+          # from the cached data/intraday) — gitignored, force-add so the deploy ships it.
+          git add -f site/intraday 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
@@ -509,8 +554,16 @@ jobs:
           # on main so the committed-tree deploy ships it (-f overrides the ignore).
           git add -f site/stockbrief 2>/dev/null || true
           git add data/catalyst/stockbrief_cache 2>/dev/null || true
+          # stock_desk (T9): the accountable-lean notes + the graded track record are written
+          # by build_stock_briefs in THIS job (after the engine job's force-add of site/stockdata
+          # already ran), so they must be force-added HERE or they never land on main → the
+          # aidesk_lean.js panel 404s. The ledger (data/stock_desk, NOT gitignored) must also be
+          # committed or the track record can never accumulate past-due leans. (Same gitignore/
+          # force-add trap as the per-market stock libraries.)
+          git add -f site/stockdata/ai_desk_notes.json site/stockdata/ai_desk_track.json 2>/dev/null || true
+          git add data/stock_desk 2>/dev/null || true
           if git diff --cached --quiet; then echo "no stock-brief changes"; exit 0; fi
-          git commit -m "stock-briefs: AI research briefs $(date -u +%F)"
+          git commit -m "stock-briefs: AI research briefs + accountable leans $(date -u +%F)"
           # best-effort push (own files → rebases clean against engine/factor_series)
           for i in 1 2 3 4 5; do
             if git pull --rebase -X theirs origin main && git push; then
