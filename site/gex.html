@@ -107,6 +107,27 @@
   .gp-rc { margin-top:3px; }
   .gp-chip { margin-top:11px; font-size:12px; line-height:1.5; border:1px solid var(--orange); border-radius:8px; padding:8px 11px; }
 
+  /* directional tilt — a rough, approximate probability lean (risk & context only) */
+  .dt { margin-top:11px; border-top:1px solid var(--line); padding-top:10px; }
+  .dt-head { display:flex; flex-wrap:wrap; align-items:center; gap:5px 12px; justify-content:space-between; }
+  .dt-k { font-size:12.5px; color:var(--muted); }
+  .dt-verdict { font-size:14px; font-weight:700; white-space:nowrap; }
+  .dt-verdict.dt-up { color:var(--up); } .dt-verdict.dt-down { color:var(--down); } .dt-verdict.dt-neu { color:var(--info); }
+  .dt-odds { font-size:11.5px; font-weight:600; color:var(--muted); margin-left:2px; }
+  .dt-meter { position:relative; height:32px; margin:12px 6px 4px; }
+  .dt-track { position:absolute; left:0; right:0; top:13px; height:6px; border-radius:4px; border:1px solid var(--line); background:linear-gradient(90deg,var(--down),var(--panel2) 42%,var(--panel2) 58%,var(--up)); opacity:.55; }
+  .dt-mid { position:absolute; left:50%; top:8px; width:1px; height:16px; background:var(--muted); transform:translateX(-50%); }
+  .dt-needle { position:absolute; top:1px; width:0; height:0; transform:translateX(-50%); border-left:6px solid transparent; border-right:6px solid transparent; }
+  .dt-needle.dt-up { border-top:11px solid var(--up); } .dt-needle.dt-down { border-top:11px solid var(--down); } .dt-needle.dt-neu { border-top:11px solid var(--info); }
+  .dt-end { position:absolute; top:21px; font-size:10px; color:var(--muted); } .dt-end.l { left:0; } .dt-end.r { right:0; }
+  .dt-legs { margin:9px 0 0; padding:0 0 0 2px; list-style:none; }
+  .dt-legs li { font-size:12px; color:var(--muted); line-height:1.5; margin:3px 0; }
+  .dt-legs li .pos { color:var(--up); font-weight:700; } .dt-legs li .neg { color:var(--down); font-weight:700; }
+  .dt-up { color:var(--up); } .dt-down { color:var(--down); } .dt-neu { color:var(--info); } .dt-warn { color:var(--orange); }
+  .dt-risk { margin-top:9px; display:flex; flex-wrap:wrap; gap:3px 10px; align-items:baseline; }
+  .dt-rk { font-size:12.5px; } .dt-rk b { font-weight:700; }
+  .dt-disc { margin-top:9px; font-size:11.5px; line-height:1.5; border:1px dashed var(--orange); border-radius:8px; padding:7px 10px; }
+
   /* ---- volatility hole ---- */
   .vhole { border-left:3px solid var(--info); }
   .vhole.vh-up { border-left-color:var(--up); } .vhole.vh-down { border-left-color:var(--down); }
@@ -349,7 +370,7 @@
 
 <div class="panel">
   <p class="muted xs" style="margin:0"><span class="l-en">Source: Cboe delayed option chains (free, keyless) → engine/gex_model.py + engine/gex_engine.py. Greeks dividend-adjusted; the gamma-flip &amp; profile curve are grid-reevaluated across spot. Daily EOD levels, delayed — OI updates once per day, this is NOT live intraday flow. A regime + levels map, display-only, never a scored signal. See LIMITATIONS.md.</span><span class="l-zh">来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_model.py + engine/gex_engine.py。希腊字母经股息调整；Gamma翻转与曲线在现价网格上重估。每日延迟价位 — OI每日更新一次，并非实时盘中流动。体制+价位地图，仅供展示，绝非评分信号。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-19 13:39 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-19 21:25 UTC</p>
 </div>
 
 <div class="floaty-tip" id="gx-tip"></div>
