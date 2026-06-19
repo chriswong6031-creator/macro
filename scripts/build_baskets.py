@@ -47,63 +47,6 @@ def _write_score_snapshot(ti: dict) -> None:
     p.write_text(json.dumps(slim, separators=(",", ":"), default=str))
 
 
-_CONV_CACHE: dict = {}
-
-
-def _member_conviction(ticker: str) -> dict | None:
-    """Pluck the per-stock Conviction Profile from site/stockdata/<T>.json (already computed
-    by build_stock_library). None if the name has no library record (off-index / thin)."""
-    if ticker in _CONV_CACHE:
-        return _CONV_CACHE[ticker]
-    val = None
-    p = config.ROOT / "site" / "stockdata" / (ticker + ".json")
-    if p.exists():
-        try:
-            c = json.loads(p.read_text()).get("conviction") or {}
-            if c:
-                val = {"score": c.get("score"), "band": c.get("band"),
-                       "band_zh": c.get("band_zh"),
-                       "verdict": c.get("verdict") if isinstance(c.get("verdict"), str) else None,
-                       "verdict_zh": c.get("verdict_zh"),
-                       "cycle_blocked": bool(c.get("cycle_blocked")),
-                       "entry_pct": ((c.get("axes") or {}).get("entry") or {}).get("pct"),
-                       "trust": (c.get("trust_tier") or {}).get("tier")}
-        except Exception:  # noqa: BLE001
-            val = None
-    _CONV_CACHE[ticker] = val
-    return val
-
-
-def _build_detail_pages(data: dict, site: Path, env) -> int:
-    """One site/basket/<id>.html per theme: holdings scoreboard w/ per-member conviction,
-    advanced textures, signals, score history + change timeline. Additive."""
-    from engine import basket_history, basket_score
-    ti = data.get("theme_intel") or {}
-    tmap = {t["id"]: t for t in ti.get("themes", [])}
-    out_dir = site / "basket"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    tmpl = env.get_template("basket_detail.html.j2")
-    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    n = 0
-    for b in data.get("baskets", []):
-        bid = b["id"]
-        members = [{**m, "conviction": _member_conviction(m["symbol"])} for m in b.get("members", [])]
-        detail = {
-            "basket": b, "members": members, "theme": tmap.get(bid, {}),
-            "act_now": basket_score.act_now_stocks(members, tmap.get(bid, {})),
-            "history": basket_history.score_series(bid, "score"),
-            "timeline": basket_history.change_timeline(bid),
-            "as_of": ti.get("as_of") or b.get("created"),
-            "market_concentration": ti.get("market_concentration") or {},
-        }
-        html = tmpl.render(detail_json=json.dumps(detail, separators=(",", ":"), default=str),
-                           basket_name=b.get("name", bid), generated_utc=built)
-        (out_dir / (bid + ".html")).write_text(html)
-        n += 1
-    log.info("wrote %d theme detail pages -> %s/basket/", n, site)
-    return n
-
-
 def main() -> int:
     site = config.ROOT / "site"
     try:

@@ -1,10 +1,11 @@
 {
-  "cash": 0.5,
+  "cash": 0.43,
   "crash": false,
   "eligible": [
     "ai_infra",
     "ai_neoclouds",
     "ai_semiconductors",
+    "critical_minerals",
     "crypto",
     "cybersecurity",
     "data_center_power",
@@ -15,25 +16,30 @@
     "managed_care",
     "memory_storage",
     "non_ai_tech",
+    "obesity_glp1",
     "power_grid",
+    "quantum_computing",
     "regional_banks",
     "reshoring",
     "robotics_automation",
     "semicap_equipment",
+    "space_economy",
     "travel"
   ],
   "held": [
     "memory_storage",
     "ai_neoclouds",
-    "non_ai_tech",
-    "data_center_power"
+    "critical_minerals",
+    "non_ai_tech"
   ],
   "leader": "memory_storage",
   "names": {
+    "ai_agents": "AI Agents & Applications",
     "ai_infra": "AI Infrastructure",
     "ai_neoclouds": "AI Neoclouds & HPC Hosting",
     "ai_semiconductors": "AI Semiconductors",
     "ai_software": "AI Software & Platforms",
+    "critical_minerals": "Critical Minerals & Rare Earths",
     "crypto": "Crypto & Digital Assets",
     "cybersecurity": "Cybersecurity",
     "data_center_power": "Data-Center Power & Cooling",
@@ -47,13 +53,17 @@
     "non_ai_software": "Non-AI Software",
     "non_ai_tech": "Non-AI Tech & Hardware",
     "nuclear_power": "Nuclear & SMR Power",
+    "obesity_glp1": "GLP-1 & Obesity",
     "payments_fintech": "Payments & Fintech",
     "power_grid": "Power & Grid Buildout",
+    "quantum_computing": "Quantum Computing",
     "regional_banks": "Regional Banks",
     "reshoring": "Reshoring & Industrial Capex",
     "retail": "Retail",
     "robotics_automation": "Robotics & Automation",
     "semicap_equipment": "Semiconductor Equipment (WFE)",
-    "travel": "Travel & Experiences"
+    "space_economy": "Space Economy",
+    "travel": "Travel & Experiences",
+    "uranium_miners": "Uranium & Nuclear Fuel"
   }
 }
