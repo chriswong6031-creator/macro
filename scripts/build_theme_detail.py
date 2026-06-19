@@ -75,6 +75,7 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
             "as_of": ti.get("as_of") or b.get("created"),
             "market_concentration": ti.get("market_concentration") or {},
             "stock_base": stock_base, "back": "../baskets.html" if region == "us" else f"../baskets_{region}.html",
+            "region": region,                          # for the cross-market narrative chip lookup
         }
         html = tmpl.render(detail_json=json.dumps(detail, separators=(",", ":"), default=str),
                            basket_name=b.get("name", bid), generated_utc=built,
