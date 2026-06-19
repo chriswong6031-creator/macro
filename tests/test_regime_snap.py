@@ -24,15 +24,22 @@ TEMPLATES = _ROOT / "templates"
 
 def _render_card(regime_snap, mode="macro"):
     """Render just the relief-radar section of dashboard.html.j2 (with the t()/help()
-    macro header) — mirrors the Fear/Euphoria render harness."""
+    macro header) — mirrors the Fear/Euphoria render harness.
+
+    Since the macro-terminal redesign (#277) the relief radar lives as the
+    `cb-p-relief` pane inside the consolidated `#now-board` panel, wrapped by the
+    page-level `{% if mode != 'stocks' %}` guard (it is hidden on the stocks page).
+    We slice out just that pane (self-contained on `regime_snap` + the t()/help()
+    macros) and re-apply the mode guard so the hidden-on-stocks behaviour holds."""
     from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]
-    start = src.index("<!-- ===== REGIME SNAP / RELIEF RADAR")
-    end = src.index("<!-- ===== FEAR <-> EUPHORIA SYNTHESIS")
+    start = src.index('<div class="cb-pane cb-p-relief"')
+    end = src.index("{% endif %}{# /mode != stocks — combined Now board")
+    section = "{% if mode != 'stocks' %}" + src[start:end] + "{% endif %}"
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
-    return env.from_string(macros + src[start:end]).render(
+    return env.from_string(macros + section).render(
         regime_snap=regime_snap, mode=mode)
 
 
