@@ -58,6 +58,23 @@ def main() -> int:
                  len(briefs), ok, len(briefs) - ok)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("stock-brief precompute failed: %s", e)
+
+    # Accountable AI JUDGMENT layer on the top picks (engine.stock_desk; T9) — one extra
+    # DeepSeek call that turns the standout board into FALSIFIABLE, scored leans + a track
+    # record. Runs here (the parallel LLM job, after build_site wrote the fresh
+    # us_standouts.json) so it never gates the deploy. Gated by stock_desk.enabled() +
+    # its own interval; always grades the past-due ledger. Additive, never fatal.
+    try:
+        from engine import stock_desk
+        if stock_desk.enabled():
+            out = stock_desk.run(persist=True, root=config.ROOT)
+            if out:
+                log.info("stock_desk: %d accountable lean(s) on the top picks (%s)",
+                         len(out.get("notes") or []), out.get("degraded") or "ok")
+        else:
+            log.info("stock_desk disabled — skipping (additive)")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("stock_desk run failed: %s", e)
     return 0
 
 
