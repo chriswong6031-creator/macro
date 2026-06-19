@@ -1,20 +1,29 @@
-"""Build the dealer-gamma "magnets" board -> site/gex.html (P3, display-only).
+"""Build the Options Desk — dealer-gamma + options-flow page -> site/gex.html (display-only).
 
-Standalone (like build_discovery.py). Fetches the live Cboe delayed chain for a set
-of liquid underlyings, runs engine.gex_engine.compute_gex for the summary AND a
-per-strike net-GEX ladder (the dealer-wall profile), then renders templates/gex.html.j2.
+Standalone (like build_discovery.py). For a broad universe of liquid optionable
+underlyings it fetches the live Cboe delayed chain, runs engine.gex_model (the rich
+modeling layer: net-gamma profile curve, GEX-by-strike walls, strike×expiry heatmap,
+vol smile + IV term structure, expected move, max-pain per expiry), and writes:
 
-HONEST FRAMING (carried onto the page): daily EOD/delayed levels, NOT live intraday
-flow; a VOL-REGIME + LEVELS MAP, NOT a buy list; the dealer long-call/short-put SIGN
-is an unobservable assumption (fragile for single names). See LIMITATIONS.md.
+  * site/gex/<KEY>.json  — one rich payload per underlying, fetched on demand by the
+                           page so any prebuilt ticker is instantly look-up-able.
+  * site/gex/index.json  — a lightweight manifest (regime / net-GEX / flip / IV per
+                           symbol) that drives the at-a-glance board + the search.
+  * site/gex.html        — the interactive shell (templates/gex.html.j2 + site/gex.js).
+
+HONEST FRAMING (carried onto the page): daily delayed Cboe levels, NOT live intraday
+flow; a VOL-REGIME + LEVELS MAP, not a buy list; the dealer long-call/short-put SIGN is
+an unobservable assumption — robust for indices, fragile for single names. See
+LIMITATIONS.md.
 
 Run: .venv/bin/python -m scripts.build_gex_board
 """
 from __future__ import annotations
 
+import json
 import logging
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -28,80 +37,145 @@ from lib import config  # noqa: E402
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_gex_board")
 
-# (cboe symbol, en label, zh label) — indices first, then liquid single names
-BOARD = [("_SPX", "S&P 500", "标普500"), ("SPY", "SPY", "标普ETF"),
-         ("QQQ", "QQQ", "纳指ETF"), ("IWM", "IWM", "小盘ETF"),
-         ("AAPL", "Apple", "苹果"), ("NVDA", "Nvidia", "英伟达"), ("TSLA", "Tesla", "特斯拉")]
-LADDER_WINDOW = 0.08   # ±8% of spot for the dealer-wall profile
-LADDER_MAX = 26        # strike rows shown
+# (cboe symbol, key, en label, zh label, group). cboe index tickers carry a leading
+# underscore (_SPX). Groups drive the board's section headers + search filters. A
+# failed/thin symbol is skipped gracefully — partial coverage is still useful.
+UNIVERSE = [
+    ("_SPX", "SPX", "S&P 500", "标普500", "Index"),
+    ("_NDX", "NDX", "Nasdaq 100", "纳指100", "Index"),
+    ("_RUT", "RUT", "Russell 2000", "罗素2000", "Index"),
+    ("SPY", "SPY", "S&P 500 ETF", "标普500 ETF", "ETF"),
+    ("QQQ", "QQQ", "Nasdaq 100 ETF", "纳指100 ETF", "ETF"),
+    ("IWM", "IWM", "Russell 2000 ETF", "小盘ETF", "ETF"),
+    ("DIA", "DIA", "Dow ETF", "道指ETF", "ETF"),
+    ("SMH", "SMH", "Semiconductors ETF", "半导体ETF", "Sector ETF"),
+    ("XLK", "XLK", "Technology ETF", "科技板块ETF", "Sector ETF"),
+    ("XLF", "XLF", "Financials ETF", "金融板块ETF", "Sector ETF"),
+    ("XLE", "XLE", "Energy ETF", "能源板块ETF", "Sector ETF"),
+    ("GLD", "GLD", "Gold ETF", "黄金ETF", "Macro ETF"),
+    ("TLT", "TLT", "20Y+ Treasury ETF", "长债ETF", "Macro ETF"),
+    ("HYG", "HYG", "High-Yield Credit ETF", "高收益债ETF", "Macro ETF"),
+    ("ARKK", "ARKK", "ARK Innovation ETF", "ARK创新ETF", "Macro ETF"),
+    ("NVDA", "NVDA", "Nvidia", "英伟达", "Mega-cap Tech"),
+    ("AAPL", "AAPL", "Apple", "苹果", "Mega-cap Tech"),
+    ("MSFT", "MSFT", "Microsoft", "微软", "Mega-cap Tech"),
+    ("AMZN", "AMZN", "Amazon", "亚马逊", "Mega-cap Tech"),
+    ("GOOGL", "GOOGL", "Alphabet", "谷歌", "Mega-cap Tech"),
+    ("META", "META", "Meta", "Meta", "Mega-cap Tech"),
+    ("TSLA", "TSLA", "Tesla", "特斯拉", "Mega-cap Tech"),
+    ("AMD", "AMD", "AMD", "超威", "Semis & AI"),
+    ("AVGO", "AVGO", "Broadcom", "博通", "Semis & AI"),
+    ("MU", "MU", "Micron", "美光", "Semis & AI"),
+    ("SMCI", "SMCI", "Super Micro", "超微电脑", "Semis & AI"),
+    ("MRVL", "MRVL", "Marvell", "迈威尔", "Semis & AI"),
+    ("ARM", "ARM", "Arm Holdings", "Arm", "Semis & AI"),
+    ("PLTR", "PLTR", "Palantir", "Palantir", "Popular / Retail"),
+    ("COIN", "COIN", "Coinbase", "Coinbase", "Popular / Retail"),
+    ("MSTR", "MSTR", "MicroStrategy", "微策略", "Popular / Retail"),
+    ("NFLX", "NFLX", "Netflix", "奈飞", "Popular / Retail"),
+    ("BABA", "BABA", "Alibaba", "阿里巴巴", "Popular / Retail"),
+    ("HOOD", "HOOD", "Robinhood", "Robinhood", "Popular / Retail"),
+    ("UBER", "UBER", "Uber", "优步", "Popular / Retail"),
+    ("GME", "GME", "GameStop", "游戏驿站", "Popular / Retail"),
+]
+
+# dividend yields used by the dividend-adjusted greeks (small effect; names -> 0)
+DIV_Q = {"SPX": 0.013, "SPY": 0.013, "QQQ": 0.006, "IWM": 0.013, "DIA": 0.018,
+         "NDX": 0.008, "RUT": 0.013, "GLD": 0.0, "TLT": 0.038, "HYG": 0.058,
+         "XLK": 0.006, "XLF": 0.016, "XLE": 0.032, "SMH": 0.004}
+
+HISTORY_DAYS = 40  # net-GEX history sparkline depth (from the stored daily summary)
 
 
-def _f(x, n=2):
-    return round(float(x), n) if isinstance(x, (int, float)) and x is not None and x == x else None
-
-
-def _ladder(chain: pd.DataFrame, spot: float, cfg: dict) -> list[dict]:
-    """Per-strike net GEX (the call-wall / put-wall profile) within ±8% of spot."""
-    w = LADDER_WINDOW
-    c = chain[(chain["T"] > 0) & chain["K"].between(spot * (1 - w), spot * (1 + w))
-              & (chain["oi"] > 0) & chain["gamma"].notna()].copy()
-    if c.empty:
+def _history(key: str) -> list[dict]:
+    """Last HISTORY_DAYS of stored daily {date, net_gex_bn, regime} for the sparkline.
+    Reads the cboe summary parquet the daily collector accrues; empty if absent."""
+    try:
+        from lib import store
+        df = store.read("cboe", f"gex_{key}")
+        if df is None or not len(df) or "net_gex_bn" not in df.columns:
+            return []
+        df = df.tail(HISTORY_DAYS)
+        return [{"date": str(pd.Timestamp(i).date()),
+                 "net_gex_bn": (round(float(v), 2) if pd.notna(v) else None),
+                 "regime": (str(r) if pd.notna(r) else None)}
+                for i, v, r in zip(df.index, df["net_gex_bn"],
+                                   df.get("gamma_regime", pd.Series([None] * len(df))))]
+    except Exception:  # noqa: BLE001 — history is a nicety, never fatal
         return []
-    mult, pm = cfg.get("contract_multiplier", 100.0), cfg.get("pct_move", 0.01)
-    sign = np.where(c["is_call"], 1.0, -1.0)
-    base = c["gamma"] * c["oi"] * mult * spot ** 2 * pm
-    c["net_gex"] = sign * base
-    c["abs_dg"] = base.abs()
-    g = (c.groupby("K").agg(net_gex=("net_gex", "sum"), abs_dg=("abs_dg", "sum"))
-         .reset_index().sort_values("abs_dg", ascending=False).head(LADDER_MAX)
-         .sort_values("K", ascending=False))
-    mx = float(g["net_gex"].abs().max()) or 1.0
-    return [{"strike": float(r["K"]), "net_gex_mn": round(float(r["net_gex"]) / 1e6, 1),
-             "pct": round(float(r["net_gex"]) / mx * 100, 1),
-             "side": "call" if r["net_gex"] >= 0 else "put"} for _, r in g.iterrows()]
 
 
-def _vm(adapter, sym, label, zh) -> dict | None:
-    from collectors.cboe import GEX_Q
-    from engine.gex_engine import compute_gex
+def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
+    """Fetch + model one underlying -> (full payload, manifest row). None on failure."""
+    from engine.gex_model import build_model
+    sym, key = row["sym"], row["key"]
     try:
         chain, spot = adapter._chain(sym)
     except Exception as e:  # noqa: BLE001 — partial board still useful
-        log.warning("gex board: %s chain failed: %s", sym, e)
+        log.warning("gex: %s chain failed: %s", sym, e)
         return None
-    gcfg = adapter.cfg["gex"]
-    ecfg = {k: gcfg[k] for k in ("contract_multiplier", "pct_move",
-                                 "strike_window_pct", "max_expiry_days") if k in gcfg}
-    summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043), "q": GEX_Q.get(sym, 0.0)})
-    if summ.get("tier") in (None, "no_options"):
+    gcfg = adapter.cfg.get("gex", {})
+    cfg = {"q": DIV_Q.get(key, 0.0), "r": 0.043,
+           "max_expiry_days": gcfg.get("max_expiry_days", 365)}
+    meta = {"key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"],
+            "asof": str(date.today())}
+    model = build_model(chain, spot, cfg, meta=meta, history=_history(key))
+    if model is None:
+        log.warning("gex: %s modeled empty — skipping", sym)
         return None
-    return {"key": sym.lstrip("_"), "label": label, "zh": zh,
-            "is_index": sym in ("_SPX", "SPY", "QQQ", "IWM"),
-            "spot": _f(summ.get("spot")), "regime": summ.get("gamma_regime"), "tier": summ.get("tier"),
-            "net_gex_bn": _f(summ.get("net_gex_bn")), "gamma_flip": _f(summ.get("gamma_flip")),
-            "dist_to_flip_pct": _f(summ.get("dist_to_flip_pct")), "magnet_up": _f(summ.get("magnet_up")),
-            "magnet_down": _f(summ.get("magnet_down")), "charm_anchor": _f(summ.get("charm_anchor")),
-            "iv30": (round(summ["iv30"] * 100, 1) if summ.get("iv30") is not None else None),
-            "put_call_oi_ratio": _f(summ.get("put_call_oi_ratio")), "max_pain": _f(summ.get("max_pain")),
-            "top_oi_share": _f(summ.get("top_oi_share"), 3), "n_strikes": summ.get("n_strikes"),
-            "ladder": _ladder(chain, spot, ecfg)}
+    s = model["summary"]
+    em = model["expected_move"]
+    manifest = {
+        "key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"],
+        "spot": s["spot"], "regime": s["regime"], "tier": s["tier"],
+        "net_gex_bn": s["net_gex_bn"], "gamma_flip": s["gamma_flip"],
+        "dist_to_flip_pct": s["dist_to_flip_pct"], "iv30": s["iv30"],
+        "call_wall": s["call_wall"], "put_wall": s["put_wall"],
+        "max_pain": s["max_pain"], "daily_move_pct": em.get("daily_pct"),
+        "put_call_oi_ratio": s["put_call_oi_ratio"], "asof": str(date.today()),
+    }
+    return model, manifest
 
 
 def main() -> int:
     from collectors.cboe import GexAdapter
     adapter = GexAdapter()
-    vms = [v for v in (_vm(adapter, s, l, z) for s, l, z in BOARD) if v]
-    if not vms:
-        log.error("gex board: no symbols computed; skipping")
+    site = config.ROOT / config.load()["storage"]["site_dir"]
+    out_dir = site / "gex"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest: list[dict] = []
+    for sym, key, en, zh, grp in UNIVERSE:
+        res = _build_one(adapter, {"sym": sym, "key": key, "en": en, "zh": zh, "grp": grp})
+        if not res:
+            continue
+        model, mrow = res
+        (out_dir / f"{key}.json").write_text(json.dumps(model, default=float, separators=(",", ":")))
+        manifest.append(mrow)
+        log.info("gex: %s ok (regime=%s net=%.2f flip=%s)",
+                 key, mrow["regime"], mrow["net_gex_bn"] or 0, mrow["gamma_flip"])
+
+    if not manifest:
+        log.error("gex: no symbols computed; leaving prior site/gex.html in place")
         return 0
+
+    (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(td=td, tr=tr)
-    html = env.get_template("gex.html.j2").render(symbols=vms, built=built)
-    site = config.ROOT / config.load()["storage"]["site_dir"]
+    # group order for the board sections
+    groups = []
+    for m in manifest:
+        if m["grp"] not in groups:
+            groups.append(m["grp"])
+    html = env.get_template("gex.html.j2").render(
+        manifest=manifest, groups=groups, built=built,
+        default_key=manifest[0]["key"], manifest_json=json.dumps(manifest, default=float))
     (site / "gex.html").write_text(html)
-    log.info("wrote %s/gex.html (%d symbols: %s)", site, len(vms), ", ".join(v["key"] for v in vms))
+    log.info("wrote %s/gex.html + %d per-symbol payloads (%s)",
+             site, len(manifest), ", ".join(m["key"] for m in manifest))
     return 0
 
 

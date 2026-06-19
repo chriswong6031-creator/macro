@@ -319,6 +319,16 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   color: var(--text); text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
 .nav-dd-menu a .d { display: block; font-size: 11px; font-weight: 400; color: var(--muted); margin-top: 1px; }
 .nav-dd-menu a:hover, .nav-dd-menu a.active { background: color-mix(in srgb, var(--link) 12%, var(--panel2)); }
+/* 3rd tier: a .nav-dd nested inside a .nav-dd-menu (Other Assets ▸ Bitcoin
+   Vector / Commodities). On desktop the child menu flies out to the right of
+   its row; ::after bridges the gap so the cursor can cross into it. */
+.nav-dd-menu .nav-sub { display: block; position: relative; }
+.nav-dd-menu .nav-sub > a.nav-sub-trig { display: flex; align-items: center; }
+.nav-dd-menu .nav-sub > a.nav-sub-trig .caret-r { margin-left: auto; padding-left: 12px; font-size: 10px;
+  opacity: .55; flex: none; transition: transform .2s; }
+.nav-dd-menu .nav-sub:hover > a.nav-sub-trig .caret-r { opacity: .9; transform: translateX(2px); }
+.nav-dd-menu .nav-sub > .nav-dd-menu { top: -7px; left: 100%; z-index: 95; }
+.nav-dd-menu .nav-sub::after { content: ""; position: absolute; top: 0; left: 100%; width: 12px; height: 100%; }
 @media (max-width: 560px) {   /* no hover on touch — render the submenu inline-expanded */
   .nav-dd { display: block; }
   .nav-dd > a.nav-link .caret { display: none; }
@@ -358,6 +368,17 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .nav-sugg .row .stt { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 6px;
   white-space: nowrap; }
 .nav-sugg .empty { padding: 11px 13px; color: var(--muted); font-size: 12.5px; }
+
+/* ---- responsive data tables ------------------------------------------------
+   Wide data tables (screeners, scoreboards, flow tables) are wrapped by theme.js
+   in this container so they scroll horizontally WITHIN their card on narrow screens
+   instead of bleeding past the viewport. width:100% tables keep filling the card on
+   desktop (content fits, no scroll); only genuine overflow scrolls. The thin styled
+   scrollbar hints the table is scrollable. */
+.tbl-scroll { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain; }
+.tbl-scroll::-webkit-scrollbar { height: 6px; }
+.tbl-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 6px; }
 
 /* ---- live table filter (injected by tablesort.js into long data tables) -----
    The little searchbar that auto-appears above any scorecard / data table with

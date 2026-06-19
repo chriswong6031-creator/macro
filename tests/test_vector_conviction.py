@@ -11,9 +11,13 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.build_vector import _conviction, _conviction_why, _tape_sign  # noqa: E402
+from scripts.build_vector import _conviction, _conviction_why, _cond_up_prob, _tape_sign  # noqa: E402
+from lib import config  # noqa: E402
 
 MIN_N = 20
 
@@ -78,9 +82,31 @@ def test_missing_prob_is_tossup():
     assert c["state"] == "TOSS-UP" and c["p_bull"] == 50
 
 
+def _prior_df(phase, pct):
+    idx = pd.date_range("2020-01-01", periods=80, freq="D")
+    return pd.DataFrame({"close": pd.Series(np.linspace(100, 110, 80), index=idx),
+                         "momentum_state": "bull",
+                         "cphase_phase": phase, "cphase_pct": pct}, index=idx)
+
+
+def test_cycle_phase_prior_sign_and_cap():
+    """The bottom-anchored 1064/364 phase drives the soft cycle prior: markup up,
+    markdown down, flipping inside the top/bottom reversal zone — never beyond the cap."""
+    cfg = config.load()["vector"]["scenarios"]
+    cap, h = cfg["cycle_tilt_pp"], cfg["prob_horizon_d"]
+    tilt = lambda ph, p: _cond_up_prob(_prior_df(ph, p), cfg, h)[3]
+    assert tilt("markup", 0.40) == cap        # mid-markup tilts up by the full cap
+    assert tilt("markdown", 0.40) == -cap     # mid-markdown tilts down
+    assert tilt("markdown", 0.95) == cap      # bottom reversal zone flips to up
+    assert tilt("markup", 0.95) == -cap       # top reversal zone flips to down
+    assert all(abs(tilt(*c)) <= cap for c in
+               [("markup", 0.4), ("markdown", 0.4), ("markdown", 0.95), ("markup", 0.95)])
+
+
 if __name__ == "__main__":
     for fn in [test_band_table, test_direction_and_caps, test_tape_sign,
-               test_why_line_is_honest, test_missing_prob_is_tossup]:
+               test_why_line_is_honest, test_missing_prob_is_tossup,
+               test_cycle_phase_prior_sign_and_cap]:
         fn()
         print(f"  ok  {fn.__name__}")
     print("all vector conviction tests passed")

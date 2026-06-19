@@ -224,14 +224,33 @@ def insider_signals(mktcap: pd.Series | None, *, months: int | None = None) -> d
 
 # universe → which breadth caches define the price/name set. 'broad' = the full
 # S&P 1500 (large+mid+small); 'narrow' = the S&P 500 large-cap (breadth cache only).
-# The keyword default is 'broad' so every existing caller is unchanged.
+# 'deep' = the survivorship-BIASED deep-history close panel (data/edgar/sue_deep_closes
+# .parquet — max-history adjusted closes for the EDGAR EPS universe, ~2011-2026), used by
+# the deep-history factor IC scorecard so the whole zoo's IC/FDR is judged on >10y rather
+# than the ~3y rolling breadth cache. Delisted names are absent (yahoo only serves the
+# currently-listed), so the deep read is an OPTIMISTIC bound — see scripts/sue_deep_phase0.py
+# + reports/sue-deep-history-phase0.md. The keyword default is 'broad' so every existing
+# caller is unchanged.
 _UNIVERSE_GROUPS = {"broad": ("breadth", "smallcap_breadth", "midcap_breadth"),
                     "narrow": ("breadth",)}
+
+# Deep-history close panel — an offline backfill (not one of the daily breadth caches).
+_DEEP_CLOSES_REL = ("edgar", "sue_deep_closes.parquet")
 
 
 def _closes(universe: str = "broad") -> pd.DataFrame:
     """Close matrix from the breadth caches. 'broad' = combined S&P 1500;
-    'narrow' = the S&P 500 large-cap cache only."""
+    'narrow' = the S&P 500 large-cap cache only; 'deep' = the survivorship-biased
+    deep-history panel (~2011-2026) used by the deep factor IC scorecard. The 'deep'
+    panel is an offline artifact — returns an empty frame when it is not present (the
+    caller then keeps the committed deep scorecard rather than writing a shallow one)."""
+    if universe == "deep":
+        p = config.data_dir().joinpath(*_DEEP_CLOSES_REL)
+        if not p.exists():
+            return pd.DataFrame()
+        out = pd.read_parquet(p)
+        out.index = pd.to_datetime(out.index)
+        return out.loc[:, ~out.columns.duplicated()].sort_index()
     frames = []
     for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
         p = config.data_dir() / grp / "_closes_cache.parquet"
@@ -244,8 +263,13 @@ def _closes(universe: str = "broad") -> pd.DataFrame:
 
 
 def _names_sectors(universe: str = "broad") -> dict[str, tuple[str, str]]:
+    # the deep panel carries no constituents table of its own → reuse the broad S&P 1500
+    # labels (best-effort; the IC math only needs the numeric factor columns, so any
+    # unlabeled deep-only ticker simply falls back to its symbol).
+    groups = (_UNIVERSE_GROUPS["broad"] if universe == "deep"
+              else _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]))
     out: dict[str, tuple[str, str]] = {}
-    for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
+    for grp in groups:
         p = config.data_dir() / grp / "constituents.parquet"
         if p.exists():
             meta = pd.read_parquet(p)
@@ -355,8 +379,11 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
     # price-only factors
     raw["low_vol"] = -_winsor_z(d["vol"], cap)
     raw["low_beta"] = -_winsor_z(d["beta"], cap)
-    # positioning: FINRA short interest (high days-to-cover / short % = bearish)
-    si = _short_interest()
+    # positioning: FINRA short interest (high days-to-cover / short % = bearish).
+    # OMITTED for the deep-history universe: FINRA SI has no point-in-time panel, so
+    # reusing the latest snapshot at a 2013 rebalance would be look-ahead. The live
+    # (asof=None) page and the shallow backtest keep the current snapshot as before.
+    si = None if universe == "deep" else _short_interest()
     if si is not None:
         dtc = si["days_to_cover"].reindex(d.index)
         si_pct = si["short_shares"].reindex(d.index) / d["shares"].where(d["shares"] > 0)

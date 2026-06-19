@@ -149,9 +149,13 @@ jobs:
           # S&P allocation deep-dive (spvector.html) + data/regime/spvector_latest.json,
           # BEFORE build_site so the macro page's allocation card reads live numbers.
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector
-          # leak-free point-in-time IC scorecard -> data/edgar/ic_scorecard.json, read by
-          # build_site's factors page. ~4s, only moves quarterly; additive (never blocks build_site).
-          python -m scripts.factor_ic_scorecard --quick || echo "ic scorecard skipped (additive)"
+          # Deep-history (2011-2026) leak-free IC scorecard -> data/edgar/ic_scorecard.json, read by
+          # build_site's factors page. --deep reads the offline deep close panel (data/edgar/
+          # sue_deep_closes.parquet — gitignored, NOT rebuilt in daily CI); when it is absent the step
+          # exits WITHOUT writing, keeping the committed deep scorecard rather than clobbering it with a
+          # shallow ~3y run. Regenerate offline: python -m scripts.sue_deep_phase0 (backfill the panel)
+          # then python -m scripts.factor_ic_scorecard --deep --start 2011. Additive (never blocks build).
+          python -m scripts.factor_ic_scorecard --deep || echo "ic scorecard skipped (additive)"
           # NOTE: build_factor_series (the ~22-min month-end walk = compute_factors x ~38
           # month-ends x 2 universes) was MOVED to its own parallel `factor_series` job
           # below — it, NOT residual-alpha, was the real engine bottleneck. build_site reads
@@ -217,10 +221,23 @@ jobs:
         # registry-driven static blog/article section -> site/reports.html + one page per
         # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
         run: python -m scripts.build_reports || echo "reports skipped (additive)"
+      - name: policy intent desk (LLM realpolitik leans + scorer; gated, resilient)
+        # BEFORE build_policy_watch so the page picks up site/policy_intent.json. Reads
+        # data/policy/intel.json + latest.json -> dated falsifiable leans (proxy vs SPY)
+        # in data/policy_intent/theses.jsonl, then scores past-due leans. NO-OP unless
+        # config policy_intent_desk.enabled AND DEEPSEEK_API_KEY are set. Never aborts.
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set +e
+          python -m engine.policy_intent_desk > /tmp/pid.log 2>&1; rc=$?
+          cat /tmp/pid.log
+          [ "$rc" -ne 0 ] && echo "::warning title=policy_intent_desk::rc=$rc (non-fatal)"
+          exit 0
       - name: fed & policy watch (build_policy_watch)
         # realpolitik Fed + Administration intel page -> site/policy_watch.html from the
         # curated data/policy/intel.json substrate (falsifiable prediction ledger + rotation
-        # map). Display/context-only; additive, returns 0 on any error.
+        # map) + the intent-desk output. Display/context-only; additive, returns 0 on any error.
         run: python -m scripts.build_policy_watch || echo "policy watch skipped (additive)"
       - name: cross-asset vector (build_crossasset)
         # after the commodity/forex/bonds pages, before build_vector (hub last):
@@ -349,6 +366,14 @@ jobs:
           # ~534-name legacy subset was ever tracked while the index lists ~1595, so the
           # untracked long tail 404'd on click. Force-add the whole dir so every name ships.
           git add -f site/stockdata 2>/dev/null || true
+          # Bespoke single-stock chart OHLC (built by build_site -> build_chart_data):
+          # gitignored like the search libraries, so force-add it or the committed-tree
+          # deploy ships no price data and every stock chart renders empty.
+          git add -f site/ohlc 2>/dev/null || true
+          # Non-US bespoke chart OHLC (built by build_{china,canada,intl}_library): same
+          # gitignore + force-add situation as their stockdata libraries (HK needs none —
+          # its per-stock JSON carries the chart series inline).
+          git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
           if git diff --cached --quiet; then echo "no engine output changes"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded

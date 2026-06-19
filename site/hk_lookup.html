@@ -210,11 +210,11 @@
     </div>
   </div>
 
-<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<script src="lightweight-charts-v5.js"></script>
+<script src="chart.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
-  var hkChart = null;
   var q = document.getElementById('q'), sugg = document.getElementById('sugg');
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
@@ -539,48 +539,19 @@
   // behind a login ("only available on TradingView"), so we never call it here.
   function drawChart(d) {
     var box = document.getElementById('tvbox');
-    box.innerHTML = '';
-    if (hkChart) { try { hkChart.remove(); } catch (e) {} hkChart = null; }
+    if (!box || !window.StockChart) return;
     var ch = d.chart;
-    if (!window.LightweightCharts || !ch || !ch.t || !ch.t.length) {
+    // HK ships a per-stock close series inline (HKEX data is login-gated on TradingView's
+    // free embed), so hand it straight to the bespoke chart engine — same area + client-side
+    // RSI/Stoch/MACD/Stoch-RSI/EMA panes and 1D/3D/1W timeframes as the other markets.
+    if (!ch || !ch.t || !ch.t.length) {
       box.innerHTML = '<p class="muted" style="font-size:13px">' + L('nochart') + '</p>';
       return;
     }
-    var holder = document.createElement('div');
-    holder.id = 'lwchart'; holder.style.height = '430px'; holder.style.width = '100%';
-    box.appendChild(holder);
-    var cap = document.createElement('p');
-    cap.className = 'muted'; cap.style.cssText = 'font-size:11.5px;margin:6px 0 0';
-    cap.textContent = L('chartcap'); box.appendChild(cap);
-
-    var dark = (localStorage.getItem('theme') !== 'light');
-    var txt = dark ? '#aeb6c4' : '#475569';
-    var grid = dark ? 'rgba(128,138,160,0.12)' : 'rgba(128,138,160,0.18)';
-    var bord = 'rgba(128,138,160,0.25)';
-    hkChart = LightweightCharts.createChart(holder, {
-      height: 430, autoSize: true,
-      layout: { background: { type: 'solid', color: 'transparent' }, textColor: txt,
-                fontFamily: 'Inter, -apple-system, sans-serif' },
-      grid: { vertLines: { color: grid }, horzLines: { color: grid } },
-      rightPriceScale: { borderColor: bord },
-      timeScale: { borderColor: bord, timeVisible: false },
-      crosshair: { mode: (LightweightCharts.CrosshairMode ? LightweightCharts.CrosshairMode.Normal : 0) }
-    });
-    var t = ch.t, c = ch.c;
-    var area = hkChart.addAreaSeries({ lineColor: '#3b82f6', topColor: 'rgba(59,130,246,0.28)',
-      bottomColor: 'rgba(59,130,246,0.02)', lineWidth: 2, priceLineVisible: false });
-    area.setData(t.map(function (x, i) { return { time: x, value: c[i] }; }));
-    function sma(w) {
-      var o = [], s = 0;
-      for (var i = 0; i < c.length; i++) { s += c[i]; if (i >= w) s -= c[i - w];
-        if (i >= w - 1) o.push({ time: t[i], value: +(s / w).toFixed(3) }); }
-      return o;
-    }
-    if (c.length >= 50) hkChart.addLineSeries({ color: '#f5a524', lineWidth: 1,
-      priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }).setData(sma(50));
-    if (c.length >= 200) hkChart.addLineSeries({ color: '#ef5350', lineWidth: 1,
-      priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false }).setData(sma(200));
-    hkChart.timeScale().fitContent();
+    var data = { t: d.ticker, o: 0, src: 'hk',
+      bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }) };
+    try { window.StockChart.mount(box, d.ticker, {name: d.name, data: data}); }
+    catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1);
@@ -595,7 +566,7 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 01:42 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-18 09:14 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>

@@ -699,6 +699,162 @@ def breadth_scorecard() -> dict | None:
     }
 
 
+# --- Advanced breadth tracker (market internals) ----------------------------
+# The classic second-derivative breadth gauges a desk watches beyond today's
+# %-above-MA snapshot: ratio-adjusted McClellan Oscillator + Summation Index, the
+# Zweig Breadth Thrust gauge, the High-Low (record-high-percent) Index, the A/D-
+# line-vs-price divergence check, and where participation sits in its own deep
+# history. Computed on the deep S&P-500 breadth series (1962-) by
+# engine.advanced_breadth; DISPLAY-ONLY (a function of price is coincident with
+# it — this explains the tape's quality, it does not forecast it).
+_TONE_COLOR = {"pos": "var(--up)", "neg": "var(--down)", "muted": "var(--link)"}
+_ABR_MCC_BAND = {
+    "surging": T("surging", "急涨"), "positive": T("positive", "正向"),
+    "neutral": T("neutral", "中性"), "negative": T("negative", "负向"),
+    "oversold": T("oversold", "超卖"),
+}
+_ABR_THRUST_ZONE = {
+    "thrust": T("thrust", "脉冲"), "neutral": T("neutral", "中性"),
+    "washed": T("washed out", "超卖"),
+}
+_ABR_HL_BAND = {
+    "expanding": T("expanding", "扩张"), "mixed": T("mixed", "参差"),
+    "contracting": T("contracting", "收缩"),
+}
+_ABR_DIV = {
+    "bearish_div": (T("bearish divergence", "看跌背离"),
+                    T("price is making new highs the advance/decline line will not confirm — the rally is narrowing underneath",
+                      "价格创新高，但腾落线未能确认 — 上涨在底层正在收窄")),
+    "bullish_div": (T("bullish divergence", "看涨背离"),
+                    T("price is making new lows the advance/decline line refuses to confirm — selling is narrowing",
+                      "价格创新低，但腾落线拒绝确认 — 抛压正在收窄")),
+    "confirmed_up": (T("confirming the highs", "确认新高"),
+                     T("the advance/decline line is making new highs alongside price — the move is broadly supported",
+                       "腾落线与价格同步创新高 — 走势获得广泛支撑")),
+    "confirmed_down": (T("confirming the lows", "确认新低"),
+                       T("the advance/decline line is making new lows with price — the weakness is broad",
+                         "腾落线与价格同步创新低 — 弱势具有广度")),
+    "inrange": (T("in range", "区间内"),
+                T("neither price nor the advance/decline line is at a 3-month extreme — no divergence to read",
+                  "价格与腾落线均未触及三个月极值 — 暂无背离可读")),
+}
+_ABR_GAP = {
+    "broadening": (T("broadening", "扩散"),
+                   T("small caps participating MORE than large — a healthy, broad-based tape",
+                     "小盘参与度高于大盘 — 健康、广泛的盘面")),
+    "narrowing": (T("narrowing", "收窄"),
+                  T("small caps lagging large — a narrow, mega-cap-led advance (more fragile)",
+                    "小盘落后于大盘 — 狭窄、由超大盘主导的上涨（更脆弱）")),
+    "inline": (T("in line", "一致"),
+               T("small- and large-cap participation roughly in line",
+                 "小盘与大盘参与度大致一致")),
+}
+_ABR_HEAD = {
+    "firm": (T("firm", "稳健"),
+             T("the internals are confirming the tape — broad participation and positive momentum",
+               "内部结构在确认盘面 — 参与广泛、动量为正")),
+    "mixed": (T("mixed", "参差"),
+              T("the internals send no clear signal either way right now",
+                "当前内部结构没有明确的方向性信号")),
+    "deteriorating": (T("deteriorating", "转弱"),
+                      T("the internals are weakening under the surface — momentum and participation are rolling over",
+                        "内部结构正在表层之下走弱 — 动量与参与度同步回落")),
+}
+
+
+def advanced_breadth_view(f: pd.DataFrame) -> dict | None:
+    """Build the Advanced Breadth panel payload for the US stocks page. Reads the
+    deep S&P-500 breadth series + the SPY proxy from the feature frame, calls the
+    engine, and dresses the result with bilingual labels and inline sparklines.
+    Additive and never fatal: any failure returns None and the panel is skipped."""
+    from markupsafe import Markup
+    try:
+        from engine import advanced_breadth as ab
+        big = pd.read_parquet(config.data_dir() / "breadth" / "breadth.parquet")
+        price = f["SPY"].dropna() if "SPY" in f.columns else None
+        tiers = {}
+        for key, ns in (("large", "breadth"), ("mid", "midcap_breadth"),
+                        ("small", "smallcap_breadth")):
+            p = config.data_dir() / ns / "breadth.parquet"
+            if p.exists():
+                s = pd.read_parquet(p)["pct_above_50"].dropna()
+                if len(s):
+                    tiers[key] = float(s.iloc[-1])
+        d = ab.advanced_breadth(big, price, tiers or None)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("advanced_breadth_view failed: %s", e)
+        return None
+    if not d:
+        return None
+
+    def spark(node, k="spark", baseline=None, w=240, h=46):
+        vals = (node or {}).get(k) or []
+        color = _TONE_COLOR.get((node or {}).get("tone", "muted"), "var(--link)")
+        return Markup(_mini_svg(vals, color=color, w=w, h=h, baseline=baseline)) if vals else ""
+
+    head = d["headline"]
+    h_label, h_verdict = _ABR_HEAD.get(head["key"], _ABR_HEAD["mixed"])
+    out = {"asof": d["asof"], "deep_from": d["deep_from"], "n_deep": d["n_deep"],
+           "headline": {"label": h_label, "verdict": h_verdict, "tone": head["tone"]}}
+
+    mcc = d.get("mcclellan")
+    if mcc:
+        out["mcc"] = {
+            "osc": "%+.1f" % mcc["osc"], "tone": mcc["tone"],
+            "band": _ABR_MCC_BAND.get(mcc["band"], _ABR_MCC_BAND["neutral"]),
+            "rising": mcc["osc_rising"], "summ_rising": mcc["summ_rising"],
+            "summ_chg20": "%+.0f" % mcc["summ_chg20"],
+            "svg": spark(mcc, "spark", baseline=0.0),
+        }
+    thr = d.get("thrust")
+    if thr:
+        # gauge position of the live value within the 0.30-0.70 display band
+        pos = max(0.0, min(100.0, (thr["value"] - 0.30) / 0.40 * 100))
+        out["thrust"] = {
+            "value": "%.2f" % thr["value"], "tone": thr["tone"],
+            "zone": _ABR_THRUST_ZONE.get(thr["zone"], _ABR_THRUST_ZONE["neutral"]),
+            "pos": round(pos, 1),
+            "washed_pos": round((thr["washed"] - 0.30) / 0.40 * 100, 1),
+            "thrust_pos": round((thr["thrust"] - 0.30) / 0.40 * 100, 1),
+            "recent": thr["recent_thrust"], "hist_count": thr["hist_count"],
+            "last": thr["last_thrust"],
+        }
+    hl = d.get("highlow")
+    if hl:
+        out["hl"] = {
+            "hli": "%.0f" % hl["hli"], "tone": hl["tone"],
+            "band": _ABR_HL_BAND.get(hl["band"], _ABR_HL_BAND["mixed"]),
+            "net_nh": "%+d" % hl["net_nh"], "net_nh_10": "%+.1f" % hl["net_nh_10"],
+            "svg": spark(hl, "spark", baseline=50.0),
+        }
+    div = d.get("divergence")
+    if div:
+        dl, dv = _ABR_DIV.get(div["state"], _ABR_DIV["inrange"])
+        out["div"] = {"label": dl, "verdict": dv, "tone": div["tone"],
+                      "corr": div["corr"], "window": div["window"],
+                      "svg": spark(div, "spark")}
+    par = d.get("participation")
+    if par:
+        out["par"] = {
+            "pa50": "%.0f" % par["pa50"], "pa200": ("%.0f" % par["pa200"]) if par["pa200"] is not None else None,
+            "chg20": "%+.1f" % par["pa50_chg20"],
+            "chg_tone": "pos" if par["pa50_chg20"] > 0 else ("neg" if par["pa50_chg20"] < 0 else "muted"),
+            "pctile": int(par["pctile"]) if par["pctile"] is not None else None,
+            "hist_from": par["hist_from"], "ad_dir": par["ad_dir"],
+            "tone": "pos" if par["pa50_chg20"] > 0 else "muted",
+            "svg": spark({"spark": par["spark"], "tone": "pos" if par["pa50_chg20"] >= 0 else "neg"},
+                         "spark", baseline=50.0),
+        }
+    gap = d.get("tiergap")
+    if gap:
+        gl, gv = _ABR_GAP.get(gap["state"], _ABR_GAP["inline"])
+        out["gap"] = {"large": "%.0f" % gap["large"],
+                      "mid": ("%.0f" % gap["mid"]) if gap["mid"] is not None else None,
+                      "small": "%.0f" % gap["small"], "gap": "%+.1f" % gap["gap"],
+                      "label": gl, "verdict": gv, "tone": gap["tone"]}
+    return out
+
+
 # heat-bar fill uses theme-aware CSS variables (legible in both modes)
 HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
                "40-54": "var(--muted)", "0-39": "var(--info)"}
@@ -2392,7 +2548,8 @@ def main() -> int:
     for asset in ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
-                  "masterbrief.js", "aibrief.js", "stockbrief.js", "lightweight-charts.js"):
+                  "masterbrief.js", "aibrief.js", "stockbrief.js", "lightweight-charts.js",
+                  "allocation_scorecard.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -2436,6 +2593,7 @@ def main() -> int:
     # only when macro_news.enabled. News NEVER feeds any score.
     macro_catalysts, macro_news_data, macro_brief_data = [], None, None
     event_strip, catalyst_line = [], ""
+    event_risk = {"show": False}
     macro_news_disclaimer = macro_news_disclaimer_zh = ""
     try:
         from engine import event_calendar as _ec
@@ -2447,6 +2605,28 @@ def main() -> int:
         # text line fed to the LLM brief below (context only; never a scored input)
         event_strip = _ec.high_impact_strip(horizon_days=_horizon)
         catalyst_line = _ec.imminent_line(horizon_days=_horizon)
+        # NON-DIRECTIONAL event-risk banner: known catalyst date x measured fragility.
+        # Never a dampener / never scored (see engine/event_risk.py discipline note).
+        from engine import event_risk as _erisk
+        event_risk = _erisk.snapshot(latest, events=event_strip, horizon_days=_horizon)
+        # scorecard: append today's firing (event-day only) + resolve realized moves
+        # from SPY closes; attach the running track record to the banner. Best-effort.
+        try:
+            _erisk.append_log(event_risk)
+            import pandas as _pd
+            _sp = _pd.read_parquet(config.data_dir() / "yahoo" / "SPY.parquet")
+            _spy = {str(i)[:10]: float(c) for i, c in _sp["close"].dropna().items()}
+            _erisk.resolve(_spy)
+        except Exception as _e:  # noqa: BLE001
+            log.warning("event_risk scorecard skipped: %s", _e)
+        try:
+            event_risk["track"] = _erisk.track_record()
+        except Exception:  # noqa: BLE001
+            pass
+        # surface the banner as a (display-only) dashboard alert
+        _ea = _erisk.as_alert(event_risk)
+        if _ea:
+            latest.setdefault("alerts", []).append(_ea)
         macro_news_data = _mnews.macro_headlines()
         macro_news_disclaimer = _mnews.DISCLAIMER_TEXT
         macro_news_disclaimer_zh = _mnews.DISCLAIMER_TEXT_ZH
@@ -2540,6 +2720,7 @@ def main() -> int:
         latest=latest,
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,
+        event_risk=event_risk,
         prediction_markets=prediction_markets,
         narrative_regime=narrative_regime,
         ndi=ndi,
@@ -2563,6 +2744,7 @@ def main() -> int:
         size_style=size_style_rows(f),
         breadth_div=breadth_divergence(f),
         breadth_panel=breadth_scorecard(),
+        adv_breadth=advanced_breadth_view(f),    # Advanced Breadth tracker (us_stocks page)
         sector_rows=sector_rows(latest.get("playbook"), sector_timing),
         sector_radar=sector_bottom_view(latest),   # Sector Bottom Radar (us_stocks page)
         generated_utc=generated,
@@ -2659,6 +2841,18 @@ def main() -> int:
             log.warning("profile translation step failed (%s); blurbs stay English", e)
         from scripts.build_stock_library import main as build_library
         build_library()
+
+        # Bespoke single-stock chart data: a compact per-ticker OHLC JSON
+        # (site/ohlc/<T>.json) read client-side by chart.js. Pure serialisation of
+        # price data already on disk (no engine compute) and depends on the stock
+        # index.json the library just wrote, so it runs right after. Garnish —
+        # never break the build if it fails; charts just degrade to "no data".
+        try:
+            from scripts.build_chart_data import build_us as build_chart_data
+            n_chart, n_candle = build_chart_data(site)
+            log.info("chart data: %d ohlc files (%d candle-capable)", n_chart, n_candle)
+        except Exception as e:  # noqa: BLE001
+            log.warning("chart data step failed (%s); stock charts degrade to no-data", e)
 
         # holdings watchlist: a pure client-state page over the same library
         # (selection persists in the browser; signals re-resolve from index.json

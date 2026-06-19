@@ -49,9 +49,11 @@ import pandas as pd
 MARKETS = ("US", "CN", "HK", "CA")
 
 # fallback on-card label for the EDGE axis per market (see _sel_kind for the dynamic,
-# leg-aware label). v2: the US/CA EDGE is the VALIDATED event core (earnings surprise +
-# insider buying + analyst revisions) — residual momentum is demoted to a light context
-# leg because on clean PIT large-cap data it does not predict (research/STOCK_CONVICTION_V2).
+# leg-aware label). v2: the US/CA EDGE leads with the event-evidence core (insider net-buying
+# — the lone borderline cross-sectional FDR survivor — + earnings surprise + analyst revisions)
+# — residual momentum is demoted to a light context leg because on clean PIT large-cap data it
+# does not predict (research/STOCK_CONVICTION_V2; SUE deep-history reconciliation in
+# reports/sue-deep-history-phase0.md).
 _SEL_KIND = {
     "US": ("event edge", "事件驱动优势"),
     "CA": ("event edge", "事件驱动优势"),
@@ -59,11 +61,18 @@ _SEL_KIND = {
     "HK": ("relative strength", "相对强度"),
 }
 
-# EDGE evidence weights (US/CA), anchored on the deep-PIT IC audit: SUE (IC .039, the only
-# FDR survivor, L/S Sharpe 1.26) > insider net-buy (.029, FDR-adjacent) > analyst-revision
-# momentum (literature IC ~.23, locally accruing) > residual momentum (.012, FAILS FDR -> a
-# light directional context only). Renormalized over whichever legs are present per name.
-_EDGE_W = {"sue": 0.40, "insider": 0.30, "revision": 0.20, "mom": 0.10}
+# EDGE evidence weights (US/CA). The SHALLOW 2023-2025 audit ranked SUE first (IC .039, lone
+# FDR survivor), but the DEEP 2011-2026 re-test (reports/sue-deep-history-phase0.md) COLLAPSED
+# SUE's cross-sectional edge to ~0 (IC .039->.0006, HAC t 2.85->0.06, fails BH-FDR). The lone
+# (borderline) cross-sectional FDR survivor is now insider net-buying (q~0.10, mid-cap habitat
+# — a confirmer, not a standalone sizer; engine/signal_lab.py, factors.html), so insider LEADS
+# the blend. SUE is kept as a per-name PEAD CONFLUENCE leg, not the dominant anchor: the deep
+# collapse is cross-sectional + survivorship-biased (an optimistic bound), and PEAD as a
+# per-name event effect can persist where the rank-IC is thin — but it no longer outweighs the
+# leg that actually survives FDR. Revision is literature-strong; residual momentum is light,
+# regime-scaled context. None is a standalone alpha -> this is a DISPLAY/confluence composite,
+# never a validated sizer. Renormalized over whichever legs are present per name.
+_EDGE_W = {"insider": 0.40, "sue": 0.30, "revision": 0.20, "mom": 0.10}
 
 # REGIME-CONDITIONAL momentum weight (research/STOCK_CONVICTION_V2 §3 + the regime audit in
 # scripts/conviction_v2_regime.py). The deep+PIT S&P panel (2008-2026, 63d) shows residual
@@ -141,14 +150,16 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
         # no event feeds on the TSX -> residual-momentum prior, never claimed as validated.
         return {"tier": "context", "en": "Residual-momentum prior — unvalidated, not a standalone edge",
                 "zh": "残差动量先验 — 未验证，非独立超额收益", "css": "tt-context"}
-    # US — v2 EDGE = validated event signals (SUE is the FDR survivor; insider is
-    # FDR-adjacent; analyst revisions are literature-strong and locally accruing).
+    # US — v2 EDGE = event-evidence signals. Insider net-buying is the lone (borderline)
+    # cross-sectional FDR survivor; SUE's cross-sectional edge COLLAPSED on deep history
+    # (reports/sue-deep-history-phase0.md) so it is kept as PEAD context, not a validated leg;
+    # analyst revisions are literature-strong and locally accruing.
     if gate_go:
-        return {"tier": "validated", "en": "Event edge (earnings + insider + revisions) cleared Phase-0",
-                "zh": "事件驱动优势（盈利＋内部人＋评级调整）已通过 Phase-0", "css": "tt-go"}
+        return {"tier": "validated", "en": "Event edge (insider + earnings + revisions) cleared Phase-0",
+                "zh": "事件驱动优势（内部人＋盈利＋评级调整）已通过 Phase-0", "css": "tt-go"}
     return {"tier": "event-edge",
-            "en": "Event edge: earnings surprise + insider buying (SUE FDR-validated) · revisions accruing",
-            "zh": "事件驱动优势：盈利超预期＋内部人买入（SUE 已通过 FDR）· 评级调整累积中", "css": "tt-context"}
+            "en": "Event edge: insider buying (lone FDR survivor) + earnings-surprise PEAD context + revisions — a confluence read, not a standalone alpha",
+            "zh": "事件驱动优势：内部人买入（唯一通过 FDR 的因子）＋盈利超预期 PEAD 背景＋评级调整 — 综合参考，非独立超额收益", "css": "tt-context"}
 
 # Per-market DISPLAY weights for the composite roll-up (labeled uncalibrated PRIOR;
 # the SHIPPED rank does not use these unless gate GO). Default behaviour is
@@ -257,9 +268,11 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
     """The EDGE axis — the VALIDATED, event-driven predictive core that DRIVES the rank
     (research/STOCK_CONVICTION_V2). Returns (z, present_legs).
 
-    * US/CA — evidence-weighted blend of SUE (FDR survivor) + insider net-buying +
-      analyst-revision momentum + a LIGHT residual-momentum context (momentum alone is
-      ~noise on clean PIT large-cap data, so it earns only the 0.10 context weight). The
+    * US/CA — evidence-weighted blend LED by insider net-buying (the lone borderline FDR
+      survivor) + earnings-surprise SUE (a per-name PEAD confluence leg — its cross-sectional
+      edge collapsed on deep history, reports/sue-deep-history-phase0.md) + analyst-revision
+      momentum + a LIGHT residual-momentum context (momentum alone is ~noise on clean PIT
+      large-cap data, so it earns only the 0.10 context weight). The
       momentum weight is REGIME-CONDITIONAL via `calm` (see `_edge_weights`): it rises in a
       calm/risk-on tape where momentum predicts and is pulled toward zero in stress where it
       crashes — the validated lift in the regime audit. `calm=None` keeps the v2 base weight.
@@ -270,10 +283,10 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
     m = market.upper()
     present: list[str] = []
     if m == "US":
-        # the validated event edge: SUE + insider + revisions exist for US (EDGAR / Form-4 /
-        # yfinance). Residual momentum is a LIGHT context leg (regime-scaled), and a CONFIDENCE
-        # FLOOR dampens a US name with NO event signal toward zero — it must not rank like a
-        # name carrying a real earnings/insider/revision edge.
+        # the event-evidence edge: insider (lone FDR survivor) + SUE (PEAD context) + revisions
+        # exist for US (Form-4 / EDGAR / yfinance). Residual momentum is a LIGHT context leg
+        # (regime-scaled), and a CONFIDENCE FLOOR dampens a US name with NO event signal toward
+        # zero — it must not rank like a name carrying a real insider/earnings/revision edge.
         ew = _edge_weights(calm)
         legs: dict[str, float] = {}
         sue = _f(rec.get("sue"))
@@ -362,8 +375,159 @@ def _rsi_band(rsi: float | None) -> float | None:
     return 0.0
 
 
+# ABSOLUTE trend-extension brake — distance above the 200dma (research: the CASY failure).
+# The own-history ext_z (engine/extension) z-scores stretch vs the name's OWN trailing year,
+# so a PERSISTENT leader that is always ~30% above its 200dma reads ~0 (not extended vs
+# itself) and slips the parabolic flag. So we ALSO read the RAW stretch above the 200dma.
+# DATA (deep+PIT 18y, top-momentum-decile, forward 5/10/21d, returns clipped): names <25%
+# above their 200dma are HEALTHY (good median, shallow drawdown), but the >~35% cohort has the
+# WORST median forward return AND the deepest drawdowns at every horizon (the fat-tailed-mean
+# "lottery" chase). Drawdown is already elevated from ~25%. So we leave the healthy ≤_STRETCH_WARN
+# zone untouched and risk-conservatively HARD-BLOCK the chase at _STRETCH_BLOCK (cap the entry,
+# "don't chase" verb) — trading a little late-momentum upside for avoiding the drawdown, which
+# is the board's risk-discipline mandate. The own-history parabolic flag (ext_z>2, validated
+# -94% DD) still blocks independently.
+_STRETCH_WARN = 25.0       # % above 200dma where the graduated entry penalty begins (≤ this = healthy)
+_STRETCH_BLOCK = 30.0      # % above 200dma => over-extended chase (cap entry + "don't chase")
+
+
+def _stretch_penalty(pct_vs_200: float | None) -> float | None:
+    if pct_vs_200 is None:
+        return None
+    x = float(pct_vs_200)
+    if x <= _STRETCH_WARN:
+        return 0.0
+    if x <= _STRETCH_BLOCK:                 # 18..30 -> 0..-0.9
+        return -(x - _STRETCH_WARN) / (_STRETCH_BLOCK - _STRETCH_WARN) * 0.9
+    return float(np.clip(-0.9 - (x - _STRETCH_BLOCK) / 10.0 * 0.3, -1.2, -0.9))
+
+
+def _overextended(rec: dict) -> bool:
+    """True when price is far enough above its 200dma to be a chase (CASY: +35%)."""
+    pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+    return pv is not None and pv >= _STRETCH_BLOCK
+
+
+# ---- macro/event RISK OVERLAY (T3) -----------------------------------------
+# A high-VIX / turning-point / drawdown-risk tape should tax a CHASE — but NOT a washed-out
+# reversal (that is exactly what works in stress, China's edge). So the haircut is
+# stress × aggressiveness: it punishes buying an extended momentum leader INTO a stressed
+# tape, and barely touches a constructive/washed-out name. Two-sided on sector (unlike the
+# legacy MRS tax that exempted defensive leaders). `stress=0` (calm tape) => zero effect, so
+# the overlay is silent in a normal week and only bites when the macro tape is genuinely hot.
+_RISK_TAX_MAX = 0.8        # max composite_z subtracted from a full-stress, full-chase name
+_RISK_VETO_STRESS = 0.5    # stress >= this AND aggressive => verb can't read "high-conviction"
+
+
+def _clip01(x: float | None) -> float:
+    return float(np.clip(x if x is not None else 0.0, 0.0, 1.0))
+
+
+def _aggressiveness(rec: dict) -> float:
+    """How much this name is a CHASE (what a stressed tape punishes): distance above the
+    200dma + own-history extension grade. 0 = constructive / washed-out, 1 = parabolic."""
+    pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+    agg = _clip01(((pv or 0.0) - 10.0) / 30.0)     # +10% over 200dma -> 0, +40% -> 1
+    grade = (rec.get("ext") or {}).get("grade")
+    if grade == _PARABOLIC:
+        agg = max(agg, 0.9)
+    elif grade == "stretched":
+        agg = max(agg, 0.5)
+    return _clip01(agg)
+
+
+def _macro_stress(overlay: dict | None) -> float:
+    return _clip01(_f((overlay or {}).get("stress")))
+
+
+def _risk_tax(overlay: dict | None, rec: dict) -> float:
+    """Subtract-only composite haircut = _RISK_TAX_MAX · macro_stress · aggressiveness."""
+    s = _macro_stress(overlay)
+    return _RISK_TAX_MAX * s * _aggressiveness(rec) if s > 0 else 0.0
+
+
+# ---- lottery / recent single-day spike penalty (T5; Bali-Cakici-Whitelaw) ----
+# VALIDATED (deep+PIT 18y, scripts/risk_penalty_phase0): a top-momentum name whose biggest
+# single-day pop in the last 21d is extreme has a NEGATIVE median fwd-21d return (-2.6%), ~2x
+# the drawdown, and a sub-coin-flip hit rate — the radioactive lottery tail. Deciles 1-8 are
+# flat, so it is a TAIL penalty (kicks in only at the extreme), never a positive add.
+_LOTTERY_WARN = 12.0       # recent 21d single-day max return % where the penalty begins
+_LOTTERY_HARD = 20.0       # >= this = radioactive one-day spike -> full penalty
+
+
+def _lottery_penalty(rec: dict) -> float:
+    mx = _f(rec.get("lottery_max"))
+    if mx is None or mx <= _LOTTERY_WARN:
+        return 0.0
+    return float(np.clip(-(mx - _LOTTERY_WARN) / (_LOTTERY_HARD - _LOTTERY_WARN) * 0.9, -1.0, 0.0))
+
+
+# ---- idiosyncratic RISK axis + suggested position size (T5) -----------------
+# Compose the per-name risk descriptors (each VALIDATED as risk, not return) into one 0..1
+# idio-risk, then a SUBTRACT-ONLY tax on the composite (never divide — comp_z is a signed z
+# near 0, so 1/risk would explode/invert and destroy the honest tiering) + a bounded 1/risk
+# suggested position size. Extension dominates (the only hard per-name DD finding); gex is a
+# noisy single-name sign so it is small. risk_idio re-orders WITHIN a tier, never alone flips
+# a leader to low (cap 0.5 < macro 0.8 < a typical band gap).
+_IDIO_W = {"ext": 0.38, "cycle": 0.27, "lottery": 0.20, "gex": 0.10, "fragility": 0.05}
+_IDIO_TAX_MAX = 0.5
+_KNIFE_R = {"none": 0.0, "watch": 0.2, "elevated": 0.55, "high": 0.85}
+
+
+def _risk_idio(rec: dict) -> tuple[float, dict]:
+    """0..1 idiosyncratic risk + the present components (renormalized over what is present)."""
+    comps: dict[str, float] = {}
+    ext = rec.get("ext") or {}
+    ez = _f(ext.get("ext_z")); pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+    if ez is not None or pv is not None:
+        rex = max(_clip01((ez - 0.5) / 1.5) if ez is not None else 0.0,
+                  _clip01((pv - 25.0) / 20.0) if pv is not None else 0.0)
+        if ext.get("grade") == _PARABOLIC:
+            rex = max(rex, 0.9)
+        elif ext.get("grade") == "stretched":
+            rex = max(rex, 0.5)
+        comps["ext"] = rex
+    kn = (rec.get("ladder") or {}).get("bc_knife")
+    if kn in _KNIFE_R:
+        comps["cycle"] = _KNIFE_R[kn]
+    lm = _f(rec.get("lottery_max"))
+    if lm is not None:
+        comps["lottery"] = _clip01((lm - _LOTTERY_WARN) / (_LOTTERY_HARD - _LOTTERY_WARN))
+    gx = (rec.get("gex") or {}).get("gamma_regime")
+    if gx in ("short", "long"):
+        comps["gex"] = 0.6 if gx == "short" else 0.0
+    if rec.get("fragility"):
+        comps["fragility"] = 0.5
+    if not comps:
+        return 0.0, {}
+    num = sum(_IDIO_W[k] * v for k, v in comps.items())
+    den = sum(_IDIO_W[k] for k in comps)
+    return _clip01(num / den), {k: round(v, 2) for k, v in comps.items()}
+
+
+_SIZE_BUCKETS = [(0.66, "quarter", 25), (0.40, "half", 50), (0.20, "three-quarter", 75)]
+
+
+def _suggested_size(risk_total: float, *, blocked: bool, market: str,
+                    validated: bool) -> dict:
+    """Bounded, monotone-decreasing-in-risk position-size guidance. All gates SUBTRACT from
+    full; none inflate. Honest: 'context' (risk-budgeting), not a claimed alpha bet."""
+    if blocked:
+        return {"bucket": "avoid", "pct": 0, "risk": round(risk_total, 2),
+                "note": "cycle/extension blocks a buy"}
+    bucket, pct = "full", 100
+    for thr, b, p in _SIZE_BUCKETS:
+        if risk_total >= thr:
+            bucket, pct = b, p
+            break
+    if market.upper() == "HK" and pct > 50:          # HK is a screen, never a full buy
+        bucket, pct = "half", 50
+    return {"bucket": bucket, "pct": pct, "risk": round(risk_total, 2),
+            "tier": "validated" if validated else "context"}
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
-    """Entry/timing axis + whether the cycle BLOCKS a buy (caps the axis)."""
+    """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis)."""
     present: list[str] = []
     lad = rec.get("ladder") or {}
     entry = (lad.get("entry") or {})
@@ -384,14 +548,20 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     if rb is not None:
         parts.append(rb); present.append("rsi")
     grade = ext.get("grade")
-    if grade in _EXT_PENALTY:               # PENALTY only, never a positive add
+    if grade in _EXT_PENALTY:               # own-history extension PENALTY (never a positive add)
         parts.append(_EXT_PENALTY[grade]); present.append("extension")
+    sp = _stretch_penalty(_f(tech.get("pct_vs_200dma")))   # absolute distance above the 200dma
+    if sp is not None and sp < 0:
+        parts.append(sp); present.append("over-200dma")
+    lp = _lottery_penalty(rec)                             # recent radioactive one-day spike
+    if lp < 0:
+        parts.append(lp); present.append("lottery-spike")
 
     z = _mean_avail(parts)
-    # the cycle hard-block: downtrend / topping / exit / avoid / parabolic
+    # hard-block: downtrend / topping / exit / avoid / parabolic / OVER-EXTENDED (a chase)
     state = (lad.get("state") or "").upper()
     blocked = (state in _CYCLE_BLOCK_STATES or urg in _BLOCK_URGENCY
-               or grade == _PARABOLIC)
+               or grade == _PARABOLIC or _overextended(rec))
     if blocked and z is not None:
         z = min(z, _ENTRY_CAP_Z)
     # scale the small tilts up toward ~unit z for the composite
@@ -464,10 +634,12 @@ def _tier(z: float | None) -> str:
     return "flat"
 
 
-def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
+def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
+            risk_stress: float = 0.0) -> dict:
     """Map the axes + cycle state to a single honest headline verb (EN + 中文),
     plus drivers/cautions. First-match-wins; the cycle block and accounting/parabolic
-    flags OVERRIDE any 'Buy' wording so a card never says BUY next to EXIT."""
+    flags OVERRIDE any 'Buy' wording so a card never says BUY next to EXIT. A stressed
+    macro tape (risk_stress) vetoes a 'high-conviction' verb on an AGGRESSIVE entry."""
     m = market.upper()
     sel = axes.get("selection", {}).get("z")
     ent = axes.get("entry", {}).get("z")
@@ -495,6 +667,14 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
         cautions.append("accounting watch")
     if grade == _PARABOLIC:
         cautions.append("parabolic — extended")
+    _ovx = _overextended(rec)
+    if _ovx:
+        _pv = _f((rec.get("tech") or {}).get("pct_vs_200dma"))
+        cautions.append(f"extended +{_pv:.0f}% over 200dma — chasing" if _pv is not None
+                        else "extended over 200dma — chasing")
+    _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
+    if _risk_veto:
+        cautions.append("stressed tape — size down / confirm")
     if cycle_blocked:
         cautions.append("cycle: " + (lad.get("label") or state or "weak tape"))
 
@@ -509,8 +689,8 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
 
     # ---- cycle hard-block: never 'Buy' regardless of the composite ----------
     if cycle_blocked:
-        # a parabolic blow-off is blocked too, but earns the more specific message
-        if grade == _PARABOLIC and sel_t in ("high", "mid"):
+        # a parabolic blow-off / over-extended chase is blocked — the specific message
+        if (grade == _PARABOLIC or _ovx) and sel_t in ("high", "mid"):
             return _v("Extended — don't chase; wait for a pullback",
                       "过度拉升 — 勿追高；等待回撤", drivers, cautions)
         if sel_t == "high":
@@ -531,6 +711,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool) -> dict:
     # ---- the constructive cases --------------------------------------------
     ent_ok = (ent is not None and ent > 0)
     if sel_t == "high" and ent_ok:
+        if _risk_veto:                         # stressed tape vetoes a high-conviction CHASE
+            return _v("Strong name · elevated-risk tape — smaller size, confirm",
+                      "强势个股 · 高风险行情 — 减小仓位并确认", drivers, cautions)
         if _tier(qz) == "low":                 # strong edge but weak fundamentals — flag the risk
             cautions.append("weak fundamentals")
             return _v("Leader · weak fundamentals — higher-risk",
@@ -613,6 +796,18 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
             den += w[k]
     comp_z = (num / den) if den > 0 else None
 
+    # macro/event RISK OVERLAY (T3): subtract-only haircut on a CHASE into a stressed tape.
+    overlay = ctx.get("risk_overlay") or {}
+    stress = _macro_stress(overlay)
+    rtax = _risk_tax(overlay, rec)
+    # idiosyncratic RISK axis (T5): a second subtract-only haircut from the per-name risk
+    # descriptors (extension / knife / lottery / gex / fragility). Re-orders WITHIN a tier.
+    idio, idio_comps = _risk_idio(rec)
+    idio_tax = _IDIO_TAX_MAX * idio
+    if comp_z is not None:
+        comp_z = float(np.clip(comp_z - rtax - idio_tax, -_AXIS_Z_CLIP, _AXIS_Z_CLIP))
+    risk_total = max(idio, stress * _aggressiveness(rec))   # worst-of (distinct failure modes)
+
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
     score = ctx.get("score_pct")
@@ -620,7 +815,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         score = _logistic_0_100(comp_z)
     score = int(round(score)) if score is not None else None
 
-    vb = verdict(axes, rec, m, cycle_blocked=blocked)
+    vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress)
     band = _band(score)
 
     # provenance — what is present vs missing, never read missing as neutral.
@@ -633,6 +828,14 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "score": score,
         "band": band["band"], "band_en": band["en"], "band_zh": band["zh"],
         "composite_z": round(comp_z, 3) if comp_z is not None else None,
+        "risk": {"total": round(risk_total, 2), "idio": round(idio, 2),
+                 "components": idio_comps or None,
+                 "macro_stress": round(stress, 2) if stress > 0 else None,
+                 "macro_tax": round(rtax, 3) if rtax > 0 else None,
+                 "idio_tax": round(idio_tax, 3) if idio_tax > 0 else None,
+                 "drivers": overlay.get("drivers") if stress > 0 else None},
+        "size": _suggested_size(risk_total, blocked=blocked, market=m,
+                                validated=bool(ctx.get("gate_go"))),
         "verdict": vb["verdict"], "verdict_zh": vb["verdict_zh"],
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
@@ -689,7 +892,8 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
-                  asym: dict | None = None, ext: dict | None = None) -> dict:
+                  asym: dict | None = None, ext: dict | None = None,
+                  lottery_max: float | None = None) -> dict:
     """Build the normalized ``rec`` the engine consumes from a per-stock library
     ``record`` (the dict written to ``<mkt>stockdata/<T>.json``) plus the
     cross-sectional legs the build joins in. Missing legs stay absent (None) —
@@ -714,7 +918,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
-        "sue": sue, "sue_fresh_days": sue_fresh_days,
+        "sue": sue, "sue_fresh_days": sue_fresh_days, "lottery_max": lottery_max,
         "insider_bps": insider_bps, "revision_z": revision_z,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)

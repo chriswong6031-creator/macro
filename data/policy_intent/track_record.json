@@ -1,0 +1,56 @@
+{
+  "schema": "ai_desk_track_record.v1",
+  "as_of": "2026-06-18",
+  "scored_total": 0,
+  "open": 2,
+  "unscored_soft": 2,
+  "expired": 0,
+  "overall": {
+    "n": 0,
+    "hits": 0,
+    "misses": 0,
+    "hit_rate": null,
+    "dir_accuracy": null
+  },
+  "by_conviction": {
+    "high": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "medium": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "low": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    }
+  },
+  "by_kind": {
+    "rel_return": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "level": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    }
+  },
+  "calibration_note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
+  "recent": []
+}

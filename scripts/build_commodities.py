@@ -481,6 +481,16 @@ def asset_vm(asset: str, df: pd.DataFrame, calib: dict, drivers: dict | None = N
         conv = commodity_conviction.conviction(asset, df, drivers, extras, mtf_a,
                                                alert_tilt_val, conv_calib)
         vm["conviction"] = conv
+    # dollar sensitivity (display-only, from the forex Dollar Desk transmission)
+    vm["dollar_corr"], vm["dollar_stable"] = None, None
+    try:
+        from lib import forex_link
+        _ck = {"gold": "GC=F", "copper": "HG=F", "oil": "CL=F"}.get(asset)
+        _ac = forex_link.asset_corr(_ck) if _ck else None
+        if _ac:
+            vm["dollar_corr"], vm["dollar_stable"] = _ac["corr"], _ac["stable"]
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
     return vm
 
 

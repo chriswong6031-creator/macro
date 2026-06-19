@@ -338,3 +338,129 @@ def test_sue_freshness_is_carried_as_display_only():
     assert cf["fresh_days"] == 8 and cs["fresh_days"] == 180   # but recency is shown
     # no fresh_days key when no filing date is known
     assert "fresh_days" not in next(x for x in ss._edge_basis({"sue": 2.0}, "US") if x["leg"] == "sue")
+
+
+# --- reshape T1: absolute trend-extension brake (the CASY fix) ----------------
+def test_stretch_penalty_bounds_and_monotone():
+    assert ss._stretch_penalty(None) is None
+    assert ss._stretch_penalty(10.0) == 0.0          # healthy trend, no penalty
+    assert ss._stretch_penalty(25.0) == 0.0          # ≤ warn = healthy, untouched (per the data)
+    # monotone-decreasing through the stretch zone, floored at -1.2
+    assert 0 > ss._stretch_penalty(27.0) > ss._stretch_penalty(30.0) >= ss._stretch_penalty(45.0)
+    assert ss._stretch_penalty(80.0) == pytest.approx(-1.2)
+
+
+def test_overextended_threshold():
+    assert ss._overextended({"tech": {"pct_vs_200dma": 31.0}}) is True
+    assert ss._overextended({"tech": {"pct_vs_200dma": 12.0}}) is False
+    assert ss._overextended({"tech": {}}) is False
+
+
+def test_overextended_name_is_blocked_and_dont_chase():
+    # a CASY-like name: strong momentum, shallow -7% dip, RSI 55, FRESH BUY, +31% over 200dma
+    rec = {"alpha": 2.4, "alpha_entry": "intact",
+           "ladder": {"state": "FRESH BUY", "label": "BUY ZONE", "dir": "up",
+                      "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -7.0, "rsi14": 55.0, "pct_vs_200dma": 31.3}}
+    z, present, blocked = ss._axis_entry(rec)
+    assert blocked is True and z is not None and z <= ss._ENTRY_CAP_Z * 1.6 + 1e-9
+    assert "over-200dma" in present
+    p = ss.conviction_profile(rec, "US")
+    assert "don't chase" in p["verdict"].lower() or "chase" in p["verdict"].lower()
+    assert any("extended" in c and "200dma" in c for c in p["cautions"])
+    assert "buy" not in p["verdict"].lower()
+
+
+def test_normal_extension_not_blocked():
+    # the SAME name only +12% over its 200dma is a healthy trend, not a chase
+    rec = {"alpha": 2.4, "alpha_entry": "pullback",
+           "ladder": {"state": "RALLY ON", "label": "UPTREND", "dir": "up",
+                      "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -7.0, "rsi14": 55.0, "pct_vs_200dma": 12.0}}
+    z, present, blocked = ss._axis_entry(rec)
+    assert blocked is False and "over-200dma" not in present
+
+
+# --- reshape T3: macro/event risk overlay (tax a chase into a stressed tape) ---
+def test_aggressiveness_chase_vs_washout():
+    assert ss._aggressiveness({"tech": {"pct_vs_200dma": 40.0}}) == pytest.approx(1.0)
+    assert ss._aggressiveness({"tech": {"pct_vs_200dma": -18.0}}) == 0.0   # washout
+    assert ss._aggressiveness({"tech": {}, "ext": {"grade": "parabolic"}}) >= 0.9
+
+
+def test_risk_tax_scales_with_stress_and_aggressiveness():
+    chase = {"tech": {"pct_vs_200dma": 40.0}}
+    wash = {"tech": {"pct_vs_200dma": -18.0}}
+    assert ss._risk_tax({"stress": 0.0}, chase) == 0.0          # calm tape -> no tax
+    assert ss._risk_tax({"stress": 0.8}, chase) > 0.4           # chase into stress -> taxed
+    assert ss._risk_tax({"stress": 0.8}, wash) == 0.0           # washout protected even in stress
+
+
+def test_calm_overlay_is_a_noop():
+    rec = _rec()
+    base = ss.conviction_profile(rec, "US")
+    calm = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.0}})
+    # a calm MACRO tape applies no macro tax; the composite is unchanged and the macro
+    # part of the risk block is null (the risk block itself always exists — it also carries
+    # the per-name idiosyncratic risk).
+    assert base["composite_z"] == calm["composite_z"]
+    assert calm["risk"]["macro_stress"] is None and calm["risk"]["macro_tax"] is None
+
+
+def test_stress_vetoes_high_conviction_on_a_chase():
+    # strong edge + good entry + moderately extended (aggressive, but <30% so not T1-blocked)
+    rec = {"sue": 2.6, "insider_bps": 30.0, "alpha": 1.2,
+           "ladder": {"state": "RALLY ON", "label": "UPTREND", "dir": "up",
+                      "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -5.0, "rsi14": 58.0, "pct_vs_200dma": 26.0}}
+    calm = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.0}})
+    hot = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.8}})
+    assert "high-conviction" in calm["verdict"].lower()          # calm -> high-conviction
+    assert "high-conviction" not in hot["verdict"].lower()       # stress -> vetoed
+    assert "elevated-risk" in hot["verdict"].lower()
+    assert hot["composite_z"] < calm["composite_z"]              # and taxed
+
+
+# --- reshape T5: lottery penalty + idiosyncratic risk axis + suggested size ----
+def test_lottery_penalty_tail_only():
+    assert ss._lottery_penalty({"lottery_max": 8.0}) == 0.0     # calm: no penalty
+    assert ss._lottery_penalty({"lottery_max": 12.0}) == 0.0    # at warn
+    assert ss._lottery_penalty({"lottery_max": 16.0}) < 0       # spike: penalised
+    assert ss._lottery_penalty({"lottery_max": 30.0}) <= -0.9   # radioactive: hard
+    assert ss._lottery_penalty({}) == 0.0                       # absent -> no penalty
+
+
+def test_lottery_spike_demotes_entry():
+    base = {"alpha": 1.5, "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+            "tech": {"off_52w_high_pct": -5.0, "rsi14": 58.0, "pct_vs_200dma": 12.0}}
+    z0, p0, _ = ss._axis_entry(base)
+    z1, p1, _ = ss._axis_entry({**base, "lottery_max": 28.0})     # +28% one-day pop
+    assert z1 < z0 and "lottery-spike" in p1
+
+
+def test_risk_idio_chase_vs_clean():
+    chase = {"ext": {"ext_z": 2.4, "grade": "parabolic"}, "tech": {"pct_vs_200dma": 40.0},
+             "lottery_max": 25.0}
+    clean = {"ext": {"ext_z": 0.2}, "tech": {"pct_vs_200dma": 8.0}, "lottery_max": 3.0}
+    ic, comps = ss._risk_idio(chase)
+    ic2, _ = ss._risk_idio(clean)
+    assert ic > 0.6 and ic2 < 0.2 and "ext" in comps
+
+
+def test_idio_tax_reorders_risky_below_clean():
+    # two equal-edge names; the over-extended/spiking one ranks BELOW the clean one after tax
+    edge = {"sue": 2.0, "ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
+            "tech": {"off_52w_high_pct": -8.0, "rsi14": 55.0}}
+    clean = ss.conviction_profile({**edge, "tech": {**edge["tech"], "pct_vs_200dma": 8.0}}, "US")
+    risky = ss.conviction_profile({**edge, "tech": {**edge["tech"], "pct_vs_200dma": 22.0},
+                                   "lottery_max": 18.0}, "US")
+    assert risky["composite_z"] < clean["composite_z"]
+    assert risky["risk"]["idio"] > clean["risk"]["idio"]
+
+
+def test_suggested_size_monotone_and_gated():
+    assert ss._suggested_size(0.05, blocked=False, market="US", validated=False)["bucket"] == "full"
+    assert ss._suggested_size(0.5, blocked=False, market="US", validated=False)["bucket"] == "half"
+    assert ss._suggested_size(0.8, blocked=False, market="US", validated=False)["bucket"] == "quarter"
+    assert ss._suggested_size(0.05, blocked=True, market="US", validated=False)["bucket"] == "avoid"
+    assert ss._suggested_size(0.05, blocked=False, market="HK", validated=False)["pct"] <= 50

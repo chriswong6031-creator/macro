@@ -55,6 +55,11 @@
     'BOTTOM WATCH': { en: 'Bottom watch', zh: '底部观察' },
     'COUNTERTREND BOUNCE': { en: 'Counter-trend bounce', zh: '逆势反弹' }
   };
+  // bottom-anchored 1064/364 cycle phase (the chart's theory) — 2 states only
+  var CPHASE = {
+    markup: { en: 'Markup (1064d)', zh: '上涨腿 (1064天)' },
+    markdown: { en: 'Markdown (364d)', zh: '下跌腿 (364天)' }
+  };
   var UI = {
     today: { en: 'live · today', zh: '实时 · 今日' },
     history: { en: 'viewing history', zh: '回看历史' }
@@ -69,6 +74,7 @@
   var range  = document.getElementById('vtm-range');
   var el = function (id) { return document.getElementById(id); };
   var elDate = el('vtm-date'), elTag = el('vtm-tag'), elPhase = el('vtm-phase'),
+      elCphase = el('vtm-cphase'),
       elStage = el('vtm-stage'), elRegime = el('vtm-regime'), elLadder = el('vtm-ladder'),
       elMom = el('vtm-mom'), elVal = el('vtm-val'), elExtreme = el('vtm-extreme'),
       elComp = el('vtm-composite'), elRiskI = el('vtm-risk-i'), elRiskV = el('vtm-risk-v'),
@@ -162,6 +168,7 @@
     var ph = PHASE[D.phase[idx]];
     tag(elPhase, ph && ph.c, L(ph) || D.phase[idx]);
     elStage.textContent = L(STAGE[D.stage[idx]]) || '—';
+    if (elCphase) elCphase.textContent = L(CPHASE[D.cphase && D.cphase[idx]]) || '—';
     var rg = REGIME[D.regime[idx]];
     tag(elRegime, rg && rg.c, L(rg) || D.regime[idx] || '—');
     elLadder.textContent = L(LADDER[D.ladder[idx]]) || D.ladder[idx] || '—';

@@ -189,6 +189,42 @@ REGISTRY: list[dict] = [
          source="gex-validation.md", horizon="intraday/days",
          wired="macro.html market-gamma note",
          extra=[("history", "accruing (n small)")]),
+    _row("Cross-asset TSMOM — masterminds GTAA workhorse (W=0.45)",
+         "跨资产时间序列动量 — masterminds GTAA 主力因子（权重0.45）", "Cross-asset", "scored",
+         why="Cross-asset trend is the 0.45-weighted PRIMARY factor of the validated, served "
+             "masterminds GTAA (engine/masterminds.py, cross_asset_trend.tsmom_alloc) — a live "
+             "allocation that beats SPY on Sharpe (1.07 vs 0.62) and MaxDD (−24.1% vs −55.2%) over "
+             "19y with OOS-stable Sharpe in BOTH halves (0.98 / 1.15). My phase0 independently "
+             "confirms the diversified-trend sleeve as a drawdown overlay: DSR 0.9952, survives "
+             "purged-CV + leave-one-crisis-out, executable ETF-only cuts a 60/40 book's MaxDD "
+             "−10pp. Honest: the Sharpe/drawdown edge is the robust OOS part; the raw-CAGR beat is "
+             "era-dependent. (Standalone leverage-free trend ≈ buy&hold — the display row below.)",
+         why_zh="跨资产趋势是已验证、已上线的 masterminds GTAA 的 0.45 权重主力因子——该实盘配置19年间在夏普"
+                "（1.07 对 0.62）与最大回撤（−24.1% 对 −55.2%）上跑赢标普，且两半样本外夏普均稳健（0.98 / 1.15）。"
+                "我的 phase0 独立确认多元趋势作为回撤叠加：DSR 0.9952，通过净化CV与逐危机剔除，纯ETF版将60/40回撤削减约10pp。"
+                "诚实说明：夏普/回撤优势为稳健的样本外部分，原始CAGR超额依赖时代。（无杠杆独立趋势≈买入持有，见下方仅展示行。）",
+         source="tsmom-overlay-phase0.md / masterminds.py", horizon="GTAA allocation (weekly)",
+         dsr=0.9952, sharpe=1.07, wired="masterminds.html GTAA — TREND factor (W=0.45)",
+         extra=[("GTAA Moderate", "Sharpe 1.07 vs SPY 0.62 · MaxDD −24.1% vs −55.2% · 19y"),
+                ("OOS Sharpe halves", "0.98 / 1.15 (both beat SPY)"),
+                ("trend-overlay confirm", "DSR 0.995 · purged-CV + leave-one-crisis-out"),
+                ("standalone sleeve", "≈ buy&hold (display row)")]),
+    _row("Quad × NFCI-direction scenario odds",
+         "宏观四象限 × NFCI方向 情景胜率", "US macro", "confirmer",
+         why="Conditioning forward SPY odds on the regime quad × NFCI direction reproduces the "
+             "measured split: Q1/Q2 with NFCI loosening 74.8% hit / +3.18% fwd-63d vs tightening "
+             "38.3% / −5.69% (HAC t on the loosening leg +7.0). A flat-when-tight overlay shows "
+             "DSR 0.9991 and cuts MaxDD −55%→−49% — BUT NFCI tight-and-tightening fires on ~5% of "
+             "days and ZERO times post-2012, so the effective-N is ~2 pre-2012 crises. Already "
+             "half-wired as the dial's NFCI rule; shipped as a scenario-odds CONFIRMER, not a "
+             "high-confidence standalone.",
+         why_zh="按宏观四象限×NFCI方向条件化前瞻标普胜率，复现既测分化：Q1/Q2 且 NFCI 宽松命中 74.8%/63日 +3.18%，"
+                "紧缩则 38.3%/−5.69%（宽松腿 HAC t +7.0）。但 NFCI 紧且收紧仅约5%交易日触发，2012年后从未触发 → "
+                "有效样本仅约2次危机。已部分接入仪表盘 NFCI 规则；作为情景胜率确认项上线，而非高置信独立信号。",
+         source="quad-nfci-phase0.md", horizon="63d",
+         hit=0.748, n=5700, wired="macro.html dial (NFCI rule) + signal_lab odds",
+         extra=[("Q1/Q2 loose vs tight hit", "74.8% vs 38.3%"), ("HAC t (loosening)", "+7.0"),
+                ("caveat", "tight fires ~5% days, 0 post-2012")]),
 
     # ---- DISPLAY-ONLY -------------------------------------------------------
     _row("US residual-alpha momentum (ranking)",
@@ -314,18 +350,23 @@ REGISTRY: list[dict] = [
          source="spvector-phase4.md", horizon="allocation",
          wired="not shipped"),
 
-    # ---- SCORED (cont.) — the clean earnings-momentum win ------------------
+    # ---- DEMOTED — SUE failed deep re-validation (was scored) --------------
     _row("SUE — standardized unexpected earnings (earnings momentum)",
-         "SUE — 标准化超预期盈利（盈利动量）", "US S&P1500", "scored",
-         why="The one clean free earnings-momentum win. Built from a new EDGAR quarterly-EPS "
-             "pipeline (on-disk EDGAR is annual-only) and the only POSITIVE factor that survives "
-             "BH-FDR in the leak-free PIT panel (IC +0.035, q=0.077). Scored as a standalone leg "
-             "on factors.html.",
-         why_zh="唯一干净的免费盈利动量胜出。基于新的 EDGAR 季度 EPS 管线（磁盘 EDGAR 仅年度）构建，"
-                "是无泄漏时点面板中唯一为正且通过 BH-FDR 的因子（IC +0.035，q=0.077）。作为 factors.html 的独立腿计分。",
-         source="factor-ic-scorecard.md / PR #35", horizon="63d",
-         ic=0.0354, t_hac=2.34, q_fdr=0.0768, fdr_survivor=True,
-         wired="factors.html scored leg"),
+         "SUE — 标准化超预期盈利（盈利动量）", "US S&P1500", "display",
+         why="DEMOTED from scored (2026-06-17). It WAS the lone FDR survivor on the shallow "
+             "2023-2025 window (IC +0.038, q=0.077) and shipped as a scored leg — but a deep "
+             "2011-2026 re-validation (survivorship-OPTIMISTIC, the one bias that helps a factor) "
+             "collapses it to ~zero: IC 0.0005, HAC t 0.06, quintile L/S Sharpe 0.09. The win was a "
+             "~2.5y-window artifact (PEAD post-publication decay). Still computed/shown on "
+             "factors.html with the deep caveat; a clean delisting-recovered deep panel could revisit.",
+         why_zh="已从“计分”降级（2026-06-17）。它曾是浅窗口（2023-2025）唯一通过 FDR 的正向因子（IC +0.038，q=0.077）并作为计分腿上线，"
+                "但深度 2011-2026 复验（且对因子有利的幸存者偏差下）将其压至接近零：IC 0.0005、HAC t 0.06、五分位多空夏普 0.09。"
+                "该胜出只是约2.5年窗口的产物（盈利公布后漂移的发表后衰减）。仍在 factors.html 展示但附深度警示。",
+         source="sue-deep-history-phase0.md / factor-ic-scorecard.md / PR #35", horizon="63d",
+         ic=0.0005, t_hac=0.061, sharpe=0.094, fdr_survivor=False,
+         wired="factors.html (descriptive — deep-caveated)",
+         extra=[("shallow 2023-2025 (was scored)", "IC 0.038, q 0.047, L/S Sharpe 1.45"),
+                ("deep 2011-2026 (surv-opt.)", "IC 0.0005 · t 0.06 · L/S Sharpe 0.09 → edge GONE")]),
 
     # ---- DISPLAY-ONLY (cont.) — origin cross-asset / macro leaves ----------
     _row("Cross-asset TSMOM trend (managed-futures style)",
@@ -428,6 +469,10 @@ def build_scorecard() -> dict:
                        "rebalances": ft.get("rebalances"),
                        "median_universe": ft.get("median_universe"),
                        "leak_free": ft.get("leak_free"),
+                       "universe": ft.get("universe"),
+                       "survivorship_biased": ft.get("survivorship_biased"),
+                       "caveat": ft.get("caveat"),
+                       "price_span": ft.get("price_span"),
                        "collinearity": ft.get("collinearity")}
 
     # survivor names (+ sign) so the page's prose adapts to whichever branch's

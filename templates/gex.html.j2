@@ -4,141 +4,115 @@
 {% macro help(en, zh='') -%}
 <span class="help">?<span class="tip"><span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span></span></span>
 {%- endmacro %}
-{% macro card(lbl, zh, val, sub='') -%}
-<div class="gcard"><div class="muted" style="font-size:12px">{{ t(lbl, zh) }}</div><div class="gval">{{ val }}</div>{% if sub %}<div class="muted sm">{{ sub }}</div>{% endif %}</div>
-{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ t('Options Magnets — dealer-gamma GEX levels', '期权磁吸 — 做市商Gamma GEX价位') }}</title>
+<title>Options Desk — GEX, walls & vol surface · 期权台</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.5 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
-  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1320px)/2)); } }
+  @media (min-width:1100px){ body{ padding:24px max(40px,calc((100vw - 1360px)/2)); } }
   a { text-decoration:none; color:inherit; }
   h1 { font-size:20px; margin:0; }
-  .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
-  .topline { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
-  .muted { color:var(--muted); } .sm { font-size:12px; }
+  h2 { font-size:14px; margin:0 0 10px; font-weight:600; letter-spacing:.2px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .muted { color:var(--muted); } .sm { font-size:12px; } .xs { font-size:11px; }
   .pos { color:var(--up); } .neg { color:var(--down); }
+  .topline { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px 14px; }
   .note { margin:8px 0 0; line-height:1.5; }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
   .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
-  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 14px; }
-  .tabbtn { padding:7px 14px; font:inherit; font-size:13px; border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px; cursor:pointer; }
-  .tabbtn.on { background:var(--panel2); color:var(--text); border-color:var(--muted); }
-  .hero { display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin-bottom:14px; }
-  .regbadge { font-size:13px; font-weight:600; padding:5px 12px; border-radius:8px; border:1px solid var(--line); }
-  .reg-long { color:var(--up); border-color:var(--up); }
-  .reg-short { color:var(--down); border-color:var(--down); }
-  .reg-na { color:var(--muted); }
-  .heronum b { font-size:16px; } .heronum { font-size:13px; }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:14px; }
+
+  /* ---- symbol picker ---- */
+  .pickbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .gx-search { position:relative; flex:1 1 280px; max-width:420px; }
+  .gx-search input { width:100%; padding:9px 12px 9px 34px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); color:var(--text); font:inherit; font-size:14px; }
+  .gx-search .mag { position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.6; }
+  .gx-sugg { position:absolute; top:108%; left:0; right:0; background:var(--panel); border:1px solid var(--line); border-radius:9px; box-shadow:var(--popover-shadow); z-index:50; max-height:320px; overflow:auto; display:none; }
+  .gx-sugg.on { display:block; }
+  .gx-sugg .row { display:flex; justify-content:space-between; gap:8px; padding:7px 11px; cursor:pointer; }
+  .gx-sugg .row:hover, .gx-sugg .row.hl { background:var(--panel2); }
+  .gx-sugg .row b { font-weight:600; } .gx-sugg .row .g { color:var(--muted); font-size:11px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { padding:5px 11px; font-size:12px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:20px; cursor:pointer; white-space:nowrap; }
+  .chip.on { color:var(--text); border-color:var(--muted); background:var(--panel); }
+
+  /* ---- board ---- */
+  .boardwrap { margin-top:12px; }
+  .board { width:100%; border-collapse:collapse; font-size:12.5px; }
+  .board th { text-align:right; color:var(--muted); font-weight:500; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
+  .board th:first-child, .board td:first-child { text-align:left; }
+  .board td { padding:6px 9px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
+  .board tr.sym { cursor:pointer; } .board tr.sym:hover td { background:var(--panel2); }
+  .board tr.sym.sel td { background:var(--panel2); }
+  .board tr.ghead td { color:var(--muted); font-size:11px; letter-spacing:.4px; text-transform:uppercase; padding-top:12px; border-bottom:none; }
+  .reg { font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+  .reg-long { color:var(--up); border-color:var(--up); } .reg-short { color:var(--down); border-color:var(--down); } .reg-na { color:var(--muted); }
+  .board .symk { font-weight:600; } .board .symn { color:var(--muted); font-size:11px; margin-left:5px; }
+  .collapse-btn { background:none; border:none; color:var(--link); cursor:pointer; font:inherit; font-size:12px; padding:0; }
+
+  /* ---- detail ---- */
+  #gx-detail { min-height:120px; }
+  .hero { display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; }
+  .hero .sym { font-size:24px; font-weight:700; } .hero .nm { color:var(--muted); font-size:13px; }
+  .regbadge { font-size:13px; font-weight:600; padding:5px 13px; border-radius:9px; border:1px solid var(--line); }
+  .heronum { font-size:13px; } .heronum b { font-size:16px; } .heronum.big b { font-size:19px; }
+  .grid2 { display:grid; grid-template-columns:1fr; gap:14px; } @media(min-width:900px){ .grid2 { grid-template-columns:1fr 1fr; } }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
   .gcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
-  .gval { font-size:17px; font-weight:600; margin-top:2px; }
-  .lad { font-size:12px; }
-  .lad-row { display:grid; grid-template-columns:62px 1fr 64px; align-items:center; gap:8px; padding:2px 4px; border-radius:4px; }
-  .lad-row.mag { background:var(--panel2); }
-  .lad-k { text-align:right; font-variant-numeric:tabular-nums; } .lad-k b { color:var(--text); }
-  .lad-bar { position:relative; height:11px; border-radius:5px; background:var(--panel2); overflow:hidden; }
-  .lad-bar > i { position:absolute; top:0; bottom:0; } .lad-bar > i.mid { left:50%; width:1px; background:var(--muted); opacity:.5; }
-  .lad-v { text-align:right; font-variant-numeric:tabular-nums; }
-  .magtag { font-size:10px; padding:0 6px; border-radius:6px; border:1px solid var(--line); color:var(--muted); margin-left:6px; }
+  .gcard .k { font-size:11.5px; color:var(--muted); } .gcard .v { font-size:17px; font-weight:600; margin-top:2px; }
+
+  /* levels ruler */
+  .ruler { position:relative; height:62px; margin:10px 2px 4px; }
+  .ruler .axis { position:absolute; left:0; right:0; top:31px; height:2px; background:var(--line); }
+  .ruler .mk { position:absolute; top:18px; transform:translateX(-50%); text-align:center; white-space:nowrap; }
+  .ruler .mk i { display:block; width:2px; height:14px; margin:0 auto; background:var(--muted); }
+  .ruler .mk .lab { font-size:10px; color:var(--muted); margin-top:3px; }
+  .ruler .mk .val { font-size:11px; font-weight:600; }
+  .ruler .mk.spot i { background:var(--text); height:22px; } .ruler .mk.spot { top:8px; }
+  .ruler .mk.cw i { background:var(--up); } .ruler .mk.pw i { background:var(--down); }
+  .ruler .mk.flip i { background:var(--info); } .ruler .mk.mp i { background:var(--orange); }
+
+  /* heatmap */
+  .hm-tabs { display:flex; gap:6px; margin-bottom:8px; }
+  .hm-tab { font-size:12px; padding:4px 11px; border:1px solid var(--line); background:var(--panel2); color:var(--muted); border-radius:7px; cursor:pointer; }
+  .hm-tab.on { color:var(--text); border-color:var(--muted); background:var(--panel); }
+  .hm-scroll { overflow-x:auto; }
+  .heat { border-collapse:separate; border-spacing:2px; font-size:11px; }
+  .heat th { color:var(--muted); font-weight:500; padding:3px 5px; white-space:nowrap; }
+  .heat th.col { writing-mode:horizontal-tb; font-size:10.5px; }
+  .heat td.kk { color:var(--muted); text-align:right; padding-right:7px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .heat td.cell { width:46px; height:26px; text-align:center; border-radius:5px; color:var(--text); position:relative; font-variant-numeric:tabular-nums; }
+  .heat td.cell.spotrow { box-shadow:inset 0 0 0 1px var(--muted); }
+  .heat td.cell:hover { outline:2px solid var(--text); outline-offset:-2px; }
+  .hm-legend { display:flex; gap:14px; align-items:center; margin-top:8px; font-size:11px; color:var(--muted); }
+  .hm-legend .sw { display:inline-block; width:34px; height:11px; border-radius:3px; vertical-align:middle; margin-right:5px; }
+
+  /* svg charts */
+  .chartbox { width:100%; } .chartbox svg { width:100%; height:auto; display:block; overflow:visible; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:3px; vertical-align:-1px; margin-right:5px; }
+
+  /* term table */
+  .term { width:100%; border-collapse:collapse; font-size:12px; }
+  .term th { color:var(--muted); font-weight:500; text-align:right; padding:5px 8px; border-bottom:1px solid var(--line); }
+  .term th:first-child, .term td:first-child { text-align:left; }
+  .term td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
+
+  .floaty-tip { position:fixed; pointer-events:none; z-index:90; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px; font-size:11.5px; box-shadow:var(--popover-shadow); display:none; white-space:nowrap; }
+  .gx-loading { color:var(--muted); padding:30px 6px; text-align:center; }
+  [data-lang="en"] .l-zh, [data-lang="zh"] .l-en { display:none; }
 </style>
 </head>
 <body>
 
 <nav class="site-nav">
-    <div class="nav-links">
-    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
-        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
-        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
-        <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
-        <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
-        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
-        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
-        <a class="active" href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
-        <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
-        <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
-        <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
-        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('Income · gold · bonds', '红利 · 黄金 · 国债') }}</span></a>
-        <a href="allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
-        <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
-        <a href="baskets_hk.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs HSI', '等权主题篮子 vs 恒指') }}</span></a>
-        <a href="allocation_hk.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
-        <a href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
-        <a href="baskets_canada.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P/TSX', '等权主题篮子 vs 标普/多伦多') }}</span></a>
-        <a href="allocation_canada.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="intl.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
-        <a href="intl_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Cross-market standouts · sectors', '跨市场精选 · 板块') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="vector.html">📊 {{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
-        <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
-        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
-        <a href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
-      </div>
-    </div>
-    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
-    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
-        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
-        <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
-        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
-        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
-        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
-        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
-      </div>
-    </div>
-  </div>
+    {% include "_navlinks.html.j2" %}
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -160,73 +134,61 @@
 
 <div class="panel">
   <div class="topline">
-    <h1>🧲 {{ t('Options Magnets', '期权磁吸') }}</h1>
-    <span class="muted sm">{{ t('where dealer option-hedging concentrates — the walls, the flip, the pins', '做市商期权对冲集中之处 — 墙、翻转、磁吸点') }}</span>
+    <h1>🧲 {{ t('Options Desk', '期权台') }}</h1>
+    <span class="muted sm">{{ t('dealer-gamma levels, the walls, the vol surface & expected move — look up any name', '做市商Gamma价位、墙、波动率曲面与预期波动 — 可查询任意标的') }}</span>
   </div>
   <p class="muted sm note">{{ t(
-    "Daily, delayed Cboe levels — NOT live intraday flow. This is a VOL-REGIME + LEVELS MAP (where hedging concentrates), NOT a buy list and NOT directional: gamma tells you the CHARACTER of moves (long-gamma → dealers dampen, price pins/mean-reverts, lower realized vol; short-gamma → dealers amplify, moves trend, higher vol), not which way. The dealer long-call/short-put SIGN is an unobservable assumption — robust enough for indices, FRAGILE for single names (a covered-call ETF or heavy retail call-buying can flip the true sign). Magnet/flip strikes are levels to watch, never targets.",
-    "每日、延迟的 Cboe 价位 — 并非实时盘中流动。这是波动率体制 + 价位地图（对冲集中之处），并非买入清单、也无方向性：Gamma 揭示走势的“性质”（多头Gamma → 做市商抑制、价格磁吸/均值回归、已实现波动更低；空头Gamma → 做市商放大、走势趋势化、波动更高），而非方向。做市商“多头看涨/空头看跌”的符号是不可观测的假设 — 对指数稳健，对个股脆弱（卖备兑ETF或散户大量买看涨可翻转真实符号）。磁吸/翻转价位仅供观察，绝非目标价。") }}</p>
+    "Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional: long gamma → dealers fade moves (price pins / mean-reverts, lower realized vol); short gamma → dealers chase (moves trend / amplify, higher vol). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, FRAGILE for single names (a covered-call ETF or heavy retail call-buying can flip it). Walls / flip / max-pain are levels to watch, never targets.",
+    "每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也无方向性：多头Gamma → 做市商抑制走势（价格磁吸/均值回归、已实现波动更低）；空头Gamma → 做市商追逐（走势趋势化/放大、波动更高）。做市商“多头看涨/空头看跌”的符号是不可观测的假设 — 对指数稳健，对个股脆弱（卖备兑ETF或散户大量买看涨可翻转）。墙/翻转/最大痛点仅供观察，绝非目标价。") }}</p>
 </div>
-
-<div class="tabs">
-  {% for s in symbols %}<button class="tabbtn {{ 'on' if loop.first }}" data-k="{{ s.key }}">{{ t(s.label, s.zh) }}</button>{% endfor %}
-</div>
-
-{% for s in symbols %}
-<div class="panel sympanel" id="gx-{{ s.key }}" data-grp="sym"{% if not loop.first %} style="display:none"{% endif %}>
-  <div class="hero">
-    <span class="regbadge reg-{{ s.regime or 'na' }}">{{ t('Long gamma · pins / mean-revert', '多头Gamma · 磁吸/均值回归') if s.regime=='long' else t('Short gamma · trends / amplifies', '空头Gamma · 趋势/放大') if s.regime=='short' else t('Neutral', '中性') }}
-      {{ help('Long gamma (spot above the flip): dealers sell rallies / buy dips → price pins to high-OI strikes, lower realized vol. Short gamma (spot below the flip): dealers chase the move → trends amplify, higher realized vol. Regime, not direction.', '多头Gamma（现价在翻转价之上）：做市商高抛低吸 → 价格磁吸到高未平仓量行权价、波动更低。空头Gamma（现价在翻转价之下）：做市商追涨杀跌 → 趋势放大、波动更高。是体制，非方向。') }}</span>
-    <span class="heronum"><span class="muted sm">{{ t('Spot', '现价') }}</span> <b>{{ s.spot }}</b></span>
-    <span class="heronum"><span class="muted sm">{{ t('Net GEX', '净GEX') }}</span> <b class="{{ 'pos' if (s.net_gex_bn or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(s.net_gex_bn) if s.net_gex_bn is not none else '—' }} $bn</b></span>
-    <span class="heronum"><span class="muted sm">{{ t('Gamma flip', 'Gamma翻转') }}</span> <b>{{ s.gamma_flip if s.gamma_flip is not none else '—' }}</b> <span class="muted sm">{{ ('(%+.1f%%)'|format(s.dist_to_flip_pct)) if s.dist_to_flip_pct is not none else '' }}</span></span>
-  </div>
-
-  <div class="cards">
-    {{ card('Magnet ↑', '上磁吸', s.magnet_up if s.magnet_up is not none else '—') }}
-    {{ card('Magnet ↓', '下磁吸', s.magnet_down if s.magnet_down is not none else '—') }}
-    {{ card('Charm anchor', 'Charm锚', s.charm_anchor if s.charm_anchor is not none else '—') }}
-    {{ card('IV30', 'IV30', ('%.1f%%'|format(s.iv30)) if s.iv30 is not none else '—') }}
-    {{ card('Put/call OI', '认沽/认购OI', s.put_call_oi_ratio if s.put_call_oi_ratio is not none else '—') }}
-    {{ card('Max pain', '最大痛点', s.max_pain if s.max_pain is not none else '—') }}
-  </div>
-
-  <div class="lad">
-    <div class="muted sm" style="margin-bottom:6px">{{ t('Dealer gamma by strike — the walls', '按行权价的做市商Gamma — 墙') }}
-      {{ help('Net dealer GEX summed at each strike (±8% of spot). Green = call-heavy (a wall above that resists / pins); red = put-heavy (a wall below). The tallest bars are the magnets; price tends to gravitate toward big positive-gamma strikes under long gamma.', '每个行权价（现价±8%）上做市商净GEX之和。绿=看涨为主（上方的墙，阻力/磁吸）；红=看跌为主（下方的墙）。最长的条即磁吸点；多头Gamma下价格倾向于被大正Gamma行权价吸引。') }}</div>
-    {% for r in s.ladder %}
-    <div class="lad-row {{ 'mag' if (r.strike == s.magnet_up or r.strike == s.magnet_down) }}">
-      <span class="lad-k">{% if r.strike == s.magnet_up or r.strike == s.magnet_down %}<b>{{ '%g'|format(r.strike) }}</b>{% else %}{{ '%g'|format(r.strike) }}{% endif %}</span>
-      <span class="lad-bar">{% if r.pct >= 0 %}<i style="left:50%;width:{{ (r.pct/2)|round(1) }}%;background:var(--up)"></i>{% else %}<i style="right:50%;width:{{ (-r.pct/2)|round(1) }}%;background:var(--down)"></i>{% endif %}<i class="mid"></i></span>
-      <span class="lad-v {{ 'pos' if r.net_gex_mn>=0 else 'neg' }}">{{ r.net_gex_mn }}{% if r.strike == s.magnet_up %}<span class="magtag">{{ t('mag↑','↑') }}</span>{% elif r.strike == s.magnet_down %}<span class="magtag">{{ t('mag↓','↓') }}</span>{% endif %}</span>
-    </div>
-    {% endfor %}
-  </div>
-
-  {% if not s.is_index %}
-  <p class="muted sm note">{{ t(
-    'Single-name caveat: the dealer-sign assumption is fragile here — concentration / covered-call / retail flow can flip it. Top-strike OI share ' ~ (s.top_oi_share if s.top_oi_share is not none else '—') ~ ', chain tier "' ~ s.tier ~ '". Read as loose context, not a level to trade against.',
-    '个股提示：此处做市商符号假设脆弱 — 集中度/备兑/散户流可将其翻转。最大行权价OI占比 ' ~ (s.top_oi_share if s.top_oi_share is not none else '—') ~ '，链路等级“' ~ s.tier ~ '”。仅作宽松背景，勿据此逆向交易。') }}</p>
-  {% endif %}
-</div>
-{% endfor %}
 
 <div class="panel">
-  <p class="muted" style="font-size:12px;margin:0">{{ t(
-    'Source: Cboe delayed option chains (free, keyless) → engine/gex_engine.py. Greeks computed dividend-adjusted; the gamma-flip is grid-reevaluated. Daily EOD levels, delayed — NOT live intraday flow (OI updates once per day). A regime + levels map, not predictive alpha. See LIMITATIONS.md.',
-    '来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_engine.py。希腊字母经股息调整计算；Gamma翻转采用网格重估。每日延迟价位 — 并非实时盘中流动（OI每日更新一次）。体制+价位地图，而非预测性超额收益。') }}
+  <div class="pickbar">
+    <div class="gx-search">
+      <span class="mag">🔎</span>
+      <input id="gx-q" type="text" autocomplete="off" placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…">
+      <div class="gx-sugg" id="gx-sugg"></div>
+    </div>
+    <div class="chips" id="gx-chips">
+      <span class="chip on" data-grp="__all">{{ t('All', '全部') }}</span>
+      {% for g in groups %}<span class="chip" data-grp="{{ g }}">{{ td(g) }}</span>{% endfor %}
+    </div>
+  </div>
+  <div class="boardwrap">
+    <div class="topline" style="justify-content:space-between">
+      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Net GEX in $bn per 1% move; “Flip” is the % distance of spot to the zero-gamma level (negative = spot below flip = short-gamma regime); IV30 is the 30-day ATM implied vol; “Exp. move” is the IV-implied 1-day 1σ move. Click any row.', '净GEX为每1%波动的十亿美元；“翻转”为现价到零Gamma价位的百分比距离（负=现价在翻转之下=空头Gamma体制）；IV30为30天平值隐含波动；“预期波动”为隐含的单日1σ波动。点击任意行。') }}</h2>
+      <button class="collapse-btn" id="gx-board-toggle">{{ t('hide', '隐藏') }}</button>
+    </div>
+    <div class="hm-scroll" id="gx-board-scroll">
+      <table class="board" id="gx-board">
+        <thead><tr>
+          <th data-sort="key">{{ t('Symbol', '代码') }}</th>
+          <th data-sort="spot">{{ t('Spot', '现价') }}</th>
+          <th data-sort="regime">{{ t('Regime', '体制') }}</th>
+          <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}</th>
+          <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}</th>
+          <th data-sort="iv30">IV30</th>
+          <th data-sort="daily_move_pct">{{ t('Exp. move', '预期波动') }}</th>
+          <th data-sort="put_call_oi_ratio">P/C</th>
+        </tr></thead>
+        <tbody><!-- filled by gex.js --></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="gx-detail"><div class="gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
+
+<div class="panel">
+  <p class="muted xs" style="margin:0">{{ t(
+    'Source: Cboe delayed option chains (free, keyless) → engine/gex_model.py + engine/gex_engine.py. Greeks dividend-adjusted; the gamma-flip & profile curve are grid-reevaluated across spot. Daily EOD levels, delayed — OI updates once per day, this is NOT live intraday flow. A regime + levels map, display-only, never a scored signal. See LIMITATIONS.md.',
+    '来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_model.py + engine/gex_engine.py。希腊字母经股息调整；Gamma翻转与曲线在现价网格上重估。每日延迟价位 — OI每日更新一次，并非实时盘中流动。体制+价位地图，仅供展示，绝非评分信号。') }}
     {{ t('Generated', '生成于') }} {{ built }}</p>
 </div>
 
-<script>
-(function(){
- document.querySelectorAll('.tabbtn').forEach(function(b){ b.addEventListener('click', function(){
-   document.querySelectorAll('.tabbtn').forEach(function(x){ x.classList.remove('on'); }); this.classList.add('on');
-   var k=this.dataset.k;
-   document.querySelectorAll('[data-grp="sym"]').forEach(function(p){ p.style.display = (p.id==='gx-'+k)?'':'none'; });
- }); });
-})();
-</script>
+<div class="floaty-tip" id="gx-tip"></div>
+<script>window.GEX_MANIFEST = {{ manifest_json|safe }}; window.GEX_DEFAULT = "{{ default_key }}";</script>
+<script src="gex.js"></script>
 <script src="theme.js"></script>
 </body>
 </html>

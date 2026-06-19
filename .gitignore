@@ -6,11 +6,15 @@ __pycache__/
 .env
 site/_tmp/
 site/stockdata/
+site/ohlc/
 site/stockbrief/
 site/chinastockdata/
 site/hkstockdata/
 site/canadastockdata/
 site/intlstockdata/
+site/chinaohlc/
+site/canadaohlc/
+site/intlohlc/
 data/breadth/_closes_cache.parquet
 data/smallcap_breadth/_closes_cache.parquet
 data/midcap_breadth/_closes_cache.parquet
@@ -32,6 +36,11 @@ data/macro/news_cache/
 data/macro/auction_cache/
 data/macro/release_cache/
 
+# China macro-news build-time flash cache (engine/china_news.py — Eastmoney
+# 全球财经快讯). Date-stamped & ephemeral — never commit. (The CCTV 新闻联播
+# policy-tone series data/china_news/cctv_tone.parquet IS versioned.)
+data/china_news/flash_cache/
+
 # News-vector GDELT fetch cache (regenerable, date-stamped). The append-only PIT
 # event store data/news_vector/events.parquet is NOT ignored — it must persist &
 # accrue forward vintages (like data/prediction_markets/snapshots.parquet).
@@ -45,6 +54,9 @@ data/breadth/_closes_delisted_1500.parquet
 data/breadth/sp500_pit_membership.parquet
 data/china_search/closes_deep.parquet
 data/sec_insider/insider_panel.parquet
+# deep-history close panel for the deep factor IC scorecard (offline backfill via
+# scripts.sue_deep_phase0; the small deep ic_scorecard.json IS committed, the 54MB panel is not).
+data/edgar/sue_deep_closes.parquet
 
 # Admin dashboard: local-only secrets / GA4 service-account keys (never commit)
 admin/.env

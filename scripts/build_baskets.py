@@ -71,6 +71,10 @@ def main() -> int:
     lwc = config.ROOT / "templates" / "lightweight-charts.js"
     if lwc.exists():
         (site / "lightweight-charts.js").write_text(lwc.read_text())
+    # ship the prevailing-narrative scorecard renderer (all baskets pages use it)
+    sc = config.ROOT / "templates" / "allocation_scorecard.js"
+    if sc.exists():
+        (site / "allocation_scorecard.js").write_text(sc.read_text())
     log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
 

@@ -199,9 +199,21 @@ def _cond_up_prob(df: pd.DataFrame, cfg: dict, horizon: int):
     if macro is not None and pd.notna(macro.iloc[-1]):
         t = cfg["macro_tilt_pp"] / 100.0
         tilt = t if macro.iloc[-1] == "tailwind" else (-t if macro.iloc[-1] == "headwind" else 0.0)
-    # halving-cycle prior (orthogonal): accumulation phase tilts up, markdown down
+    # cycle-time prior (orthogonal): the bottom-anchored 1064/364 phase — markup tilts up,
+    # markdown down, FADING to the opposite sign inside the top/bottom reversal zone (so it
+    # backs off near a projected turn). Same +/-cycle_tilt_pp magnitude, never a trigger.
+    # Falls back to the halving phase if the bottom-anchored column is absent.
+    cph, cpct = df.get("cphase_phase"), df.get("cphase_pct")
     cyc = df.get("cycle_phase")
-    if cyc is not None and pd.notna(cyc.iloc[-1]) and cfg.get("cycle_tilt_pp"):
+    if cfg.get("cycle_tilt_pp") and cph is not None and pd.notna(cph.iloc[-1]):
+        ct = cfg["cycle_tilt_pp"] / 100.0
+        tz = cfg.get("cycle_top_zone", 0.85)
+        in_zone = cpct is not None and pd.notna(cpct.iloc[-1]) and cpct.iloc[-1] >= tz
+        if cph.iloc[-1] == "markup":
+            tilt += -ct if in_zone else ct
+        elif cph.iloc[-1] == "markdown":
+            tilt += ct if in_zone else -ct
+    elif cyc is not None and pd.notna(cyc.iloc[-1]) and cfg.get("cycle_tilt_pp"):
         ct = cfg["cycle_tilt_pp"] / 100.0
         tilt += ct if cyc.iloc[-1] == "accumulation" else (-ct if cyc.iloc[-1] == "markdown" else 0.0)
     p = min(max(p + tilt, cfg["prob_floor"]), cfg["prob_ceil"])
@@ -495,8 +507,8 @@ def _conviction_why(c: dict, cell, n, horizon: int):
               f"优势在周期，而非{near_zh}。")
         return en, zh
     dword, dword_zh = ("bull", "看多") if c["dir"] > 0 else ("bear", "看空")
-    drv = f"{c['tilt']:+d}pp macro+cycle tilt" if c["tilt"] else "the cell base-rate"
-    drv_zh = f"{c['tilt']:+d}pp 宏观+周期偏移" if c["tilt"] else "区间基准率"
+    drv = f"{c['tilt']:+d}pp macro + 1064/364-cycle tilt" if c["tilt"] else "the cell base-rate"
+    drv_zh = f"{c['tilt']:+d}pp 宏观+1064/364周期偏移" if c["tilt"] else "区间基准率"
     tf, tf_zh = ("weekly", "周线") if horizon >= 7 else ("daily", "日线")
     tape_en = (" Tape agrees." if c["tape"] == "confirm"
                else (f" But the {tf} tape disagrees — nimble only." if c["tape"] == "conflict" else ""))
@@ -733,8 +745,7 @@ def build_landing(site: Path, vm: dict) -> None:
                     _watchlist_state(), _etf_state(), _hk_state(), _forex_state(),
                     _bonds_state(), _us_stocks_state(), _strategies_state(), _crossasset_state(),
                     _market_stocks_state("china"), _market_stocks_state("hk"),
-                    canada=_canada_state(), intl=_intl_state(), ipo=_ipo_state(),
-                    spr=_spr_state())
+                    canada=_canada_state())
     (site / "index.html").write_text(hub)
     log.info("wrote landing hub -> index.html")
 
@@ -743,10 +754,12 @@ def _macro_state() -> dict:
     try:
         d = json.loads((config.data_dir() / "regime" / "latest.json").read_text())
         # plain-English regime name only — never the Q-code (macro D28: a user
-        # misread "Q1" as calendar Q1)
-        return {"label": d.get("quad_name", "—"), "date": d.get("date", "")}
+        # misread "Q1" as calendar Q1). `quad` is carried separately to COLOR the
+        # landing-hub regime chip (q1..q4) and feed the risk-pulse — never shown.
+        return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
+                "quad": d.get("quad", "")}
     except Exception:
-        return {"label": "—", "date": ""}
+        return {"label": "—", "date": "", "quad": ""}
 
 
 def _china_state() -> dict:
@@ -757,9 +770,9 @@ def _china_state() -> dict:
     try:
         d = json.loads((config.data_dir() / "china_regime" / "latest.json").read_text())
         return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
-                "present": (site / "china.html").exists()}
+                "quad": d.get("quad", ""), "present": (site / "china.html").exists()}
     except Exception:
-        return {"label": "—", "date": "", "present": (site / "china.html").exists()}
+        return {"label": "—", "date": "", "quad": "", "present": (site / "china.html").exists()}
 
 
 def _hk_state() -> dict:
@@ -770,9 +783,10 @@ def _hk_state() -> dict:
     try:
         d = json.loads((config.data_dir() / "hk_regime" / "latest.json").read_text())
         return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
+                "quad": d.get("quad", ""),
                 "risk": d.get("risk_state", ""), "present": (site / "hk.html").exists()}
     except Exception:
-        return {"label": "—", "date": "", "risk": "", "present": (site / "hk.html").exists()}
+        return {"label": "—", "date": "", "quad": "", "risk": "", "present": (site / "hk.html").exists()}
 
 
 def _canada_state() -> dict:
@@ -783,10 +797,11 @@ def _canada_state() -> dict:
     try:
         d = json.loads((config.data_dir() / "canada_regime" / "latest.json").read_text())
         return {"label": d.get("quad_name", "—"), "date": d.get("date", ""),
+                "quad": d.get("quad", ""),
                 "risk": (d.get("overlay") or {}).get("state", ""),
                 "present": (site / "canada.html").exists()}
     except Exception:
-        return {"label": "—", "date": "", "risk": "", "present": (site / "canada.html").exists()}
+        return {"label": "—", "date": "", "quad": "", "risk": "", "present": (site / "canada.html").exists()}
 
 
 def _intl_state() -> dict:
@@ -839,12 +854,14 @@ def _forex_state() -> dict:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     try:
         d = json.loads((config.data_dir() / "forex" / "latest.json").read_text())
+        desk = d.get("dollar_desk") or {}
         return {"label": d.get("regime", "—"), "date": d.get("date", ""),
                 "favored": d.get("favored", []), "risk": d.get("risk", ""),
+                "desk_lean": desk.get("lean", ""), "real_rate": desk.get("real_rate_regime", ""),
                 "present": (site / "forex.html").exists()}
     except Exception:
-        return {"label": "—", "date": "", "favored": [], "risk": "",
-                "present": (site / "forex.html").exists()}
+        return {"label": "—", "date": "", "favored": [], "risk": "", "desk_lean": "",
+                "real_rate": "", "present": (site / "forex.html").exists()}
 
 
 def _bonds_state() -> dict:
@@ -1071,451 +1088,634 @@ def _when_zh(ts: pd.Timestamp, date_only: bool) -> str:
     return base if date_only else f"{base} · {ts.strftime('%H:%M')} UTC"
 
 
-def _hub_alert_rows(alerts: list[dict]) -> str:
-    # Emit each text bilingually (dual <span class="l-en/l-zh">); theme.css shows the
-    # one matching the active data-lang. Each source supplies whatever zh it has and
-    # falls back to English otherwise (see home_alert_feed: commodity headlines/details
-    # and the macro numeric detail line have no zh at source).
+# landing-hub: the static CSS lives in a module-level raw string so its many CSS
+# braces stay single (the rest of _hub_html is an f-string with doubled braces).
+# --------------------------------------------------------------------------- #
+# AURORA globe flight-deck landing hub. The CSS + globe DOM are verified-static raw
+# strings; per-build data (regimes, prices, alerts) is injected via .replace(). All
+# bilingual text is literal <span class="l-en/l-zh"> pairs (theme.css toggles them).
+# --------------------------------------------------------------------------- #
+_GLOBE_HUB_CSS = r"""<style>
+html{overflow-x:hidden}
+
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
+ font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
+ padding:22px 20px 56px;position:relative;overflow-x:hidden}
+.wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
+.hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
+.h{text-align:center;margin:6px 0 20px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);
+ background:color-mix(in srgb,var(--panel) 64%,transparent);border:1px solid var(--line);padding:6px 14px;border-radius:999px;
+ margin-bottom:14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.eyebrow .live{width:7px;height:7px;border-radius:50%;background:#22c55e;
+ box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent);animation:livepulse 2.4s ease-out infinite}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.h h1{font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:0 0 9px;
+ background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ /* a soft --bg halo on the glyphs keeps the headline legible over the sun/moon
+    WITHOUT any rectangular scrim that would cut a line across the body */
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
+html[data-lang="zh"] .h h1{letter-spacing:0}
+.h p{color:var(--muted);font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:560px;line-height:1.5;text-wrap:balance;
+ text-shadow:0 1px 2px var(--bg),0 0 10px var(--bg),0 0 20px var(--bg)}
+
+/* ===== glass + accent primitives ===== */
+.glass{position:relative;border-radius:16px;overflow:hidden;isolation:isolate;
+ background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+ -webkit-backdrop-filter:blur(13px) saturate(1.08);backdrop-filter:blur(13px) saturate(1.08);
+ box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),0 8px 26px -18px rgba(0,0,0,.5)}
+html[data-theme="light"] .glass{background:color-mix(in srgb,var(--panel) 90%,transparent);
+ border-color:color-mix(in srgb,var(--line) 92%,transparent);
+ box-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent),0 6px 20px -14px rgba(20,30,50,.16)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:color-mix(in srgb,var(--panel) 96%,transparent)}}
+.acc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
+ background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
+ transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
+.acc::after{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
+ background:radial-gradient(360px 180px at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 68%);transition:opacity .25s ease}
+
+/* ===== state band: compact risk pulse + synthesis (slim, one row) ===== */
+.state{--accent:#416aec;display:flex;align-items:center;gap:22px;padding:15px 20px;margin-bottom:22px;flex-wrap:wrap}
+.state-wash{position:absolute;inset:0;z-index:-1;background:radial-gradient(520px 200px at 0% 0%,color-mix(in srgb,#416aec 10%,transparent),transparent 70%)}
+.pulse{flex:0 0 auto;display:flex;flex-direction:column;gap:7px;min-width:230px}
+.pulse-head{display:flex;align-items:baseline;gap:9px}
+.pulse-eye{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+html[data-lang="zh"] .pulse-eye{letter-spacing:0}
+.pulse-num{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--text)}
+.pulse-band{font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:6px;
+ color:color-mix(in srgb,var(--warn) 86%,var(--text));background:color-mix(in srgb,var(--warn) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
+.pulse-band.tone-off{color:color-mix(in srgb,var(--act) 86%,var(--text));background:color-mix(in srgb,var(--act) 13%,var(--panel2));border-color:color-mix(in srgb,var(--act) 22%,transparent)}
+.pulse-band.tone-on{color:color-mix(in srgb,var(--ok) 86%,var(--text));background:color-mix(in srgb,var(--ok) 13%,var(--panel2));border-color:color-mix(in srgb,var(--ok) 22%,transparent)}
+.pulse-track{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--act),var(--warn) 42%,#14b8a6 72%,var(--ok));opacity:.92}
+.pulse-mark{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--text);border:3px solid var(--panel);
+ transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.35)}
+.pulse-ticks{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+html[data-lang="zh"] .pulse-ticks{letter-spacing:0}
+.state-mid{flex:1;min-width:280px;display:flex;flex-direction:column;gap:6px;border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-left:22px}
+.state-synth{font-size:13.5px;color:var(--muted);line-height:1.5}
+.state-synth b{color:var(--text);font-weight:700}
+.state-alert{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text);text-decoration:none;width:fit-content}
+.state-alert .sa-dot{width:7px;height:7px;border-radius:50%;background:var(--act);flex:none}
+.state-alert .sa-txt{color:var(--muted)}
+.state-alert b{font-weight:600}
+.state-alert .sa-go{color:var(--link);font-weight:700;white-space:nowrap}
+.state-alert:hover .sa-go{text-decoration:underline}
+@media(max-width:760px){.state-mid{border-left:none;padding-left:0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:12px}}
+
+/* ===== section labels ===== */
+.band{display:flex;align-items:center;gap:11px;margin:0 2px 13px}
+.band h2{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0}
+html[data-lang="zh"] .band h2{letter-spacing:0}
+.band .ln{flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.band .cnt{font-size:11px;font-weight:600;color:var(--muted)}
+
+/* ===== the nav grid (markets + vectors, all visible) ===== */
+.nav{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:26px}
+@media(max-width:880px){.nav{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.nav{grid-template-columns:1fr}}
+
+.card{position:relative;display:flex;flex-direction:column;padding:15px 16px 14px;min-height:138px;text-decoration:none;color:inherit;
+ transition:transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .18s ease,border-color .18s ease}
+.card:hover,.card:focus-within{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 48%,var(--line));
+ box-shadow:0 16px 36px -16px color-mix(in srgb,var(--accent) 40%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent)}
+.card:hover.acc::before,.card:focus-within.acc::before{transform:scaleX(1)} .card:hover.acc::after{opacity:1}
+.card-top{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.ico{width:32px;height:32px;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;border-radius:9px;
+ background:color-mix(in srgb,var(--accent) 15%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));
+ transition:transform .18s cubic-bezier(.2,.7,.3,1)}
+.card:hover .ico{transform:scale(1.07) rotate(-4deg)}
+.card-h{font-size:14.5px;font-weight:800;color:var(--text);margin:0;letter-spacing:-.015em;line-height:1.15}
+html[data-lang="zh"] .card-h{letter-spacing:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pill{font-size:11.5px;font-weight:700;letter-spacing:-.005em;background:color-mix(in srgb,var(--accent) 12%,var(--panel2));
+ color:color-mix(in srgb,var(--accent) 74%,var(--text));padding:3px 9px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 18%,transparent)}
+.pill.q1{background:color-mix(in srgb,var(--q1) 13%,var(--panel2));color:color-mix(in srgb,var(--q1) 80%,var(--text));border-color:color-mix(in srgb,var(--q1) 24%,transparent)}
+.pill.q2{background:color-mix(in srgb,var(--q2) 13%,var(--panel2));color:color-mix(in srgb,var(--q2) 80%,var(--text));border-color:color-mix(in srgb,var(--q2) 24%,transparent)}
+.pill.q3{background:color-mix(in srgb,var(--q3) 13%,var(--panel2));color:color-mix(in srgb,var(--q3) 80%,var(--text));border-color:color-mix(in srgb,var(--q3) 24%,transparent)}
+.pill.q4{background:color-mix(in srgb,var(--q4) 13%,var(--panel2));color:color-mix(in srgb,var(--q4) 80%,var(--text));border-color:color-mix(in srgb,var(--q4) 24%,transparent)}
+.pill.on{background:color-mix(in srgb,var(--info) 15%,var(--panel));color:color-mix(in srgb,var(--info) 82%,var(--text));border-color:color-mix(in srgb,var(--info) 22%,transparent)}
+.pill.off{background:color-mix(in srgb,var(--act) 14%,var(--panel));color:color-mix(in srgb,var(--act) 82%,var(--text));border-color:color-mix(in srgb,var(--act) 22%,transparent)}
+.pill.neg{background:color-mix(in srgb,var(--down) 13%,var(--panel2));color:color-mix(in srgb,var(--down) 80%,var(--text));border-color:color-mix(in srgb,var(--down) 22%,transparent)}
+.bar{height:5px;border-radius:999px;background:color-mix(in srgb,var(--line) 70%,transparent);overflow:hidden;margin:-2px 0 9px}
+.bar i{display:block;height:100%;border-radius:999px}
+.bar.b-risk i{background:linear-gradient(90deg,var(--act),var(--warn))}
+.bar.b-health i{background:linear-gradient(90deg,var(--warn),var(--ok))}
+.go{margin-top:auto;font-weight:700;color:var(--accent);font-size:12px}
+.go::after{content:' →'}
+/* market cards: header chip + two clearly-labelled split BUTTONS (Macro / Stock) */
+.card .pill.hd{margin-left:auto}
+.split{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.splitbtn{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;
+ border:1px solid color-mix(in srgb,var(--line) 80%,transparent);border-radius:11px;padding:9px 11px;
+ background:color-mix(in srgb,var(--panel2) 42%,transparent);
+ transition:transform .14s ease,border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.splitbtn:hover{border-color:color-mix(in srgb,var(--accent) 52%,var(--line));background:color-mix(in srgb,var(--accent) 8%,var(--panel2));
+ transform:translateY(-1px);box-shadow:0 7px 16px -10px color-mix(in srgb,var(--accent) 45%,transparent)}
+.sb-ic{width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;border-radius:8px;
+ background:color-mix(in srgb,var(--accent) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--accent) 22%,transparent)}
+.sb-tx{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.sb-tx b{font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.01em}
+html[data-lang="zh"] .sb-tx b{letter-spacing:0}
+.sb-tx em{font-style:normal;font-size:11px;color:var(--muted)}
+.sb-go{margin-left:auto;color:var(--accent);font-weight:700;font-size:13px;transition:transform .14s ease}
+.splitbtn:hover .sb-go{transform:translateX(2px)}
+
+.us{--accent:#416aec} .cn{--accent:#e35d6a} .hk{--accent:#a855f7} .ca{--accent:#e5484d} .btc{--accent:#f7931a}
+.com{--accent:#d4a12a} .fx{--accent:#14b8a6} .bd{--accent:#0ea5e9} .xa{--accent:#8b5cf6}
+.etf{--accent:#3b82f6} .str{--accent:#10b981} .wl{--accent:#64748b}
+
+/* ===== compact alerts (secondary, bottom) ===== */
+.alerts{margin-top:4px}
+.al-card{padding:6px 18px}
+.ha-item{border-bottom:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.ha-item:last-child{border-bottom:none}
+.ha-item summary{display:flex;align-items:center;gap:10px;padding:11px 0;cursor:pointer;list-style:none;flex-wrap:wrap;transition:padding-left .16s ease}
+.ha-item summary:hover{padding-left:5px}
+.ha-item summary::-webkit-details-marker{display:none}
+.ha-dot{width:8px;height:8px;border-radius:50%;flex:none}
+.ha-dot.d-high{background:var(--act)} .ha-dot.d-medium{background:var(--info)} .ha-dot.d-info{background:var(--muted)}
+.ha-src{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;white-space:nowrap;flex:none}
+.ha-src.s-macro{background:color-mix(in srgb,#6366f1 16%,var(--panel));color:color-mix(in srgb,#6366f1 80%,var(--text))}
+.ha-src.s-vector{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 82%,var(--text))}
+.ha-src.s-commodity{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:color-mix(in srgb,var(--warn) 84%,var(--text))}
+.ha-head{flex:1;min-width:200px;font-weight:600;color:var(--text);font-size:13px}
+.ha-when{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
+.ha-detail{padding:0 0 12px 22px;font-size:12.5px;color:var(--text);line-height:1.55}
+.ha-detail a{font-weight:700;color:var(--link)}
+.ha-what{margin:6px 0 7px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:12px;color:var(--muted);line-height:1.5}
+.ha-edge{margin:3px 0 7px;font-size:11.5px;color:var(--text)}
+.ha-edge b{color:var(--muted);font-weight:600}
+.al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
+.al-more:hover{text-decoration:underline}
+
+.site-footer{margin:34px auto 0;padding-top:22px;border-top:1px solid var(--line);text-align:center;line-height:1.6}
+.site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
+.site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
+.foot{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
+a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:8px}
+
+@keyframes smReveal{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.reveal{animation:smReveal .45s cubic-bezier(.2,.7,.3,1) both}
+.state.reveal{animation-delay:0ms} .nav.mk.reveal{animation-delay:70ms} .nav.vc.reveal{animation-delay:120ms} .alerts.reveal{animation-delay:160ms}
+@media (prefers-reduced-motion: reduce){
+ .eyebrow .live{animation:none} .reveal{animation:none}
+ .card,.ico,.ha-item summary{transition:none} .card:hover{transform:none}}
+
+/* ===== flight deck ===== */
+.globe-deck{display:grid;grid-template-columns:minmax(0,2.05fr) minmax(0,1fr);gap:16px;align-items:stretch;max-width:100%}
+@media(max-width:880px){.globe-deck{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:520px){
+ .gd-clock{padding:12px 11px 10px}
+ .gd-row{gap:8px;padding:6px 7px}
+ .gd-r-idx{font-size:11.5px} .gd-r-px{font-size:10.5px}
+ .gd-r-cd{font-size:9.5px} .gd-r-txt{font-size:10.5px}
+}
+/* the globe is UNBOUNDED — no card; it floats on the page's aurora. The canvas is
+   transparent outside the sphere, so body::before's aurora shows through. */
+.gd-stage{min-height:640px;display:flex;overflow:visible;background:none;border:none;box-shadow:none;min-width:0}
+@media(max-width:880px){.gd-stage{min-height:0;height:min(94vw,500px)}}
+.gd-canvas{width:100%;max-width:100%;height:100%;display:block;touch-action:none;cursor:grab;outline:none}
+.gd-canvas:focus-visible{outline:2px solid var(--link);outline-offset:-2px}
+.gd-poster{position:absolute;inset:0;width:100%;height:100%;transition:opacity .6s ease;pointer-events:none}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:-1px;padding:0;border:0}
+.gd-legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;margin:0;padding:0;border:0;list-style:none}
+.gd-leg{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text);cursor:pointer;
+ background:color-mix(in srgb,var(--panel) 70%,transparent);border:1px solid var(--line);border-radius:999px;padding:3px 9px;
+ -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.gd-leg:hover{border-color:color-mix(in srgb,var(--accent,var(--info)) 55%,var(--line))}
+.gd-leg .dot{width:7px;height:7px;border-radius:50%}
+.gd-leg.q1 .dot{background:var(--q1)} .gd-leg.q2 .dot{background:var(--q2)} .gd-leg.q3 .dot{background:var(--q3)} .gd-leg.q4 .dot{background:var(--q4)}
+.gd-leg .l-zh{display:none} html[data-lang="zh"] .gd-leg .l-en{display:none} html[data-lang="zh"] .gd-leg .l-zh{display:inline}
+
+/* ===== tooltip ===== */
+.gd-tip{position:fixed;z-index:50;width:264px;padding:13px 14px;border-radius:14px;pointer-events:none;
+ box-shadow:var(--popover-shadow);transition:opacity .12s ease}
+.gd-tip.pinned{pointer-events:auto}   /* a clicked (pinned) tooltip is interactive so its "Open dashboard" link works */
+.gd-tip[hidden]{display:none}
+.gd-tip-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.gd-tip-flag{font-size:18px}
+.gd-tip-name{font-weight:800;font-size:14px;color:var(--text);flex:1;letter-spacing:-.01em}
+.gd-chip{font-size:11px;font-weight:800;padding:2px 8px;border-radius:7px;white-space:nowrap;
+ color:color-mix(in srgb,var(--mq) 82%,var(--text));background:color-mix(in srgb,var(--mq) 15%,var(--panel));border:1px solid color-mix(in srgb,var(--mq) 26%,transparent)}
+.gd-chip.q1{--mq:var(--q1)} .gd-chip.q2{--mq:var(--q2)} .gd-chip.q3{--mq:var(--q3)} .gd-chip.q4{--mq:var(--q4)}
+.gd-tip-gi{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
+.gd-tip-gi>div{display:flex;align-items:center;gap:8px;font-size:12px}
+.gd-tip-k{color:var(--muted);font-weight:600;width:58px;flex:none}
+.gd-tip-gi b{font-variant-numeric:tabular-nums;font-weight:700;width:42px;text-align:right}
+.gd-bar{position:relative;flex:1;height:5px;border-radius:999px;background:color-mix(in srgb,var(--line) 60%,transparent)}
+.gd-bar::before{content:'';position:absolute;left:50%;top:-2px;width:1px;height:9px;background:color-mix(in srgb,var(--line) 90%,transparent)}
+.gd-bar i{position:absolute;top:0;height:100%;border-radius:999px}
+.gd-tip-row{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:7px;color:var(--text)}
+.gd-dots{letter-spacing:1px;color:var(--info)}
+.gd-lim{font-size:10px;font-weight:700;color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--panel2));padding:1px 6px;border-radius:5px}
+.gd-tip-idx{display:flex;align-items:center;gap:8px;font-size:12.5px;padding-top:8px;border-top:1px solid var(--line);margin-bottom:7px}
+.gd-tip-idx span:first-child{color:var(--muted);flex:1}
+.gd-tip-idx b{font-variant-numeric:tabular-nums}
+.gd-chg{font-weight:700}
+.gd-tip-foot{font-size:10.5px;color:var(--muted);line-height:1.45;margin-bottom:9px}
+.gd-tip-go{display:inline-block;font-size:12px;font-weight:700;color:var(--link);text-decoration:none}
+.gd-tip .l-zh{display:none} html[data-lang="zh"] .gd-tip .l-en{display:none} html[data-lang="zh"] .gd-tip .l-zh{display:inline}
+
+/* ===== sidebar clock ===== */
+.gd-clock{display:flex;flex-direction:column;padding:14px 14px 12px;min-width:0;max-width:100%}
+.gd-clock>header{font-size:12px;font-weight:800;color:var(--text);letter-spacing:-.01em;margin:0 2px 11px;display:flex;gap:6px;align-items:baseline}
+.gd-clock>header .gd-utc{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:600}
+.gd-clock ul{list-style:none;margin:0;padding:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.gd-row{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:10px;border:1px solid transparent;cursor:pointer;transition:background .14s,border-color .14s}
+.gd-row:hover,.gd-row.sel{background:color-mix(in srgb,var(--info) 7%,var(--panel2));border-color:color-mix(in srgb,var(--info) 22%,var(--line))}
+.gd-row:focus-visible{outline:2px solid var(--link);outline-offset:1px}
+.gd-r-sm{width:26px;flex:none}
+.gd-sm{width:26px;height:16px;display:block}
+.gd-r-main{flex:1;display:flex;flex-direction:column;min-width:0;gap:1px}
+.gd-r-idx{font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gd-r-px{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.gd-r-px em{font-style:normal;font-weight:700}
+.gd-r-state{display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right;flex:none}
+.gd-r-dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.gd-r-dot.on{background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 22%,transparent)}
+.gd-r-dot.off{background:var(--muted)} .gd-r-dot.lunch{background:var(--warn)}
+.gd-r-txt{font-size:11px;font-weight:700;color:var(--text)}
+.gd-r-cd{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.gd-r-state{flex-direction:row;align-items:center;gap:7px}
+.gd-asof,.gd-foot{font-size:10px;color:var(--muted);margin:8px 2px 0;line-height:1.4}
+.gd-clock .l-zh{display:none} html[data-lang="zh"] .gd-clock .l-en{display:none} html[data-lang="zh"] .gd-clock .l-zh{display:inline}
+.gd-r-cd .l-zh,.gd-r-txt .l-zh{display:none} html[data-lang="zh"] .gd-r-cd .l-en,html[data-lang="zh"] .gd-r-txt .l-en{display:none}
+html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display:inline}
+
+/* ===== celestial day/night backdrop (sky.js) =====
+   #sky floats at z-index:-1 — ABOVE the ambient aurora (body::before, also -1
+   but earlier in tree order) and BEHIND all page content. Sun parks on a
+   time-of-day arc in light mode; a breathing starfield + moon take over in dark. */
+#sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
+@media(max-width:560px){#sky{--cs:clamp(92px,26vw,124px)}}  /* smaller disc on phones so it stays fully on-screen */
+#sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
+#sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
+ transform:translate(-50%,calc(-50% + 80vh));opacity:0;
+ transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
+#sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
+#sky[data-sky="night"] #sky-moon{transform:translate(-50%,-50%);opacity:1}
+/* sun — a luminous light source: white-hot core, warm body, big soft bloom + a
+   faint blurred corona flare (no hard cartoon spokes) */
+#sky-sun{background:radial-gradient(circle at 50% 50%,#fffdf7 0%,#fff2cc 20%,#ffd87f 40%,#ffb84d 58%,rgba(255,156,54,.34) 76%,transparent 84%);
+ box-shadow:0 0 46px 6px rgba(255,226,150,.6),0 0 110px 28px rgba(255,192,92,.38),0 0 220px 86px rgba(255,170,68,.18),0 0 360px 160px rgba(255,160,60,.08)}
+#sky-sun::before{content:'';position:absolute;inset:-46%;border-radius:50%;filter:blur(11px);opacity:.5;
+ background:repeating-conic-gradient(from 0deg,rgba(255,222,150,.16) 0deg 7deg,transparent 7deg 22deg);
+ -webkit-mask:radial-gradient(circle,transparent 46%,#000 62%,transparent 92%);mask:radial-gradient(circle,transparent 46%,#000 62%,transparent 92%);
+ animation:sky-spin 90s linear infinite}
+#sky-sun::after{content:'';position:absolute;inset:12%;border-radius:50%;mix-blend-mode:screen;
+ background:radial-gradient(circle at 44% 40%,rgba(255,255,255,.95) 0%,rgba(255,247,214,.25) 42%,transparent 62%);
+ animation:sky-breathe 6.5s ease-in-out infinite}
+/* moon — a 3-D shaded sphere: soft terminator, faint craters, cool halo */
+#sky-moon{background:radial-gradient(circle at 34% 28%,#ffffff 0%,#eef2fb 26%,#cdd8ee 58%,#9fafcf 100%);
+ box-shadow:inset -24px -20px 50px rgba(16,26,54,.58),inset 12px 9px 24px rgba(255,255,255,.42),0 0 56px 10px rgba(150,182,242,.3),0 0 160px 60px rgba(120,162,232,.15)}
+#sky-moon::before{content:'';position:absolute;inset:0;border-radius:50%;opacity:.3;
+ background:radial-gradient(circle at 63% 31%,rgba(116,132,166,.6) 0 5%,transparent 6%),
+  radial-gradient(circle at 39% 58%,rgba(116,132,166,.5) 0 3.6%,transparent 4.6%),
+  radial-gradient(circle at 71% 64%,rgba(116,132,166,.45) 0 2.6%,transparent 3.6%),
+  radial-gradient(circle at 30% 37%,rgba(116,132,166,.4) 0 2%,transparent 3%),
+  radial-gradient(circle at 52% 72%,rgba(116,132,166,.4) 0 2.4%,transparent 3.4%)}
+#sky-moon::after{content:'';position:absolute;inset:-30%;border-radius:50%;
+ background:radial-gradient(circle,rgba(150,182,242,.16) 0%,transparent 62%);
+ animation:sky-breathe 7.5s ease-in-out infinite}
+@keyframes sky-spin{to{transform:rotate(360deg)}}
+@keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
+/* headline legibility over the sun/moon is handled by a soft --bg glyph halo on
+   the text itself (see .h h1 / .h p) — no backdrop scrim, so nothing draws an
+   edge across the celestial body */
+.h{position:relative}
+@media (prefers-reduced-motion: reduce){
+ #sky-sun,#sky-moon{transition:none}
+ #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
+</style>"""
+
+_GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
+    <div class="gd-stage">
+      <canvas class="gd-canvas" data-topo="world-110m.json" role="application" tabindex="0"
+        aria-roledescription="interactive macro-regime globe"
+        aria-label="Macro regime globe. Arrow keys rotate, plus and minus zoom, Escape deselects." aria-describedby="gd-live"></canvas>
+      <span id="gd-live" class="sr-only" aria-live="polite"></span>
+      <div class="gd-tip glass" role="tooltip" hidden></div>
+      <ul class="gd-legend" aria-label="Markets / 市场列表">__LEGEND__</ul>
+    </div>
+    <aside class="gd-clock glass" aria-label="Market clock">
+      <header><span class="l-en">Market clock</span><span class="l-zh">交易时钟</span> · <time class="gd-utc"></time> UTC</header>
+      <ul></ul>
+      <p class="gd-asof"><span class="l-en">Prices as of last build · clocks are live</span><span class="l-zh">价格为上次构建时 · 时钟为实时</span></p>
+      <p class="gd-foot"><span class="l-en">Regular sessions; holidays not modeled</span><span class="l-zh">常规交易时段，未计入假期</span></p>
+    </aside>
+  </section>"""
+
+_GQUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
+             "Growth scare": "增长恐慌", "Growth-scare": "增长恐慌", "Deflation": "通缩"}
+_GQCLS = {"Q1": "q1", "Q2": "q2", "Q3": "q3", "Q4": "q4"}
+_EZ_MEMBERS = ["AUT", "BEL", "CYP", "EST", "FIN", "FRA", "DEU", "GRC", "IRL", "ITA",
+               "LVA", "LTU", "LUX", "MLT", "NLD", "PRT", "SVK", "SVN", "ESP", "HRV"]
+_ISO_NUM = {"USA": "840", "CAN": "124", "CHN": "156", "JPN": "392", "KOR": "410", "TWN": "158", "GBR": "826",
+            "AUT": "040", "BEL": "056", "CYP": "196", "EST": "233", "FIN": "246", "FRA": "250", "DEU": "276",
+            "GRC": "300", "IRL": "372", "ITA": "380", "LVA": "428", "LTU": "440", "LUX": "442", "MLT": "470",
+            "NLD": "528", "PRT": "620", "SVK": "703", "SVN": "705", "ESP": "724", "HRV": "191"}
+_GMETA = {
+    "US": dict(iso3="USA", kind="country", flag="🇺🇸", name_en="United States", name_zh="美国",
+               idx_en="S&P 500", idx_zh="标普500", pq="data/yahoo/_GSPC.parquet", tz="America/New_York", open="09:30", close="16:00", lunch=None, href="macro.html"),
+    "CA": dict(iso3="CAN", kind="country", flag="🇨🇦", name_en="Canada", name_zh="加拿大",
+               idx_en="S&P/TSX", idx_zh="标普/TSX", pq="data/canada/_GSPTSE.parquet", tz="America/Toronto", open="09:30", close="16:00", lunch=None, href="canada.html"),
+    "CN": dict(iso3="CHN", kind="country", flag="🇨🇳", name_en="China", name_zh="中国",
+               idx_en="Shanghai Comp", idx_zh="上证综指", pq="data/china/000001.SS.parquet", tz="Asia/Shanghai", open="09:30", close="15:00", lunch=["11:30", "13:00"], href="china.html"),
+    "HK": dict(iso3=None, kind="marker", marker=[114.17, 22.32], flag="🇭🇰", name_en="Hong Kong", name_zh="香港",
+               idx_en="Hang Seng", idx_zh="恒生指数", pq="data/hk/_HSI.parquet", tz="Asia/Hong_Kong", open="09:30", close="16:00", lunch=["12:00", "13:00"], href="hk.html"),
+    "JP": dict(iso3="JPN", kind="country", flag="🇯🇵", name_en="Japan", name_zh="日本",
+               idx_en="Nikkei 225", idx_zh="日経225", pq="data/intl/_N225.parquet", tz="Asia/Tokyo", open="09:00", close="15:00", lunch=["11:30", "12:30"], href="intl.html"),
+    "KR": dict(iso3="KOR", kind="country", flag="🇰🇷", name_en="South Korea", name_zh="韩国",
+               idx_en="KOSPI", idx_zh="韩国综合", pq="data/intl/_KS11.parquet", tz="Asia/Seoul", open="09:00", close="15:30", lunch=None, href="intl.html"),
+    "TW": dict(iso3="TWN", kind="country", flag="🇹🇼", name_en="Taiwan", name_zh="台湾",
+               idx_en="TAIEX", idx_zh="加权指数", pq="data/intl/_TWII.parquet", tz="Asia/Taipei", open="09:00", close="13:30", lunch=None, href="intl.html"),
+    "GB": dict(iso3="GBR", kind="country", flag="🇬🇧", name_en="United Kingdom", name_zh="英国",
+               idx_en="FTSE 100", idx_zh="富时100", pq="data/intl/_FTSE.parquet", tz="Europe/London", open="08:00", close="16:30", lunch=None, href="intl.html"),
+    "EZ": dict(iso3=None, kind="bloc", ez_members=_EZ_MEMBERS, flag="🇪🇺", name_en="Eurozone", name_zh="欧元区",
+               idx_en="EuroStoxx 50", idx_zh="欧洲斯托克50", pq="data/intl/_STOXX50E.parquet", tz="Europe/Berlin", open="09:00", close="17:30", lunch=None, href="intl.html"),
+}
+_GRISK = {"q1": ("calm — low macro stress", "平静 — 宏观压力低"),
+          "q2": ("moderate — reflationary", "中等 — 再通胀"),
+          "q3": ("elevated — stagflationary", "偏高 — 滞胀"),
+          "q4": ("high — growth scare", "高 — 增长恐慌")}
+
+
+def _g_price(pq):
+    try:
+        df = pd.read_parquet(config.ROOT / pq)
+        c = df["close"] if "close" in df.columns else df["Close"]
+        last, prev = float(c.iloc[-1]), float(c.iloc[-2])
+        return "{:,.2f}".format(last), round(100 * (last / prev - 1), 2)
+    except Exception:  # noqa: BLE001
+        return None, None
+
+
+def _g_regime_json(name):
+    try:
+        return json.loads((config.data_dir() / name / "latest.json").read_text())
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _globe_markets() -> list:
+    """Assemble the 9-market globe blob (US/CA/CN/HK + JP/KR/TW/GB/EZ) from the regime
+    JSONs + intl/latest.json. Numbers are real; recession/drawdown null-safe."""
+    import json as _json
+    home = {"US": _g_regime_json("regime"), "CN": _g_regime_json("china_regime"),
+            "HK": _g_regime_json("hk_regime"), "CA": _g_regime_json("canada_regime")}
+    intl = _g_regime_json("intl")
+    heat = {r["cc"]: r for r in intl.get("heatmap", [])}
+    rec = {r["cc"]: r["value"] for r in intl.get("rankings", {}).get("recession_score", {}).get("rows", [])}
+    dd = {r["cc"]: r["value"] for r in intl.get("rankings", {}).get("drawdown_risk", {}).get("rows", [])}
+    intl_date = intl.get("date", "")
+    rows = []
+    for cc, m in _GMETA.items():
+        quad = qn = ""
+        growth = infl = conf = None
+        recession = drawdown = None
+        asof = ""
+        data_limited = False
+        if cc in home:
+            d = home[cc]
+            quad, qn = d.get("quad", ""), d.get("quad_name", "—")
+            growth, infl, conf = d.get("growth_score"), d.get("inflation_score"), d.get("confidence")
+            asof = d.get("date", "")
+            comp = (d.get("macro_risk") or {}).get("components") or {}
+            if comp.get("recession") is not None:
+                recession = round(100 * comp["recession"])
+            if comp.get("drawdown") is not None:
+                drawdown = round(100 * comp["drawdown"])
+        else:
+            h = heat.get(cc, {})
+            quad, qn = h.get("quad", ""), h.get("quad_name", "—")
+            growth, infl, conf = h.get("growth"), h.get("inflation"), h.get("confidence")
+            data_limited = bool(h.get("data_limited"))
+            asof = intl_date
+            recession, drawdown = rec.get(cc), dd.get(cc)
+        qc = _GQCLS.get(quad, "q1")
+        price, chg = _g_price(m["pq"])
+        rt_en, rt_zh = _GRISK.get(qc, ("—", "—"))
+        if m["kind"] == "bloc":
+            geo_ids = [_ISO_NUM[x] for x in m["ez_members"] if x in _ISO_NUM]
+        elif m.get("iso3"):
+            geo_ids = [_ISO_NUM[m["iso3"]]] if m["iso3"] in _ISO_NUM else []
+        else:
+            geo_ids = []
+        rows.append({
+            "cc": cc, "name_en": m["name_en"], "name_zh": m["name_zh"], "flag": m["flag"],
+            "iso3": m.get("iso3"), "kind": m["kind"], "geo_ids": geo_ids,
+            "ez_members": m.get("ez_members"), "marker_lonlat": m.get("marker"),
+            "quad": qc, "quad_name_en": qn, "quad_name_zh": _GQUAD_ZH.get(qn, qn),
+            "growth": round(growth, 3) if growth is not None else None,
+            "inflation": round(infl, 3) if infl is not None else None,
+            "confidence": round(conf, 3) if conf is not None else None,
+            "data_limited": data_limited, "recession": recession, "drawdown_risk": drawdown,
+            "risk_text_en": rt_en, "risk_text_zh": rt_zh, "macro_asof": asof,
+            "index_name_en": m["idx_en"], "index_name_zh": m["idx_zh"],
+            "index_price": price, "index_chg_pct": chg,
+            "tz": m["tz"], "open": m["open"], "close": m["close"], "lunch": m["lunch"], "href": m["href"],
+        })
+    for r in rows:
+        r["agrees_with"] = [o["cc"] for o in rows if o["cc"] != r["cc"] and o["quad"] == r["quad"]]
+    return rows
+
+
+def _bi(en, zh):
+    return '<span class="l-en">' + str(en) + '</span><span class="l-zh">' + str(zh) + '</span>'
+
+
+def _g_legend(blob):
+    out = []
+    for m in blob:
+        out.append('<li><button class="gd-leg ' + m["quad"] + '" data-cc="' + m["cc"] + '">'
+                   '<span class="dot"></span>' + m["flag"] + ' '
+                   + _bi(m["cc"], m["cc"]) + '</button></li>')
+    return "".join(out)
+
+
+def _g_markets(blob, us_n, cn_n, hk_n):
+    by = {m["cc"]: m for m in blob}
+    SUB = {
+        "US": [("macro.html", "📊", "Macro Dashboard", "宏观看板", "Regime · cycle · drivers", "周期 · 阶段 · 驱动"),
+               ("us_stocks.html", "📈", "Stock Dashboard", "个股看板", str(us_n) + " standout setups", str(us_n) + " 只精选个股")],
+        "CN": [("china.html", "📊", "Macro Dashboard", "宏观看板", "A-share regime · cycle", "A股周期 · 阶段"),
+               ("china_stocks.html", "📈", "Stock Dashboard", "个股看板", str(cn_n) + " setups · screener", str(cn_n) + " 形态 · 筛选")],
+        "HK": [("hk.html", "📊", "Macro Dashboard", "宏观看板", "Regime · risk overlay", "周期 · 风险叠加"),
+               ("hk_stocks.html", "📈", "Stock Dashboard", "个股看板", str(hk_n) + " beta exposures", str(hk_n) + " 个 beta 敞口")],
+        "CA": [("canada.html", "📊", "Macro Dashboard", "宏观看板", "Regime · CAD overlay", "周期 · 加元叠加"),
+               ("canada_stocks.html", "📈", "Stock Dashboard", "个股看板", "TSX names & sectors", "TSX 个股与板块")],
+    }
+    cls = {"US": "us", "CN": "cn", "HK": "hk", "CA": "ca"}
+    nm = {"US": ("United States", "美国"), "CN": ("China", "中国"), "HK": ("Hong Kong", "香港"), "CA": ("Canada · TSX", "加拿大 · TSX")}
+    cards = []
+    for cc in ("US", "CN", "HK", "CA"):
+        m = by[cc]
+        btns = []
+        for href, ic, ten, tzh, sen, szh in SUB[cc]:
+            btns.append('<a class="splitbtn" href="' + href + '"><span class="sb-ic" aria-hidden="true">' + ic + '</span>'
+                        '<span class="sb-tx"><b>' + _bi(ten, tzh) + '</b><em>' + _bi(sen, szh) + '</em></span>'
+                        '<span class="sb-go" aria-hidden="true">→</span></a>')
+        cards.append('<div class="glass acc card ' + cls[cc] + '">'
+                     '<div class="card-top"><span class="ico" aria-hidden="true">' + m["flag"] + '</span>'
+                     '<h3 class="card-h">' + _bi(*nm[cc]) + '</h3>'
+                     '<span class="pill ' + m["quad"] + ' hd">' + _bi(m["quad_name_en"], m["quad_name_zh"]) + '</span></div>'
+                     '<div class="split">' + "".join(btns) + '</div></div>')
+    return ('<div class="band"><h2>' + _bi("Markets", "市场") + '</h2><span class="ln"></span></div>'
+            '<div class="nav mk reveal">' + "".join(cards) + '</div>')
+
+
+def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist):
+    risk_cls = "on" if vm["risk_on"] else "off"
+    mom_cls = "neg" if (vm.get("momentum") is not None and vm["momentum"] < 0) else ""
+    fav = ", ".join((commodities or {}).get("favored", []))
+    b_score = (bonds or {}).get("score")
+    b_phase = (bonds or {}).get("phase") or ""
+    fx_risk = (forex or {}).get("risk", "")
+    ca_corr = (crossasset or {}).get("correlation", "")
+    n_strat = (strategies or {}).get("n", 0)
+
+    def card(cls, ic, h_en, h_zh, body, go_en, go_zh, href):
+        return ('<a class="glass acc card ' + cls + '" href="' + href + '">'
+                '<div class="card-top"><span class="ico" aria-hidden="true">' + ic + '</span>'
+                '<h3 class="card-h">' + _bi(h_en, h_zh) + '</h3></div>' + body
+                + '<span class="go">' + _bi(go_en, go_zh) + '</span></a>')
+
+    btc = ('<div class="bar b-risk"><i style="width:' + str(vm["risk_index"]) + '%"></i></div>'
+           '<div class="chips"><span class="pill ' + risk_cls + '">' + _bi("Risk " + vm["risk_word"] + " · " + str(vm["risk_index"]),
+           "风险" + ("开启" if vm["risk_on"] else "关闭") + " · " + str(vm["risk_index"]))
+           + '</span><span class="pill ' + mom_cls + '">' + _bi("Mom " + str(vm["momentum"]), "动量 " + str(vm["momentum"])) + '</span></div>')
+    bd_bar = ('<div class="bar b-health"><i style="width:' + str(b_score) + '%"></i></div>') if b_score is not None else ""
+    bd_pill = (_bi("Health " + str(b_score) + " · " + (b_phase or "late"), "健康 " + str(b_score) + " · " + ("晚期" if str(b_phase).startswith("late") else b_phase))) if b_score is not None else _bi("Bond health", "债券健康")
+    bd = bd_bar + '<div class="chips"><span class="pill">' + bd_pill + '</span></div>'
+    com_q = _quad_cls(name=(commodities or {}).get("label", "")) if "_quad_cls" in globals() else ""
+    com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi((commodities or {}).get("label", "—"), (commodities or {}).get("label", "—"))
+           + '</span>' + ('<span class="pill">' + _bi("Favored: " + fav, "偏好：" + fav) + '</span>' if fav else "") + '</div>')
+    fx = '<div class="chips"><span class="pill">' + _bi((forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else ""), (forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else "")) + '</span></div>'
+    xa = '<div class="chips"><span class="pill">' + _bi((crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else ""), (crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else "")) + '</span></div>'
+    etfc = '<div class="chips"><span class="pill">' + _bi("Manager & index flows", "经理人与指数资金流") + '</span></div>'
+    strc = '<div class="chips"><span class="pill">' + _bi(str(n_strat) + " strategies", str(n_strat) + " 个策略") + '</span></div>'
+    wlc = '<div class="chips"><span class="pill">' + _bi("Your holdings", "你的持仓") + '</span></div>'
+    cards = [
+        card("btc", "₿", "Bitcoin Vector", "比特币向量", btc, "Risk, momentum & allocation", "风险、动量与配置", "vector.html"),
+        card("bd", "🏛️", "Bonds & Bond Health", "债券与债券健康", bd, "Curve, credit & cycle clock", "曲线、信用与周期时钟", "bonds.html"),
+        card("com", "◆", "Commodity Vector", "大宗商品向量", com, "Allocation & shock detection", "配置与冲击检测", "commodities.html"),
+        card("fx", "💱", "Forex Vector", "外汇向量", fx, "Dollar-smile currency board", "美元微笑货币面板", "forex.html"),
+        card("xa", "🧭", "Cross-Asset", "跨资产", xa, "Trend & correlation regime", "趋势与相关性体制", "crossasset.html"),
+        card("etf", "🐋", "ETF Flow Radar", "ETF 资金雷达", etfc, "Accumulation & trims", "增持与减持", "etfs.html"),
+        card("str", "🎛️", "Strategy Scorecards", "策略记分卡", strc, "Macro-factor tactical strategies", "宏观因子战术策略", "strategies.html"),
+        card("wl", "📋", "Watchlist", "持仓清单", wlc, "Track holdings with live signals", "跟踪持仓与实时信号", "watchlist.html"),
+    ]
+    return ('<div class="band"><h2>' + _bi("Vectors & strategies", "向量与策略") + '</h2><span class="ln"></span></div>'
+            '<div class="nav vc reveal">' + "".join(cards) + '</div>')
+
+
+def _g_alerts(alerts):
     try:
         from engine.i18n import t as T
     except Exception:  # noqa: BLE001
         def T(en, zh=""):
             return en
-
+    n = len(alerts)
+    head = ('<div class="band"><h2>' + _bi("What changed", "近期变化") + '</h2><span class="ln"></span>'
+            '<span class="cnt">' + _bi(str(n) + " signals", str(n) + " 条信号") + '</span></div>')
     if not alerts:
-        return ('<div class="ha-empty">'
-                + str(T("No major alerts right now — both engines quiet on top-tier signals.",
-                        "目前没有重大警报 — 两个引擎在顶级信号上均保持平静。"))
-                + '</div>')
-    rows = []
-    for a in alerts:
-        ts = pd.Timestamp(a["ts"])
-        when = ts.strftime("%b %d") if a["date_only"] else ts.strftime("%b %d · %H:%M UTC")
-        src_cls = {"macro": "s-macro", "vector": "s-vector",
-                   "commodity": "s-commodity"}.get(a["source"], "s-vector")
-        src = T(a["source_label"], a.get("source_label_zh") or a["source_label"])
-        head = T(a["headline"], a.get("headline_zh") or a["headline"])
-        detail = T(a["detail"], a.get("detail_zh") or a["detail"])
-        whenspan = T(when, _when_zh(ts, a["date_only"]))
-        what = (f'<div class="ha-what">{T(a["what"], a.get("what_zh") or a["what"])}</div>'
-                if a.get("what") else "")
-        edge = (f'<div class="ha-edge"><b>{T("Conviction:", "可信度：")}</b> '
-                f'{T(a["edge"], a.get("edge_zh") or a["edge"])}</div>'
-                if a.get("edge") else "")
-        cta = T(a.get("cta", "Open →"), a.get("cta_zh") or a.get("cta", "Open →"))
-        rows.append(f"""<details class="ha-item">
-  <summary>
-    <span class="ha-dot d-{a['severity']}"></span>
-    <span class="ha-src {src_cls}">{src}</span>
-    <span class="ha-head">{head}</span>
-    <span class="ha-when">{whenspan}</span>
-  </summary>
-  <div class="ha-detail">{detail}{what}{edge}<a class="ha-open" href="{a['link']}">{cta}</a></div>
-</details>""")
-    return "\n".join(rows)
+        rows = '<div class="ha-empty">' + str(T("No major alerts right now.", "目前没有重大警报。")) + '</div>'
+    else:
+        now = pd.Timestamp.utcnow().tz_localize(None)
+        out = []
+        for a in alerts[:5]:
+            ts = pd.Timestamp(a["ts"])
+            if ts.tzinfo is not None:
+                ts = ts.tz_localize(None)
+            days = (now.normalize() - ts.normalize()).days
+            when = "today" if days <= 0 else (str(days) + "d")
+            when_zh = "今天" if days <= 0 else (str(days) + "天")
+            sev = a["severity"]; dot = sev if sev in ("high", "medium") else "info"
+            src_cls = {"macro": "s-macro", "vector": "s-vector", "commodity": "s-commodity"}.get(a["source"], "s-vector")
+            src = str(T(a["source_label"], a.get("source_label_zh") or a["source_label"]))
+            head_t = str(T(a["headline"], a.get("headline_zh") or a["headline"]))
+            detail = str(T(a["detail"], a.get("detail_zh") or a["detail"]))
+            cta = str(T(a.get("cta", "Open →"), a.get("cta_zh") or a.get("cta", "Open →")))
+            out.append('<details class="ha-item"><summary><span class="ha-dot d-' + dot + '"></span>'
+                       '<span class="ha-src ' + src_cls + '">' + src + '</span>'
+                       '<span class="ha-head">' + head_t + '</span>'
+                       '<span class="ha-when">' + _bi(when, when_zh) + '</span></summary>'
+                       '<div class="ha-detail">' + detail + ' <a href="' + a["link"] + '">' + cta + '</a></div></details>')
+        out.append('<a class="al-more" href="vector.html#timeline">' + _bi("View full timeline →", "查看完整时间线 →") + '</a>')
+        rows = "".join(out)
+    return head + '<section class="alerts reveal" id="alerts"><div class="glass al-card">' + rows + '</div></section>'
 
 
-def _hub_html(vm: dict, macro: dict, alerts: list[dict], china: dict | None = None,
+def _hub_alert_rows(alerts):  # retained name for back-compat; delegates to the compact strip
+    return _g_alerts(alerts)
+
+
+def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
               forex: dict | None = None, bonds: dict | None = None,
               us_stocks: dict | None = None,
               strategies: dict | None = None, crossasset: dict | None = None,
               china_stocks: dict | None = None, hk_stocks: dict | None = None,
-              canada: dict | None = None, intl: dict | None = None,
-              ipo: dict | None = None, spr: dict | None = None) -> str:
-    # Bilingual via the i18n layer when present, identity fallback when absent.
-    try:
-        from engine.i18n import t as T, tr as TR
-    except Exception:  # noqa: BLE001
-        def T(en, zh=""):
-            return en
+              canada: dict | None = None,
+              intl: dict | None = None, ipo: dict | None = None, spr: dict | None = None,
+              **_ignored) -> str:
+    """The AURORA globe flight-deck landing hub. intl/ipo/spr (+ any future state)
+    are accepted-and-ignored: build_landing still passes them, so the signature must
+    absorb them or every daily build crashes (TypeError)."""
+    built = vm["built"]
+    blob = _globe_markets()
+    us_n = (us_stocks or {}).get("n_setups") or 0
+    cn_n = (china_stocks or {}).get("n_setups") or 0
+    hk_n = (hk_stocks or {}).get("n_setups") or 0
+    legend = _g_legend(blob)
+    globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
+    markets = _g_markets(blob, us_n, cn_n, hk_n)
+    vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist)
+    alerts_html = _g_alerts(alerts)
+    blob_json = json.dumps(blob, ensure_ascii=False)
 
-        def TR(en):
-            return en
-    risk_cls = "on" if vm["risk_on"] else "off"
-    macro_label = config.load()["home"]["alerts"]["macro_label"]
-    n_major = len(alerts)
-    china = china or {"present": False}
-    china_card = ("" if not china.get("present") else f"""
-  <a class="c" href="china.html">
-    <div class="ico">\U0001F1E8\U0001F1F3</div>
-    <h2>{T('China A-Shares', '中国A股')}</h2>
-    <p>{T('Regime, sector rotation & cycle read for the Mainland A-share market.', '中国A股市场的周期状态、板块轮动与周期解读。')}</p>
-    <span class="stat">{T(china['label'], TR(china['label']))}</span>
-    <div class="go">{T('Open China A-Shares →', '打开中国A股 →')}</div>
-  </a>""")
-    hk = hk or {"present": False}
-    hk_risk = hk.get("risk", "")
-    hk_card = ("" if not hk.get("present") else f"""
-  <a class="c" href="hk.html">
-    <div class="ico">\U0001F1ED\U0001F1F0</div>
-    <h2>{T('Hong Kong', '香港')}</h2>
-    <p>{T('Regime, a primary global risk-on/off overlay, sector rotation & cycle read for the Hang Seng market.', '恒生市场的周期状态、以全球风险开关为主的叠加、板块轮动与周期解读。')}</p>
-    <span class="stat">{T(hk['label'], TR(hk['label']))}{(' · ' + T(hk_risk, TR(hk_risk))) if hk_risk else ''}</span>
-    <div class="go">{T('Open Hong Kong →', '打开香港 →')}</div>
-  </a>""")
-    canada = canada or {"present": False}
-    canada_risk = canada.get("risk", "")
-    canada_card = ("" if not canada.get("present") else f"""
-  <a class="c c--canada" href="canada.html">
-    <div class="ico">\U0001F1E8\U0001F1E6</div>
-    <h2>{T('Canada — S&P/TSX', '加拿大 — 标普/TSX')}</h2>
-    <p>{T('Regime, a commodity / CAD / BoC-vs-Fed overlay, sector rotation & cycle read for the TSX.', 'TSX 的周期状态、大宗商品／加元／央行-美联储叠加、板块轮动与周期解读。')}</p>
-    <span class="stat">{T(canada['label'], TR(canada['label']))}{(' · ' + T(canada_risk, TR(canada_risk))) if canada_risk else ''}</span>
-    <div class="go">{T('Open Canada →', '打开加拿大 →')}</div>
-  </a>""")
-    intl = intl or {"present": False}
-    intl_risk = intl.get("risk", "")
-    intl_card = ("" if not intl.get("present") else f"""
-  <a class="c c--intl" href="intl.html">
-    <div class="ico">\U0001F30D</div>
-    <h2>{T('International', '国际经济体')}</h2>
-    <p>{T('Japan, South Korea, Taiwan, the UK & Europe compared side-by-side — regime, recession & equity-risk, plus cross-market stock standouts.', '日本、韩国、台湾、英国与欧洲并排对比 — 周期、衰退与股市风险，以及跨市场个股精选。')}</p>
-    <span class="stat">{T(intl['label'], TR(intl['label']))}{(' · ' + T(intl_risk, TR(intl_risk))) if intl_risk else ''}</span>
-    <div class="go">{T('Open International →', '打开国际 →')}</div>
-  </a>""")
-    commodities = commodities or {"present": False}
-    fav = ", ".join(commodities.get("favored", []))
-    commodities_card = ("" if not commodities.get("present") else f"""
-  <a class="c c--commodity" href="commodities.html">
-    <div class="ico">◆</div>
-    <h2>{T('Commodity Vector', '大宗商品向量')}</h2>
-    <p>{T('Regime, allocation & shock-detection for gold, silver, oil & copper.', '黄金、白银、原油与铜的周期、配置与冲击检测。')}</p>
-    <span class="stat">{T(commodities['label'], TR(commodities['label']))}{(' · ' + fav) if fav else ''}</span>
-    <div class="go">{T('Open Commodity Vector →', '打开大宗商品向量 →')}</div>
-  </a>""")
-    spr = spr or {"present": False}
-    spr_fill = spr.get("fill")
-    # f-string FIRST to flatten the Markup to a plain str — `Markup + str` would escape
-    # the inner T('full') span (see the bonds card note above).
-    spr_label = f"{T(spr.get('label', '—'), TR(spr.get('label', '—')))}"
-    spr_stat = spr_label + (f" · {spr_fill:.0f}% {T('full', '已注满')}" if spr_fill is not None else "")
-    spr_card = ("" if not spr.get("present") else f"""
-  <a class="c c--commodity" href="spr.html">
-    <div class="ico">\U0001F6E2️</div>
-    <h2>{T('Strategic Reserves', '战略石油储备')}</h2>
-    <p>{T('SPR levels for the US (live, weekly) and major countries — fill, days of cover & national crude stocks against oil prices.', '美国（实时，每周）及主要国家的战略石油储备水平——注满率、可供天数与国家原油库存对照油价。')}</p>
-    <span class="stat">{spr_stat}</span>
-    <div class="go">{T('Open Strategic Reserves →', '打开战略储备 →')}</div>
-  </a>""")
-    forex = forex or {"present": False}
-    fx_risk = forex.get("risk", "")
-    forex_card = ("" if not forex.get("present") else f"""
-  <a class="c c--forex" href="forex.html">
-    <div class="ico">💱</div>
-    <h2>{T('Forex Vector', '外汇向量')}</h2>
-    <p>{T('Dollar-first currency board — the dollar-smile regime plus risk-context signals on 9 pairs, each scored on its dollar-orthogonalized residual.', '以美元为先的货币面板——美元微笑格局，以及9个货币对在剥离美元后的风险背景信号。')}</p>
-    <span class="stat">{T(forex['label'], TR(forex['label']))}{(' · ' + T(fx_risk, TR(fx_risk))) if fx_risk else ''}</span>
-    <div class="go">{T('Open Forex Vector →', '打开外汇向量 →')}</div>
-  </a>""")
-    bonds = bonds or {"present": False}
-    b_score = bonds.get("score")
-    b_phase = bonds.get("phase") or ""
-    # Build with f-strings only (never `str + Markup`, which escapes the left
-    # operand and would print the literal <span> tags from a rendered T()).
-    b_main = (f"{T('Health', '健康度')} {b_score}/100" if b_score is not None
-              else f"{T(bonds.get('label', '—'), TR(bonds.get('label', '—')))}")
-    b_stat = b_main + (f" · {T(b_phase, TR(b_phase))}" if b_phase else "")
-    bonds_card = ("" if not bonds.get("present") else f"""
-  <a class="c c--bonds" href="bonds.html">
-    <div class="ico">\U0001F3DB️</div>
-    <h2>{T('Bonds & Bond Health', '债券与债券健康')}</h2>
-    <p>{T('What the curve, credit, real rates, rates-vol & funding plumbing say about economic health, regime & the cycle.', '收益率曲线、信用利差、实际利率、利率波动与资金管道对经济健康、周期状态与所处阶段的判读。')}</p>
-    <span class="stat">{b_stat}</span>
-    <div class="go">{T('Open Bonds →', '打开债券 →')}</div>
-  </a>""")
-    crossasset = crossasset or {"present": False}
-    ca_stat = (T(crossasset.get("regime", "—"), TR(crossasset.get("regime", "—")))
-               + ((" · " + T(crossasset.get("correlation"), TR(crossasset.get("correlation"))))
-                  if crossasset.get("correlation") else ""))
-    crossasset_card = ("" if not crossasset.get("present") else f"""
-  <a class="c c--crossasset" href="crossasset.html">
-    <div class="ico">🧭</div>
-    <h2>{T('Cross-Asset Vector', '跨资产向量')}</h2>
-    <p>{T('What is trending across equities, bonds, commodities, the dollar & crypto — time-series momentum, intermarket ratios & the correlation regime. A regime read, not a strategy.', '股票、债券、商品、美元与加密货币之间在趋势什么——时间序列动量、跨市场比价与相关性体制。体制判读，而非策略。')}</p>
-    <span class="stat">{ca_stat}</span>
-    <div class="go">{T('Open Cross-Asset →', '打开跨资产 →')}</div>
-  </a>""")
-    watchlist = watchlist or {"present": False}
-    watchlist_card = ("" if not watchlist.get("present") else f"""
-  <a class="c c--watch" href="watchlist.html">
-    <div class="ico">📋</div>
-    <h2>{T('Watchlist', '持仓清单')}</h2>
-    <p>{T('Track your own holdings — equities, ETFs, commodities and crypto — each with its live signal.', '跟踪你自己的持仓——股票、ETF、大宗商品与加密货币——每个都附带实时信号。')}</p>
-    <span class="stat">{T('Your holdings', '你的持仓')}</span>
-    <div class="go">{T('Open Watchlist →', '打开持仓清单 →')}</div>
-  </a>""")
-    etf = etf or {"present": False}
-    etf_card = ("" if not etf.get("present") else f"""
-  <a class="c c--etf" href="etfs.html">
-    <div class="ico">🐳</div>
-    <h2>{T('ETF Flow Radar', 'ETF 资金雷达')}</h2>
-    <p>{T('What funds are accumulating and trimming — flow-normalized share decisions across popular ETFs, tagged manager-conviction vs index-rebalance.', '基金在增持与减持什么——主流 ETF 经资金流标准化的份额决策，并标注“经理人信念”与“指数再平衡”。')}</p>
-    <span class="stat">{T('Manager and index flows', '经理人与指数资金流')}</span>
-    <div class="go">{T('Open ETF Flow Radar →', '打开 ETF 资金雷达 →')}</div>
-  </a>""")
+    head = (HUB_MARKER + "\n"
+            '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            '<title>Market Intelligence</title>\n'
+            "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
+            '<link rel="stylesheet" href="theme.css">\n'
+            '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n'
+            + _GLOBE_HUB_CSS + "</head><body>")
 
-    # ---- Row-1 hero cards: the three core markets, each split macro / stocks ----
-    us_stocks = us_stocks or {"present": False}
-    _site = config.ROOT / config.load()["storage"]["site_dir"]
-    _n = us_stocks.get("n_setups") or 0
-    us_stat = (T(f"{_n} standout setups", f"{_n} 只精选个股") if _n else T('Stock signals & flows', '个股信号与资金流'))
-    us_hero = f"""
-  <div class="c-hero">
-    <div class="ch-title"><span class="ch-ico">\U0001F1FA\U0001F1F8</span>{T('United States', '美国')}</div>
-    <div class="ch-halves">
-      <a class="c-half" href="macro.html">
-        <div class="ch-top"><span>\U0001F30D</span><b>{T('Macro regime', '宏观周期')}</b><span class="ch-tag">{T('Macro', '宏观')}</span></div>
-        <span class="ch-stat">{T(macro['label'], TR(macro['label']))}</span>
-        <div class="ch-go">{T('Open macro dashboard →', '打开宏观看板 →')}</div>
-      </a>
-      <a class="c-half" href="us_stocks.html">
-        <div class="ch-top"><span>\U0001F4C8</span><b>{T('US Stocks', '美国个股')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
-        <span class="ch-stat">{us_stat}</span>
-        <div class="ch-go">{T('Open stock dashboard →', '打开个股看板 →')}</div>
-      </a>
-    </div>
-  </div>"""
-    _cn_href = ("china_stocks.html" if (_site / "china_stocks.html").exists()
-                else ("china_lookup.html" if (_site / "china_lookup.html").exists() else "china.html"))
-    _cn_n = (china_stocks or {}).get("n_setups") or 0
-    cn_stat = (T(f"{_cn_n} setups · screener", f"{_cn_n} 形态 · 筛选") if _cn_n
-               else T('Setups · screener · lookup', '形态 · 筛选 · 查询'))
-    china_hero = ("" if not china.get("present") else f"""
-  <div class="c-hero c-hero--china">
-    <div class="ch-title"><span class="ch-ico">\U0001F1E8\U0001F1F3</span>{T('China', '中国')}</div>
-    <div class="ch-halves">
-      <a class="c-half" href="china.html">
-        <div class="ch-top"><span>\U0001F4CA</span><b>{T('Macro regime', '宏观周期')}</b><span class="ch-tag">{T('Macro', '宏观')}</span></div>
-        <span class="ch-stat">{T(china['label'], TR(china['label']))}</span>
-        <div class="ch-go">{T('Open A-share regime →', '打开A股周期 →')}</div>
-      </a>
-      <a class="c-half" href="{_cn_href}">
-        <div class="ch-top"><span>\U0001F4C8</span><b>{T('A-share stocks', 'A股个股')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
-        <span class="ch-stat">{cn_stat}</span>
-        <div class="ch-go">{T('Open stock screener →', '打开个股筛选 →')}</div>
-      </a>
-    </div>
-  </div>""")
-    _hk_href = ("hk_stocks.html" if (_site / "hk_stocks.html").exists()
-                else ("hk_lookup.html" if (_site / "hk_lookup.html").exists() else "hk.html"))
-    _hk_n = (hk_stocks or {}).get("n_setups") or 0
-    hk_stat = (T(f"{_hk_n} beta exposures", f"{_hk_n} 个 beta 敞口") if _hk_n
-               else T('Beta exposure · sectors · lookup', 'Beta敞口 · 板块 · 查询'))
-    hk_hero = ("" if not hk.get("present") else f"""
-  <div class="c-hero c-hero--hk">
-    <div class="ch-title"><span class="ch-ico">\U0001F1ED\U0001F1F0</span>{T('Hong Kong', '香港')}</div>
-    <div class="ch-halves">
-      <a class="c-half" href="hk.html">
-        <div class="ch-top"><span>\U0001F4CA</span><b>{T('Macro regime', '宏观周期')}</b><span class="ch-tag">{T('Macro', '宏观')}</span></div>
-        <span class="ch-stat">{T(hk['label'], TR(hk['label']))}{(' · ' + T(hk_risk, TR(hk_risk))) if hk_risk else ''}</span>
-        <div class="ch-go">{T('Open HK regime →', '打开香港周期 →')}</div>
-      </a>
-      <a class="c-half" href="{_hk_href}">
-        <div class="ch-top"><span>\U0001F4C8</span><b>{T('HK stocks & exposure', '港股与敞口')}</b><span class="ch-tag">{T('Stocks', '个股')}</span></div>
-        <span class="ch-stat">{hk_stat}</span>
-        <div class="ch-go">{T('Open stock board →', '打开个股看板 →')}</div>
-      </a>
-    </div>
-  </div>""")
-    bitcoin_card = f"""
-  <a class="c c--btc" href="vector.html">
-    <div class="ico">₿</div>
-    <h2>{T('Bitcoin Vector', '比特币向量')}</h2>
-    <p>{T('Risk regime, momentum, structure & backtested allocation for Bitcoin.', '比特币的风险状态、动量、结构与经回测的仓位策略。')}</p>
-    <span class="stat {risk_cls}">{T('Risk', '风险')} {T(vm['risk_word'], TR(vm['risk_word']))} · {vm['risk_index']}</span>
-    <span class="stat">{T('Momentum', '动量')} {vm['momentum']}</span>
-    <div class="go">{T('Open Bitcoin Vector →', '打开比特币向量 →')}</div>
-  </a>"""
-    strategies = strategies or {"present": False}
-    strategies_card = ("" if not strategies.get("present") else f"""
-  <a class="c c--strat" href="strategies.html">
-    <div class="ico">🎛️</div>
-    <h2>{T('Strategy Scorecards', '策略记分卡')}</h2>
-    <p>{T('Macro-factor tactical strategies — shift allocations on signals to lift risk-adjusted yield and dodge the drawdowns.', '宏观因子战术策略——按信号切换配置，提升风险调整后收益并规避回撤。')}</p>
-    <span class="stat">{strategies.get('n', 0)} {T('strategies', '个策略')}</span>
-    <div class="go">{T('Open Strategy Scorecards →', '打开策略记分卡 →')}</div>
-  </a>""")
-    ipo = ipo or {"present": False}
-    _ipo_band = ipo.get("band", "—")
-    _ipo_band_zh = {"OPEN": "开启", "MIXED": "混合", "SHUT": "关闭"}.get(_ipo_band, _ipo_band)
-    _ipo_gap = ipo.get("gap_5y_pp")
-    _ipo_gap_txt = (f" · {T('IPO ETF', '新股ETF')} {_ipo_gap:+.0f}pp/yr" if _ipo_gap is not None else "")
-    ipo_card = ("" if not ipo.get("present") else f"""
-  <a class="c c--ipo" href="ipo.html">
-    <div class="ico">🆕</div>
-    <h2>{T('IPO Radar', '新股雷达')}</h2>
-    <p>{T('Is the IPO window open — and is it worth chasing? The issuance-window read, the aftermarket reality check & the deal calendar. Avoidance + context, never a buy signal.', '新股窗口是否开启——值得追吗？发行窗口读数、二级市场现实检验与交易日历。规避与背景，绝非买入信号。')}</p>
-    <span class="stat">{T('Window', '窗口')} {T(_ipo_band, _ipo_band_zh)}{_ipo_gap_txt}</span>
-    <div class="go">{T('Open IPO Radar →', '打开新股雷达 →')}</div>
-  </a>""")
-    return f"""{HUB_MARKER}
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Market Intelligence</title>
-<script>try{{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}}catch(e){{}}</script>
-<link rel="stylesheet" href="theme.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-*{{box-sizing:border-box}}
-body{{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
- font-family:Inter,sans-serif;display:flex;flex-direction:column;align-items:center;
- padding:22px 20px 64px;position:relative;overflow-x:hidden}}
-/* the ambient aurora backdrop now lives in theme.css (html body::before), shared
-   by every page with separate dark / light tunings */
-/* top bar — theme + language toggles pinned to the right of the content column */
-.hub-top{{width:100%;max-width:1120px;display:flex;justify-content:flex-end;
- align-items:center;gap:10px;margin-bottom:8px}}
-.h{{text-align:center;margin:16px 0 38px}}
-.eyebrow{{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;
- color:var(--muted);background:color-mix(in srgb,var(--panel) 64%,transparent);
- border:1px solid var(--line);padding:6px 14px;border-radius:999px;margin-bottom:18px;
- -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}}
-.eyebrow .live{{width:7px;height:7px;border-radius:50%;background:#22c55e;
- box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent);animation:livepulse 2.4s ease-out infinite}}
-@keyframes livepulse{{0%{{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}}
- 70%{{box-shadow:0 0 0 8px transparent}}100%{{box-shadow:0 0 0 0 transparent}}}}
-.h h1{{font-size:clamp(34px,5vw,52px);font-weight:800;letter-spacing:-.035em;line-height:1.04;margin:0 0 12px;
- background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
- -webkit-background-clip:text;background-clip:text;color:transparent}}
-.h p{{color:var(--muted);font-size:clamp(15px,2vw,18px);margin:0 auto;max-width:560px;line-height:1.5}}
-.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;width:100%;max-width:1120px}}
-@media(max-width:720px){{.cards{{grid-template-columns:1fr}}}}
-/* combined alert feed */
-.feed{{width:100%;max-width:880px;margin-top:48px}}
-.feed-h{{display:flex;align-items:baseline;justify-content:space-between;margin:0 6px 14px;flex-wrap:wrap;gap:6px}}
-.feed-h h3{{font-size:17px;font-weight:800;color:var(--text);margin:0;letter-spacing:-.01em}}
-.feed-h .n{{font-size:13px;color:var(--muted);font-weight:600}}
-.feed-card{{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:6px 22px;
- box-shadow:0 1px 3px rgba(16,24,64,.04)}}
-.ha-item{{border-bottom:1px solid var(--line)}}
-.ha-item:last-child{{border-bottom:none}}
-.ha-item summary{{display:flex;align-items:center;gap:11px;padding:14px 0;cursor:pointer;
- list-style:none;flex-wrap:wrap;transition:padding-left .18s ease}}
-.ha-item summary:hover{{padding-left:5px}}
-.ha-item summary::-webkit-details-marker{{display:none}}
-.ha-dot{{width:10px;height:10px;border-radius:50%;flex:none}}
-.ha-dot.d-high{{background:var(--act)}} .ha-dot.d-medium{{background:var(--info)}} .ha-dot.d-info{{background:var(--muted)}}
-.ha-src{{font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px}}
-.ha-src.s-macro{{background:color-mix(in srgb,#6366f1 16%,var(--panel));color:color-mix(in srgb,#6366f1 78%,var(--text))}}
-.ha-src.s-vector{{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text))}}
-.ha-src.s-commodity{{background:color-mix(in srgb,var(--warn) 18%,var(--panel));color:color-mix(in srgb,var(--warn) 82%,var(--text))}}
-.ha-head{{flex:1;min-width:200px;font-weight:600;color:var(--text);font-size:14px}}
-.ha-when{{font-size:12px;color:var(--muted);font-weight:600}}
-.ha-detail{{padding:0 0 13px 21px;font-size:13px;color:var(--text);line-height:1.6}}
-.ha-detail a{{font-weight:700;white-space:nowrap}}
-.ha-what{{margin:7px 0 9px;padding-top:8px;border-top:1px solid var(--line);
- font-size:12.5px;color:var(--muted);line-height:1.55}}
-.ha-edge{{margin:4px 0 9px;font-size:12px;color:var(--text);line-height:1.5}}
-.ha-edge b{{color:var(--muted);font-weight:600}}
-.ha-open{{display:inline-block;color:var(--link);font-weight:700}}
-.ha-empty{{padding:18px;text-align:center;color:var(--muted);font-size:14px}}
-.c{{--accent:#416aec;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:18px;
- padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
- transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s ease,border-color .2s ease}}
-.c::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px;
- background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
- transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}}
-.c::after{{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
- background:radial-gradient(360px 180px at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 68%);
- transition:opacity .25s ease}}
-.c:hover{{transform:translateY(-4px);border-color:color-mix(in srgb,var(--accent) 50%,var(--line));
- box-shadow:0 18px 38px -14px color-mix(in srgb,var(--accent) 42%,transparent)}}
-.c:hover::before{{transform:scaleX(1)}} .c:hover::after{{opacity:1}}
-.c--canada{{--accent:#e5484d}} .c--intl{{--accent:#0d9488}} .c--btc{{--accent:#f7931a}} .c--sp{{--accent:#6366f1}} .c--strat{{--accent:#10b981}} .c--ipo{{--accent:#f59e0b}}
-.c--commodity{{--accent:#d4a12a}} .c--forex{{--accent:#14b8a6}} .c--bonds{{--accent:#0ea5e9}}
-.c--crossasset{{--accent:#8b5cf6}} .c--etf{{--accent:#3b82f6}} .c--watch{{--accent:#64748b}}
-.c .ico{{width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:22px;
- border-radius:12px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));
- border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line));margin-bottom:13px;
- transition:transform .2s cubic-bezier(.2,.7,.3,1)}}
-.c:hover .ico{{transform:scale(1.07) rotate(-4deg)}}
-.c h2{{font-size:18px;font-weight:800;color:var(--text);margin:0 0 6px;letter-spacing:-.02em}}
-.c p{{color:var(--muted);font-size:13px;margin:0 0 13px;line-height:1.5;flex:1}}
-.stat{{display:inline-block;padding:5px 10px;border-radius:8px;
- background:color-mix(in srgb,var(--accent) 11%,var(--panel2));
- color:color-mix(in srgb,var(--accent) 70%,var(--text));font-weight:700;font-size:12.5px;
- margin:0 6px 6px 0;border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}}
-.stat.on{{background:color-mix(in srgb,var(--info) 16%,var(--panel));color:color-mix(in srgb,var(--info) 80%,var(--text));border-color:color-mix(in srgb,var(--info) 22%,transparent)}}
-.stat.off{{background:color-mix(in srgb,var(--act) 16%,var(--panel));color:color-mix(in srgb,var(--act) 80%,var(--text));border-color:color-mix(in srgb,var(--act) 22%,transparent)}}
-.go{{margin-top:auto;padding-top:2px;font-weight:700;color:var(--accent);font-size:13px;transition:transform .2s ease}}
-.c:hover .go{{transform:translateX(3px)}}
-/* row 1 — three core-market hero cards, each split macro / stocks */
-.cards-hero{{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;width:100%;max-width:1120px;margin-bottom:20px}}
-@media(max-width:860px){{.cards-hero{{grid-template-columns:1fr}}}}
-.c-hero{{--accent:#416aec;position:relative;background:var(--panel);border:1px solid var(--line);
- border-radius:20px;padding:18px 18px 16px;display:flex;flex-direction:column;overflow:hidden;isolation:isolate;
- transition:transform .2s cubic-bezier(.2,.7,.3,1),box-shadow .2s ease,border-color .2s ease}}
-.c-hero::before{{content:'';position:absolute;top:0;left:0;right:0;height:3px;
- background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
- transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}}
-.c-hero:hover{{transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 42%,var(--line));
- box-shadow:0 18px 40px -16px color-mix(in srgb,var(--accent) 40%,transparent)}}
-.c-hero:hover::before{{transform:scaleX(1)}}
-.c-hero--china{{--accent:#e35d6a}} .c-hero--hk{{--accent:#a855f7}}
-.ch-title{{font-size:21px;font-weight:800;color:var(--text);letter-spacing:-.02em;display:flex;align-items:center;gap:10px;margin-bottom:13px}}
-.ch-title .ch-ico{{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:19px;
- border-radius:10px;background:color-mix(in srgb,var(--accent) 15%,var(--panel2));
- border:1px solid color-mix(in srgb,var(--accent) 24%,var(--line))}}
-.c-half{{display:block;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:13px;
- padding:13px 14px;background:color-mix(in srgb,var(--panel2) 45%,transparent);
- transition:transform .14s ease,border-color .14s ease,background .14s ease,box-shadow .14s ease}}
-.c-half + .c-half{{margin-top:10px}}
-.c-half:hover{{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));
- background:color-mix(in srgb,var(--accent) 7%,var(--panel2));transform:translateY(-1px);
- box-shadow:0 8px 18px -10px color-mix(in srgb,var(--accent) 45%,transparent)}}
-.ch-top{{display:flex;align-items:center;gap:8px;margin-bottom:8px}}
-.ch-top b{{font-size:15px;font-weight:700;color:var(--text)}}
-.ch-tag{{margin-left:auto;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
- color:color-mix(in srgb,var(--accent) 68%,var(--text));
- background:color-mix(in srgb,var(--accent) 12%,var(--panel2));padding:2px 8px;border-radius:6px}}
-.ch-stat{{display:inline-block;padding:5px 11px;border-radius:8px;
- background:color-mix(in srgb,var(--accent) 11%,var(--panel2));
- color:color-mix(in srgb,var(--accent) 72%,var(--text));font-weight:700;font-size:12.5px;
- border:1px solid color-mix(in srgb,var(--accent) 16%,transparent)}}
-.ch-go{{margin-top:9px;font-weight:700;color:var(--accent);font-size:13px}}
-/* row 2 — smaller ancillary cards (styled via .c above, with per-card --accent) */
-.cards-sub{{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:18px;width:100%;max-width:1120px}}
-@media(max-width:720px){{.cards-sub{{grid-template-columns:1fr}}}}
-.foot{{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}}
-.site-footer{{width:100%;max-width:880px;margin:30px auto 0;padding-top:22px;
- border-top:1px solid var(--line);text-align:center;line-height:1.6}}
-.site-footer .made{{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}}
-.site-footer .dev{{display:block;margin-top:1px;font-size:12px;color:var(--muted)}}
-@media (prefers-reduced-motion: reduce){{.eyebrow .live{{animation:none}}
- .c,.c .ico,.go,.c-hero,.c-half,.ha-item summary{{transition:none}}
- .c:hover,.c-hero:hover{{transform:none}}}}
-</style></head><body>
-<div class="hub-top">
-  <button class="theme-switch" aria-label="Toggle dark / light mode">
-    <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
-  </button>
-  <div class="lang-toggle" role="group" aria-label="Language">
-    <span class="pill"></span>
-    <span class="opt en-opt" data-l="en">EN</span>
-    <span class="opt zh-opt" data-l="zh">中文</span>
-  </div>
-</div>
-<div class="h">
-  <span class="eyebrow"><span class="live"></span>{T('Live · zero-cost data engine · updated', '实时 · 零成本数据引擎 · 更新于')} {vm['built']}</span>
-  <h1>{T('Market Intelligence', '市场情报')}</h1>
-  <p>{T('Market regime dashboards across every major asset class — one mechanical, backtested engine.', '覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。')}</p>
-</div>
-<div class="cards-hero">{us_hero}{china_hero}{hk_hero}</div>
-<div class="cards-sub">{canada_card}{intl_card}{bitcoin_card}{strategies_card}{ipo_card}{commodities_card}{spr_card}{forex_card}{bonds_card}{crossasset_card}{etf_card}{watchlist_card}</div>
-<div class="feed">
-  <div class="feed-h"><h3>{T('Latest Alerts', '最新警报')}</h3>
-    <span class="n">{n_major} {T('major · from both feeds ·', '条重要 · 来自两个数据源 ·')} <a href="vector.html#timeline">{T('full Vector timeline →', '完整向量时间线 →')}</a></span></div>
-  <div class="feed-card">{_hub_alert_rows(alerts)}</div>
-</div>
-<div class="foot">{T('Built', '生成于')} {vm['built']} · {T('mechanical, backtested, free public data · not investment advice', '机械化 · 经回测 · 免费公开数据 · 非投资建议')}</div>
-<footer class="site-footer">
-  <span class="made">{T('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作')}</span>
-  <span class="dev">{T('Developed by', '开发者')} Chris Wong</span>
-</footer>
-<script src="theme.js"></script>
-</body></html>"""
+    body = (
+        '<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div></div>'
+        '<div class="wrap">'
+        '<div class="hub-top">'
+        '<button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>'
+        '<div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>'
+        '</div>'
+        '<header class="h"><span class="eyebrow"><span class="live"></span>'
+        + _bi("Live · zero-cost data engine · updated " + built, "实时 · 零成本数据引擎 · 更新于 " + built)
+        + '</span><h1>' + _bi("Market Intelligence", "市场情报") + '</h1>'
+        '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
+                    "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
+        '<div class="band"><h2>' + _bi("Global macro regime", "全球宏观周期") + '</h2><span class="ln"></span></div>'
+        + globe_deck + markets + vectors + alerts_html
+        + '<div class="foot">' + _bi("Built " + built + " · mechanical, backtested, free public data · not investment advice",
+                                      "生成于 " + built + " · 机械化 · 经回测 · 免费公开数据 · 非投资建议") + '</div>'
+        '<footer class="site-footer"><span class="made">' + _bi("Made with ❤️ in Canada", "用 ❤️ 在加拿大制作") + '</span>'
+        '<span class="dev">' + _bi("Developed by Chris Wong", "开发者 Chris Wong") + '</span></footer>'
+        '</div>'
+        '<script id="globe-data" type="application/json">' + blob_json + '</script>'
+        '<script defer src="vendor/d3-array.min.js"></script>'
+        '<script defer src="vendor/d3-geo.min.js"></script>'
+        '<script defer src="vendor/topojson-client.min.js"></script>'
+        '<script defer src="globe-deck.js"></script>'
+        '<script defer src="sky.js"></script>'
+        '<script src="theme.js"></script>'
+        '</body></html>'
+    )
+    return head + body
+
 
 
 # --------------------------------------------------------------------------- #
@@ -1666,6 +1866,7 @@ def vector_timeline(sig: pd.DataFrame, ladder: pd.DataFrame) -> dict:
         "dates": [d.strftime("%Y-%m-%d") for d in df.index],
         "price": num(df["close"]),
         "phase": cat(df["cycle_phase"], "accumulation"),
+        "cphase": cat(df["cphase_phase"], ""),   # bottom-anchored 1064/364 phase (PIT)
         "stage": [None if pd.isna(v) else int(v) for v in stage],
         "regime": cat(lad["regime"], "neutral"),
         "ladder": cat(lad["ladder_state"], ""),
@@ -1954,6 +2155,17 @@ def main() -> int:
             "vdd": _r(last.get("vdd_multiple"), 2),
             "vdd_pctile": _r(last.get("vdd_pctile"), 0),
         },
+        "cycle_phase": {     # bottom-anchored 1064/364 clock (the chart's theory)
+            "phase": last.get("cphase_phase"),
+            "pct": _r(100 * last["cphase_pct"], 0) if pd.notna(last.get("cphase_pct")) else None,
+            "days_in": _r(last.get("cphase_days_in"), 0),
+            "len": _r(last.get("cphase_len"), 0),
+            "days_left": _r(last.get("cphase_days_left"), 0),
+            "next_pivot": last.get("cphase_next_pivot"),
+            "next_kind": last.get("cphase_next_kind"),
+            "status": last.get("cphase_status"),
+            "anchor": last.get("cphase_anchor_date"),
+        },
         "positioning": {
             "cot_net_pct": _r(last.get("cot_net_pct"), 1),
             "cot_z": _r(last.get("cot_z"), 2),
@@ -2034,12 +2246,19 @@ def main() -> int:
         log.error("strategies pages (via build_vector) failed (%s)", e)
     try:  # IPO Radar (display-only, never-scored) — no dedicated daily.yml step (PAT lacks
           # `workflow` scope), built here AFTER build_spvector (it reuses the validated
-          # de-risk score from data/regime/spvector_latest.json) and before build_landing
-          # reads _ipo_state(). Refreshes the Nasdaq IPO calendar best-effort; never fatal.
+          # de-risk score from data/regime/spvector_latest.json) to render the standalone
+          # ipo.html. Refreshes the Nasdaq IPO calendar best-effort; never fatal.
         from scripts.build_ipo import build as _build_ipo
         _build_ipo()
     except Exception as e:  # noqa: BLE001
         log.error("ipo radar page (via build_vector) failed (%s)", e)
+    try:  # China Mastermind GTAA flagships — detail pages + snapshot. MUST run BEFORE
+          # build_china_strategies so strategy_cnmm_*.html exist when the pinned hero links to them.
+          # (PAT lacks workflow scope → piggyback on build_vector; promote to a daily.yml step later.)
+        from scripts.build_china_masterminds import build as _build_china_masterminds
+        _build_china_masterminds()
+    except Exception as e:  # noqa: BLE001
+        log.error("china mastermind flagship pages (via build_vector) failed (%s)", e)
     try:  # China Strategy Scorecards hub + detail pages (same hook rationale as the US hub;
           # the China Income Vector card pulls from build_china_allocation, so this runs after it).
         from scripts.build_china_strategies import build as _build_china_strategies
@@ -2067,7 +2286,7 @@ def main() -> int:
         log.error("canada dashboard (via build_vector) failed (%s)", e)
     try:  # International comparative dashboard (JP/KR/TW/UK/EU) — same hook pattern as
           # build_canada (PAT lacks `workflow` scope for a dedicated daily.yml step), built
-          # here before the landing hub reads _intl_state(). Self-sufficient + returns 0.
+          # here to render the standalone intl.html. Self-sufficient + returns 0.
           # TODO: promote to a proper daily.yml `build_intl` step once a workflow token exists.
         from scripts import build_intl as _build_intl
         _build_intl.main()

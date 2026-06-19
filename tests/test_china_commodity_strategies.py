@@ -42,7 +42,7 @@ def test_china_strategies_grid_renders():
     html = _env().get_template("china_strategies.html.j2").render(cards=cards, built="now", C=_C)
     assert "China Strategy Scorecards" in html
     assert "china_allocation.html" in html and "strategy_cn_credit_vol.html" in html
-    assert 'class="active" href="china_strategies.html"' in html      # China nav active
+    assert "Other Assets" in html and "masterminds.html" not in html  # standardized shared nav (_navlinks.html.j2)
     assert "commodity_strategies.html" in html                        # nav has the sibling hub
     assert "Experimental" in html and len(html) > 5000
 

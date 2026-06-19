@@ -281,6 +281,27 @@ def _caution_flags(bonds: dict, fx: dict, eq_calm: bool) -> list[dict]:
             "新兴市场货币承压（美元相对墨西哥比索与巴西雷亚尔走强）— 套息平仓是同步的避险放大器"
             "（肥尾，非干净领先）。", "medium", "fx", "coincident")
 
+    # --- Dollar Desk (the deepened dollar read; all display-only / coincident-context) ---
+    desk = fx.get("dollar_desk") or {}
+    if desk.get("triple_red"):
+        add("usd_triple_red", "Triple-red — USD, equities & Treasuries falling together: the dollar "
+            "is NOT acting as a safe haven (a US-idiosyncratic 'sell-America' configuration).",
+            "三红 — 美元、股票与国债同步下跌：美元未发挥避险作用（美国特有的‘抛售美国’配置）。",
+            "high", "fx", "coincident")
+    if desk.get("usd_pos_state") in ("crowded_long", "crowded_short"):
+        _side = "long" if desk["usd_pos_state"] == "crowded_long" else "short"
+        _side_zh = "做多" if _side == "long" else "做空"
+        add("usd_positioning", f"USD spec positioning crowded {_side} ({desk.get('usd_pos_pctile')}th "
+            "pctile) — a contrarian fragility/crowding gauge, not a timing signal (lagged, unmeasured).",
+            f"美元投机持仓拥挤{_side_zh}（第{desk.get('usd_pos_pctile')}百分位）— 逆向脆弱性/拥挤度计量，"
+            "非择时信号（滞后、未测）。", "info", "fx", "context")
+    unstable = (fx.get("transmission") or {}).get("unstable") or []
+    if unstable:
+        add("usd_transmission_unstable", "Dollar↔asset betas are sign-unstable right now ("
+            + ", ".join(unstable[:3]) + ") — cross-asset transmission reads should be taken with caution.",
+            "美元与资产的贝塔当前符号不稳定（" + "、".join(unstable[:3]) + "）— 跨资产传导解读需谨慎。",
+            "info", "fx", "context")
+
     return flags
 
 

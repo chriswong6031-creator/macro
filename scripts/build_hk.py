@@ -24,6 +24,7 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import plotly.graph_objects as go  # noqa: E402
+from markupsafe import Markup  # noqa: E402
 
 from lib import config, store  # noqa: E402
 
@@ -31,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_hk")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js")
+          "charts.js", "tablesort.js", "aibrief.js")
 
 
 def _range_selector() -> dict:
@@ -217,6 +218,23 @@ def _breadth() -> dict | None:
     the same broad/thin/mixed participation read the US/CN/CA cards use. DISPLAY-ONLY."""
     from collectors.breadth import breadth_summary
     return breadth_summary(store.read("hk_breadth", "breadth"), full=False)
+
+
+def _full_breadth() -> dict | None:
+    """Full HK main-board advance/decline participation (collectors/hk_full_breadth,
+    ~2000+ names) — the widest-denominator complement to the curated 73-name gauge.
+    A snapshot (no MA history), so it carries adv/dec/%-up + universe size only.
+    Eastmoney spot is flaky → degrades to None (the curated gauge stays primary)."""
+    df = store.read("hk_full_breadth", "breadth")
+    if df is None or df.empty or "pct_up" not in df.columns:
+        return None
+    r = df.dropna(subset=["pct_up"])
+    if r.empty:
+        return None
+    last = r.iloc[-1]
+    return {"n_members": int(last["n_members"]), "adv": int(last["adv"]),
+            "dec": int(last["dec"]), "pct_up": round(float(last["pct_up"]), 1),
+            "asof": str(r.index[-1].date())}
 
 
 def _build_sector_pages(env) -> int:
@@ -415,6 +433,174 @@ def _vhsi_vm() -> dict | None:
             "chg20": round(latest - float(s.iloc[-21]), 2) if len(s) > 21 else None}
 
 
+def _hk_signal_stack(latest: dict) -> dict | None:
+    """Consolidated cross-subsystem 'signal stack' read (display-only). Pure function
+    of the HK `latest` state; never fatal."""
+    try:
+        from engine.hk_signal_stack import build_hk_signal_stack
+        return build_hk_signal_stack(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("hk signal stack failed (%s); skipping", e)
+        return None
+
+
+def _hk_market_tiles() -> list[dict]:
+    """CROSS-ASSET 'market snapshot' tiles — level + 1-day move for the non-index
+    instruments that drive HK (the true HS-TECH index, USD/HKD peg, offshore yuan,
+    gold, the dollar, overnight HIBOR). The HSI/HSCEI levels live ONLY in the
+    index-health grid above; this strip is the cross-asset complement."""
+    # (store group, name, column, en, zh, tag_en, tag_zh, decimals, is_rate, invert_tone)
+    spec = [
+        ("hk", "HSTECH", "close", "HS-TECH", "恒生科技", "growth", "成长", 0, False, False),
+        ("hk", "HKD=X", "close", "USD / HKD", "美元兑港元", "peg", "联汇", 4, False, True),
+        ("china", "CNH_F", "close", "Offshore yuan", "离岸人民币", "USDCNH", "美元离岸", 3, False, True),
+        ("yahoo", "GC_F", "close", "Gold", "黄金", "USD/oz", "美元/盎司", 0, False, False),
+        ("yahoo", "DX-Y.NYB", "close", "US Dollar", "美元指数", "DXY", "美元", 2, False, True),
+        ("hkma", "interbank_liquidity", "hibor_on", "Overnight HIBOR", "隔夜HIBOR", "yield", "利率", 2, True, False),
+    ]
+    out: list[dict] = []
+    for grp, name, col, en, zh, ten, tzh, dec, is_rate, invert in spec:
+        try:
+            df = store.read(grp, name)
+            if (df is None or df.empty or col not in df.columns) and name == "HSTECH":
+                df, col = store.read("hk", "3033.HK"), "close"   # fallback to the ETF proxy
+                en, zh = "HS-TECH ETF", "恒生科技ETF"
+            if df is None or df.empty or col not in df.columns:
+                continue
+            s = df[col].astype(float).dropna()
+            if len(s) < 2:
+                continue
+            last, prev = float(s.iloc[-1]), float(s.iloc[-2])
+            chg = last - prev
+            pct = (last / prev - 1) * 100 if prev else 0.0
+            tone = "pos" if chg > 0 else "neg" if chg < 0 else "muted"
+            if invert and tone != "muted":      # weaker HKD / yuan / stronger USD = risk-off
+                tone = "neg" if chg > 0 else "pos"
+            chg_dec = max(dec, 1)                # never collapse a sub-unit move to "+0" (e.g. gold)
+            out.append({
+                "label": Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(en, zh),
+                "tag": Markup('<span class="l-en">{}</span><span class="l-zh">{}</span>').format(ten, tzh),
+                "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
+                "chg": f"{chg:+.{chg_dec}f}", "pct": f"{pct:+.1f}%", "tone": tone,
+            })
+        except Exception:  # noqa: BLE001 — a single bad series never breaks the strip
+            continue
+    return out
+
+
+def _hk_property_vm() -> dict | None:
+    """HK residential-property panel (Centaline CCL) — level/trend block + chart, or
+    None if the CCL feed is missing (the collector is a fragile single-host scrape)."""
+    try:
+        from engine import hk_property
+        v = hk_property.property_view()
+        if not v:
+            return None
+        ccl = v.get("ccl") or {}
+        if ccl.get("chart"):
+            v["chart_html"] = _panel_line(ccl["chart"], "#c08bd8", height=190)
+        return v
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("hk property vm failed (%s); skipping", e)
+        return None
+
+
+def _hk_valuation_vm() -> dict | None:
+    """HK index valuation (Baidu PE/PB market-median across the big-cap cohort) — the
+    currency-clean valuation read hk_fundamentals deliberately skips. PE/PB only
+    (Baidu serves no dividend-yield chart). Display-only."""
+    df = store.read("hk_valuation", "median")
+    if df is None or df.empty or "pe" not in df.columns:
+        return None
+    out: dict = {}
+    for col, key in (("pe", "pe"), ("pb", "pb")):
+        s = df[col].dropna() if col in df.columns else pd.Series(dtype=float)
+        if s.empty:
+            continue
+        lvl = float(s.iloc[-1])
+        out[key] = {
+            "level": round(lvl, 2),
+            "pctile": int(round((s <= lvl).mean() * 100)),
+            "chg_1y": round(100 * (lvl / float(s.iloc[-253]) - 1), 1) if len(s) > 253 else None,
+            "span": f"{s.index.min():%Y-%m} → {s.index.max():%Y-%m}",
+        }
+    if not out:
+        return None
+    out["pe_chart_html"] = _panel_line(
+        {"dates": [d.strftime("%Y-%m-%d") for d in df["pe"].dropna().index],
+         "vals": [round(float(v), 2) for v in df["pe"].dropna()]}, "#5fbf7f", height=180)
+    out["n"] = int(df["n_pe"].dropna().iloc[-1]) if "n_pe" in df.columns and not df["n_pe"].dropna().empty else None
+    return out
+
+
+def _hk_ah_official_vm() -> dict | None:
+    """Official ~190-pair A/H premium index (reconstructed daily) + the latest market-
+    wide spot mean — the calibrated 'HK is the cheaper way to own China' gauge. Display
+    only. Complements the computed 12-pair basket (vm['ah'])."""
+    prem = store.read("hk_ah_official", "ah_premium")
+    spot = store.read("hk_ah_official", "ah_spot")
+    if (prem is None or prem.empty or "hsahp" not in prem.columns) and \
+       (spot is None or spot.empty):
+        return None
+    out: dict = {}
+    if prem is not None and "hsahp" in getattr(prem, "columns", []):
+        s = prem["hsahp"].dropna()
+        if not s.empty:
+            lvl = float(s.iloc[-1])
+            out.update({
+                "premium_pct": round(lvl, 1),
+                "pctile": int(round((s <= lvl).mean() * 100)),
+                "chg_1y": round(lvl - float(s.iloc[-253]), 1) if len(s) > 253 else None,
+                "span": f"{s.index.min():%Y-%m} → {s.index.max():%Y-%m}",
+                "chart_html": _panel_line(
+                    {"dates": [d.strftime("%Y-%m-%d") for d in s.index],
+                     "vals": [round(float(v), 1) for v in s]}, "#c08bd8", height=190, zero=False),
+            })
+    if spot is not None and not spot.empty and "hsahp" in spot.columns:
+        r = spot.dropna(subset=["hsahp"])
+        if not r.empty:
+            out["spot_mean"] = round(float(r["hsahp"].iloc[-1]), 1)
+            out["spot_median"] = (round(float(r["hsahp_median"].iloc[-1]), 1)
+                                  if "hsahp_median" in r.columns else None)
+            out["n_pairs"] = (int(r["n_pairs"].iloc[-1])
+                             if "n_pairs" in r.columns and pd.notna(r["n_pairs"].iloc[-1]) else None)
+    return out or None
+
+
+def _hk_southbound_channels_vm() -> dict | None:
+    """Per-channel southbound split (港股通沪 vs 港股通深) — net flow momentum + the
+    cumulative mainland HK holdings, the richer view of the #1 HK capital flow."""
+    out: dict = {}
+    for nm, key, en, zh in (("southbound_sh", "sh", "Shanghai → HK", "沪市港股通"),
+                            ("southbound_sz", "sz", "Shenzhen → HK", "深市港股通")):
+        df = store.read("hk_connect", nm)
+        if df is None or df.empty or "net" not in df.columns:
+            continue
+        net = df["net"].dropna()
+        if net.empty:
+            continue
+        out[key] = {
+            "label_en": en, "label_zh": zh,
+            "net": round(float(net.iloc[-1]), 1),
+            "sum_20d": round(float(net.tail(20).sum()), 1),
+            "sum_60d": round(float(net.tail(60).sum()), 1),
+            "cum": (round(float(df["cum"].dropna().iloc[-1]), 0)
+                    if "cum" in df.columns and not df["cum"].dropna().empty else None),
+        }
+    return out or None
+
+
+def _hk_alloc_card() -> dict:
+    """Compact allocation card for the index-health button (graceful — present=False if
+    no HK allocation artifact exists yet, so the macro page never depends on it)."""
+    try:
+        p = config.data_dir() / "hk_regime" / "hk_alloc_latest.json"
+        d = json.loads(p.read_text())
+        return d if d.get("present") else {"present": False}
+    except Exception:  # noqa: BLE001 — button is additive, never fatal
+        return {"present": False}
+
+
 def main() -> int:
     try:
         from engine.hk_run import run
@@ -430,15 +616,56 @@ def main() -> int:
             "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             "sectors": sectors,
             "breadth": _breadth(),
+            "full_breadth": _full_breadth(),     # full main-board adv/dec (fragile; None when blocked)
             "benchmark": _benchmark_card(),
             "pair": latest.get("pair_ratios", {}),
             "pref": latest.get("preference_check", {}),
             "gv": latest.get("global_snapshot", {}),
             "vhsi": _vhsi_vm(),
             "index_health": _hk_index_health(),  # macro-page index-health strip
+            "signal_stack": _hk_signal_stack(latest),   # consolidated cross-subsystem read
+            "market_tiles": _hk_market_tiles(),         # cross-asset market-snapshot tiles
+            "alloc_card": _hk_alloc_card(),             # allocation button (graceful)
+            "valuation": _hk_valuation_vm(),            # PE/PB market-median band
+            "ah_official": _hk_ah_official_vm(),        # official ~190-pair A/H index
+            "sb_channels": _hk_southbound_channels_vm(),  # per-channel southbound split
         }
         site = Path(config.load()["storage"]["site_dir"])
         site.mkdir(parents=True, exist_ok=True)
+
+        # conditions (RORO + uncalibrated slowdown/drawdown gauges) + Fear↔Euphoria
+        # charts — None-safe. The dicts already ride in vm via "latest"; here we just
+        # render their plotly lines (display-only, never scored).
+        try:
+            cond = latest.get("conditions")
+            if cond and cond.get("charts"):
+                ch = cond["charts"]
+                cond["roro_html"] = _panel_line(ch.get("roro"), "#3f9fd8", height=170, zero=True)
+                cond["recession_html"] = _panel_line(ch.get("recession"), "#d4a017", height=150)
+                cond["drawdown_html"] = _panel_line(ch.get("drawdown"), "#d04545", height=150)
+                fe = latest.get("fear_euphoria")
+                if fe is not None and ch.get("fear_euphoria"):
+                    fe["chart_html"] = _panel_line(ch["fear_euphoria"], "#c08bd8", height=160)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk conditions charts failed (%s); skipping", e)
+
+        # HK / US / China macro release calendar — display-only scheduling context
+        # (pure date arithmetic; no news API). None-safe.
+        try:
+            from engine import hk_event_calendar as hec
+            vm["calendar"] = hec.hk_macro_events(horizon_days=14)
+            vm["event_strip"] = hec.high_impact_strip(horizon_days=14)
+            vm["imminent"] = hec.imminent_line(horizon_days=14)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk calendar build failed (%s); skipping", e)
+            vm["calendar"], vm["event_strip"], vm["imminent"] = [], [], None
+
+        # HK residential-property panel (Centaline CCL) — display/regime context, None-safe
+        try:
+            vm["property"] = _hk_property_vm()
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("hk property build failed (%s); skipping", e)
+            vm["property"] = None
 
         # market-internals (southbound flow + China credit/policy backdrop) — None-safe
         try:

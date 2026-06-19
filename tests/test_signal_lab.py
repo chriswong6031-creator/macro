@@ -66,14 +66,19 @@ def test_factor_cross_section_is_leak_free_and_data_driven():
     assert p["factor_meta"].get("leak_free") is True
 
 
-def test_sue_is_a_scored_positive_fdr_survivor():
-    """On the production branch SUE is the one POSITIVE factor that survives FDR
-    and is wired as a scored leg — promoted out of the 'pending' tier."""
+def test_sue_demoted_after_deep_revalidation():
+    """SUE survived FDR only on the shallow 2023-2025 window; a deep 2011-2026
+    re-validation (survivorship-optimistic) collapsed the edge to ~zero (IC 0.0005,
+    t 0.06), so it is DEMOTED out of the scored tier and shown as display with the
+    deep-kill caveat (see reports/sue-deep-history-phase0.md)."""
     p = _payload()
     scored = next(t for t in p["tiers"] if t["key"] == "scored")
-    sue = next((r for r in scored["rows"] if "SUE" in r["name"]), None)
-    assert sue is not None and sue["fdr_survivor"] is True
-    assert sue["ic"] is not None and sue["ic"] > 0              # the clean positive win
+    assert not any("SUE" in r["name"] for r in scored["rows"]), "SUE should no longer be scored"
+    disp = next(t for t in p["tiers"] if t["key"] == "display")
+    sue = next((r for r in disp["rows"] if "SUE" in r["name"]), None)
+    assert sue is not None, "SUE should remain shown as display (deep-killed), not deleted"
+    blob = (sue["why"] + " " + " ".join(v for _, v in sue["extra"])).lower()
+    assert "deep" in blob and "0.0005" in blob                 # the deep-kill caveat is present
     assert not any(t["key"] == "pending" for t in p["tiers"])  # nothing left pending
 
 

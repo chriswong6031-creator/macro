@@ -209,6 +209,20 @@ def _calibration_note(overall: dict, by_conv: dict) -> str:
     return " ".join(parts)
 
 
+def _calibration_note_zh(overall: dict, by_conv: dict) -> str:
+    """简体中文 mirror of _calibration_note (display-only; the English note is canonical)."""
+    if overall["n"] == 0:
+        return "尚无判断被评分 —— 待首批核查日到期后开始累积战绩；在此之前置信保持克制。"
+    hi = by_conv.get("high", {})
+    parts = [f"已评分 {overall['n']} 条，命中率 {overall['hit_rate']}"
+             f"（方向准确率 {overall['dir_accuracy']}）。"]
+    if hi.get("n"):
+        parts.append(f"高置信判断：{hi['hits']}/{hi['n']} 未被证伪。")
+    if overall["n"] < 10:
+        parts.append("样本极小 —— 将置信视为暂定并保持偏低。")
+    return "".join(parts)
+
+
 def _aggregate(scored: list, ledger: dict, today) -> dict:
     decided = [r for r in scored if r.get("outcome") in ("hit", "miss")]
     overall = _bucket(decided)
@@ -233,6 +247,7 @@ def _aggregate(scored: list, ledger: dict, today) -> dict:
         "by_conviction": by_conv,
         "by_kind": by_kind,
         "calibration_note": _calibration_note(overall, by_conv),
+        "calibration_note_zh": _calibration_note_zh(overall, by_conv),
         "recent": [{k: r.get(k) for k in
                     ("id", "subject", "lean", "conviction", "outcome", "realized", "check_by")}
                    for r in recent],

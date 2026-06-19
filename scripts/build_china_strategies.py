@@ -77,7 +77,20 @@ def build() -> str:
                          back_label=BACK), C=C)
         (site / f"strategy_{spec.key}.html").write_text(html)
 
-    hub = env.get_template("china_strategies.html.j2").render(cards=cards, built=built, C=C)
+    # Pinned "China Mastermind Flagships" hero — the 3 multi-asset GTAA cards from the SAME
+    # source build_china_masterminds renders (engine.china_masterminds), so the pinned hero
+    # here and the per-profile detail pages stay in sync on every build. Additive: the
+    # {% if masterminds %} guard means the hub still builds if the engine errors.
+    masterminds = []
+    try:
+        from scripts.build_china_masterminds import china_mastermind_cards
+        masterminds = china_mastermind_cards()
+    except Exception as e:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning("china mastermind hero cards unavailable (%s)", e)
+
+    hub = env.get_template("china_strategies.html.j2").render(cards=cards, masterminds=masterminds,
+                                                              built=built, C=C)
     (site / "china_strategies.html").write_text(hub)
 
     snap = {"n": len(cards), "built": built,

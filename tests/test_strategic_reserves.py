@@ -105,6 +105,78 @@ def test_caveat_is_bilingual_and_non_directional():
     assert "not a price signal" in sr.SPR_CAVEAT["en"]
 
 
+def _annual(values, start_year=2022):
+    idx = pd.to_datetime([f"{start_year + i}-12-31" for i in range(len(values))])
+    return pd.Series(values, index=idx, dtype="float64")
+
+
+def _monthly_flow(values, start="2024-01-01"):
+    idx = pd.date_range(start, periods=len(values), freq="MS")
+    return pd.DataFrame({"level": values, "assess": [1] * len(values)}, index=idx)
+
+
+def test_net_imports_smoothed():
+    imp = _monthly_flow([6000, 6200, 6400])     # kbd
+    exp = _monthly_flow([3000, 3400, 3800])
+    # trailing-window mean of imports − mean of exports
+    assert sr.net_imports(imp, exp, window=3) == round((6200) - (3400), 1)
+    assert sr.net_imports(imp, None, window=3) == 6200.0   # missing exports -> 0
+    assert sr.net_imports(None, exp) is None
+    # net exporter -> negative (caller skips import-cover)
+    assert sr.net_imports(_monthly_flow([100]), _monthly_flow([500])) == -400.0
+
+
+def test_merge_country_row_trade_cover():
+    cfg = {"iso": "JP", "name": "Japan", "flag": "🇯🇵"}
+    crude = _annual([300_000, 330_000])           # kbbl (reused annual helper ok)
+    imp = _monthly_flow([2700, 2730])             # kbd
+    exp = _monthly_flow([0, 0])
+    row = sr.merge_country_row(cfg, crude, jodi_imports=imp, jodi_exports=exp)
+    assert row["net_imports_kbd"] == 2715.0       # mean(2700,2730) − 0
+    assert row["stock_cover_days"] == sr.days_of_cover(330_000, 2715.0)
+
+
+def test_gold_value_share():
+    assert sr.gold_value_share(100.0, 25.0) == {"value_usd": 75.0, "share_pct": 75.0}
+    assert sr.gold_value_share(None, 25.0)["value_usd"] is None
+    assert sr.gold_value_share(0.0, 0.0)["value_usd"] is None
+    assert sr.gold_value_share(100.0, 120.0)["value_usd"] is None   # negative -> guarded
+
+
+def test_total_official_tonnes():
+    rows = [{"tonnes": 8133.5}, {"tonnes": 2280.0}, {"tonnes": None}]
+    assert sr.total_official_tonnes(rows) == 10414.0
+    assert sr.total_official_tonnes([]) is None
+
+
+def test_merge_gold_row_live():
+    cfg = {"iso": "USA", "name": "United States", "flag": "🇺🇸", "tonnes": 8133.5,
+           "trend": "stable"}
+    total = _annual([770.0, 910.0])     # 2022, 2023
+    exgold = _annual([220.0, 228.0])
+    row = sr.merge_gold_row(cfg, total, exgold)
+    assert row["tonnes"] == 8133.5
+    assert row["trend_en"] == "stable"
+    assert row["value_usd"] == 910.0 - 228.0          # latest gold value
+    assert row["share_pct"] == round(100 * 682 / 910, 1)
+    # YoY value vs prior year: (910-228)/(770-220) - 1
+    assert row["value_yoy_pct"] == round(100 * (682 / 550 - 1), 1)
+
+
+def test_merge_gold_row_no_wb():
+    cfg = {"iso": "TWN", "name": "Taiwan", "flag": "🇹🇼", "tonnes": 423.6,
+           "trend": "stable", "no_wb": True}
+    row = sr.merge_gold_row(cfg, _annual([1, 2]), _annual([1, 1]))
+    assert row["tonnes"] == 423.6
+    assert row["value_usd"] is None and row["share_pct"] is None   # suppressed
+
+
+def test_gold_caveat_bilingual():
+    for k in ("en", "zh"):
+        assert k in sr.GOLD_CAVEAT and len(sr.GOLD_CAVEAT[k]) > 40
+    assert "not a trade signal" in sr.GOLD_CAVEAT["en"]
+
+
 def test_leaf_is_never_wired_into_a_scoring_path():
     """Guardrail: strategic reserves are DISPLAY-ONLY. The leaf must not import any
     scoring/alert/conviction module."""

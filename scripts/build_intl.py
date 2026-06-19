@@ -50,6 +50,41 @@ def main() -> int:
         log.error("intl engine failed (%s); skipping intl page", e)
         return 0
 
+    # ---- cross-market performance / rotation / rates desks (display-only) ------
+    try:                                                # inline SVG sparkline renderer
+        from scripts.build_intl_library import _spark_svg
+    except Exception:  # noqa: BLE001 — sparklines are decorative; never break the build
+        def _spark_svg(*_a, **_k):
+            return ""
+    perf, rates = None, None
+    try:
+        from engine import intl_performance
+        perf = intl_performance.performance_panel(records=latest["records"])
+        for b in (perf.get("leaderboard") or []):
+            h = next((b["returns"][k] for k in ("12m", "6m", "3m", "ytd", "1m")
+                      if k in b["returns"]), None)
+            col = ("var(--up)" if (h and h["usd"] >= 0) else "var(--down)")
+            b["spark_svg"] = _spark_svg(b.get("spark") or [], color=col, w=200, h=40)
+    except Exception as e:  # noqa: BLE001 — additive, never break the build
+        log.error("intl performance panel failed (%s)", e)
+    try:
+        from engine import intl_rates
+        rates = intl_rates.rates_desk(latest["records"])
+        for r in (rates.get("rows") or []):
+            # neutral accent — the spark plots the 10y *yield* path (not a price
+            # direction), so up/down semantics would misread (a rising yield line
+            # tinted "down")
+            r["spark_svg"] = _spark_svg(r.get("spark") or [], color="var(--link)", w=130, h=34)
+        an = rates.get("anchor") or {}
+        an["spark_svg"] = _spark_svg(an.get("spark") or [], color="var(--link)", w=200, h=40)
+        liq = rates.get("liquidity")
+        if liq:
+            liq["spark_svg"] = _spark_svg(liq.get("spark") or [],
+                                          color=("var(--down)" if liq.get("draining") else "var(--up)"),
+                                          w=200, h=40)
+    except Exception as e:  # noqa: BLE001
+        log.error("intl rates desk failed (%s)", e)
+
     try:
         from engine import intl_stocks
         closes, members = intl_stocks.panel()
@@ -85,6 +120,8 @@ def main() -> int:
             "periphery": latest.get("periphery"),
             "sector_board": board,
             "setups": setups,
+            "perf": perf,
+            "rates": rates,
         }
 
         site = Path(config.load()["storage"]["site_dir"])

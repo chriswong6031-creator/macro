@@ -93,7 +93,7 @@
   .nbcard.nb-caution { border-left-color:var(--warn); }
   .nb-top { display:flex; align-items:baseline; gap:6px; }
   .nb-tk { font-weight:800; font-size:14px; color:var(--text); }
-  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
   .nb-px { font-weight:700; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .nb-sub { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
   .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
@@ -338,90 +338,7 @@
 <body>
 
 <nav class="site-nav">
-    <div class="nav-links">
-    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
-        <a href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
-        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
-        <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
-        <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
-        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
-        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
-        <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
-        <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link active" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a class="{{ 'active' if mode != 'stocks' }}" href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
-        <a class="{{ 'active' if mode == 'stocks' }}" href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
-        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('Income · gold · bonds', '红利 · 黄金 · 国债') }}</span></a>
-        <a href="allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
-        <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
-        <a href="baskets_hk.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs HSI', '等权主题篮子 vs 恒指') }}</span></a>
-        <a href="allocation_hk.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
-        <a href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
-        <a href="baskets_canada.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P/TSX', '等权主题篮子 vs 标普/多伦多') }}</span></a>
-        <a href="allocation_canada.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="intl.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
-        <a href="intl_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Cross-market standouts · sectors', '跨市场精选 · 板块') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="vector.html">📊 {{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
-        <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
-        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
-        <a href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
-      </div>
-    </div>
-    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
-    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
-        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
-        <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
-        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
-        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
-        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
-        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
-      </div>
-    </div>
-  </div>
+    {% include "_navlinks.html.j2" %}
   <div class="nav-search" data-lib="chinastockdata/index.json" data-target="china_lookup.html">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search A-shares"
@@ -573,14 +490,12 @@
       </div>
       {% if alloc_card and alloc_card.present %}
       <a class="idx-alloc" href="china_allocation.html">
-        <a href="allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
         <div class="idx-gk">◎ {{ t('Income Vector allocation', '红利向量仓位') }} →</div>
         <div class="idx-gv" style="color:{{ '#1FA971' if alloc_card.band == 'low' else ('var(--warn)' if alloc_card.band == 'elevated' else 'var(--down)') }}">{{ alloc_card.growth_w }}%<small> {{ t('growth', '增长') }} / {{ alloc_card.defensive_w }}% {{ t('defensive', '防御') }}</small></div>
         <div class="muted" style="font-size:11px">{{ t(alloc_card.label_en, alloc_card.label_zh) }} · Sharpe {{ alloc_card.sharpe }} · MaxDD {{ alloc_card.maxdd }}%</div>
       </a>
       {% else %}
       <a class="idx-alloc" href="china_allocation.html">
-        <a href="allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
         <div class="idx-gk">◎ {{ t('Allocation strategy', '仓位策略') }} →</div>
         <div class="muted" style="font-size:12px;margin-top:4px">{{ t('Income core + gold + bonds — a validated drawdown / Sharpe engine.', '红利核心 + 黄金 + 国债 — 经验证的回撤 / 夏普引擎。') }}</div>
       </a>
@@ -805,6 +720,51 @@
     </table>
     {% endif %}
     <p class="note" style="margin:8px 0 0;font-size:11px;text-transform:none">{{ t('Scheduling context only — never scored, no event-risk dampener, no news API.', '仅日程背景 —— 从不评分、无事件风险衰减、无新闻接口。') }}</p>
+  </div>
+  {% endif %}
+
+  <!-- ===================== MACRO NEWS & OFFICIAL POLICY TONE (display-only) ===================== -->
+  {% if mode != 'stocks' and china_news %}
+  {% set CN = china_news %}
+  <style>
+    #china-news .muted{color:var(--muted);font-weight:400}
+    #china-news .cn-tone{display:flex;gap:8px;align-items:baseline;font-size:14px;margin:2px 0 6px;flex-wrap:wrap}
+    #china-news .cn-badge{font-weight:700;padding:1px 9px;border-radius:6px}
+    #china-news .cn-b-supportive{background:#1f4733;color:#a0ffc4}
+    #china-news .cn-b-cautious{background:#4f2422;color:#ff9c9c}
+    #china-news .cn-b-steady,#china-news .cn-b-building,#china-news .cn-b-unknown{background:var(--line);color:var(--muted)}
+    #china-news .cn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;margin:8px 0 6px}
+    #china-news .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px;font-weight:700}
+    #china-news .cn-item{display:block;padding:7px 0;border-bottom:1px solid var(--panel2);color:var(--text);font-size:13px;line-height:1.45}
+    #china-news a.cn-item:hover{color:var(--up)}
+    #china-news .cn-theme{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted);margin-right:7px;vertical-align:1px}
+    #china-news .cn-when{color:var(--muted);font-size:11px;margin-left:6px;white-space:nowrap}
+    #china-news .cn-disc{font-size:11px;color:var(--muted);margin:10px 0 0;text-transform:none;line-height:1.5}
+  </style>
+  <div class="panel span12" id="china-news">
+    <h2>📰 {{ t('Macro news & official policy tone', '宏观新闻与官方政策基调') }}
+      {{ help("Two keyless, display-only legs. (1) Official policy tone — a z-score of a crude keyword proxy on the daily CCTV 新闻联播 (Xinwen Lianbo) broadcast: does official language lean supportive/pro-growth or cautious/risk-tilted? Read RELATIVE (z vs a trailing window), never as an absolute sentiment. (2) Filtered Eastmoney 全球财经快讯 flash headlines — kept only when they match a China macro theme (PBoC / inflation / growth / credit / fiscal / policy / markets), each tagged, deduped, newest-first. No per-headline AI. Nothing here feeds any score, signal, regime or allocation, and the mechanical model never sees it.", "两条无需密钥、仅展示的分腿。（1）官方政策基调 —— 对每日央视《新闻联播》文本的粗略关键词代理做 z 标准化：官方措辞偏积极/稳增长，还是偏谨慎/防风险？按相对值（相对滚动窗口的 z）解读，而非绝对情绪。（2）已筛选的东方财富《全球财经快讯》头条 —— 仅保留命中中国宏观主题（央行/物价/增长/信用/财政/政策/市场）的条目，逐条标注、去重、最新优先。无逐条新闻 AI。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。") }}
+    </h2>
+    {% if CN.tone %}
+    <div class="cn-tone">
+      <span class="muted">{{ t('Official policy tone (CCTV 新闻联播):', '官方政策基调（央视新闻联播）：') }}</span>
+      <span class="cn-badge cn-b-{{ CN.tone.band }}">{{ t(CN.tone.label_en, CN.tone.label_zh) }}</span>
+      <span class="muted">· z {{ '%+.2f'|format(CN.tone.z) }} · {{ CN.tone.n_days }}{{ t('d series', '天序列') }} · {{ CN.tone.asof }}</span>
+    </div>
+    {% endif %}
+    {% if CN.brief and CN.brief.text %}
+    <div class="cn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ CN.brief.text }}</div>
+    {% endif %}
+    <div class="section-title">{{ t('Filtered macro flashes', '已筛选的宏观快讯') }}{% if CN.news and CN.news.n_raw %} <span class="muted">({{ CN.news.n_kept }}/{{ CN.news.n_raw }})</span>{% endif %} <span class="muted" style="text-transform:none">· {{ t('Eastmoney 全球财经快讯', '东方财富 全球财经快讯') }}</span></div>
+    {% if CN.news and CN.news.headlines %}
+      {% for h in CN.news.headlines %}
+      {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
+      {% if h.url %}<a class="cn-item" href="{{ h.url }}" target="_blank" rel="noopener">{% else %}<span class="cn-item">{% endif %}<span class="cn-theme">{{ t(tl[0], tl[1]) }}</span>{{ h.title }}{% if h.time %}<span class="cn-when">{{ h.time }}</span>{% endif %}{% if h.url %}</a>{% else %}</span>{% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="note" style="text-transform:none">{{ t('No macro flashes right now — the flash fetch is off (default) or temporarily unavailable.', '暂无宏观快讯 —— 快讯抓取已关闭（默认）或暂不可用。') }}</p>
+    {% endif %}
+    <p class="cn-disc">{{ t(CN.disclaimer, CN.disclaimer_zh) }}</p>
   </div>
   {% endif %}
 
@@ -1067,7 +1027,7 @@
     {% if setups.laggards %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
-      {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:nowrap"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
+      {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
     <p class="note" style="margin:8px 0 0;font-size:11px">{{ t('Cycle entry + mean-reversion (the validated A-share effects), with residual relative strength as a light quality tiebreaker. Deep-history corrected: A-shares mean-revert — momentum is not an edge. A shortlist to size and confirm, not a buy list; cycle state is a drawdown/structure tool, not a timing oracle.', '周期入场 + 均值回归（A股已验证的效应），残差相对强度仅作轻量质量加权。经深度历史校正：A股均值回归 —— 动量并非优势。用于定仓与确认的名单，而非买入清单；周期状态是回撤/结构工具，而非择时神谕。') }}</p>

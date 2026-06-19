@@ -38,6 +38,11 @@ def _fixture() -> pd.DataFrame:
         _row("CN", "2024-12", "KBBL", "-", 3),
         _row("CN", "2024-12", "KTONS", "..", 3),
         _row("CN", "2024-12", "CONVBBL", "x", 3),
+        # trade flows are RATES in KBD (not levels): imports + exports
+        _row("US", "2024-12", "KBD", "6600.0", 1, flow="TOTIMPSB"),
+        _row("US", "2024-12", "KBD", "3900.0", 1, flow="TOTEXPSB"),
+        _row("JP", "2024-12", "KBD", "2730.0", 1, flow="TOTIMPSB"),
+        _row("JP", "2024-12", "KBD", "0.0", 1, flow="TOTEXPSB"),     # zero export must be KEPT
         # noise that must be filtered: wrong flow, wrong product, off-roster country
         _row("US", "2024-12", "KBBL", "999.0", 1, flow="PRODUCTION"),
         _row("US", "2024-12", "KBBL", "888.0", 1, prod="TOTPRODS"),
@@ -59,6 +64,12 @@ def test_reconciliation(monkeypatch):
     us = frames["crude_us"]
     assert us["level"].iloc[-1] == 671557.0       # KBBL used directly
     assert int(us["assess"].iloc[-1]) == 1
+
+    # trade flows -> separate kbd series; a zero export is a real value, kept
+    assert frames["imports_us"]["level"].iloc[-1] == 6600.0
+    assert frames["exports_us"]["level"].iloc[-1] == 3900.0
+    assert frames["imports_jp"]["level"].iloc[-1] == 2730.0
+    assert frames["exports_jp"]["level"].iloc[-1] == 0.0   # zero kept (rate >= 0)
 
     de = frames["crude_de"]
     assert abs(de["level"].iloc[-1] - 10000.0 * 7.3) < 1e-6   # KTONS x CONVBBL

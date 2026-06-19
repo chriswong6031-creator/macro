@@ -77,6 +77,23 @@ def main() -> int:
         log.warning("lead/lag snapshot failed: %s", e)
         leadlag = None
 
+    # Dollar factor — the forex Dollar Desk's cross-asset transmission (display-only,
+    # contemporaneous). Degrades to None if build_forex hasn't written latest.json.
+    try:
+        from lib import forex_link
+        _tr = forex_link.transmission()
+        _rows = []
+        for k in ("SPY", "EEM", "GC=F", "CL=F", "HG=F", "UST10", "BTC"):
+            ac = forex_link.asset_corr(k, _tr)
+            if ac:
+                _rows.append({"label": ac["label"], "label_zh": ac["label_zh"],
+                              "corr": ac["corr"], "stable": ac["stable"]})
+        _rows.sort(key=lambda r: r["corr"])            # most negative (biggest headwind) first
+        dollar_factor = {"rows": _rows, "usd_dir": _tr.get("usd_dir")} if _rows else None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("dollar-factor read failed: %s", e)
+        dollar_factor = None
+
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -85,7 +102,7 @@ def main() -> int:
         as_of=snap.get("asof"), built=built, regime=snap.get("regime"),
         breadth=snap.get("breadth"), trend=snap.get("trend"), ratios=snap.get("ratios"),
         carry=snap.get("carry"), correlation=snap.get("correlation"), note=snap.get("note"),
-        leadlag=leadlag,
+        leadlag=leadlag, dollar_factor=dollar_factor,
         liquidity=liquidity, liq_spark=(_sparkline(liquidity["spark"]) if liquidity else ""),
         funding=funding, fund_spark=(_sparkline(funding["spark"]) if funding else ""))
     site = config.ROOT / config.load()["storage"]["site_dir"]

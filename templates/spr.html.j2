@@ -102,6 +102,10 @@ html[data-theme="dark"] .pill{background:var(--grid)}
 .tbadge{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
 .tb-gov{background:#E3F5E9;color:var(--green)} .tb-ind{background:#E8EEFF;color:var(--blue)}
 .tb-com{background:var(--grid);color:var(--muted)} .tb-est{background:#FFF2D9;color:#9a6a00}
+.trd{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.trd-accumulating{background:#E3F5E9;color:var(--green)} .trd-stable{background:var(--grid);color:var(--muted)} .trd-reducing{background:#FDEBEB;color:var(--red)}
+.sharebar{position:relative;height:7px;border-radius:5px;background:var(--grid);width:96px;margin-top:5px;overflow:hidden}
+.sharebar .sf{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:linear-gradient(90deg,#C8A53B,#e8c15a)}
 .qbadge{display:inline-block;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700;background:var(--grid);color:var(--muted);margin-left:5px}
 .qbadge.q1{background:#E3F5E9;color:var(--green)} .qbadge.q3{background:#FFF2D9;color:#9a6a00}
 .caveat{margin-top:2px;padding:13px 16px;border:1px solid var(--grid);border-radius:12px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--text)}
@@ -123,22 +127,7 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
 </head>
 <body>
 <div class="topbar">
-  <div class="nav-links">
-    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <a class="nav-link" href="macro.html">🇺🇸 {{ t('United States', '美国') }}</a>
-    <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }}</a>
-    <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link active" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
-        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
-        <a class="active" href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
-      </div>
-    </div>
-    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
-    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
-  </div>
+  {% include "_navlinks.html.j2" %}
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
@@ -167,7 +156,7 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
       <div class="metric-row">
         <div class="m"><div class="k">{{ t('4-week','4周') }}</div><div class="v {{ 'up' if (us.chg_4w_mb or 0) > 0 else ('down' if (us.chg_4w_mb or 0) < 0 else '') }}">{{ '%+.1f'|format(us.chg_4w_mb) if us.chg_4w_mb is not none else '—' }}<small> M</small></div></div>
         <div class="m"><div class="k">{{ t('52-week','52周') }}</div><div class="v {{ 'up' if (us.chg_52w_mb or 0) > 0 else ('down' if (us.chg_52w_mb or 0) < 0 else '') }}">{{ '%+.0f'|format(us.chg_52w_mb) if us.chg_52w_mb is not none else '—' }}<small> M</small></div></div>
-        {% if us.days_cover is not none %}<div class="m"><div class="k">{{ t('Days cover','可供天数') }}</div><div class="v">{{ us.days_cover }}<small> {{ t('d','天') }}</small></div></div>{% endif %}
+        {% if us.import_cover_days is not none %}<div class="m"><div class="k">{{ t('Import cover','进口覆盖') }}</div><div class="v">{{ us.import_cover_days|round|int }}<small> {{ t('d','天') }}</small></div></div>{% elif us.days_cover is not none %}<div class="m"><div class="k">{{ t('Days cover','可供天数') }}</div><div class="v">{{ us.days_cover }}<small> {{ t('d','天') }}</small></div></div>{% endif %}
       </div>
     </div>
     <div class="card">
@@ -176,6 +165,8 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
       <div class="sigline"><span class="l">{{ t('Below peak','低于峰值') }}</span><span class="r"><b class="down">−{{ mb(us.below_peak_mb) }} M</b></span></div>
       <div class="sigline"><span class="l">{{ t('Record low','历史低点') }}</span><span class="r"><b>{{ mb(us.low_mb) }} M</b> <span class="faint">{{ us.low_date }}</span></span></div>
       <div class="sigline"><span class="l">{{ t('Above low','高于低点') }}</span><span class="r"><b class="up">+{{ mb(us.above_low_mb) }} M</b></span></div>
+      {% if us.import_cover_days is not none %}<div class="sigline"><span class="l">{{ t('Days of net-import cover','净进口可供天数') }}</span><span class="r"><b>{{ us.import_cover_days|round|int }}</b> <span class="faint">{{ t('SPR ÷ net crude imports (EIA, live)','战略储备 ÷ 原油净进口（EIA，实时）') }}</span></span></div>{% endif %}
+      {% if us.imports_mbd is not none %}<div class="sigline"><span class="l">{{ t('US crude trade','美国原油贸易') }}</span><span class="r"><b>{{ us.imports_mbd }}</b> {{ t('imp','进') }} / <b>{{ us.exports_mbd }}</b> {{ t('exp','出') }}{% if us.net_imports_mbd is not none %} · <b>{{ us.net_imports_mbd }}</b> {{ t('net','净') }}{% endif %} <span class="faint">{{ t('Mb/d · 1y avg','百万桶/日 · 1年均') }}</span></span></div>{% endif %}
       <div class="sigline"><span class="l">{{ t('Days of US refinery runs','美国炼厂可供天数') }}</span><span class="r"><b>{{ us.days_cover if us.days_cover is not none else '—' }}</b> <span class="faint">{{ t('SPR alone','仅战略储备') }}</span></span></div>
       <div class="caveat" style="margin-top:14px">
         <div class="hd">{{ t('Read this as context, not a signal', '请作为背景而非信号解读') }}</div>
@@ -224,6 +215,7 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
         <td class="r">
           {% if c.jodi_total_mb is not none %}<span class="num">{{ '{:,.0f}'.format(c.jodi_total_mb) }}</span> <span class="sm">M</span>{% if c.jodi_assess %}<span class="qbadge q{{ c.jodi_assess }}">{{ t(assess_word.get(c.jodi_assess,''), '') }}</span>{% endif %}
             {% if c.jodi_mom_mb is not none %}<div class="sm {{ 'up' if c.jodi_mom_mb > 0 else ('down' if c.jodi_mom_mb < 0 else '') }}">{{ '%+.1f'|format(c.jodi_mom_mb) }}M/mo · {{ c.jodi_as_of }}</div>{% endif %}
+            {% if c.net_imports_kbd is not none %}<div class="sm">{{ t('net imp','净进口') }} {{ (c.net_imports_kbd / 1000)|round(2) }}M/d{% if c.stock_cover_days is not none %} · ~{{ c.stock_cover_days|round|int }}d {{ t('cover','覆盖') }}{% endif %}</div>{% endif %}
           {% elif c.curated_total_mb %}<span class="num">~{{ '{:,.0f}'.format(c.curated_total_mb) }}</span> <span class="sm">M {{ t('est','估算') }}</span>{% else %}<span class="sm">{{ t('not reported to JODI','未向 JODI 报送') }}</span>{% endif %}
         </td>
         <td class="r">{% if c.days_cover is not none %}<span class="num">{{ c.days_cover }}</span><div class="sm">{{ t(c.days_basis_en, c.days_basis_zh) }}</div>{% else %}—{% endif %}</td>
@@ -248,9 +240,45 @@ html[data-theme="dark"] .iea-row .ie{background:var(--grid)}
     </div>
   </div>
 
+  <!-- ===================== OFFICIAL GOLD RESERVES ===================== -->
+  {% if gold and gold.rows %}
+  <div class="section-title">{{ t('Official gold reserves — central banks', '官方黄金储备 — 央行') }}</div>
+  <div class="card">
+    <div class="iea-row" style="margin-bottom:6px">
+      {% if gold.top_tonnes %}<div class="ie"><div class="k">{{ t('Top holders (shown)','上榜持有量') }}</div><div class="v">{{ '{:,.0f}'.format(gold.top_tonnes) }}</div><div class="h">{{ t('tonnes · official','吨 · 官方') }}</div></div>{% endif %}
+      {% if gold.global_tonnes %}<div class="ie"><div class="k">{{ t('Global official gold','全球官方黄金') }}</div><div class="v">~{{ '{:,.0f}'.format(gold.global_tonnes) }}</div><div class="h">{{ t('tonnes · all central banks','吨 · 全部央行') }}</div></div>{% endif %}
+      <div class="ie" style="flex:2;min-width:240px"><div class="k">{{ t('The structural bid','结构性买盘') }}</div><div class="h" style="font-size:13px;color:var(--text);margin-top:5px">{{ t(gold.note_en, gold.note_zh) }}</div></div>
+    </div>
+    <div class="sub" style="margin:8px 0 12px">{{ t('Tonnes = curated (World Gold Council / IMF IFS, as of','吨位 = 人工整理（世界黄金协会／IMF IFS，截至') }} {{ gold.as_of }}{{ t('). Gold value & share of reserves = live World Bank','）。黄金价值与占储备比例 = 世界银行实时数据') }}{% if gold.wb_year %} ({{ gold.wb_year }}){% endif %}{{ t(', valued at market.','，按市价计。') }}</div>
+    <div class="tbl-scroll">
+    <table class="catbl">
+      <thead><tr>
+        <th>{{ t('Country','国家') }}</th>
+        <th class="r">{{ t('Gold (tonnes)','黄金（吨）') }}</th>
+        <th>{{ t('Trend','趋势') }}</th>
+        <th class="r">{{ t('Gold value','黄金价值') }}</th>
+        <th>{{ t('Share of reserves','占储备比例') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in gold.rows %}
+      <tr>
+        <td class="a">{{ r.flag }} {{ t(r.name, r.name_zh) }}</td>
+        <td class="r"><span class="num">{{ '{:,.0f}'.format(r.tonnes) if r.tonnes is not none else '—' }}</span> <span class="sm">t</span></td>
+        <td>{% if r.trend %}<span class="trd trd-{{ r.trend }}">{{ t(r.trend_en, r.trend_zh) }}</span>{% else %}—{% endif %}</td>
+        <td class="r">{% if r.value_usd is not none %}<span class="num">${{ '{:,.0f}'.format(r.value_usd / 1e9) }}B</span>{% if r.value_yoy_pct is not none %}<div class="sm {{ 'up' if r.value_yoy_pct > 0 else ('down' if r.value_yoy_pct < 0 else '') }}">{{ '%+.0f'|format(r.value_yoy_pct) }}%/yr</div>{% endif %}{% else %}<span class="sm">{{ t('n/a','无') }}</span>{% endif %}</td>
+        <td>{% if r.share_pct is not none %}<span class="num">{{ r.share_pct }}%</span><div class="sharebar"><div class="sf" style="width:{{ r.share_pct }}%"></div></div>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <div class="caveat" style="margin-top:14px"><div class="hd">{{ t('How to read this','如何解读') }}</div>{{ t(gold.caveat_en, gold.caveat_zh) }}</div>
+  </div>
+  {% endif %}
+
   <div class="foot">
     {{ t('Strategic Reserves · built','战略储备 · 生成于') }} {{ built }} · {{ t('data as of','数据截至') }} {{ as_of }}.
-    {{ t('Sources: US SPR — EIA Weekly Petroleum Status Report (live). National crude stocks — JODI-Oil World Database (monthly, total stocks, reconciled to barrels). Strategic-reserve figures — EIA, IEA & national agencies (ISPRL, METI), each dated above.','数据来源：美国战略储备 — EIA 每周石油状况报告（实时）。各国原油库存 — JODI 石油世界数据库（月度，总库存，已换算为桶）。战略储备数据 — EIA、IEA 及各国机构（ISPRL、METI），均在上表注明日期。') }}
+    {{ t('Sources: US SPR — EIA Weekly Petroleum Status Report (live). National crude stocks — JODI-Oil World Database (monthly, total stocks, reconciled to barrels). Strategic-reserve figures — EIA, IEA & national agencies (ISPRL, METI), each dated above. Official gold — World Bank (value & share of reserves, live) + World Gold Council / IMF IFS (tonnes, curated).','数据来源：美国战略储备 — EIA 每周石油状况报告（实时）。各国原油库存 — JODI 石油世界数据库（月度，总库存，已换算为桶）。战略储备数据 — EIA、IEA 及各国机构（ISPRL、METI），均在上表注明日期。官方黄金 — 世界银行（价值与占储备比例，实时）+ 世界黄金协会／IMF IFS（吨位，人工整理）。') }}
     {{ t('Display-only and never scored — strategic reserves are a policy lever, not a forecasting signal. Not investment advice.','仅供展示，从不计入评分——战略储备是政策杠杆，而非预测信号。非投资建议。') }}
     {{ t('Limitations:','局限性：') }} <a href="https://github.com/chriswong6031-creator/macro/blob/main/LIMITATIONS.md">LIMITATIONS.md</a>.
   </div>

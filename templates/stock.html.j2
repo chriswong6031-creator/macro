@@ -212,6 +212,10 @@
                color:var(--muted); background:color-mix(in srgb,var(--muted) 10%,var(--panel));
                border:1px solid color-mix(in srgb,var(--muted) 24%,var(--line)); }
   .cv-regime .cv-rgdot { width:7px; height:7px; border-radius:50%; background:currentColor; flex:0 0 auto; }
+  .cv-size { display:flex; align-items:center; gap:8px; margin-top:7px; font-size:11.5px; flex-wrap:wrap; }
+  .cv-size .cv-szk { color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-size:10px; }
+  .cv-size .cv-szv { font-weight:800; }
+  .cv-size .cv-szt { color:var(--muted); font-weight:600; font-size:10.5px; }
   .cv-regime.rg-calm { color:var(--up); background:color-mix(in srgb,var(--up) 11%,var(--panel));
                        border-color:color-mix(in srgb,var(--up) 30%,var(--line)); }
   .cv-regime.rg-stress { color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,var(--panel));
@@ -288,91 +292,7 @@
 </head>
 <body>
 <nav class="site-nav">
-    <div class="nav-links">
-    <a class="nav-link" href="index.html">🏠 {{ t('Home', '首页') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link active" href="macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
-        <a class="active" href="us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a href="anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
-        <a href="strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
-        <a href="spvector.html">📐 {{ t('S&P / Macro Vector', '标普宏观向量') }}<span class="d">{{ t('Tactical equity↔cash', '战术股票↔现金') }}</span></a>
-        <a href="ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
-        <a href="baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
-        <a href="allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-        <a href="alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
-        <a href="gex.html">🧲 {{ t('Options Magnets', '期权磁吸') }}<span class="d">{{ t('Dealer-gamma GEX levels', '做市商Gamma GEX价位') }}</span></a>
-        <a href="etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="china.html">🇨🇳 {{ t('China', '中国') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
-        <a href="china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
-        <a href="baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
-        <a href="china_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('Income · gold · bonds', '红利 · 黄金 · 国债') }}</span></a>
-        <a href="allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="hk.html">🇭🇰 {{ t('Hong Kong', '香港') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="hk.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('HSI · southbound · global risk', 'HSI · 南向 · 全球风险') }}</span></a>
-        <a href="hk_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('HK-listed standouts · alpha', 'HK上市精选 · 阿尔法') }}</span></a>
-        <a href="baskets_hk.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs HSI', '等权主题篮子 vs 恒指') }}</span></a>
-        <a href="allocation_hk.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="canada.html">🇨🇦 {{ t('Canada', '加拿大') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="canada.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('TSX · BoC · commodity overlay', 'TSX · 加央行 · 商品叠加') }}</span></a>
-        <a href="canada_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('TSX standouts · sectors · alpha', 'TSX精选 · 板块 · 阿尔法') }}</span></a>
-        <a href="baskets_canada.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P/TSX', '等权主题篮子 vs 标普/多伦多') }}</span></a>
-        <a href="allocation_canada.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="intl.html">🌍 {{ t('International', '国际') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="intl.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
-        <a href="intl_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Cross-market standouts · sectors', '跨市场精选 · 板块') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="vector.html">₿ {{ t('Bitcoin Vector', '比特币向量') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="vector.html">📊 {{ t('Overview', '总览') }}<span class="d">{{ t('Market state · risk · momentum', '市场状态 · 风险 · 动量') }}</span></a>
-        <a href="vector_allocation.html">◎ {{ t('Allocation Strategy', '仓位策略') }}<span class="d">{{ t('BTC · ETH · alts · cash', 'BTC · ETH · 山寨 · 现金') }}</span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="commodities.html">🛢 {{ t('Commodities', '大宗商品') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="commodities.html">📊 {{ t('Commodity Dashboard', '商品仪表盘') }}<span class="d">{{ t('Gold · silver · copper · oil · complex', '金 · 银 · 铜 · 油 · 综合') }}</span></a>
-        <a href="commodity_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Per-commodity tactical strategies', '分品种战术策略') }}</span></a>
-        <a href="spr.html">🛢️ {{ t('Strategic Reserves', '战略储备') }}<span class="d">{{ t('SPR levels by country vs oil prices', '各国战略储备水平与油价') }}</span></a>
-      </div>
-    </div>
-    <a class="nav-link" href="forex.html">💱 {{ t('Forex', '外汇') }}</a>
-    <a class="nav-link" href="bonds.html">🏛️ {{ t('Bonds', '债券') }}</a>
-    <div class="nav-dd">
-      <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
-        <a href="policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
-        <a href="masterminds.html">🧠 {{ t('Masterminds', '操盘大师') }}<span class="d">{{ t('Multi-asset active GTAA strategies', '多资产主动配置策略') }}</span></a>
-        <a href="transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
-        <a href="crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
-        <a href="signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>
-        <a href="factors.html">🧮 {{ t('Factors & Seasonality', '因子 & 季节性') }}<span class="d">{{ t('Value · quality · low-vol · monthly calendar', '价值 · 质量 · 低波动 · 月历') }}</span></a>
-        <a href="validation_timeline.html">🧪 {{ t('Validation Timeline', '验证时间线') }}<span class="d">{{ t('Full 2007→ walk-forward backtest', '2007→ 完整滚动回测') }}</span></a>
-      </div>
-    </div>
-  </div>
+    {% include "_navlinks.html.j2" %}
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -486,8 +406,8 @@
 
     <div class="panel" id="panel_earn" style="display:none">
       <h2>📅 {{ t('Earnings', '财报') }}
-        {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It is the ONLY positive factor leg to survive the dashboard\'s leak-free false-discovery-rate test (see the Factor fingerprint panel / factors page); the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
-          '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它是唯一通过本看板无泄漏错误发现率检验的正向因子（见“因子指纹”面板／因子页）；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
+        {{ help('Next reported earnings date and the recent beat/miss history (SEC + Nasdaq, keyless), plus the SUE earnings-momentum z. SUE (standardized unexpected earnings) measures how far the latest quarter beat its year-ago seasonal expectation, standardized by the company\'s own history — the post-earnings-announcement-drift (PEAD) effect. It was the strongest factor and lone false-discovery-rate survivor on the shallow 2023-2025 window, but a deep 2011-2026 re-test (survivorship-biased, an optimistic bound) collapses its CROSS-SECTIONAL edge to ~zero (see the factors page) — so it is shown as earnings-momentum / PEAD context, not a validated standalone alpha; the z is RELATIVE to the S&P 1500 (0 = average, +2 = top of the pack). Context, not a standalone buy signal.',
+          '下次财报日与近期超预期/不及预期历史（SEC＋纳斯达克，免密钥），以及SUE盈利动量z值。SUE（标准化超预期盈利）衡量最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化——即盈利公布后漂移（PEAD）效应。它在浅窗口（2023-2025）曾是最强正向因子且唯一通过无泄漏错误发现率检验，但 2011-2026 深度复检（含幸存者偏差，乐观上界）使其横截面优势崩塌至约零（见因子页）——故仅作盈利动量／PEAD 背景展示，并非已验证的独立超额收益；该z为相对标普1500的排名（0＝平均，+2＝领先）。仅供参考，并非独立买入信号。') }}</h2>
       <div id="r_earn"></div>
     </div>
 
@@ -577,7 +497,8 @@
     </div>
   </div>
 
-<script src="https://s3.tradingview.com/tv.js"></script>
+<script src="lightweight-charts-v5.js"></script>
+<script src="chart.js"></script>
 <script src="stockbrief.js"></script>
 <script>
 (function () {
@@ -621,7 +542,7 @@
           short:'Short interest', shortpct:'Short % of float', dtc:'Days to cover', sichg:'SI change (2wk)',
           insider:'Insider net flow', insiderpct:'Net buying (% cap)', buyers:'distinct insiders (B/S)', buys:'buys / sells', fwdnote_lite:'Forward P/E: trailing only — no free forward estimate at S&P-1500 scale.',
           mediansrc:'sector median', scorelab:'Factor score', compos:'composite percentile vs S&P 1500',
-          suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500; the only positive factor leg to survive the leak-free FDR scorecard. Context, not a standalone signal.',
+          suehelp:'Standardized unexpected earnings — how far the latest quarter beat its year-ago seasonal expectation, standardized by the company’s own history (post-earnings-announcement drift). Cross-sectional winsorized z vs the S&P 1500. Standout on the shallow 2023-2025 window, but its cross-sectional edge does NOT persist on deep 2011-2026 history (see the factors page) — earnings-momentum / PEAD context, not a standalone signal.',
           suevs:'z vs S&P 1500',
           piotroski:'Piotroski F · Altman Z', ph2:'Phase 2' },
     zh: { building:'暂无该公司的业务简介。',
@@ -635,7 +556,7 @@
           short:'做空持仓', shortpct:'做空占流通股', dtc:'回补天数', sichg:'做空变化（两周）',
           insider:'内部人净流向', insiderpct:'净买入（占市值%）', buyers:'不同内部人（买/卖）', buys:'买入 / 卖出', fwdnote_lite:'前瞻市盈率：仅历史值——标普1500规模下无免费前瞻预期。',
           mediansrc:'行业中位', scorelab:'因子评分', compos:'相对标普1500综合百分位',
-          suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值；是唯一通过无泄漏FDR评分卡的正向因子。仅供参考，并非独立信号。',
+          suehelp:'标准化超预期盈利（SUE）——最新季度相对去年同期季节性预期超出多少，并以公司自身历史标准化（盈利公布后漂移效应）。相对标普1500的横截面缩尾z值。在浅窗口（2023-2025）曾突出，但其横截面优势在 2011-2026 深度历史中不再成立（见因子页）——仅作盈利动量／PEAD 背景，并非独立信号。',
           suevs:'相对标普1500的z',
           piotroski:'Piotroski F · Altman Z', ph2:'第二阶段' } };
   function LF(k) { return (TF[lang()] || TF.en)[k]; }
@@ -1114,6 +1035,23 @@
     var rg = c.regime;
     var rgbar = rg ? '<div class="cv-regime ' + esc(rg.css || '') + '"><span class="cv-rgdot"></span>' +
       esc(lz(rg.en, rg.zh)) + '</div>' : '';
+    // SUGGESTED POSITION SIZE (T5) — risk-budgeting guide scaled by 1/risk, NOT an alpha bet.
+    var SZ = { full: ['var(--up)', 'Full size', '足额仓位'],
+               'three-quarter': ['var(--g-cold)', '¾ size', '3/4 仓位'],
+               half: ['var(--muted)', '½ size', '半仓'],
+               quarter: ['var(--warn)', '¼ size', '1/4 仓位'],
+               avoid: ['var(--down)', 'Avoid — not a buy', '回避 — 非买入'] };
+    var sz = c.size, szbar = '';
+    if (sz && SZ[sz.bucket]) {
+      var sc = SZ[sz.bucket], rk = (c.risk && c.risk.components) ? Object.keys(c.risk.components)
+        .filter(function (k) { return c.risk.components[k] >= 0.4; }) : [];
+      szbar = '<div class="cv-size" style="color:' + sc[0] + '"><span class="cv-szk">' +
+        lz('Suggested size', '建议仓位') + '</span><span class="cv-szv">' + esc(lz(sc[1], sc[2])) +
+        (sz.pct != null && sz.bucket !== 'avoid' ? ' · ' + sz.pct + '%' : '') + '</span>' +
+        (rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
+          (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
+        '</div>';
+    }
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
@@ -1121,7 +1059,7 @@
         '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
       (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
         '</span>' + basis + '</div>' : '') +
-      rgbar +
+      rgbar + szbar +
       '<div class="cv-axes">' + ax + '</div>' +
       (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
       '<div class="cv-note">' + lz(
@@ -1550,25 +1488,17 @@
     tvLoad(d);
   }
 
-  // TradingView chart loader, shared by the full and limited views. Yahoo encodes
-  // US share classes with a dash (BRK-B); TradingView uses a dot (BRK.B), and a
-  // bare "BRK-B" resolves to a colliding TSX income-strategy ETF. Pin the known
-  // US class-shares to NYSE; otherwise convert the trailing class-dash to a dot.
-  // Crypto keeps its -USD -> USD mapping.
+  // Bespoke chart loader, shared by the full and limited views. Replaces the old
+  // TradingView iframe widget with our self-hosted Lightweight Charts engine
+  // (site/chart.js) driven by our own OHLC data (ohlc/<ticker>.json): candles +
+  // multi-timeframe RSI / Stoch / MACD / Stoch-RSI, computed client-side. The
+  // chart is garnish — if data or the library is missing it fails quietly and the
+  // analysis above stands alone, exactly as the old loader did.
   function tvLoad(d) {
-    document.getElementById('tvbox').innerHTML = '<div id="tvchart"></div>';
-    var TV_FIX = {'BRK-A': 'NYSE:BRK.A', 'BRK-B': 'NYSE:BRK.B', 'BF-A': 'NYSE:BF.A',
-      'BF-B': 'NYSE:BF.B', 'CWEN-A': 'NYSE:CWEN.A', 'MOG-A': 'NYSE:MOG.A',
-      'HEI-A': 'NYSE:HEI.A', 'LEN-B': 'NYSE:LEN.B'};
-    var tvsym = TV_FIX[d.ticker] || (d.ticker.indexOf('-USD') >= 0
-      ? d.ticker.replace('-USD', 'USD') : d.ticker.replace(/-([A-Z])$/, '.$1'));
-    try {
-      new TradingView.widget({container_id: 'tvchart', symbol: tvsym,
-        interval: 'D', theme: (localStorage.getItem('theme') === 'light' ? 'light' : 'dark'),
-        style: '1', height: 430, width: '100%',
-        hide_side_toolbar: true, allow_symbol_change: true,
-        studies: ['RSI@tv-basicstudies', 'MACD@tv-basicstudies']});
-    } catch (e) { /* chart is garnish — analysis above stands alone */ }
+    var box = document.getElementById('tvbox');
+    if (!box || !window.StockChart) return;
+    try { window.StockChart.mount(box, d.ticker, {name: d.name}); }
+    catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
 
   // A brand-new listing (a days-old IPO like SPCX) has no computable cycle ladder
@@ -1734,8 +1664,8 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts by TradingView ·
-methodology &amp; caveats: see any sector page footer.</p>
+<p class="muted" style="font-size:12px">Generated {{ generated_utc }} UTC · charts rendered in-house with
+Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>

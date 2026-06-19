@@ -4,8 +4,9 @@
    honesty caveats, and has no double-escaped entities.
  - dashboard.html.j2 compiles (the macro/stocks mode-conditional if/endif balance)
    and carries the split markers; same for the nav-edited china/gex/hk templates.
- - the landing hub emits the three split market cards and degrades gracefully when
-   a market didn't build.
+ - the landing hub (AURORA globe flight deck) emits the d3-geo regime globe + the
+   two-split Macro/Stock market cards + vector grid, and absorbs the intl/ipo/spr
+   kwargs build_landing still passes.
 
 Run as a script (no pytest needed): python -m tests.test_spvector_page
 """
@@ -118,13 +119,24 @@ def test_hub_split_cards():
         us_stocks={"label": "12 standout setups", "n_setups": 12, "present": True},
         commodities={"present": False}, forex={"present": False}, bonds={"present": False},
         etf={"present": False}, watchlist={"present": False})
-    nh = html.count('class="c-half"')
-    check("hub has cards-hero row", "cards-hero" in html)
-    check("hub has >=6 split-card halves", nh >= 6, f"halves={nh}")
-    check("hub has cards-sub row", "cards-sub" in html)
-    for s in ("United States", "macro.html", "us_stocks.html"):
+    # AURORA globe flight deck: an unbounded d3-geo regime globe + market-clock
+    # sidebar, then two-split Macro/Stock market cards + the vector grid + alerts.
+    nb = html.count("splitbtn")
+    check("hub has globe deck", 'class="globe-deck' in html)
+    check("hub has globe canvas", 'class="gd-canvas' in html)
+    check("hub has globe-data blob", 'id="globe-data"' in html)
+    check("hub has server-rendered legend twin (>=9)", html.count('class="gd-leg') >= 9)
+    check("hub has two-split markets (>=8 buttons)", nb >= 8, f"splitbtns={nb}")
+    check("hub has vector grid", 'class="nav vc' in html)
+    for s in ("United States", "macro.html", "us_stocks.html", "china_stocks.html"):
         check(f"hub contains: {s}", s in html, "missing")
     check("no double-escaped entities in hub", "&amp;amp;" not in html)
+    # Markup+str / markup-in-attribute regressions ESCAPE the bilingual spans -> the
+    # tell-tale is a literal escaped "&lt;span" anywhere in the rendered hub.
+    check("no escaped-markup leak in hub", "&lt;span" not in html)
+    # build_landing passes intl/ipo/spr -> the hub MUST absorb them (else daily crash).
+    check("hub absorbs intl/ipo/spr kwargs",
+          bool(bv._hub_html(vm, macro, [], intl={}, ipo={}, spr={})))
     # graceful: China/HK didn't build -> still renders, US hero present
     html2 = bv._hub_html(
         vm, macro, [], china={"present": False}, hk={"present": False},

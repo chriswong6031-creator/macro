@@ -63,6 +63,13 @@ def _detail_vm(prof_key: str, res: dict, built: str) -> dict:
         "oos": res["oos"], "verdict_en": verdict[0], "verdict_zh": verdict[1],
         "caveat_en": _CAV[0], "caveat_zh": _CAV[1],
         "back_href": BACK[0], "back_label_en": BACK[1], "back_label_zh": BACK[2],
+        # ── flagship UI + "how it works" explainer ──
+        "accent": _ACCENT[prof_key], "grad": _GRAD[prof_key], "riskpos": _RISKPOS[prof_key],
+        "profile_en": prof["label_en"], "profile_zh": prof["label_zh"],
+        "sharpe_mult": round(sc["sharpe"] / sc["hodl_sharpe"], 1) if sc.get("hodl_sharpe") else None,
+        "factors_detail": _factors_vm(), "universe": _universe_vm(), "pipeline": M.PIPELINE,
+        "profiles_cmp": _profiles_cmp_vm(prof_key),
+        "blurb_en": prof["blurb_en"], "blurb_zh": prof["blurb_zh"],
     }
 
 
@@ -82,8 +89,45 @@ def _verdict(prof_key: str, oos: dict, sc: dict) -> tuple[str, str]:
 # per-profile accent for the pinned/highlighted UI (conservative→green, moderate→blue,
 # aggressive→violet). Single source of truth shared with the Strategy Scorecards pinned hero.
 _ACCENT = {"conservative": "#1FA971", "moderate": "#285fff", "aggressive": "#a855f7"}
+# per-profile gradient stops (border/flag/shimmer on the flagship detail hero)
+_GRAD = {"conservative": "#1FA971,#34d399,#0ea5e9", "moderate": "#285fff,#6366f1,#8b5cf6",
+         "aggressive": "#a855f7,#d946ef,#ec4899"}
 # risk-spectrum marker position (0=left/safe .. 1=right/aggressive) for the mini risk meter
 _RISKPOS = {"conservative": 0.16, "moderate": 0.5, "aggressive": 0.9}
+_BENCH_LBL = {"6040": ("60/40", "60/40"), "spy": ("S&P 500", "标普500")}
+
+
+def _factors_vm() -> list[dict]:
+    """The 4 conviction factors + a relative bar width (vs the largest weight)."""
+    mx = max(f["weight"] for f in M.FACTORS) or 1
+    out = []
+    for f in M.FACTORS:
+        d = dict(f)
+        d["wpct"] = round(f["weight"] * 100)
+        d["wrel"] = round(f["weight"] / mx * 100)
+        out.append(d)
+    return out
+
+
+def _universe_vm() -> list[dict]:
+    """The 9-asset universe with (ticker, role) rows → dicts the template can read."""
+    return [{"cls_en": c["cls_en"], "cls_zh": c["cls_zh"], "icon": c["icon"],
+             "rows": [{"ticker": tk, "role_en": re, "role_zh": rz} for (tk, re, rz) in c["rows"]]}
+            for c in M.UNIVERSE]
+
+
+def _profiles_cmp_vm(cur: str) -> list[dict]:
+    """All three risk profiles' knobs, current one flagged — the 'three dials' panel."""
+    out = []
+    for pk in ("conservative", "moderate", "aggressive"):
+        p = M.PROFILES[pk]
+        be, bz = _BENCH_LBL[p["bench"]]
+        out.append({"key": pk, "accent": _ACCENT[pk], "icon": p["icon"],
+                    "label_en": p["label_en"], "label_zh": p["label_zh"],
+                    "target_vol": round(p["target_vol"] * 100), "max_lev": p["max_lev"],
+                    "w_cap": round(p["w_cap"] * 100), "bench_en": be, "bench_zh": bz,
+                    "is_current": pk == cur})
+    return out
 
 
 def _rich_card(pk: str, res: dict) -> dict:
@@ -136,7 +180,7 @@ def build() -> str:
         if res.get("error"):
             continue
         cards.append(_rich_card(pk, res))          # same rich card as the strategies.html hero
-        html = env.get_template("active_detail.html.j2").render(**_detail_vm(pk, res, built), C=C)
+        html = env.get_template("mastermind_detail.html.j2").render(**_detail_vm(pk, res, built), C=C)
         (site / f"strategy_mm_{pk}.html").write_text(html)
 
     hub = env.get_template("masterminds.html.j2").render(cards=cards, built=built, C=C)

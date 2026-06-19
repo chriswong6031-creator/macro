@@ -153,6 +153,17 @@ html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.acti
 html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{
   background:color-mix(in srgb,var(--blue) 18%,var(--card));}
 
+/* 3rd-tier fly-out (Other Assets ▸ Bitcoin Vector / Commodities) — layout only,
+   palette inherited from the host page's inline nav-dd-menu. Loaded after the
+   page <style>, so these position overrides win. */
+.nav-dd-menu .nav-sub{display:block;position:relative;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig{display:flex;align-items:center;}
+.nav-dd-menu .nav-sub>a.nav-sub-trig .caret-r{margin-left:auto;padding-left:12px;font-size:10px;
+  opacity:.55;flex:none;transition:transform .2s;}
+.nav-dd-menu .nav-sub:hover>a.nav-sub-trig .caret-r{opacity:.9;transform:translateX(2px);}
+.nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
+.nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
+
 /* toggles — subtle hover feedback (their slide animations are untouched) */
 .theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
 .theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
@@ -180,7 +191,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
 <body>
 <div class="wrap">
   <div class="topbar">
-      <div class="nav-links">
+      
+
+
+    <div class="nav-links">
     <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
     <div class="nav-dd">
       <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
@@ -189,11 +203,10 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
-        <a href="spvector.html">📐 <span class="l-en">S&amp;P / Macro Vector</span><span class="l-zh">标普宏观向量</span><span class="d"><span class="l-en">Tactical equity↔cash</span><span class="l-zh">战术股票↔现金</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
-        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&amp;P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
-        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold &amp; when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
-        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked &amp; triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Magnets</span><span class="l-zh">期权磁吸</span><span class="d"><span class="l-en">Dealer-gamma GEX levels</span><span class="l-zh">做市商Gamma GEX价位</span></span></a>
         <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
       </div>
@@ -204,6 +217,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -211,6 +226,8 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="nav-dd-menu" role="menu">
         <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
         <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -218,36 +235,48 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
       <div class="nav-dd-menu" role="menu">
         <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
         <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret">▾</span></a>
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
-        <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
-      <a class="nav-link" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret">▾</span></a>
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
-        <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
-        <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
       </div>
     </div>
-    <a class="nav-link" href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span></a>
-    <a class="nav-link" href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span></a>
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market &amp; macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
-        <a href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
-        <a class="active" href="masterminds.html">🧠 <span class="l-en">Masterminds</span><span class="l-zh">操盘大师</span><span class="d"><span class="l-en">Multi-asset active GTAA strategies</span><span class="l-zh">多资产主动配置策略</span></span></a>
-        <a href="transmission.html">🔀 <span class="l-en">Rate &amp; Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates &amp; inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
-        <a href="factors.html">🧮 <span class="l-en">Factors &amp; Seasonality</span><span class="l-zh">因子 &amp; 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
-        <a href="validation_timeline.html">🧪 <span class="l-en">Validation Timeline</span><span class="l-zh">验证时间线</span><span class="d"><span class="l-en">Full 2007→ walk-forward backtest</span><span class="l-zh">2007→ 完整滚动回测</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
       </div>
     </div>
   </div>
@@ -262,73 +291,66 @@ a.card:hover,a.actitem:hover,a.idx-alloc:hover{transform:translateY(-2px);
     </div>
   </div>
 
-  <div class="h1">🧠 <span class="l-en">Mastermind Strategies</span><span class="l-zh">操盘大师策略</span></div>
-  <div class="intro"><span class="l-en">Active, multi-asset, conviction-weighted, vol-targeted global tactical asset allocation — full freedom across equities, Treasuries, credit, gold/copper and crypto, with leverage. This is where the most robust risk-adjusted edge lives: cross-asset diversification + trend + carry + regime-rotation. Three risk profiles for three goals.</span><span class="l-zh">主动、多资产、按信念加权、以波动率为目标的全球战术资产配置——在股票、国债、信用、黄金/铜与加密之间完全自由，并可加杠杆。这里是最稳健的风险调整优势所在：跨资产分散 + 趋势 + 套息 + 周期轮动。三种风险档对应三种目标。</span></div>
-  <div class="note"><span class="l-en">Honest framing: the robust, out-of-sample-stable edge is the SHARPE and the DRAWDOWN (these run ~1.5-2x the Sharpe of their benchmark with far shallower drawdowns). The raw-CAGR beat is era-dependent — the Aggressive profile beats the S&amp;P on CAGR in both backtest halves; Moderate beats it full-sample; Conservative is built to beat 60/40 on risk-adjusted terms. Net of cost + financing. Benchmarks: the S&amp;P 500 and a 60/40.</span><span class="l-zh">诚实说明：稳健且样本外稳定的优势在于夏普与回撤（其夏普约为基准的 1.5-2 倍，回撤浅得多）。原始年化的跑赢取决于时代——进取档在回测两个半段均跑赢标普；均衡档全样本跑赢；保守档旨在风险调整后跑赢 60/40。扣除成本+融资。基准：标普500 与 60/40。</span></div>
-
-  <div class="sgrid">
-    
-    <a class="scard" href="strategy_mm_conservative.html">
-      <div class="scard-top">
-        <span class="ico">🛟</span>
-        <h2><span class="l-en">Mastermind — Conservative</span><span class="l-zh">操盘大师 — 保守</span></h2>
-        <span class="exp">⚗ <span class="l-en">Experimental</span><span class="l-zh">实验性</span></span>
-      </div>
-      <p><span class="l-en">Capital-preservation GTAA — diversified, lightly levered; beats 60/40 on Sharpe, drawdown AND return.</span><span class="l-zh">资本保全型全球配置——分散、轻杠杆；在夏普、回撤与收益上均跑赢 60/40。</span></p>
-      <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v lose">7.93%</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> 8.36%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">1.13</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> 0.77</span></div>
-        <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-17.3%</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> -31.4%</span></div>
-        <div><span class="m-k"><span class="l-en">Avg lev</span><span class="l-zh">平均杠杆</span></span><span class="m-v">0.78x</span><span class="m-sub">19.1y</span></div>
-      </div>
-      <div class="scard-foot">
-        <span class="stance"><span class="l-en">vs 60/40 (SPY/IEF) · 0.59x gross</span><span class="l-zh">对比60/40（SPY/IEF） · 0.59x 总敞口</span></span>
-        <span class="go"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></span>
-      </div>
-    </a>
-    
-    <a class="scard" href="strategy_mm_moderate.html">
-      <div class="scard-top">
-        <span class="ico">⚖️</span>
-        <h2><span class="l-en">Mastermind — Moderate</span><span class="l-zh">操盘大师 — 均衡</span></h2>
-        <span class="exp">⚗ <span class="l-en">Experimental</span><span class="l-zh">实验性</span></span>
-      </div>
-      <p><span class="l-en">Balanced GTAA — S&amp;P-like return at ~1.7× the Sharpe and less than half the drawdown.</span><span class="l-zh">均衡型全球配置——接近标普的收益，但夏普约 1.7 倍、回撤不到一半。</span></p>
-      <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">11.51%</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> 10.77%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">1.07</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> 0.62</span></div>
-        <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-24.1%</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> -55.2%</span></div>
-        <div><span class="m-k"><span class="l-en">Avg lev</span><span class="l-zh">平均杠杆</span></span><span class="m-v">1.21x</span><span class="m-sub">19.1y</span></div>
-      </div>
-      <div class="scard-foot">
-        <span class="stance"><span class="l-en">vs S&amp;P 500 · 1.08x gross</span><span class="l-zh">对比标普500 · 1.08x 总敞口</span></span>
-        <span class="go"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></span>
-      </div>
-    </a>
-    
-    <a class="scard" href="strategy_mm_aggressive.html">
-      <div class="scard-top">
-        <span class="ico">🚀</span>
-        <h2><span class="l-en">Mastermind — Aggressive</span><span class="l-zh">操盘大师 — 进取</span></h2>
-        <span class="exp">⚗ <span class="l-en">Experimental</span><span class="l-zh">实验性</span></span>
-      </div>
-      <p><span class="l-en">Maximum-growth GTAA — levers the highest-conviction trends to beat the S&amp;P on CAGR with a higher Sharpe.</span><span class="l-zh">增长最大化全球配置——对最高信念的趋势加杠杆，在年化与夏普上跑赢标普。</span></p>
-      <div class="metrics">
-        <div><span class="m-k">CAGR</span><span class="m-v win">17.35%</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> 10.77%</span></div>
-        <div><span class="m-k">Sharpe</span><span class="m-v win">1.0</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> 0.62</span></div>
-        <div><span class="m-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="m-v win">-34.9%</span><span class="m-sub"><span class="l-en">Bench</span><span class="l-zh">基准</span> -55.2%</span></div>
-        <div><span class="m-k"><span class="l-en">Avg lev</span><span class="l-zh">平均杠杆</span></span><span class="m-v">2.02x</span><span class="m-sub">19.1y</span></div>
-      </div>
-      <div class="scard-foot">
-        <span class="stance"><span class="l-en">vs S&amp;P 500 · 2.12x gross</span><span class="l-zh">对比标普500 · 2.12x 总敞口</span></span>
-        <span class="go"><span class="l-en">Open →</span><span class="l-zh">打开 →</span></span>
-      </div>
-    </a>
-    
+  <div class="mm-stage">
+    <span class="mm-flag">★ <span class="l-en">Flagship strategies</span><span class="l-zh">旗舰策略</span></span>
+    <div class="mm-h1">🧠 <span class="l-en">Mastermind Strategies</span><span class="l-zh">操盘大师策略</span></div>
+    <div class="mm-lead"><span class="l-en">Active, multi-asset, conviction-weighted, vol-targeted global tactical asset allocation — full freedom across equities, Treasuries, credit, gold/copper and crypto, with leverage. The most robust risk-adjusted edge there is: cross-asset diversification + trend + carry + regime-rotation. Three risk profiles for three goals.</span><span class="l-zh">主动、多资产、按信念加权、以波动率为目标的全球战术资产配置——在股票、国债、信用、黄金/铜与加密之间完全自由，并可加杠杆。最稳健的风险调整优势：跨资产分散 + 趋势 + 套息 + 周期轮动。三种风险档对应三种目标。</span></div>
+    <div class="mm-grid">
+      
+      <a class="mm-card" href="strategy_mm_conservative.html" style="--accent:#1FA971;--pos:0.16">
+        <span class="mm-glow"></span>
+        <div class="mm-top"><span class="mm-ico">🛟</span><span class="mm-prof"><span class="l-en">Conservative</span><span class="l-zh">保守</span></span></div>
+        <div class="mm-cagr">7.94%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">60/40 (SPY/IEF)</span><span class="l-zh">60/40（SPY/IEF）</span> 8.36% · <b>1.5× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-meter"></div>
+        <div class="mm-meter-l"><span><span class="l-en">Safer</span><span class="l-zh">更稳健</span></span><span><span class="l-en">Aggressive</span><span class="l-zh">进取</span></span></div>
+        <div class="mm-mets">
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.13</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.77</span></div>
+          <div><span class="mm-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="mm-v">-17.3%</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -31.4%</span></div>
+          <div><span class="mm-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span><span class="mm-v">0.59x</span><span class="mm-d">19.1y</span></div>
+        </div>
+        <div class="mm-thesis"><span class="l-en">Capital-preservation GTAA — diversified, lightly levered; ~1.5× the 60/40 Sharpe at about half the drawdown, for a comparable return.</span><span class="l-zh">资本保全型全球配置——分散、轻杠杆；夏普约为 60/40 的 1.5 倍、回撤约为其一半，收益相当。</span></div>
+        <div class="mm-go"><span class="l-en">Open strategy</span><span class="l-zh">打开策略</span> →</div>
+      </a>
+      
+      <a class="mm-card" href="strategy_mm_moderate.html" style="--accent:#285fff;--pos:0.5">
+        <span class="mm-glow"></span>
+        <div class="mm-top"><span class="mm-ico">⚖️</span><span class="mm-prof"><span class="l-en">Moderate</span><span class="l-zh">均衡</span></span></div>
+        <div class="mm-cagr">11.52%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> 10.77% · <b>1.7× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-meter"></div>
+        <div class="mm-meter-l"><span><span class="l-en">Safer</span><span class="l-zh">更稳健</span></span><span><span class="l-en">Aggressive</span><span class="l-zh">进取</span></span></div>
+        <div class="mm-mets">
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.07</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.62</span></div>
+          <div><span class="mm-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="mm-v">-24.1%</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
+          <div><span class="mm-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span><span class="mm-v">1.08x</span><span class="mm-d">19.1y</span></div>
+        </div>
+        <div class="mm-thesis"><span class="l-en">Balanced GTAA — S&amp;P-like return at ~1.7× the Sharpe and less than half the drawdown.</span><span class="l-zh">均衡型全球配置——接近标普的收益，但夏普约 1.7 倍、回撤不到一半。</span></div>
+        <div class="mm-go"><span class="l-en">Open strategy</span><span class="l-zh">打开策略</span> →</div>
+      </a>
+      
+      <a class="mm-card" href="strategy_mm_aggressive.html" style="--accent:#a855f7;--pos:0.9">
+        <span class="mm-glow"></span>
+        <div class="mm-top"><span class="mm-ico">🚀</span><span class="mm-prof"><span class="l-en">Aggressive</span><span class="l-zh">进取</span></span></div>
+        <div class="mm-cagr">17.37%<small>CAGR</small></div>
+        <div class="mm-bench"><span class="l-en">vs</span><span class="l-zh">对比</span> <span class="l-en">S&amp;P 500</span><span class="l-zh">标普500</span> 10.77% · <b>1.6× <span class="l-en">its Sharpe</span><span class="l-zh">其夏普</span></b></div>
+        <div class="mm-meter"></div>
+        <div class="mm-meter-l"><span><span class="l-en">Safer</span><span class="l-zh">更稳健</span></span><span><span class="l-en">Aggressive</span><span class="l-zh">进取</span></span></div>
+        <div class="mm-mets">
+          <div><span class="mm-k">Sharpe</span><span class="mm-v">1.0</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> 0.62</span></div>
+          <div><span class="mm-k"><span class="l-en">Max DD</span><span class="l-zh">最大回撤</span></span><span class="mm-v">-34.9%</span><span class="mm-d"><span class="l-en">B&amp;H</span><span class="l-zh">买持</span> -55.2%</span></div>
+          <div><span class="mm-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span><span class="mm-v">2.12x</span><span class="mm-d">19.1y</span></div>
+        </div>
+        <div class="mm-thesis"><span class="l-en">Maximum-growth GTAA — levers the highest-conviction trends to beat the S&amp;P on CAGR with a higher Sharpe.</span><span class="l-zh">增长最大化全球配置——对最高信念的趋势加杠杆，在年化与夏普上跑赢标普。</span></div>
+        <div class="mm-go"><span class="l-en">Open strategy</span><span class="l-zh">打开策略</span> →</div>
+      </a>
+      
+    </div>
+    <div class="note" style="margin-top:22px"><span class="l-en">Honest framing: the robust, out-of-sample-stable edge is the SHARPE and the DRAWDOWN (~1.5-2x the benchmark Sharpe, far shallower drawdowns). The raw-CAGR beat is era-dependent — Aggressive beats the S&amp;P on CAGR in both backtest halves; Moderate beats it full-sample; Conservative is built to beat 60/40 on risk-adjusted terms. Net of cost + financing. Benchmarks: the S&amp;P 500 and a 60/40.</span><span class="l-zh">诚实说明：稳健且样本外稳定的优势在于夏普与回撤（约为基准夏普的 1.5-2 倍，回撤浅得多）。原始年化的跑赢取决于时代——进取档在回测两个半段均跑赢标普；均衡档全样本跑赢；保守档旨在风险调整后跑赢 60/40。扣除成本+融资。基准：标普500 与 60/40。</span></div>
   </div>
 
   <div class="foot">
-    <span class="l-en">Mechanical, backtested on free public data, net of 3 bps one-way transaction cost, positions acting next-bar (no look-ahead). Total-return benchmarks (dividend/coupon-adjusted). Not investment advice — these are drawdown / risk-adjusted-return engines, not yield-maximizers or CAGR-beaters. Experimental strategies are pending full Phase-0 validation (leave-one-crisis-out, deflated-Sharpe gate). Built</span><span class="l-zh">机械化 · 基于免费公开数据回测，扣除 3 个基点单边交易成本，仓位次日生效（无前视）。总回报基准（经分红/票息调整）。非投资建议 —— 这些是回撤 / 风险调整收益引擎，并非收益最大化或跑赢年化的工具。实验性策略尚待完整 Phase-0 验证（留一危机、贬值夏普门槛）。生成于</span> 2026-06-18 01:48 UTC.
+    <span class="l-en">Mechanical, backtested on free public data, net of 3 bps one-way transaction cost, positions acting next-bar (no look-ahead). Total-return benchmarks (dividend/coupon-adjusted). Not investment advice — these are drawdown / risk-adjusted-return engines, not yield-maximizers or CAGR-beaters. Experimental strategies are pending full Phase-0 validation (leave-one-crisis-out, deflated-Sharpe gate). Built</span><span class="l-zh">机械化 · 基于免费公开数据回测，扣除 3 个基点单边交易成本，仓位次日生效（无前视）。总回报基准（经分红/票息调整）。非投资建议 —— 这些是回撤 / 风险调整收益引擎，并非收益最大化或跑赢年化的工具。实验性策略尚待完整 Phase-0 验证（留一危机、贬值夏普门槛）。生成于</span> 2026-06-18 09:21 UTC.
   </div>
 </div>
 <script src="theme.js"></script>
