@@ -153,30 +153,29 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
         except Exception:  # noqa: BLE001
             return True
 
-    todo = [t for t in (tickers or sorted(cal) or list(universe)) if stale(t)][:max_new]
     now = datetime.now(timezone.utc).isoformat()
-    rows = []
-    for t in todo:
-        surp = _surprises(session, t)
-        time.sleep(0.25)
-        cc = cal.get(t, {})
-        rows.append({"ticker": t, "next_date": cc.get("next_date"),
-                     "next_time": cc.get("next_time"), "eps_forecast": cc.get("eps_forecast"),
-                     "surprises_json": json.dumps(surp), "as_of": now})
-
-    fresh = pd.DataFrame(rows).set_index("ticker") if rows else pd.DataFrame()
-    # also refresh next_date for cached names found in this sweep (cheap, no extra call)
+    have_surp = (existing["surprises_json"] if (not existing.empty and "surprises_json" in existing.columns)
+                 else pd.Series(dtype=object))
+    # PERSIST the cheap calendar next_date for EVERY name the sweep found — not only the capped
+    # surprise-drip batch (the bug: a 1363-name sweep wrote 4). Carry forward existing surprise
+    # history so the per-name drip below only adds detail, never drops the calendar.
+    out = pd.DataFrame([
+        {"ticker": t, "next_date": cc.get("next_date"), "next_time": cc.get("next_time"),
+         "eps_forecast": cc.get("eps_forecast"),
+         "surprises_json": (have_surp.get(t) if t in have_surp.index else "[]"), "as_of": now}
+        for t, cc in cal.items()
+    ]).set_index("ticker") if cal else pd.DataFrame()
+    # keep any previously-cached names this sweep didn't cover
     if not existing.empty:
-        existing = existing.copy()
-        for t, cc in cal.items():
-            if t in existing.index and (fresh.empty or t not in fresh.index):
-                existing.loc[t, "next_date"] = cc.get("next_date")
-                existing.loc[t, "next_time"] = cc.get("next_time")
-                existing.loc[t, "eps_forecast"] = cc.get("eps_forecast")
-    if not existing.empty and not fresh.empty:
-        out = pd.concat([existing[~existing.index.isin(fresh.index)], fresh])
-    else:
-        out = fresh if not fresh.empty else existing
+        keep = existing[~existing.index.isin(out.index)] if not out.empty else existing
+        out = pd.concat([out, keep]) if not out.empty else existing
+
+    # surprise history: drip a capped batch of stale/uncached names (the only expensive call)
+    todo = [t for t in (tickers or sorted(cal) or list(universe)) if stale(t) and t in out.index][:max_new]
+    for t in todo:
+        out.loc[t, "surprises_json"] = json.dumps(_surprises(session, t))
+        out.loc[t, "as_of"] = now
+        time.sleep(0.25)
     if not out.empty:
         out.to_parquet(cache)
     log.info("equity_earnings: cache now %d tickers (%d with a next date)",
