@@ -89,6 +89,12 @@ function renderThemeDesk(){
 function renderMacroCtx(){
   if(!THEME) return;
   const m=THEME.macro_context||{};
+  const el=document.getElementById('macro-ctx');
+  // markets without a single macro-regime snapshot (e.g. the cross-country Intl book) carry no
+  // backdrop — hide the row rather than show a line of em-dashes.
+  const empty=!m.quad_name&&!m.quad&&(!m.fed_dir||m.fed_dir==='unknown')&&!m.nfci_state&&!m.cycle&&!m.dollar_regime&&!m.bond_cycle;
+  if(empty){ if(el) el.style.display='none'; return; }
+  if(el) el.style.display='';
   const item=(en,zh,v)=>`<span><span class="mc-k">${L(en,zh)}:</span> <b>${esc(v==null?'—':v)}</b></span>`;
   document.getElementById('macro-ctx').innerHTML=
     `<span>${L('Macro backdrop','宏观背景')}: <b>${esc(m.quad_name||m.quad||'—')}</b></span>`

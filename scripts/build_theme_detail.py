@@ -26,6 +26,7 @@ REGIONS = {
     "china":  ("chinastockdata",   "basket_china",  ""),
     "hk":     ("hkstockdata",      "basket_hk",     ""),
     "canada": ("canadastockdata",  "basket_canada", "../canada_stock.html#"),
+    "intl":   ("intlstockdata",    "basket_intl",   "../intl_stock.html#"),
 }
 
 

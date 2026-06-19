@@ -2467,6 +2467,12 @@ def main() -> int:
         _build_baskets_canada.main()
     except Exception as e:  # noqa: BLE001
         log.error("canada baskets (via build_vector) failed (%s)", e)
+    try:  # International (developed ex-US + India) thematic baskets — cross-country themes off
+          # the intl_search cache, benchmarked to a synthetic cap-weighted composite.
+        from scripts import build_baskets_intl as _build_baskets_intl
+        _build_baskets_intl.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("intl baskets (via build_vector) failed (%s)", e)
     build_landing(site, vm)
     return 0
 

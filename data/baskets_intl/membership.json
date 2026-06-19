@@ -1,0 +1,2330 @@
+{
+  "version": "2026-06-19",
+  "seed_date": "2021-06-15",
+  "curated": "2026-06-19",
+  "benchmark": "_INTLC",
+  "benchmark_label": "Intl ex-US",
+  "benchmark_label_zh": "国际(除美)",
+  "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day. Each theme is a deterministic rule (GICS sector ∩ name ∩ country, ranked by index weight) over the intl_search universe, so every member is a real, cache-validated ticker. Benchmark = a cap-weighted composite of the universe (Intl ex-US composite).",
+  "history_note": "Series before a basket's creation date are a backtest of the membership as of creation; live tracking starts at creation. Universe = the intl_search cache (developed ex-US + India large-caps across JP/GB/EU/IN/KR/TW/AU, ~5y).",
+  "note": "Curated international (ex-US) thematic baskets that deliberately mix equities across countries — hindsight-curated and descriptive, not an out-of-sample backtest and not a buy list.",
+  "baskets": {
+    "intl_semis": {
+      "name": "Global Semiconductors",
+      "name_zh": "全球半导体",
+      "category": "Technology",
+      "category_zh": "科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The non-US foundries, memory makers, chip-equipment and fabless leaders that sit at the centre of the AI build-out — TSMC and the Taiwan complex, Samsung and SK Hynix in Korea, Tokyo Electron / Advantest / Disco in Japan and ASML / Infineon in Europe. The single most important cross-country tech theme.",
+      "thesis_zh": "AI 建设核心的非美晶圆代工、存储、设备与无晶圆厂龙头 — 台积电与台湾产业链、韩国三星与 SK 海力士、日本东京威力科创/爱德万/迪斯科，以及欧洲 ASML 与英飞凌。最重要的跨国科技主题。",
+      "members": [
+        {
+          "ticker": "2330.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Taiwan Semiconductor Manufacturing",
+          "rationale": "🇹🇼 TW · Taiwan Semiconductor Manufacturing"
+        },
+        {
+          "ticker": "000660.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sk Hynix Inc",
+          "rationale": "🇰🇷 KR · Sk Hynix Inc"
+        },
+        {
+          "ticker": "2454.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mediatek Inc",
+          "rationale": "🇹🇼 TW · Mediatek Inc"
+        },
+        {
+          "ticker": "ASML.AS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Asml Holding Nv",
+          "rationale": "🇪🇺 EZ · Asml Holding Nv"
+        },
+        {
+          "ticker": "8035.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tokyo Electron Ltd",
+          "rationale": "🇯🇵 JP · Tokyo Electron Ltd"
+        },
+        {
+          "ticker": "3711.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ase Technology Holding Ltd",
+          "rationale": "🇹🇼 TW · Ase Technology Holding Ltd"
+        },
+        {
+          "ticker": "6857.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Advantest Corp",
+          "rationale": "🇯🇵 JP · Advantest Corp"
+        },
+        {
+          "ticker": "2303.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "United Micro Electronics Corp",
+          "rationale": "🇹🇼 TW · United Micro Electronics Corp"
+        },
+        {
+          "ticker": "6723.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Renesas Electronics Corp",
+          "rationale": "🇯🇵 JP · Renesas Electronics Corp"
+        },
+        {
+          "ticker": "6146.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Disco Corp",
+          "rationale": "🇯🇵 JP · Disco Corp"
+        },
+        {
+          "ticker": "IFX.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Infineon Technologies Ag",
+          "rationale": "🇪🇺 EZ · Infineon Technologies Ag"
+        },
+        {
+          "ticker": "3443.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Global Unichip Corp",
+          "rationale": "🇹🇼 TW · Global Unichip Corp"
+        },
+        {
+          "ticker": "2379.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Realtek Semiconductor Corp",
+          "rationale": "🇹🇼 TW · Realtek Semiconductor Corp"
+        },
+        {
+          "ticker": "3661.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Alchip Technologies Ltd",
+          "rationale": "🇹🇼 TW · Alchip Technologies Ltd"
+        },
+        {
+          "ticker": "042700.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hanmi Semiconductor Ltd",
+          "rationale": "🇰🇷 KR · Hanmi Semiconductor Ltd"
+        },
+        {
+          "ticker": "3034.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Novatek Microelectronics Corp",
+          "rationale": "🇹🇼 TW · Novatek Microelectronics Corp"
+        },
+        {
+          "ticker": "STMPA.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Stmicroelectronics Nv",
+          "rationale": "🇪🇺 EZ · Stmicroelectronics Nv"
+        },
+        {
+          "ticker": "BESI.AS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Be Semiconductor Industries Nv",
+          "rationale": "🇪🇺 EZ · Be Semiconductor Industries Nv"
+        },
+        {
+          "ticker": "005930.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Electronics Ltd",
+          "rationale": "🇰🇷 KR · Samsung Electronics Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Global Semiconductors — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_tech_hw": {
+      "name": "Tech Hardware & Components",
+      "name_zh": "科技硬件与零部件",
+      "category": "Technology",
+      "category_zh": "科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The picks-and-shovels of global electronics — contract manufacturers, passive components, connectors, optics and precision parts that build the devices and AI servers. Foxconn, Murata, TDK, Quanta, Wistron and the component makers across Taiwan and Japan.",
+      "thesis_zh": "全球电子的“卖铲人” — 制造代工、被动元件、连接器、光学与精密零件，组装设备与 AI 服务器。鸿海、村田、TDK、广达、纬创及台日零部件厂。",
+      "members": [
+        {
+          "ticker": "2308.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Delta Electronics Inc",
+          "rationale": "🇹🇼 TW · Delta Electronics Inc"
+        },
+        {
+          "ticker": "2317.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hon Hai Precision Industry Ltd",
+          "rationale": "🇹🇼 TW · Hon Hai Precision Industry Ltd"
+        },
+        {
+          "ticker": "2327.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Yageo Corp",
+          "rationale": "🇹🇼 TW · Yageo Corp"
+        },
+        {
+          "ticker": "2383.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Elite Material Ltd",
+          "rationale": "🇹🇼 TW · Elite Material Ltd"
+        },
+        {
+          "ticker": "6981.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Murata Manufacturing Ltd",
+          "rationale": "🇯🇵 JP · Murata Manufacturing Ltd"
+        },
+        {
+          "ticker": "3037.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Unimicron Technology Corp",
+          "rationale": "🇹🇼 TW · Unimicron Technology Corp"
+        },
+        {
+          "ticker": "2345.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Accton Technology Corp",
+          "rationale": "🇹🇼 TW · Accton Technology Corp"
+        },
+        {
+          "ticker": "2382.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Quanta Computer Inc",
+          "rationale": "🇹🇼 TW · Quanta Computer Inc"
+        },
+        {
+          "ticker": "2360.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Chroma Ate Inc",
+          "rationale": "🇹🇼 TW · Chroma Ate Inc"
+        },
+        {
+          "ticker": "3017.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Asia Vital Components Ltd",
+          "rationale": "🇹🇼 TW · Asia Vital Components Ltd"
+        },
+        {
+          "ticker": "6762.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tdk Corp",
+          "rationale": "🇯🇵 JP · Tdk Corp"
+        },
+        {
+          "ticker": "2357.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Asustek Computer Inc",
+          "rationale": "🇹🇼 TW · Asustek Computer Inc"
+        },
+        {
+          "ticker": "6669.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Wiwynn Corporation",
+          "rationale": "🇹🇼 TW · Wiwynn Corporation"
+        },
+        {
+          "ticker": "3231.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Wistron Corp",
+          "rationale": "🇹🇼 TW · Wistron Corp"
+        },
+        {
+          "ticker": "3008.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Largan Precision Ltd",
+          "rationale": "🇹🇼 TW · Largan Precision Ltd"
+        },
+        {
+          "ticker": "4958.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Zhen Ding Technology Holding Ltd",
+          "rationale": "🇹🇼 TW · Zhen Ding Technology Holding Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Tech Hardware & Components — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_software": {
+      "name": "Software & IT Services",
+      "name_zh": "软件与IT服务",
+      "category": "Technology",
+      "category_zh": "科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The global enterprise-software and IT-services leaders outside the US — Europe's SAP and Capgemini, India's outsourcing giants (Infosys, TCS, HCL, Wipro), and the UK / Australia SaaS names. Levered to the digitisation and AI-services cycle.",
+      "thesis_zh": "非美的企业软件与 IT 服务龙头 — 欧洲 SAP 与凯捷、印度外包巨头（Infosys、TCS、HCL、Wipro），以及英澳 SaaS 公司。受益于数字化与 AI 服务周期。",
+      "members": [
+        {
+          "ticker": "INFY.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Infosys Ltd",
+          "rationale": "🇮🇳 IN · Infosys Ltd"
+        },
+        {
+          "ticker": "TCS.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tata Consultancy Services Ltd",
+          "rationale": "🇮🇳 IN · Tata Consultancy Services Ltd"
+        },
+        {
+          "ticker": "SAP.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sap",
+          "rationale": "🇪🇺 EZ · Sap"
+        },
+        {
+          "ticker": "HCLTECH.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hcl Technologies Ltd",
+          "rationale": "🇮🇳 IN · Hcl Technologies Ltd"
+        },
+        {
+          "ticker": "SCT.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Softcat Plc",
+          "rationale": "🇬🇧 GB · Softcat Plc"
+        },
+        {
+          "ticker": "CCC.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Computacenter Plc",
+          "rationale": "🇬🇧 GB · Computacenter Plc"
+        },
+        {
+          "ticker": "TECHM.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tech Mahindra Ltd",
+          "rationale": "🇮🇳 IN · Tech Mahindra Ltd"
+        },
+        {
+          "ticker": "XRO.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Xero Ltd",
+          "rationale": "🇦🇺 AU · Xero Ltd"
+        },
+        {
+          "ticker": "PERSISTENT.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Persistent Systems Ltd",
+          "rationale": "🇮🇳 IN · Persistent Systems Ltd"
+        },
+        {
+          "ticker": "WTC.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Wisetech Global Ltd",
+          "rationale": "🇦🇺 AU · Wisetech Global Ltd"
+        },
+        {
+          "ticker": "WIPRO.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Wipro Ltd",
+          "rationale": "🇮🇳 IN · Wipro Ltd"
+        },
+        {
+          "ticker": "SGE.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "The Sage Group Plc",
+          "rationale": "🇬🇧 GB · The Sage Group Plc"
+        },
+        {
+          "ticker": "MPHASIS.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mphasis Ltd",
+          "rationale": "🇮🇳 IN · Mphasis Ltd"
+        },
+        {
+          "ticker": "CAP.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Capgemini",
+          "rationale": "🇪🇺 EZ · Capgemini"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Software & IT Services — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_banks": {
+      "name": "Global Banks",
+      "name_zh": "全球银行",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The big non-US money-centre and retail banks — Japan's megabanks (MUFG, SMFG, Mizuho), the UK lenders (HSBC, Barclays, Lloyds, NatWest), Europe's Santander, India's private banks (HDFC, ICICI, Axis, Kotak, SBI), Korea's financial groups and the Australian majors. A direct read on global credit and rates.",
+      "thesis_zh": "非美的大型商业与零售银行 — 日本三大行（三菱日联、三井住友、瑞穗）、英国（汇丰、巴克莱、劳埃德、NatWest）、欧洲桑坦德、印度私行（HDFC、ICICI、Axis、Kotak、SBI）、韩国金融集团与澳洲四大行。直接反映全球信贷与利率。",
+      "members": [
+        {
+          "ticker": "CBA.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Commonwealth Bank Of Australia",
+          "rationale": "🇦🇺 AU · Commonwealth Bank Of Australia"
+        },
+        {
+          "ticker": "HDFCBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hdfc Bank Ltd",
+          "rationale": "🇮🇳 IN · Hdfc Bank Ltd"
+        },
+        {
+          "ticker": "WBC.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Westpac Banking Corporation",
+          "rationale": "🇦🇺 AU · Westpac Banking Corporation"
+        },
+        {
+          "ticker": "NAB.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "National Australia Bank Ltd",
+          "rationale": "🇦🇺 AU · National Australia Bank Ltd"
+        },
+        {
+          "ticker": "ICICIBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Icici Bank Ltd",
+          "rationale": "🇮🇳 IN · Icici Bank Ltd"
+        },
+        {
+          "ticker": "8306.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mitsubishi Ufj Financial Group Inc",
+          "rationale": "🇯🇵 JP · Mitsubishi Ufj Financial Group Inc"
+        },
+        {
+          "ticker": "8316.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sumitomo Mitsui Financial Group In",
+          "rationale": "🇯🇵 JP · Sumitomo Mitsui Financial Group In"
+        },
+        {
+          "ticker": "LLOY.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Lloyds Banking Group Plc",
+          "rationale": "🇬🇧 GB · Lloyds Banking Group Plc"
+        },
+        {
+          "ticker": "AXISBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Axis Bank Ltd",
+          "rationale": "🇮🇳 IN · Axis Bank Ltd"
+        },
+        {
+          "ticker": "8411.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mizuho Financial Group Inc",
+          "rationale": "🇯🇵 JP · Mizuho Financial Group Inc"
+        },
+        {
+          "ticker": "105560.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kb Financial Group Inc",
+          "rationale": "🇰🇷 KR · Kb Financial Group Inc"
+        },
+        {
+          "ticker": "2891.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ctbc Financial Holding Ltd",
+          "rationale": "🇹🇼 TW · Ctbc Financial Holding Ltd"
+        },
+        {
+          "ticker": "KOTAKBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kotak Mahindra Bank Ltd",
+          "rationale": "🇮🇳 IN · Kotak Mahindra Bank Ltd"
+        },
+        {
+          "ticker": "2881.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Fubon Financial Holding Ltd",
+          "rationale": "🇹🇼 TW · Fubon Financial Holding Ltd"
+        },
+        {
+          "ticker": "2882.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Cathay Financial Holding Ltd",
+          "rationale": "🇹🇼 TW · Cathay Financial Holding Ltd"
+        },
+        {
+          "ticker": "SBIN.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "State Bank Of India",
+          "rationale": "🇮🇳 IN · State Bank Of India"
+        },
+        {
+          "ticker": "055550.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shinhan Financial Group Ltd",
+          "rationale": "🇰🇷 KR · Shinhan Financial Group Ltd"
+        },
+        {
+          "ticker": "086790.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hana Financial Group Inc",
+          "rationale": "🇰🇷 KR · Hana Financial Group Inc"
+        },
+        {
+          "ticker": "2885.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Yuanta Financial Holding Ltd",
+          "rationale": "🇹🇼 TW · Yuanta Financial Holding Ltd"
+        },
+        {
+          "ticker": "2887.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ts Financial Holding Ltd",
+          "rationale": "🇹🇼 TW · Ts Financial Holding Ltd"
+        },
+        {
+          "ticker": "HSBA.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hsbc Holdings Plc",
+          "rationale": "🇬🇧 GB · Hsbc Holdings Plc"
+        },
+        {
+          "ticker": "BARC.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Barclays Plc",
+          "rationale": "🇬🇧 GB · Barclays Plc"
+        },
+        {
+          "ticker": "SAN.MC",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Banco Santander",
+          "rationale": "🇪🇺 EZ · Banco Santander"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Global Banks — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_insurers": {
+      "name": "Insurers & Diversified Financials",
+      "name_zh": "保险与多元金融",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The global insurance and diversified-financial complex — European insurers (Allianz, Zurich), the UK life and P&C names (Prudential, Aviva), Japan's Tokio Marine and MS&AD, Korea's Samsung Life, the exchanges (LSE) and the Australian insurers. Long-bond-yield and equity-market geared book value.",
+      "thesis_zh": "全球保险与多元金融 — 欧洲保险（安联、苏黎世）、英国寿险与财险（保诚、Aviva）、日本东京海上与 MS&AD、韩国三星生命、交易所（伦交所）与澳洲险企。账面价值与长债收益率及权益市场挂钩。",
+      "members": [
+        {
+          "ticker": "MQG.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Macquarie Group Ltd Def",
+          "rationale": "🇦🇺 AU · Macquarie Group Ltd Def"
+        },
+        {
+          "ticker": "LSEG.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "London Stock Exchange Group Plc",
+          "rationale": "🇬🇧 GB · London Stock Exchange Group Plc"
+        },
+        {
+          "ticker": "QBE.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Qbe Insurance Group Ltd",
+          "rationale": "🇦🇺 AU · Qbe Insurance Group Ltd"
+        },
+        {
+          "ticker": "8766.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tokio Marine Holdings Inc",
+          "rationale": "🇯🇵 JP · Tokio Marine Holdings Inc"
+        },
+        {
+          "ticker": "ABDN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Aberdeen Group Plc",
+          "rationale": "🇬🇧 GB · Aberdeen Group Plc"
+        },
+        {
+          "ticker": "ALV.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Allianz",
+          "rationale": "🇪🇺 EZ · Allianz"
+        },
+        {
+          "ticker": "032830.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Life Ltd",
+          "rationale": "🇰🇷 KR · Samsung Life Ltd"
+        },
+        {
+          "ticker": "PRU.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Prudential Plc",
+          "rationale": "🇬🇧 GB · Prudential Plc"
+        },
+        {
+          "ticker": "SUN.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Suncorp Group Ltd",
+          "rationale": "🇦🇺 AU · Suncorp Group Ltd"
+        },
+        {
+          "ticker": "III.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "3I Group Plc",
+          "rationale": "🇬🇧 GB · 3I Group Plc"
+        },
+        {
+          "ticker": "IAG.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Insurance Australia Group Ltd",
+          "rationale": "🇦🇺 AU · Insurance Australia Group Ltd"
+        },
+        {
+          "ticker": "AV.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Aviva Plc",
+          "rationale": "🇬🇧 GB · Aviva Plc"
+        },
+        {
+          "ticker": "ZURN.SW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Zurich Insurance Group Ag",
+          "rationale": "🇪🇺 EZ · Zurich Insurance Group Ag"
+        },
+        {
+          "ticker": "MPL.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Medibank Private Ltd",
+          "rationale": "🇦🇺 AU · Medibank Private Ltd"
+        },
+        {
+          "ticker": "8725.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ms&Ad Insurance Group Holdings Inc",
+          "rationale": "🇯🇵 JP · Ms&Ad Insurance Group Holdings Inc"
+        },
+        {
+          "ticker": "000810.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Fire & Marine Insurance Lt",
+          "rationale": "🇰🇷 KR · Samsung Fire & Marine Insurance Lt"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Insurers & Diversified Financials — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_pharma": {
+      "name": "Global Pharma & Healthcare",
+      "name_zh": "全球制药与医疗",
+      "category": "Healthcare",
+      "category_zh": "医疗保健",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The non-US drug majors and healthcare leaders — AstraZeneca and GSK in the UK, Roche / Novartis / Sanofi in Europe, Japan's Takeda / Chugai / Otsuka, India's Sun Pharma and the hospital chains, and Australia's CSL. Defensive growth with global drug pipelines.",
+      "thesis_zh": "非美的制药巨头与医疗龙头 — 英国阿斯利康与 GSK、欧洲罗氏/诺华/赛诺菲、日本武田/中外/大塚、印度太阳制药与医院连锁，以及澳洲 CSL。具全球药物管线的防御性成长。",
+      "members": [
+        {
+          "ticker": "AZN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Astrazeneca Plc",
+          "rationale": "🇬🇧 GB · Astrazeneca Plc"
+        },
+        {
+          "ticker": "GSK.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Glaxosmithkline",
+          "rationale": "🇬🇧 GB · Glaxosmithkline"
+        },
+        {
+          "ticker": "CSL.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Csl Ltd",
+          "rationale": "🇦🇺 AU · Csl Ltd"
+        },
+        {
+          "ticker": "ROP.SW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Roche Ps Par Ag",
+          "rationale": "🇪🇺 EZ · Roche Ps Par Ag"
+        },
+        {
+          "ticker": "NOVN.SW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Novartis Ag",
+          "rationale": "🇪🇺 EZ · Novartis Ag"
+        },
+        {
+          "ticker": "SUNPHARMA.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sun Pharmaceutical Industries Ltd",
+          "rationale": "🇮🇳 IN · Sun Pharmaceutical Industries Ltd"
+        },
+        {
+          "ticker": "HLN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Haleon Plc",
+          "rationale": "🇬🇧 GB · Haleon Plc"
+        },
+        {
+          "ticker": "7741.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hoya Corp",
+          "rationale": "🇯🇵 JP · Hoya Corp"
+        },
+        {
+          "ticker": "4502.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Takeda Pharmaceutical Ltd",
+          "rationale": "🇯🇵 JP · Takeda Pharmaceutical Ltd"
+        },
+        {
+          "ticker": "068270.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Celltrion Inc",
+          "rationale": "🇰🇷 KR · Celltrion Inc"
+        },
+        {
+          "ticker": "HIK.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hikma Pharmaceuticals Plc",
+          "rationale": "🇬🇧 GB · Hikma Pharmaceuticals Plc"
+        },
+        {
+          "ticker": "SIG.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sigma Healthcare Ltd",
+          "rationale": "🇦🇺 AU · Sigma Healthcare Ltd"
+        },
+        {
+          "ticker": "SAN.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sanofi Sa",
+          "rationale": "🇪🇺 EZ · Sanofi Sa"
+        },
+        {
+          "ticker": "APOLLOHOSP.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Apollo Hospitals Enterprise Ltd",
+          "rationale": "🇮🇳 IN · Apollo Hospitals Enterprise Ltd"
+        },
+        {
+          "ticker": "DIVISLAB.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Divis Laboratories Ltd",
+          "rationale": "🇮🇳 IN · Divis Laboratories Ltd"
+        },
+        {
+          "ticker": "4519.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Chugai Pharmaceutical Ltd",
+          "rationale": "🇯🇵 JP · Chugai Pharmaceutical Ltd"
+        },
+        {
+          "ticker": "MAXHEALTH.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Max Healthcare Institute Ltd",
+          "rationale": "🇮🇳 IN · Max Healthcare Institute Ltd"
+        },
+        {
+          "ticker": "4578.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Otsuka Holdings Ltd",
+          "rationale": "🇯🇵 JP · Otsuka Holdings Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Global Pharma & Healthcare — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_defense": {
+      "name": "Defense & Aerospace",
+      "name_zh": "国防与航空航天",
+      "category": "Industrials",
+      "category_zh": "工业",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The global re-armament trade outside the US — Europe's BAE Systems, Rheinmetall, Thales, Saab, Safran, Airbus and Rolls-Royce, plus Japan's heavy-industry primes (Mitsubishi Heavy, Kawasaki, IHI) and Korea's defense exporters (Hanwha Aerospace, Korea Aerospace). Levered to rising NATO and Asian defense budgets.",
+      "thesis_zh": "非美的全球再武装交易 — 欧洲 BAE、莱茵金属、泰雷兹、绅宝、赛峰、空客与罗罗，加日本重工三巨头（三菱重工、川崎重工、IHI）与韩国国防出口商（韩华航空、韩国航空）。受益于北约与亚洲国防预算上升。",
+      "members": [
+        {
+          "ticker": "RR.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rolls-Royce Holdings Plc",
+          "rationale": "🇬🇧 GB · Rolls-Royce Holdings Plc"
+        },
+        {
+          "ticker": "BA.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bae Systems Plc",
+          "rationale": "🇬🇧 GB · Bae Systems Plc"
+        },
+        {
+          "ticker": "7011.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mitsubishi Heavy Industries Ltd",
+          "rationale": "🇯🇵 JP · Mitsubishi Heavy Industries Ltd"
+        },
+        {
+          "ticker": "012450.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hanwha Aerospace Ltd",
+          "rationale": "🇰🇷 KR · Hanwha Aerospace Ltd"
+        },
+        {
+          "ticker": "SAF.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Safran Sa",
+          "rationale": "🇪🇺 EZ · Safran Sa"
+        },
+        {
+          "ticker": "AIR.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Airbus Group",
+          "rationale": "🇪🇺 EZ · Airbus Group"
+        },
+        {
+          "ticker": "QQ.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Qinetiq Group Plc",
+          "rationale": "🇬🇧 GB · Qinetiq Group Plc"
+        },
+        {
+          "ticker": "RHM.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rheinmetall Ag",
+          "rationale": "🇪🇺 EZ · Rheinmetall Ag"
+        },
+        {
+          "ticker": "CHG.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Chemring Group Plc",
+          "rationale": "🇬🇧 GB · Chemring Group Plc"
+        },
+        {
+          "ticker": "047810.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Korea Aerospace Industries Ltd",
+          "rationale": "🇰🇷 KR · Korea Aerospace Industries Ltd"
+        },
+        {
+          "ticker": "7013.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ihi Corp",
+          "rationale": "🇯🇵 JP · Ihi Corp"
+        },
+        {
+          "ticker": "7012.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kawasaki Heavy Industries Ltd",
+          "rationale": "🇯🇵 JP · Kawasaki Heavy Industries Ltd"
+        },
+        {
+          "ticker": "272210.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hanwha Systems Ltd",
+          "rationale": "🇰🇷 KR · Hanwha Systems Ltd"
+        },
+        {
+          "ticker": "BAB.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Babcock International Group Plc",
+          "rationale": "🇬🇧 GB · Babcock International Group Plc"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Defense & Aerospace — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_automation": {
+      "name": "Industrial Automation & Machinery",
+      "name_zh": "工业自动化与机械",
+      "category": "Industrials",
+      "category_zh": "工业",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The global factory-automation and capital-goods leaders — Europe's Siemens, Schneider, ABB, Sandvik and Legrand, and Japan's robotics and motion champions (Fanuc, Daikin, SMC, Mitsubishi Electric, Nidec). The capex-cycle and re-shoring beneficiaries.",
+      "thesis_zh": "全球工厂自动化与资本品龙头 — 欧洲西门子、施耐德、ABB、山特维克与罗格朗，日本机器人与运动控制冠军（发那科、大金、SMC、三菱电机、日本电产）。资本开支周期与回流受益者。",
+      "members": [
+        {
+          "ticker": "6501.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hitachi Ltd",
+          "rationale": "🇯🇵 JP · Hitachi Ltd"
+        },
+        {
+          "ticker": "SIE.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Siemens N Ag",
+          "rationale": "🇪🇺 EZ · Siemens N Ag"
+        },
+        {
+          "ticker": "6503.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mitsubishi Electric Corp",
+          "rationale": "🇯🇵 JP · Mitsubishi Electric Corp"
+        },
+        {
+          "ticker": "SU.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Schneider Electric",
+          "rationale": "🇪🇺 EZ · Schneider Electric"
+        },
+        {
+          "ticker": "ABBN.SW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Abb Ltd",
+          "rationale": "🇪🇺 EZ · Abb Ltd"
+        },
+        {
+          "ticker": "ENR.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Siemens Energy N Ag",
+          "rationale": "🇪🇺 EZ · Siemens Energy N Ag"
+        },
+        {
+          "ticker": "ROR.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rotork Plc",
+          "rationale": "🇬🇧 GB · Rotork Plc"
+        },
+        {
+          "ticker": "6954.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Fanuc Corp",
+          "rationale": "🇯🇵 JP · Fanuc Corp"
+        },
+        {
+          "ticker": "6367.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Daikin Industries Ltd",
+          "rationale": "🇯🇵 JP · Daikin Industries Ltd"
+        },
+        {
+          "ticker": "6273.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Smc (Japan) Corp",
+          "rationale": "🇯🇵 JP · Smc (Japan) Corp"
+        },
+        {
+          "ticker": "POWERINDIA.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hitachi Energy India Ltd",
+          "rationale": "🇮🇳 IN · Hitachi Energy India Ltd"
+        },
+        {
+          "ticker": "SMIN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Smiths Group Plc",
+          "rationale": "🇬🇧 GB · Smiths Group Plc"
+        },
+        {
+          "ticker": "SAND.ST",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sandvik",
+          "rationale": "🇪🇺 EZ · Sandvik"
+        },
+        {
+          "ticker": "LR.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Legrand Sa",
+          "rationale": "🇪🇺 EZ · Legrand Sa"
+        },
+        {
+          "ticker": "6594.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Nidec Corp",
+          "rationale": "🇯🇵 JP · Nidec Corp"
+        },
+        {
+          "ticker": "ABB.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Abb India Ltd",
+          "rationale": "🇮🇳 IN · Abb India Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Industrial Automation & Machinery — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_autos": {
+      "name": "Autos & Mobility",
+      "name_zh": "汽车与出行",
+      "category": "Consumer",
+      "category_zh": "消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The world's car makers and their suppliers outside the US — Toyota, Honda and the Japanese OEMs, Germany's Mercedes / BMW / VW, Korea's Hyundai and Kia, India's Tata Motors and Maruti, plus the big parts makers (Denso, Bridgestone). A cyclical, EV-transition and global-demand play.",
+      "thesis_zh": "非美的全球车企及供应商 — 丰田、本田与日系车厂、德国奔驰/宝马/大众、韩国现代与起亚、印度塔塔汽车与马鲁蒂铃木，加大型零部件厂（电装、普利司通）。周期性、电动化转型与全球需求主题。",
+      "members": [
+        {
+          "ticker": "7203.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Toyota Motor Corp",
+          "rationale": "🇯🇵 JP · Toyota Motor Corp"
+        },
+        {
+          "ticker": "005380.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hyundai Motor",
+          "rationale": "🇰🇷 KR · Hyundai Motor"
+        },
+        {
+          "ticker": "000270.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kia Corporation",
+          "rationale": "🇰🇷 KR · Kia Corporation"
+        },
+        {
+          "ticker": "MARUTI.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Maruti Suzuki India Ltd",
+          "rationale": "🇮🇳 IN · Maruti Suzuki India Ltd"
+        },
+        {
+          "ticker": "EICHERMOT.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Eicher Motors Ltd",
+          "rationale": "🇮🇳 IN · Eicher Motors Ltd"
+        },
+        {
+          "ticker": "7267.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Honda Motor Ltd",
+          "rationale": "🇯🇵 JP · Honda Motor Ltd"
+        },
+        {
+          "ticker": "TMPV.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tata Motors Passenger Vehicles Ltd",
+          "rationale": "🇮🇳 IN · Tata Motors Passenger Vehicles Ltd"
+        },
+        {
+          "ticker": "BAJAJ-AUTO.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bajaj Auto Ltd",
+          "rationale": "🇮🇳 IN · Bajaj Auto Ltd"
+        },
+        {
+          "ticker": "5108.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bridgestone Corp",
+          "rationale": "🇯🇵 JP · Bridgestone Corp"
+        },
+        {
+          "ticker": "7269.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Suzuki Motor Corp",
+          "rationale": "🇯🇵 JP · Suzuki Motor Corp"
+        },
+        {
+          "ticker": "6902.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Denso Corp",
+          "rationale": "🇯🇵 JP · Denso Corp"
+        },
+        {
+          "ticker": "005387.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hyundai Motor S2 Pref",
+          "rationale": "🇰🇷 KR · Hyundai Motor S2 Pref"
+        },
+        {
+          "ticker": "MBG.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mercedes-Benz Group N Ag",
+          "rationale": "🇪🇺 EZ · Mercedes-Benz Group N Ag"
+        },
+        {
+          "ticker": "005385.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hyundai Motor S1 Pref",
+          "rationale": "🇰🇷 KR · Hyundai Motor S1 Pref"
+        },
+        {
+          "ticker": "7270.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Subaru Corp",
+          "rationale": "🇯🇵 JP · Subaru Corp"
+        },
+        {
+          "ticker": "BMW.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bmw Ag",
+          "rationale": "🇪🇺 EZ · Bmw Ag"
+        },
+        {
+          "ticker": "VOW3.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Volkswagen Non-Voting Pref Ag",
+          "rationale": "🇪🇺 EZ · Volkswagen Non-Voting Pref Ag"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Autos & Mobility — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_luxury": {
+      "name": "Luxury & Premium Brands",
+      "name_zh": "奢侈品与高端品牌",
+      "category": "Consumer",
+      "category_zh": "消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Europe's incomparable luxury houses plus the global premium spirits and apparel leaders — LVMH, Hermès, Richemont, L'Oréal, Kering, Ferrari, Adidas, Burberry, Pernod Ricard and Diageo. Pricing power, global aspirational demand and a China-consumer beta.",
+      "thesis_zh": "欧洲无可比拟的奢侈品集团加全球高端烈酒与服饰龙头 — LVMH、爱马仕、历峰、欧莱雅、开云、法拉利、阿迪达斯、博柏利、保乐力加与帝亚吉欧。定价权、全球向往型需求与中国消费 Beta。",
+      "members": [
+        {
+          "ticker": "DGE.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Diageo Plc",
+          "rationale": "🇬🇧 GB · Diageo Plc"
+        },
+        {
+          "ticker": "MC.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Lvmh",
+          "rationale": "🇪🇺 EZ · Lvmh"
+        },
+        {
+          "ticker": "CFR.SW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Compagnie Financiere Richemont Sa",
+          "rationale": "🇪🇺 EZ · Compagnie Financiere Richemont Sa"
+        },
+        {
+          "ticker": "OR.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Loreal Sa",
+          "rationale": "🇪🇺 EZ · Loreal Sa"
+        },
+        {
+          "ticker": "RMS.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hermes International",
+          "rationale": "🇪🇺 EZ · Hermes International"
+        },
+        {
+          "ticker": "RACE.MI",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ferrari Nv",
+          "rationale": "🇪🇺 EZ · Ferrari Nv"
+        },
+        {
+          "ticker": "ADS.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Adidas N Ag",
+          "rationale": "🇪🇺 EZ · Adidas N Ag"
+        },
+        {
+          "ticker": "BRBY.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Burberry Group Plc",
+          "rationale": "🇬🇧 GB · Burberry Group Plc"
+        },
+        {
+          "ticker": "KER.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kering Sa",
+          "rationale": "🇪🇺 EZ · Kering Sa"
+        },
+        {
+          "ticker": "MONC.MI",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Moncler",
+          "rationale": "🇪🇺 EZ · Moncler"
+        },
+        {
+          "ticker": "RI.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Pernod Ricard Sa",
+          "rationale": "🇪🇺 EZ · Pernod Ricard Sa"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Luxury & Premium Brands — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_energy": {
+      "name": "Global Energy",
+      "name_zh": "全球能源",
+      "category": "Energy & Materials",
+      "category_zh": "能源与材料",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The non-US integrated oil & gas majors and producers — Shell, BP and TotalEnergies, Italy's Eni, Australia's Woodside and Santos, India's Reliance and ONGC, and Japan's Inpex and Eneos. Levered to crude, LNG and the global energy cycle.",
+      "thesis_zh": "非美的一体化油气巨头与生产商 — 壳牌、BP 与道达尔、意大利埃尼、澳洲伍德赛德与桑托斯、印度信实与 ONGC，以及日本国际石油与 ENEOS。受原油、LNG 与全球能源周期驱动。",
+      "members": [
+        {
+          "ticker": "SHEL.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shell Plc",
+          "rationale": "🇬🇧 GB · Shell Plc"
+        },
+        {
+          "ticker": "RELIANCE.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Reliance Industries Ltd",
+          "rationale": "🇮🇳 IN · Reliance Industries Ltd"
+        },
+        {
+          "ticker": "BP.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bp Plc",
+          "rationale": "🇬🇧 GB · Bp Plc"
+        },
+        {
+          "ticker": "WDS.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Woodside Energy Group Ltd",
+          "rationale": "🇦🇺 AU · Woodside Energy Group Ltd"
+        },
+        {
+          "ticker": "TTE.PA",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Totalenergies",
+          "rationale": "🇪🇺 EZ · Totalenergies"
+        },
+        {
+          "ticker": "STO.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Santos Ltd",
+          "rationale": "🇦🇺 AU · Santos Ltd"
+        },
+        {
+          "ticker": "COALINDIA.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Coal India Ltd",
+          "rationale": "🇮🇳 IN · Coal India Ltd"
+        },
+        {
+          "ticker": "HBR.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Harbour Energy Plc",
+          "rationale": "🇬🇧 GB · Harbour Energy Plc"
+        },
+        {
+          "ticker": "ONGC.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Oil And Natural Gas Ltd",
+          "rationale": "🇮🇳 IN · Oil And Natural Gas Ltd"
+        },
+        {
+          "ticker": "BPCL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bharat Petroleum Ltd",
+          "rationale": "🇮🇳 IN · Bharat Petroleum Ltd"
+        },
+        {
+          "ticker": "5020.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Eneos Holdings Inc",
+          "rationale": "🇯🇵 JP · Eneos Holdings Inc"
+        },
+        {
+          "ticker": "1605.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Inpex Corp",
+          "rationale": "🇯🇵 JP · Inpex Corp"
+        },
+        {
+          "ticker": "267250.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hd Hyundai Ltd",
+          "rationale": "🇰🇷 KR · Hd Hyundai Ltd"
+        },
+        {
+          "ticker": "ENI.MI",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Eni",
+          "rationale": "🇪🇺 EZ · Eni"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Global Energy — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_mining": {
+      "name": "Mining & Metals",
+      "name_zh": "矿业与金属",
+      "category": "Energy & Materials",
+      "category_zh": "能源与材料",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The world's diversified miners and steelmakers ex-US — BHP, Rio Tinto, Glencore, Anglo American, Antofagasta and Fortescue, plus Korea's POSCO and India's Tata Steel / JSW / Vedanta. The cyclical, electrification-and-China-demand metals complex.",
+      "thesis_zh": "非美的全球多元化矿企与钢铁商 — 必和必拓、力拓、嘉能可、英美资源、安托法加斯塔与 Fortescue，加韩国 POSCO 与印度塔塔钢铁/JSW/韦丹塔。周期性、受电气化与中国需求驱动的金属板块。",
+      "members": [
+        {
+          "ticker": "BHP.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bhp Group Ltd",
+          "rationale": "🇦🇺 AU · Bhp Group Ltd"
+        },
+        {
+          "ticker": "RIO.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rio Tinto Ltd",
+          "rationale": "🇦🇺 AU · Rio Tinto Ltd"
+        },
+        {
+          "ticker": "RIO.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rio Tinto Plc",
+          "rationale": "🇬🇧 GB · Rio Tinto Plc"
+        },
+        {
+          "ticker": "GLEN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Glencore Plc",
+          "rationale": "🇬🇧 GB · Glencore Plc"
+        },
+        {
+          "ticker": "AAL.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Anglo American Plc",
+          "rationale": "🇬🇧 GB · Anglo American Plc"
+        },
+        {
+          "ticker": "FMG.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Fortescue Ltd",
+          "rationale": "🇦🇺 AU · Fortescue Ltd"
+        },
+        {
+          "ticker": "TATASTEEL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tata Steel Ltd",
+          "rationale": "🇮🇳 IN · Tata Steel Ltd"
+        },
+        {
+          "ticker": "HINDALCO.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hindalco Industries Ltd",
+          "rationale": "🇮🇳 IN · Hindalco Industries Ltd"
+        },
+        {
+          "ticker": "S32.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "South32 Ltd",
+          "rationale": "🇦🇺 AU · South32 Ltd"
+        },
+        {
+          "ticker": "005490.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Posco",
+          "rationale": "🇰🇷 KR · Posco"
+        },
+        {
+          "ticker": "JSWSTEEL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Jsw Steel Ltd",
+          "rationale": "🇮🇳 IN · Jsw Steel Ltd"
+        },
+        {
+          "ticker": "ANTO.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Antofagasta Plc",
+          "rationale": "🇬🇧 GB · Antofagasta Plc"
+        },
+        {
+          "ticker": "VAML.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Vedanta Aluminium Metal Ltd",
+          "rationale": "🇮🇳 IN · Vedanta Aluminium Metal Ltd"
+        },
+        {
+          "ticker": "5401.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Nippon Steel Corp",
+          "rationale": "🇯🇵 JP · Nippon Steel Corp"
+        },
+        {
+          "ticker": "VEDL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Vedanta Ltd",
+          "rationale": "🇮🇳 IN · Vedanta Ltd"
+        },
+        {
+          "ticker": "5713.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sumitomo Metal Mining Ltd",
+          "rationale": "🇯🇵 JP · Sumitomo Metal Mining Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Mining & Metals — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_telecom": {
+      "name": "Telecom, Media & Internet",
+      "name_zh": "电信媒体与互联网",
+      "category": "Communication",
+      "category_zh": "通信",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The global communication leaders outside the US — Japan's SoftBank, NTT, KDDI and Nintendo, Europe's Deutsche Telekom and Vodafone, Korea's internet platform Naver, India's Bharti Airtel and the UK media names. A mix of defensive carriers and Asian-internet / media growth.",
+      "thesis_zh": "非美的全球通信龙头 — 日本软银、NTT、KDDI 与任天堂、欧洲德国电信与沃达丰、韩国互联网平台 Naver、印度 Bharti Airtel 与英国媒体股。防御性运营商与亚洲互联网/媒体成长的混合。",
+      "members": [
+        {
+          "ticker": "BHARTIARTL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bharti Airtel Ltd",
+          "rationale": "🇮🇳 IN · Bharti Airtel Ltd"
+        },
+        {
+          "ticker": "9984.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Softbank Group Corp",
+          "rationale": "🇯🇵 JP · Softbank Group Corp"
+        },
+        {
+          "ticker": "035420.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Naver Corp",
+          "rationale": "🇰🇷 KR · Naver Corp"
+        },
+        {
+          "ticker": "WPP.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Wpp Plc",
+          "rationale": "🇬🇧 GB · Wpp Plc"
+        },
+        {
+          "ticker": "ITV.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Itv Plc",
+          "rationale": "🇬🇧 GB · Itv Plc"
+        },
+        {
+          "ticker": "TLS.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Telstra Group Ltd",
+          "rationale": "🇦🇺 AU · Telstra Group Ltd"
+        },
+        {
+          "ticker": "7974.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Nintendo Ltd",
+          "rationale": "🇯🇵 JP · Nintendo Ltd"
+        },
+        {
+          "ticker": "9433.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kddi Corp",
+          "rationale": "🇯🇵 JP · Kddi Corp"
+        },
+        {
+          "ticker": "2412.TW",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Chunghwa Telecom Ltd",
+          "rationale": "🇹🇼 TW · Chunghwa Telecom Ltd"
+        },
+        {
+          "ticker": "VOD.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Vodafone Group Plc",
+          "rationale": "🇬🇧 GB · Vodafone Group Plc"
+        },
+        {
+          "ticker": "DTE.DE",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Deutsche Telekom N Ag",
+          "rationale": "🇪🇺 EZ · Deutsche Telekom N Ag"
+        },
+        {
+          "ticker": "9434.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Softbank Corp",
+          "rationale": "🇯🇵 JP · Softbank Corp"
+        },
+        {
+          "ticker": "HTWS.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Helios Towers Plc",
+          "rationale": "🇬🇧 GB · Helios Towers Plc"
+        },
+        {
+          "ticker": "9432.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ntt Inc",
+          "rationale": "🇯🇵 JP · Ntt Inc"
+        },
+        {
+          "ticker": "CAR.AX",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Car Group Ltd",
+          "rationale": "🇦🇺 AU · Car Group Ltd"
+        },
+        {
+          "ticker": "BT-A.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bt Group Plc",
+          "rationale": "🇬🇧 GB · Bt Group Plc"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Telecom, Media & Internet — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_india": {
+      "name": "India Growth",
+      "name_zh": "印度成长",
+      "category": "Regional Growth",
+      "category_zh": "区域成长",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The blue-chip face of India's structural-growth story — Reliance, the private banks (HDFC, ICICI), the IT-services majors (Infosys, TCS), Bharti Airtel and the industrial and consumer leaders. The highest-growth large-cap market in the universe.",
+      "thesis_zh": "印度结构性成长故事的蓝筹代表 — 信实、私营银行（HDFC、ICICI）、IT 服务巨头（Infosys、TCS）、Bharti Airtel 与工业消费龙头。本组合中成长最快的大盘市场。",
+      "members": [
+        {
+          "ticker": "HDFCBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hdfc Bank Ltd",
+          "rationale": "🇮🇳 IN · Hdfc Bank Ltd"
+        },
+        {
+          "ticker": "RELIANCE.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Reliance Industries Ltd",
+          "rationale": "🇮🇳 IN · Reliance Industries Ltd"
+        },
+        {
+          "ticker": "ICICIBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Icici Bank Ltd",
+          "rationale": "🇮🇳 IN · Icici Bank Ltd"
+        },
+        {
+          "ticker": "BHARTIARTL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bharti Airtel Ltd",
+          "rationale": "🇮🇳 IN · Bharti Airtel Ltd"
+        },
+        {
+          "ticker": "INFY.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Infosys Ltd",
+          "rationale": "🇮🇳 IN · Infosys Ltd"
+        },
+        {
+          "ticker": "AXISBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Axis Bank Ltd",
+          "rationale": "🇮🇳 IN · Axis Bank Ltd"
+        },
+        {
+          "ticker": "LT.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Larsen And Toubro Ltd",
+          "rationale": "🇮🇳 IN · Larsen And Toubro Ltd"
+        },
+        {
+          "ticker": "BAJFINANCE.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bajaj Finance Ltd",
+          "rationale": "🇮🇳 IN · Bajaj Finance Ltd"
+        },
+        {
+          "ticker": "KOTAKBANK.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kotak Mahindra Bank Ltd",
+          "rationale": "🇮🇳 IN · Kotak Mahindra Bank Ltd"
+        },
+        {
+          "ticker": "SBIN.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "State Bank Of India",
+          "rationale": "🇮🇳 IN · State Bank Of India"
+        },
+        {
+          "ticker": "TCS.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tata Consultancy Services Ltd",
+          "rationale": "🇮🇳 IN · Tata Consultancy Services Ltd"
+        },
+        {
+          "ticker": "SUNPHARMA.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sun Pharmaceutical Industries Ltd",
+          "rationale": "🇮🇳 IN · Sun Pharmaceutical Industries Ltd"
+        },
+        {
+          "ticker": "MARUTI.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Maruti Suzuki India Ltd",
+          "rationale": "🇮🇳 IN · Maruti Suzuki India Ltd"
+        },
+        {
+          "ticker": "TITAN.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Titan Company Ltd",
+          "rationale": "🇮🇳 IN · Titan Company Ltd"
+        },
+        {
+          "ticker": "NTPC.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Ntpc Ltd",
+          "rationale": "🇮🇳 IN · Ntpc Ltd"
+        },
+        {
+          "ticker": "HINDUNILVR.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hindustan Unilever Ltd",
+          "rationale": "🇮🇳 IN · Hindustan Unilever Ltd"
+        },
+        {
+          "ticker": "TATASTEEL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tata Steel Ltd",
+          "rationale": "🇮🇳 IN · Tata Steel Ltd"
+        },
+        {
+          "ticker": "BEL.NS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bharat Electronics Ltd",
+          "rationale": "🇮🇳 IN · Bharat Electronics Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded India Growth — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_japan": {
+      "name": "Japan Inc.",
+      "name_zh": "日本企业",
+      "category": "Regional Growth",
+      "category_zh": "区域成长",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The large-cap heart of the Japan reflation and corporate-reform trade — the megabanks, trading houses, Toyota and the global tech and industrial champions. Geared to the end of deflation, a weak yen and improving capital returns.",
+      "thesis_zh": "日本再通胀与公司治理改革交易的大盘核心 — 三大行、综合商社、丰田与全球科技工业冠军。受益于通缩终结、日元偏弱与资本回报改善。",
+      "members": [
+        {
+          "ticker": "8306.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mitsubishi Ufj Financial Group Inc",
+          "rationale": "🇯🇵 JP · Mitsubishi Ufj Financial Group Inc"
+        },
+        {
+          "ticker": "8035.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tokyo Electron Ltd",
+          "rationale": "🇯🇵 JP · Tokyo Electron Ltd"
+        },
+        {
+          "ticker": "285A.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kioxia Holdings Corp",
+          "rationale": "🇯🇵 JP · Kioxia Holdings Corp"
+        },
+        {
+          "ticker": "7203.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Toyota Motor Corp",
+          "rationale": "🇯🇵 JP · Toyota Motor Corp"
+        },
+        {
+          "ticker": "9984.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Softbank Group Corp",
+          "rationale": "🇯🇵 JP · Softbank Group Corp"
+        },
+        {
+          "ticker": "8316.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sumitomo Mitsui Financial Group In",
+          "rationale": "🇯🇵 JP · Sumitomo Mitsui Financial Group In"
+        },
+        {
+          "ticker": "6857.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Advantest Corp",
+          "rationale": "🇯🇵 JP · Advantest Corp"
+        },
+        {
+          "ticker": "6501.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hitachi Ltd",
+          "rationale": "🇯🇵 JP · Hitachi Ltd"
+        },
+        {
+          "ticker": "6758.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sony Group Corp",
+          "rationale": "🇯🇵 JP · Sony Group Corp"
+        },
+        {
+          "ticker": "8411.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mizuho Financial Group Inc",
+          "rationale": "🇯🇵 JP · Mizuho Financial Group Inc"
+        },
+        {
+          "ticker": "6981.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Murata Manufacturing Ltd",
+          "rationale": "🇯🇵 JP · Murata Manufacturing Ltd"
+        },
+        {
+          "ticker": "9983.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Fast Retailing Ltd",
+          "rationale": "🇯🇵 JP · Fast Retailing Ltd"
+        },
+        {
+          "ticker": "6861.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Keyence Corp",
+          "rationale": "🇯🇵 JP · Keyence Corp"
+        },
+        {
+          "ticker": "6098.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Recruit Holdings Ltd",
+          "rationale": "🇯🇵 JP · Recruit Holdings Ltd"
+        },
+        {
+          "ticker": "8058.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mitsubishi Corp",
+          "rationale": "🇯🇵 JP · Mitsubishi Corp"
+        },
+        {
+          "ticker": "8766.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Tokio Marine Holdings Inc",
+          "rationale": "🇯🇵 JP · Tokio Marine Holdings Inc"
+        },
+        {
+          "ticker": "7011.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Mitsubishi Heavy Industries Ltd",
+          "rationale": "🇯🇵 JP · Mitsubishi Heavy Industries Ltd"
+        },
+        {
+          "ticker": "4063.T",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shin Etsu Chemical Ltd",
+          "rationale": "🇯🇵 JP · Shin Etsu Chemical Ltd"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Japan Inc. — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_korea": {
+      "name": "Korea Tech & Industry",
+      "name_zh": "韩国科技与工业",
+      "category": "Regional Growth",
+      "category_zh": "区域成长",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Korea's export champions and the 'Value-Up' re-rating story — Samsung Electronics and SK Hynix in memory, the internet platforms, Hyundai and the battery / shipbuilding / defense names. A high-beta read on global tech and trade.",
+      "thesis_zh": "韩国出口冠军与“企业价值提升”重估故事 — 存储的三星电子与 SK 海力士、互联网平台、现代汽车以及电池/造船/国防股。对全球科技与贸易的高 Beta 读数。",
+      "members": [
+        {
+          "ticker": "005930.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Electronics Ltd",
+          "rationale": "🇰🇷 KR · Samsung Electronics Ltd"
+        },
+        {
+          "ticker": "000660.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sk Hynix Inc",
+          "rationale": "🇰🇷 KR · Sk Hynix Inc"
+        },
+        {
+          "ticker": "402340.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Sk Square Ltd",
+          "rationale": "🇰🇷 KR · Sk Square Ltd"
+        },
+        {
+          "ticker": "009150.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Electro Mechanics Ltd",
+          "rationale": "🇰🇷 KR · Samsung Electro Mechanics Ltd"
+        },
+        {
+          "ticker": "005935.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Electronics Non Voting Pre",
+          "rationale": "🇰🇷 KR · Samsung Electronics Non Voting Pre"
+        },
+        {
+          "ticker": "005380.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hyundai Motor",
+          "rationale": "🇰🇷 KR · Hyundai Motor"
+        },
+        {
+          "ticker": "105560.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kb Financial Group Inc",
+          "rationale": "🇰🇷 KR · Kb Financial Group Inc"
+        },
+        {
+          "ticker": "034020.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Doosan Enerbility Ltd",
+          "rationale": "🇰🇷 KR · Doosan Enerbility Ltd"
+        },
+        {
+          "ticker": "055550.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shinhan Financial Group Ltd",
+          "rationale": "🇰🇷 KR · Shinhan Financial Group Ltd"
+        },
+        {
+          "ticker": "012450.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hanwha Aerospace Ltd",
+          "rationale": "🇰🇷 KR · Hanwha Aerospace Ltd"
+        },
+        {
+          "ticker": "028260.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung C&T Corp",
+          "rationale": "🇰🇷 KR · Samsung C&T Corp"
+        },
+        {
+          "ticker": "000270.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Kia Corporation",
+          "rationale": "🇰🇷 KR · Kia Corporation"
+        },
+        {
+          "ticker": "012330.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hyundai Mobis Ltd",
+          "rationale": "🇰🇷 KR · Hyundai Mobis Ltd"
+        },
+        {
+          "ticker": "032830.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Samsung Life Ltd",
+          "rationale": "🇰🇷 KR · Samsung Life Ltd"
+        },
+        {
+          "ticker": "035420.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Naver Corp",
+          "rationale": "🇰🇷 KR · Naver Corp"
+        },
+        {
+          "ticker": "086790.KS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hana Financial Group Inc",
+          "rationale": "🇰🇷 KR · Hana Financial Group Inc"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded Korea Tech & Industry — equal-weight cross-country members."
+        }
+      ]
+    },
+    "intl_uk": {
+      "name": "UK Blue Chips",
+      "name_zh": "英国蓝筹",
+      "category": "Regional Growth",
+      "category_zh": "区域成长",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "The FTSE 100 large-cap core — the global-facing UK leaders in energy, pharma, banks, consumer staples and miners (Shell, AstraZeneca, HSBC, Unilever, BP, Rio Tinto). A cheap, dividend-rich, internationally-earning equity sleeve.",
+      "thesis_zh": "富时 100 大盘核心 — 面向全球的英国能源、制药、银行、必需消费与矿业龙头（壳牌、阿斯利康、汇丰、联合利华、BP、力拓）。低估值、高股息、收入来自全球的权益板块。",
+      "members": [
+        {
+          "ticker": "HSBA.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Hsbc Holdings Plc",
+          "rationale": "🇬🇧 GB · Hsbc Holdings Plc"
+        },
+        {
+          "ticker": "AZN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Astrazeneca Plc",
+          "rationale": "🇬🇧 GB · Astrazeneca Plc"
+        },
+        {
+          "ticker": "SHEL.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Shell Plc",
+          "rationale": "🇬🇧 GB · Shell Plc"
+        },
+        {
+          "ticker": "RR.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rolls-Royce Holdings Plc",
+          "rationale": "🇬🇧 GB · Rolls-Royce Holdings Plc"
+        },
+        {
+          "ticker": "BATS.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "British American Tobacco",
+          "rationale": "🇬🇧 GB · British American Tobacco"
+        },
+        {
+          "ticker": "ULVR.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Unilever Plc",
+          "rationale": "🇬🇧 GB · Unilever Plc"
+        },
+        {
+          "ticker": "RIO.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Rio Tinto Plc",
+          "rationale": "🇬🇧 GB · Rio Tinto Plc"
+        },
+        {
+          "ticker": "BP.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bp Plc",
+          "rationale": "🇬🇧 GB · Bp Plc"
+        },
+        {
+          "ticker": "GSK.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Glaxosmithkline",
+          "rationale": "🇬🇧 GB · Glaxosmithkline"
+        },
+        {
+          "ticker": "BARC.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Barclays Plc",
+          "rationale": "🇬🇧 GB · Barclays Plc"
+        },
+        {
+          "ticker": "LLOY.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Lloyds Banking Group Plc",
+          "rationale": "🇬🇧 GB · Lloyds Banking Group Plc"
+        },
+        {
+          "ticker": "GLEN.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Glencore Plc",
+          "rationale": "🇬🇧 GB · Glencore Plc"
+        },
+        {
+          "ticker": "NG.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "National Grid Plc",
+          "rationale": "🇬🇧 GB · National Grid Plc"
+        },
+        {
+          "ticker": "BA.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Bae Systems Plc",
+          "rationale": "🇬🇧 GB · Bae Systems Plc"
+        },
+        {
+          "ticker": "NWG.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Natwest Group Plc",
+          "rationale": "🇬🇧 GB · Natwest Group Plc"
+        },
+        {
+          "ticker": "REL.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Relx Plc",
+          "rationale": "🇬🇧 GB · Relx Plc"
+        },
+        {
+          "ticker": "AAL.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "Anglo American Plc",
+          "rationale": "🇬🇧 GB · Anglo American Plc"
+        },
+        {
+          "ticker": "LSEG.L",
+          "added": "2021-06-15",
+          "removed": null,
+          "name": "London Stock Exchange Group Plc",
+          "rationale": "🇬🇧 GB · London Stock Exchange Group Plc"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "create",
+          "note": "Seeded UK Blue Chips — equal-weight cross-country members."
+        }
+      ]
+    }
+  }
+}
