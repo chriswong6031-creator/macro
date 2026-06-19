@@ -86,6 +86,7 @@ def all_adapters() -> dict:
         ("hk_indices", "collectors.hk_indices", "HkIndicesAdapter"),           # true Hang Seng TECH (HSTECH) index OHLCV — retires the 3033.HK ETF proxy
         ("hk_ah_official", "collectors.hk_ah_official", "HkAhOfficialAdapter"),  # official ~190-pair A/H premium snapshot + reconstructed daily index
         ("hk_connect_channels", "collectors.hk_connect_channels", "HkConnectChannelsAdapter"),  # 港股通沪/深 per-channel southbound history (additive to china_connect)
+        ("hk_southbound_holdings", "collectors.hk_southbound_holdings", "HkSouthboundHoldingsAdapter"),  # per-STOCK southbound holdings (mainland smart-money) — feeds the HK Stock Desk conviction
         ("hk_valuation", "collectors.hk_valuation", "HkValuationAdapter"),     # Baidu PE/PB market-median (currency-neutral; the read hk_fundamentals skips)
         ("hk_property", "collectors.hk_property", "HkPropertyAdapter"),         # Centaline CCL weekly HK home-price index (+ CVI/CSI) — DISPLAY only (fragile->blocked)
         ("hk_full_breadth", "collectors.hk_full_breadth", "HkFullBreadthAdapter"),  # full HK main-board adv/dec participation (Eastmoney spot; fragile->blocked)
