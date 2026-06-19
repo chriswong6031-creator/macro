@@ -67,9 +67,53 @@
   .gcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
   .gcard .k { font-size:11.5px; color:var(--muted); } .gcard .v { font-size:17px; font-weight:600; margin-top:2px; }
 
-  /* the plain-English read */
+  /* the plain-English read (legacy) */
   .gx-read { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info); border-radius:9px; padding:11px 14px; margin-top:12px; font-size:13.5px; line-height:1.6; }
   .gx-read b { font-weight:700; }
+
+  /* ---- "New to options?" primer ---- */
+  .primer { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:0 16px; margin-bottom:14px; }
+  .primer summary { cursor:pointer; padding:13px 0; font-weight:600; font-size:13.5px; list-style:none; }
+  .primer summary::-webkit-details-marker { display:none; }
+  .primer summary::before { content:"📘  "; }
+  .primer[open] summary { border-bottom:1px solid var(--line); }
+  .primer-intro { margin:13px 0 4px; font-weight:600; line-height:1.55; }
+  .primer ul { margin:6px 0 16px; padding-left:20px; }
+  .primer li { margin:8px 0; font-size:13px; line-height:1.6; }
+
+  /* ---- board-column "?" help + its wrapping floating popover ---- */
+  .bhelp { display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:9px; font-weight:600; cursor:help; margin-left:5px; vertical-align:middle; }
+  .bhelp:hover, .bhelp:focus { color:var(--text); border-color:var(--text); outline:none; }
+  .help-pop { position:fixed; z-index:95; max-width:300px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font-size:12px; line-height:1.5; color:var(--text); box-shadow:var(--popover-shadow); display:none; }
+  .help-pop b { font-weight:700; }
+
+  /* ---- the Game Plan card (beginner signal read) ---- */
+  .gx-gameplan { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info); border-radius:10px; padding:12px 15px; margin-top:12px; }
+  .gx-gameplan.gp-calm, .gx-gameplan.gp-up { border-left-color:var(--up); }
+  .gx-gameplan.gp-jumpy { border-left-color:var(--down); }
+  .gx-gameplan.gp-warn { border-left-color:var(--orange); }
+  .gx-gameplan.gp-neutral { border-left-color:var(--info); }
+  .gp-head { display:flex; align-items:center; gap:9px; }
+  .gp-icon { font-size:20px; line-height:1; }
+  .gp-verdict { font-size:17px; font-weight:700; letter-spacing:.2px; }
+  .gp-calm .gp-verdict, .gp-up .gp-verdict { color:var(--up); }
+  .gp-jumpy .gp-verdict { color:var(--down); }
+  .gp-warn .gp-verdict { color:var(--orange); }
+  .gp-sub { font-size:13.5px; line-height:1.55; margin-top:6px; }
+  .gp-levels { margin-top:11px; border-top:1px solid var(--line); padding-top:10px; display:flex; flex-direction:column; gap:9px; }
+  .gp-weak { font-size:12px; color:var(--muted); font-style:italic; }
+  .gp-lvl { display:grid; grid-template-columns:max-content 1fr; gap:3px 16px; align-items:baseline; }
+  @media (max-width:640px){ .gp-lvl { grid-template-columns:1fr; gap:2px; } }
+  .gp-lk { font-size:13px; white-space:nowrap; }
+  .gp-li { margin-right:5px; }
+  .gp-ll { color:var(--muted); }
+  .gp-lv { font-size:14.5px; font-weight:700; margin-left:3px; }
+  .gp-lt { font-size:12.5px; color:var(--muted); line-height:1.5; }
+  .gp-range { margin-top:11px; border-top:1px solid var(--line); padding-top:10px; }
+  .gp-rk { font-size:12.5px; color:var(--muted); }
+  .gp-rv { font-size:15px; margin-top:2px; }
+  .gp-rc { margin-top:3px; }
+  .gp-chip { margin-top:11px; font-size:12px; line-height:1.5; border:1px solid var(--orange); border-radius:8px; padding:8px 11px; }
 
   /* ---- volatility hole ---- */
   .vhole { border-left:3px solid var(--info); }
@@ -173,6 +217,19 @@
     "每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也无方向性：多头Gamma → 做市商抑制走势（价格磁吸/均值回归、已实现波动更低）；空头Gamma → 做市商追逐（走势趋势化/放大、波动更高）。做市商“多头看涨/空头看跌”的符号是不可观测的假设 — 对指数稳健，对个股脆弱（卖备兑ETF或散户大量买看涨可翻转）。墙/翻转/最大痛点仅供观察，绝非目标价。") }}</p>
 </div>
 
+<details class="primer">
+  <summary>{{ t('New to options? Read this first.', '不熟悉期权？先读这里。') }}</summary>
+  <p class="primer-intro">{{ t("This page maps where big options dealers are likely to push or cushion the price. It's a map of levels, not a buy/sell signal and not a price target.", "本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图，并非买卖信号、也非目标价。") }}</p>
+  <ul>
+    <li>{{ t("Dealers are the banks that sell most options. To stay market-neutral, they constantly buy and sell the stock to offset what they've sold — and that hedging quietly pushes the price around.", "做市商是卖出大部分期权的银行。为保持市场中性，它们不断买卖股票以对冲卖出的部分 — 这种对冲会悄悄地推动价格。") }}</li>
+    <li>{{ t("Sometimes their hedging calms the market, sometimes it makes it jumpy. When dealers lean against moves (sell rallies, buy dips), price tends to stick in a range. When they pile into moves (buy higher, sell lower), trends and air-pockets run bigger. This is about how volatile, not which direction.", "它们的对冲有时让市场平静、有时让市场跳动。当做市商逆势（涨时卖、跌时买），价格倾向停在区间；当它们顺势（追高、杀低），趋势与急跌都会更大。这关乎波动多大，而非方向。") }}</li>
+    <li>{{ t("“Walls” are price levels where that hedging is heaviest — a call wall above tends to act like a ceiling, a put wall below like a floor. They're where price tends to stall, not targets it aims for.", "“墙”是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。价格倾向在此停滞，而非以其为目标。") }}</li>
+    <li>{{ t("“The flip” is the line between calm and jumpy. Above it the market is usually calmer; below it, jumpier. It's a regime boundary you watch like a thermostat — not a support or resistance level.", "“翻转”是平静与跳动的分界。其上市场通常更平静，其下更跳动。它是像恒温器一样观察的体制边界 — 而非支撑或阻力位。") }}</li>
+    <li>{{ t("How to use it: pick a ticker, read the one-line Game Plan, then watch the walls and the flip as the levels that matter today. Every trigger is a daily closing price beyond a level, since the data is end-of-day.", "用法：选一个代码，读一行“行动计划”，再把墙与翻转作为今日关键价位观察。由于数据为收盘，每个触发都是日线收盘越过某价位。") }}</li>
+    <li>{{ t("The dealer math is an assumption — solid for big indices and ETFs (SPX, SPY, QQQ), but shaky and sometimes flat wrong for single stocks. Treat single-name levels as loose context.", "做市商的推算是一种假设 — 对大型指数与ETF（SPX、SPY、QQQ）稳健，但对个股不稳、有时完全错误。个股价位仅作宽松背景。") }}</li>
+  </ul>
+</details>
+
 <div class="panel">
   <div class="pickbar">
     <div class="gx-search">
@@ -187,7 +244,7 @@
   </div>
   <div class="boardwrap">
     <div class="topline" style="justify-content:space-between">
-      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Net GEX in $bn per 1% move; “Vol hole” is the dealer-gamma compression state (in-hole / coiled at a wall / broken out / expansion); “Flip” is the % distance of spot to the zero-gamma level (negative = spot below flip = short-gamma regime); IV30 is the 30-day ATM implied vol; “Exp. move” is the IV-implied 1-day 1σ move. Click any row.', '净GEX为每1%波动的十亿美元；“波动洞”为做市商Gamma压缩状态（洞内/贴墙蓄势/突破/扩张）；“翻转”为现价到零Gamma价位的百分比距离（负=现价在翻转之下=空头Gamma体制）；IV30为30天平值隐含波动；“预期波动”为隐含的单日1σ波动。点击任意行。') }}</h2>
+      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Each column has its own ❓ — hover it for a plain-English explanation. Click a header to sort, or click any row for the full breakdown.', '每列都有自己的 ❓ — 悬停查看通俗解释。点击表头排序，或点击任意行查看完整分解。') }}</h2>
       <button class="collapse-btn" id="gx-board-toggle">{{ t('hide', '隐藏') }}</button>
     </div>
     <div class="hm-scroll" id="gx-board-scroll">
@@ -195,13 +252,13 @@
         <thead><tr>
           <th data-sort="key">{{ t('Symbol', '代码') }}</th>
           <th data-sort="spot">{{ t('Spot', '现价') }}</th>
-          <th data-sort="regime">{{ t('Regime', '体制') }}</th>
-          <th data-sort="vh_state">{{ t('Vol hole', '波动洞') }}</th>
-          <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}</th>
-          <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}</th>
-          <th data-sort="iv30">IV30</th>
-          <th data-sort="daily_move_pct">{{ t('Exp. move', '预期波动') }}</th>
-          <th data-sort="put_call_oi_ratio">P/C</th>
+          <th data-sort="regime">{{ t('Regime', '体制') }}<span class="bhelp" data-h="regime" tabindex="0" role="button" aria-label="What is Regime?">?</span></th>
+          <th data-sort="vh_state">{{ t('Vol hole', '波动洞') }}<span class="bhelp" data-h="volhole" tabindex="0" role="button" aria-label="What is Vol hole?">?</span></th>
+          <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}<span class="bhelp" data-h="netgex" tabindex="0" role="button" aria-label="What is Net GEX?">?</span></th>
+          <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}<span class="bhelp" data-h="flip" tabindex="0" role="button" aria-label="What is Flip?">?</span></th>
+          <th data-sort="iv30">IV30<span class="bhelp" data-h="iv30" tabindex="0" role="button" aria-label="What is IV30?">?</span></th>
+          <th data-sort="daily_move_pct">{{ t('Exp. move', '预期波动') }}<span class="bhelp" data-h="expmove" tabindex="0" role="button" aria-label="What is Expected move?">?</span></th>
+          <th data-sort="put_call_oi_ratio">P/C<span class="bhelp" data-h="pc" tabindex="0" role="button" aria-label="What is Put/Call?">?</span></th>
         </tr></thead>
         <tbody><!-- filled by gex.js --></tbody>
       </table>
@@ -219,6 +276,7 @@
 </div>
 
 <div class="floaty-tip" id="gx-tip"></div>
+<div class="help-pop" id="gx-htip"></div>
 <script>window.GEX_MANIFEST = {{ manifest_json|safe }}; window.GEX_DEFAULT = "{{ default_key }}";</script>
 <script src="gex.js"></script>
 <script src="theme.js"></script>
