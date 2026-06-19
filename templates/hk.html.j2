@@ -358,10 +358,10 @@
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
         <div class="nb-axes">
-          {% for ax, lbl in [('selection','RS'),('entry','ENT'),('tailwind','TWD'),('quality','QUAL')] %}
+          {% for ax, lbl, lbl_zh in [('selection','RS','相对'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
           {% set a = c.axes[ax] %}
           <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-            <div class="axl">{{ lbl }}</div>
+            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
             <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
           </div>
           {% endfor %}
@@ -379,7 +379,7 @@
         </div>
         {% endif %}
         {% if c %}
-        {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span>⚠ {{ cau }}</span>{% endfor %}</div>{% endif %}
+        {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
         <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
