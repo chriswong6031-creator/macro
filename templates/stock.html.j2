@@ -1498,7 +1498,7 @@
   function tvLoad(d) {
     var box = document.getElementById('tvbox');
     if (!box || !window.StockChart) return;
-    try { window.StockChart.mount(box, d.ticker, {name: d.name}); }
+    try { window.StockChart.mount(box, d.ticker, {name: d.name, intraday: !!d.has_intraday}); }
     catch (e) { /* chart is garnish — analysis above stands alone */ }
   }
 

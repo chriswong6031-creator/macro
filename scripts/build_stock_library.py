@@ -834,6 +834,9 @@ def main() -> int:
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
+        # 4H intraday available? (Polygon hourly store -> site/intraday/<T>.json). stock.html
+        # passes this to the chart so the 4H button only appears where data actually exists.
+        rec["has_intraday"] = 1 if (config.data_dir() / "intraday" / f"{ticker}.parquet").exists() else 0
         profiles[ticker] = prof
         # ---- Macro sensitivity (display-only, never scored) -------------------
         # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
