@@ -2351,6 +2351,130 @@
   </div>
   {% endif %}
 
+  <!-- ===================== ADVANCED BREADTH TRACKER ===================== -->
+  {% if adv_breadth %}
+  {% set tc = {'pos':'var(--up)','neg':'var(--down)','muted':'var(--link)'} %}
+  <div class="panel span12" id="advanced-breadth">
+    <h2>{{ t('Advanced breadth — the market internals under the tape', '高级广度 — 盘面之下的市场内部结构') }}
+      {{ help("The classic 'market internals' a desk watches beyond today's %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history. Computed on the DEEP S&P 500 breadth series (1962-). These are SECOND-DERIVATIVE reads of the same breadth — they describe the QUALITY of the move (broad vs narrow, accelerating vs rolling over). Display-only: breadth internals are a function of price, so they're coincident with it by construction — this explains the tape, it does not forecast it. Survivorship caveat: the deep series is rebuilt from today's members, so the percentile context is taken over the mature-universe window only.", "盘面之下、超越「高于均线占比」快照的经典「市场内部结构」：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位。基于标普500深度广度序列（1962年起）计算。这些是同一广度的二阶读数 — 描述走势的「质量」（广泛或狭窄、加速或回落）。仅作展示：内部结构是价格的函数、与价格同步，用于解释盘面而非预测。幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间。") }}
+    </h2>
+    <p class="{{ adv_breadth.headline.tone }}" style="margin:0 2px 14px; font-size:14px; line-height:1.5">
+      {{ t('The internals read', '内部结构读数为') }} <b>{{ adv_breadth.headline.label }}</b> —
+      <span class="muted">{{ adv_breadth.headline.verdict }}.</span>
+    </p>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(248px,1fr)); gap:12px">
+
+      <!-- McClellan -->
+      {% if adv_breadth.mcc %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
+        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('McClellan Oscillator', '麦克莱伦振荡指标') }}
+          {{ help("Ratio-adjusted McClellan Oscillator: the 19-day minus 39-day EMA of net advances (normalised so a changing universe size doesn't distort it). Above zero & rising = breadth momentum building; below zero & falling = internals rolling over. The Summation Index is its running total — its slope and sign carry the meaning, not the absolute (cumulative) level.", "比率调整后的麦克莱伦振荡指标：净上涨家数的19日与39日指数均线之差（已归一化，避免样本规模变化造成失真）。高于零且上行 = 广度动量在累积；低于零且下行 = 内部结构在回落。累积指标是其累计和 — 关键在斜率与正负号，而非绝对（累计）水平。") }}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
+          <b class="{{ adv_breadth.mcc.tone }}" style="font-size:22px">{{ adv_breadth.mcc.osc }}</b>
+          <span class="pill {{ adv_breadth.mcc.tone }}" style="background:var(--panel)">{{ adv_breadth.mcc.band }}</span>
+        </div>
+        {{ adv_breadth.mcc.svg }}
+        <div class="muted" style="font-size:11px; margin-top:3px">{{ t('Summation Index', '累积指标') }}
+          <b class="{{ 'pos' if adv_breadth.mcc.summ_rising else 'neg' }}">{{ t('rising', '上行') if adv_breadth.mcc.summ_rising else t('falling', '下行') }}</b>
+          <span class="muted">(20d {{ adv_breadth.mcc.summ_chg20 }})</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Breadth Thrust -->
+      {% if adv_breadth.thrust %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
+        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('Breadth Thrust (Zweig)', '广度脉冲（兹威格）') }}
+          {{ help("The 10-day EMA of the advancers' share, advances / (advances + declines). Zweig's classic launch signal fires when it surges from below 0.40 (washed out) through 0.615 (thrust) inside 10 days — a rare, powerful 'everything's going up at once' kick-off. HONESTY: on our survivorship-biased S&P-500 proxy the strict crossing fires far more often than the canonical ~once-a-decade NYSE signal (rebuilt-from-survivors rebounds look broader than they were live), so read this as a momentum gauge, not the rare historic trigger.", "上涨家数占比（上涨 /(上涨+下跌)）的10日指数均线。兹威格的经典启动信号：在10日内自0.40以下（超卖）急升突破0.615（脉冲）时触发 —— 罕见而强劲的「同涨」启动。诚实说明：在带有幸存者偏差的标普500代理上，严格的穿越远比经典的纽交所「十年一遇」信号更频繁（以幸存者重建的反弹看起来比当时更广），故此处作为动量计读取，而非罕见的历史触发。") }}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
+          <b class="{{ adv_breadth.thrust.tone }}" style="font-size:22px">{{ adv_breadth.thrust.value }}</b>
+          <span class="pill {{ adv_breadth.thrust.tone }}" style="background:var(--panel)">{{ adv_breadth.thrust.zone }}</span>
+        </div>
+        <span style="position:relative; display:block; height:10px; background:var(--panel); border-radius:5px; margin:10px 0 6px" title="0.40 washed → 0.615 thrust">
+          <i style="position:absolute; left:{{ adv_breadth.thrust.washed_pos }}%; top:-3px; width:2px; height:16px; background:var(--muted); opacity:.7"></i>
+          <i style="position:absolute; left:{{ adv_breadth.thrust.thrust_pos }}%; top:-3px; width:2px; height:16px; background:var(--up)"></i>
+          <i style="position:absolute; left:calc({{ adv_breadth.thrust.pos }}% - 5px); top:0; width:10px; height:10px; border-radius:50%; background:{{ tc[adv_breadth.thrust.tone] }}; box-shadow:0 0 0 2px var(--panel2)"></i>
+        </span>
+        <div class="muted" style="font-size:11px; margin-top:3px">
+          {% if adv_breadth.thrust.recent %}<b class="pos">{{ t('strict thrust fired in the last month', '近一月内触发严格脉冲') }}</b>{% else %}{{ t('last strict thrust', '上次严格脉冲') }} <b>{{ adv_breadth.thrust.last or '—' }}</b>{% endif %}
+          <span class="muted">· {{ adv_breadth.thrust.hist_count }} {{ t('since 2005', '次（2005年以来）') }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- High-Low Index -->
+      {% if adv_breadth.hl %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
+        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('High-Low Index', '新高—新低指数') }}
+          {{ help("The 10-day average of the record-high percent: 52-week new highs as a share of (new highs + new lows). Above 50 = new highs are outpacing new lows (an expanding, healthy new-high ledger); below 50 = the new-low side is winning (deterioration). Today's raw net new highs (highs minus lows) and their 10-day average are shown below.", "记录新高占比的10日均值：52周新高占（新高+新低）的比例。高于50 = 新高多于新低（新高账本在扩张、健康）；低于50 = 新低占上风（恶化）。下方显示今日净新高（新高减新低）及其10日均值。") }}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
+          <b class="{{ adv_breadth.hl.tone }}" style="font-size:22px">{{ adv_breadth.hl.hli }}</b>
+          <span class="pill {{ adv_breadth.hl.tone }}" style="background:var(--panel)">{{ adv_breadth.hl.band }}</span>
+        </div>
+        {{ adv_breadth.hl.svg }}
+        <div class="muted" style="font-size:11px; margin-top:3px">{{ t('net new highs', '净新高') }}
+          <b class="{{ 'pos' if adv_breadth.hl.net_nh[0] != '-' else 'neg' }}">{{ adv_breadth.hl.net_nh }}</b>
+          {{ t('today', '今日') }} · <b>{{ adv_breadth.hl.net_nh_10 }}</b> {{ t('avg 10d', '10日均') }}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- A/D vs price divergence -->
+      {% if adv_breadth.div %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
+        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('A/D line vs price', '腾落线对价格') }}
+          {{ help("Does the cumulative advance/decline line confirm the index's recent extremes? If price prints a fresh 3-month high the A/D line will NOT confirm, the advance is narrowing underneath (bearish divergence); a fresh price low the A/D line refuses to confirm is a bullish divergence. Otherwise the internals are confirming the move, or nothing is at an extreme (in range). The sparkline traces the A/D line; the correlation is price-vs-A/D over the last 60 sessions.", "累积腾落线是否确认指数近期的极值？若价格创3个月新高而腾落线未确认，则上涨在底层收窄（看跌背离）；若价格创新低而腾落线拒绝确认，则为看涨背离。否则即为内部结构确认走势，或均未触及极值（区间内）。曲线描绘腾落线；相关系数为近60个交易日价格与腾落线的相关性。") }}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px; min-height:30px">
+          <b class="{{ adv_breadth.div.tone }}" style="font-size:16px">{{ adv_breadth.div.label }}</b>
+        </div>
+        {{ adv_breadth.div.svg }}
+        <div class="muted" style="font-size:11px; margin-top:3px">{{ adv_breadth.div.verdict }}.
+          {% if adv_breadth.div.corr is not none %}<span class="muted">({{ adv_breadth.div.window }}d corr {{ adv_breadth.div.corr }})</span>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Participation in historical context -->
+      {% if adv_breadth.par %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
+        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('Participation in context', '参与度的历史背景') }}
+          {{ help("Today's % of S&P 500 stocks above their 50-day line, set against its own deep history: the percentile tells you where this reading ranks vs every day since the universe matured, and the 20-day change is the momentum of participation (is it broadening or thinning?). The advance/decline line direction over 20 days rounds it out.", "今日标普500中高于50日均线的股票占比，对照其自身的深度历史：分位数显示该读数相对样本成熟以来每一天的排名，20日变化为参与度的动量（在扩散还是变薄？）。再辅以腾落线20日方向。") }}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
+          <b class="{{ adv_breadth.par.tone }}" style="font-size:22px">{{ adv_breadth.par.pa50 }}%</b>
+          {% if adv_breadth.par.pctile is not none %}<span class="pill" style="background:var(--panel)">{{ adv_breadth.par.pctile }}{{ t('th pct', '分位') }} · {{ t('since', '自') }} {{ adv_breadth.par.hist_from }}</span>{% endif %}
+        </div>
+        {{ adv_breadth.par.svg }}
+        <div class="muted" style="font-size:11px; margin-top:3px">
+          {% if adv_breadth.par.pa200 %}&gt;200d <b>{{ adv_breadth.par.pa200 }}%</b> · {% endif %}{{ t('20d', '20日') }} <b class="{{ adv_breadth.par.chg_tone }}">{{ adv_breadth.par.chg20 }}</b>
+          {% if adv_breadth.par.ad_dir %} · {{ t('A/D', '腾落') }} <b class="{{ 'pos' if adv_breadth.par.ad_dir == 'up' else 'neg' }}">{{ t('up', '上行') if adv_breadth.par.ad_dir == 'up' else t('down', '下行') }}</b>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Cross-tier participation gap -->
+      {% if adv_breadth.gap %}
+      <div style="border:1px solid var(--line); border-radius:10px; padding:12px 13px; background:var(--panel2)">
+        <div class="muted" style="font-size:11px; letter-spacing:.02em">{{ t('Large / mid / small gap', '大／中／小盘差') }}
+          {{ help("The % > 50-day line for each S&P size tier (500 / 400 / 600), and the small-minus-large gap. Small caps participating MORE than large = a healthy, broad-based tape; small lagging = a narrow, mega-cap-led advance that's more fragile.", "标普各规模层级（500／400／600）高于50日均线的占比，以及「小盘减大盘」之差。小盘参与度高于大盘 = 健康、广泛的盘面；小盘落后 = 狭窄、由超大盘主导、更脆弱的上涨。") }}</div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin:4px 0 2px">
+          <b class="{{ adv_breadth.gap.tone }}" style="font-size:22px">{{ adv_breadth.gap.gap }}</b>
+          <span class="pill {{ adv_breadth.gap.tone }}" style="background:var(--panel)">{{ adv_breadth.gap.label }}</span>
+        </div>
+        <div style="display:flex; gap:10px; margin:8px 0 4px; font-size:12px">
+          <span>{{ t('L', '大') }} <b>{{ adv_breadth.gap.large }}%</b></span>
+          {% if adv_breadth.gap.mid %}<span class="muted">{{ t('M', '中') }} <b>{{ adv_breadth.gap.mid }}%</b></span>{% endif %}
+          <span>{{ t('S', '小') }} <b>{{ adv_breadth.gap.small }}%</b></span>
+        </div>
+        <div class="muted" style="font-size:11px; margin-top:3px">{{ adv_breadth.gap.verdict }}.</div>
+      </div>
+      {% endif %}
+
+    </div>
+    <p class="muted" style="margin:10px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ adv_breadth.asof }} · {{ t('computed on the deep S&P 500 breadth series', '基于标普500深度广度序列计算') }} ({{ adv_breadth.deep_from }}–) · {{ t('display-only market internals, never scored', '仅作展示的市场内部结构，不计入评分') }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== SECTOR BOTTOM RADAR ===================== -->
   {% if sector_radar and sector_radar.washed %}
   <div class="panel span12" id="sector-bottom-radar">
