@@ -14,12 +14,12 @@ from __future__ import annotations
 import pandas as pd
 
 
-def score_series(basket_id: str, field: str = "score") -> list[dict]:
+def score_series(basket_id: str, field: str = "score", region: str = "us") -> list[dict]:
     """Dated [{date, value}] of one scalar (score / components.* / textures.*) for a basket,
     pulled from the 'baskets' signal-archive snapshots. Empty until history accrues."""
     try:
         from engine.signal_archive import load_archive
-        df = load_archive("baskets")
+        df = load_archive("baskets" if region == "us" else f"baskets_{region}")
     except Exception:  # noqa: BLE001
         return []
     if df is None or df.empty or "snapshot_json" not in df.columns:
@@ -43,12 +43,12 @@ def score_series(basket_id: str, field: str = "score") -> list[dict]:
     return out
 
 
-def change_timeline(basket_id: str, days: int = 365) -> list[dict]:
+def change_timeline(basket_id: str, days: int = 365, region: str = "us") -> list[dict]:
     """This theme's dated score/label/reco CHANGE events from engine.theme_alerts, newest
     first — the 'when scoring changed' record the user asked for."""
     try:
         from engine import theme_alerts
-        evs = [e for e in theme_alerts.load_events() if e.get("asset") == basket_id]
+        evs = [e for e in theme_alerts.load_events(region) if e.get("asset") == basket_id]
     except Exception:  # noqa: BLE001
         return []
     if not evs:

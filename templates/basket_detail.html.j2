@@ -64,13 +64,13 @@
 <nav class="site-nav">
   {% include "_navlinks.html.j2" %}
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="../baskets.html">🧺 {{ t('All themes', '全部主题') }}</a>
+    <a class="ai-brief-link" href="{{ back_href | default('../baskets.html') }}">🧺 {{ t('All themes', '全部主题') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
     <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
   </div>
 </nav>
 
-<a class="back" href="../baskets.html">← {{ t('Theme Rotation Desk', '主题轮动台') }}</a>
+<a class="back" href="{{ back_href | default('../baskets.html') }}">← {{ t('Theme Rotation Desk', '主题轮动台') }}</a>
 <div id="app"></div>
 
 <footer>
@@ -111,6 +111,8 @@ function convCell(c){
 
 function render(){
   const d=DETAIL, b=d.basket||{}, th=d.theme||{}, tx=th.textures||{};
+  const SB=d.stock_base||'';   // per-stock link base ('' for markets with no per-stock page → plain ticker)
+  const stk=(sym)=> SB ? `<a class="tk" href="${SB}${encodeURIComponent(sym)}">${esc(sym)}</a>` : `<span class="tk">${esc(sym)}</span>`;
   const lc=LABEL_COLOR[th.label]||LABEL_COLOR.neutral, rc=RECO_COLOR[th.reco]||RECO_COLOR.hold;
   const tags=(b.tags||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join('');
   // ---- hero ----
@@ -137,7 +139,7 @@ function render(){
   if(an.status==='ok' && (an.buys||[]).length){
     h+=`<div class="muted sm" style="margin-bottom:8px">${L('Member stocks with a clean entry right now — buy/add verdict, cycle not blocking, decent entry price. Ranked by entry quality.','当前具备干净入场点的成分股 — 买入/加仓结论、周期未阻断、入场价尚可。按入场质量排序。')}</div>
     <div class="ts"><table><thead><tr><th>${L('Stock','个股')}</th><th class="num">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num">${L('Entry','入场')}</th><th class="num">20d</th><th class="num">YTD</th></tr></thead><tbody>`+
-      an.buys.map(x=>`<tr><td><a class="tk" href="../stock.html#${esc(x.symbol)}">${esc(x.symbol)}</a> <span class="muted sm">${esc(x.name||'')}</span></td>
+      an.buys.map(x=>`<tr><td>${stk(x.symbol)} <span class="muted sm">${esc(x.name||'')}</span></td>
         <td class="num">${convCell({score:x.score})}</td>
         <td>${x.verdict?L(esc(x.verdict),esc(x.verdict_zh||x.verdict)):'—'}</td>
         <td class="num">${x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—'}</td>
@@ -195,7 +197,7 @@ function render(){
   const mem=(d.members||[]).slice();
   const rows=mem.map(m=>{const c=m.conviction;
     return `<tr>
-      <td><a class="tk" href="../stock.html#${esc(m.symbol)}">${esc(m.symbol)}</a> <span class="muted sm">${esc(m.name||'')}</span></td>
+      <td>${stk(m.symbol)} <span class="muted sm">${esc(m.name||'')}</span></td>
       <td class="num">${convCell(c)}</td>
       <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
       <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
