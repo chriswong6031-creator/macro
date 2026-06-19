@@ -19,6 +19,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pandas as pd
 from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -34,6 +35,54 @@ PAGES = {"us": ("allocation.json", "allocation.html"),
          "china": ("allocation_china.json", "allocation_china.html"),
          "hk": ("allocation_hk.json", "allocation_hk.html"),
          "canada": ("allocation_canada.json", "allocation_canada.html")}
+
+
+def _write_alloc_snapshot(region: str, data: dict) -> None:
+    """Slim playbook snapshot -> data/allocation/latest_<region>.json (archived daily by
+    scripts.archive_signals into 'allocation_<region>' → the risk-over-time history)."""
+    alloc = data.get("allocation") or {}
+    rot = data.get("rotation") or {}
+    slim = {"as_of": data.get("as_of"), "region": region,
+            "cash": alloc.get("cash"), "n_held": alloc.get("n_held"),
+            "held": [w["id"] for w in alloc.get("weights", [])],
+            "leader": (rot.get("leader") or {}).get("id"),
+            "absorption": rot.get("absorption"),
+            "crash": bool((alloc.get("crash_overlay") or {}).get("active"))}
+    p = config.data_dir() / "allocation" / f"latest_{region}.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(slim, separators=(",", ":"), default=str))
+
+
+def _alloc_history(region: str) -> list[dict]:
+    """Dated [{date, cash, n_held}] from the allocation signal-archive — the risk dial over
+    time. Empty until history accrues (the page then shows 'history accruing')."""
+    try:
+        from engine.signal_archive import load_archive
+        df = load_archive(f"allocation_{region}")
+    except Exception:  # noqa: BLE001
+        return []
+    if df is None or df.empty:
+        return []
+    out = []
+    for _, r in df.iterrows():
+        cash = r.get("cash")
+        if cash is not None and pd.notna(cash):
+            out.append({"date": str(r.get("asof")), "cash": float(cash),
+                        "n_held": (int(r["n_held"]) if pd.notna(r.get("n_held")) else None)})
+    return out
+
+
+def _theme_act_now(region: str, site) -> dict | None:
+    """The theme-level WHAT-TO-ACT-ON-NOW (buy/add vs reduce/avoid) from the baskets desk —
+    US only (theme_intel is US). Read from the already-built basketdata/baskets.json."""
+    if region != "us":
+        return None
+    try:
+        p = site / "basketdata" / "baskets.json"
+        ti = (json.loads(p.read_text()).get("theme_intel") or {}) if p.exists() else {}
+        return ti.get("act_now")
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def build_region(region: str, env, built: str, site) -> bool:
@@ -52,8 +101,23 @@ def build_region(region: str, env, built: str, site) -> bool:
     fdir = site / "allocationdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / jname).write_text(json.dumps(data, separators=(",", ":"), default=str))
+    # ROTATION ALERTS + risk-over-time history + the theme buy/sell shortlist (additive)
+    rot_alerts, hist = [], []
+    try:
+        from engine import allocation_alerts
+        allocation_alerts.rebuild(data, region)
+        _write_alloc_snapshot(region, data)
+        rot_alerts = allocation_alerts.recent(region, 45, as_of=data.get("as_of"))
+        hist = _alloc_history(region)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("[%s] rotation alerts/history failed: %s", region, e)
+    act_now = _theme_act_now(region, site)
     html = env.get_template("allocation.html.j2").render(
-        d=data, data_json=json.dumps(data, separators=(",", ":")), generated_utc=built)
+        d=data, data_json=json.dumps(data, separators=(",", ":")),
+        rotation_alerts_json=json.dumps(rot_alerts, separators=(",", ":")),
+        risk_history_json=json.dumps(hist, separators=(",", ":")),
+        act_now_json=json.dumps(act_now, separators=(",", ":"), default=str),
+        generated_utc=built)
     (site / page).write_text(html)
     log.info("[%s] wrote %s (%d themes, headline=%s)", region, page,
              data.get("n_themes", 0), (data.get("headline") or {}).get("name", "—"))

@@ -25,6 +25,22 @@
   .tagline { color:var(--muted); font-size:12.5px; max-width:94ch; margin:4px 0 0; line-height:1.5; }
   .sub { color:var(--muted); font-size:12.5px; margin:2px 0 10px; max-width:94ch; }
   .chip { display:inline-block; font-size:11px; padding:1px 7px; margin:0 4px 4px 0; border-radius:7px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  .chip.ok2 { color:var(--up); } .chip.hot2 { color:var(--down); }
+  /* ---- playbook (PR2) ---- */
+  .rotwrap2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
+  @media (max-width:680px){ .rotwrap2{ grid-template-columns:1fr; } }
+  .pcol { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:10px 13px; }
+  .pcol h4 { margin:0 0 4px; font-size:13px; } .pcol h4.buy { color:var(--up); } .pcol h4.sell { color:var(--down); }
+  .prow { display:flex; align-items:center; gap:9px; padding:7px 4px; border-top:1px solid var(--line); color:inherit; border-radius:7px; }
+  .prow:first-of-type { border-top:0; } .prow:hover { background:var(--panel2); }
+  .pverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
+  .prow .pn { font-weight:650; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .prow .pw { font-variant-numeric:tabular-nums; font-weight:700; }
+  .palert { display:flex; gap:9px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
+  .palert:first-of-type { border-top:0; }
+  .palert .pdt { color:var(--muted); width:84px; flex:0 0 84px; font-variant-numeric:tabular-nums; }
+  .sev-high { color:var(--down); } .sev-medium { color:var(--warn); }
+  .riskbig { font-size:34px; font-weight:740; font-variant-numeric:tabular-nums; line-height:1; }
   .chip.warn { background:rgba(250,204,21,.12); border-color:rgba(250,204,21,.4); color:var(--warn); }
   .chip.ok { background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.4); color:var(--up); }
   .chip.hot { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.4); color:var(--down); }
@@ -188,7 +204,36 @@
   <p class="tagline" style="margin-top:10px">{{ t(
     'Equal-weight by design — the momentum rank has ~0 forward information coefficient on the clean universe, so we ride the trending leaders without betting conviction on the exact order. Crowded themes are trimmed toward cash (a sizing caution, never a sell or a short).',
     '刻意采用等权 — 在干净样本上动量排名的前瞻信息系数约为0，因此我们持有处于趋势中的领跑者，但不对其精确排序押注信心。拥挤主题被向现金削减（仅为仓位审慎，绝非卖出或做空）。') }}</p>
+  {% if d.allocation.de_overlapped %}
+  <p class="tagline" style="margin-top:6px">🧮 {{ t('De-overlapped for diversification', '为分散去重叠') }} — {{ t(
+    'held to ≤1 per parent super-theme so the book is not four flavours of one trade. Displaced (still trending, just a lower slot)',
+    '每个父级主题最多持有 1 个，避免组合沦为同一笔交易的四种说法。被替换（仍在趋势中，仅排序较低）') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
+  {% endif %}
 </div>
+
+<!-- ============ 01b PLAYBOOK: BUY & SELL ENTRIES ============ -->
+<h2><span class="idx">★</span>🎯 {{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
+  <span class="chip">{{ t('discipline, not advice', '纪律，非建议') }}</span></h2>
+<p class="sub">{{ t(
+  'The executional read: which themes to add to (the de-overlapped trending book + clean-entry buys) and which to reduce or stand aside from (lost trend, crowded, or rolling over). Click a theme for the specific stocks to act on.',
+  '可执行结论：该加仓哪些主题（去重叠的趋势组合 + 干净入场买入），该减仓或回避哪些（失去趋势、拥挤或见顶回落）。点击主题查看应操作的具体个股。') }}</p>
+<div id="playbook-entries" class="rotwrap2"></div>
+
+<!-- ============ 01c RISK OVER TIME ============ -->
+<h2><span class="idx">★</span>🌡️ {{ t('Risk over time', '风险随时间') }}
+  <span class="chip">{{ t('cash dial & de-risk events', '现金刻度与去风险事件') }}</span></h2>
+<p class="sub">{{ t(
+  'How aggressively the playbook is positioned through time — the suggested cash weight (high = defensive, low = risk-on), with the momentum-crash de-risk windows marked. The dial rises as breadth narrows and themes lose their trend.',
+  '手册在时间上的进取程度 — 建议现金权重（高=防守，低=进攻），并标注动量崩盘去风险窗口。当广度收窄、主题失去趋势时，刻度上升。') }}</p>
+<div id="risk-time" class="panel"></div>
+
+<!-- ============ 01d ROTATION ALERTS ============ -->
+<h2><span class="idx">★</span>🔔 {{ t('Rotation alerts', '轮动警报') }}
+  <span class="chip">{{ t('book & leadership changes', '组合与领涨变化') }}</span></h2>
+<p class="sub">{{ t(
+  'When the playbook changes — themes entering or leaving the book, leadership rotation, trend-gate flips and risk-dial swings. These also flow into the site-wide Alert Center.',
+  '当手册发生变化 — 主题进出组合、领涨轮换、趋势门翻转与风险刻度摆动。这些同样汇入站点警报中心。') }}</p>
+<div id="rot-alerts" class="panel"></div>
 
 <!-- ============ 02 NARRATIVE LIFECYCLE BOARD ============ -->
 <h2><span class="idx">02</span>{{ t('Narrative lifecycle board', '叙事生命周期看板') }}
@@ -350,6 +395,66 @@
     '仅供参考的只读分析 — 非投资建议，也非买卖清单。主题篮子为等权、按时点日期管理成分、基于免费约3-5年价格缓存，以 ' + d.bench_label + ' 为基准，且在已知该期表现下整理 — 故为事后描述性序列，并非样本外回测。该配置"算法"在跨越数十年的行业 ETF 历史上验证（见面板04），其唯一可重复的优势是通过绝对趋势门控制回撤/被甩出；横截面动量前瞻rank-IC约为0，篮子层面拥挤无前瞻回撤优势（仅用于降仓）。持续性、拥挤与轮动均为同步的、仅展示的背景 — 都不进入任何评分。参见 LIMITATIONS.md 与 scripts/thematic_rotation_phase0.py。') }}
   {{ t('Generated', '生成于') }} {{ generated_utc }}.
 </footer>
+<script>
+// ---- PR2 strategic playbook: buy/sell entries · risk over time · rotation alerts ----
+const ALLOC = {{ data_json|safe }};
+const ROT_ALERTS = {{ rotation_alerts_json|safe }};
+const RISK_HIST = {{ risk_history_json|safe }};
+const ACT_NOW = {{ act_now_json|safe }};
+const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const bid = s => /^[a-z0-9_-]+$/i.test(s||'') ? s : '';
+
+function renderEntries(){
+  const el=document.getElementById('playbook-entries'); if(!el) return;
+  const alloc=ALLOC.allocation||{}, an=ACT_NOW||null;
+  const held=new Set((alloc.weights||[]).map(w=>w.id));
+  // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
+  let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="basket/${bid(w.id)}.html">
+    <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
+    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
+  if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
+    const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
+    buy.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
+      <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
+  // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
+  let sell=[];
+  if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];
+    sell.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:${v[2]};border-color:${v[2]}">${L(v[0],v[1])}</span>
+      <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
+  (alloc.weights||[]).filter(w=>w.crowded).forEach(w=>sell.push(`<div class="prow"><span class="pverb" style="color:var(--warn);border-color:var(--warn)">${L('SIZE DOWN','降仓')}</span><span class="pn">${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${L('crowded','拥挤')}</span></div>`));
+  if(!sell.length) sell.push(`<div class="muted" style="padding:10px 2px;font-size:12px">${L('Nothing flagged to reduce right now.','当前无需减仓的标的。')}</div>`);
+  el.innerHTML=`<div class="pcol"><h4 class="buy">✅ ${L('Add / hold now','现在加仓 / 持有')} <span class="muted" style="font-size:11px">(${buy.length})</span></h4>${buy.join('')||('<div class="muted" style="padding:10px 2px;font-size:12px">'+L('No themes above trend — sit in cash.','无主题处于趋势上方 — 持有现金。')+'</div>')}</div>
+    <div class="pcol"><h4 class="sell">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted" style="font-size:11px">(${sell.length})</span></h4>${sell.join('')}</div>`;
+}
+
+function renderRiskTime(){
+  const el=document.getElementById('risk-time'); if(!el) return;
+  const alloc=ALLOC.allocation||{}, cash=alloc.cash, crash=(alloc.crash_overlay||{}).active;
+  const pts=(RISK_HIST||[]).map(h=>h.cash).filter(v=>v!=null);
+  let spark=`<span class="muted" style="font-size:12px">${L('history accruing','历史累积中')}</span>`;
+  if(pts.length>=2){ const w=320,hh=46,mn=Math.min(...pts),mx=Math.max(...pts),sp=(mx-mn)||1;
+    const d=pts.map((v,i)=>`${i?'L':'M'}${(i/(pts.length-1)*w).toFixed(1)} ${(hh-3-(v-mn)/sp*(hh-7)).toFixed(1)}`).join(' ');
+    spark=`<svg width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><path d="${d}" fill="none" stroke="${cssv('--muted')}" stroke-width="1.6"/></svg>`; }
+  const posture = cash==null?['—','—',cssv('--muted')] : crash?['DE-RISKED','已去风险',cssv('--down')] : cash>=0.5?['DEFENSIVE','防守',cssv('--warn')] : cash>=0.25?['BALANCED','均衡',cssv('--text')] : ['RISK-ON','进攻',cssv('--up')];
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+    <div><div class="riskbig" style="color:${posture[2]}">${cash==null?'—':Math.round(cash*100)+'%'}</div><div class="muted" style="font-size:11px">${L('suggested cash','建议现金')}</div></div>
+    <div><div style="font-size:16px;font-weight:700;color:${posture[2]}">${L(posture[0],posture[1])}</div><div class="muted" style="font-size:11px">${L('risk posture now','当前风险姿态')}</div></div>
+    <div style="margin-left:auto">${spark}<div class="muted" style="font-size:10.5px">${L('cash % over time','现金% 历时')}</div></div>
+  </div>${crash?`<div class="muted" style="font-size:12px;margin-top:8px;color:var(--down)">🛑 ${L('Momentum-crash de-risk active — book halved to cash.','动量崩盘去风险激活 — 组合减半至现金。')}</div>`:''}`;
+}
+
+function renderRotAlerts(){
+  const el=document.getElementById('rot-alerts'); if(!el) return;
+  const evs=(ROT_ALERTS||[]).slice(0,14);
+  if(!evs.length){ el.innerHTML=`<div class="muted" style="font-size:12px">${L('No playbook changes recorded yet — the book is steady. Changes accrue here run over run.','尚无手册变化记录 — 组合稳定。变化将逐次累积于此。')}</div>`; return; }
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end"><a href="alerts.html" class="muted" style="font-size:11px;text-decoration:underline">${L('Alert Center →','警报中心 →')}</a></div>`+
+    evs.map(e=>`<div class="palert"><span class="pdt">${esc((e.ts||'').slice(0,10))}</span><span class="sev-${esc(e.severity)}">${L(esc(e.headline),esc(e.headline_zh||e.headline))}</span></div>`).join('');
+}
+(function(){ function go(){ renderEntries(); renderRiskTime(); renderRotAlerts(); }
+  if(document.readyState!=='loading') go(); else document.addEventListener('DOMContentLoaded',go); })();
+</script>
 <script src="ai_desk_thematic.js"></script>
 <script src="theme.js"></script>
 </body>
