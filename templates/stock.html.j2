@@ -1034,8 +1034,8 @@
         (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
         (pct == null ? '—' : pct) + '</span></div>';
     }).join('');
-    var cau = (c.cautions || []).map(function (x) {
-      return '<span class="ccau">⚠ ' + esc(x) + '</span>'; }).join('');
+    var cau = (c.cautions || []).map(function (x, i) {
+      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
     // EDGE basis — which legs are firing + how strong, each tagged validated / literature /
     // context / screen, so a user (and the AI layer) sees WHY the edge score is what it is.
     var TIER_C = { validated: 'var(--up)', literature: 'var(--g-cold)',

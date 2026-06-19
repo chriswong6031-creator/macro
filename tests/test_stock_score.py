@@ -65,6 +65,16 @@ def test_parabolic_penalised_and_not_chased():
     assert any("parabolic" in c for c in p["cautions"])
 
 
+def test_cautions_are_bilingual():
+    # the dashboards render cautions as l-en/l-zh spans, so cautions_zh must run
+    # parallel to cautions and carry real Chinese (not the English fallback).
+    rec = _rec(ext={"grade": "parabolic", "ext_z": 2.6}, tech={"off_52w_high_pct": -1.0, "rsi14": 82.0})
+    p = ss.conviction_profile(rec, "US")
+    assert p["cautions"], "expected at least one caution for the parabolic case"
+    assert len(p["cautions_zh"]) == len(p["cautions"])
+    assert all(z and z != en for en, z in zip(p["cautions"], p["cautions_zh"]))
+
+
 def test_parabolic_entry_axis_below_intrend():
     base = ss.conviction_profile(_rec(), "US")["axes"]["entry"]["z"]
     para = ss.conviction_profile(_rec(ext={"grade": "parabolic", "ext_z": 2.6}), "US")["axes"]["entry"]["z"]
