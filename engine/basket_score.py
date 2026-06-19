@@ -226,7 +226,7 @@ def act_now_stocks(members: list, theme: dict) -> dict:
 
 
 _BREADTH_DIR = {"us": "breadth", "china": "china_breadth",
-                "hk": "hk_breadth", "canada": "canada_breadth"}
+                "hk": "hk_breadth", "canada": "canada_breadth", "intl": "intl_breadth"}
 
 
 def market_concentration(region: str = "us") -> dict:

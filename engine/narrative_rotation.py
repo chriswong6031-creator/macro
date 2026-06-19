@@ -96,6 +96,18 @@ def _region_cfg(region: str) -> dict | None:
                 "group": "canada", "bench_default": BENCHMARK_DEFAULT, "page": "allocation_canada.html",
                 "phase0_file": "thematic_rotation_phase0_canada.json", "phase0_fallback": None,
                 "membership": _membership, "closes": _closes, "extras": None}
+    if region == "intl":
+        # International (developed ex-US + India). Cross-country universe → the benchmark is a
+        # synthetic cap-weighted composite (data/intl/_INTLC.parquet), refreshed by
+        # engine.baskets_intl.refresh_composite() before the desk computes. No per-country macro
+        # regime snapshot exists → _macro_context degrades to neutral (the macro leg ~0 and the
+        # trend/breadth/impulse/crowding legs carry the score).
+        from engine.baskets_intl import BENCHMARK_DEFAULT, _closes, _membership
+        return {"id": "intl", "market_en": "International", "market_zh": "国际",
+                "bench_label": "Intl ex-US", "bench_label_zh": "国际(除美)",
+                "group": "intl", "bench_default": BENCHMARK_DEFAULT, "page": "baskets_intl.html",
+                "phase0_file": "thematic_rotation_phase0.json", "phase0_fallback": "thematic_rotation_phase0.json",
+                "membership": _membership, "closes": _closes, "extras": None}
     return None
 
 
