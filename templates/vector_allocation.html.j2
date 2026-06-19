@@ -12,9 +12,11 @@
 <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
 <style>
 :root{
-  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.r3}}; --ink:{{C.ink}};
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --r2:{{C.r2}}; --r3:{{C.bear}}; --ink:{{C.ink}};
   --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
+  --bull:var(--blue); --bull-soft:{{C.bull_soft}}; --bear:{{C.bear}}; --bear-soft:{{C.bear_soft}};
+  --warn:{{C.warn}}; --neutral:var(--muted);
 }
 *{box-sizing:border-box}
 html:not([data-lang="zh"]) .l-zh{display:none}
@@ -44,7 +46,7 @@ html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
 html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
 html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
 .nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r3:{{C.bear_dk}};--bear:{{C.bear_dk}};--bear-soft:#3a1c1c;--bull-soft:#14233f}
 .theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
 html[data-theme="dark"] .theme-switch{background:#222732}
 .theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
@@ -84,6 +86,27 @@ html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#
 .score .v{font-size:19px;font-weight:800;color:var(--ink)}
 .chip{display:inline-block;padding:4px 11px;border-radius:9px;font-weight:700;font-size:13px}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+/* allocation-desk decision hero */
+.reco-k{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.deck.t-bull{background:linear-gradient(120% 140% at 0 0,var(--bull-soft),var(--card) 60%)}
+.deck.t-bear{background:linear-gradient(120% 140% at 0 0,var(--bear-soft),var(--card) 60%)}
+.deck-act{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.08;margin:6px 0 8px}
+.deck-act.t-bull{color:var(--bull)} .deck-act.t-bear{color:var(--bear)} .deck-act.t-neutral{color:var(--ink)}
+.deck-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.deck-conv{font-size:11px;font-weight:800;padding:2px 9px;border-radius:7px;letter-spacing:.03em}
+.conv-high{background:var(--bull);color:#fff} .conv-high.bear{background:var(--bear)} .conv-moderate{background:var(--warn);color:#fff} .conv-low{background:var(--grid);color:var(--muted)}
+.exp-band{font-size:24px;font-weight:800;color:var(--ink);margin:8px 0 6px}
+.exp-track{position:relative;height:12px;border-radius:7px;background:var(--grid)}
+.exp-fill{position:absolute;top:0;bottom:0;border-radius:7px;background:color-mix(in srgb,var(--bull) 55%,var(--grid))}
+.exp-fill.t-bear{background:color-mix(in srgb,var(--bear) 50%,var(--grid))}
+.exp-kelly{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:2px}
+.exp-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:4px}
+.deck-risk{font-size:12.5px;color:var(--bear);background:var(--bear-soft);border-radius:9px;padding:8px 11px;margin-top:12px;line-height:1.45}
+.rchip{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:8px;background:var(--bg);border:1px solid var(--grid);color:var(--text)}
+html[data-theme="dark"] .rchip{background:var(--grid)}
+.rchip i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.rchip i.bull{background:var(--bull)} .rchip i.bear{background:var(--bear)} .rchip i.neutral{background:var(--muted)}
+.kx{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-top:1px solid var(--grid)} .kx b{color:var(--ink)}
 @media(max-width:700px){
   .topbar{flex-wrap:wrap;row-gap:10px;padding:14px 0 12px}
 }
@@ -109,6 +132,63 @@ html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#
   <div class="section-title">{{ t('Allocation Strategy · in depth','仓位策略 · 深度') }}</div>
   <div class="h1">{{ t('How much Bitcoin — and Ethereum — to hold right now','当前应配置多少比特币 — 以及以太坊') }}</div>
   <div class="sub" style="margin-bottom:18px">{{ t('As of','截至') }} {{ as_of }} · BTC {{ '$%s'|format('{:,.0f}'.format(price)) }}</div>
+
+  <!-- ===== ALLOCATION DESK · the decision (shared with the Vector command center) ===== -->
+  {% if rec and rec.ok %}
+  {% set rt = rec.tone %}{% set L = rec.levels %}
+  <div class="grid cols-2">
+    <div class="card deck t-{{ rt }}">
+      <div class="reco-k">▶ {{ t('Recommendation · strategic','建议 · 战略') }}{% if master and master.ok %} · {{ t('Master Signal','主信号') }} {{ '%+d'|format(master.score) }} ({{ t(master.band, master.band_zh) }}){% endif %}</div>
+      <div class="deck-act t-{{ rt }}">{{ t(rec.action, rec.action_zh) }}</div>
+      <div class="deck-meta">
+        <span class="deck-conv {{ rt }} conv-{{ rec.conviction|lower }}">{{ t(rec.conviction ~ ' conviction', rec.conviction ~ ' 信心') }}</span>
+        <span>· {{ t(rec.basis_en, rec.basis_zh) }}</span>
+      </div>
+      <div class="exp-band">{{ t('Target BTC exposure','目标 BTC 仓位') }} {{ rec.exposure_lo }}–{{ rec.exposure_hi }}%</div>
+      <div class="exp-track">
+        <div class="exp-fill {{ 't-bear' if rt=='bear' else '' }}" style="left:{{ rec.exposure_lo }}%;width:{{ rec.exposure_hi - rec.exposure_lo }}%"></div>
+        {% if rec.kelly_pct is not none %}<div class="exp-kelly" style="left:{{ rec.kelly_pct }}%"></div>{% endif %}
+      </div>
+      <div class="exp-scale"><span>0% {{ t('cash','现金') }}</span><span>{{ t('Kelly','Kelly') }} {{ rec.kelly_pct }}%</span><span>100% {{ t('BTC','BTC') }}</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+        {% for d in rec.rationale %}<span class="rchip"><i class="{{ d.tone }}"></i>{{ t(d.label_en, d.label_zh) }} · {{ t(d.state_en, d.state_zh) }}</span>{% endfor %}
+      </div>
+      {% if rec.key_risk_en %}<div class="deck-risk">⚠ {{ t(rec.key_risk_en, rec.key_risk_zh) }}</div>{% endif %}
+    </div>
+    <div class="card">
+      <h3>{{ t('How much — risk-budgeted Kelly','配置多少 — 风险预算 Kelly') }}</h3>
+      {% if sizing %}
+      <div style="font-size:30px;font-weight:800;color:{{ 'var(--bull)' if sizing.size_pct>=40 else 'var(--bear)' }}">{{ sizing.size_pct }}%<span class="sub" style="font-size:13px;font-weight:600"> {{ t('of the BTC sleeve','BTC 仓位') }}</span></div>
+      <div class="kx"><span>{{ t('Regime edge (90d)','格局优势（90天）') }}</span><b style="color:{{ 'var(--bull)' if sizing.edge_90>=0 else 'var(--bear)' }}">{{ '%+0.0f'|format(sizing.edge_90) }}%</b></div>
+      <div class="kx"><span>{{ t('Volatility (90d σ)','波动率（90天 σ）') }}</span><b>{{ sizing.vol_90 }}%</b></div>
+      <div class="kx"><span>{{ t('Worst-case 90d dip (p05)','极端 90 天回撤（p05）') }}</span><b style="color:var(--bear)">{{ sizing.tail_90 }}%</b></div>
+      <div class="kx"><span>{{ t('Binding constraint','约束因素') }}</span><b>{{ t('drawdown cap','回撤上限') if sizing.binding=='tail' else t('regime edge','格局优势') }}</b></div>
+      <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Half-Kelly on the calibrated 90-day regime edge, CAPPED so the worst-case 90d dip stays inside the drawdown budget. Direction is a coin-flip, so the edge is the regime, not the week.','基于已校准的 90 天格局优势的半 Kelly，并设上限使极端 90 天回撤不超过回撤预算。方向接近抛硬币，故优势来自格局而非本周。') }}</div>
+      {% else %}<div class="sub faint">{{ t('Sizing unavailable (insufficient regime history).','无法定仓（格局历史不足）。') }}</div>{% endif %}
+      {% if catalyst and catalyst.imminent %}<div class="deck-risk" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--card))">⚠ {{ t('Next macro binary:','下一宏观二元事件：') }} <b>{{ td(catalyst.next_event) }}</b> {{ t('in','还有') }} {{ catalyst.days }} {{ t('days','天') }} — {{ t('don\'t size up into it.','勿在此前加仓。') }}</div>{% endif %}
+    </div>
+  </div>
+
+  {# forward cones strip #}
+  {% if cones and cones.ok and cones.horizons %}
+  <div class="card" style="margin-top:18px">
+    <h3 style="margin-bottom:6px">{{ t('Forward outlook · regime-conditioned','前瞻展望 · 按格局') }} <span class="faint" style="font-size:12px;font-weight:600">{{ cones.regime or '' }}</span></h3>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <tr style="color:var(--muted);font-size:11px;text-transform:uppercase"><td style="padding:5px 4px">{{ t('Horizon','周期') }}</td><td style="text-align:right">p25</td><td style="text-align:right">{{ t('median','中位') }}</td><td style="text-align:right">p75</td><td style="text-align:right">P↑</td><td style="text-align:right">{{ t('avg dip','常见回撤') }}</td></tr>
+      {% for k in ['7d','30d','90d'] %}{% set h = cones.horizons.get(k) %}{% if h and h.p50 is not none %}
+      <tr style="border-top:1px solid var(--grid)"{% if h.thin %} style="opacity:.6"{% endif %}>
+        <td style="padding:7px 4px;font-weight:700;color:var(--ink)">{{ k }}{% if h.thin %} <span class="faint" style="font-weight:400">{{ t('thin','样本少') }}</span>{% endif %}</td>
+        <td style="text-align:right;color:var(--bear)">{{ '%+0.0f'|format(h.p25) }}%</td>
+        <td style="text-align:right;color:{{ 'var(--bull)' if h.p50>=0 else 'var(--bear)' }};font-weight:700">{{ '%+0.0f'|format(h.p50) }}%</td>
+        <td style="text-align:right;color:var(--bull)">{{ '%+0.0f'|format(h.p75) }}%</td>
+        <td style="text-align:right"><b style="color:{{ 'var(--muted)' if h.thin else ('var(--bull)' if h.p_up>=h.base_up else 'var(--bear)') }}">{{ (h.p_up*100)|round|int }}%</b> <span class="faint">/ {{ (h.base_up*100)|round|int }}%</span></td>
+        <td style="text-align:right;color:var(--bear)">{{ h.dd_avg }}%</td>
+      </tr>{% endif %}{% endfor %}
+    </table>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('Empirical forward-return distribution on days that shared the current regime (zero fitted weights). P↑ vs the all-history base rate. Drawdown leads tactically; direction is a call only at the measured extremes.','历史上处于当前格局之日的实测前瞻收益分布（无拟合权重）。P↑ 对比全样本基准。战术上以回撤为先；方向仅在实测极值处才作判断。') }}</div>
+  </div>
+  {% endif %}
+  {% endif %}
 
   <!-- ===== recommended split ===== -->
   <div class="grid cols-2">
