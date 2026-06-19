@@ -225,13 +225,18 @@ def act_now_stocks(members: list, theme: dict) -> dict:
     return {"status": "ok", "buys": buys[:12]}
 
 
-def market_concentration() -> dict:
-    """Broad-market narrowness from the S&P breadth tape (the user's 'market is narrow now').
+_BREADTH_DIR = {"us": "breadth", "china": "china_breadth",
+                "hk": "hk_breadth", "canada": "canada_breadth"}
 
-    Daily + 3-day + weekly + monthly advance-decline ratio, % above 50/200d, new-hi/lo, and
-    a broad/narrowing/narrow verdict. Read-only over data/breadth/breadth.parquet; {} on miss."""
+
+def market_concentration(region: str = "us") -> dict:
+    """Broad-market narrowness from the region's breadth tape (the user's 'market is narrow now').
+
+    Daily + 3-day + weekly + monthly advance-decline ratio, % above 50/200d, new-hi/lo, and a
+    broad/narrowing/narrow verdict. Read-only over data/<region>_breadth/breadth.parquet; {} on
+    miss (the section then hides)."""
     try:
-        b = pd.read_parquet(config.data_dir() / "breadth" / "breadth.parquet")
+        b = pd.read_parquet(config.data_dir() / _BREADTH_DIR.get(region, "breadth") / "breadth.parquet")
     except Exception:  # noqa: BLE001
         return {}
     if b.empty:
