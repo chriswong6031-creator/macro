@@ -170,9 +170,11 @@ def main() -> int:
     for m in manifest:
         if m["grp"] not in groups:
             groups.append(m["grp"])
+    keys = {m["key"] for m in manifest}
+    default_key = "SPY" if "SPY" in keys else manifest[0]["key"]
     html = env.get_template("gex.html.j2").render(
         manifest=manifest, groups=groups, built=built,
-        default_key=manifest[0]["key"], manifest_json=json.dumps(manifest, default=float))
+        default_key=default_key, manifest_json=json.dumps(manifest, default=float))
     (site / "gex.html").write_text(html)
     log.info("wrote %s/gex.html + %d per-symbol payloads (%s)",
              site, len(manifest), ", ".join(m["key"] for m in manifest))

@@ -193,7 +193,7 @@
         '<span class="heronum"><span class="muted sm">' + lz("Exp. daily move", "预期单日波动") + '</span> <b>±' + pctU(em.daily_pct, 2) + "</b> <span class='muted sm'>±" + price(em.daily_abs) + "</span></span>" +
         '<span class="heronum"><span class="muted sm">' + lz("Front-expiry move", "近月预期波动") + "</span> <b>" + frontMove + "</b></span>" +
         '<span id="gx-spark"></span>' +
-      "</div>" + rulerHTML() + "</div>";
+      "</div>" + readLine() + rulerHTML() + "</div>";
 
     var charts =
       '<div class="grid2">' +
@@ -240,7 +240,31 @@
     return '<span class="help">?<span class="tip">' + esc(txt) + "</span></span>";
   }
 
-  // ---- key-levels ruler ----------------------------------------------------
+  // ---- plain-English read --------------------------------------------------
+  function readLine() {
+    var s = cur.summary, em = cur.expected_move; if (!s) return "";
+    var parts = [];
+    if (s.regime === "short") parts.push(lz("<b>Short gamma</b> — dealers hedge <i>with</i> the move, so it tends to <b>amplify</b> (trending, higher realized vol)", "<b>空头Gamma</b> — 做市商<i>顺势</i>对冲，走势倾向<b>放大</b>（趋势化、已实现波动更高）"));
+    else if (s.regime === "long") parts.push(lz("<b>Long gamma</b> — dealers hedge <i>against</i> the move, so it tends to be <b>dampened</b> (pinning / mean-reversion, lower realized vol)", "<b>多头Gamma</b> — 做市商<i>逆势</i>对冲，走势倾向<b>被抑制</b>（磁吸/均值回归、已实现波动更低）"));
+    else parts.push(lz("<b>Neutral gamma</b> — no strong dealer-hedging tilt", "<b>中性Gamma</b> — 做市商对冲无明显倾向"));
+    if (s.gamma_flip != null && s.dist_to_flip_pct != null) {
+      var d = Math.abs(s.dist_to_flip_pct).toFixed(1);
+      parts.push(lz("spot " + price(s.spot) + " is " + d + "% " + (s.dist_to_flip_pct >= 0 ? "above" : "below") + " the " + price(s.gamma_flip) + " flip", "现价 " + price(s.spot) + " 位于 " + price(s.gamma_flip) + " 翻转" + (s.dist_to_flip_pct >= 0 ? "上方" : "下方") + " " + d + "%"));
+    }
+    var w = [];
+    if (s.call_wall != null) w.push(lz("the <b>" + price(s.call_wall) + "</b> call wall caps upside", "<b>" + price(s.call_wall) + "</b> 看涨墙压制上行"));
+    if (s.put_wall != null) w.push(lz("the <b>" + price(s.put_wall) + "</b> put wall cushions downside", "<b>" + price(s.put_wall) + "</b> 看跌墙缓冲下行"));
+    if (s.max_pain != null) w.push(lz(price(s.max_pain) + " max-pain", price(s.max_pain) + " 最大痛点"));
+    if (w.length) parts.push(w.join(lz("; ", "；")));
+    if (em && em.daily_pct != null) {
+      var mv = lz("options price a <b>±" + em.daily_pct.toFixed(2) + "%/day</b> move", "期权定价 <b>±" + em.daily_pct.toFixed(2) + "%/日</b> 波动");
+      if (em.front) mv += lz(" (±" + price(em.front.abs) + " by " + em.front.expiry + ")", "（至 " + em.front.expiry + " ±" + price(em.front.abs) + "）");
+      parts.push(mv);
+    }
+    return '<div class="gx-read">' + parts.join(lz(". ", "。")) + (lang() === "zh" ? "。" : ".") + "</div>";
+  }
+
+  // ---- key-levels ruler (two label lanes so close markers don't collide) ----
   function rulerHTML() {
     var s = cur.summary;
     var pts = [
@@ -253,11 +277,18 @@
     if (pts.length < 2) return "";
     var vals = pts.map(function (p) { return p.v; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-    var pad = (hi - lo) * 0.12 || 1; lo -= pad; hi += pad;
-    function x(v) { return ((v - lo) / (hi - lo) * 100).toFixed(1); }
+    var pad = (hi - lo) * 0.10 || 1; lo -= pad; hi += pad;
+    function xp(v) { return (v - lo) / (hi - lo) * 100; }
+    pts.sort(function (a, b) { return a.v - b.v; });
+    var lastX = [-99, -99], GAP = 11;       // assign 2 lanes by horizontal proximity
+    pts.forEach(function (p) {
+      var px = xp(p.v);
+      var lane = (px - lastX[0] >= GAP) ? 0 : (px - lastX[1] >= GAP) ? 1 : (lastX[0] <= lastX[1] ? 0 : 1);
+      p.lane = lane; lastX[lane] = px;
+    });
     var mk = pts.map(function (p) {
-      return '<div class="mk ' + p.cls + '" style="left:' + x(p.v) + '%">' +
-        '<span class="val">' + price(p.v) + "</span><i></i><span class='lab'>" + esc(p.lab) + "</span></div>";
+      return '<div class="mk ' + p.cls + " lane" + p.lane + '" style="left:' + xp(p.v).toFixed(2) + '%">' +
+        '<i></i><span class="lbl"><span class="val">' + price(p.v) + '</span><span class="lab">' + esc(p.lab) + "</span></span></div>";
     }).join("");
     return '<div class="ruler"><div class="axis"></div>' + mk + "</div>";
   }
@@ -322,17 +353,26 @@
       if (v.R > 0) svg += '<rect x="' + x0 + '" y="' + (yy - bh / 2) + '" width="' + (v.R * sc) + '" height="' + bh + '" fill="' + up + '" opacity="0.82"><title>' + r.K + "</title></rect>";
       if (v.L > 0) svg += '<rect x="' + (x0 - v.L * sc) + '" y="' + (yy - bh / 2) + '" width="' + (v.L * sc) + '" height="' + bh + '" fill="' + down + '" opacity="0.82"><title>' + r.K + "</title></rect>";
     });
-    // level lines
-    function lvl(v, color, label) {
-      if (v == null) return "";
-      var yy = y(v);
-      return '<line x1="' + mL + '" y1="' + yy + '" x2="' + (W - mR) + '" y2="' + yy + '" stroke="' + color + '" stroke-width="1.3" stroke-dasharray="4 3"/>' +
-        '<text x="' + (W - mR + 5) + '" y="' + (yy + 3) + '" font-size="10" fill="' + color + '">' + label + "</text>";
-    }
-    svg += lvl(s.call_wall, up, lz("call wall", "看涨墙"));
-    svg += lvl(s.put_wall, down, lz("put wall", "看跌墙"));
-    svg += lvl(s.gamma_flip, info, lz("flip", "翻转"));
-    svg += lvl(s.spot, text, lz("spot", "现价"));
+    // level lines (lines at true y; right-edge labels dodged so close levels don't overlap)
+    var levels = [
+      { v: s.call_wall, c: up, t: lz("call wall", "看涨墙") },
+      { v: s.spot, c: text, t: lz("spot", "现价") },
+      { v: s.gamma_flip, c: info, t: lz("flip", "翻转") },
+      { v: s.put_wall, c: down, t: lz("put wall", "看跌墙") }
+    ].filter(function (L) { return L.v != null; }).map(function (L) { return { c: L.c, t: L.t, y: y(L.v) }; });
+    levels.forEach(function (L) {
+      svg += '<line x1="' + mL + '" y1="' + L.y.toFixed(1) + '" x2="' + (W - mR) + '" y2="' + L.y.toFixed(1) + '" stroke="' + L.c + '" stroke-width="1.3" stroke-dasharray="4 3"/>';
+    });
+    var sortedL = levels.slice().sort(function (a, b) { return a.y - b.y; });
+    var GAPL = 13, prevLy = -1e9;
+    sortedL.forEach(function (L) { L.ly = Math.max(L.y, prevLy + GAPL); prevLy = L.ly; });
+    var overflow = sortedL.length ? sortedL[sortedL.length - 1].ly - (H - 4) : 0;
+    if (overflow > 0) sortedL.forEach(function (L) { L.ly -= overflow; });
+    sortedL.forEach(function (L) {
+      if (Math.abs(L.ly - L.y) > 2)
+        svg += '<line x1="' + (W - mR) + '" y1="' + L.y.toFixed(1) + '" x2="' + (W - mR + 4) + '" y2="' + L.ly.toFixed(1) + '" stroke="' + L.c + '" stroke-width="0.7" opacity="0.55"/>';
+      svg += '<text x="' + (W - mR + 5) + '" y="' + (L.ly + 3).toFixed(1) + '" font-size="10" fill="' + L.c + '">' + L.t + "</text>";
+    });
     svg += "</svg>";
     host.innerHTML = svg;
   }
@@ -385,7 +425,8 @@
     }
     if (p.flip != null) {
       svg += '<line x1="' + X(p.flip) + '" y1="' + mT + '" x2="' + X(p.flip) + '" y2="' + (H - mB) + '" stroke="' + info + '" stroke-width="1.2" stroke-dasharray="4 3"/>';
-      svg += '<text x="' + X(p.flip) + '" y="' + (H - mB + 14) + '" text-anchor="middle" font-size="10" fill="' + info + '">' + lz("flip", "翻转") + " " + price(p.flip) + "</text>";
+      // flip label stacked under the spot label (top) so the two don't collide when close
+      svg += '<text x="' + X(p.flip) + '" y="' + (mT + 22) + '" text-anchor="middle" font-size="10" fill="' + info + '">' + lz("flip", "翻转") + " " + price(p.flip) + "</text>";
     }
     // x ticks
     for (var j = 0; j <= 4; j++) {
