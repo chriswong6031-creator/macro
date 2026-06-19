@@ -42,7 +42,7 @@ DEFAULTS = dict(
     # the per-strike "walls" ladder (aggregated across expiries within the horizon)
     wall_window_pct=0.12, wall_max_strikes=40, max_expiry_days=365,
     # the strike × expiry surface
-    heat_window_pct=0.08, heat_max_strikes=22, heat_max_expiries=8,
+    heat_window_pct=0.10, heat_max_strikes=26, heat_max_expiries=12,
     # the volatility smile (front expiry) and the IV term structure
     smile_window_pct=0.15, term_max_expiries=12,
     trading_days=252.0,
