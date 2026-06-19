@@ -309,6 +309,18 @@ jobs:
           cat /tmp/aidesk_score.log
           [ "$rc" -ne 0 ] && echo "::warning title=ai_desk_scorer::rc=$rc (non-fatal)"
           exit 0
+      - name: Demand-chain ledger (Demand Desk Phase 2; deterministic, resilient)
+        # Appends falsifiable demand-chain divergence theses (data/demand_chain/theses.jsonl)
+        # and scores past-due ones vs SPY into data/demand_chain/{scored.jsonl,track_record.json},
+        # which the Demand Context panel reads back as its accountability line. Rule-derived
+        # (no API key) — turns the "customer capex ahead of consensus" read into a scored
+        # forward record. Reuses the ai_desk_scorer predicate evaluators. Never aborts.
+        run: |
+          set +e
+          python -m engine.demand_ledger > /tmp/demand_ledger.log 2>&1; rc=$?
+          cat /tmp/demand_ledger.log
+          [ "$rc" -ne 0 ] && echo "::warning title=demand_ledger::rc=$rc (non-fatal)"
+          exit 0
       - name: AI desk (accountable analyst layer; context-only, resilient)
         # Runs right after master_brain (shares the keyed LLM step family). Reads the
         # TRUST-GRADED detectors — site/basketdata/flow.json (from build_baskets) +

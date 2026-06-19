@@ -1,121 +1,110 @@
-"""Tests for engine/demand_chain.py — the customer-capex demand-chain L2 leg."""
+"""Tests for engine/demand_chain.py — the multi-chain customer-demand L2 leg."""
 from __future__ import annotations
 
 from engine import demand_chain as dc
 
 
-# capex_by_ticker maps ticker -> {fy: capex_usd}. Use 5 spenders so coverage holds.
-def _spenders(per_year):
-    """per_year: {fy: total_usd}; split evenly across 5 synthetic spenders."""
-    out = {}
-    for i, t in enumerate(["MSFT", "GOOGL", "AMZN", "META", "ORCL"]):
-        out[t] = {fy: tot / 5.0 for fy, tot in per_year.items()}
-    return out
+def _ai(per_year):
+    """AI capex spenders: split each year's total across the 5 hyperscalers."""
+    rows = []
+    for t in ["MSFT", "GOOGL", "AMZN", "META", "ORCL"]:
+        for fy, tot in per_year.items():
+            rows.append({"ticker": t, "fy": fy, "capex": tot / 5.0, "revenue": None})
+    return rows
 
 
-def test_signal_accelerating():
-    # YoY growth itself rising: 20% -> 60% => accelerating
-    sig = dc.compute_capex_signal(_spenders({2023: 100e9, 2024: 120e9, 2025: 192e9}))
-    assert sig is not None
-    assert sig["fy_latest"] == 2025
-    assert sig["capex_latest_bn"] == 192.0
-    assert sig["yoy_pct"] == 60.0
-    assert sig["trend"] == "accelerating"
-    assert sig["series"][0] == [2023, 100.0]
+def _housing(per_year):
+    """Homebuilder revenue: split across the 6 builders."""
+    rows = []
+    for t in ["DHI", "LEN", "PHM", "NVR", "TOL", "KBH"]:
+        for fy, tot in per_year.items():
+            rows.append({"ticker": t, "fy": fy, "capex": None, "revenue": tot / 6.0})
+    return rows
 
 
-def test_signal_expanding_when_growth_steady_or_slowing_slightly():
-    # 60% then 58% — still strong, slight slow but within tolerance => expanding
-    sig = dc.compute_capex_signal(_spenders({2023: 100e9, 2024: 160e9, 2025: 252.8e9}))
-    assert sig["trend"] == "expanding"
+def test_compute_signals_ai_accelerating():
+    sig = dc.compute_signals(_ai({2023: 100e9, 2024: 120e9, 2025: 192e9}))
+    assert "ai_datacenter" in sig
+    s = sig["ai_datacenter"]
+    assert s["trend"] == "accelerating" and s["yoy_pct"] == 60.0
+    assert s["total_latest_bn"] == 192.0 and s["chain_key"] == "ai_datacenter"
 
 
-def test_signal_peaking_when_growth_collapses_but_positive():
-    # 60% then 8% => still growing but decelerating hard => peaking
-    sig = dc.compute_capex_signal(_spenders({2023: 100e9, 2024: 160e9, 2025: 172.8e9}))
-    assert sig["trend"] == "peaking"
+def test_trend_labels():
+    assert dc.compute_signals(_ai({2023: 100e9, 2024: 160e9, 2025: 252.8e9}))["ai_datacenter"]["trend"] == "expanding"
+    assert dc.compute_signals(_ai({2023: 100e9, 2024: 160e9, 2025: 172.8e9}))["ai_datacenter"]["trend"] == "peaking"
+    assert dc.compute_signals(_ai({2023: 200e9, 2024: 210e9, 2025: 150e9}))["ai_datacenter"]["trend"] == "contracting"
 
 
-def test_signal_contracting():
-    sig = dc.compute_capex_signal(_spenders({2023: 200e9, 2024: 210e9, 2025: 150e9}))
-    assert sig["trend"] == "contracting"
+def test_compute_signals_housing_revenue():
+    sig = dc.compute_signals(_housing({2023: 90e9, 2024: 100e9, 2025: 115e9}))
+    assert "housing" in sig
+    assert sig["housing"]["total_latest_bn"] == 115.0
 
 
-def test_signal_none_when_insufficient_years():
-    assert dc.compute_capex_signal(_spenders({2025: 100e9})) is None
+def test_min_cover_gating():
+    # only 2 AI spenders report -> below min_cover (4)
+    thin = [{"ticker": "MSFT", "fy": y, "capex": 50e9, "revenue": None} for y in (2024, 2025)]
+    thin += [{"ticker": "AMZN", "fy": y, "capex": 50e9, "revenue": None} for y in (2024, 2025)]
+    assert "ai_datacenter" not in dc.compute_signals(thin)
 
 
-def test_signal_none_when_coverage_too_thin():
-    # only 2 spenders report -> below _MIN_COVER (4) -> no comparable years
-    thin = {"MSFT": {2024: 50e9, 2025: 80e9}, "AMZN": {2024: 50e9, 2025: 80e9}}
-    assert dc.compute_capex_signal(thin) is None
-
-
-def test_alphabet_alias_counted_once_via_builder_contract():
-    # The builder resolves Alphabet to a single alias; if both are passed the
-    # aggregate would double-count. We document the contract: builder must pass
-    # one alias per economic spender. Here we confirm n_spenders reflects keys.
-    sig = dc.compute_capex_signal(_spenders({2024: 100e9, 2025: 150e9}))
-    assert sig["n_spenders"] == 5
+def test_both_chains_coexist():
+    rows = _ai({2023: 100e9, 2024: 130e9, 2025: 200e9}) + _housing({2023: 90e9, 2024: 100e9, 2025: 95e9})
+    sig = dc.compute_signals(rows)
+    assert set(sig) == {"ai_datacenter", "housing"}
 
 
 SEMI = [{"slug": "ai_semiconductors", "name": "AI Semiconductors"}]
-WFE = [{"slug": "semicap_equipment", "name": "Semiconductor Equipment (WFE)"}]
-POWER = [{"slug": "nuclear_power"}]
-OFFCHAIN = [{"slug": "retail"}, {"slug": "housing"}]
+WFE = [{"slug": "ai_infra"}, {"slug": "semicap_equipment"}]
+HOUSE = [{"slug": "housing", "name": "Housing Chain"}]
+OFFCHAIN = [{"slug": "retail"}, {"slug": "housing_unrelated"}]
 
 
-def test_beneficiary_tier_precedence_compute_over_power():
-    bm = [{"slug": "nuclear_power"}, {"slug": "ai_semiconductors"}]
-    assert dc._beneficiary_tier(bm)["key"] == "compute"
+def _ai_sig():
+    return dc.compute_signals(_ai({2023: 100e9, 2024: 130e9, 2025: 200e9}))
 
 
-def test_beneficiary_tier_wfe_wins_over_ai_infra():
-    # AMAT/LRCX/KLAC sit in BOTH ai_infra and semicap_equipment — the more accurate
-    # "one step back" WFE tier must win.
-    bm = [{"slug": "ai_infra"}, {"slug": "semicap_equipment"}]
-    assert dc._beneficiary_tier(bm)["key"] == "wfe"
+def test_ai_beneficiary_compute_tier():
+    r = dc.chain_read(_ai_sig(), SEMI, None, ticker="NVDA")
+    assert r is not None and r["chain_key"] == "ai_datacenter"
+    assert r["tier"] == "compute" and r["leading"] is True
+    assert r["divergence"] == "signal_only"          # no revisions
+
+
+def test_wfe_precedence_over_ai_infra():
+    r = dc.chain_read(_ai_sig(), WFE, {"est_chg_90d": 8.0, "breadth": 0.7}, ticker="LRCX")
+    assert r["tier"] == "wfe" and r["divergence"] == "aligned"
+
+
+def test_ai_ahead_of_consensus():
+    r = dc.chain_read(_ai_sig(), SEMI, {"est_chg_90d": 0.2, "breadth": 0.0}, ticker="QCOM")
+    assert r["divergence"] == "ahead_of_consensus"
+    assert "AHEAD" in r["read"]["en"] or "ahead" in r["read"]["en"].lower()
+
+
+def test_ai_consensus_at_risk():
+    sig = dc.compute_signals(_ai({2023: 200e9, 2024: 210e9, 2025: 150e9}))
+    r = dc.chain_read(sig, SEMI, {"est_chg_90d": 6.0, "breadth": 0.6}, ticker="NVDA")
+    assert r["trend"] == "contracting" and r["divergence"] == "consensus_at_risk"
 
 
 def test_non_beneficiary_returns_none():
-    sig = dc.compute_capex_signal(_spenders({2024: 100e9, 2025: 150e9}))
-    assert dc.chain_read(sig, OFFCHAIN, None) is None
-    assert dc.chain_read(sig, None, None) is None
+    assert dc.chain_read(_ai_sig(), OFFCHAIN, None, ticker="WMT") is None
+    assert dc.chain_read(_ai_sig(), None, None, ticker="WMT") is None
 
 
-def test_chain_read_signal_only_without_revisions():
-    sig = dc.compute_capex_signal(_spenders({2023: 100e9, 2024: 130e9, 2025: 200e9}))
-    r = dc.chain_read(sig, SEMI, None)
-    assert r is not None
-    assert r["divergence"] == "signal_only"
-    assert r["consensus_dir"] == "none"
-    assert r["tier"] == "compute"
-    assert "zh" in r["headline"] and r["headline"]["zh"]
-
-
-def test_chain_read_ahead_of_consensus():
-    sig = dc.compute_capex_signal(_spenders({2023: 100e9, 2024: 130e9, 2025: 200e9}))
-    # capex accelerating, consensus flat (no drift, flat breadth)
-    rev = {"est_chg_90d": 0.2, "breadth": 0.0}
-    r = dc.chain_read(sig, SEMI, rev)
-    assert r["divergence"] == "ahead_of_consensus"
-
-
-def test_chain_read_aligned_when_consensus_also_rising():
-    sig = dc.compute_capex_signal(_spenders({2023: 100e9, 2024: 130e9, 2025: 200e9}))
-    rev = {"est_chg_90d": 8.0, "breadth": 0.7}
-    r = dc.chain_read(sig, SEMI, rev)
-    assert r["divergence"] == "aligned"
-
-
-def test_chain_read_consensus_at_risk():
-    # capex contracting but consensus still rising
-    sig = dc.compute_capex_signal(_spenders({2023: 200e9, 2024: 210e9, 2025: 150e9}))
-    rev = {"est_chg_90d": 6.0, "breadth": 0.6}
-    r = dc.chain_read(sig, WFE, rev)
-    assert r["trend"] == "contracting"
-    assert r["divergence"] == "consensus_at_risk"
-    assert r["tier"] == "wfe"
+def test_housing_supplier_qualifies_builder_excluded():
+    sig = dc.compute_signals(_housing({2023: 90e9, 2024: 100e9, 2025: 115e9}))
+    # a supplier (BLDR) in the housing basket → qualifies, coincident & non-leading
+    sup = dc.chain_read(sig, HOUSE, None, ticker="BLDR")
+    assert sup is not None and sup["chain_key"] == "housing"
+    assert sup["leading"] is False and sup["tier"] == "products"
+    assert "end-market" in sup["caveat"]["en"].lower() or "coincident" in sup["caveat"]["en"].lower()
+    # a BUILDER (DHI) is the demand SOURCE, not a beneficiary → excluded
+    assert dc.chain_read(sig, HOUSE, None, ticker="DHI") is None
+    # housing requires a ticker to apply the supplier allowlist
+    assert dc.chain_read(sig, HOUSE, None, ticker=None) is None
 
 
 def test_consensus_dir_thresholds():
@@ -124,3 +113,10 @@ def test_consensus_dir_thresholds():
     assert dc._consensus_dir({"est_chg_90d": 0.0, "breadth": 0.0}) == "flat"
     assert dc._consensus_dir(None) == "none"
     assert dc._consensus_dir({}) == "none"
+
+
+def test_divergence_matrix():
+    assert dc._divergence("accelerating", "rising") == "aligned"
+    assert dc._divergence("accelerating", "flat") == "ahead_of_consensus"
+    assert dc._divergence("contracting", "rising") == "consensus_at_risk"
+    assert dc._divergence("accelerating", "none") == "signal_only"

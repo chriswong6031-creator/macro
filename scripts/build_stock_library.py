@@ -772,30 +772,31 @@ def main() -> int:
             log.warning("revisions latest.parquet unreadable (%s)", e)
     log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
              " · GATE GO → board ranks by EDGE" if gate_go else "")
-    # Customer-capex demand chain (engine/demand_chain) — the first L2 "independent
-    # observable" leg of the Demand Context panel: aggregate hyperscaler capex from
-    # the SPENDERS' own SEC filings is the forward-demand pool for the AI-infra chain.
-    # Computed ONCE here; attached per beneficiary name in the loop below. Display-only.
-    capex_signal = None
+    # Customer-demand chains (engine/demand_chain) — the L2 "independent observable"
+    # leg of the Demand Context panel: aggregate spender capex/revenue from OTHER
+    # companies' SEC filings is the forward-demand pool for each beneficiary cohort
+    # (AI capex → semis/infra; homebuilder revenue → building products). Computed
+    # ONCE here; attached per beneficiary name in the loop below. Display-only.
+    demand_signals: dict[str, dict] = {}
     _sp = config.data_dir() / "edgar" / "statements.parquet"
     if _sp.exists():
         try:
-            _st = pd.read_parquet(_sp)
-            capex_by_ticker: dict[str, dict[int, float]] = {}
-            for aliases in dchain.SPENDERS:
-                for a in aliases:                       # first alias with data wins (count once)
-                    g = _st[(_st["ticker"] == a) & _st["capex"].notna()]
-                    if len(g):
-                        capex_by_ticker[a] = {int(r.fy): float(r.capex) for r in g.itertuples()}
-                        break
-            capex_signal = dchain.compute_capex_signal(capex_by_ticker)
-            if capex_signal:
-                log.info("demand-chain: hyperscaler capex %s %+.0f%% YoY to ~$%.0fB (FY%d, n=%d)",
-                         capex_signal["trend"], capex_signal["yoy_pct"] or 0.0,
-                         capex_signal["capex_latest_bn"], capex_signal["fy_latest"],
-                         capex_signal["n_spenders"])
+            demand_signals = dchain.compute_signals(pd.read_parquet(_sp))
+            for ck, sg in demand_signals.items():
+                log.info("demand-chain[%s]: %s %+.0f%% YoY to ~$%.0fB (FY%d, n=%d)", ck,
+                         sg["trend"], sg["yoy_pct"] or 0.0, sg["total_latest_bn"],
+                         sg["fy_latest"], sg["n_spenders"])
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.warning("demand-chain capex signal skipped (%s)", e)
+            log.warning("demand-chain signals skipped (%s)", e)
+    # scored-ledger track record (engine/demand_ledger, prior build) for the panel's
+    # accountability line; absent on first run — degrade silently.
+    demand_track = None
+    _dtr = config.data_dir() / "demand_chain" / "track_record.json"
+    if _dtr.exists():
+        try:
+            demand_track = json.loads(_dtr.read_text())
+        except Exception:  # noqa: BLE001
+            demand_track = None
     index, cand, built, failed = [], [], 0, 0
     # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
@@ -914,9 +915,17 @@ def main() -> int:
             rec["baskets_membership"] = bsk_mem[ticker]
         if revision_raw.get(ticker):           # raw analyst-revision fields → Demand Context (L1 consensus)
             rec["revisions"] = revision_raw[ticker]
-        if capex_signal:                       # customer-capex demand chain → Demand Context (L2 variant)
-            dchread = dchain.chain_read(capex_signal, rec.get("baskets_membership"), rec.get("revisions"))
+        if demand_signals:                     # customer-demand chains → Demand Context (L2 variant)
+            dchread = dchain.chain_read(demand_signals, rec.get("baskets_membership"),
+                                        rec.get("revisions"), ticker=ticker)
             if dchread:
+                # attach the scored-ledger summary (leading chains only) for the
+                # panel's accountability line — global, same for every name
+                if dchread.get("leading") and demand_track:
+                    o = demand_track.get("overall") or {}
+                    dchread["ledger"] = {"scored": o.get("n"), "hits": o.get("hits"),
+                                         "hit_rate": o.get("hit_rate"), "open": demand_track.get("open"),
+                                         "since": demand_track.get("as_of")}
                 rec["demand_chain"] = dchread
         # ---- unified Conviction Profile (engine/stock_score) -----------------
         # The single block both the dashboard standout card AND this name's detail page
