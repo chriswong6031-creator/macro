@@ -70,6 +70,12 @@ jobs:
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # massive.com options-OI accrual (GEX foundation)
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)
           QUIVER_API_KEY: ${{ secrets.QUIVER_API_KEY }}     # Quiver alt-data suite (collectors/quiver.py); absent -> 'blocked', non-fatal
+          GRANTS_GOV_API_KEY: ${{ secrets.GRANTS_GOV_API_KEY }}  # Simpler Grants.gov pre-award FOA flow (collectors/grants_gov.py); free Login.gov key; absent -> 'blocked', non-fatal
+          FDA_API_KEY: ${{ secrets.FDA_API_KEY }}           # openFDA higher rate limit (collectors/openfda.py); OPTIONAL — keyless works at 1k/day
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}                 # Hugging Face higher rate limit (collectors/huggingface.py); OPTIONAL — anon tier suffices
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}   # Finnhub analyst/insider-MSPR/earnings trio (collectors/finnhub_altdata.py); free tier; FINNHUB_KEY also accepted
+          SAM_API_KEY: ${{ secrets.SAM_API_KEY }}           # SAM.gov pre-award solicitations (collectors/sam_gov.py); free key (entity reg); absent -> 'blocked', non-fatal
+          GITHUB_TOKEN: ${{ github.token }}                 # GitHub star velocity (collectors/github_repos.py); the auto-injected workflow token reads public-repo metadata at 1000/hr — no new secret needed
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           python -m scripts.collect

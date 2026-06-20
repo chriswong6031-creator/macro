@@ -75,3 +75,4 @@ admin/*-sa.json
 
 # dev-only fast-render view-model cache (scripts/render_macro_fast.py)
 data/_dev_macro_vm.pkl
+data/edgar/company_tickers.json

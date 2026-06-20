@@ -1,0 +1,25 @@
+{
+  "_note": "ClinicalTrials.gov lead-sponsor query term -> ticker (collectors/clinicaltrials.py). query.spons is a fuzzy text match, so a short distinctive term suffices. Only INDUSTRY-class sponsors are kept. Two signals: a new Phase-3 START (pipeline advancing) and a trial HALT (TERMINATED/SUSPENDED/WITHDRAWN — a risk flag, recorded but NOT scored into the bullish convergence weight). Mirrors the openFDA drug-maker universe; ADRs -> US ticker.",
+  "sponsors": {
+    "LLY": "Eli Lilly",
+    "NVO": "Novo Nordisk",
+    "PFE": "Pfizer",
+    "AMGN": "Amgen",
+    "AZN": "AstraZeneca",
+    "RHHBY": "Hoffmann-La Roche",
+    "MRK": "Merck Sharp",
+    "NVS": "Novartis Pharmaceuticals",
+    "SNY": "Sanofi",
+    "ABBV": "AbbVie",
+    "BMY": "Bristol-Myers Squibb",
+    "GILD": "Gilead Sciences",
+    "BIIB": "Biogen",
+    "VRTX": "Vertex Pharmaceuticals",
+    "REGN": "Regeneron Pharmaceuticals",
+    "GSK": "GlaxoSmithKline",
+    "VKTX": "Viking Therapeutics",
+    "GPCR": "Structure Therapeutics",
+    "ALT": "Altimmune",
+    "SRRK": "Scholar Rock"
+  }
+}
