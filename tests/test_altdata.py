@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 import math
+from datetime import date
 
 import pandas as pd
 import pytest
 
 from collectors import quiver
-from engine import altdata, altdata_alerts, altdata_signals
+from engine import altdata, altdata_alerts, altdata_ledger, altdata_signals
 from lib import config
 
 
@@ -164,3 +165,41 @@ def test_alerts_fire_on_enter_only(tmp_path, monkeypatch):
     bt2["tickers"]["NVDA"] = {"convergence_score": 3, "channels": ["13f_add", "darkpool_accum", "congress_buy"], "trump_linked": False}
     fired3 = altdata_alerts.rebuild(bt2)                       # score increase -> re-fires
     assert len(fired3) == 1 and "NVDA" in fired3[0]["headline"]
+
+
+# --------------------------------------------------------------- falsifiable ledger
+def test_ledger_logs_scorable_and_scores(tmp_path, monkeypatch):
+    import json
+    idx = pd.date_range("2026-01-01", "2026-05-01", freq="B")
+    n = len(idx)
+
+    def fake_closes(tk, root):  # WIN beats SPY; LOSE lags; PRIV has no price
+        if tk == "SPY":
+            return pd.Series([100 * (1 + 0.05 * i / n) for i in range(n)], index=idx)
+        if tk == "WIN":
+            return pd.Series([50 * (1 + 0.20 * i / n) for i in range(n)], index=idx)
+        if tk == "LOSE":
+            return pd.Series([50 * (1 - 0.15 * i / n) for i in range(n)], index=idx)
+        return None
+    # one patch covers build (via _level_asof) AND score (via the scorer's reads)
+    monkeypatch.setattr(altdata_ledger._desk, "_close_series", fake_closes)
+
+    bt = {"as_of": "2026-01-02", "tickers": {
+        "WIN": {"convergence_score": 2, "channels": ["congress_buy", "trump"], "trump_linked": True},
+        "LOSE": {"convergence_score": 2, "channels": ["insider_buy", "gov_contract"], "trump_linked": False},
+        "PRIV": {"convergence_score": 3, "channels": ["a", "b", "c"], "trump_linked": False},
+    }}
+    new = altdata_ledger.build_theses(bt, root=tmp_path, today=date(2026, 1, 2))
+    assert {r["ticker"] for r in new} == {"WIN", "LOSE"}       # PRIV unscorable -> skipped
+    assert all(r["lean"] == "overweight" and r["conviction"] == "low" for r in new)
+
+    # vintage dedupe — same day, windows still active -> nothing new
+    assert altdata_ledger.build_theses(bt, root=tmp_path, today=date(2026, 1, 2)) == []
+
+    # score once the window has elapsed (check_by ~2026-04-03; data runs to 2026-05-01)
+    track = altdata_ledger.score(root=tmp_path, today=date(2026, 5, 2))
+    assert track["scored_total"] == 2
+    scored = [json.loads(l) for l in (tmp_path / "data" / "altdata" / "scored.jsonl").read_text().splitlines()]
+    outcome = {r["id"].split("-")[-2]: r["outcome"] for r in scored}
+    assert outcome["WIN"] == "hit" and outcome["LOSE"] == "miss"
+    assert track["overall"]["hit_rate"] == 0.5

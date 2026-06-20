@@ -87,6 +87,30 @@
 </div>
 {% endif %}
 
+{# ---------------- Falsifiable ledger: convergence scored vs SPY ---------------- #}
+{% if track %}
+<div class="ad-card span2">
+  <h2>📈 {{ t('Signals scored vs SPY', '信号对标普评分') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('convergence held accountable, not assumed', '汇聚信号需问责，而非假定') }}</span></h2>
+  <div class="ad-meta">
+    <span class="chip"><b>{{ track.scored_total or 0 }}</b>&nbsp;{{ t('scored', '已评分') }}</span>
+    <span class="chip"><b>{{ track.open or 0 }}</b>&nbsp;{{ t('open', '进行中') }}</span>
+    {% if track.overall and track.overall.n %}<span class="chip tag-equities"><b>{{ track.overall.hit_rate }}</b>&nbsp;{{ t('hit rate', '命中率') }}</span>{% endif %}
+  </div>
+  <p class="mut2" style="font-size:11.5px;margin:8px 0"><span class="l-en">{{ track.calibration_note }}</span><span class="l-zh">{{ track.calibration_note_zh or track.calibration_note }}</span></p>
+  {% if track.recent %}
+  <table class="ad"><thead><tr><th>{{ t('Thesis','论点') }}</th><th>{{ t('Lean','倾向') }}</th><th>{{ t('Outcome','结果') }}</th><th class="num">{{ t('vs SPY','对标普') }}</th><th class="num">{{ t('Check by','核查日') }}</th></tr></thead><tbody>
+  {% for r in track.recent[:8] %}
+    <tr><td class="tk">{{ r.subject }}</td><td class="mut2">{{ r.lean }}</td>
+        <td class="{{ 'r-pos' if r.outcome=='hit' else 'r-neg' if r.outcome=='miss' else 'mut2' }}">{{ r.outcome }}</td>
+        <td class="num">{% if r.realized is not none %}{{ '%+.1f%%'|format(r.realized*100) }}{% else %}—{% endif %}</td>
+        <td class="num mut2">{{ r.check_by }}</td></tr>
+  {% endfor %}
+  </tbody></table>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="ad-grid">
   {# ---------------- Donald Trump trades ---------------- #}
   <div class="ad-card">
