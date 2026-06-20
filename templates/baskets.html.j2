@@ -711,6 +711,30 @@ function renderThemeDesk(){
   if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
   document.getElementById('theme-desk').innerHTML=(THEME.themes||[]).map(themeCard).join('');
   const d=THEME.disclaimer||{}; document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''));
+  decorateRealActivity();
+}
+// Display-only: stamp each theme card with the Divergence Radar real-activity read
+// (basketdata/radar.json). Bilingual l-en/l-zh spans (toggle-proof). Non-invasive — appends
+// one pill to the card's .txrow; silent if the radar JSON is absent. See site/radar.html.
+function decorateRealActivity(){
+  const ST={POSITIVE_DIVERGENCE:[L('🛰️ activity ahead','🛰️ 活动领先'),'var(--up)'],
+            NEGATIVE_DIVERGENCE:[L('🛰️ price ahead','🛰️ 价格领先'),'var(--warn)'],
+            CONFIRMED_UP:[L('🛰️ confirmed','🛰️ 已印证'),'var(--muted)'],
+            CONFIRMED_DOWN:[L('🛰️ weak','🛰️ 走弱'),'var(--muted)'],
+            QUIET:[L('🛰️ quiet','🛰️ 平静'),'var(--muted)']};
+  fetch('basketdata/radar.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(function(d){
+    if(!d||!d.flags) return;
+    d.flags.forEach(function(f){
+      const row=document.querySelector('#theme-'+(f.basket||'')+' .txrow');
+      if(!row||row.querySelector('.ra-pill')) return;
+      const s=ST[f.state]||ST.QUIET;
+      const dv=f.divergence==null?'':' '+(f.divergence>0?'+':'')+f.divergence.toFixed(1);
+      const pill=document.createElement('span');
+      pill.className='tpill ra-pill'; pill.style.borderColor=s[1]; pill.title='real-activity radar';
+      pill.innerHTML=s[0]+dv;
+      row.appendChild(pill);
+    });
+  }).catch(function(){});
 }
 function renderMacroCtx(){
   if(!THEME) return;
