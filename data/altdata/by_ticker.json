@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v1",
   "as_of": "2026-06-20",
-  "generated_utc": "2026-06-20T02:21:32.598606+00:00",
-  "n_tickers": 117,
+  "generated_utc": "2026-06-20T03:54:27.586690+00:00",
+  "n_tickers": 116,
   "note": "Display/context-only per-ticker alt-data rollup. convergence_score = distinct independent channels; donors excluded from the score.",
   "tickers": {
     "TDG": {
@@ -172,7 +172,7 @@
         "gov_contract"
       ],
       "gov_contract_usd_30d": 114643353.0,
-      "donor_usd": 19500.0,
+      "donor_usd": 20500.0,
       "convergence_score": 1,
       "trump_linked": false
     },
@@ -846,15 +846,6 @@
       "convergence_score": 1,
       "trump_linked": true
     },
-    "GOOG": {
-      "ticker": "GOOG",
-      "channels": [
-        "trump"
-      ],
-      "trump_side": "buy",
-      "convergence_score": 1,
-      "trump_linked": true
-    },
     "NWSA": {
       "ticker": "NWSA",
       "channels": [
@@ -879,7 +870,7 @@
         "trump"
       ],
       "trump_side": "buy",
-      "donor_usd": 81500.0,
+      "donor_usd": 84000.0,
       "convergence_score": 1,
       "trump_linked": true
     },
@@ -901,8 +892,8 @@
       "convergence_score": 1,
       "trump_linked": true
     },
-    "NFLX": {
-      "ticker": "NFLX",
+    "WMT": {
+      "ticker": "WMT",
       "channels": [
         "trump"
       ],
@@ -910,8 +901,8 @@
       "convergence_score": 1,
       "trump_linked": true
     },
-    "WMT": {
-      "ticker": "WMT",
+    "GOOG": {
+      "ticker": "GOOG",
       "channels": [
         "trump"
       ],
@@ -964,17 +955,17 @@
       "convergence_score": 1,
       "trump_linked": true
     },
+    "T": {
+      "ticker": "T",
+      "channels": [],
+      "donor_usd": 73000.0,
+      "convergence_score": 0,
+      "trump_linked": false
+    },
     "BA": {
       "ticker": "BA",
       "channels": [],
       "donor_usd": 72500.0,
-      "convergence_score": 0,
-      "trump_linked": false
-    },
-    "T": {
-      "ticker": "T",
-      "channels": [],
-      "donor_usd": 62500.0,
       "convergence_score": 0,
       "trump_linked": false
     },
@@ -1013,6 +1004,13 @@
       "convergence_score": 0,
       "trump_linked": false
     },
+    "CXW": {
+      "ticker": "CXW",
+      "channels": [],
+      "donor_usd": 28500.0,
+      "convergence_score": 0,
+      "trump_linked": false
+    },
     "BAC": {
       "ticker": "BAC",
       "channels": [],
@@ -1038,13 +1036,6 @@
       "ticker": "PNW",
       "channels": [],
       "donor_usd": 20500.0,
-      "convergence_score": 0,
-      "trump_linked": false
-    },
-    "AEE": {
-      "ticker": "AEE",
-      "channels": [],
-      "donor_usd": 18000.0,
       "convergence_score": 0,
       "trump_linked": false
     }

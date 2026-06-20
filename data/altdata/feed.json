@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-20T02:21:31.240793+00:00",
+  "generated_utc": "2026-06-20T03:54:25.281661+00:00",
   "as_of": "2026-06-20",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -752,7 +752,7 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Senate trading",
       "label_zh": "\u53c2\u8bae\u9662\u4ea4\u6613",
-      "rows": 4632,
+      "rows": 4633,
       "last_seen": "2026-06-05",
       "recent": [
         {
@@ -4101,20 +4101,104 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 457,
+      "rows": 466,
       "last_seen": "2026-06-14",
       "recent": [
         {
-          "BioGuideID": "C001137",
-          "CandidateName": "CRANK, JEFF",
-          "CompanyCMTENM": "CACI INTERNATIONAL INC POLITICAL ACTION COMMITTEE (CACI PAC)",
+          "BioGuideID": "M001215",
+          "CandidateName": "MILLER-MEEKS, MARIANNETTE JANE",
+          "CompanyCMTENM": "SUN LIFE FINANCIAL (U.S.) SERVICES COMPANY INC PAC SUN LIFE PAC",
           "TransactionDate": "2026-04-28",
-          "TransactionAmount": "4000",
-          "Ticker": "CACI",
-          "CommitteeName": "JEFF CRANK FOR CONGRESS",
+          "TransactionAmount": "1000",
+          "Ticker": "SLF",
+          "CommitteeName": "MILLER-MEEKS FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00783423",
+          "CompanyCMTEID": "C00677146",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "B000490",
+          "CandidateName": "BISHOP, SANFORD",
+          "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "5000",
+          "Ticker": "MO",
+          "CommitteeName": "SANFORD BISHOP FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00089136",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "M001204",
+          "CandidateName": "MEUSER, DANIEL",
+          "CompanyCMTENM": "BANK OF AMERICA CORPORATION FEDERAL PAC",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "1000",
+          "Ticker": "BAC",
+          "CommitteeName": "MEUSER FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00364778",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "S000344",
+          "CandidateName": "SHERMAN, BRAD",
+          "CompanyCMTENM": "BANK OF AMERICA CORPORATION FEDERAL PAC",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "5000",
+          "Ticker": "BAC",
+          "CommitteeName": "SHERMAN FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00364778",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "V000136",
+          "CandidateName": "VASQUEZ, GABRIEL",
+          "CompanyCMTENM": "TOYOTA MOTOR NORTH AMERICA, INC POLITICAL ACTION COMMITTEE (TOYOTA/LEXUS PAC)",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "1000",
+          "Ticker": "TM",
+          "CommitteeName": "GABE VASQUEZ FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00542365",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "L000600",
+          "CandidateName": "LANGWORTHY, NICK",
+          "CompanyCMTENM": "CNA FINANCIAL CORPORATION CITIZENS FOR GOOD GOVERNMENT",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "1000",
+          "Ticker": "CNA",
+          "CommitteeName": "LANGWORTHY FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00078287",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "P000613",
+          "CandidateName": "PANETTA, JIMMY",
+          "CompanyCMTENM": "AT&T INC. EMPLOYEE FEDERAL POLITICAL ACTION COMMITTEE (AT&T EMPLOYEE FEDERAL PAC)",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "-2500",
+          "Ticker": "T",
+          "CommitteeName": "JIMMY PANETTA FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00109017",
           "Uploaded": "2026-06-14 23:34:06.059174",
           "_first_seen": "2026-06-20T01:08:30.606406+00:00"
         },
@@ -4126,6 +4210,20 @@
           "TransactionAmount": "500",
           "Ticker": "TM",
           "CommitteeName": "MOOLENAAR FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00542365",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "L000590",
+          "CandidateName": "LEE, SUSIE",
+          "CompanyCMTENM": "TOYOTA MOTOR NORTH AMERICA, INC POLITICAL ACTION COMMITTEE (TOYOTA/LEXUS PAC)",
+          "TransactionDate": "2026-04-24",
+          "TransactionAmount": "1000",
+          "Ticker": "TM",
+          "CommitteeName": "SUSIE LEE FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00542365",
@@ -4203,20 +4301,6 @@
           "_first_seen": "2026-06-20T01:08:30.606406+00:00"
         },
         {
-          "BioGuideID": "B000490",
-          "CandidateName": "BISHOP, SANFORD",
-          "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "5000",
-          "Ticker": "MO",
-          "CommitteeName": "SANFORD BISHOP FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00089136",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
           "BioGuideID": null,
           "CandidateName": null,
           "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
@@ -4227,6 +4311,20 @@
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00089136",
+          "Uploaded": "2026-06-14 23:34:06.059174",
+          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
+        },
+        {
+          "BioGuideID": "B000740",
+          "CandidateName": "BICE, STEPHANIE",
+          "CompanyCMTENM": "SOUTHERN COMPANY GAS EMPLOYEES PAC",
+          "TransactionDate": "2026-04-28",
+          "TransactionAmount": "2500",
+          "Ticker": "SO",
+          "CommitteeName": "BICE FOR CONGRESS",
+          "Cycle": "2026",
+          "TransactionType": "24K",
+          "CompanyCMTEID": "C00145037",
           "Uploaded": "2026-06-14 23:34:06.059174",
           "_first_seen": "2026-06-20T01:08:30.606406+00:00"
         },
@@ -4355,104 +4453,6 @@
           "CompanyCMTEID": "C00089136",
           "Uploaded": "2026-06-14 23:34:06.059174",
           "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": "B001296",
-          "CandidateName": "BOYLE, BRENDAN F",
-          "CompanyCMTENM": "DRAFTKINGS INC. POLITICAL ACTION COMMITTEE DBA DRAFTKINGS PAC",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "1000",
-          "Ticker": "DKNG",
-          "CommitteeName": "CITIZENS FOR BOYLE",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00908699",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": null,
-          "CandidateName": null,
-          "CompanyCMTENM": "BANK OF AMERICA CORPORATION FEDERAL PAC",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "2500",
-          "Ticker": "BAC",
-          "CommitteeName": "ARKANSAS FOR LEADERSHIP POLITICAL ACTION COMMITTEE",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00364778",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": "T000193",
-          "CandidateName": "THOMPSON, BENNIE G.",
-          "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "1500",
-          "Ticker": "MO",
-          "CommitteeName": "FRIENDS OF BENNIE THOMPSON",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00089136",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": "M001198",
-          "CandidateName": "MARSHALL, ROGER W",
-          "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "1000",
-          "Ticker": "MO",
-          "CommitteeName": "KANSANS FOR MARSHALL",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00089136",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": "L000566",
-          "CandidateName": "LATTA, ROBERT EDWARD",
-          "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "1000",
-          "Ticker": "MO",
-          "CommitteeName": "LATTA FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00089136",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": "M001210",
-          "CandidateName": "MURPHY, GREGORY FRANCIS DR.",
-          "CompanyCMTENM": "TENET HEALTHCARE CORPORATION POLITICAL ACTION COMMITTEE",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "2500",
-          "Ticker": "THC",
-          "CommitteeName": "FRIENDS TO ELECT DR. GREG MURPHY TO CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00119354",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
-        },
-        {
-          "BioGuideID": "C001125",
-          "CandidateName": "CARTER, TROY A. SR.",
-          "CompanyCMTENM": "ALTRIA GROUP,  INC. POLITICAL ACTION COMMITTEE (ALTRIAPAC)",
-          "TransactionDate": "2026-04-24",
-          "TransactionAmount": "2500",
-          "Ticker": "MO",
-          "CommitteeName": "TROY CARTER FOR CONGRESS",
-          "Cycle": "2026",
-          "TransactionType": "24K",
-          "CompanyCMTEID": "C00089136",
-          "Uploaded": "2026-06-14 23:34:06.059174",
-          "_first_seen": "2026-06-20T01:08:30.606406+00:00"
         }
       ]
     },
@@ -4460,9 +4460,18 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 30,
-      "last_seen": "2026-06-19",
+      "rows": 31,
+      "last_seen": "2026-06-20",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/America%E2%80%99s+Car-Mart+Enters+Amendment+to+Credit+Agreement+to+Preserve+Liquidity+and+Advance+Strategic+Alternatives+Review",
+          "time": "2026-06-20 01:12:01",
+          "headline": "America\u2019s Car-Mart Enters Amendment to Credit Agreement to Preserve Liquidity and Advance Strategic Alternatives Review",
+          "category": "press_release_summary",
+          "summary": "<p>America\u2019s Car-Mart amended its credit agreement to enhance liquidity and evaluate strategic alternatives for stakeholders.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>America's Car-Mart, Inc. has announ\u2026",
+          "image": "https://www.quiverquant.com/images/crmt_rect_new.png",
+          "_first_seen": "2026-06-20T03:48:22.849747+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Ayanna+Pressley+Commends+Senate+Haiti+TPS+Bill+After+House+Passage",
           "time": "2026-06-19 22:20:06",
@@ -4491,21 +4500,21 @@
           "_first_seen": "2026-06-20T01:08:31.279511+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/%24POWW+Q4+2026+Earnings+Preview%3A+Recent+%24POWW+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
-          "time": "2026-06-19 21:05:17",
-          "headline": "$POWW Q4 2026 Earnings Preview: Recent $POWW Insider Trading, Hedge Fund Activity, and More",
-          "category": "earnings_automated",
-          "summary": "<p>$POWW (<a href=\"https://www.quiverquant.com/stock/POWW/\">$POWW</a>) is expected to release its quarterly earnings data on Monday, June 22nd before market open, per Finnhub. Analysts are expecting revenue of $12,954\u2026",
-          "image": "https://www.quiverquant.com/images/poww_rect_new.png",
-          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/FERVO+ENERGY+Q1+2026+Earnings+Preview%3A+Recent+%24FRVO+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
           "time": "2026-06-19 21:05:17",
           "headline": "FERVO ENERGY Q1 2026 Earnings Preview: Recent $FRVO Insider Trading, Hedge Fund Activity, and More",
           "category": "earnings_automated",
           "summary": "<p>FERVO ENERGY (<a href=\"https://www.quiverquant.com/stock/FRVO/\">$FRVO</a>) is expected to release its quarterly earnings data on Monday, June 22nd before market open, per Finnhub. Analysts are expecting revenue of \u2026",
           "image": "https://www.quiverquant.com/images/frvo_rect_new.png",
+          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/%24POWW+Q4+2026+Earnings+Preview%3A+Recent+%24POWW+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More",
+          "time": "2026-06-19 21:05:17",
+          "headline": "$POWW Q4 2026 Earnings Preview: Recent $POWW Insider Trading, Hedge Fund Activity, and More",
+          "category": "earnings_automated",
+          "summary": "<p>$POWW (<a href=\"https://www.quiverquant.com/stock/POWW/\">$POWW</a>) is expected to release its quarterly earnings data on Monday, June 22nd before market open, per Finnhub. Analysts are expecting revenue of $12,954\u2026",
+          "image": "https://www.quiverquant.com/images/poww_rect_new.png",
           "_first_seen": "2026-06-20T01:08:31.279511+00:00"
         },
         {
@@ -4572,15 +4581,6 @@
           "_first_seen": "2026-06-20T01:08:31.279511+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Representative+Stephen+F.+Lynch+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-19 18:10:12",
-          "headline": "Representative Stephen F. Lynch has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Stephen F. Lynch has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</\u2026",
-          "image": "https://www.quiverquant.com/images/L000562_congress.png",
-          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Representative+John+B.+Larson+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
           "time": "2026-06-19 18:10:12",
           "headline": "Representative John B. Larson has filed a new financial disclosure - here\u2019s what we see",
@@ -4608,6 +4608,24 @@
           "_first_seen": "2026-06-20T01:08:31.279511+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Representative+Stephen+F.+Lynch+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-06-19 18:10:12",
+          "headline": "Representative Stephen F. Lynch has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Stephen F. Lynch has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</\u2026",
+          "image": "https://www.quiverquant.com/images/L000562_congress.png",
+          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/CoreWeave+Stock+%28CRWV%29+Opinions+on+Nasdaq+100+Addition+and+Analyst+Targets",
+          "time": "2026-06-19 17:33:42",
+          "headline": "CoreWeave Stock (CRWV) Opinions on Nasdaq 100 Addition and Analyst Targets",
+          "category": "discussion_automated",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nasdaq Index Speculation:</strong> Social media buzz centers on CoreWeave's potential inclusion in prominent indices, fueling conversations around its expanding role in AI inf\u2026",
+          "image": "https://www.quiverquant.com/images/crwv_rect_new.png",
+          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Oracle+Corporation+Stock+%28ORCL%29+Opinions+on+Earnings+and+AI+Capex+Plans",
           "time": "2026-06-19 17:33:42",
           "headline": "Oracle Corporation Stock (ORCL) Opinions on Earnings and AI Capex Plans",
@@ -4632,15 +4650,6 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Midjourney AI Partnership Sparks Rally:</strong> Social media chatter highlights Butterfly Network's recent surge following news of its ultrasound-on-chip technology powering \u2026",
           "image": "https://www.quiverquant.com/images/bfly_rect_new.png",
-          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/CoreWeave+Stock+%28CRWV%29+Opinions+on+Nasdaq+100+Addition+and+Analyst+Targets",
-          "time": "2026-06-19 17:33:42",
-          "headline": "CoreWeave Stock (CRWV) Opinions on Nasdaq 100 Addition and Analyst Targets",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nasdaq Index Speculation:</strong> Social media buzz centers on CoreWeave's potential inclusion in prominent indices, fueling conversations around its expanding role in AI inf\u2026",
-          "image": "https://www.quiverquant.com/images/crwv_rect_new.png",
           "_first_seen": "2026-06-20T01:08:31.279511+00:00"
         },
         {
@@ -4677,15 +4686,6 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Component Demand Surges:</strong> Social media discussions are centering on Vishay Intertechnology's exposure to high-growth areas like MLCCs used in AI servers, where anal\u2026",
           "image": "https://www.quiverquant.com/images/vsh_rect_new.png",
-          "_first_seen": "2026-06-20T01:08:31.279511+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Saia+Inc.+Opens+New+Terminals+in+Duluth+and+Columbia+to+Expand+Midwest+Network",
-          "time": "2026-06-19 17:10:37",
-          "headline": "Saia Inc. Opens New Terminals in Duluth and Columbia to Expand Midwest Network",
-          "category": "press_release_summary",
-          "summary": "<p>Saia Inc. opened new terminals in Duluth, Minnesota, and Columbia, Missouri, enhancing regional service and network capacity.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Saia Inc. announced the opening \u2026",
-          "image": "https://www.quiverquant.com/images/saia_rect_new.png",
           "_first_seen": "2026-06-20T01:08:31.279511+00:00"
         }
       ]
@@ -5464,6 +5464,449 @@
           "Count": "1",
           "Time": "2026-06-19",
           "_first_seen": "2026-06-20T01:08:34.135908+00:00"
+        }
+      ]
+    },
+    "topshareholders": {
+      "emoji": "\ud83c\udfdb\ufe0f",
+      "label_en": "Top shareholders",
+      "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
+      "rows": 1338,
+      "last_seen": "2026-06-20",
+      "recent": [
+        {
+          "ticker": "ABTC",
+          "owner_name": "BlackRock, Inc.",
+          "owner_title": "Institution",
+          "shares": "3648400",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Flinn Joseph",
+          "owner_title": null,
+          "shares": "17324",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Mariner, LLC",
+          "owner_title": "Institution",
+          "shares": "17952",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
+          "owner_title": "Institution",
+          "shares": "18184",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Creative Planning",
+          "owner_title": "Institution",
+          "shares": "18934",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "NATIONAL BANK OF CANADA /FI/",
+          "owner_title": "Institution",
+          "shares": "18993",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "NISA INVESTMENT ADVISORS, LLC",
+          "owner_title": "Institution",
+          "shares": "19157",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Pictet Asset Management Holding SA",
+          "owner_title": "Institution",
+          "shares": "19182",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Arosa Capital Management LP",
+          "owner_title": "Institution",
+          "shares": "20000",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Defiance ETFs, LLC",
+          "owner_title": "Institution",
+          "shares": "20169",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "STRS OHIO",
+          "owner_title": "Institution",
+          "shares": "20200",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "US BANCORP \\DE\\",
+          "owner_title": "Institution",
+          "shares": "20355",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "FMR LLC",
+          "owner_title": "Institution",
+          "shares": "20403",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Independent Advisor Alliance",
+          "owner_title": "Institution",
+          "shares": "20459",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Dockside LLC",
+          "owner_title": "Institution",
+          "shares": "20609",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "BNP PARIBAS FINANCIAL MARKETS",
+          "owner_title": "Institution",
+          "shares": "21115",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "GLENMEDE TRUST CO NA",
+          "owner_title": "Institution",
+          "shares": "21161",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Clear Street Group Inc.",
+          "owner_title": "Institution",
+          "shares": "21586",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Huntleigh Advisors, Inc.",
+          "owner_title": "Institution",
+          "shares": "21755",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "ProShare Advisors LLC",
+          "owner_title": "Institution",
+          "shares": "17908",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
+          "owner_title": "Institution",
+          "shares": "17190",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Caitong International Asset Management Co., Ltd",
+          "owner_title": "Institution",
+          "shares": "22570",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Marnell Management LLC",
+          "owner_title": "Institution",
+          "shares": "17143",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "ROYAL BANK OF CANADA",
+          "owner_title": "Institution",
+          "shares": "14404",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "owner_name": "Squarepoint Ops LLC",
+          "owner_title": "Institution",
+          "shares": "14429",
+          "_collected": "2026-06-20"
+        }
+      ]
+    },
+    "execcomp": {
+      "emoji": "\ud83d\udcb0",
+      "label_en": "Executive comp",
+      "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
+      "rows": 94,
+      "last_seen": "2026-06-20",
+      "recent": [
+        {
+          "ticker": "ABTC",
+          "name": "Steve Gutterman",
+          "role": "Former CEO",
+          "year": "2025",
+          "total_comp": "1037164.0",
+          "salary": "300000.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Mark Zuckerberg",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "27219874.0",
+          "salary": "1.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Susan Li",
+          "role": "CFO",
+          "year": "2023",
+          "total_comp": "23456207.0",
+          "salary": "871154.0",
+          "bonus": "980049.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Andrew Bosworth",
+          "role": "CTO",
+          "year": "2023",
+          "total_comp": "23494034.0",
+          "salary": "936346.0",
+          "bonus": "1053392.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Christopher K. Cox",
+          "role": "CPO",
+          "year": "2023",
+          "total_comp": "23506959.0",
+          "salary": "936346.0",
+          "bonus": "1053392.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Mark Zuckerberg",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "24399968.0",
+          "salary": "1.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Javier Olivan",
+          "role": "COO",
+          "year": "2023",
+          "total_comp": "25558488.0",
+          "salary": "1104234.0",
+          "bonus": "1238568.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Andrew Bosworth",
+          "role": "CTO",
+          "year": "2024",
+          "total_comp": "23594826.0",
+          "salary": "985385.0",
+          "bonus": "923799.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Christopher K. Cox",
+          "role": "CPO",
+          "year": "2024",
+          "total_comp": "23609319.0",
+          "salary": "996289.0",
+          "bonus": "923799.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Susan Li",
+          "role": "CFO",
+          "year": "2024",
+          "total_comp": "23620488.0",
+          "salary": "946731.0",
+          "bonus": "877826.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Javier Olivan",
+          "role": "COO",
+          "year": "2024",
+          "total_comp": "25506684.0",
+          "salary": "1082979.0",
+          "bonus": "1015293.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Jaime Leverton",
+          "role": "Former CEO",
+          "year": "2023",
+          "total_comp": "47258.0",
+          "salary": "47258.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Christopher K. Cox",
+          "role": "CPO",
+          "year": "2022",
+          "total_comp": "22591304.0",
+          "salary": "893846.0",
+          "bonus": "940214.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Asher Genoot",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "1451636.0",
+          "salary": "265692.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Michael Ho",
+          "role": "CSO",
+          "year": "2023",
+          "total_comp": "5956568.0",
+          "salary": "271465.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Aniss Amdiss",
+          "role": "Former Chief Legal Officer",
+          "year": "2024",
+          "total_comp": "795919.0",
+          "salary": "38943.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Shenif Visram",
+          "role": "Former CFO",
+          "year": "2024",
+          "total_comp": "960900.0",
+          "salary": "259616.0",
+          "bonus": "680000.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Jaime Leverton",
+          "role": "Former CEO",
+          "year": "2024",
+          "total_comp": "1513429.0",
+          "salary": "57116.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Sean Glennan",
+          "role": "CFO",
+          "year": "2024",
+          "total_comp": "1513880.0",
+          "salary": "155385.0",
+          "bonus": "145356.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Victor Semah",
+          "role": "Chief Legal Officer & Corporate Secretary",
+          "year": "2024",
+          "total_comp": "2440606.0",
+          "salary": "262501.0",
+          "bonus": "318750.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Michael Ho",
+          "role": "CSO",
+          "year": "2024",
+          "total_comp": "10131864.0",
+          "salary": "490000.0",
+          "bonus": "980000.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "HUT",
+          "name": "Asher Genoot",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "10280140.0",
+          "salary": "534616.0",
+          "bonus": "1100000.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Mark Zuckerberg",
+          "role": "CEO",
+          "year": "2022",
+          "total_comp": "27110418.0",
+          "salary": "1.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "META",
+          "name": "Javier Olivan",
+          "role": "COO",
+          "year": "2022",
+          "total_comp": "21267164.0",
+          "salary": "987046.0",
+          "bonus": "786552.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "ABTC",
+          "name": "Matt Prusak",
+          "role": "President and Interim CFO",
+          "year": "2025",
+          "total_comp": "576923.0",
+          "salary": "76923.0",
+          "bonus": "500000.0",
+          "_collected": "2026-06-20"
         }
       ]
     }
@@ -7208,21 +7651,21 @@
     "corporate_donors": [
       {
         "ticker": "HD",
-        "total_usd": 81500.0,
-        "donations": 29,
+        "total_usd": 84000.0,
+        "donations": 30,
         "politicians": 26
+      },
+      {
+        "ticker": "T",
+        "total_usd": 73000.0,
+        "donations": 47,
+        "politicians": 38
       },
       {
         "ticker": "BA",
         "total_usd": 72500.0,
         "donations": 53,
         "politicians": 48
-      },
-      {
-        "ticker": "T",
-        "total_usd": 62500.0,
-        "donations": 43,
-        "politicians": 37
       },
       {
         "ticker": "MRK",
@@ -7261,6 +7704,12 @@
         "politicians": 6
       },
       {
+        "ticker": "CXW",
+        "total_usd": 28500.0,
+        "donations": 5,
+        "politicians": 4
+      },
+      {
         "ticker": "BAC",
         "total_usd": 25500.0,
         "donations": 9,
@@ -7279,25 +7728,26 @@
         "politicians": 6
       },
       {
+        "ticker": "DELL",
+        "total_usd": 20500.0,
+        "donations": 12,
+        "politicians": 10
+      },
+      {
         "ticker": "PNW",
         "total_usd": 20500.0,
         "donations": 8,
         "politicians": 6
-      },
-      {
-        "ticker": "DELL",
-        "total_usd": 19500.0,
-        "donations": 11,
-        "politicians": 10
-      },
-      {
-        "ticker": "AEE",
-        "total_usd": 18000.0,
-        "donations": 9,
-        "politicians": 8
       }
     ],
     "news": [
+      {
+        "headline": "America\u2019s Car-Mart Enters Amendment to Credit Agreement to Preserve Liquidity and Advance Strategic Alternatives Review",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-20 01:12:01",
+        "url": "https://www.quiverquant.com/news/America%E2%80%99s+Car-Mart+Enters+Amendment+to+Credit+Agreement+to+Preserve+Liquidity+and+Advance+Strategic+Alternatives+Review"
+      },
       {
         "headline": "Press Release: Ayanna Pressley Commends Senate Haiti TPS Bill After House Passage",
         "ticker": null,
@@ -7320,18 +7770,18 @@
         "url": "https://www.quiverquant.com/news/CARNIVALORATION+Q2+2026+Earnings+Preview%3A+Recent+%24CCL+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
       },
       {
-        "headline": "$POWW Q4 2026 Earnings Preview: Recent $POWW Insider Trading, Hedge Fund Activity, and More",
-        "ticker": null,
-        "category": "earnings_automated",
-        "time": "2026-06-19 21:05:17",
-        "url": "https://www.quiverquant.com/news/%24POWW+Q4+2026+Earnings+Preview%3A+Recent+%24POWW+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
-      },
-      {
         "headline": "FERVO ENERGY Q1 2026 Earnings Preview: Recent $FRVO Insider Trading, Hedge Fund Activity, and More",
         "ticker": null,
         "category": "earnings_automated",
         "time": "2026-06-19 21:05:17",
         "url": "https://www.quiverquant.com/news/FERVO+ENERGY+Q1+2026+Earnings+Preview%3A+Recent+%24FRVO+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
+      },
+      {
+        "headline": "$POWW Q4 2026 Earnings Preview: Recent $POWW Insider Trading, Hedge Fund Activity, and More",
+        "ticker": null,
+        "category": "earnings_automated",
+        "time": "2026-06-19 21:05:17",
+        "url": "https://www.quiverquant.com/news/%24POWW+Q4+2026+Earnings+Preview%3A+Recent+%24POWW+Insider+Trading%2C+Hedge+Fund+Activity%2C+and+More"
       },
       {
         "headline": "Press Release: Kathy Castor, Gabe Evans Introduce Bill on Data Center Costs for Ratepayers",
@@ -7383,13 +7833,6 @@
         "url": "https://www.quiverquant.com/news/Representative+Darin+LaHood+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
       },
       {
-        "headline": "Representative Stephen F. Lynch has filed a new financial disclosure - here\u2019s what we see",
-        "ticker": null,
-        "category": "congress_trades_automated",
-        "time": "2026-06-19 18:10:12",
-        "url": "https://www.quiverquant.com/news/Representative+Stephen+F.+Lynch+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
-      },
-      {
         "headline": "Representative John B. Larson has filed a new financial disclosure - here\u2019s what we see",
         "ticker": null,
         "category": "congress_trades_automated",
@@ -7411,6 +7854,20 @@
         "url": "https://www.quiverquant.com/news/Representative+Barry+Loudermilk+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
       },
       {
+        "headline": "Representative Stephen F. Lynch has filed a new financial disclosure - here\u2019s what we see",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-19 18:10:12",
+        "url": "https://www.quiverquant.com/news/Representative+Stephen+F.+Lynch+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+      },
+      {
+        "headline": "CoreWeave Stock (CRWV) Opinions on Nasdaq 100 Addition and Analyst Targets",
+        "ticker": null,
+        "category": "discussion_automated",
+        "time": "2026-06-19 17:33:42",
+        "url": "https://www.quiverquant.com/news/CoreWeave+Stock+%28CRWV%29+Opinions+on+Nasdaq+100+Addition+and+Analyst+Targets"
+      },
+      {
         "headline": "Oracle Corporation Stock (ORCL) Opinions on Earnings and AI Capex Plans",
         "ticker": null,
         "category": "discussion_automated",
@@ -7423,20 +7880,6 @@
         "category": "discussion_automated",
         "time": "2026-06-19 17:33:42",
         "url": "https://www.quiverquant.com/news/SoFi+Technologies+Stock+%28SOFI%29+Opinions+on+Technical+Breakout+and+Growth+Potential"
-      },
-      {
-        "headline": "Butterfly Network Stock (BFLY) Opinions on Midjourney Partnership Catalyst",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-19 17:33:42",
-        "url": "https://www.quiverquant.com/news/Butterfly+Network+Stock+%28BFLY%29+Opinions+on+Midjourney+Partnership+Catalyst"
-      },
-      {
-        "headline": "CoreWeave Stock (CRWV) Opinions on Nasdaq 100 Addition and Analyst Targets",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-19 17:33:42",
-        "url": "https://www.quiverquant.com/news/CoreWeave+Stock+%28CRWV%29+Opinions+on+Nasdaq+100+Addition+and+Analyst+Targets"
       }
     ],
     "wsb": [
@@ -7521,14 +7964,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",

@@ -8,7 +8,7 @@
   "inflation_confidence": 1.0,
   "confidence": 0.733,
   "liquidity_overlay": "neutral",
-  "cycle_tag": "mid",
+  "cycle_tag": "late",
   "pending_quad": NaN,
   "pending_days": 0,
   "confirming": [

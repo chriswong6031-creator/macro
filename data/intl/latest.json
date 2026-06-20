@@ -323,7 +323,7 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 10363.27,
+        "price": 10363.3,
         "off_52w_high": -5.0,
         "above_50d": false,
         "above_200d": true,
@@ -346,11 +346,11 @@
       "date": "2026-06-19",
       "quad": "Q2",
       "quad_name": "Reflation",
-      "growth_score": 0.6,
+      "growth_score": 0.2,
       "inflation_score": 0.333,
-      "confidence": 0.383,
+      "confidence": 0.183,
       "liquidity": "neutral",
-      "recession_score": 1.0,
+      "recession_score": 2.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 3.22,
@@ -367,8 +367,8 @@
         "m2_yoy": 5.1,
         "fx": 1.1469,
         "fx_strength_3m": -1.19,
-        "realvol": 9.4,
-        "drawdown": -0.4
+        "realvol": 9.5,
+        "drawdown": -0.6
       },
       "macro_asof": {
         "cpi_yoy": "2026-04",
@@ -377,13 +377,13 @@
         "yield_10y": "2026-01"
       },
       "equity": {
-        "price": 637.06,
-        "off_52w_high": -0.4,
+        "price": 635.61,
+        "off_52w_high": -0.6,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 9.4,
-        "rsi": 64.0,
-        "ext_z": 0.81,
+        "realvol": 9.5,
+        "rsi": 62.0,
+        "ext_z": 0.72,
         "ext_grade": "steady",
         "drawdown_risk": 1.0,
         "drawdown_band": "low",
@@ -423,15 +423,15 @@
           "value": 3.0
         },
         {
-          "cc": "JP",
-          "flag": "\ud83c\uddef\ud83c\uddf5",
-          "name": "Japan",
-          "value": 1.0
-        },
-        {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
+          "value": 2.0
+        },
+        {
+          "cc": "JP",
+          "flag": "\ud83c\uddef\ud83c\uddf5",
+          "name": "Japan",
           "value": 1.0
         },
         {
@@ -738,9 +738,9 @@
       "region": "Europe",
       "quad": "Q2",
       "quad_name": "Reflation",
-      "growth": 0.6,
+      "growth": 0.2,
       "inflation": 0.333,
-      "confidence": 0.383,
+      "confidence": 0.183,
       "data_limited": false
     }
   ],

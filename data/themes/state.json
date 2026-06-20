@@ -51,7 +51,7 @@
     "label": "neutral",
     "name": "Crypto & Digital Assets",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-    "rank": 19,
+    "rank": 20,
     "reco": "hold",
     "score": 54
   },
@@ -59,9 +59,9 @@
     "label": "neutral",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 17,
+    "rank": 16,
     "reco": "hold",
-    "score": 58
+    "score": 60
   },
   "data_center_power": {
     "label": "neutral",
@@ -115,7 +115,7 @@
     "label": "fading",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 16,
+    "rank": 17,
     "reco": "trim",
     "score": 59
   },
@@ -205,15 +205,15 @@
     "name_zh": "\u96f6\u552e",
     "rank": 23,
     "reco": "hold",
-    "score": 47
+    "score": 48
   },
   "robotics_automation": {
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 20,
+    "rank": 18,
     "reco": "hold",
-    "score": 52
+    "score": 58
   },
   "semicap_equipment": {
     "label": "dominant",
@@ -243,7 +243,7 @@
     "label": "emerging",
     "name": "Uranium & Nuclear Fuel",
     "name_zh": "\u94c0\u77ff\u4e0e\u6838\u71c3\u6599",
-    "rank": 18,
+    "rank": 19,
     "reco": "enter",
     "score": 56
   }

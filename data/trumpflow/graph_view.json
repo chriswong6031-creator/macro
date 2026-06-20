@@ -1,7 +1,7 @@
 {
   "schema": "trumpflow.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-20T03:08:50.029190+00:00",
+  "generated_utc": "2026-06-20T03:54:27.891182+00:00",
   "note": "Hand-curated Trump-family / administration investment graph seed. Public-record only. provenance = FACT (filing / widely-reported) | DISCLOSED (self-reported) | INFERRED (analytical link). The LLM extractor (engine/trumpflow/extract.py) proposes ADDITIONAL candidate edges into a separate file; a human promotes them here. Nothing here is scored \u2014 it feeds the latent-stake view + the brain.",
   "paths": [
     {
@@ -218,7 +218,12 @@
       "note": "Branded a bitcoin miner / treasury; the Trump sons hold ~20%, Hut 8 ~80%. Public via Gryphon merger (Nasdaq: ABTC).",
       "alt_corroborated": false,
       "alt_score": null,
-      "alt_channels": []
+      "alt_channels": [],
+      "top_holder": {
+        "owner": "BlackRock, Inc.",
+        "title": "Institution",
+        "shares": 3648400
+      }
     },
     {
       "ticker": "HUT",
@@ -238,7 +243,12 @@
       "note": "Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthropic/Fluidstack 245MW $7B Dec-2025; $9.8B Beacon Point lease May-2026; >$16.8B pipeline; 8.6GW in development).",
       "alt_corroborated": false,
       "alt_score": null,
-      "alt_channels": []
+      "alt_channels": [],
+      "top_holder": {
+        "owner": "BlackRock, Inc.",
+        "title": "Institution",
+        "shares": 8625260
+      }
     },
     {
       "ticker": "DJT",
@@ -257,7 +267,12 @@
       "note": "Truth Social; Trump-family majority holder.",
       "alt_corroborated": false,
       "alt_score": null,
-      "alt_channels": []
+      "alt_channels": [],
+      "top_holder": {
+        "owner": "Trump Donald J. JR",
+        "title": "",
+        "shares": 114787498
+      }
     }
   ],
   "n_nodes": 10,
