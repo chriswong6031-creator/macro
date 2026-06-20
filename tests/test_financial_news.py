@@ -327,6 +327,47 @@ def test_feed_nvda_in_ai_basket_if_basket_member():
     assert any_basket_has_nvda_news or len(nvda_baskets) == 0  # degrade gracefully
 
 
+# --------------------------------------------------------------------------- #
+# _normalise — provider="quiver" tier-0 domain kept; provider="gdelt" dropped
+# --------------------------------------------------------------------------- #
+def test_normalise_tier0_quiver_kept():
+    # provider="quiver" gives tier-3 floor, so a tier-0 domain (quiverquant.com) is KEPT
+    result = fn._normalise(
+        "Congress buys semiconductor stock",
+        "https://quiverquant.com/news/123",
+        "quiverquant.com",
+        "2026-06-19T12:00:00+00:00",
+        "Quiver",
+        ["AMD"],
+        "Quiver Quant summary",
+        None,
+        "quiver",          # <-- key: the quiver provider floor
+        0.7,
+        _NOW,
+    )
+    assert result is not None, "quiver provider should keep tier-0 domains at tier-3 floor"
+    assert result["tier"] == 3
+    assert result["quality"] > 0
+
+
+def test_normalise_tier0_gdelt_still_dropped():
+    # provider="gdelt" has NO tier override → tier-0 domain still returns None
+    result = fn._normalise(
+        "Some headline from unknown site",
+        "https://quiverquant.com/news/456",
+        "quiverquant.com",
+        "2026-06-19T12:00:00+00:00",
+        "Quiver",
+        [],
+        "",
+        None,
+        "gdelt",           # <-- gdelt does NOT grant the tier-3 floor
+        1.0,
+        _NOW,
+    )
+    assert result is None, "gdelt provider must not override tier-0 domains"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn_call in fns:
