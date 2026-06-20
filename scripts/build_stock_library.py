@@ -32,6 +32,7 @@ from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
+from engine import pullback_zone  # noqa: E402
 from engine import dannytrades_chip as dt_chip  # noqa: E402
 from engine import demand_chain as dchain  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
@@ -1003,6 +1004,19 @@ def main() -> int:
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
+        # ---- Pullback buy-zone (display-only) ---------------------------------
+        # turn an "Extended — don't chase" verdict into a concrete level: the rising 50d /
+        # the out-of-chase line for a timeable leader, or a "this is a chase, the reset is X%
+        # lower" read for a parabolic blow-off. Pure price math off rec['tech'] + the grade;
+        # self-gates (returns None) for anything not in don't-chase territory.
+        try:
+            pz = pullback_zone.compute(
+                rec.get("tech"), (rec.get("ext") or {}).get("grade"),
+                downtrend=((rec.get("ladder") or {}).get("dir") == "down"))
+            if pz:
+                rec["pullback_zone"] = pz
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("pullback-zone for %s failed (%s)", ticker, e)
         # 4H intraday available? (Polygon hourly store -> site/intraday/<T>.json). stock.html
         # passes this to the chart so the 4H button only appears where data actually exists.
         rec["has_intraday"] = 1 if (config.data_dir() / "intraday" / f"{ticker}.parquet").exists() else 0
