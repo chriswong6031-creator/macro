@@ -43,11 +43,31 @@
     #forming-narratives .ne-leg>i{display:block;height:100%;background:var(--link,#5aa7ff)}
     #forming-narratives .ne-rec-h{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:0 0 5px}
     #forming-narratives .ne-recs{display:flex;flex-wrap:wrap;gap:6px}
-    #forming-narratives .ne-tk{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border,rgba(127,127,127,.25));
-      border-radius:7px;padding:3px 8px;font-size:12px;font-variant-numeric:tabular-nums}
-    #forming-narratives .ne-tk .ne-dot{width:7px;height:7px;border-radius:50%}
-    #forming-narratives .ne-tk b{font-weight:650}
-    #forming-narratives .ne-tk small{color:var(--muted)}
+    #forming-narratives .ne-tk{position:relative;display:inline-flex;align-items:center;gap:6px;
+      border:1px solid var(--border,rgba(127,127,127,.25));border-radius:7px;padding:3px 9px;font-size:12px;
+      cursor:pointer;outline:none;transition:border-color .15s ease,background .15s ease}
+    #forming-narratives .ne-tk:hover,#forming-narratives .ne-tk:focus-visible,#forming-narratives .ne-tk.ne-open{
+      border-color:var(--link,#5aa7ff);background:color-mix(in srgb,var(--link,#5aa7ff) 7%,transparent)}
+    #forming-narratives .ne-tk .ne-dot{flex:none;width:7px;height:7px;border-radius:50%}
+    #forming-narratives .ne-tk-nm{font-weight:650;line-height:1.2}
+    #forming-narratives .ne-tk small{color:var(--muted);font-variant-numeric:tabular-nums}
+    /* crafted code popover — revealed on hover/focus (mouse, keyboard) or pinned on tap (touch) */
+    #forming-narratives .ne-pop{position:absolute;left:50%;bottom:calc(100% + 10px);z-index:50;
+      transform:translateX(-50%) translateY(5px) scale(.96);transform-origin:bottom center;
+      display:flex;flex-direction:column;align-items:center;gap:3px;min-width:96px;max-width:220px;
+      padding:9px 13px;border-radius:10px;text-align:center;
+      background:var(--panel2,#1e222a);border:1px solid var(--line,rgba(127,127,127,.3));
+      box-shadow:0 12px 30px rgba(0,0,0,.32),0 3px 9px rgba(0,0,0,.2);
+      opacity:0;visibility:hidden;pointer-events:none;transition:opacity .17s ease,transform .17s ease}
+    #forming-narratives .ne-tk:hover .ne-pop,#forming-narratives .ne-tk:focus-within .ne-pop,#forming-narratives .ne-tk.ne-open .ne-pop{
+      opacity:1;visibility:visible;transform:translateX(-50%) translateY(0) scale(1)}
+    #forming-narratives .ne-pop::before,#forming-narratives .ne-pop::after{content:"";position:absolute;top:100%;left:50%;width:0;height:0}
+    #forming-narratives .ne-pop::before{transform:translateX(-50%);border:7px solid transparent;border-top-color:var(--line,rgba(127,127,127,.3))}
+    #forming-narratives .ne-pop::after{transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--panel2,#1e222a)}
+    #forming-narratives .ne-pop-lab{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+    #forming-narratives .ne-pop-code{font-size:15.5px;font-weight:700;letter-spacing:.02em;line-height:1.15;color:var(--text,inherit);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:nowrap}
+    #forming-narratives .ne-pop-sub{font-size:10.5px;color:var(--muted);line-height:1.4}
     #forming-narratives .ne-caution{margin-top:9px;font-size:11.5px;color:var(--warn,#f59e0b)}
     #forming-narratives details.ne-cav{margin-top:9px;font-size:11.5px;color:var(--muted)}
     #forming-narratives details.ne-cav summary{cursor:pointer;user-select:none}
@@ -68,9 +88,19 @@
   function tickerChip(r) {
     const col = GRADE_COLOR[r.grade] || 'var(--muted)';
     const ext = r.ext == null ? '' : ` <small>${pct(r.ext)}</small>`;
-    const tip = esc((r.name || r.ticker) + (r.sector ? ' · ' + r.sector : '')) + ' — ' +
-      esc(r.grade_en || r.grade) + ' entry';
-    return `<span class="ne-tk" title="${tip}"><span class="ne-dot" style="background:${col}"></span><b>${esc(r.ticker)}</b>${ext}</span>`;
+    const label = esc(r.name || r.ticker);          // the chip now reads as the company name…
+    const code = esc(r.ticker);                       // …with the stock code in a tap/hover popover.
+    const grade = L(esc(r.grade_en || r.grade) + ' entry', esc(r.grade_zh || r.grade) + ' 入场');
+    const sect = r.sector ? esc(r.sector) + ' · ' : '';
+    const aria = esc((r.name || r.ticker) + ' (' + r.ticker + ')');
+    return `<span class="ne-tk" tabindex="0" role="button" aria-label="${aria}">`
+      + `<span class="ne-dot" style="background:${col}"></span>`
+      + `<b class="ne-tk-nm">${label}</b>${ext}`
+      + `<span class="ne-pop" role="tooltip">`
+        + `<span class="ne-pop-lab">${L('Code', '代码')}</span>`
+        + `<span class="ne-pop-code">${code}</span>`
+        + `<span class="ne-pop-sub">${sect}${grade}</span>`
+      + `</span></span>`;
   }
 
   function card(nv) {
@@ -137,6 +167,25 @@
           <p class="ne-note">${L(
             'Scanned ' + (d.n_universe || '—') + ' names as of ' + esc(d.as_of) + '. The 0–100 score ranks how clearly a narrative is FORMING (tightening co-movement), not how much it will pay — early-entry return edge is ~0 and negatively skewed. Promote a confirmed candidate to a curated basket with scripts/promote_candidate.py.',
             '截至 ' + esc(d.as_of) + ' 扫描了 ' + (d.n_universe || '—') + ' 只个股。0–100 分衡量叙事成形的清晰度（共动收紧），而非回报 — 早期入场优势≈0 且负偏。可用 scripts/promote_candidate.py 将确认的候选提升为人工策选篮子。')}</p>`;
+        // hover/focus reveals the code popover via CSS; a tap pins it (touch, where hover is
+        // unreliable). Close on outside tap or Escape; only one pinned at a time.
+        sec.querySelectorAll('.ne-tk').forEach(chip => {
+          chip.addEventListener('click', e => {
+            const open = chip.classList.contains('ne-open');
+            sec.querySelectorAll('.ne-tk.ne-open').forEach(c => c.classList.remove('ne-open'));
+            if (!open) chip.classList.add('ne-open');
+            e.stopPropagation();
+          });
+        });
+        if (!window.__neTkBound) {
+          window.__neTkBound = true;
+          document.addEventListener('click', () =>
+            document.querySelectorAll('#forming-narratives .ne-tk.ne-open').forEach(c => c.classList.remove('ne-open')));
+          document.addEventListener('keydown', e => {
+            if (e.key === 'Escape')
+              document.querySelectorAll('#forming-narratives .ne-tk.ne-open').forEach(c => c.classList.remove('ne-open'));
+          });
+        }
         // deep-link flash from an alert anchor (#ne-<sig>)
         if (location.hash.startsWith('#ne-')) {
           const el = document.getElementById(location.hash.slice(1));
