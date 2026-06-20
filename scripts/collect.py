@@ -110,6 +110,26 @@ def all_adapters() -> dict:
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
         ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
+        # Quiver Quantitative alt-data suite (Trader plan) — cross-sectional EVENT
+        # feeds -> data/quiver/<dataset>.parquet (append-only, key-deduped). Feeds the
+        # Alternative Data desk + the Claude-CLI brain feed. Each needs QUIVER_API_KEY
+        # (else reports 'blocked'). See collectors/quiver.py.
+        ("quiver_congress", "collectors.quiver", "CongressAdapter"),
+        ("quiver_senate", "collectors.quiver", "SenateAdapter"),
+        ("quiver_house", "collectors.quiver", "HouseAdapter"),
+        ("quiver_lobbying", "collectors.quiver", "LobbyingAdapter"),
+        ("quiver_govcontracts", "collectors.quiver", "GovContractsAdapter"),
+        ("quiver_offexchange", "collectors.quiver", "OffExchangeAdapter"),
+        ("quiver_insiders", "collectors.quiver", "InsidersAdapter"),
+        ("quiver_flights", "collectors.quiver", "FlightsAdapter"),
+        ("quiver_patents", "collectors.quiver", "PatentsAdapter"),
+        ("quiver_wsb", "collectors.quiver", "WallStreetBetsAdapter"),
+        ("quiver_twitter", "collectors.quiver", "TwitterAdapter"),
+        ("quiver_sec13f", "collectors.quiver", "Sec13FAdapter"),
+        ("quiver_sec13f_changes", "collectors.quiver", "Sec13FChangesAdapter"),
+        ("quiver_cnbc", "collectors.quiver", "CnbcAdapter"),
+        ("quiver_spacs", "collectors.quiver", "SpacsAdapter"),
+        ("quiver_trump", "collectors.quiver", "TrumpTradesAdapter"),
     ]
     for key, mod, cls in specs:
         try:
