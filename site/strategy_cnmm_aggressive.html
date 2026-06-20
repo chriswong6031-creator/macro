@@ -273,6 +273,21 @@ html[data-lang="zh"] .site-nav .lang-toggle .zh-opt{color:#fff}
 
 
 
+/* One-row section menu (re-fix on current main): the 8-dropdown section menu
+   (~1418px) overflowed the 1180 content rail and wrapped onto a second row.
+   Widen the nav to the same ~1500 rail the macro family uses, on >=701px, for
+   whichever nav variant a family page renders today: the body-level .site-nav
+   (migrated vector pages, capped by an inline max-width:1180) and the legacy
+   in-wrap .topbar (strategy / misc pages, a sticky bar inside the content rail).
+   The page body keeps its 1180 rail and the <=700px hamburger (theme.js) is
+   untouched. */
+@media (min-width:701px){
+  nav.site-nav{max-width:1500px !important;}
+  .topbar{margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+    padding-left:max(40px,calc((100vw - 1500px)/2));
+    padding-right:max(40px,calc((100vw - 1500px)/2));}
+}
+
 /* toggles — subtle hover feedback (their slide animations are untouched) */
 .theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
 .theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
