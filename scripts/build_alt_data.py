@@ -39,6 +39,13 @@ def main() -> int:
         alerts = altdata_alerts.recent(days=30)
         # falsifiable ledger: log convergence theses vs SPY + grade matured ones
         track = altdata_ledger.rebuild(by_ticker) or {}
+        # optional gated LLM extractor — grows the graph w/ candidate edges from news
+        # (default off; needs DEEPSEEK_API_KEY). No-op + non-fatal otherwise.
+        try:
+            from engine.trumpflow import extract as trumpflow_extract
+            trumpflow_extract.run()
+        except Exception as e:  # noqa: BLE001
+            log.warning("trumpflow extractor skipped (%s)", e)
         # latent-stake entity graph (the deals Quiver can't see), cross-ref'd w/ alt-data
         latent = trumpflow_graph.build_view(by_ticker) or {}
     except Exception as e:  # noqa: BLE001

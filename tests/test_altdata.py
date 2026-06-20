@@ -1,6 +1,7 @@
 """Tests for the Quiver alt-data collector + engine (no network)."""
 from __future__ import annotations
 
+import json
 import math
 from datetime import date
 
@@ -269,3 +270,27 @@ def test_graph_view_cross_references_altdata(monkeypatch):
     assert hut["alt_corroborated"] is True and hut["alt_score"] == 2
     abtc = next(w for w in v["watch"] if w["ticker"] == "ABTC")
     assert abtc["alt_corroborated"] is False                  # not in the live alt-data set
+
+
+# --------------------------------------------------------------- LLM extractor (gate)
+def test_extractor_citation_gate():
+    from engine.trumpflow import extract
+    source = ("Eric Trump's American Bitcoin is majority-owned by Hut 8, which retains "
+              "an 80% stake and serves as its exclusive infrastructure partner.")
+    reply = json.dumps({"edges": [
+        # valid — citation is verbatim in the source
+        {"src": "Hut 8", "rel": "HOLDS_STAKE", "dst": "American Bitcoin",
+         "citation": "retains an 80% stake"},
+        # hallucinated citation — not in the source -> must be DROPPED
+        {"src": "Eric Trump", "rel": "CONTROLS", "dst": "World Liberty",
+         "citation": "Eric Trump owns a controlling interest in World Liberty Financial"},
+        # invalid rel -> dropped
+        {"src": "Hut 8", "rel": "BANANA", "dst": "American Bitcoin", "citation": "Hut 8"},
+    ]})
+    edges = extract._extract_edges(source, reply)
+    assert len(edges) == 1
+    assert edges[0]["rel"] == "HOLDS_STAKE" and edges[0]["dst"] == "American Bitcoin"
+    assert edges[0]["provenance"] == "INFERRED" and edges[0]["status"] == "candidate"
+    # garbage reply / no key path -> empty, never raises
+    assert extract._extract_edges(source, "not json at all") == []
+    assert extract._extract_edges(source, None) == []

@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v1",
   "as_of": "2026-06-20",
-  "generated_utc": "2026-06-20T02:16:17.762697+00:00",
+  "generated_utc": "2026-06-20T02:21:32.598606+00:00",
   "n_tickers": 117,
   "note": "Display/context-only per-ticker alt-data rollup. convergence_score = distinct independent channels; donors excluded from the score.",
   "tickers": {

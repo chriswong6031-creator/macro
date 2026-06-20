@@ -182,6 +182,12 @@ def build_view(by_ticker: dict | None = None, root=None) -> dict:
         })
     watch.sort(key=lambda w: (w["alt_corroborated"], len(w["trump_people"])), reverse=True)
 
+    try:
+        from engine.trumpflow import extract as _extract
+        n_candidates = len(_extract.load_candidates(root))
+    except Exception:  # noqa: BLE001
+        n_candidates = 0
+
     view = {
         "schema": "trumpflow.graph.v1",
         "as_of": intel.get("as_of"),
@@ -192,6 +198,7 @@ def build_view(by_ticker: dict | None = None, root=None) -> dict:
         "watch": watch,
         "n_nodes": len(people) + len(ents) + len(intel.get("themes", {})),
         "n_edges": len(intel.get("edges", [])),
+        "n_candidates": n_candidates,
     }
     _write(view)
     log.info("trumpflow graph: %d paths, %d mismatches, %d watch tickers",

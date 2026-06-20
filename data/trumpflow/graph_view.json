@@ -1,7 +1,7 @@
 {
   "schema": "trumpflow.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-20T02:16:17.792399+00:00",
+  "generated_utc": "2026-06-20T02:21:32.627175+00:00",
   "note": "Hand-curated Trump-family / administration investment graph seed. Public-record only. provenance = FACT (filing / widely-reported) | DISCLOSED (self-reported) | INFERRED (analytical link). The LLM extractor (engine/trumpflow/extract.py) proposes ADDITIONAL candidate edges into a separate file; a human promotes them here. Nothing here is scored \u2014 it feeds the latent-stake view + the brain.",
   "paths": [
     {
@@ -261,5 +261,6 @@
     }
   ],
   "n_nodes": 10,
-  "n_edges": 12
+  "n_edges": 12,
+  "n_candidates": 0
 }
