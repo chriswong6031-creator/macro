@@ -50,9 +50,24 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error('hk theme desk failed: %s', e)
 
+    # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — coherent, TIGHTENING HK groups
+    # not yet in a basket, with clean-entry recommended tickers. Display-only, additive, noisy.
+    emergence = None
+    try:
+        from engine.narrative_emergence import compute_emergence
+        emergence = compute_emergence('hk')
+        if emergence:
+            from engine import emergence_alerts
+            emergence_alerts.rebuild(emergence, 'hk')
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error('hk narrative emergence failed: %s', e)
+
     fdir = site / "hkbasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    if emergence:
+        (fdir / "narrative_emergence.json").write_text(
+            json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))
 
     chart = data.pop("chart")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -70,6 +85,9 @@ def main() -> int:
         deskjs = config.ROOT / 'templates' / 'baskets_desk.js'
         if deskjs.exists():
             (site / 'baskets_desk.js').write_text(deskjs.read_text())
+        ne = config.ROOT / 'templates' / 'forming_narratives.js'
+        if ne.exists():
+            (site / 'forming_narratives.js').write_text(ne.read_text())
     except Exception as e:  # noqa: BLE001
         log.error('hk theme detail pages failed: %s', e)
     lwc = config.ROOT / "templates" / "lightweight-charts.js"

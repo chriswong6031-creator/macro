@@ -1,5 +1,5 @@
 {
-  "date": "Jun 19, 2026",
+  "date": "Jun 20, 2026",
   "regime": "Global reflation",
   "favored": [
     "AUD",
@@ -10,64 +10,64 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1451,
-      "chg": -1.5,
+      "quote": 1.1469,
+      "chg": -1.3,
       "action": "FLAT",
-      "score": -13.5
+      "score": -14.2
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3196,
-      "chg": -1.8,
+      "quote": 1.3237,
+      "chg": -1.5,
       "action": "FLAT",
-      "score": 17.0
+      "score": 16.4
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.293,
+      "quote": 161.275,
       "chg": 1.5,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8069,
-      "chg": 3.1,
+      "quote": 0.8064,
+      "chg": 3.0,
       "action": "LONG",
-      "score": 30.1
+      "score": 32.0
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7011,
-      "chg": -2.0,
+      "quote": 0.7016,
+      "chg": -2.2,
       "action": "SHORT",
-      "score": -25.3
+      "score": -23.4
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4144,
+      "quote": 1.4152,
       "chg": 2.5,
       "action": "LONG",
-      "score": 25.4
+      "score": 32.5
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.3679,
-      "chg": 0.6,
+      "quote": 17.309,
+      "chg": 0.3,
       "action": "SHORT",
-      "score": -32.3
+      "score": -38.3
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1577,
+      "quote": 5.1415,
       "chg": 2.6,
       "action": "FLAT",
-      "score": 4.5
+      "score": -1.3
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7565,
-      "chg": -0.5,
+      "quote": 6.745,
+      "chg": -0.7,
       "action": "FLAT",
       "score": 15.0
     }
@@ -76,7 +76,7 @@
     "lean": "mixed backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.72,
-    "fed_path_bps": 49.0,
+    "fed_path_bps": 50.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 42.0,
     "usd_pos_state": "neutral",

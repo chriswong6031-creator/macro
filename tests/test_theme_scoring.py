@@ -134,7 +134,10 @@ def test_compute_theme_intel_contract_when_data_present():
     th = ti["themes"][0]
     assert 0 <= th["score"] <= 100 and th["rank"] == 1
     assert th["label"] in ts.LABELS and th["reco"] in ts.RECOS
-    assert set(th["components"]) == {"trend", "breadth", "impulse", "macro", "crowding"}
+    # base legs always present; mtf/volhole ride along when the consolidated candle resolves (US)
+    comp = set(th["components"])
+    assert {"trend", "breadth", "impulse", "macro", "crowding"} <= comp
+    assert comp <= {"trend", "breadth", "impulse", "macro", "mtf", "volhole", "crowding"}
     sc = ti["impulse_scorecard"]
     assert sc["net"] == sc["up3"] - sc["down3"]
     assert sc["net_hl"] == sc["nh"] - sc["nl"]
