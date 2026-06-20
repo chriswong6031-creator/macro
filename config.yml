@@ -1868,7 +1868,7 @@ macro_news:
   lang: eng
   window_days: 2                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering
-  max_show: 10                    # headlines shown after filtering
+  max_show: 20                    # headlines shown after filtering (raised 10 -> 20)
   min_request_interval_s: 6       # GDELT pacing
   cache_dir: data/macro/news_cache
   cache_ttl_hours: 12
@@ -1922,8 +1922,8 @@ china_news:
   request_pace_s: 0.4             # collector: politeness pause between CCTV day-page fetches
   tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
   tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
-  max_records: 60                 # Eastmoney flashes pulled before the macro-theme gate
-  max_show: 12                    # macro headlines shown after filtering
+  max_records: 80                 # Eastmoney flashes pulled before the macro-theme gate
+  max_show: 16                    # macro headlines shown after filtering (raised 12 -> 16; +tech/politics/markets)
   cache_dir: data/china_news/flash_cache
   cache_ttl_hours: 12
   # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
@@ -1932,6 +1932,49 @@ china_news:
   llm_model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
+# Financial / sector / Mag-7 / thematic-basket news (engine/financial_news.py) — the
+# flagship feed for the Research → News page. A LEAF: imports only lib.config +
+# engine.news_common; nothing in scoring imports it. Ticker-TAGGED corpus from
+# Polygon (+ Finnhub market/company) routed into Mag-7 / sector-ETF / basket /
+# per-ticker sections via the entity map, plus keyless GDELT thematic queries per
+# sector. Ranked by the transparent engine.news_common.quality_score; never scored.
+# Keys reused from the daily build: POLYGON_API_KEY / MASSIVE_API_KEY, FINNHUB_KEY.
+# =============================================================================
+financial_news:
+  enabled: true                   # MASTER SWITCH for the financial-news feed
+  window_days: 3                  # how far back to pull ticker-tagged news
+  cache_dir: data/financial_news/cache
+  cache_ttl_hours: 12
+  gdelt: true                     # keyless GDELT thematic supplement (market + 11 sectors)
+  gdelt_window_days: 2
+  gdelt_max_records: 40
+  finnhub_company: true           # per-Mag7 company-news (7 extra Finnhub calls)
+  # per-section display caps (after dedup + quality rank)
+  top_market: 18
+  top_sector: 8
+  top_mag7: 6
+  top_basket: 8
+  top_ticker: 6
+
+# =============================================================================
+# News LLM processor (engine/news_llm.py) — OPTIONAL cheap batch summaries + an
+# "importance" re-rank layered on top of the deterministic quality score. It never
+# gates a headline in/out and feeds NO score. Provider order: Claude Haiku via the
+# subscription OAuth token (CLAUDE_CODE_OAUTH_TOKEN), then Claude Haiku via
+# ANTHROPIC_API_KEY, then DeepSeek V4-Flash via DEEPSEEK_API_KEY. Degrades to a
+# no-op pass-through whenever no credential is present.
+# =============================================================================
+news_llm:
+  enabled: true                   # try to enrich; auto no-op when no key present
+  provider_order: [oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  deepseek_key_env: DEEPSEEK_API_KEY
+  anthropic_model: claude-haiku-4-5
+  deepseek_model: deepseek-chat
+  batch_size: 12                  # headlines summarised per model call
+  max_batches: 16                 # hard cap on model calls per build (cost guard)
 
 # =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).

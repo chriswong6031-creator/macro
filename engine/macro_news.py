@@ -62,28 +62,23 @@ THEME_LABEL = {
 }
 
 # reputable macro/financial outlets — the source allowlist (substring match on the
-# article domain, so finance.yahoo.com matches yahoo.com). Tune in config.
-# Tier-1 reputable NEWS wires/outlets. A GDELT hit here is kept on the SOURCE
-# alone (no title keyword needed) — the query already matched the macro terms in
-# the article BODY, and these outlets don't churn out stock-pick noise the way the
-# finance aggregators do. Without this, the title-only theme gate drops most real
-# macro stories (reputable headlines rarely put "CPI"/"Fed" in the title).
-_NEWS_SOURCES = [
-    "reuters.com", "apnews.com", "bloomberg.com", "wsj.com", "ft.com",
-    "nytimes.com", "washingtonpost.com", "cnbc.com", "cnn.com", "nbcnews.com",
-    "abcnews.go.com", "cbsnews.com", "npr.org", "pbs.org", "axios.com",
-    "thehill.com", "politico.com", "economist.com", "bbc.com", "bbc.co.uk",
-    "semafor.com", "usatoday.com", "marketwatch.com", "barrons.com",
-    "foxbusiness.com", "rttnews.com", "spglobal.com",
-]
+# article domain, so finance.yahoo.com matches yahoo.com). Sourced from the shared
+# tiered registry in engine.news_common so the whole news suite shares ONE
+# allowlist. Tune in config (`macro_news.sources`).
+#
+# _NEWS_SOURCES — wires + quality press. A GDELT hit here is kept on the SOURCE
+# alone (no title keyword needed): the query already matched the macro terms in
+# the article BODY, and these outlets don't churn out stock-pick noise. Without
+# this, the title-only theme gate drops most real macro stories (reputable
+# headlines rarely put "CPI"/"Fed" in the title).
+from engine import news_common as _nc
 
-# Full quality allowlist (tier-1 + finance aggregators). Articles from the
-# aggregator-only sources must additionally clear the title macro-theme gate, so
-# their stock-pick/retirement noise is filtered out.
-_DEFAULT_SOURCES = _NEWS_SOURCES + [
-    "yahoo.com", "investing.com", "forbes.com", "businessinsider.com",
-    "fortune.com", "morningstar.com", "seekingalpha.com", "kitco.com",
-]
+_NEWS_SOURCES = list(_nc.TIER1_SOURCES) + list(_nc.TIER2_SOURCES)
+
+# Full quality allowlist (wires + press + finance aggregators). Articles from the
+# tier-3 aggregator sources must additionally clear the title macro-theme gate, so
+# their stock-pick/retirement noise is filtered out. Exported for the narrative bus.
+_DEFAULT_SOURCES = list(_nc.ALL_SOURCES)
 
 DISCLAIMER_TEXT = (
     "Context only — not a signal. These headlines are filtered (reputable sources, "
@@ -167,7 +162,8 @@ def _query(cfg: dict) -> str:
     # precision step.
     core = ['"federal reserve"', "fomc", "inflation", "cpi", '"interest rates"',
             "recession", '"jobs report"', "payrolls", "gdp", '"treasury yield"',
-            "tariffs", '"debt ceiling"']
+            "tariffs", '"debt ceiling"', '"jobless claims"', '"consumer confidence"',
+            "powell", '"rate cut"']
     q = "(" + " OR ".join(core) + ")"
     # sourcecountry:US removes the flood of foreign local papers at source; the
     # reputable-source allowlist + title theme-gate then run in filter_headlines.
