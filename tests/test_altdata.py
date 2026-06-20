@@ -275,6 +275,23 @@ def test_build_picks_filters_passive(monkeypatch):
     assert "leading" in efx["verdict"]["en"]                   # +3.5pp vs SPY
 
 
+def test_picks_gov_contract_accel(monkeypatch):
+    from engine import altdata_picks as ap
+    monkeypatch.setattr(ap, "_rs_vs_spy", lambda tk, root, win=60: 1.0)
+    feed = {"signals": {"trump": [], "gov_contracts": [
+        {"ticker": "TXT", "total_usd": 2e8, "accel_x": 2.4},   # strong accel -> standalone candidate
+        {"ticker": "GD", "total_usd": 1e8, "accel_x": 1.3},    # mild accel -> enrich an existing candidate
+    ]}}
+    bt = {"tickers": {"GD": {"convergence_score": 2, "channels": ["gov_contract", "congress_buy"]}}}
+    out = ap.build_picks(feed, bt, root=None, top=10)
+    tickers = {p["ticker"] for p in out["picks"]}
+    assert "TXT" in tickers                                    # surfaced purely on strong fed-spend accel
+    txt = next(p for p in out["picks"] if p["ticker"] == "TXT")
+    assert txt["gov_contract_accel"] == 2.4 and any("fed-spend accel" in r for r in txt["reasons"])
+    gd = next(p for p in out["picks"] if p["ticker"] == "GD")
+    assert gd["gov_contract_accel"] == 1.3 and any("fed-spend accel" in r for r in gd["reasons"])
+
+
 # --------------------------------------------------------------- watchlist (per-ticker)
 def test_watchlist_derivation(tmp_path, monkeypatch):
     from collectors.quiver_watchlist import QuiverWatchlistAdapter
