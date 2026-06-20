@@ -34,6 +34,9 @@ from engine import stock_score  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
 from engine import pullback_zone  # noqa: E402
 from engine import dannytrades_chip as dt_chip  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer OHLCV-aware technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole
+from engine import gex_confirm  # noqa: E402  — dealer-gamma verifier/confirmer
 from engine import demand_chain as dchain  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -109,6 +112,64 @@ def _optionable_gex() -> dict:
             log.debug("per-stock gex %s skipped: %s", t, e)
     log.info("per-stock GEX: %d/%d optionable names", len(out), len(OPTIONABLE_GEX))
     return out
+
+
+def _load_gex_board(site: Path) -> dict:
+    """The pre-built per-symbol dealer-gamma payloads (site/gex/<SYM>.json) — RICHER than the
+    live compute_gex path: they carry call/put walls + the vol_hole state + consistent units,
+    for the curated optionable universe. Read once; graceful (absent dir => {}). These feed the
+    GEX verifier/confirmer (engine.gex_confirm) and enrich the per-stock gex chip."""
+    out: dict = {}
+    gdir = site / "gex"
+    if not gdir.exists():
+        return out
+    for fp in gdir.glob("*.json"):
+        sym = fp.stem
+        if sym == "index":
+            continue
+        try:
+            payload = json.loads(fp.read_text())
+            if (payload.get("summary") or {}).get("tier") not in (None, "no_options"):
+                out[sym] = payload
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.debug("gex board %s unreadable: %s", sym, e)
+    log.info("GEX board: %d per-symbol payloads loaded for the confirmer", len(out))
+    return out
+
+
+def _flat_gex_from_board(payload: dict) -> dict:
+    """A stock.html-compatible flat gex dict from the rich board payload. CRUCIAL: stock.html
+    multiplies iv30 by 100 (expects a DECIMAL), but the board stores iv30 as a PERCENT — so we
+    convert it back to decimal here (the iv30 unit-mismatch fix), and ADD the walls + vol_hole
+    that the lighter compute_gex path never produced (never touching the keys stock.html reads)."""
+    s = payload.get("summary") or {}
+    iv = s.get("iv30")
+    return {
+        "gamma_regime": s.get("regime"), "regime": s.get("regime"),
+        "net_gex_bn": s.get("net_gex_bn"),
+        "gamma_flip": s.get("gamma_flip"), "dist_to_flip_pct": s.get("dist_to_flip_pct"),
+        "iv30": (round(iv / 100.0, 4) if iv is not None else None),   # PERCENT -> DECIMAL
+        "call_wall": s.get("call_wall"), "put_wall": s.get("put_wall"),
+        "tier": s.get("tier"), "n_strikes": s.get("n_strikes"),
+        "rr_25d": s.get("rr_25d"),
+        "vol_hole": payload.get("vol_hole"),
+    }
+
+
+def _next_monthly_opex_days() -> int | None:
+    """Calendar days to the next monthly options expiry (3rd Friday) — feeds the GEX confirmer's
+    pre-OPEX suppression (charm/vanna flows dominate the last 2 sessions)."""
+    import datetime as _dt
+
+    def third_friday(y: int, m: int) -> "_dt.date":
+        d = _dt.date(y, m, 1)
+        return d + _dt.timedelta(days=(4 - d.weekday()) % 7 + 14)
+    today = _dt.date.today()
+    tf = third_friday(today.year, today.month)
+    if tf < today:
+        ny, nm = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+        tf = third_friday(ny, nm)
+    return (tf - today).days
 
 
 def current_vix_context() -> dict | None:
@@ -700,8 +761,14 @@ def main() -> int:
             smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("smartmoney.json unreadable (%s)", e)
-    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
-    gex_by_ticker = _optionable_gex()
+    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex). PRIMARY =
+    # the pre-built site/gex board payloads (rich: walls + vol_hole + consistent units), which
+    # already cover the curated optionable universe. The live compute_gex path is only used as a
+    # cold-start fallback when the board dir is entirely absent (a fresh checkout before the first
+    # gex build) — it is skipped whenever the board has any payload, to avoid the slow Cboe fetch.
+    gex_board = _load_gex_board(site)
+    gex_by_ticker = _optionable_gex() if not gex_board else {}
+    opex_days = _next_monthly_opex_days()
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
     # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
@@ -920,7 +987,8 @@ def main() -> int:
             t0 = time.time()
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
                                      initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set,
-                                               ant_macro, ant_gate, ant_breadth)) as ex:
+                                               ant_macro, ant_gate, ant_breadth,
+                                               name_dir_inputs)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)
@@ -957,8 +1025,43 @@ def main() -> int:
                 cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
-        if gex_by_ticker.get(ticker):
+        # ---- richer OHLCV technical snapshot + single-stock volatility black hole ------
+        # Supersede the thin close-only snapshot with the research-vetted read (ATR/ADX/
+        # squeeze/volume where full OHLCV exists; momentum / 52w-proximity / realized-vol
+        # percentile everywhere). The OHLCV names also get the price-based vol-squeeze state.
+        # Read store("stocks") ONCE here and reuse it for the DannyTrades chip below.
+        # Graceful: any failure leaves the thin snapshot in place.
+        _ohlcv = None
+        try:
+            _ohlcv = store.read("stocks", ticker)
+            if _ohlcv is not None and {"high", "low", "volume"} <= set(_ohlcv.columns):
+                rich = stock_technicals.snapshot(_ohlcv["close"], _ohlcv["high"],
+                                                 _ohlcv["low"], _ohlcv["volume"], bench=bench)
+                sq = vol_squeeze.assess(_ohlcv["close"], _ohlcv["high"],
+                                        _ohlcv["low"], _ohlcv["volume"])
+            else:
+                rich = stock_technicals.snapshot(close, bench=bench)
+                sq = vol_squeeze.assess(close)
+            rec["tech"] = {**(rec.get("tech") or {}), **rich}
+            if sq:
+                rec["vol_squeeze"] = sq
+        except Exception as e:  # noqa: BLE001 — additive; the thin snapshot is already on rec
+            log.warning("tech/squeeze enrich for %s failed (%s)", ticker, e)
+        # ---- dealer-gamma join (RICH board payload) + the GEX verifier/confirmer -------
+        # Prefer the pre-built site/gex payload (call/put walls + vol_hole + correct units);
+        # fall back to the live compute_gex summary. _flat_gex_from_board keeps stock.html's
+        # gex chip working (and fixes the iv30 decimal/percent mismatch).
+        _gp = gex_board.get(ticker)
+        if _gp:
+            rec["gex"] = _flat_gex_from_board(_gp)
+            _gc = gex_confirm.assess(_gp, opex_days=opex_days)
+            if _gc:
+                rec["gex_confirm"] = _gc
+        elif gex_by_ticker.get(ticker):
             rec["gex"] = gex_by_ticker[ticker]
+            _gc = gex_confirm.assess(gex_by_ticker[ticker], opex_days=opex_days)
+            if _gc:
+                rec["gex_confirm"] = _gc
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
         if bsk_mem.get(ticker):
@@ -1045,7 +1148,6 @@ def main() -> int:
         # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
         # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
         try:
-            _ohlcv = store.read("stocks", ticker)
             if _ohlcv is not None and {"low", "volume"} <= set(_ohlcv.columns):
                 dtc = dt_chip.assess(_ohlcv["close"], _ohlcv.get("high"),
                                      _ohlcv.get("low"), _ohlcv.get("volume"))

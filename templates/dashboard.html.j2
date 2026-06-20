@@ -477,6 +477,21 @@
   .nbb-validated { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
   .nbb-literature { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 35%, var(--line)); }
   .nbb-screen { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  /* the two new VERIFIERS — dealer-gamma "Options check" + the single-stock vol black hole */
+  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px;
+              border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .vf-confirm { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+                background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .vf-caution { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
+                background: color-mix(in srgb, var(--warn) 10%, var(--panel)); }
+  .vf-neutral { color: var(--muted); }
+  .vf-coil { color: var(--link); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
+             background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
+  .vf-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
+           background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
+  .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* market dealer-gamma vol-regime context banner */
   .gamma-note { margin-top: 9px; padding: 7px 11px; border-radius: 9px; font-size: 11.5px;
                 line-height: 1.5; border: 1px solid var(--line); border-left-width: 3px; }
@@ -2315,8 +2330,8 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px">{{ t('Standout individual stocks', '表现突出的个股') }}</span>
-        {% if _su %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t('of', '/') }} {{ _su.eligible }} {{ t('cleared the +0.5 α floor · ranked across the full S&P 1500 by validated residual momentum · each card carries the unified Conviction profile (cycle state caps the verdict)', '只通过 +0.5 α 门槛 · 在整个标普1500内按已验证残差动量排序 · 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}
-          {{ help("The bench is ranked by the VALIDATED sector-neutral residual-momentum leg (α) across the full S&P 1500 — so it surfaces leaders that aren't in any sector ETF's top-10. Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and a single honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — which is why this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability); the composite is shown as context until a deep Phase-0 clears it. Click any card for the full breakdown.", "榜单按已验证的行业中性残差动量（α）在整个标普1500内排序——因此能发掘不在任何行业ETF前十大持仓中的领涨股。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示“买入”，而显示“强势但趋势不利”——这正是该卡片与个股自身页面永不矛盾的原因。0-100 分是市场内百分位的展示皮肤（非概率）；在深度 Phase-0 通过前，综合分仅作情境展示。点击任意卡片查看完整拆解。") }}</span>{% endif %}
+        {% if _su %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t('of', '/') }} {{ _su.eligible }} {{ t('passed the entry-quality gate (not in a downtrend / parabolic, and a constructive entry) · ranked by the multi-factor Conviction composite — event edge + entry timing + quality + tailwind — an honest DISPLAY ordering, not a standalone validated alpha · each card carries the unified profile plus the Options (dealer-gamma) and volatility-squeeze verifiers (cycle state caps the verdict)', '通过入场质量门槛（非下行／抛物线，且入场具建设性）· 按多因子确信度综合分排序 — 事件优势＋入场择时＋质量＋顺风 — 为诚实的展示排序，并非独立已验证超额收益 · 每张卡片附带统一画像，外加期权（做市商 Gamma）与波动压缩验证器（周期状态会封顶结论）') }}
+          {{ help("The bench is ranked by the multi-factor Conviction COMPOSITE (event edge + entry timing + quality + tailwind) across the full S&P 1500 — so it surfaces leaders that aren't in any sector ETF's top-10. This is an honest DISPLAY ordering, NOT a standalone validated alpha: the α (residual-momentum) leg is just one light, regime-scaled input, not the rank key. Each card carries the four transparent axes (selection / entry / tailwind / quality), a single honest verdict, and two new VERIFIERS — an Options (dealer-gamma) check and a single-stock volatility-squeeze read. The verifiers sharpen the ENTRY only (display + a small bounded tilt); they can lower conviction but never manufacture a buy, and never touch the selection rank. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — which is why this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability); the composite is context until a deep Phase-0 clears it. Click any card for the full breakdown.", "榜单按多因子确信度综合分（事件优势＋入场择时＋质量＋顺风）在整个标普1500内排序——因此能发掘不在任何行业ETF前十大持仓中的领涨股。这是诚实的展示排序，并非独立已验证的超额收益：α（残差动量）维度只是一个轻量、随行情缩放的输入，并非排序关键。每张卡片附带四条透明维度（选股／入场／顺风／质量）、一个诚实结论，以及两个新验证器——期权（做市商 Gamma）检查与个股波动压缩读数。验证器只优化“入场”（展示＋小幅有界倾斜）；它们可降低确信度，但绝不制造买入信号，也不触及选股排序。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示“买入”，而显示“强势但趋势不利”。0-100 分是市场内百分位展示皮肤（非概率）；在深度 Phase-0 通过前综合分仅作情境。点击任意卡片查看完整拆解。") }}</span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t('from each sector’s top-10 holdings · grouped by cycle entry, ranked by sector-neutral momentum (α)', '来自各板块前十大持仓 · 按周期入场分组，以行业中性动量（α）排序') }}
           {{ help("Every sector ETF's top-10 holdings are run through the SAME price-cycle engine as the sectors. A name earns a card only when its cycle signal is decisive — a confirmed buy (BUY ZONE), an imminent turn (BOTTOMING), or a sell (TOPPING). The cycle state GROUPS the cards (it places risk — a defined entry + exit); WITHIN each group they're ordered by the validated sector-neutral residual momentum (α — market + sector beta stripped). We Phase-0 tested blending the cycle timing INTO the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y) and it did NOT improve forward returns — it diluted α — so the order rides α and the cycle/pullback is shown as risk-placement CONTEXT, not a return signal. A soft per-sector cap keeps one hot sector from crowding the board. The α / #rank / pullback line and the 👤 insider chip are context inputs, NOT standalone buy signals. Click any card for the full breakdown.", "每个板块 ETF 的前十大持仓都用与板块相同的价格周期引擎分析。只有当个股的周期信号具决定性时才会获得卡片 — 已确认买入（买入区）、即将转向（筑底）或卖出（做顶）。周期状态对卡片进行分组（它摆放风险 — 明确的入场与出场）；在每组内部，按已验证的行业中性残差动量（α — 已剥离大盘与行业 beta）排序。我们做了 Phase-0 检验，把周期择时混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年），结果并未改善前瞻收益 — 反而稀释了 α — 因此排序以 α 为准，周期/回调作为风险摆位的情境展示，而非收益信号。软性的单一板块上限可避免强势板块挤占整版。卡片上的 α / #排名 / 回调一行以及 👤 内部人买入标记均为情境输入，并非独立买入信号。点击任意卡片查看完整拆解。") }}</span>{% endif %}
       </div>
@@ -2373,9 +2388,20 @@
           </div>
           {% set _basis = (c.axes.selection.basis or [])[:3] %}
           {% if _basis %}<div class="nb-basis">{% for b in _basis %}<span class="nbb nbb-{{ b.tier }}">{{ b.label }} {{ '%+.1f'|format(b.z) }}</span>{% endfor %}</div>{% endif %}
+          {# --- the two new VERIFIERS: dealer-gamma "Options check" + single-stock vol black hole --- #}
+          {% set _gc = c.gex_confirm %}{% set _vs = c.vol_squeeze %}
+          {% set _sqshow = _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
+          {% if _gc or _sqshow %}
+          <div class="nb-vf">
+            {% if _gc %}{% set _gr = (_gc.reasons[0] if _gc.reasons else None) %}
+            <span class="nb-vchip vf-{{ _gc.verdict }}" title="Options check (dealer gamma){% if _gr %} — {{ _gr.en }}{% endif %}{% if _gc.levels.call_wall %} · call wall {{ _gc.levels.call_wall }}{% endif %}{% if _gc.levels.flip %} · flip {{ _gc.levels.flip }}{% endif %} · {{ _gc.caveat }} | 期权确认（做市商 Gamma）{% if _gr %} — {{ _gr.zh }}{% endif %} · {{ _gc.caveat_zh }}">{{ '✓' if _gc.verdict=='confirm' else ('⚠' if _gc.verdict=='caution' else '·') }} {{ t('Options', '期权') }} {% if _gc.verdict=='confirm' %}{{ t('confirm','确认') }}{% elif _gc.verdict=='caution' %}{{ t('caution','警示') }}{% else %}{{ t('neutral','中性') }}{% endif %}</span>{% endif %}
+            {% if _sqshow %}
+            <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %}{% if _vs.bbwp is not none %} · BBWP {{ _vs.bbwp }}{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% if _vs.volume_confirmed %} ✓{% endif %}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Vol expansion','波动扩张') }}{% endif %}</span>{% endif %}
+          </div>
+          {% endif %}
           <div class="nb-bot">
             {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
-            {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
+            {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
             {% if n.sector_rank %}<span class="nb-rk">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
             {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
               {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" title="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal · 需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>

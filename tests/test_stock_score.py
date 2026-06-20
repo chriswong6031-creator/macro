@@ -525,3 +525,96 @@ def test_imminent_earnings_sizes_down_and_cautions():
     assert soon["risk"]["total"] >= 0.5
     # earnings is a SIZE/verb concern, NOT a composite-rank tax (transient risk)
     assert soon["composite_z"] == base["composite_z"]
+
+
+# --- overhaul: technical confirmers wired into the ENTRY axis (verifiers, never alpha) -------
+def _entry_base():
+    return {"ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
+            "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
+
+
+def test_vol_squeeze_fired_up_lifts_entry_fired_down_trims():
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    up, pu, _ = ss._axis_entry({**base, "vol_squeeze": {"state": "FIRED_UP", "volume_confirmed": True}})
+    dn, _, _ = ss._axis_entry({**base, "vol_squeeze": {"state": "FIRED_DOWN"}})
+    assert up > z0 > dn
+    assert "vol-squeeze" in pu
+
+
+def test_gex_confirm_lifts_caution_trims_neutral_noop():
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    conf, pc, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "confirm"}})
+    caut, _, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "caution"}})
+    neut, _, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "neutral"}})
+    assert conf > z0 > caut
+    assert neut == z0                      # a NEUTRAL verifier does not move the entry
+    assert "options" in pc
+
+
+def test_trend_quality_tilt_direction():
+    base = _entry_base()
+    up, _, _ = ss._axis_entry({**base, "tech": {**base["tech"], "adx14": 30, "adx_trend": "up"}})
+    dn, _, _ = ss._axis_entry({**base, "tech": {**base["tech"], "adx14": 30, "adx_trend": "down"}})
+    assert up > dn
+
+
+def test_confirmer_nudge_is_bounded():
+    # even a maximally-bullish confirmer stack lifts the entry by a bounded amount
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    stacked, _, _ = ss._axis_entry({
+        **base, "tech": {**base["tech"], "adx14": 35, "adx_trend": "up"},
+        "vol_squeeze": {"state": "FIRED_UP", "volume_confirmed": True},
+        "gex_confirm": {"verdict": "confirm"}})
+    assert 0 < (stacked - z0) <= ss._ENTRY_CONFIRM_CAP * 1.6 + 1e-9
+
+
+def test_confirmer_cannot_rescue_a_blocked_or_extended_name():
+    # parabolic + over-extended + the strongest possible options/squeeze confirm: still no buy
+    rec = {"sue": 2.6, "insider_bps": 30.0, "alpha": 2.0,
+           "ext": {"grade": "parabolic", "ext_z": 2.6},
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -1.0, "rsi14": 80.0, "pct_vs_200dma": 40.0},
+           "vol_squeeze": {"state": "FIRED_UP", "volume_confirmed": True},
+           "gex_confirm": {"verdict": "confirm"}}
+    p = ss.conviction_profile(rec, "US")
+    assert "buy" not in p["verdict"].lower()
+    assert p["axes"]["entry"]["z"] <= ss._ENTRY_CAP_Z * 1.6 + 1e-9
+    assert "chase" in p["verdict"].lower() or "extended" in p["verdict"].lower()
+
+
+def test_hard_penalty_not_diluted_by_good_urgency():
+    # a parabolic name with the best-possible urgency still has a strongly-penalised entry
+    good = {"ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+            "tech": {"off_52w_high_pct": -3.0, "rsi14": 55.0}}
+    para = {**good, "ext": {"grade": "parabolic", "ext_z": 2.6}}
+    z_good, _, _ = ss._axis_entry(good)
+    z_para, _, _ = ss._axis_entry(para)
+    assert z_para < 0 < z_good            # the -1.0 penalty survives, not averaged away
+
+
+def test_risk_idio_gex_vol_regime_and_backcompat():
+    short = ss._risk_idio({"gex_confirm": {"levels": {"regime": "short", "vol_hole_state": "EXPANSION"}}})[0]
+    coiled = ss._risk_idio({"gex_confirm": {"levels": {"regime": "long", "vol_hole_state": "COILED_UP"}}})[0]
+    pin = ss._risk_idio({"gex_confirm": {"levels": {"regime": "long", "vol_hole_state": "IN_HOLE"}}})[0]
+    assert short > coiled > pin
+    # back-compat: a raw gamma_regime (no confirmer) still reads as risk
+    assert ss._risk_idio({"gex": {"gamma_regime": "short"}})[0] > 0
+
+
+def test_normalize_rec_passes_the_confirmers_through():
+    rec = {"ticker": "T", "gex": {"gamma_regime": "long"},
+           "gex_confirm": {"verdict": "caution"}, "vol_squeeze": {"state": "COILED"}}
+    n = ss.normalize_rec(rec, "US")
+    assert n["gex"]["gamma_regime"] == "long"
+    assert n["gex_confirm"]["verdict"] == "caution"
+    assert n["vol_squeeze"]["state"] == "COILED"
+
+
+def test_profile_surfaces_confirmers_for_display():
+    rec = _rec(gex_confirm={"verdict": "confirm"}, vol_squeeze={"state": "COILED"})
+    p = ss.conviction_profile(rec, "US")
+    assert p["gex_confirm"]["verdict"] == "confirm"
+    assert p["vol_squeeze"]["state"] == "COILED"

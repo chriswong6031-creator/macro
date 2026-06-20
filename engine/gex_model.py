@@ -312,6 +312,31 @@ def vol_smile(chain: pd.DataFrame, spot: float, cf: dict) -> dict:
             "strikes": [_f(k) for k in ks], "call_iv": civ, "put_iv": piv}
 
 
+def risk_reversal_25d(chain: pd.DataFrame, spot: float, cf: dict) -> float | None:
+    """25-delta risk reversal = (25Δ call IV − 25Δ put IV) in vol points, for the nearest
+    liquid expiry. Equity skew is STRUCTURALLY negative, so the LEVEL is display context only —
+    the confirmer (engine/gex_confirm) uses its CHANGE, never this number alone. Best-effort:
+    returns None when the chain carries no per-contract delta (the lighter compute_gex path)."""
+    if chain is None or "delta" not in chain.columns or not (spot and spot > 0):
+        return None
+    c = chain[(chain["T"] * 365 >= 2) & (chain["oi"] > 0) & chain["iv"].notna()].copy()
+    if c.empty or not c["delta"].notna().any():
+        return None
+    exp = sorted(c["expiry"].unique())[0] if "expiry" in c.columns else None
+    g = c[c["expiry"] == exp] if exp is not None else c
+    calls = g[g["is_call"]]
+    puts = g[~g["is_call"]]
+    if calls.empty or puts.empty:
+        return None
+    # the contract whose delta is closest to +0.25 (call) and −0.25 (put)
+    ci = (calls["delta"].astype(float) - 0.25).abs().idxmin()
+    pi = (puts["delta"].astype(float) + 0.25).abs().idxmin()
+    civ, piv = float(calls.loc[ci, "iv"]), float(puts.loc[pi, "iv"])
+    if not (civ > 0 and piv > 0):
+        return None
+    return round((civ - piv) * 100.0, 2)
+
+
 def _net_delta_bn(chain: pd.DataFrame, spot: float, cf: dict):
     """Dealer net $delta (long-call / short-put sign) in $bn — positioning context."""
     c = _window(chain, spot, cf["flip_window_pct"], need_iv=False)
@@ -703,6 +728,7 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
         "top_oi_share": _f(base.get("top_oi_share"), 3),
         "call_wall": walls["call_wall"], "put_wall": walls["put_wall"],
         "largest_oi": walls["largest_oi"],
+        "rr_25d": risk_reversal_25d(chain, spot, cf),   # display level; confirmer uses the CHANGE
     }
     # volume put/call (a flow tilt the OI ratio misses)
     if "volume" in chain.columns:
