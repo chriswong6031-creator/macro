@@ -455,6 +455,115 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </div>
   {% endif %}
 
+  {# ---------------- MACRO-REGIME SCORECARD · five-tier composite (DISPLAY-ONLY) ---------------- #}
+  {% if regime and regime.ok %}
+  {% set rtone = {'bull':'var(--bull)','bull-soft':'var(--blue)','neutral':'var(--muted)','bear-soft':'var(--amber)','bear':'var(--r3)'} %}
+  {% set rcol = rtone.get(regime.band_tone, 'var(--muted)') %}
+  {% set fl = regime.flags %}
+  <style>
+  .rgc-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px}
+  @media(max-width:760px){.rgc-grid{grid-template-columns:1fr}}
+  .rgc-meter{height:12px;border-radius:7px;background:linear-gradient(90deg,var(--r3),var(--amber) 38%,var(--muted) 50%,var(--blue) 64%,var(--bull));position:relative;margin:10px 0 4px}
+  .rgc-mk{position:absolute;top:-4px;width:4px;height:20px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--card)}
+  .rgc-tier{display:grid;grid-template-columns:96px 1fr 42px;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
+  .rgc-bar{height:9px;border-radius:5px;background:var(--hair);position:relative;overflow:hidden}
+  .rgc-bar > i{position:absolute;top:0;height:100%;border-radius:5px}
+  .rgc-fac{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;border:1px solid var(--hair);font-size:11.5px;margin:3px 4px 3px 0}
+  .rgc-org{font-size:9px;text-transform:uppercase;letter-spacing:.04em;opacity:.6;font-weight:700}
+  .rgc-flag{border:1px solid var(--hair);border-radius:10px;padding:10px 12px;font-size:12px}
+  .rgc-cond{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:11.5px}
+  .rgc-dot{width:7px;height:7px;border-radius:50%;flex:none}
+  </style>
+  <div class="section-title" style="margin-top:18px">🧭 {{ t('Macro-Regime Scorecard · five-tier composite', '宏观格局记分卡 · 五层综合') }}</div>
+  <div class="card" style="padding:18px 22px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <div style="font-size:30px;font-weight:800;color:{{ rcol }};font-variant-numeric:tabular-nums">{{ regime.index|round|int }}</div>
+        <div>
+          <div style="font-weight:700;color:{{ rcol }}">{{ t(regime.band, regime.band_zh) }}{% if regime.thin %} · <span class="faint">{{ t('thin','数据稀疏') }}</span>{% endif %}</div>
+          <div class="faint" style="font-size:11.5px">{{ t('0 = strong headwind · 100 = strong tailwind','0 = 强逆风 · 100 = 强顺风') }}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <span class="chip" style="border-color:{{ rcol }};color:{{ rcol }}">{{ t('DISPLAY-ONLY · does not size','仅供参考 · 不用于定仓') }}</span>
+        {% if regime.mode_lean and regime.mode_lean.ok %}<div class="faint" style="font-size:11.5px;margin-top:5px">{{ t('regime mode','格局模式') }}: <b style="color:var(--ink)">{{ t(regime.mode_lean.chip, regime.mode_lean.chip_zh) }}</b></div>{% endif %}
+      </div>
+    </div>
+    <div class="rgc-meter"><div class="rgc-mk" style="left:calc({{ regime.index }}% - 2px)"></div></div>
+    <div class="faint" style="font-size:11.5px">{{ t('Context exposure band (NOT a position):','参考仓位区间（非实际仓位）：') }} <b style="color:var(--ink)">{{ (regime.exposure_display*100)|round|int }}%</b> · {{ regime.n_live }} {{ t('live factors','有效因子') }}</div>
+
+    <div class="rgc-grid" style="margin-top:14px">
+      {# ---- per-tier sub-scores ---- #}
+      <div>
+        <div class="faint" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">{{ t('Transmission tiers','传导层') }}</div>
+        {% for tr_ in regime.tiers %}
+        {% set nv = tr_.norm if tr_.norm is not none else 0 %}
+        {% set tcol = 'var(--bull)' if nv > 0.05 else ('var(--r3)' if nv < -0.05 else 'var(--muted)') %}
+        {% set wpct = (nv*50)|abs|round|int %}
+        <div class="rgc-tier">
+          <span>{{ tr_.tier }} <span class="faint">{{ t(tr_.label, tr_.label) }}</span></span>
+          <span class="rgc-bar"><i style="background:{{ tcol }};{{ 'left' if nv>=0 else 'right' }}:50%;width:{{ wpct }}%"></i><i style="left:50%;width:1px;background:var(--muted);opacity:.4"></i></span>
+          <span style="text-align:right;color:{{ tcol }};font-variant-numeric:tabular-nums">{{ '%+0.0f'|format(tr_.sub) }}</span>
+        </div>
+        {% endfor %}
+        <div style="margin-top:10px">
+          {% for f in regime.factors %}
+          {% set fc = 'var(--bull)' if (f.score or 0) > 0 else ('var(--r3)' if (f.score or 0) < 0 else 'var(--muted)') %}
+          <span class="rgc-fac" style="{{ 'opacity:.45' if not f.present else '' }}">
+            <b style="color:{{ fc }};font-variant-numeric:tabular-nums">{{ ('%+d'|format(f.score)) if f.present else '–' }}</b>
+            {{ t(f.label, f.label) }}
+            <span class="rgc-org">{{ f.origin }}</span>
+          </span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {# ---- confluence tail flags ---- #}
+      <div>
+        <div class="faint" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:4px">{{ t('Confluence tail flags','合流尾部信号') }}</div>
+        <div style="font-size:12.5px;margin-bottom:8px">
+          {% if fl and fl.ok %}
+          {% if fl.active == 'STAY-AWAY' %}<b style="color:var(--r3)">🔴 {{ t('STAY-AWAY','回避') }}</b>
+          {% elif fl.active == 'DOUBLE-DOWN' %}<b style="color:var(--bull)">🟢 {{ t('DOUBLE-DOWN','加倍') }}</b>
+          {% else %}<b class="faint">{{ t('No tail flag active','无尾部信号') }}</b>{% endif %}
+          <span class="faint">· {{ t('needs ≥5 of 8 (count illustrative on ~5 cycles)','需 ≥5/8（约 5 个周期下计数仅供参考）') }}</span>
+          {% endif %}
+        </div>
+        {% if fl and fl.ok %}
+        <div class="rgc-flag" style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between"><b style="color:var(--r3)">{{ t('Stay-away','回避') }}</b><span style="font-variant-numeric:tabular-nums">{{ fl.stay_away.count }}/{{ fl.stay_away.n_available }} · k4/5/6: {{ '✓' if fl.stay_away.fires_at_k[4] else '·' }}{{ '✓' if fl.stay_away.fires_at_k[5] else '·' }}{{ '✓' if fl.stay_away.fires_at_k[6] else '·' }}</span></div>
+          {% for c in fl.stay_away.conditions %}<div class="rgc-cond"><span class="rgc-dot" style="background:{{ 'var(--r3)' if c.fired else 'var(--hair)' }}"></span>{{ t(c.label, c.label) }}{% if c.prov %} <span class="faint" style="font-size:10px">({{ t('shared','共享') }})</span>{% endif %}</div>{% endfor %}
+        </div>
+        <div class="rgc-flag">
+          <div style="display:flex;justify-content:space-between"><b style="color:var(--bull)">{{ t('Double-down','加倍') }}</b><span style="font-variant-numeric:tabular-nums">{{ fl.double_down.count }}/{{ fl.double_down.n_available }} · {{ t('prereq','前提') }}: {{ '✓' if fl.double_down.prereq_ok else '✗' }}</span></div>
+          {% for c in fl.double_down.conditions %}<div class="rgc-cond"><span class="rgc-dot" style="background:{{ 'var(--bull)' if c.fired else 'var(--hair)' }}"></span>{{ t(c.label, c.label) }}</div>{% endfor %}
+          {% if fl.double_down.override %}<div class="faint" style="font-size:11px;margin-top:4px">⛔ {{ t('suppressed by trend filter (Override #1)','受趋势过滤抑制（覆盖规则 #1）') }}</div>{% endif %}
+        </div>
+        {% if fl.onchain_panel and fl.onchain_panel.ok %}
+        <div class="faint" style="font-size:11.5px;margin-top:8px">{{ t('On-chain panel (rolling-percentile):','链上面板（滚动分位）：') }}
+          {% if fl.onchain_panel.depressed_co_flash %}<b style="color:var(--bull)">{{ t('cheap · panel-confirmed','便宜 · 面板确认') }}</b>
+          {% elif fl.onchain_panel.stretched_co_flash %}<b style="color:var(--r3)">{{ t('rich · panel-confirmed','偏贵 · 面板确认') }}</b>
+          {% else %}<b>{{ t('no co-flash','无共振') }}</b>{% endif %}
+          <span>({{ fl.onchain_panel.n_depressed }}↓ / {{ fl.onchain_panel.n_stretched }}↑ {{ t('of','/') }} {{ fl.onchain_panel.n }})</span>
+        </div>
+        {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% set cl = regime.context_legs %}
+    {% if cl %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+      {% if cl.netliq and cl.netliq.ok %}<span class="rgc-fac">🌊 {{ t('Net-liquidity','净流动性') }}: <b>{{ t(cl.netliq.impulse_state, cl.netliq.impulse_state) }}</b></span>{% endif %}
+      {% if cl.leverage and cl.leverage.ok %}<span class="rgc-fac" style="{{ 'border-color:var(--r3)' if cl.leverage.cascade_risk=='high' else '' }}">⚡ {{ t('Leverage','杠杆') }}: <b>{{ t(cl.leverage.cascade_risk, cl.leverage.cascade_risk) }}</b>{% if cl.leverage.derisk_cap %} · {{ t('cap','上限') }} {{ (cl.leverage.derisk_cap*100)|round|int }}%{% endif %}</span>{% endif %}
+      {% if cl.dat and cl.dat.ok and cl.dat.mnav is not none %}<span class="rgc-fac" style="{{ 'border-color:var(--r3)' if cl.dat.state=='discount' else '' }}">🏛 {{ t('MSTR mNAV','MSTR mNAV') }}: <b>{{ '%.2f'|format(cl.dat.mnav) }}×</b> {{ t(cl.dat.state, cl.dat.state) }}</span>{% endif %}
+      {% if cl.etf_perfund and cl.etf_perfund.ok and cl.etf_perfund.ibit_share is not none %}<span class="rgc-fac">📊 IBIT {{ (cl.etf_perfund.ibit_share*100)|round|int }}%</span>{% endif %}
+    </div>
+    {% endif %}
+    <div class="sub faint" style="margin-top:12px;font-size:11.5px">{{ t('Transparent fixed weights, no fitting. The composite did NOT beat the hand-tuned allocator out-of-sample (kill-test), so it never sizes — it is an avoidance instrument. ORIGIN: apriori = sign/economics only · context = 2024-onward flow leg (graded forward, never gates).', '透明固定权重，无拟合。该综合在样本外未能跑赢手工调校的配置器（kill-test），故从不用于定仓 — 仅作回避工具。ORIGIN：apriori = 仅基于符号/经济学 · context = 2024 年起的资金流分项（仅前瞻评分，从不作为门槛）。') }}</div>
+    {% if regime.ledger and regime.ledger.honesty_note %}<div class="sub faint" style="margin-top:6px;font-size:11.5px">📒 {{ t('Forward ledger','前瞻账本') }}: {{ t(regime.ledger.honesty_note, regime.ledger.honesty_note_zh) }}</div>{% endif %}
+  </div>
+  {% endif %}
+
   {# ---------------- FORWARD OUTLOOK CONES (regime-conditioned distribution) ---------------- #}
   {% if cones and cones.ok and cones.horizons %}
   {% set ch = cones.horizons %}

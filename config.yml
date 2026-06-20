@@ -2877,6 +2877,21 @@ vector:
     soleth_slope_d: 56            # 8-week SOL/ETH slope
     soleth_pctile_d: 730          # 2y SOL/ETH percentile (SOL-USD ~2020->)
 
+  # Macro-regime composite deferred CONTEXT legs (engine/btc_netliq, etf_perfund,
+  # btc_dat, btc_leverage_cascade). All DISPLAY-ONLY — they never size or gate.
+  btc_netliq:
+    enabled: true
+    yoy_window_d: 252             # YoY ROC lookback for the Howell net-liquidity stack
+  btc_etf_perfund:
+    scrape_enabled: false         # Farside per-fund scrape OFF by default (read-only otherwise)
+    url: "https://farside.co.uk/bitcoin-etf-flow-all-data/"
+  btc_dat:
+    json_path: "data/dat_holdings.json"   # manual 8-K-sourced MSTR/DAT drop (NOT 13F)
+    margin_haircut: 0.78          # forced-sell trigger ~ avg_cost x this (≈ -22%)
+  btc_leverage_cascade:
+    high_funding_annual_pct: 50   # annualized funding above this = "high"
+    sustain_days: 3               # consecutive days of high funding to flag a cascade
+
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)
     split_date: "2021-01-01"      # split-half robustness boundary
