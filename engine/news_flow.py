@@ -1,12 +1,15 @@
 """Modeled per-theme NEWS FLOW — velocity / acceleration of the macro-narrative slice.
 
 The repo's built-in "modeled news flow" is the point-in-time GDELT narrative log
-(engine/news_vector.py → data/news_vector/events.parquet): reputable-source headlines
+(the news bus accrues data/news_vector/events.parquet): reputable-source headlines
 classified into MACRO narrative buckets (geopolitics / trade / industrial_policy /
 monetary / …). This module maps each thematic basket onto the macro buckets it's
 exposed to and reads the news VELOCITY (tier-weighted article count, last 7d) and
 ACCELERATION (vs the prior 7d) for that basket — one leg of the multi-source
 real-activity observable (engine/real_activity.py).
+
+LEAF DISCIPLINE: news_flow is a scoring-path leg, so it must NOT import the display-only
+bus module — it reads the bus's OUTPUT parquet directly via lib.config (see _events_path).
 
 HONEST + COARSE BY DESIGN: the news store is macro-narrative-scoped, not per-ticker, so
 only baskets with a clear macro channel (defense→geopolitics, semis→industrial_policy,
@@ -16,14 +19,15 @@ carries a LOW fusion weight. Display/context only — never a score input on its
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import pandas as pd
 
-from engine import news_vector
+from lib import config
 
 log = logging.getLogger(__name__)
 
-# basket_id -> the macro narrative buckets (news_vector.NARRATIVE_THEMES keys) it rides.
+# basket_id -> the macro narrative buckets (the bus's macro-narrative themes) it rides.
 # Coarse + curated; absent baskets get no news leg (honest — the store can't resolve them).
 BASKET_TO_GDELT_THEME: dict[str, list[str]] = {
     "defense":           ["geopolitics", "industrial_policy"],
@@ -47,10 +51,18 @@ _TIER_W = {1: 1.0}    # tier-1 wires full weight; everything else 0.6
 _OTHER_TIER_W = 0.6
 
 
+def _events_path(root=None) -> Path:
+    """Path to the bus's accrued PIT event parquet, resolved WITHOUT importing the bus
+    module (LEAF discipline). Mirrors news_vector's own location: <data_dir>/news_vector/.
+    A read path, so it does not create the directory."""
+    base = (root / "data") if root is not None else config.data_dir()
+    return base / "news_vector" / "events.parquet"
+
+
 def load_events(root=None) -> pd.DataFrame | None:
     """The PIT narrative-news log with a parsed UTC timestamp. None if absent/empty."""
     try:
-        p = news_vector._events_path() if root is None else (root / "data" / "news_vector" / "events.parquet")
+        p = _events_path(root)
         if not p.exists():
             return None
         df = pd.read_parquet(p)
