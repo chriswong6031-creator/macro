@@ -2060,6 +2060,23 @@ ai_desk:
                                  # skeptic/base-rate/structural) -> desk-head adjudicator.
                                  # false = single analyst (cheaper: 1 LLM call vs 5).
 
+# Narrative Brain — Claude reasoning desk for the Divergence Radar (engine/narrative_brain.py).
+# Reads site/basketdata/radar.json as an evidence pack; judges theme durability/continuity
+# (Sonnet, per theme) + a cross-theme rotation read (Opus). Falsifiable + ledger-graded;
+# a CODE clamp blocks ENTER on a fading/negative theme. CONTEXT-ONLY — no score/allocation.
+narrative_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  models:
+    durability: claude-sonnet-4-6   # per-theme durability/continuity (medium reasoning)
+    rotation: claude-opus-4-8       # one cross-theme rotation synthesis (deep)
+  interval_days: 1
+  max_themes: 6                  # cap per-theme LLM calls (cost + honesty over breadth)
+  max_tokens: 6000
+  horizon_d: 21                  # trading-day horizon for the falsifiable proxy-vs-SPY check
+  rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
+
 # =============================================================================
 # Stock desk — accountable AI JUDGMENT layer on the US standout top-picks
 # (engine/stock_desk.py; T9). The per-stock sibling of ai_desk: turns each top pick's
