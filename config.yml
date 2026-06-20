@@ -1672,6 +1672,19 @@ transmission:
     sticky_inflation: false          # corepce_gap -> MRS
 
 # =============================================================================
+# YIELD-CURVE analytics (engine/yield_curve.py) — the unified, theory-grounded
+# interest-rate read surfaced on the transmission page + emitted dashboard-wide
+# (latest.json["yield_curve"]). DISPLAY-ONLY: reuses the bond-engine curve primitives
+# (probit / near-term forward spread / move taxonomy / un-inversion) and the
+# transmission IC matrix; the scored-leg gate found NO curve leg robust enough to score.
+yield_curve:
+  enabled: true
+  regime_window_d: 21                # ~1mo window for the bull/bear × steep/flat classification
+  neutral_funds: 2.5                 # ~nominal-neutral funds anchor (r* ~0.5% + 2% target) for the Wright policy-stance read
+  # (the percentile / momentum / PCA windows are engine constants — PCTILE_LOOKBACK 1260,
+  #  MOM_WINDOW 63, PCA_WINDOW 1260 — documented in engine/yield_curve.py.)
+
+# =============================================================================
 # Treasury auction RESULTS (collectors/treasury_auctions.py + engine/treasury_supply.py)
 # — the DEMAND side of the Treasury market from the keyless TreasuryDirect
 # TA_WS/securities/auctioned feed. Display-only "supply absorption" panel on the

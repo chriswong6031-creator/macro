@@ -198,6 +198,20 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("rate/inflation transmission layer failed: %s", e)
         latest["rate_inflation_transmission"] = None
+    # YIELD-CURVE analytics (research/YIELD_CURVE_ENGINE.md): the unified interest-rate
+    # read — shape (level/slope/curvature + the Litterman-Scheinkman PCA variance), every
+    # canonical slope + its momentum, the bull/bear × steepener/flattener regime with its
+    # Fed-cycle phase and asset map, the recession dashboard (near-term forward spread +
+    # NY-Fed probit + un-inversion + TP-adjusted), forward rates with carry/roll-down, and
+    # four typed signal families (core-macro / sector / stock-factor / market-tendency).
+    # DISPLAY-ONLY leaf (engine/yield_curve.py) reusing the bond-engine curve primitives;
+    # the scored-leg gate found NO curve leg robust enough to score. Never fatal.
+    try:
+        from engine.yield_curve import snapshot as yield_curve_snapshot
+        latest["yield_curve"] = yield_curve_snapshot(f)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("yield-curve layer failed: %s", e)
+        latest["yield_curve"] = None
     # Turning-point fragility meta-layer (engine/turning_point.py): reads ACROSS the
     # leaves above (cross_asset / market_drivers / conditions / dislocation / fed_path)
     # and raises a DISPLAY-ONLY caution when the tape is a one-factor macro-shock

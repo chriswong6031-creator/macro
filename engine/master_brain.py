@@ -109,6 +109,11 @@ MASTER_SYSTEM_TMPL = (
     "causal chains are active. The coefficients are MEASURED forward IC but `scored` is "
     "false on purpose — the gate found no leg robust enough to time returns, so frame it "
     "as RISK (which assets are pressured), never as a return forecast.\n"
+    "- The nested `yield_curve` is the curve read: state the regime (bull/bear × steepener/"
+    "flattener) and its Fed-cycle phase, the recession-dashboard risk (n flags from the "
+    "near-term forward spread / 3m10y probit / un-inversion / TP-adjusted slope), the policy "
+    "stance, and the curve's style tilt (value vs growth, size). Display-only context — the "
+    "curve is REACTIVE; narrate the backdrop, never call it a timing signal.\n"
     "- OPEN with the dominant driver in `macro.market_drivers` when one is present — "
     "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
     "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
@@ -410,7 +415,7 @@ def _transmission_summary(macro: dict | None) -> dict | None:
     st = t.get("state") or {}
     def lab(d):  # the EN side of a bilingual label dict
         return (d or {}).get("label", {}).get("en") if isinstance(d, dict) else None
-    return {
+    out = {
         "rates": lab(st.get("rates")), "inflation": lab(st.get("inflation")),
         "expectations": lab(st.get("expectations")),
         "headwinds": [h.get("asset") for h in (t.get("headwinds") or [])[:4]],
@@ -418,6 +423,23 @@ def _transmission_summary(macro: dict | None) -> dict | None:
         "active_chains": [c.get("id") for c in (t.get("chains") or []) if c.get("active")],
         "scored": False,
     }
+    # slim yield-curve read (engine/yield_curve.py) — regime + recession dashboard +
+    # the curve's sector/style tilt. Display-only context; the curve narrates, never sizes.
+    yc = (macro or {}).get("yield_curve")
+    if yc:
+        reg = yc.get("regime") or {}
+        rec = yc.get("recession") or {}
+        fac = (yc.get("signals") or {}).get("stock_factor") or {}
+        out["yield_curve"] = {
+            "regime": (reg.get("label") or {}).get("en"),
+            "fed_phase": (reg.get("fed_phase") or {}).get("en"),
+            "favored": reg.get("favored"), "pressured": reg.get("pressured"),
+            "recession_risk": rec.get("risk"), "recession_flags": rec.get("flags"),
+            "policy_stance": (rec.get("policy_stance") or {}).get("stance"),
+            "style": {k: fac.get(k) for k in ("value_vs_growth", "size", "duration_factor")},
+            "market_tendency": ((yc.get("signals") or {}).get("market_tendency") or {}).get("drawdown_risk"),
+        }
+    return out
 
 
 def _policy_intel_summary(root: Path) -> dict | None:
