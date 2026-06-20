@@ -192,7 +192,8 @@
     {% for w in d.allocation.weights %}
     <div class="arow">
       <span class="nm">#{{ w.rank }} {{ t(w.name, w.name_zh) }}
-        {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}</span>
+        {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}
+        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--up);border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
       <span class="bar"><span class="fill" style="width:{{ ((w.weight/0.35*100) if w.weight>0 else 0)|round(1) }}%"></span></span>
       <span class="wv">{{ (w.weight*100)|round|int }}%</span>
     </div>
@@ -262,6 +263,8 @@
   <tr class="{{ '' if r.eligible else 'inelig' }}">
     <td><b><a class="tlink" href="{{ BASKETS_PAGE }}#b-{{ r.id }}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       {% if r.rank==1 %}<span class="stage lead">{{ t('LEADER', '领跑') }}</span>{% endif %}
+      {% if r.val_upgrade %}<span class="stage" style="color:var(--up)" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
+      {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--warn)" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
       <div class="legrow">{{ r.category }} · {{ r.n_live }} {{ t('names', '只') }}</div></td>
     <td class="num"><b>{{ '%.2f'|format(r.score) if r.score is not none else '—' }}</b></td>
     <td>{% if r.eligible %}<span class="stage" style="color:var(--up)">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
