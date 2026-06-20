@@ -1,0 +1,1448 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">News — Macro · Markets · Sectors · China</span><span class="l-zh">新闻 — 宏观 · 市场 · 板块 · 中国</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body.page-news{ background:var(--bg); color:var(--text); margin:0;
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .page-news a{ color:var(--link); text-decoration:none; }
+  .news-wrap{ max-width:1180px; margin:0 auto; padding:14px 16px 64px; }
+  .news-head h1{ font-size:25px; margin:6px 0 2px; letter-spacing:-.01em; }
+  .news-head p{ margin:0 0 6px; color:color-mix(in srgb,var(--text) 62%,transparent); }
+  /* sticky jump nav */
+  .jump{ position:sticky; top:0; z-index:20; display:flex; gap:6px; flex-wrap:wrap;
+    padding:9px 0; margin:6px 0 14px; background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid color-mix(in srgb,var(--text) 10%,transparent); }
+  .jump a{ font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:999px;
+    border:1px solid color-mix(in srgb,var(--text) 14%,transparent);
+    color:color-mix(in srgb,var(--text) 80%,transparent); }
+  .jump a.on, .jump a:hover{ background:var(--link); color:#fff; border-color:var(--link); }
+  /* section + card */
+  .sec{ margin:0 0 30px; scroll-margin-top:58px; }
+  .sec-h{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:0 0 10px; }
+  .sec-h h2{ font-size:18px; margin:0; }
+  .sec-h .sub{ font-size:12px; color:color-mix(in srgb,var(--text) 55%,transparent); }
+  .card{ border:1px solid color-mix(in srgb,var(--text) 11%,transparent); border-radius:12px;
+    background:color-mix(in srgb,var(--text) 3%,transparent); padding:12px 14px; }
+  .grid{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
+  .card h3{ font-size:14px; margin:0 0 8px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .card h3 .etf{ font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:6px;
+    background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  /* headline list */
+  ul.hl-list{ list-style:none; margin:0; padding:0; }
+  .hl{ padding:8px 0; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); }
+  .hl:first-child{ border-top:0; }
+  .hl-title{ font-weight:560; }
+  .hl-title:hover{ text-decoration:underline; }
+  .hl-sum{ font-size:12.5px; color:color-mix(in srgb,var(--text) 64%,transparent); margin-top:2px; }
+  .hl-meta{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:4px;
+    font-size:11px; color:color-mix(in srgb,var(--text) 52%,transparent); }
+  .chip{ font-size:10px; font-weight:600; padding:1px 6px; border-radius:6px;
+    background:color-mix(in srgb,var(--text) 9%,transparent); }
+  .chip-tk{ font-family:ui-monospace,Menlo,monospace; }
+  .chip-th{ background:color-mix(in srgb,var(--link) 15%,transparent); color:var(--link); }
+  .s-pos{ background:color-mix(in srgb,#16a34a 22%,transparent); color:#16a34a; }
+  .s-neg{ background:color-mix(in srgb,#dc2626 22%,transparent); color:#dc2626; }
+  .src{ font-weight:600; }
+  .ago{ margin-left:auto; white-space:nowrap; }
+  .brief{ border-left:3px solid var(--link); padding:8px 12px; border-radius:0 8px 8px 0;
+    background:color-mix(in srgb,var(--link) 7%,transparent); margin:0 0 12px; font-size:13px; }
+  .cats{ display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
+  .cat-cnt{ font-size:11.5px; padding:3px 9px; border-radius:8px;
+    background:color-mix(in srgb,var(--text) 7%,transparent); }
+  details.basket-group{ margin:0 0 10px; }
+  details.basket-group>summary{ cursor:pointer; font-weight:700; font-size:13.5px; padding:7px 0;
+    list-style:none; }
+  details.basket-group>summary::-webkit-details-marker{ display:none; }
+  details.basket-group>summary::before{ content:'▸'; margin-right:7px; color:var(--link); }
+  details.basket-group[open]>summary::before{ content:'▾'; }
+  .disc{ font-size:11px; color:color-mix(in srgb,var(--text) 50%,transparent);
+    margin-top:10px; line-height:1.5; }
+  .empty{ font-size:12.5px; color:color-mix(in srgb,var(--text) 50%,transparent); padding:8px 0; }
+  .cat-list{ list-style:none; margin:0; padding:0; }
+  .cat-list li{ padding:6px 0; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);
+    display:flex; gap:10px; font-size:13px; }
+  .cat-list li:first-child{ border-top:0; }
+  .cat-list .d{ font-family:ui-monospace,Menlo,monospace; font-size:12px; white-space:nowrap;
+    color:color-mix(in srgb,var(--text) 60%,transparent); }
+  .cat-list .imp{ font-size:10px; font-weight:700; padding:0 5px; border-radius:5px;
+    background:color-mix(in srgb,#f59e0b 22%,transparent); color:#b45309; }
+  footer.news-foot{ margin-top:24px; padding-top:14px;
+    border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent);
+    font-size:11px; color:color-mix(in srgb,var(--text) 50%,transparent); }
+</style>
+</head>
+<body class="page-news">
+<nav class="site-nav">
+  
+
+
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search any stock, ETF, commodity or crypto"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="news-wrap">
+  <div class="news-head">
+    <h1>📰 <span class="l-en">News</span><span class="l-zh">新闻</span></h1>
+    <p><span class="l-en">Curated, source-ranked headlines across macro, the US stock market, every sector & thematic basket, and China — context only, never a signal.</span><span class="l-zh">精选、按来源质量排序的头条：宏观、美股大盘、各板块与主题篮子，以及中国 — 仅作背景，绝非信号。</span></p>
+  </div>
+
+  <nav class="jump" aria-label="Sections">
+    <a href="#macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></a>
+    <a href="#market"><span class="l-en">Market</span><span class="l-zh">大盘</span></a>
+    <a href="#mag7"><span class="l-en">Mag-7</span><span class="l-zh">七巨头</span></a>
+    <a href="#sectors"><span class="l-en">Sectors</span><span class="l-zh">板块</span></a>
+    <a href="#baskets"><span class="l-en">Baskets</span><span class="l-zh">主题篮子</span></a>
+    <a href="#china"><span class="l-en">China</span><span class="l-zh">中国</span></a>
+    <a href="#narrative"><span class="l-en">Narrative</span><span class="l-zh">叙事</span></a>
+  </nav>
+
+  
+  
+  <section class="sec" id="macro">
+    <div class="sec-h"><h2>🏛️ <span class="l-en">Macro news, sentiment & catalysts</span><span class="l-zh">宏观新闻、情绪与催化</span></h2>
+      <span class="sub"><span class="l-en">Reputable wires · macro themes</span><span class="l-zh">权威通讯社 · 宏观主题</span> · 0</span></div>
+    
+    <div class="grid">
+      <div class="card">
+        <h3><span class="l-en">Top macro headlines</span><span class="l-zh">宏观头条</span></h3>
+        <div class="empty"><span class="l-en">Quiet macro tape.</span><span class="l-zh">宏观平静。</span></div>
+      </div>
+      <div class="card">
+        <h3>🗓️ <span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化</span></h3>
+        <ul class="cat-list">
+          <li>
+            <span class="d">2026-06-19 · 16:00</span>
+            <span>Quad-witching expiration</span></li><li>
+            <span class="d">2026-06-23 · 13:00</span>
+            <span>2-Year Note auction</span></li><li>
+            <span class="d">2026-06-24 · 13:00</span>
+            <span>2-Year Note auction (reopening)</span></li><li>
+            <span class="d">2026-06-24 · 13:00</span>
+            <span>5-Year Note auction</span></li><li>
+            <span class="d">2026-06-25 · 08:30</span>
+            <span>GDP (BEA estimate)</span></li><li>
+            <span class="d">2026-06-25 · 08:30</span>
+            <span>PCE / personal income (BEA)</span></li><li>
+            <span class="d">2026-06-25 · 08:30</span>
+            <span>Initial jobless claims</span></li><li>
+            <span class="d">2026-06-25 · 13:00</span>
+            <span>7-Year Note auction</span></li><li>
+            <span class="d">2026-07-01 · 10:00</span>
+            <span>ISM Manufacturing PMI</span></li><li>
+            <span class="d">2026-07-02 · 08:30</span>
+            <span>Jobs report (nonfarm payrolls)</span></li><li>
+            <span class="d">2026-07-02 · 08:30</span>
+            <span>Initial jobless claims</span></li><li>
+            <span class="d">2026-07-03 · 10:00</span>
+            <span>ISM Services PMI</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="disc">Context only — not a signal. These headlines are filtered (reputable sources, macro themes only) and shown as background; the “sentiment” gauge is the SF-Fed Daily News Sentiment Index (a quantitative series), NOT a per-headline AI judgement. Nothing here is an input to any score, signal or allocation, and the mechanical model never sees it. Upcoming-catalyst dates are scheduling information, not forecasts.<br><span class="l-zh">仅作背景，非信号。以下头条已经过筛选（仅可靠来源、仅宏观主题）；“情绪”指标采用旧金山联储每日新闻情绪指数（一个量化序列），并非逐条新闻的 AI 判断。这里没有任何内容会进入任何评分、信号或配置，机械模型也从不读取它们。即将到来的催化日期为日程信息，而非预测。</span></div>
+  </section>
+  
+
+  
+  
+  <section class="sec" id="market">
+    <div class="sec-h"><h2>📈 <span class="l-en">Market-wide</span><span class="l-zh">全市场</span></h2>
+      <span class="sub"><span class="l-en">Broad equity-market news</span><span class="l-zh">大盘股市新闻</span> · 3 <span class="l-en">sources</span><span class="l-zh">来源</span></span></div>
+    <div class="card">
+      <ul class="hl-list">
+        
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.yahoo.com/news/politics/articles/u-qatar-discuss-plan-iran-035311616.html" target="_blank" rel="noopener noreferrer">U . S ., Qatar discuss plan to give Iran access to $6 billion in frozen funds</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">S</span>
+    
+    <span class="src">yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T04:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/technology/articles/elon-musks-robotaxi-goals-boost-213205974.html" target="_blank" rel="noopener noreferrer">Elon Musk Robotaxi Goals Get A Boost As Texas DOT Official Hails Tesla Cybercab</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">TSLA</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T04:00:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/spacex-just-went-public-heres-210900370.html" target="_blank" rel="noopener noreferrer">SpaceX Just Went Public . Here What Smart Investors Are Doing With SPCX Stock Right Now .</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T03:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/apple-latest-reveal-proves-micron-210909169.html" target="_blank" rel="noopener noreferrer">Apple Latest Reveal Proves That Micron Has  More Room To Run</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">AAPL</span><span class="chip chip-tk">MU</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T03:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/carnival-stock-pops-mediterranean-expansion-201658938.html" target="_blank" rel="noopener noreferrer">Carnival Stock Pops on Mediterranean Expansion Plans</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T02:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/6-simple-questions-ask-yourself-204818820.html" target="_blank" rel="noopener noreferrer">6 Simple Questions to Ask Yourself So You Can Survive ( and Maybe Thrive ) Even in a True Bear Market</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T02:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/crypto/articles/hyperion-ceo-says-hype-rally-201100156.html" target="_blank" rel="noopener noreferrer">Hyperion CEO Says HYPE Rally Still Undervalues Hyperliquid Ecosystem Shift</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T02:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/economy/policy/articles/quiet-revolution-fed-u-banking-201714249.html" target="_blank" rel="noopener noreferrer">The Quiet Revolution at the Fed : The U . S . Banking Sector Received a Catalyst More Potent than Rate Cuts</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">S</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T02:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/does-appian-ceos-sale-50-200901558.html" target="_blank" rel="noopener noreferrer">What Does Appian CEO Sale of 50 , 000 Shares for $1 . 2 Million Mean for Investors ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T02:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/stocks-sharply-higher-us-iran-203423331.html" target="_blank" rel="noopener noreferrer">Stocks Sharply Higher as US - Iran Peace Deal Eases Inflation Risks</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T02:30:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/oil-companies-sounding-alarm-inventories-183500779.html" target="_blank" rel="noopener noreferrer">Oil Companies are Sounding the Alarm on Inventories . Here What You Need to Know .</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T01:45:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/magnificent-7-debt-binge-sending-184706781.html" target="_blank" rel="noopener noreferrer">The Magnificent 7 Debt Binge is Sending a Crystal Clear Message to Wall Street . But Are Investors Paying Attention ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T01:45:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/accenture-q3-fy2026-earnings-stock-183759093.html" target="_blank" rel="noopener noreferrer">Accenture Q3 FY2026 earnings : stock sinks on lowered forecast</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T01:45:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/trump-just-sent-intel-stock-193645149.html" target="_blank" rel="noopener noreferrer">Trump Just Sent Intel Stock Soaring . Here Why .</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">INTC</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T01:45:00+00:00">2026-06-20</time>
+  </div>
+</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="mag7">
+    <div class="sec-h"><h2>🦣 <span class="l-en">Magnificent Seven</span><span class="l-zh">七巨头</span></h2>
+      <span class="sub"><span class="l-en">Per-name megacap news</span><span class="l-zh">逐只大型科技股新闻</span></span></div>
+    <div class="grid">
+      
+      <div class="card">
+        <h3><span class="chip chip-tk">AAPL</span> Apple</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="chip chip-tk">MSFT</span> Microsoft</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="chip chip-tk">NVDA</span> Nvidia</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="chip chip-tk">AMZN</span> Amazon</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="chip chip-tk">GOOGL</span> Alphabet (Google)</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="chip chip-tk">META</span> Meta Platforms</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="chip chip-tk">TSLA</span> Tesla</h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="sectors">
+    <div class="sec-h"><h2>🧭 <span class="l-en">Sectors (11 GICS)</span><span class="l-zh">行业板块（11 GICS）</span></h2>
+      <span class="sub"><span class="l-en">SPDR sector ETFs + holdings</span><span class="l-zh">SPDR 行业 ETF + 成份</span></span></div>
+    <div class="grid">
+      
+      <div class="card">
+        <h3><span class="etf">XLB</span> <span class="l-en">Materials</span><span class="l-zh">原材料</span></h3>
+        <ul class="hl-list">
+          
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/bhp-shares-sink-5-6-175337487.html" target="_blank" rel="noopener noreferrer">BHP Shares Sink 5 . 6 % After $2 . 3 Billion Jansen Write - Down</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T18:15:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/donald-trump-top-crypto-stock-153544302.html" target="_blank" rel="noopener noreferrer">Here Donald Trump Top Crypto Stock Pick in 2026</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T16:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLC</span> <span class="l-en">Communication Services</span><span class="l-zh">通信服务</span></h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLE</span> <span class="l-en">Energy</span><span class="l-zh">能源</span></h3>
+        <ul class="hl-list">
+          
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.fool.com/investing/2026/06/19/prediction-oil-will-hit-60-a-barrel-in-2027-heres/" target="_blank" rel="noopener noreferrer">Prediction : Oil Will Hit $60 a Barrel in 2027 . Here How to Invest Now .</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">fool.com</span>
+    <time class="ago" datetime="2026-06-20T02:00:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/oil-companies-sounding-alarm-inventories-183500779.html" target="_blank" rel="noopener noreferrer">Oil Companies are Sounding the Alarm on Inventories . Here What You Need to Know .</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-20T01:45:00+00:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.fool.com/coverage/better-buy/2026/06/19/conocophillips-vs-viper-energy-which-energy-stock-is-a-better-buy-in-2026/?source=iedfolrf0000001" target="_blank" rel="noopener noreferrer">ConocoPhillips vs . Viper Energy : Which Energy Stock Is a Better Buy in 2026 ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">fool.com</span>
+    <time class="ago" datetime="2026-06-19T18:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/conocophillips-vs-viper-energy-energy-143259338.html" target="_blank" rel="noopener noreferrer">ConocoPhillips vs . Viper Energy : Which Energy Stock Is a Better Buy in 2026 ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T15:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/energy-etf-better-buy-global-230342958.html" target="_blank" rel="noopener noreferrer">Which Energy ETF Is the Better Buy : Global X MLPX or iShare Clean Energy Fund ICLN ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T11:15:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/2-nuclear-stocks-worth-buying-105000954.html" target="_blank" rel="noopener noreferrer">2 Nuclear Stocks Worth Buying as AI and Geopolitics Drive Demand for Power</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T11:15:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/bank-america-sees-exxon-differently-191300161.html" target="_blank" rel="noopener noreferrer">Bank of America sees Exxon differently than oil market</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">BAC</span><span class="chip chip-tk">XOM</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T07:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/top-high-yield-dividend-stocks-152000240.html" target="_blank" rel="noopener noreferrer">Top High - Yield Dividend Stocks to Buy With $1 , 000 Right Now</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-18T23:15:00+00:00">2026-06-18</time>
+  </div>
+</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLF</span> <span class="l-en">Financials</span><span class="l-zh">金融</span></h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLI</span> <span class="l-en">Industrials</span><span class="l-zh">工业</span></h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLK</span> <span class="l-en">Technology</span><span class="l-zh">科技</span></h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLP</span> <span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span></h3>
+        <ul class="hl-list">
+          
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/clorox-stock-underperforming-dow-133604301.html" target="_blank" rel="noopener noreferrer">Is Clorox Stock Underperforming the Dow ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T21:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/philip-morris-international-pm-declares-011514841.html" target="_blank" rel="noopener noreferrer">Philip Morris International ( PM ) Declares Quarterly Dividend of $1 . 47 per Share</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">PM</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T12:00:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/3-reasons-sell-pep-1-105258793.html" target="_blank" rel="noopener noreferrer">3 Reasons to Sell PEP and 1 Stock to Buy Instead</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    <span class="chip chip-tk">PEP</span>
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T11:15:00+00:00">2026-06-19</time>
+  </div>
+</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLRE</span> <span class="l-en">Real Estate</span><span class="l-zh">房地产</span></h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLU</span> <span class="l-en">Utilities</span><span class="l-zh">公用事业</span></h3>
+        <ul class="hl-list">
+          
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/energy/articles/invisible-energy-crisis-threatening-derail-000000469.html" target="_blank" rel="noopener noreferrer">The Invisible Energy Crisis Threatening to Derail the AI Boom</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T10:45:00+00:00">2026-06-19</time>
+  </div>
+</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLV</span> <span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></h3>
+        <ul class="hl-list">
+          
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.rttnews.com/story.aspx?Id=3661488" target="_blank" rel="noopener noreferrer">Canadian Stocks Turning In Mixed Performance In Lackluster Trade</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">rttnews.com</span>
+    <time class="ago" datetime="2026-06-19T20:15:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/healthcare/articles/vanguard-vht-vs-vaneck-pph-104101698.html" target="_blank" rel="noopener noreferrer">Vanguard ( VHT ) vs VanEck ( PPH ): Which Healthcare ETF Is the Better Buy ?</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T20:45:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/healthcare/articles/pcma-sues-exempt-pbms-illinois-102200955.html" target="_blank" rel="noopener noreferrer">PCMA sues to exempt PBMs from Illinois drug law</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T20:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/healthcare/articles/pfizer-cfo-departs-consumer-goods-102408468.html" target="_blank" rel="noopener noreferrer">Pfizer CFO departs for consumer goods sector</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    <time class="ago" datetime="2026-06-19T20:30:00+00:00">2026-06-19</time>
+  </div>
+</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3><span class="etf">XLY</span> <span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span></h3>
+        <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="baskets">
+    <div class="sec-h"><h2>🧺 <span class="l-en">Thematic baskets</span><span class="l-zh">主题篮子</span></h2>
+      <span class="sub"><span class="l-en">News for every theme basket</span><span class="l-zh">每个主题篮子的新闻</span> · 25</span></div>
+    
+    
+    
+    <details class="basket-group" open>
+      <summary>AI &amp; Technology <span class="src">(3)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Magnificent Seven <span class="l-zh" style="font-weight:400;opacity:.7">七巨头</span>
+            <span class="etf">QQQ</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>AI Infrastructure <span class="l-zh" style="font-weight:400;opacity:.7">AI 基础设施</span>
+            <span class="etf">SMH</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>AI Software &amp; Platforms <span class="l-zh" style="font-weight:400;opacity:.7">AI 软件与平台</span>
+            <span class="etf">XLK</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Industrials &amp; Defense <span class="src">(2)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Defense &amp; Aerospace <span class="l-zh" style="font-weight:400;opacity:.7">国防与航空航天</span>
+            <span class="etf">ITA</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Reshoring &amp; Industrial Capex <span class="l-zh" style="font-weight:400;opacity:.7">回流与工业资本开支</span>
+            <span class="etf">XLI</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Energy &amp; Power <span class="src">(4)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Power &amp; Grid Buildout <span class="l-zh" style="font-weight:400;opacity:.7">电力与电网</span>
+            <span class="etf">XLU</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>US Energy Complex <span class="l-zh" style="font-weight:400;opacity:.7">美国能源综合</span>
+            <span class="etf">XLE</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Data-Center Power &amp; Cooling <span class="l-zh" style="font-weight:400;opacity:.7">数据中心电力与散热</span>
+            <span class="etf">XLU</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Nuclear &amp; SMR Power <span class="l-zh" style="font-weight:400;opacity:.7">核电与小型模块化反应堆</span>
+            </h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Financials <span class="src">(2)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Regional Banks <span class="l-zh" style="font-weight:400;opacity:.7">区域银行</span>
+            <span class="etf">KRE</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Payments &amp; Fintech <span class="l-zh" style="font-weight:400;opacity:.7">支付与金融科技</span>
+            <span class="etf">XLF</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Healthcare <span class="src">(1)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Managed Care &amp; Insurers <span class="l-zh" style="font-weight:400;opacity:.7">管理式医疗与保险</span>
+            <span class="etf">XLV</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Consumer Cyclical <span class="src">(3)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Housing Chain <span class="l-zh" style="font-weight:400;opacity:.7">住房产业链</span>
+            <span class="etf">XHB</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Travel &amp; Experiences <span class="l-zh" style="font-weight:400;opacity:.7">旅行与体验</span>
+            <span class="etf">JETS</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Retail <span class="l-zh" style="font-weight:400;opacity:.7">零售</span>
+            <span class="etf">XLY</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Consumer Defensive <span class="src">(1)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Defensives <span class="l-zh" style="font-weight:400;opacity:.7">防御板块</span>
+            <span class="etf">XLP</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Crypto &amp; Digital Assets <span class="src">(1)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Crypto &amp; Digital Assets <span class="l-zh" style="font-weight:400;opacity:.7">加密与数字资产</span>
+            <span class="etf">IBIT</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Artificial Intelligence <span class="src">(1)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>AI Neoclouds &amp; HPC Hosting <span class="l-zh" style="font-weight:400;opacity:.7">AI 新云与高性能算力托管</span>
+            </h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Software <span class="src">(2)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Non-AI Software <span class="l-zh" style="font-weight:400;opacity:.7">非AI软件</span>
+            <span class="etf">IGV</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Cybersecurity <span class="l-zh" style="font-weight:400;opacity:.7">网络安全</span>
+            <span class="etf">CIBR</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Semiconductors &amp; Hardware <span class="src">(1)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Non-AI Tech &amp; Hardware <span class="l-zh" style="font-weight:400;opacity:.7">非AI科技与硬件</span>
+            <span class="etf">XLK</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Semiconductors <span class="src">(3)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>AI Semiconductors <span class="l-zh" style="font-weight:400;opacity:.7">AI半导体</span>
+            <span class="etf">SMH</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Semiconductor Equipment (WFE) <span class="l-zh" style="font-weight:400;opacity:.7">半导体设备（晶圆厂设备）</span>
+            <span class="etf">SMH</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+        <div class="card">
+          <h3>Memory, HBM &amp; Storage <span class="l-zh" style="font-weight:400;opacity:.7">内存、HBM 与存储</span>
+            <span class="etf">SMH</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <details class="basket-group">
+      <summary>Industrials <span class="src">(1)</span></summary>
+      <div class="grid">
+        
+        <div class="card">
+          <h3>Robotics &amp; Automation <span class="l-zh" style="font-weight:400;opacity:.7">机器人与自动化</span>
+            <span class="etf">BOTZ</span></h3>
+          <div class="empty"><span class="l-en">No recent headlines.</span><span class="l-zh">近期无头条。</span></div>
+        </div>
+      </div>
+    </details>
+    
+    <div class="disc">Context only — not a signal. These headlines are filtered (reputable sources, market relevance) and ranked by a transparent quality score (source tier × relevance × recency); any one-line summaries are AI-compressed from the headline only. Nothing here is an input to any score, signal or allocation, and the mechanical model never reads it.<br><span class="l-zh">仅作背景，非信号。以下头条已经过筛选（可靠来源、市场相关），并按透明的质量分排序（来源等级 × 相关性 × 时效）；任何一句话摘要均由 AI 仅依据标题压缩生成。这里没有任何内容会进入任何评分、信号或配置，机械模型也从不读取它们。</span></div>
+  </section>
+  
+
+  
+  
+  
+  <section class="sec" id="china">
+    <div class="sec-h"><h2>🇨🇳 <span class="l-en">China — macro · markets · tech · politics</span><span class="l-zh">中国 — 宏观 · 市场 · 科技 · 政治</span></h2>
+      <span class="sub"><span class="l-en">Policy tone</span><span class="l-zh">政策基调</span>:
+        <span class="l-en">building</span><span class="l-zh">积累中</span> · z 0.63</span></div>
+    
+    <div class="card">
+      <h3><span class="l-en">Filtered China headlines</span><span class="l-zh">筛选后的中国头条</span></h3>
+      <ul class="hl-list">
+        
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776928729.html" target="_blank" rel="noopener noreferrer">马来西亚6月1日至20日棕榈油出口量为907,067吨</a>
+    <div class="hl-sum">马来西亚6月1日至20日棕榈油出口量为907,067吨。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 13:14:52">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776927468.html" target="_blank" rel="noopener noreferrer">见证金融AI“换芯”：从“外挂”进化为“原生”</a>
+    <div class="hl-sum">【见证金融AI“换芯”：从“外挂”进化为“原生”】随着为期3天的2026中国国际金融展在上海落下帷幕，一个清晰的信号穿透了展馆内熙攘的人流与酷炫的展台：金融业与人工智能的融合，正经历一场静水流深的质变。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 13:06:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776922316.html" target="_blank" rel="noopener noreferrer">中国在为台湾岛以东海域的国土空间规划做准备</a>
+    <div class="hl-sum">【中国在为台湾岛以东海域的国土空间规划做准备】6月16日至18日，自然资源部组织开展我国台湾岛以东管辖海域海洋环境调查。此前，谭主从多部门的一系列行动中提炼出“近海治理模式”，得到了多方关注——以后，我们的视野里会越来越少出现“台湾海峡”；台湾岛以东海域就是我们的“近海”，这就是我们存在、管辖和治理的海洋。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 11:43:38">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776922147.html" target="_blank" rel="noopener noreferrer">曹德旺谈内卷：我从来不怕竞争 优秀的企业需要强有力的对手</a>
+    <div class="hl-sum">【曹德旺谈内卷：我从来不怕竞争 优秀的企业需要强有力的对手】现年80岁的曹德旺，卸任福耀玻璃（600660.SH）董事长后并未闲下来。在福耀科技大学商学中心近日举办的一场企业家培训营上，这位全球最大汽车玻璃企业创始人分享了对内卷、制造业痛点、企业传承交接等话题的看法。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 11:32:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776921730.html" target="_blank" rel="noopener noreferrer">创新生态聚引力，外资行看多中国资产</a>
+    <div class="hl-sum">【创新生态聚引力，外资行看多中国资产】多家外资行近期表示，中国经济韧性凸显，新质生产力加速形成，全球资本对中国市场的信心攀升，境外投资者增持中国资产的意愿持续增强。“对外资而言，中国资产已从‘是否配置’转向‘如何配置’。”瑞银集团中国区总裁、瑞银证券董事长胡知鸷表示。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 11:22:46">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776920076.html" target="_blank" rel="noopener noreferrer">伊朗称不信任美国 正在做两手准备</a>
+    <div class="hl-sum">【伊朗称不信任美国 正在做两手准备】伊朗议会国家安全和外交政策委员会发言人易卜拉欣·雷扎伊日前表示，黎巴嫩停火问题是伊朗的红线，伊朗不会在相关问题上退让。关于伊美关系，雷扎伊表示，伊朗不信任美国，不会与其实现关系正常化。雷扎伊强调，目前伊美处于敌对状态，伊朗正在为可能的另一场战争做准备，“我们不相信美国人说的话，而是基于自己的考量行事”，并表示伊朗也在采用谈判和外交的选项，将继续与美国进行谈判。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 11:11:22">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776919226.html" target="_blank" rel="noopener noreferrer">梅洛尼喊话特朗普：意大利从不乞求任何人</a>
+    <div class="hl-sum">【梅洛尼喊话特朗普：意大利从不乞求任何人】意大利总理梅洛尼19日在社交媒体上发布视频表示，美国总统特朗普日前称她在今年七国集团峰会期间“乞求合影”的言论“纯属捏造”。她表示，自己和意大利从不“乞求”任何人。据意大利安莎社报道，意大利副总理兼外长塔亚尼19日表示，由于特朗普的不当言论，他决定取消原定本月21日至22日对美国的访问。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 11:03:10">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776919140.html" target="_blank" rel="noopener noreferrer">AI投资热潮向上游扩散 美股多家半导体设备龙头今年翻倍</a>
+    <div class="hl-sum">【AI投资热潮向上游扩散 美股多家半导体设备龙头今年翻倍】2026年即将过半，回顾年初至今的美股市场，不仅半导体、光通信等AI硬件板块集体狂飙，产业链上游的半导体设备赛道亦同步走出亮眼升势。据《科创板日报》统计，美股总市值超百亿美元的9家半导体设备公司，今年以来股价涨幅均已超过75%。其中，应用材料、拉姆研究、科磊、泰瑞达、MKS Inc、英特格、Onto Innovation Inc这7只个股年内股价实现翻倍，其年内收益与英伟达、谷歌、Meta等科技巨头已显著拉开差距。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 10:55:37">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776913765.html" target="_blank" rel="noopener noreferrer">短期看跌！美联储“吓坏”高盛：大幅下调金价预期</a>
+    <div class="hl-sum">【短期看跌！美联储“吓坏”高盛：大幅下调金价预期】随着美联储上半年最后一次议息会议落幕，基于美联储2026年降息可能性大幅消退的判断，高盛本周将年末金价预测下调500美元，至4900美元。虽然这家华尔街大行对金价中长期走势维持看多判断，但短期策略趋于谨慎，金价存在下行压力。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 09:51:04">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776910783.html" target="_blank" rel="noopener noreferrer">盛吉盛先进半导体产品孵化与制造中心项目落地无锡</a>
+    <div class="hl-sum">【盛吉盛先进半导体产品孵化与制造中心项目落地无锡】“无锡发布”微信公众号消息，6月17日，盛吉盛先进半导体产品孵化与制造中心项目正式签约，落地惠山高新区洛社镇。盛吉盛将在惠山先进制造产业园内建设先进产品孵化中心，一期面积约为6000平方米，先期导入两款先进12英寸薄膜沉积设备，规模量产后实现年产值1.5亿元以上。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 08:57:19">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776908465.html" target="_blank" rel="noopener noreferrer">今年第7号台风“米克拉”生成</a>
+    <div class="hl-sum">【今年第7号台风“米克拉”生成】据中央气象台消息，今年第7号台风“米克拉”生成！（英文名称：Mekkhala；名字来源：泰国；名称意义：雷电天使）。预计，“米克拉”将以每小时15～20公里左右的速度向西偏北方向移动，强度逐渐增强。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 08:32:09">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776908122.html" target="_blank" rel="noopener noreferrer">胡塞武装高官：美国应彻底改变在中东的侵略性战略</a>
+    <div class="hl-sum">【胡塞武装高官：美国应彻底改变在中东的侵略性战略】也门胡塞武装政治局成员阿里·达伊拉米在接受总台采访时表示，胡塞武装对美伊签署第一阶段谅解备忘录表示欢迎，他呼吁美国以此为契机，彻底改变其在中东的侵略性战略。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 08:24:33">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776908881.html" target="_blank" rel="noopener noreferrer">智谱唐杰“呛声”马斯克：中国模型达到Fable水平用不了那么久</a>
+    <div class="hl-sum">【智谱唐杰“呛声”马斯克：中国模型达到Fable水平用不了那么久】中国大模型巨头智谱创始人唐杰和特斯拉创始人马斯克就中国AI展开一场“辩论”。6月18日，有网友在社交平台向马斯克提问,“中国大模型预计何时能够达到Anthropic的Fable水平？智谱GLM-5.2无疑缩小了差距。”马斯克对此回复称，“可能在（2027年）一季度。（Probably Q1）”之后，清华大学教授、智谱AI创始人唐杰回复马斯克：“用不了这么久。（Wont take that long）。”</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Tech</span><span class="l-zh">科技</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 08:16:00">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776907146.html" target="_blank" rel="noopener noreferrer">美国新“空军一号”专机亮相，由卡塔尔赠送</a>
+    <div class="hl-sum">【美国新“空军一号”专机亮相，由卡塔尔赠送】当地时间6月19日下午，美国总统特朗普在马里兰州安德鲁斯联合基地视察了经改装的、由卡塔尔赠送的波音747-8型飞机，并在飞机上签名。这架飞机即将交付，加入“空军一号”专机机队。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 07:54:43">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776905896.html" target="_blank" rel="noopener noreferrer">大众汽车加速推进业务重组 将削减约5万个岗位</a>
+    <div class="hl-sum">【大众汽车加速推进业务重组 将削减约5万个岗位】德国汽车制造商大众汽车集团当地时间6月18日表示，受地缘政治紧张、行业竞争加剧等因素影响，公司正加速推进业务重组。据悉，今年年底前，大众将在德国本土削减1.9万个岗位，到2030年削减约5万个岗位。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 07:42:49">2026-06-20</time>
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.eastmoney.com/a/202606203776905756.html" target="_blank" rel="noopener noreferrer">殷勇调研具身智能机器人产业发展时强调 全力打造全球领先的具身智能机器人产业高地</a>
+    <div class="hl-sum">【殷勇调研具身智能机器人产业发展时强调 全力打造全球领先的具身智能机器人产业高地】日前，北京市委副书记、市长殷勇到海淀区调研具身智能机器人产业发展。他强调，要深入贯彻习近平总书记考察北京重要讲话精神，充分发挥北京教育科技人才资源优势，加快推动具身智能科技创新和产业创新深度融合，巩固本市具身智能机器人产业发展引领优势，全力打造全球领先的具身智能机器人产业高地。</div>
+  </div>
+  <div class="hl-meta">
+    <span class="chip chip-th"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></span>
+    
+    
+    <span class="src"></span>
+    <time class="ago" datetime="2026-06-20 07:41:11">2026-06-20</time>
+  </div>
+</li>
+      </ul>
+    </div>
+    <div class="disc">Context only — not a signal. The policy-tone read is a z-score of a crude lexicon proxy on the CCTV 新闻联播 broadcast (relative, never an absolute sentiment); the headlines are deterministically filtered (macro themes only, each tagged) Eastmoney flash-wire items. Nothing here is an input to any score, signal, regime or allocation, and the mechanical model never sees it.<br><span class="l-zh">仅作背景，非信号。政策基调读数是对央视《新闻联播》文本的粗略词典代理的 z 标准化（相对值，并非绝对情绪）；头条为东方财富快讯经确定性筛选（仅宏观主题，逐条标注）的条目。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。</span></div>
+  </section>
+  
+
+  
+  
+  <section class="sec" id="narrative">
+    <div class="sec-h"><h2>🧵 <span class="l-en">Narrative event bus</span><span class="l-zh">叙事事件总线</span></h2>
+      <span class="sub"><span class="l-en">First-print, point-in-time</span><span class="l-zh">首次刊发 · 时点</span> · 54 <span class="l-en">events</span><span class="l-zh">事件</span></span></div>
+    <div class="card">
+      
+      <div class="cats">
+        <span class="cat-cnt">geopolitics · 42</span><span class="cat-cnt">monetary · 6</span><span class="cat-cnt">industrial_policy · 3</span><span class="cat-cnt">growth · 2</span><span class="cat-cnt">inflation · 1</span>
+        <span class="cat-cnt">26% <span class="l-en">unscheduled</span><span class="l-zh">非计划</span></span>
+      </div>
+      <ul class="hl-list">
+        
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.yahoo.com/news/politics/articles/hillary-clinton-breaks-democratic-critics-203059313.html" target="_blank" rel="noopener noreferrer">Hillary Clinton breaks with Democratic critics by backing Trump Gaza plan as the  only game in town  </a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">yahoo.com</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/economy/policy/articles/2026-fed-interest-rate-increase-193800580.html" target="_blank" rel="noopener noreferrer">Will a 2026 Fed Interest Rate Increase Help or Hurt Retirees ? </a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.cnn.com/2026/06/18/europe/ukraine-strikes-moscow-oil-refinery-intl-hnk" target="_blank" rel="noopener noreferrer">Ukraine launches largest attack on Moscow in two years , Russian media says</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">cnn.com</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.cnn.com/2026/06/18/world/live-news/iran-war-trump-israel-lebanon" target="_blank" rel="noopener noreferrer">Live updates : US and Iran sign hard copy of agreement</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">cnn.com</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/technology/ai/articles/alphabet-googl-talks-samsung-manufacturing-184915564.html" target="_blank" rel="noopener noreferrer">Alphabet ( GOOGL ) In Talks With Samsung For Manufacturing Next - Gen AI Processors</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://finance.yahoo.com/markets/stocks/articles/taiwan-semiconductor-manufacturing-company-limited-185813926.html" target="_blank" rel="noopener noreferrer">This is What Taiwan Semiconductor Manufacturing Company Limited ( TSM ) CEO Sees Happening</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">finance.yahoo.com</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://knpr.org/npr/2026-06-17/over-1-000-people-killed-during-gaza-ceasefire-palestinian-authorities-say" target="_blank" rel="noopener noreferrer">Over 1 , 000 people killed during Gaza ceasefire , Palestinian authorities say</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">knpr.org</span>
+    
+  </div>
+</li>
+
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="https://www.bloomberg.com:443/news/articles/2026-06-17/warsh-rocks-bond-market-in-debut-sparks-surge-in-rate-hike-bets" target="_blank" rel="noopener noreferrer">Warsh Rocks Bond Market in Debut , Sparks Surge in Hike Bets</a>
+    
+  </div>
+  <div class="hl-meta">
+    
+    
+    
+    <span class="src">bloomberg.com</span>
+    
+  </div>
+</li>
+      </ul>
+    </div>
+    <div class="disc">Context only — not a signal. This is a first-print, point-in-time log of filtered policy/geopolitical/macro headlines (reputable sources, narrative themes only), kept to MEASURE the news flow honestly over time — never to predict direction. Nothing here is an input to any score, signal or allocation, and the mechanical model never reads it. The “scheduled” tag means a high-impact release fell on/near that date (so the move may be calendar-explained rather than a headline shock); it is context, not a forecast.<br><span class="l-zh">仅作背景，非信号。这是经过筛选的政策／地缘／宏观头条的首次出现时间点日志（仅可靠来源、仅叙事主题），用于诚实地长期度量新闻流，而非预测方向。这里没有任何内容会进入任何评分、信号或配置，机械模型也从不读取它们。“已排程”标签表示当日附近有高影响数据发布（因此走势可能由日历解释，而非头条冲击），仅为背景，而非预测。</span></div>
+  </section>
+  
+
+  <footer class="news-foot">
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-20T05:39:03.444344+00:00">2026-06-20 05:39</time> UTC ·
+    
+    <span class="l-en">All news is context only — never an input to any score, signal or allocation.</span><span class="l-zh">所有新闻仅作背景 — 绝不进入任何评分、信号或配置。</span>
+  </footer>
+</div>
+
+<script src="theme.js"></script>
+<script>
+(function(){
+  // relative "x ago" labels
+  function ago(iso){
+    var d=new Date(iso); if(isNaN(d)) return null;
+    var s=(Date.now()-d.getTime())/1000; if(s<0) s=0;
+    var zh=document.documentElement.getAttribute('data-lang')==='zh';
+    if(s<3600) return Math.max(1,Math.round(s/60))+(zh?'分钟前':'m ago');
+    if(s<86400) return Math.round(s/3600)+(zh?'小时前':'h ago');
+    if(s<604800) return Math.round(s/86400)+(zh?'天前':'d ago');
+    return d.toISOString().slice(0,10);
+  }
+  function paintTimes(){
+    document.querySelectorAll('time.ago[datetime]').forEach(function(el){
+      var r=ago(el.getAttribute('datetime')); if(r) el.textContent=r;
+    });
+  }
+  paintTimes(); document.addEventListener('langchange', paintTimes);
+  // active jump-pill on scroll
+  var links=[].slice.call(document.querySelectorAll('.jump a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));}).filter(Boolean);
+  function onScroll(){
+    var y=window.scrollY+70, cur=null;
+    secs.forEach(function(s){ if(s.offsetTop<=y) cur=s.id; });
+    links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href')==='#'+cur); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>

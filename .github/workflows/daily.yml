@@ -249,6 +249,24 @@ jobs:
         # registry-driven static blog/article section -> site/reports.html + one page per
         # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
         run: python -m scripts.build_reports || echo "reports skipped (additive)"
+      - name: news suite (build_news)
+        # after build_site/build_baskets: macro + financial/sector/Mag-7/basket + China +
+        # narrative news -> site/news.html + site/news/*.json (incl by_ticker.json for the
+        # Mastermind bot). Polygon/Finnhub ticker-tagged corpus + keyless GDELT; optional
+        # Haiku/DeepSeek summaries. Every feed degrades to empty on a missing key; never aborts.
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set +e
+          python -m scripts.build_news > /tmp/news.log 2>&1; rc=$?
+          tail -n 25 /tmp/news.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_news::rc=$rc (non-fatal)"
+          exit 0
       - name: policy intent desk (LLM realpolitik leans + scorer; gated, resilient)
         # BEFORE build_policy_watch so the page picks up site/policy_intent.json. Reads
         # data/policy/intel.json + latest.json -> dated falsifiable leans (proxy vs SPY)
