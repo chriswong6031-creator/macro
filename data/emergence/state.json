@@ -1,0 +1,32 @@
+{
+  "7552931d0df8": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Real Estate",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Real Estate",
+    "score": 71.1
+  },
+  "7db337a10577": {
+    "name_en": "Emerging Information Technology cluster",
+    "name_zh": "\u65b0\u5174 Information Technology \u96c6\u7fa4",
+    "score": 46.3
+  },
+  "e54107bf2f30": {
+    "name_en": "Cross-sector cluster \u00b7 Financials + Information Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Information Technology",
+    "score": 52.8
+  },
+  "ed60880c90db": {
+    "name_en": "Cross-sector cluster \u00b7 Information Technology + Real Estate",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Real Estate",
+    "score": 78.1
+  },
+  "fa7c30773dc4": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Industrials",
+    "score": 65.5
+  },
+  "fbd18e172db6": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Materials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Materials",
+    "score": 61.3
+  }
+}

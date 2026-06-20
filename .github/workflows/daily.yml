@@ -69,6 +69,7 @@ jobs:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # massive.com options-OI accrual (GEX foundation)
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)
+          QUIVER_API_KEY: ${{ secrets.QUIVER_API_KEY }}     # Quiver alt-data suite (collectors/quiver.py); absent -> 'blocked', non-fatal
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           python -m scripts.collect
@@ -184,6 +185,10 @@ jobs:
           # below — it, NOT residual-alpha, was the real engine bottleneck. build_site reads
           # the COMMITTED factor_series.json (degrade-never-raise), so a <=1-run-old series
           # is fine and the deep walk no longer gates the daily dashboard/deploy.
+          # Alt-data desk BEFORE build_site so today's convergence alerts are already in
+          # data/altdata/alerts.jsonl when build_site assembles the Alert Center. Reads the
+          # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
+          run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           exit 0
       - name: build china a-share dashboard
@@ -244,6 +249,24 @@ jobs:
         # registry-driven static blog/article section -> site/reports.html + one page per
         # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
         run: python -m scripts.build_reports || echo "reports skipped (additive)"
+      - name: news suite (build_news)
+        # after build_site/build_baskets: macro + financial/sector/Mag-7/basket + China +
+        # narrative news -> site/news.html + site/news/*.json (incl by_ticker.json for the
+        # Mastermind bot). Polygon/Finnhub ticker-tagged corpus + keyless GDELT; optional
+        # Haiku/DeepSeek summaries. Every feed degrades to empty on a missing key; never aborts.
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set +e
+          python -m scripts.build_news > /tmp/news.log 2>&1; rc=$?
+          tail -n 25 /tmp/news.log
+          [ "$rc" -ne 0 ] && echo "::warning title=build_news::rc=$rc (non-fatal)"
+          exit 0
       - name: policy intent desk (LLM realpolitik leans + scorer; gated, resilient)
         # BEFORE build_policy_watch so the page picks up site/policy_intent.json. Reads
         # data/policy/intel.json + latest.json -> dated falsifiable leans (proxy vs SPY)
@@ -309,6 +332,36 @@ jobs:
           cat /tmp/aidesk_score.log
           [ "$rc" -ne 0 ] && echo "::warning title=ai_desk_scorer::rc=$rc (non-fatal)"
           exit 0
+      - name: Demand-chain ledger (Demand Desk Phase 2; deterministic, resilient)
+        # Appends falsifiable demand-chain divergence theses (data/demand_chain/theses.jsonl)
+        # and scores past-due ones vs SPY into data/demand_chain/{scored.jsonl,track_record.json},
+        # which the Demand Context panel reads back as its accountability line. Rule-derived
+        # (no API key) — turns the "customer capex ahead of consensus" read into a scored
+        # forward record. Reuses the ai_desk_scorer predicate evaluators. Never aborts.
+        run: |
+          set +e
+          python -m engine.demand_ledger > /tmp/demand_ledger.log 2>&1; rc=$?
+          cat /tmp/demand_ledger.log
+          [ "$rc" -ne 0 ] && echo "::warning title=demand_ledger::rc=$rc (non-fatal)"
+          exit 0
+      - name: Demand-chain Phase-0 validation (forward placebo test; resilient)
+        # Reads the demand_chain ledger and, once enough theses are DECIDED, tests the
+        # hit-rate vs a coin flip (exact binomial) → data/demand_chain/phase0.json.
+        # Honest by design: the signal is NOT historically back-testable (annual cadence,
+        # no PIT consensus history), so the forward ledger is the only path; verdict stays
+        # PENDING until ≥20 decided. Deterministic; never aborts.
+        run: |
+          set +e
+          python -m scripts.demand_chain_phase0 > /tmp/demand_phase0.log 2>&1; rc=$?
+          cat /tmp/demand_phase0.log
+          [ "$rc" -ne 0 ] && echo "::warning title=demand_chain_phase0::rc=$rc (non-fatal)"
+          exit 0
+      - name: Demand Desk page (build_demand)
+        # market-wide view of the L2 demand layer (site/demand.html): the ranked
+        # ahead-of-consensus / at-risk names across all chains + chain signals + the
+        # scored-ledger track record + Phase-0 verdict. Runs AFTER the ledger/phase0
+        # steps (fresh track_record/phase0) and build_site (rpo dripped). Resilient.
+        run: python -m scripts.build_demand
       - name: AI desk (accountable analyst layer; context-only, resilient)
         # Runs right after master_brain (shares the keyed LLM step family). Reads the
         # TRUST-GRADED detectors — site/basketdata/flow.json (from build_baskets) +
@@ -324,6 +377,71 @@ jobs:
           python -m engine.ai_desk > /tmp/aidesk.log 2>&1; rc=$?
           cat /tmp/aidesk.log
           [ "$rc" -ne 0 ] && echo "::warning title=ai_desk::rc=$rc (non-fatal)"
+          exit 0
+      - name: Narrative Brain (Claude radar-reasoning desk; context-only, resilient)
+        # Reads the deterministic radar (site/basketdata/radar.json from build_baskets) as an
+        # evidence pack and writes a FALSIFIABLE durability + rotation read (site/basketdata/
+        # narrative_brain.json) + appends data/narrative_brain/theses.jsonl. Claude via the
+        # user's Claude-Code OAuth token (Bearer + oauth beta header), ANTHROPIC_API_KEY fallback.
+        # NO-OP unless narrative_brain.enabled AND a token is set. Context-only; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.narrative_brain > /tmp/nbrain.log 2>&1; rc=$?
+          cat /tmp/nbrain.log
+          [ "$rc" -ne 0 ] && echo "::warning title=narrative_brain::rc=$rc (non-fatal)"
+          exit 0
+      - name: Radar + Brain ledger scorer (grade the falsifiable theses vs SPY; context-only)
+        # Grades data/{radar,narrative_brain}/theses.jsonl once each check_by passes (reuses
+        # engine.ai_desk_scorer) -> track_record.json + a site copy. Idempotent; context-only
+        # (never feeds a score); needs no key. Runs after the brain so fresh theses are logged.
+        run: |
+          set +e
+          python -m engine.radar_scorer > /tmp/radar_score.log 2>&1; rc=$?
+          cat /tmp/radar_score.log
+          [ "$rc" -ne 0 ] && echo "::warning title=radar_scorer::rc=$rc (non-fatal)"
+          exit 0
+      - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
+        # Reads the deterministic weighted-convergence substrate + influence graph (written by
+        # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
+        # (action/conviction/direction + a falsifiable thesis graded vs SPY) -> site/altdata/
+        # brain.json + data/altdata/brain_theses.jsonl, then re-runs build_alt_data to re-emit
+        # mastermind.json + re-render alt_data.html with the fresh read. Claude via the user's
+        # Claude-Code OAuth token (Bearer + oauth beta), ANTHROPIC_API_KEY fallback — the SAME
+        # auth as the Narrative Brain step (the build_alt_data step above only carries the
+        # DeepSeek key, so the Opus/Haiku calls must run HERE). NO-OP unless altdata_brain.enabled
+        # AND a token is set. A hard CODE clamp blocks ACCUMULATE on an extended name; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.altdata_brain > /tmp/altbrain.log 2>&1; rc=$?
+          cat /tmp/altbrain.log
+          # re-emit the Mastermind feed + re-render the page with the fresh Opus read
+          python -m scripts.build_alt_data > /tmp/altbrain_render.log 2>&1
+          tail -3 /tmp/altbrain_render.log
+          [ "$rc" -ne 0 ] && echo "::warning title=altdata_brain::rc=$rc (non-fatal)"
+          exit 0
+      - name: unified intelligence bundle (build_intelligence)
+        # AFTER build_news (site/news/by_ticker.json) + build_alt_data + the Alt-Data Brain
+        # re-emit (site/altdata/mastermind.json): merges the per-ticker news flow + the scored
+        # alt-data signal into ONE site/intelligence/by_ticker.json the Mastermind bot pulls.
+        # Facts side by side, never pre-blended. No keys needed; pure JSON merge; never aborts.
+        run: python -m scripts.build_intelligence || echo "intelligence skipped (additive)"
+      - name: radar upgrade (build_radar_plus + IC)
+        # ADDITIVE Phase-2 radar: enrich site/basketdata/radar.json with edge_score +
+        # cross-source confirmation legs (alt/flows/options) + regime + decay (no edits to
+        # the radar kernel), emit site/basketdata/radar_ticker.json (per-name divergence),
+        # accrue the edge-snapshot IC ledger, then re-render radar.html with the mounts.
+        # Runs after build_baskets (radar.json) + build_alt_data + build_intelligence. Resilient.
+        run: |
+          set +e
+          python -m scripts.build_radar_plus > /tmp/radarplus.log 2>&1; tail -4 /tmp/radarplus.log
+          python -m scripts.build_radar_ic   > /tmp/radaric.log   2>&1; tail -3 /tmp/radaric.log
+          python -m scripts.build_radar_page  > /tmp/radarpage.log 2>&1; tail -1 /tmp/radarpage.log
           exit 0
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI

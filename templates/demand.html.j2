@@ -1,0 +1,149 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demand Desk — forward demand vs the price</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.55 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px; }
+  @media (min-width:1100px){ body{ padding:26px max(40px,calc((100vw - 1120px)/2)); } }
+  h1 { font-size:21px; margin:0 0 2px; }
+  .lead { color:var(--muted); font-size:13px; margin:0 0 16px; max-width:760px; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+  .sec { font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:18px 0 8px; }
+  /* chain signal cards */
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; }
+  .cc { background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:12px 14px; }
+  .cc-h { display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; }
+  .cc-tag { font-size:10px; font-weight:800; letter-spacing:.04em; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .cc-tag.lead { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .cc-big { font-size:20px; font-weight:800; font-variant-numeric:tabular-nums; margin:7px 0 1px; }
+  .cc-sub { color:var(--muted); font-size:12px; }
+  .cc-ser { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .ser { font-size:11px; padding:2px 7px; border-radius:6px; background:var(--bg); border:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .pos{color:var(--up)} .neg{color:var(--down)} .mut{color:var(--muted)}
+  /* variant tables */
+  .grp-h { display:flex; align-items:center; gap:9px; margin:16px 0 6px; }
+  .badge { font-size:11px; font-weight:800; letter-spacing:.03em; padding:3px 9px; border-radius:7px; border:1px solid var(--line); }
+  .badge.up { color:var(--up); background:color-mix(in srgb,var(--up) 13%,transparent); border-color:color-mix(in srgb,var(--up) 38%,var(--line)); }
+  .badge.risk { color:var(--down); background:color-mix(in srgb,var(--down) 13%,transparent); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .badge.mut { color:var(--muted); background:var(--panel2); }
+  .grp-n { color:var(--muted); font-size:12px; }
+  table.dt { width:100%; border-collapse:collapse; font-size:13px; }
+  table.dt th { text-align:left; color:var(--muted); font-weight:600; font-size:11.5px; padding:5px 8px; border-bottom:1px solid var(--line); }
+  table.dt td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.dt tr:last-child td { border-bottom:0; }
+  .tk { font-weight:800; }
+  .tk a { color:var(--link); text-decoration:none; }
+  .chip { font-size:10.5px; padding:1px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.coin { border-style:dashed; }
+  .num { font-variant-numeric:tabular-nums; }
+  details.fold { margin-top:6px; } details.fold > summary { cursor:pointer; color:var(--muted); font-size:12.5px; padding:4px 0; }
+  /* accountability */
+  .acct { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .stat .k { color:var(--muted); font-size:11.5px; } .stat .v { font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .verdict { font-size:11px; font-weight:800; letter-spacing:.04em; padding:3px 9px; border-radius:7px; border:1px solid var(--line); color:var(--muted); }
+  .verdict.PENDING { color:var(--g-cold); } .verdict.NEUTRAL { color:var(--muted); }
+  .verdict.EDGE_CANDIDATE { color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .cav { color:var(--muted); font-size:11.5px; line-height:1.5; margin-top:8px; border-top:1px dotted var(--line); padding-top:8px; }
+  .faint { color:var(--muted); }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<h1>🧭 {{ t('Demand Desk', '需求台') }}</h1>
+<p class="lead">{{ t('Where independent, forward-looking demand is running AHEAD of (or behind) the priced consensus. The market embeds the sell-side forward view in the price; edge lives only where a management-independent signal — customer capex, contracted bookings — diverges from it. Display-only; nothing here is a buy signal.',
+  '独立的前瞻需求在何处领先（或落后）于已被定价的共识。市场已将卖方的前瞻预期计入价格；优势只存在于不依赖管理层口径的独立信号——客户资本开支、已签约订单——与共识背离之处。仅作展示，均非买入信号。') }}
+  <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
+
+<div class="panel">
+  <div class="sec">{{ t('The demand pools (independent signals)', '需求来源（独立信号）') }}</div>
+  <div class="cards">
+    {% for c in cards %}
+    <div class="cc">
+      <div class="cc-h">{{ t(c.label_en, c.label_zh) }}
+        <span class="cc-tag {{ 'lead' if c.leading else '' }}">{{ t('leading','领先') if c.leading else t('coincident','同步') }}</span></div>
+      {% if c.yoy_pct is not none %}
+        <div class="cc-big {{ 'pos' if c.yoy_pct >= 0 else 'neg' }}">{{ '%+.0f'|format(c.yoy_pct) }}% <span class="cc-sub num">{{ t('YoY','同比') }} · ~${{ '%.0f'|format(c.total_bn) }}B</span></div>
+        <div class="cc-sub">{{ t(c.spender_en, c.spender_zh) }} · {{ t(c.trend_en, c.trend_zh) }} · FY{{ c.fy }} · n={{ c.n }}</div>
+        {% if c.series %}<div class="cc-ser">{% for p in c.series[-3:] %}<span class="ser">FY{{ p[0] % 100 }} ${{ p[1] }}B</span>{% endfor %}</div>{% endif %}
+      {% else %}
+        <div class="cc-big">{{ c.n }} <span class="cc-sub">{{ t('names','只') }}</span></div>
+        <div class="cc-sub">{{ t(c.spender_en, c.spender_zh) }}</div>
+        {% if c.leaders %}<div class="cc-ser">{% for l in c.leaders %}<span class="ser">{{ l.t }} {{ '%+.0f'|format(l.yoy) }}%</span>{% endfor %}</div>{% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% macro rowtable(rows) -%}
+<table class="dt">
+  <tr><th>{{ t('Name','标的') }}</th><th>{{ t('Chain','链条') }}</th><th>{{ t('Independent signal','独立信号') }}</th><th>{{ t('Consensus','共识') }}</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td class="tk"><a href="stock.html#{{ r.ticker }}">{{ r.ticker }}</a></td>
+    <td><span class="chip {{ 'coin' if not r.leading else '' }}">{{ r.chain }} · {{ r.tier }}</span></td>
+    <td>{% if r.yoy_pct is not none %}<span class="num {{ 'pos' if r.yoy_pct >= 0 else 'neg' }}">{{ '%+.0f'|format(r.yoy_pct) }}%</span> {% endif %}<span class="faint">{{ t(r.trend_en, r.trend_zh) }}</span></td>
+    <td class="faint">{{ t(r.consensus_dir, r.consensus_dir) }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{%- endmacro %}
+
+<div class="panel">
+  {% for dv in div_order %}
+    {% set rows = groups[dv] %}
+    {% set m = div_meta[dv] %}
+    {% if rows %}
+      {% if dv in ('ahead_of_consensus','consensus_at_risk') %}
+        <div class="grp-h"><span class="badge {{ m.cls }}">{{ t(m.en, m.zh) }}</span><span class="grp-n">{{ rows|length }} {{ t('names','只') }}</span></div>
+        {% if dv == 'ahead_of_consensus' %}<p class="cav" style="border:0;padding:0;margin:0 0 8px">{{ t('Independent demand running ahead of estimates — the variant list. Worth watching, not a buy signal.','独立需求跑在预期之前——变体清单。值得关注，非买入信号。') }}</p>{% endif %}
+        {{ rowtable(rows) }}
+      {% else %}
+        <details class="fold"><summary>{{ t(m.en, m.zh) }} — {{ rows|length }} {{ t('names','只') }}</summary>{{ rowtable(rows) }}</details>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% if track %}
+<div class="panel">
+  <div class="sec">{{ t('Accountability — the variant calls are scored forward', '可问责 — 变体判断前向评分') }}</div>
+  <div class="acct">
+    <div class="stat"><div class="k">{{ t('Open calls','未结判断') }}</div><div class="v">{{ track.open }}</div></div>
+    <div class="stat"><div class="k">{{ t('Scored','已评分') }}</div><div class="v">{{ (track.overall or {}).n or 0 }}</div></div>
+    <div class="stat"><div class="k">{{ t('Hit rate','命中率') }}</div><div class="v">{% if (track.overall or {}).hit_rate is not none %}{{ '%.0f'|format(track.overall.hit_rate * 100) }}%{% else %}—{% endif %}</div></div>
+    {% if phase0 %}<div class="stat"><div class="k">{{ t('Verdict','结论') }}</div><div class="v"><span class="verdict {{ phase0.verdict }}">{{ phase0.verdict }}</span></div></div>{% endif %}
+  </div>
+  {% if phase0 %}<p class="cav">{{ t(phase0.note, phase0.note_zh) }}</p>{% endif %}
+</div>
+{% endif %}
+
+<p class="cav" style="max-width:820px">{{ t('Method: each chain aggregates a spender cohort\'s capex/revenue (or a name\'s own RPO) from SEC filings as the forward-demand pool, then compares its trend to the name\'s analyst-revision direction. Cross-company / annual / coarse — a divergence flag, not a forecast. The signal is NOT historically back-testable (annual cadence, no point-in-time consensus history), so the forward-scored ledger above is the only honest validation path.',
+  '方法：每条链条以卖方/客户群体的资本开支或营收（或个股自身RPO）作为前瞻需求来源（来自SEC财报），再将其趋势与该股分析师评级调整方向对比。跨公司／年度／粗粒度——是背离标记而非预测。该信号无法用历史数据回测（年度频率、无时点共识历史），故上方前向评分记录是唯一诚实的验证路径。') }}</p>
+
+<script src="theme.js"></script>
+<footer class="site-footer" style="margin-top:18px;color:var(--muted);font-size:12px">
+  {{ t('Made with ❤️ in Canada · Developed by', '用 ❤️ 在加拿大制作 · 开发者') }} Chris Wong · <span class="faint">{{ t('Built', '构建于') }} {{ built }} UTC · {{ t('display-only research context, not investment advice', '仅研究背景展示，非投资建议') }}</span>
+</footer>
+</body>
+</html>

@@ -403,7 +403,7 @@
   .nb-sub { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
   .nb-spark { width: 100%; height: 42px; border-radius: 5px; }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
-  .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; }
+  .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-size: 10px; }
   .nb-state { font-size: 10px; font-weight: 800; letter-spacing: .02em; padding: 1px 7px;
               border-radius: 8px; }
   .nb-up .nb-state { color: var(--up); background: color-mix(in srgb, var(--up) 15%, var(--panel)); }
@@ -420,12 +420,12 @@
   /* sector-neutral momentum (alpha) line on each standout card */
   .nb-alpha { display: flex; align-items: center; gap: 6px; font-size: 9.5px;
               margin-top: 2px; flex-wrap: wrap; }
-  .nb-az { font-weight: 800; font-variant-numeric: tabular-nums;
+  .nb-az { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
            padding: 0 5px; border-radius: 7px; background: var(--panel);
            border: 1px solid var(--line); color: var(--muted); }
   .nb-az.az-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
   .nb-az.az-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line)); }
-  .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .nb-rk { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .nb-ent { font-weight: 700; padding: 0 5px; border-radius: 7px; }
   .ent-good { color: var(--up); background: color-mix(in srgb, var(--up) 14%, var(--panel)); }
   .ent-warn { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); }
@@ -435,6 +435,19 @@
   .ts-ins { font-weight: 800; font-size: 10px; color: var(--up); white-space: nowrap;
             padding: 0 4px; border-radius: 6px;
             background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
+  /* theme/sector SPOTLIGHT tilt chip (engine.spotlight) — narrative alignment of the pick.
+     A small, declared nudge: it re-orders within a tier, never overrides the risk vetoes. */
+  .nb-spot { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 700;
+             padding: 1px 6px; border-radius: 7px; margin: 3px 0 0; white-space: nowrap; max-width: 100%;
+             overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
+             color: var(--muted); background: var(--panel); text-decoration: none; }
+  a.nb-spot { cursor: pointer; }
+  a.nb-spot:hover { filter: brightness(1.08); border-color: currentColor; }
+  .nb-spot.spot-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
+                     background: color-mix(in srgb, var(--up) 11%, var(--panel)); }
+  .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
+                     background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
+  .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
   .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
@@ -497,6 +510,13 @@
   .nb-sue { font-weight: 800; padding: 0 5px; border-radius: 7px; color: var(--info);
             white-space: nowrap; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
+  /* Demand Desk L2 divergence flag (non-directional attention; immune to Asia red/green swap) */
+  .nb-dmnd { font-weight: 800; padding: 0 5px; border-radius: 7px; white-space: nowrap;
+             border: 1px solid var(--line); }
+  .nb-dmnd.dmnd-up { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
+             background: color-mix(in srgb, var(--warn) 12%, var(--panel)); }
+  .nb-dmnd.dmnd-rk { color: var(--down); border-color: color-mix(in srgb, var(--down) 38%, var(--line));
+             background: color-mix(in srgb, var(--down) 11%, var(--panel)); }
   .ts-sue { font-weight: 800; font-size: 10px; color: var(--info); white-space: nowrap;
             padding: 0 4px; border-radius: 6px; font-variant-numeric: tabular-nums;
             background: color-mix(in srgb, var(--info) 13%, var(--panel)); }
@@ -2337,6 +2357,20 @@
             {% if n.get('price') is not none %}<span class="nb-px">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+          {% set sp = c.spotlight if c else none %}
+          {% if sp and sp.dir and sp.dir != 'neutral' %}
+            {% set _th = sp.theme or {} %}{% set _sc = sp.sector or {} %}
+            {% set _en = (_th.name or _sc.name or _sc.etf)|e %}{% set _zh = (_th.name_zh or _th.name or _sc.name or _sc.etf)|e %}
+            {% set _spcls = 'spot-up' if sp.dir == 'tailwind' else 'spot-dn' %}
+            {# data values are |e-escaped (the build Environment has autoescape off) so theme names
+               with & / < / " can't corrupt the attribute. L()/t() must never appear in an attr. #}
+            {% set _sptip = ('Theme/sector spotlight tilt (×' ~ ('%.2f'|format(sp.mult)) ~ ') — a small narrative nudge to rank; never overrides extension or risk vetoes.' ~ ((' Theme: ' ~ _th.name ~ ((' (' ~ _th.reco_en ~ ')') if _th.reco_en else '') ~ '.') if _th.name else '') ~ ((' Sector: ' ~ (_sc.name or _sc.etf) ~ ' — ' ~ _sc.stage ~ (', extended/do not chase' if _sc.extended else '') ~ '.') if _sc.etf else ''))|e %}
+            {% if _th.slug %}
+            <a class="nb-spot {{ _spcls }}" href="basket/{{ _th.slug|e }}.html" title="{{ _sptip }} Open the theme →"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></a>
+            {% else %}
+            <div class="nb-spot {{ _spcls }}" title="{{ _sptip }}"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></div>
+            {% endif %}
+          {% endif %}
           {{ n.spark_svg }}
           {% if c %}
           <div class="nb-conv">
@@ -2369,6 +2403,9 @@
             {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
             {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
             {% if n.sector_rank %}<span class="nb-rk">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
+            {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
+              {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" title="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal · 需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
+              {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
           {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
           <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
@@ -2395,7 +2432,7 @@
             {% if n.eq_grade %}<span class="nb-grade" style="color:{{ 'var(--up)' if n.eq_dir=='up' else ('var(--down)' if n.eq_dir=='down' else 'var(--muted)') }}">{{ t(n.eq_grade, n.eq_grade_zh) if n.eq_grade_zh else n.eq_grade }}</span> ·{% endif %}
             <span title="signal triggered {{ n.signal_date }} · 信号触发 {{ n.signal_date }}">⏱ {{ t(n.age_short, n.age_short_zh) if n.age_short else (n.signal_date or '') }}</span>
           </div>
-          {% if n.alpha_z is not none or n.insider_buyers or n.sue_z %}
+          {% if n.alpha_z is not none or n.insider_buyers or n.sue_z or n.demand %}
           <div class="nb-alpha">
             {% if n.alpha_z is not none %}<span class="nb-az {{ 'az-up' if n.alpha_z > 0 else ('az-dn' if n.alpha_z < 0 else '') }}" title="Sector-neutral residual momentum (z) — stock-specific strength with market + sector beta stripped. A ranking/context leg, not a standalone signal. · 行业中性残差动量（z）— 剥离大盘与行业 beta 后的个股特定强度。属排序/情境维度，并非独立信号。">α {{ '%+.2f'|format(n.alpha_z) }}</span>{% endif %}
             {% if n.alpha_sector_rank %}<span class="nb-rk" title="Rank within its GICS sector by sector-neutral momentum · 按行业中性动量在其 GICS 行业内的排名">#{{ n.alpha_sector_rank }}/{{ n.alpha_sector_n }}</span>{% endif %}
@@ -2403,6 +2440,9 @@
             {% elif n.alpha_entry == 'extended' %}<span class="nb-ent ent-warn" title="A leader that just spiked — short-term reversal risk · 强势股刚刚拉升 — 短线反转风险">{{ t('extended', '过热') }}</span>{% endif %}
             {% if n.insider_buyers %}<span class="nb-ins" title="{{ n.insider_buyers }} distinct insiders net-bought{% if n.insider_net_mn %} ${{ '%.1f'|format(n.insider_net_mn) }}M{% endif %}{% if n.insider_bps %} (+{{ n.insider_bps }} bps of cap){% endif %} in the last 6 months — a Form-4 CLUSTER confirmer (orthogonal long-only conviction, not a standalone signal) · {{ n.insider_buyers }} 名内部人近 6 个月净买入 — Form-4 集群确认指标">👤 {{ n.insider_buyers }}</span>{% endif %}
             {% if n.sue_z %}<span class="nb-sue" title="Earnings momentum: SUE z {{ '%+.1f'|format(n.sue_z) }} vs the S&P 1500 — the latest quarter beat its year-ago seasonal expectation and tends to keep drifting (post-earnings-announcement drift). Standout on the shallow recent window but its cross-sectional edge does NOT persist on deep history; a DISPLAY confirmer, never part of the setup score · 盈利动量：SUE z {{ '%+.1f'|format(n.sue_z) }}（相对标普1500）— 最新季度超出去年同期季节性预期并倾向延续漂移（盈利后漂移）。在浅窗口曾突出，但其横截面优势在深度历史中不再成立；仅为展示确认项，不计入布局分">📈 SUE {{ '%+.1f'|format(n.sue_z) }}</span>{% endif %}
+            {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
+              {% if n.demand.div == 'ahead_of_consensus' %}<span class="nb-dmnd dmnd-up" title="Demand Desk: an independent, management-INDEPENDENT forward-demand signal (customer capex / contracted bookings · {{ n.demand.chain }}{{ dyoy }} YoY) is running AHEAD of this name's analyst consensus — i.e. not yet fully in the price. See the Demand Desk page. Display-only context, scored forward vs SPY; NOT a buy signal · 需求台：一个不依赖管理层口径的独立前瞻需求信号正领先于该股分析师共识——尚未充分计入价格。详见需求台页面。仅供展示并对SPY前向评分；非买入信号。">🧭 {{ t('demand ahead', '需求领先') }}</span>
+              {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
           {% endif %}
         </a>

@@ -100,7 +100,10 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "open_interest_df": store.read("bgeo", "open_interest_futures"),  # all 15 venue cols
         "okx_ls_ratio": _col("okx", "ls_account_ratio"),     # OKX retail account long/short breadth (DISPLAY)
         "okx_taker_buy": _col("okx", "taker_volume"),        # taker buy / (buy+sell) flow ratio (DISPLAY)
+        "okx_spot_usdt": _col("okx", "spot_usdt_daily", "close"),  # offshore-USDT ref for self-computed Coinbase Premium (2018->)
         "etf_flow": _col("bgeo", "etf_flow_btc"),
+        "farside_etf": store.read("farside", "etf_flows"),   # per-fund spot-BTC-ETF flows US$m (2024-01->)
+        "farside_total": _col("farside", "etf_flows", "total"),  # aggregate net flow US$m (Farside, primary)
         "btc_dominance": _col("bgeo", "btc_dominance"),
         "stablecoins": stables,
         "stablecoin_peg": _col("defillama", "stablecoin_peg"),  # peg-deviation veto (D-vec-PEG)
@@ -120,6 +123,12 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "hy_oas": _col("fred", "BAMLH0A0HYM2"),   # high-yield credit spread (%)
         "vix": _col("fred", "VIXCLS"),
         "dxy": _col("yahoo", "DX-Y.NYB", "close"),
+        # Tier-3 curve / Fed-path overlay (all FRED, already collected — config maps
+        # DGS2/DGS10/T10Y2Y/DFF). Used to score the 4 yield-curve regimes + Fed direction.
+        "us2y": _col("fred", "DGS2"),             # 2y nominal yield (%) — front-end
+        "us10y": _col("fred", "DGS10"),           # 10y nominal yield (%) — long-end
+        "spread_2s10s": _col("fred", "T10Y2Y"),   # 10y-2y term spread (%)
+        "fed_funds": _col("fred", "DFF"),         # effective fed funds rate (%)
         # New-factor hunt: positioning + cross-asset (all on disk already)
         "cot_net_pct": _col("cot", "cot_bitcoin", "net_spec_pct_oi"),  # CME net-spec % of OI
         "spx": _col("yahoo", "SPY", "close"),

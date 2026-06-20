@@ -85,32 +85,64 @@ DIV_Q = {"SPX": 0.013, "SPY": 0.013, "QQQ": 0.006, "IWM": 0.013, "DIA": 0.018,
          "XLK": 0.006, "XLF": 0.016, "XLE": 0.032, "SMH": 0.004}
 
 HISTORY_DAYS = 40  # net-GEX history sparkline depth (from the stored daily summary)
+# Concurrent Cboe chain fetches. The free cdn.cboe.com feed rate-limits (HTTP 429) under
+# heavy parallelism, so keep this modest — at ~313 symbols, 5 workers covers the board in
+# a few minutes without tripping the limiter (12 lost ~half the universe to 429s).
+MAX_WORKERS = 5
+FETCH_TRIES = 5    # extra 429-aware retries on top of http_get's own backoff
+# honesty gate for DERIVED (basket-member) names: skip when the chain is too thin or one
+# position dominates so much the dealer long-call/short-put SIGN can't be trusted.
+THEME_MIN_STRIKES = 8
+THEME_MAX_OI_SHARE = 0.55
 
 
 def _history(key: str) -> list[dict]:
-    """Last HISTORY_DAYS of stored daily {date, net_gex_bn, regime} for the sparkline.
-    Reads the cboe summary parquet the daily collector accrues; empty if absent."""
+    """Last HISTORY_DAYS of stored daily {date, net_gex_bn, regime, iv30} for the
+    sparkline + the short-window IV rank. Reads the cboe summary parquet the daily
+    collector accrues; empty if absent (so newly-added basket names just lack history
+    until it accrues — iv-rank / sparkline degrade gracefully). iv30 is converted to
+    PERCENT to match summary.iv30."""
     try:
         from lib import store
         df = store.read("cboe", f"gex_{key}")
         if df is None or not len(df) or "net_gex_bn" not in df.columns:
             return []
         df = df.tail(HISTORY_DAYS)
+        regs = df.get("gamma_regime", pd.Series([None] * len(df)))
+        ivs = df.get("iv30", pd.Series([None] * len(df)))
         return [{"date": str(pd.Timestamp(i).date()),
                  "net_gex_bn": (round(float(v), 2) if pd.notna(v) else None),
-                 "regime": (str(r) if pd.notna(r) else None)}
-                for i, v, r in zip(df.index, df["net_gex_bn"],
-                                   df.get("gamma_regime", pd.Series([None] * len(df))))]
+                 "regime": (str(r) if pd.notna(r) else None),
+                 "iv30": (round(float(iv) * 100, 2) if pd.notna(iv) else None)}
+                for i, v, r, iv in zip(df.index, df["net_gex_bn"], regs, ivs)]
     except Exception:  # noqa: BLE001 — history is a nicety, never fatal
         return []
 
 
+def _fetch_chain(adapter, sym: str):
+    """adapter._chain with extra 429-aware backoff (the CDN throttles at scale). A small
+    random jitter desynchronises the worker pool so the limiter clears between bursts."""
+    import random
+    import time
+    for i in range(FETCH_TRIES):
+        try:
+            if i == 0:
+                time.sleep(random.random() * 0.4)        # initial jitter
+            return adapter._chain(sym)
+        except Exception as e:  # noqa: BLE001
+            if i < FETCH_TRIES - 1 and ("429" in str(e) or "too many" in str(e).lower()):
+                time.sleep(3.0 * (i + 1) + random.random() * 2.0)
+                continue
+            raise
+
+
 def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
-    """Fetch + model one underlying -> (full payload, manifest row). None on failure."""
+    """Fetch + model one underlying -> (full payload, manifest row). None on failure or
+    when a derived name fails the honesty gate (too thin / too concentrated to trust)."""
     from engine.gex_model import build_model
-    sym, key = row["sym"], row["key"]
+    sym, key, src = row["sym"], row["key"], row.get("src", "core")
     try:
-        chain, spot = adapter._chain(sym)
+        chain, spot = _fetch_chain(adapter, sym)
     except Exception as e:  # noqa: BLE001 — partial board still useful
         log.warning("gex: %s chain failed: %s", sym, e)
         return None
@@ -118,49 +150,125 @@ def _build_one(adapter, row: dict) -> tuple[dict, dict] | None:
     cfg = {"q": DIV_Q.get(key, 0.0), "r": 0.043,
            "max_expiry_days": gcfg.get("max_expiry_days", 365)}
     meta = {"key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"],
-            "asof": str(date.today())}
+            "src": src, "asof": str(date.today())}
     model = build_model(chain, spot, cfg, meta=meta, history=_history(key))
     if model is None:
-        log.warning("gex: %s modeled empty — skipping", sym)
         return None
     s = model["summary"]
+    # derived-name honesty gate: don't surface a basket member whose sign we can't trust
+    if src == "theme" and ((s.get("n_strikes") or 0) < THEME_MIN_STRIKES
+                           or (s.get("top_oi_share") or 1.0) > THEME_MAX_OI_SHARE):
+        return None
     em = model["expected_move"]
     vh = model.get("vol_hole") or {}
+    tilt = model.get("tilt") or {}
+    skew = s.get("skew") or {}
+    ivr = s.get("iv_rank") or {}
     manifest = {
-        "key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"],
+        "key": key, "en": row["en"], "zh": row["zh"], "grp": row["grp"], "src": src,
         "spot": s["spot"], "regime": s["regime"], "tier": s["tier"],
+        "thin": (s["tier"] == "thin_chain"),
         "net_gex_bn": s["net_gex_bn"], "gamma_flip": s["gamma_flip"],
         "dist_to_flip_pct": s["dist_to_flip_pct"], "iv30": s["iv30"],
         "call_wall": s["call_wall"], "put_wall": s["put_wall"],
+        "call_wall_band": s.get("call_wall_band"), "put_wall_band": s.get("put_wall_band"),
         "max_pain": s["max_pain"], "daily_move_pct": em.get("daily_pct"),
         "put_call_oi_ratio": s["put_call_oi_ratio"],
         "vh_state": vh.get("state"), "vh_bias": vh.get("bias"),
+        "tilt_read": tilt.get("read"), "skew_tone": skew.get("tone"),
+        "iv_rank_band": ivr.get("band"),
         "asof": str(date.today()),
     }
     return model, manifest
 
 
+def _basket_universe(existing: set[str]) -> list[tuple]:
+    """Derive the thematic-basket members from data/baskets/membership.json so the board
+    auto-covers every curated theme name. Each row is (cboe_sym, key, en, zh, grp) with
+    grp='Theme · <category>'; de-duped against the curated UNIVERSE (curated group wins)
+    and across baskets (first basket's category wins). name left blank (ticker-centric)."""
+    path = config.ROOT / "data" / "baskets" / "membership.json"
+    try:
+        data = json.loads(path.read_text())
+    except Exception as e:  # noqa: BLE001 — basket expansion is additive, never fatal
+        log.warning("gex: basket membership unreadable (%s); core universe only", e)
+        return []
+    rows, seen = [], set()
+    for b in data.get("baskets", {}).values():
+        grp = f"Theme · {b.get('category') or 'Other'}"
+        for m in b.get("members", []):
+            if m.get("removed"):
+                continue
+            tk = (m.get("ticker") or "").strip().upper()
+            if not tk or tk in existing or tk in seen:
+                continue
+            seen.add(tk)
+            rows.append((tk, tk, "", "", grp))
+    return rows
+
+
+def _ordered_groups(universe: list[tuple]) -> list[str]:
+    """Board section order: curated groups first (in UNIVERSE order), then the
+    Theme · <category> groups alphabetically."""
+    core, themes = [], []
+    for _, _, _, _, grp in universe:
+        bucket = themes if grp.startswith("Theme · ") else core
+        if grp not in bucket:
+            bucket.append(grp)
+    return core + sorted(themes)
+
+
 def main() -> int:
+    from concurrent.futures import ThreadPoolExecutor
     from collectors.cboe import GexAdapter
     adapter = GexAdapter()
     site = config.ROOT / config.load()["storage"]["site_dir"]
     out_dir = site / "gex"
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    core_keys = {key for _, key, *_ in UNIVERSE}
+    universe = list(UNIVERSE) + _basket_universe(core_keys)
+    rows = [{"sym": s, "key": k, "en": e, "zh": z, "grp": g,
+             "src": ("theme" if g.startswith("Theme · ") else "core")}
+            for s, k, e, z, g in universe]
+    attempted: dict[str, int] = {}
+    for r in rows:
+        attempted[r["grp"]] = attempted.get(r["grp"], 0) + 1
+    log.info("gex: universe = %d symbols (%d core + %d theme members)",
+             len(rows), len(UNIVERSE), len(rows) - len(UNIVERSE))
+
+    def work(row):
+        # the WHOLE unit (fetch → model → serialize → write) is guarded so one bad symbol
+        # (fetch error, OS write failure, or a stray NaN that allow_nan=False rejects) is
+        # skipped, never aborting the board or crashing main() — partial coverage is fine.
+        try:
+            res = _build_one(adapter, row)
+            if not res:
+                return None
+            model, mrow = res
+            (out_dir / f"{mrow['key']}.json").write_text(
+                json.dumps(model, default=float, allow_nan=False, separators=(",", ":")))
+            return mrow
+        except Exception as e:  # noqa: BLE001 — one bad symbol never aborts the board
+            log.warning("gex: %s errored: %s", row["key"], e)
+            return None
+
     manifest: list[dict] = []
-    for sym, key, en, zh, grp in UNIVERSE:
-        res = _build_one(adapter, {"sym": sym, "key": key, "en": en, "zh": zh, "grp": grp})
-        if not res:
-            continue
-        model, mrow = res
-        (out_dir / f"{key}.json").write_text(json.dumps(model, default=float, separators=(",", ":")))
-        manifest.append(mrow)
-        log.info("gex: %s ok (regime=%s net=%.2f flip=%s)",
-                 key, mrow["regime"], mrow["net_gex_bn"] or 0, mrow["gamma_flip"])
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        for mrow in ex.map(work, rows):
+            if mrow:
+                manifest.append(mrow)
 
     if not manifest:
         log.error("gex: no symbols computed; leaving prior site/gex.html in place")
         return 0
+
+    # per-group coverage (covered of attempted) so the board can be honest about gaps
+    covered: dict[str, int] = {}
+    for m in manifest:
+        covered[m["grp"]] = covered.get(m["grp"], 0) + 1
+    coverage = {g: {"covered": covered.get(g, 0), "total": t} for g, t in attempted.items()}
+    coverage["__all__"] = {"covered": len(manifest), "total": len(rows)}
 
     (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
 
@@ -168,19 +276,17 @@ def main() -> int:
     from engine.i18n import td, tr
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(td=td, tr=tr)
-    # group order for the board sections
-    groups = []
-    for m in manifest:
-        if m["grp"] not in groups:
-            groups.append(m["grp"])
+    present = {m["grp"] for m in manifest}
+    groups = [g for g in _ordered_groups(universe) if g in present]
     keys = {m["key"] for m in manifest}
     default_key = "SPY" if "SPY" in keys else manifest[0]["key"]
     html = env.get_template("gex.html.j2").render(
-        manifest=manifest, groups=groups, built=built,
-        default_key=default_key, manifest_json=json.dumps(manifest, default=float))
+        manifest=manifest, groups=groups, built=built, default_key=default_key,
+        coverage=coverage, coverage_json=json.dumps(coverage, default=float),
+        manifest_json=json.dumps(manifest, default=float))
     (site / "gex.html").write_text(html)
-    log.info("wrote %s/gex.html + %d per-symbol payloads (%s)",
-             site, len(manifest), ", ".join(m["key"] for m in manifest))
+    log.info("gex: wrote %s/gex.html + %d payloads (%d of %d symbols had liquid options)",
+             site, len(manifest), len(manifest), len(rows))
     return 0
 
 

@@ -1,0 +1,57 @@
+{
+  "schema": "demand_chain_track_record.v1",
+  "as_of": "2026-06-20",
+  "scored_total": 0,
+  "open": 7,
+  "unscored_soft": 0,
+  "expired": 0,
+  "overall": {
+    "n": 0,
+    "hits": 0,
+    "misses": 0,
+    "hit_rate": null,
+    "dir_accuracy": null
+  },
+  "by_conviction": {
+    "high": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "medium": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "low": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    }
+  },
+  "by_kind": {
+    "rel_return": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "level": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    }
+  },
+  "calibration_note": "No theses scored yet — the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
+  "calibration_note_zh": "尚无判断被评分 —— 待首批核查日到期后开始累积战绩；在此之前置信保持克制。",
+  "recent": []
+}

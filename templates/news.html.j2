@@ -1,0 +1,307 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{#- one headline row. Tolerant of macro/china/financial shapes. NEVER puts t()
+    inside an attribute (datetime= takes the raw ISO string, which is data). -#}
+{% macro headline(h, labels={}) -%}
+{% set ts = h.seendate or h.time %}
+{% set sent = h.sentiment or h.llm_tone %}
+<li class="hl">
+  <div class="hl-main">
+    <a class="hl-title" href="{{ h.url or '#' }}" target="_blank" rel="noopener noreferrer">{{ h.title }}</a>
+    {% if h.summary %}<div class="hl-sum">{{ h.summary }}</div>{% endif %}
+  </div>
+  <div class="hl-meta">
+    {% if h.theme and labels.get(h.theme) %}<span class="chip chip-th">{{ t(labels[h.theme][0], labels[h.theme][1]) }}</span>{% endif %}
+    {% for tk in (h.tickers or [])[:3] %}<span class="chip chip-tk">{{ tk }}</span>{% endfor %}
+    {% if sent and sent in ['pos','neg'] %}<span class="chip s-{{ sent }}">{{ '▲' if sent=='pos' else '▼' }}</span>{% endif %}
+    <span class="src">{{ h.source or h.domain }}</span>
+    {% if ts %}<time class="ago" datetime="{{ ts }}">{{ ts[:10] }}</time>{% endif %}
+  </div>
+</li>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('News — Macro · Markets · Sectors · China', '新闻 — 宏观 · 市场 · 板块 · 中国') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body.page-news{ background:var(--bg); color:var(--text); margin:0;
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .page-news a{ color:var(--link); text-decoration:none; }
+  .news-wrap{ max-width:1180px; margin:0 auto; padding:14px 16px 64px; }
+  .news-head h1{ font-size:25px; margin:6px 0 2px; letter-spacing:-.01em; }
+  .news-head p{ margin:0 0 6px; color:color-mix(in srgb,var(--text) 62%,transparent); }
+  /* sticky jump nav */
+  .jump{ position:sticky; top:0; z-index:20; display:flex; gap:6px; flex-wrap:wrap;
+    padding:9px 0; margin:6px 0 14px; background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(8px); border-bottom:1px solid color-mix(in srgb,var(--text) 10%,transparent); }
+  .jump a{ font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:999px;
+    border:1px solid color-mix(in srgb,var(--text) 14%,transparent);
+    color:color-mix(in srgb,var(--text) 80%,transparent); }
+  .jump a.on, .jump a:hover{ background:var(--link); color:#fff; border-color:var(--link); }
+  /* section + card */
+  .sec{ margin:0 0 30px; scroll-margin-top:58px; }
+  .sec-h{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:0 0 10px; }
+  .sec-h h2{ font-size:18px; margin:0; }
+  .sec-h .sub{ font-size:12px; color:color-mix(in srgb,var(--text) 55%,transparent); }
+  .card{ border:1px solid color-mix(in srgb,var(--text) 11%,transparent); border-radius:12px;
+    background:color-mix(in srgb,var(--text) 3%,transparent); padding:12px 14px; }
+  .grid{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
+  .card h3{ font-size:14px; margin:0 0 8px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .card h3 .etf{ font-size:10.5px; font-weight:700; padding:1px 6px; border-radius:6px;
+    background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }
+  /* headline list */
+  ul.hl-list{ list-style:none; margin:0; padding:0; }
+  .hl{ padding:8px 0; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent); }
+  .hl:first-child{ border-top:0; }
+  .hl-title{ font-weight:560; }
+  .hl-title:hover{ text-decoration:underline; }
+  .hl-sum{ font-size:12.5px; color:color-mix(in srgb,var(--text) 64%,transparent); margin-top:2px; }
+  .hl-meta{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:4px;
+    font-size:11px; color:color-mix(in srgb,var(--text) 52%,transparent); }
+  .chip{ font-size:10px; font-weight:600; padding:1px 6px; border-radius:6px;
+    background:color-mix(in srgb,var(--text) 9%,transparent); }
+  .chip-tk{ font-family:ui-monospace,Menlo,monospace; }
+  .chip-th{ background:color-mix(in srgb,var(--link) 15%,transparent); color:var(--link); }
+  .s-pos{ background:color-mix(in srgb,#16a34a 22%,transparent); color:#16a34a; }
+  .s-neg{ background:color-mix(in srgb,#dc2626 22%,transparent); color:#dc2626; }
+  .src{ font-weight:600; }
+  .ago{ margin-left:auto; white-space:nowrap; }
+  .brief{ border-left:3px solid var(--link); padding:8px 12px; border-radius:0 8px 8px 0;
+    background:color-mix(in srgb,var(--link) 7%,transparent); margin:0 0 12px; font-size:13px; }
+  .cats{ display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 12px; }
+  .cat-cnt{ font-size:11.5px; padding:3px 9px; border-radius:8px;
+    background:color-mix(in srgb,var(--text) 7%,transparent); }
+  details.basket-group{ margin:0 0 10px; }
+  details.basket-group>summary{ cursor:pointer; font-weight:700; font-size:13.5px; padding:7px 0;
+    list-style:none; }
+  details.basket-group>summary::-webkit-details-marker{ display:none; }
+  details.basket-group>summary::before{ content:'▸'; margin-right:7px; color:var(--link); }
+  details.basket-group[open]>summary::before{ content:'▾'; }
+  .disc{ font-size:11px; color:color-mix(in srgb,var(--text) 50%,transparent);
+    margin-top:10px; line-height:1.5; }
+  .empty{ font-size:12.5px; color:color-mix(in srgb,var(--text) 50%,transparent); padding:8px 0; }
+  .cat-list{ list-style:none; margin:0; padding:0; }
+  .cat-list li{ padding:6px 0; border-top:1px solid color-mix(in srgb,var(--text) 8%,transparent);
+    display:flex; gap:10px; font-size:13px; }
+  .cat-list li:first-child{ border-top:0; }
+  .cat-list .d{ font-family:ui-monospace,Menlo,monospace; font-size:12px; white-space:nowrap;
+    color:color-mix(in srgb,var(--text) 60%,transparent); }
+  .cat-list .imp{ font-size:10px; font-weight:700; padding:0 5px; border-radius:5px;
+    background:color-mix(in srgb,#f59e0b 22%,transparent); color:#b45309; }
+  footer.news-foot{ margin-top:24px; padding-top:14px;
+    border-top:1px solid color-mix(in srgb,var(--text) 11%,transparent);
+    font-size:11px; color:color-mix(in srgb,var(--text) 50%,transparent); }
+</style>
+</head>
+<body class="page-news">
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search any stock, ETF, commodity or crypto"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="news-wrap">
+  <div class="news-head">
+    <h1>📰 {{ t('News', '新闻') }}</h1>
+    <p>{{ t('Curated, source-ranked headlines across macro, the US stock market, every sector & thematic basket, and China — context only, never a signal.',
+            '精选、按来源质量排序的头条：宏观、美股大盘、各板块与主题篮子，以及中国 — 仅作背景，绝非信号。') }}</p>
+  </div>
+
+  <nav class="jump" aria-label="Sections">
+    {% if macro %}<a href="#macro">{{ t('Macro', '宏观') }}</a>{% endif %}
+    {% if fin %}<a href="#market">{{ t('Market', '大盘') }}</a>
+    <a href="#mag7">{{ t('Mag-7', '七巨头') }}</a>
+    <a href="#sectors">{{ t('Sectors', '板块') }}</a>
+    <a href="#baskets">{{ t('Baskets', '主题篮子') }}</a>{% endif %}
+    {% if china %}<a href="#china">{{ t('China', '中国') }}</a>{% endif %}
+    {% if narrative %}<a href="#narrative">{{ t('Narrative', '叙事') }}</a>{% endif %}
+  </nav>
+
+  {# ===================== MACRO ===================== #}
+  {% if macro %}
+  <section class="sec" id="macro">
+    <div class="sec-h"><h2>🏛️ {{ t('Macro news, sentiment & catalysts', '宏观新闻、情绪与催化') }}</h2>
+      <span class="sub">{{ t('Reputable wires · macro themes', '权威通讯社 · 宏观主题') }} · {{ macro.n_kept }}</span></div>
+    {% if macro_brief and macro_brief.text %}<div class="brief">🤖 {{ macro_brief.text }}</div>{% endif %}
+    <div class="grid">
+      <div class="card">
+        <h3>{{ t('Top macro headlines', '宏观头条') }}</h3>
+        {% if macro.headlines %}<ul class="hl-list">
+          {% for h in macro.headlines %}{{ headline(h, macro_theme_label) }}{% endfor %}
+        </ul>{% else %}<div class="empty">{{ t('Quiet macro tape.', '宏观平静。') }}</div>{% endif %}
+      </div>
+      <div class="card">
+        <h3>🗓️ {{ t('Upcoming catalysts', '即将到来的催化') }}</h3>
+        {% if macro_catalysts %}<ul class="cat-list">
+          {% for c in macro_catalysts[:12] %}<li>
+            <span class="d">{{ c.date }}{% if c.time_et %} · {{ c.time_et }}{% endif %}</span>
+            <span>{{ c.label or c.type }}</span></li>{% endfor %}
+        </ul>{% else %}<div class="empty">{{ t('No scheduled releases in the window.', '窗口内无定期数据发布。') }}</div>{% endif %}
+      </div>
+    </div>
+    <div class="disc">{{ macro_disclaimer }}<br><span class="l-zh">{{ macro_disclaimer_zh }}</span></div>
+  </section>
+  {% endif %}
+
+  {# ===================== FINANCIAL / MARKET ===================== #}
+  {% if fin %}
+  <section class="sec" id="market">
+    <div class="sec-h"><h2>📈 {{ t('Market-wide', '全市场') }}</h2>
+      <span class="sub">{{ t('Broad equity-market news', '大盘股市新闻') }}
+        {%- if fin.providers %} · {{ fin.providers.keys()|select|list|length }} {{ t('sources', '来源') }}{% endif %}</span></div>
+    <div class="card">
+      {% if fin.market %}<ul class="hl-list">
+        {% for h in fin.market %}{{ headline(h) }}{% endfor %}
+      </ul>{% else %}<div class="empty">{{ t('No market headlines available — check Polygon / Finnhub keys.', '暂无大盘头条 — 请检查 Polygon / Finnhub 密钥。') }}</div>{% endif %}
+    </div>
+  </section>
+
+  <section class="sec" id="mag7">
+    <div class="sec-h"><h2>🦣 {{ t('Magnificent Seven', '七巨头') }}</h2>
+      <span class="sub">{{ t('Per-name megacap news', '逐只大型科技股新闻') }}</span></div>
+    <div class="grid">
+      {% for t_ in mag7_order %}{% set m = fin.mag7.get(t_) %}{% if m %}
+      <div class="card">
+        <h3><span class="chip chip-tk">{{ t_ }}</span>{% if m.name and m.name != t_ %} {{ m.name }}{% endif %}</h3>
+        {% if m.headlines %}<ul class="hl-list">
+          {% for h in m.headlines %}{{ headline(h) }}{% endfor %}
+        </ul>{% else %}<div class="empty">{{ t('No recent headlines.', '近期无头条。') }}</div>{% endif %}
+      </div>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="sec" id="sectors">
+    <div class="sec-h"><h2>🧭 {{ t('Sectors (11 GICS)', '行业板块（11 GICS）') }}</h2>
+      <span class="sub">{{ t('SPDR sector ETFs + holdings', 'SPDR 行业 ETF + 成份') }}</span></div>
+    <div class="grid">
+      {% for etf, label in sector_etfs.items() %}{% set s = fin.sectors.get(etf) %}{% if s %}
+      <div class="card">
+        <h3><span class="etf">{{ etf }}</span> {{ t(label[0], label[1]) }}</h3>
+        {% if s.headlines %}<ul class="hl-list">
+          {% for h in s.headlines %}{{ headline(h) }}{% endfor %}
+        </ul>{% else %}<div class="empty">{{ t('No recent headlines.', '近期无头条。') }}</div>{% endif %}
+      </div>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section class="sec" id="baskets">
+    <div class="sec-h"><h2>🧺 {{ t('Thematic baskets', '主题篮子') }}</h2>
+      <span class="sub">{{ t('News for every theme basket', '每个主题篮子的新闻') }} · {{ fin.baskets|length }}</span></div>
+    {% set cats = {} %}
+    {% for key, b in fin.baskets.items() %}{% set _ = cats.setdefault(b.category or 'Other', []).append((key, b)) %}{% endfor %}
+    {% for cat, items in cats.items() %}
+    <details class="basket-group"{% if loop.first %} open{% endif %}>
+      <summary>{{ cat }} <span class="src">({{ items|length }})</span></summary>
+      <div class="grid">
+        {% for key, b in items %}
+        <div class="card">
+          <h3>{{ b.name }}{% if b.name_zh %} <span class="l-zh" style="font-weight:400;opacity:.7">{{ b.name_zh }}</span>{% endif %}
+            {% if b.etf %}<span class="etf">{{ b.etf }}</span>{% endif %}</h3>
+          {% if b.headlines %}<ul class="hl-list">
+            {% for h in b.headlines[:5] %}{{ headline(h) }}{% endfor %}
+          </ul>{% else %}<div class="empty">{{ t('No recent headlines.', '近期无头条。') }}</div>{% endif %}
+        </div>{% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+    <div class="disc">{{ fin.disclaimer }}<br><span class="l-zh">{{ fin.disclaimer_zh }}</span></div>
+  </section>
+  {% endif %}
+
+  {# ===================== CHINA ===================== #}
+  {% if china %}
+  {% set CN = china %}
+  <section class="sec" id="china">
+    <div class="sec-h"><h2>🇨🇳 {{ t('China — macro · markets · tech · politics', '中国 — 宏观 · 市场 · 科技 · 政治') }}</h2>
+      {% if CN.tone %}<span class="sub">{{ t('Policy tone', '政策基调') }}:
+        {{ t(CN.tone.label_en, CN.tone.label_zh) }} · z {{ '%.2f'|format(CN.tone.z) if CN.tone.z is not none else '—' }}</span>{% endif %}</div>
+    {% if CN.brief and CN.brief.text %}<div class="brief">🤖 {{ CN.brief.text }}</div>{% endif %}
+    <div class="card">
+      <h3>{{ t('Filtered China headlines', '筛选后的中国头条') }}</h3>
+      {% if CN.news and CN.news.headlines %}<ul class="hl-list">
+        {% for h in CN.news.headlines %}{{ headline(h, CN.theme_label) }}{% endfor %}
+      </ul>{% else %}<div class="empty">{{ t('No headlines available.', '暂无头条。') }}</div>{% endif %}
+    </div>
+    {% if CN.disclaimer %}<div class="disc">{{ CN.disclaimer }}<br><span class="l-zh">{{ CN.disclaimer_zh }}</span></div>{% endif %}
+  </section>
+  {% endif %}
+
+  {# ===================== NARRATIVE ===================== #}
+  {% if narrative %}{% set NV = narrative %}
+  <section class="sec" id="narrative">
+    <div class="sec-h"><h2>🧵 {{ t('Narrative event bus', '叙事事件总线') }}</h2>
+      <span class="sub">{{ t('First-print, point-in-time', '首次刊发 · 时点') }}
+        {%- if NV.events %} · {{ NV.events.n_recent }} {{ t('events', '事件') }}{% endif %}</span></div>
+    <div class="card">
+      {% if NV.events and NV.events.by_theme %}
+      <div class="cats">
+        {% for th, n in NV.events.by_theme.items() %}<span class="cat-cnt">{{ th }} · {{ n }}</span>{% endfor %}
+        {% if NV.events.unscheduled_share is not none %}<span class="cat-cnt">{{ (NV.events.unscheduled_share*100)|round|int }}% {{ t('unscheduled', '非计划') }}</span>{% endif %}
+      </div>{% endif %}
+      {% if NV.events and NV.events['items'] %}<ul class="hl-list">
+        {% for h in NV.events['items'] %}{{ headline(h) }}{% endfor %}
+      </ul>{% else %}<div class="empty">{{ t('Nothing accrued yet — the bus fills over the coming days.', '尚无累积 — 事件总线将在未来数日填充。') }}</div>{% endif %}
+    </div>
+    {% if NV.disclaimer %}<div class="disc">{{ NV.disclaimer }}<br><span class="l-zh">{{ NV.disclaimer_zh }}</span></div>{% endif %}
+  </section>
+  {% endif %}
+
+  <footer class="news-foot">
+    {{ t('Built', '生成于') }} <time datetime="{{ built }}">{{ built[:16].replace('T',' ') }}</time> UTC ·
+    {% if llm_provider %}{{ t('Summaries', '摘要') }}: {{ llm_provider }} · {% endif %}
+    {{ t('All news is context only — never an input to any score, signal or allocation.',
+          '所有新闻仅作背景 — 绝不进入任何评分、信号或配置。') }}
+  </footer>
+</div>
+
+<script src="theme.js"></script>
+<script>
+(function(){
+  // relative "x ago" labels
+  function ago(iso){
+    var d=new Date(iso); if(isNaN(d)) return null;
+    var s=(Date.now()-d.getTime())/1000; if(s<0) s=0;
+    var zh=document.documentElement.getAttribute('data-lang')==='zh';
+    if(s<3600) return Math.max(1,Math.round(s/60))+(zh?'分钟前':'m ago');
+    if(s<86400) return Math.round(s/3600)+(zh?'小时前':'h ago');
+    if(s<604800) return Math.round(s/86400)+(zh?'天前':'d ago');
+    return d.toISOString().slice(0,10);
+  }
+  function paintTimes(){
+    document.querySelectorAll('time.ago[datetime]').forEach(function(el){
+      var r=ago(el.getAttribute('datetime')); if(r) el.textContent=r;
+    });
+  }
+  paintTimes(); document.addEventListener('langchange', paintTimes);
+  // active jump-pill on scroll
+  var links=[].slice.call(document.querySelectorAll('.jump a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));}).filter(Boolean);
+  function onScroll(){
+    var y=window.scrollY+70, cur=null;
+    secs.forEach(function(s){ if(s.offsetTop<=y) cur=s.id; });
+    links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href')==='#'+cur); });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+})();
+</script>
+</body>
+</html>

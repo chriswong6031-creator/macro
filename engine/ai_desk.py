@@ -142,15 +142,45 @@ def _brief_age_days(prev) -> float | None:
         return None
 
 
+_BREADTH_MEMO: dict[str, object] = {}
+
+
+def _breadth_frame(root):
+    """The S&P 1500 close matrix (data/breadth/_closes_cache.parquet), memoized per
+    root. Columns are tickers; lets the scorer resolve names beyond the ~153 yahoo
+    parquets (e.g. individual semiconductors). None if the cache is absent."""
+    key = str(root)
+    if key not in _BREADTH_MEMO:
+        val = None
+        try:
+            p = Path(root) / "data" / "breadth" / "_closes_cache.parquet"
+            if p.exists():
+                df = pd.read_parquet(p)
+                df.index = pd.to_datetime(df.index)
+                val = df.sort_index()
+        except Exception:  # noqa: BLE001
+            val = None
+        _BREADTH_MEMO[key] = val
+    return _BREADTH_MEMO[key]
+
+
 def _close_series(ticker: str, root) -> pd.Series | None:
-    """Closes for a yahoo-cached instrument (cols are lowercase 'close'); None if absent."""
+    """Closes for an instrument. Prefers the per-ticker yahoo parquet (cols are
+    lowercase 'close'); falls back to the S&P 1500 breadth close cache so subjects
+    beyond the ~153 yahoo names are still scorable. None if neither has it."""
     try:
         df = pd.read_parquet(Path(root) / "data" / "yahoo" / f"{ticker}.parquet")
         s = df["close"].dropna()
         s.index = pd.to_datetime(s.index)
         return s.sort_index()
     except Exception:  # noqa: BLE001
-        return None
+        pass
+    bf = _breadth_frame(root)                       # additive fallback; yahoo names unaffected
+    if bf is not None and ticker in getattr(bf, "columns", []):
+        s = bf[ticker].dropna()
+        if len(s):
+            return s.sort_index()
+    return None
 
 
 def _level_asof(ticker: str, root, asof) -> float | None:

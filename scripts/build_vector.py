@@ -1840,6 +1840,35 @@ def _r(v, n=2):
     return round(float(v), n) if v is not None and pd.notna(v) else None
 
 
+_ETF_FUND_NAMES = {
+    "ibit": "iShares (IBIT)", "fbtc": "Fidelity (FBTC)", "bitb": "Bitwise (BITB)",
+    "arkb": "ARK 21Shares (ARKB)", "btco": "Invesco (BTCO)", "ezbc": "Franklin (EZBC)",
+    "brrr": "Valkyrie (BRRR)", "hodl": "VanEck (HODL)", "btcw": "WisdomTree (BTCW)",
+    "msbt": "Morgan Stanley (MSBT)", "gbtc": "Grayscale (GBTC)", "btc": "Grayscale Mini (BTC)",
+}
+
+
+def _etf_fund_leaders(fa, recent_d: int = 5) -> list[dict]:
+    """Per-fund spot-ETF league table from the Farside frame: trailing-Nd net flow +
+    cumulative since launch (both US$m), sorted by cumulative. Drives the per-issuer
+    breakdown on the ETF card. Returns [] if Farside is unavailable (card hides it)."""
+    if fa is None or fa.empty:
+        return []
+    funds = [c for c in fa.columns if c != "total"]
+    recent = fa[funds].tail(recent_d).sum(min_count=1)
+    cum = fa[funds].sum(min_count=1)
+    rows = []
+    for t in funds:
+        c = cum.get(t)
+        if c is None or pd.isna(c):
+            continue
+        rows.append({"ticker": t.upper(), "name": _ETF_FUND_NAMES.get(t, t.upper()),
+                     "recent": round(float(recent.get(t, 0) or 0), 1),
+                     "cum": round(float(c), 1)})
+    rows.sort(key=lambda r: r["cum"], reverse=True)
+    return rows
+
+
 def _okx_ls_lean(z) -> str:
     """Contrarian retail-crowding label from the OKX long/short ACCOUNT-ratio z —
     DISPLAY-ONLY context with its OWN enum (NOT merged into the funding
@@ -2010,6 +2039,12 @@ def main() -> int:
     _efl = sig[sig["etf_flow_sum"].notna()] if "etf_flow_sum" in sig.columns else sig.iloc[0:0]
     etf_last = _efl.iloc[-1] if len(_efl) else last
     etf_asof = _efl.index[-1].strftime("%b %-d") if len(_efl) else None
+    # Farside per-fund USD layer reads its last PUBLISHED-flow row (lags the tape a day),
+    # so the as-of date matches the latest real daily flow (not just the rolling window).
+    _eul = sig[sig["etf_flow_total_usd"].notna()] if "etf_flow_total_usd" in sig.columns else sig.iloc[0:0]
+    etf_usd_last = _eul.iloc[-1] if len(_eul) else last
+    etf_usd_asof = _eul.index[-1].strftime("%b %-d") if len(_eul) else None
+    etf_funds = _etf_fund_leaders(store.read("farside", "etf_flows"))
     px = _series("coinbase", "btc_daily")
     close = sig["close"]
     chg24 = round(100 * (close.iloc[-1] / close.iloc[-2] - 1), 2)
@@ -2098,6 +2133,45 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — synthesis is optional; page renders without it
         log.warning("master signal synthesis failed (%s)", e)
         master = {"ok": False}
+
+    # Five-tier macro-regime composite (engine/btc_regime.py). DISPLAY-ONLY — the P0
+    # kill-test showed it does NOT beat the hand-tuned allocator OOS, so it never sizes;
+    # it is a transparent, falsifiable avoidance instrument. Never break the build.
+    try:
+        from engine import btc_regime
+        regime = btc_regime.compute(sig, calib)
+    except Exception as e:  # noqa: BLE001 — the regime scorecard is optional
+        log.warning("regime composite failed (%s)", e)
+        regime = {"ok": False}
+    if regime.get("ok"):           # deferred CONTEXT legs (display-only; each degrades to ok:False)
+        legs = {}
+        for _mod, _key in (("btc_netliq", "netliq"), ("btc_leverage_cascade", "leverage"),
+                           ("btc_dat", "dat"), ("etf_perfund", "etf_perfund")):
+            try:
+                _m = __import__(f"engine.{_mod}", fromlist=["x"])
+                if _mod == "etf_perfund":
+                    legs[_key] = _m.read_perfund()
+                elif _mod == "btc_dat":               # reads a manual json drop + parquet close, not the df
+                    legs[_key] = _m.compute()
+                else:
+                    legs[_key] = _m.compute(sig)       # btc_netliq / btc_leverage_cascade take the df
+            except Exception as _le:  # noqa: BLE001 — context legs are optional
+                legs[_key] = {"ok": False, "reason": f"{type(_le).__name__}"}
+        regime["context_legs"] = legs
+    if regime.get("ok"):           # accrue the falsifiable forward ledger (context-only, separate)
+        try:
+            from engine import btc_regime_ledger
+            btc_regime_ledger.stamp(regime)
+            btc_regime_ledger.falsifier_status()          # writes regime_falsifiers.json
+            regime["ledger"] = btc_regime_ledger.render_summary()
+        except Exception as le:    # noqa: BLE001 — ledger is optional / may not exist yet
+            log.warning("regime ledger failed (%s)", le)
+    if regime.get("ok"):           # persist the COMPLETE scorecard (legs + ledger included)
+        try:
+            (config.data_dir() / "vector" / "regime_latest.json").write_text(
+                json.dumps(regime, default=str, separators=(",", ":")))
+        except Exception as we:    # noqa: BLE001
+            log.warning("regime persist failed (%s)", we)
 
     # Forward-return CONES (empirical, regime-conditioned) + the RECOMMENDATION engine —
     # the command-center decision layer (engine/btc_recommend.py). Never break the build.
@@ -2226,6 +2300,15 @@ def main() -> int:
             "gamma_flip": _r(last.get("gamma_flip"), 0),
             "dist_to_flip_pct": _r(last.get("dist_to_flip_pct"), 1),
             "gamma_regime": last.get("gamma_regime"),
+            # VRP regime + DVOL-implied expected-move band (the options leg of the risk model)
+            "vrp_z": _r(last.get("vrp_z"), 1),
+            "vrp_state": last.get("vrp_state"),
+            "iv_term_spread": _r(last.get("iv_term_spread"), 1),
+            "iv_term_state": last.get("iv_term_state"),
+            "skew_state": last.get("skew_state"),
+            "em_pct": _r(last.get("expected_move_pct"), 1),
+            "em_upper": _r(last.get("em_upper"), 0),
+            "em_lower": _r(last.get("em_lower"), 0),
         },
         "leverage": {
             "oi_total": _r(last.get("oi_total_usd"), 0),
@@ -2248,6 +2331,12 @@ def main() -> int:
             "cme_basis_ann": _r(last.get("cme_basis_ann"), 0),
             "cme_basis_pctile": _r(last.get("cme_basis_pctile"), 0),
             "cme_basis_regime": last.get("cme_basis_regime"),
+            # consolidated derivatives CARRY across CME + perp funding + Deribit basis
+            "carry_z": _r(last.get("futures_carry_z"), 1),
+            "carry_state": last.get("futures_carry_state"),
+            "carry_cme_pct": _r(last.get("carry_cme_pct"), 2),
+            "carry_funding_ann": _r(last.get("carry_funding_ann"), 1),
+            "carry_deribit_ann": _r(last.get("carry_deribit_ann"), 1),
         },
         "macro": {
             "score": _r(last.get("macro_score"), 2),
@@ -2272,6 +2361,13 @@ def main() -> int:
         "onchain": {
             "premium": _r(last.get("coinbase_premium_ema"), 2),
             "premium_hot": bool(pd.notna(last.get("coinbase_premium_ema")) and last["coinbase_premium_ema"] > 1.5),
+            # Coinbase Premium MODEL — self-computed (Coinbase USD − OKX USDT), spliced w/ bgeo.
+            # premium_z passes the 2-half forward-edge gate (IC +0.08→+0.18) — measured.
+            "premium_pct": _r(last.get("coinbase_premium"), 3),
+            "premium_z": _r(last.get("coinbase_premium_z"), 1),
+            "premium_pctile": _r(last.get("coinbase_premium_pctile"), 0),
+            "premium_state": last.get("coinbase_premium_state"),
+            "premium_div": last.get("coinbase_premium_divergence"),
             "ssr": _r(last.get("ssr"), 1),
             "ssr_osc": _r(last.get("ssr_oscillator"), 2),
             "mpi": _r(last.get("mpi"), 2),
@@ -2289,6 +2385,22 @@ def main() -> int:
             "cum_usd_bn": (_r(etf_last["etf_flow_cum"] * etf_last["close"] / 1e9, 1)
                            if pd.notna(etf_last.get("etf_flow_cum")) else None),
             "present": bool(len(_efl)),
+            # Farside per-fund USD model (US$m; primary going forward, bgeo BTC = cross-check)
+            "usd_asof": etf_usd_asof,
+            "total_usd_str": (f"${etf_usd_last['etf_flow_total_usd']:+,.0f}M"
+                              if pd.notna(etf_usd_last.get("etf_flow_total_usd")) else "—"),
+            "usd_5d_str": (f"${etf_usd_last['etf_usd_sum']:+,.0f}M"
+                           if pd.notna(etf_usd_last.get("etf_usd_sum")) else "—"),
+            "usd_z": _r(etf_usd_last.get("etf_usd_z"), 2),
+            "usd_cum_bn": (_r(etf_usd_last["etf_usd_cum"] / 1e3, 1)
+                           if pd.notna(etf_usd_last.get("etf_usd_cum")) else None),
+            "exgbtc_cum_bn": (_r(etf_usd_last["etf_exgbtc_cum"] / 1e3, 1)
+                              if pd.notna(etf_usd_last.get("etf_exgbtc_cum")) else None),
+            "concentration": (_r(100 * etf_usd_last["etf_concentration"], 0)
+                              if pd.notna(etf_usd_last.get("etf_concentration")) else None),
+            "divergence": etf_usd_last.get("etf_flow_divergence"),
+            "funds": etf_funds,
+            "usd_present": bool(len(_eul)),
         },
         "impulse": {
             "value": _r(last.get("impulse"), 2),
@@ -2332,6 +2444,7 @@ def main() -> int:
         },
         "breadth": breadth,
         "master": master,
+        "regime": regime,
         "cones": cones,
         "rec": recommendation,
         "newf": newf,

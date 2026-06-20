@@ -1,175 +1,179 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-18",
-  "generated_at": "2026-06-19T08:35:32.381689+00:00",
+  "generated_at": "2026-06-20T06:01:56.762692+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-06-18-MCY-1",
-      "ticker": "MCY",
-      "name": "Mercury General",
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The validated SUE and revision edges support the stock, but price is at 52-week highs and the engine's HOLD signal flags extension risk; waiting for a pullback respects the don't-chase brake and macro liquidity headwinds.",
-      "evidence": [
-        "Selection axis: SUE z=1.26 (validated), revisions z=1.99 (literature)",
-        "Entry axis: 'pullback/extended' present, off_high_pct 0%",
-        "Ladder: RALLY ON, HOLD, urgency hold"
-      ],
-      "dissent": "If liquidity conditions improve and the trend accelerates, the name could continue to lead despite the HOLD signal.",
-      "falsifier": {
-        "text": "Price closes below the 10-day moving average (~$102) and MACD turns negative, breaking the uptrend sequence.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MCY",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-16",
-      "engine_verdict": "High-conviction \u2014 leader with a good entry"
-    },
-    {
-      "id": "2026-06-18-WT-2",
-      "ticker": "WT",
-      "name": "WisdomTree Investments, Inc.",
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Revisions and momentum support a bottoming attempt with a half-size entry allowed; the engine's BUY SETUP and pullback (-7.6% off highs) offer a risk-conscious start, though the missing SUE leg keeps conviction low.",
-      "evidence": [
-        "Selection: revisions z=1.36 (literature), alpha momentum z=1.44 (context)",
-        "Entry: urgency now, HALF SIZE, off-high -7.6%",
-        "Ladder: TURN SIGNALED, BUY SETUP"
-      ],
-      "dissent": "The bottoming may fail if macro headwinds intensify\u2014no clear weekly trend and the daily momentum turn is still unconfirmed, which could lead to a dead-cat bounce.",
-      "falsifier": {
-        "text": "Price trades and closes back below $17.00 (the June-10 swing low area) within 10 days.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "WT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-16",
-      "engine_verdict": "High-conviction \u2014 leader with a good entry"
-    },
-    {
-      "id": "2026-06-18-HWM-3",
+      "id": "2026-06-18-HWM-1",
       "ticker": "HWM",
       "name": "Howmet Aerospace",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 30,
-      "thesis": "A powerful validated SUE (z=3.0) and positive revisions provide a strong earnings edge, while the FRESH BUY signal and bullish weekly alignment make the current entry attractive relative to the trend, despite macro headwinds.",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Fresh buy signal with strong event-edge selection (SUE z=3.0, revisions, insider) and a minimal 2% off highs after a cycle low \u2014 the risk-controlled entry supports a relative outperformance lean despite macro liquidity headwinds.",
       "evidence": [
-        "SUE z=3.0 (validated, fresh 19 days)",
-        "Ladder: FRESH BUY, BUY NOW, urgency now",
-        "Bigger picture: bullish (with-trend for daily long), off-high -2.0%"
+        "selection axis: SUE fresh 19d, revisions, momentum positive",
+        "entry axis: off-high -2%, RSI 62 not overbought, urgent buy zone",
+        "cycle_blocked false, ladder_state FRESH BUY",
+        "risk control: no caution flags, earnings proximity not flagged"
       ],
-      "dissent": "As a large-cap industrial, it is macro-sensitive; contracting liquidity and elevated aggregate macro risk could trigger a sharp sell-off that overrides the earnings edge.",
+      "dissent": "Macro net liquidity contraction and elevated macro risk for industrial names could stall the rally; high selection score does not imply a guaranteed edge over the S&P 500.",
       "falsifier": {
-        "text": "A close below $260 (near the 50-day moving average) or a retest of the June-8 swing low of $246.55 on volume.",
+        "text": "If HWM closes below the recent swing low of $246.55 within 20 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "HWM",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 30
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-30",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
-      "id": "2026-06-18-ATO-4",
-      "ticker": "ATO",
-      "name": "Atmos Energy",
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 25,
-      "thesis": "The validated SUE (3.0) is compelling, but the daily uptrend is a counter-trend rally inside a bearish weekly structure, the investor cycle is left-translated, and accounting watch cautions exist; the engine's HOLD reinforces a wait-for-dip stance.",
-      "evidence": [
-        "SUE z=3.0 (validated)",
-        "Ladder: RALLY ON but bigger picture BEARISH, prior cycle left-translated",
-        "Quality: accounting watch caution, momentum alpha z=-0.17"
-      ],
-      "dissent": "If earnings continue to surprise and the stock breaks above the 200-day moving average with volume, the bearish structure could flip, justifying a re-entry.",
-      "falsifier": {
-        "text": "A close below $160 or a break of the recent swing low that started the rally, indicating the counter-trend move has reversed.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "ATO",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 25
-        }
-      },
-      "check_by": "2026-07-23",
-      "engine_verdict": "High-conviction \u2014 leader with a good entry"
-    },
-    {
-      "id": "2026-06-18-GNL-5",
-      "ticker": "GNL",
-      "name": "Global Net Lease, Inc.",
+      "id": "2026-06-18-MCY-2",
+      "ticker": "MCY",
+      "name": "Mercury General",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 25,
-      "thesis": "Strong revisions (literature z=2.44) and a modest SUE support the stock, while the TURN SIGNALED ladder with imminent urgency offers a risk-controlled bottoming entry\u2014provided the 10-day average is reclaimed soon.",
+      "horizon_d": 20,
+      "thesis": "Uptrend intact with earnings/insider/revisions edge and clean fundamentals; the hold signal at 52-week highs avoids immediate extension risk, favoring modest relative strength over the market.",
       "evidence": [
-        "Selection: revisions z=2.44 (literature), SUE z=1.04 (validated)",
-        "Entry: BUY SOON, urgency imminent, off-high -5.6%, entry axis z=0.88",
-        "Ladder: TURN SIGNALED, daily cycle approaching_band"
+        "selection axis: SUE 1.26, revisions 1.99, momentum 1.64",
+        "entry axis: off-high 0% but not extended, RSI 59, above MAs",
+        "quality axis: factors positive, accounting clean",
+        "cycle_blocked false, ladder_state RALLY ON"
       ],
-      "dissent": "Real estate is sensitive to rates; if the bottom fails to form and daily momentum continues down, the name could underperform substantially\u2014accounting watch adds uncertainty.",
+      "dissent": "Being at exact 52-week highs leaves no buffer against a quick mean-reversion; small-cap financial sector rotations could undercut event-driven narratives.",
       "falsifier": {
-        "text": "Price fails to reclaim the 10-day moving average within five sessions and instead closes below $8.90, negating the bottoming setup.",
+        "text": "If MCY closes below its 50-day moving average (~$98.0) within 20 trading days.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "GNL",
+          "subject_ticker": "MCY",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 25
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-23",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
-      "id": "2026-06-18-OFG-6",
+      "id": "2026-06-18-WT-3",
+      "ticker": "WT",
+      "name": "WisdomTree Investments, Inc.",
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Early bottoming signal with event edge (revisions, momentum) but weekly trend not yet confirmed and entry tagged HALF SIZE \u2014 the cautious lean reflects the elevated macro headwind and incomplete turnaround structure.",
+      "evidence": [
+        "selection axis: revisions 1.36, momentum 1.45, no SUE present",
+        "entry axis: pullback/extended, off-high -7.6%, RSI 51, MACD still negative",
+        "signal: TURN SIGNALED, half-size entry, macro-sensitive name with liquidity contraction"
+      ],
+      "dissent": "Insider-buying event edge and strong revisions could accelerate a bounce that outperforms despite macro; the half-size entry already accounts for risk.",
+      "falsifier": {
+        "text": "If WT closes below the swing low of $16.77 within 20 trading days.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "WT",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-16",
+      "engine_verdict": "High-conviction \u2014 leader with a good entry"
+    },
+    {
+      "id": "2026-06-18-OFG-4",
       "ticker": "OFG",
       "name": "OFG Bancorp",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "A strong SUE (validated z=2.69) suggests potential, but the engine's BOTTOM WATCH with WAIT urgency indicates the entry is not confirmed (still below the 10-day average); a cautious lean respects the risk control until the structure clears.",
+      "horizon_d": 20,
+      "thesis": "Bottom-watch setup with high SUE but still below the 10-day average and the engine marking 'WAIT'; the bullish bigger picture is offset by a not-yet-confirmed entry, so cautious until price reclaims the trigger.",
       "evidence": [
-        "SUE z=2.69 (validated)",
-        "Ladder: BOTTOM WATCH, WAIT, still below 10-day average",
-        "Entry axis z=0.27 low, entry not yet triggered"
+        "selection axis: SUE 2.69, revisions 0.93, momentum modest",
+        "entry axis: off-high -2.9%, RSI 55, but still below 10-day MA",
+        "ladder_state: BOTTOM WATCH, entry urgency later"
       ],
-      "dissent": "If the stock quickly reclaims the 10-day line and momentum turns up, the bullish weekly picture could produce a swift advance, making now a good level for a disciplined partial entry.",
+      "dissent": "Financials with strong SUE and 11% above 200-day MA could break higher quickly once the 10-day average is recovered, leaving the cautious lean behind.",
       "falsifier": {
-        "text": "Price remains below the 10-day average for another week and closes below $44, invalidating the bottom pattern.",
+        "text": "If OFG fails to reclaim and hold above its 10-day moving average within 15 trading days, or closes below the 50-day MA (~$45.2).",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "OFG",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-09",
+      "check_by": "2026-07-16",
+      "engine_verdict": "High-conviction \u2014 leader with a good entry"
+    },
+    {
+      "id": "2026-06-18-ATO-5",
+      "ticker": "ATO",
+      "name": "Atmos Energy",
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Counter-trend rally in a bearish weekly structure with left-translated prior cycle and accounting watch; while SUE is high, the larger down-trend and below-200-day positioning warrant a cautious lean despite the ongoing daily uptrend.",
+      "evidence": [
+        "signal: bigger picture bearish, prior cycle topped early",
+        "selection: SUE z=3.0 but momentum negative",
+        "quality axis: accounting flagged 'watch'",
+        "technicals: price below 50/200-day MAs, RSI 42"
+      ],
+      "dissent": "Stable utility SUE and potential safe-haven flows could create a sustained mean-reversion rally that outperforms the S&P 500.",
+      "falsifier": {
+        "text": "If ATO's daily MACD histogram turns negative and price closes below its rising 10-day moving average within 15 trading days.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "ATO",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-16",
+      "engine_verdict": "High-conviction \u2014 leader with a good entry"
+    },
+    {
+      "id": "2026-06-18-GNL-6",
+      "ticker": "GNL",
+      "name": "Global Net Lease, Inc.",
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Turn-signaled bottoming with insider/revisions event edge and imminent buy trigger, despite momentum just crossing down \u2014 the risk-controlled setup with a nearby swing low offers a constructive relative lean over the market.",
+      "evidence": [
+        "selection axis: revisions z=2.44, SUE 1.04, momentum positive overall",
+        "entry axis: off-high -5.6%, RSI 45 not stretched, urgency imminent",
+        "entry tag: BUY SOON with half-size risk control implied by bottoming structure",
+        "cycle_blocked false"
+      ],
+      "dissent": "Momentum just crossed down and still below the 10-day average, while the 'accounting watch' flag raises fundamental uncertainty; the bottom may not be fully formed.",
+      "falsifier": {
+        "text": "If GNL closes below the swing low printed on 2026-06-17 (approx $9.00) within 20 trading days.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "GNL",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     }
   ],

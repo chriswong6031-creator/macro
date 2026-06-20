@@ -414,6 +414,39 @@ def _overextended(rec: dict) -> bool:
     return pv is not None and pv >= _STRETCH_BLOCK
 
 
+# ---- theme/sector SPOTLIGHT tilt (engine.spotlight) -------------------------
+# A declared, clamped narrative nudge that aligns the board with the live thematic-basket
+# recommendation + sector playbook. Enters ONLY the tailwind axis (weight 0.10) — so a full
+# +1 tilt moves comp_z by at most ~0.03 z, dominated ~20x by the macro/idio risk taxes and
+# fully orthogonal to the entry hard-block. Below the knee (BOTH channels out of play) it
+# also steps suggested SIZE down — asymmetric: a positive tilt never inflates size.
+_OOP_KNEE = 0.40          # blended spotlight z below -this => start trimming suggested size
+_OOP_SIZE_MAX = 0.5       # max risk_total contribution from the out-of-play size trim
+# Damp the tilt INTO the tailwind axis so it stays "subtle": with the tailwind weight 0.10
+# and (typically) a single-part axis, a full +/-1 tilt then moves comp_z by only ~+/-0.04 z
+# — a within-tier re-order, dominated ~20x by the macro/idio risk taxes. The UNDAMPED z is
+# still what the display chip + the out-of-play size trim read (those are deliberately legible).
+_SPOTLIGHT_LEG_GAIN = 0.4
+
+
+def _eff_spotlight(rec: dict, *, blocked: bool = False) -> dict | None:
+    """The spotlight tilt AS IT ENTERS THE SCORE: a positive theme/sector tailwind is
+    NEUTRALIZED when the entry gate BLOCKS the name — over-extended (a chase), or a broken
+    tape (downtrend / rolling-over / top-watch / parabolic / exit-urgency). A hot theme must
+    never reward a chase or a broken tape; the risk taxes already tax it and the narrative can't
+    pull it back up. A negative (out-of-play) tilt is left intact. None when absent / has no z."""
+    sp = rec.get("spotlight")
+    if not sp:
+        return None
+    z = _f(sp.get("z"))
+    if z is None:
+        return None
+    if z > 0 and (blocked or _overextended(rec)):
+        why = "stock-extended" if _overextended(rec) else "cycle-blocked"
+        return {**sp, "z": 0.0, "mult": 1.0, "dir": "neutral", "clamped": why}
+    return sp
+
+
 # ---- macro/event RISK OVERLAY (T3) -----------------------------------------
 # A high-VIX / turning-point / drawdown-risk tape should tax a CHASE — but NOT a washed-out
 # reversal (that is exactly what works in stress, China's edge). So the haircut is
@@ -698,17 +731,28 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
 
 
 def _axis_tailwind(rec: dict) -> tuple[float | None, list[str]]:
-    """Sector + thematic-basket tailwind — a declared SECTOR-LEVEL tilt (small)."""
+    """Sector + thematic tailwind — a declared SECTOR-LEVEL tilt (small weight 0.10).
+
+    The SPOTLIGHT leg (engine.spotlight) is the scored theme-reco + sector-stage tilt in
+    [-1, 1]; it is the modern channel and SUPERSEDES the raw basket.rel20 / sector-RS legs
+    when present, so the macro+crowding-gated theme verdict isn't double-counted against the
+    raw 20d momentum it replaces. The older legs remain as graceful fallbacks for markets /
+    runs that pass no spotlight. The spotlight reaching here is already over-extension-clamped
+    (see _eff_spotlight), so a hot theme can never reward a chase."""
     present: list[str] = []
     parts: list[float | None] = []
-    srs = rec.get("sector_rs") or {}
-    pct = _f(srs.get("pct"))
-    if pct is not None:                      # 0..100 sector-RS percentile
-        parts.append((pct - 50.0) / 25.0); present.append("sector-RS")
-    bk = rec.get("basket") or {}
-    rel = _f(bk.get("rel20"))                # basket 20d return vs benchmark (%)
-    if rel is not None:
-        parts.append(float(np.clip(rel / 6.0, -1.0, 1.0))); present.append("theme")
+    sp = _f((rec.get("spotlight") or {}).get("z"))     # declared theme+sector tilt in [-1,1]
+    if sp is not None:
+        parts.append(float(np.clip(sp, -1.0, 1.0)) * _SPOTLIGHT_LEG_GAIN); present.append("spotlight")
+    else:                                              # fallbacks (non-US / no theme intel)
+        srs = rec.get("sector_rs") or {}
+        pct = _f(srs.get("pct"))
+        if pct is not None:                            # 0..100 sector-RS percentile
+            parts.append((pct - 50.0) / 25.0); present.append("sector-RS")
+        bk = rec.get("basket") or {}
+        rel = _f(bk.get("rel20"))                      # basket 20d return vs benchmark (%)
+        if rel is not None:
+            parts.append(float(np.clip(rel / 6.0, -1.0, 1.0))); present.append("theme")
     return _clipz(_mean_avail(parts)), present
 
 
@@ -941,6 +985,13 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
 
     sel_z, sel_present = _axis_selection(rec, m, calm)
     ent_z, ent_present, blocked = _axis_entry(rec)
+    # spotlight tilt — neutralize a positive tilt on any name the entry gate BLOCKS (over-extended,
+    # downtrend/rolling-over/top-watch, parabolic, exit/avoid) before it reaches the tailwind axis:
+    # a hot theme must never reward a chase OR a broken tape. Carry the effective block on rec so
+    # the axis + the displayed conviction.spotlight + the size trim all read one consistent value.
+    eff_sp = _eff_spotlight(rec, blocked=blocked)
+    if eff_sp is not None:
+        rec = {**rec, "spotlight": eff_sp}
     tw_z, tw_present = _axis_tailwind(rec)
     q_z, q_present, q_flags = _axis_quality(rec, m)
 
@@ -982,7 +1033,16 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     event = _event_risk(rec)
     if event > 0:
         idio_comps = {**(idio_comps or {}), "event": round(event, 2)}
-    risk_total = max(idio, stress * _aggressiveness(rec), event)
+    # out-of-play SIZE trim: when BOTH theme & sector lean out of play (blended spotlight z
+    # below the knee), step suggested SIZE down (raise risk_total). Asymmetric — a positive
+    # spotlight never raises size (the narrative can shrink a bet, never inflate it). Does NOT
+    # touch comp_z, so it never re-ranks; it only sizes a surviving buy more conservatively.
+    sp_z = _f((eff_sp or {}).get("z"))
+    oop_risk = (_clip01((-sp_z - _OOP_KNEE) / (1.0 - _OOP_KNEE)) * _OOP_SIZE_MAX
+                if (sp_z is not None and sp_z < -_OOP_KNEE) else 0.0)
+    if oop_risk > 0:
+        idio_comps = {**(idio_comps or {}), "out_of_play": round(oop_risk, 2)}
+    risk_total = max(idio, stress * _aggressiveness(rec), event, oop_risk)
 
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
@@ -1020,6 +1080,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "cautions_zh": vb["cautions_zh"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
         "regime": _regime_tilt(m, calm),
+        "spotlight": eff_sp,          # theme+sector narrative tilt (display chip + tailwind leg)
         "axes": axes,
         # the two new VERIFIERS, surfaced for the card chips (display; they also fed a small
         # bounded tilt into the entry axis above — never the selection rank).
@@ -1076,6 +1137,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
+                  spotlight: dict | None = None,
                   asym: dict | None = None, ext: dict | None = None,
                   lottery_max: float | None = None,
                   earnings_days: float | None = None) -> dict:
@@ -1099,7 +1161,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "ladder": record.get("ladder") or {},
         "tech": record.get("tech") or {},
         "ext": ext if ext is not None else record.get("ext"),
-        "sector_rs": sector_rs, "basket": basket,
+        "sector_rs": sector_rs, "basket": basket, "spotlight": spotlight,
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
