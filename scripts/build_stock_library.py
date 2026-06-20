@@ -817,6 +817,7 @@ def main() -> int:
             demand_track = json.loads(_dtr.read_text())
         except Exception:  # noqa: BLE001
             demand_track = None
+    demand_chip: dict[str, dict] = {}      # per-ticker actionable demand divergence → standout board chip
     index, cand, built, failed = [], [], 0, 0
     # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
@@ -949,6 +950,10 @@ def main() -> int:
                                          "hit_rate": o.get("hit_rate"), "open": demand_track.get("open"),
                                          "since": demand_track.get("as_of")}
                 rec["demand_chain"] = dchread
+                # surface the actionable divergence on the standout board chip (below)
+                if dchread["divergence"] in ("ahead_of_consensus", "consensus_at_risk"):
+                    demand_chip[ticker] = {"div": dchread["divergence"], "chain": dchread["chain_key"],
+                                           "tier": dchread["tier"], "yoy": dchread.get("yoy_pct")}
         # ---- unified Conviction Profile (engine/stock_score) -----------------
         # The single block both the dashboard standout card AND this name's detail page
         # render, so the two can never structurally disagree. v2: the EDGE = the VALIDATED
@@ -1085,6 +1090,8 @@ def main() -> int:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+            if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
+                r["demand"] = demand_chip[t]
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
         (site / "factordata" / "us_standouts.json").write_text(
