@@ -182,6 +182,7 @@ _BLOCK_URGENCY = {"exit", "avoid"}
 
 _PARABOLIC = "parabolic"
 _ENTRY_CAP_Z = -0.2          # entry axis cannot exceed this when cycle-blocked
+_ENTRY_CONFIRM_CAP = 0.5     # max |additive nudge| from the technical confirmers (trend/squeeze/GEX)
 _AXIS_Z_CLIP = 3.0
 
 
@@ -498,9 +499,21 @@ def _risk_idio(rec: dict) -> tuple[float, dict]:
     lm = _f(rec.get("lottery_max"))
     if lm is not None:
         comps["lottery"] = _clip01((lm - _LOTTERY_WARN) / (_LOTTERY_HARD - _LOTTERY_WARN))
-    gx = (rec.get("gex") or {}).get("gamma_regime")
-    if gx in ("short", "long"):
-        comps["gex"] = 0.6 if gx == "short" else 0.0
+    # GEX as a REALIZED-VOL / gap-risk read (distinct from the directional confirmer): short
+    # gamma or a vol-hole EXPANSION = amplified moves = higher gap risk; a deep long-gamma pin =
+    # suppressed vol = low risk; a coiled band is armed gap risk. Reads the joined confirmer
+    # levels (rich), else the raw gamma sign (back-compat). A neutral regime is no longer silent.
+    _gc_lv = (rec.get("gex_confirm") or {}).get("levels") or {}
+    _regime = _gc_lv.get("regime") or (rec.get("gex") or {}).get("gamma_regime")
+    _vh = _gc_lv.get("vol_hole_state")
+    if _vh == "EXPANSION" or _regime == "short":
+        comps["gex"] = 0.6
+    elif _vh in ("COILED_UP", "COILED_DOWN"):
+        comps["gex"] = 0.4
+    elif _regime == "long":
+        comps["gex"] = 0.1
+    elif _regime is not None or _vh is not None:
+        comps["gex"] = 0.3
     if rec.get("fragility"):
         comps["fragility"] = 0.5
     if not comps:
@@ -565,38 +578,115 @@ def _suggested_size(risk_total: float, *, blocked: bool, market: str,
     return out
 
 
+# ---- bounded technical CONFIRMERS for the entry axis (display/verifier, small by design) ----
+# These are NOT selection alpha — they sharpen the ENTRY (timing) ONLY, only where the data
+# exists, and never rescue a blocked name (the cycle/extension block cap still binds). Kept
+# deliberately small so a confirmer can only NUDGE conviction, never manufacture it — the
+# GEX / volatility-black-hole confirmer doctrine (research/US_STOCKS_OVERHAUL §3).
+def _trend_quality_tilt(tech: dict | None) -> float | None:
+    """ADX-confirmed trend quality: a strong directional trend supports the entry; a choppy,
+    no-trend tape damps it. Needs ADX (OHLC names) → None for close-only names."""
+    if not tech:
+        return None
+    adx = _f(tech.get("adx14"))
+    if adx is not None and adx >= 25.0:
+        d = tech.get("adx_trend")
+        if d == "up":
+            return 0.25
+        if d == "down":
+            return -0.25
+    chop = _f(tech.get("chop14"))
+    if chop is not None and chop >= 61.8:      # high choppiness = no trend = damp the entry
+        return -0.15
+    return None
+
+
+def _vol_squeeze_tilt(vs: dict | None) -> float | None:
+    """The single-stock volatility black hole as a TIMING tilt. Phase-0 (reports/
+    US_STOCKS_SIGNALS_PHASE0.md) found the BARE squeeze has NO forward-move edge — only a
+    VOLUME-CONFIRMED break is directional — so a still-coiled name gets NO tilt (display only);
+    the tilt rewards a confirmed upside break / penalises a downside break, with late expansion
+    a mild caution."""
+    if not vs:
+        return None
+    state = vs.get("state")
+    if state == "FIRED_UP":
+        return 0.4 if vs.get("volume_confirmed") else 0.2
+    if state == "FIRED_DOWN":
+        return -0.4
+    if state == "EXPANSION":
+        return -0.15
+    return None                       # COILED / COMPRESSED / NONE -> display only, no entry tilt
+
+
+def _gex_confirm_tilt(gc: dict | None) -> float | None:
+    """Dealer-gamma confirmer as a bounded entry tilt: CONFIRM nudges up, CAUTION nudges down,
+    NEUTRAL/absent is no tilt. Bounded so options positioning can only verify, never pick."""
+    if not gc:
+        return None
+    v = gc.get("verdict")
+    if v == "confirm":
+        return 0.3
+    if v == "caution":
+        return -0.3
+    return None
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
-    """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis)."""
+    """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis).
+
+    Three-tier aggregation (the dilution fix): the BASE timing tilts (urgency, pullback tag,
+    drawdown-from-high, RSI band) are AVERAGED; the bounded technical CONFIRMERS (trend-quality,
+    vol-squeeze, GEX) are ADDED as one clipped ±0.5 nudge (so a CONFIRM always lifts and a
+    CAUTION always trims, never diluted by — and never dominating — the base); the HARD penalties
+    (own-history extension grade, the absolute over-200dma stretch, the radioactive one-day
+    spike) are SUMMED on top, so a real penalty is never averaged away by a good urgency read."""
     present: list[str] = []
     lad = rec.get("ladder") or {}
     entry = (lad.get("entry") or {})
     tech = rec.get("tech") or {}
     ext = rec.get("ext") or {}
 
-    parts: list[float | None] = []
+    base: list[float] = []
     urg = entry.get("urgency")
     if urg in _URG_Z:
-        parts.append(_URG_Z[urg]); present.append("urgency")
+        base.append(_URG_Z[urg]); present.append("urgency")
     tag = rec.get("alpha_entry")
     if tag in _ENTRY_TAG_Z:
-        parts.append(_ENTRY_TAG_Z[tag]); present.append("pullback/extended")
+        base.append(_ENTRY_TAG_Z[tag]); present.append("pullback/extended")
     dh = _drawdown_hump(_f(tech.get("off_52w_high_pct")))
     if dh is not None:
-        parts.append(dh); present.append("off-high")
+        base.append(dh); present.append("off-high")
     rb = _rsi_band(_f(tech.get("rsi14")))
     if rb is not None:
-        parts.append(rb); present.append("rsi")
+        base.append(rb); present.append("rsi")
+
+    # bounded technical CONFIRMERS — one clipped additive nudge (never the selection edge)
+    conf = 0.0
+    tq = _trend_quality_tilt(tech)
+    if tq is not None:
+        conf += tq; present.append("trend-quality")
+    vq = _vol_squeeze_tilt(rec.get("vol_squeeze"))
+    if vq is not None:
+        conf += vq; present.append("vol-squeeze")
+    gq = _gex_confirm_tilt(rec.get("gex_confirm"))
+    if gq is not None:
+        conf += gq; present.append("options")
+    conf = float(np.clip(conf, -_ENTRY_CONFIRM_CAP, _ENTRY_CONFIRM_CAP))
+
+    hard: list[float] = []
     grade = ext.get("grade")
     if grade in _EXT_PENALTY:               # own-history extension PENALTY (never a positive add)
-        parts.append(_EXT_PENALTY[grade]); present.append("extension")
+        hard.append(_EXT_PENALTY[grade]); present.append("extension")
     sp = _stretch_penalty(_f(tech.get("pct_vs_200dma")))   # absolute distance above the 200dma
     if sp is not None and sp < 0:
-        parts.append(sp); present.append("over-200dma")
+        hard.append(sp); present.append("over-200dma")
     lp = _lottery_penalty(rec)                             # recent radioactive one-day spike
     if lp < 0:
-        parts.append(lp); present.append("lottery-spike")
+        hard.append(lp); present.append("lottery-spike")
 
-    z = _mean_avail(parts)
+    _has = bool(base) or conf != 0.0 or bool(hard)
+    z = ((_mean_avail(base) or 0.0) + conf + sum(hard)) if _has else None
     # hard-block: downtrend / topping / exit / avoid / parabolic / OVER-EXTENDED (a chase)
     state = (lad.get("state") or "").upper()
     blocked = (state in _CYCLE_BLOCK_STATES or urg in _BLOCK_URGENCY
@@ -795,6 +885,9 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
             _cau("weak fundamentals", "基本面偏弱")
             return _v("Leader · weak fundamentals — higher-risk",
                       "领先 · 基本面偏弱 — 风险偏高", drivers, cautions)
+        if acct == "watch":                    # an accounting WATCH never reads a clean high-conviction
+            return _v("Leader · accounting watch — confirm before adding",
+                      "领先 · 财务质量关注 — 加仓前先确认", drivers, cautions)
         return _v("High-conviction — leader with a good entry",
                   "高确信 — 领先且入场点良好", drivers, cautions)
     if sel_t == "high" and ent is None:        # absent entry data is NOT 'poor entry'
@@ -928,6 +1021,10 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
         "regime": _regime_tilt(m, calm),
         "axes": axes,
+        # the two new VERIFIERS, surfaced for the card chips (display; they also fed a small
+        # bounded tilt into the entry axis above — never the selection rank).
+        "gex_confirm": rec.get("gex_confirm"),
+        "vol_squeeze": rec.get("vol_squeeze"),
         "n_axes": n_axes,
         "cycle_blocked": blocked,
         "provenance": {"present": present, "n_axes": n_axes,
@@ -1012,6 +1109,12 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "fund_priors": {"z": fund_priors_z} if fund_priors_z is not None else None,
         "asym": asym,                      # downside-asymmetry DISPLAY read (risk shape, not scored)
         "accounting": record.get("accounting_quality"),
+        # dealer-gamma + single-stock volatility black hole — VERIFIERS/CONFIRMERS (display +
+        # bounded entry-timing tilt, never selection alpha). Previously `gex` was dropped here,
+        # so the idio GEX leg was dead — these passthroughs revive + extend it.
+        "gex": record.get("gex"),
+        "gex_confirm": record.get("gex_confirm"),
+        "vol_squeeze": record.get("vol_squeeze"),
     }
 
 
