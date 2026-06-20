@@ -203,3 +203,22 @@ def test_ledger_logs_scorable_and_scores(tmp_path, monkeypatch):
     outcome = {r["id"].split("-")[-2]: r["outcome"] for r in scored}
     assert outcome["WIN"] == "hit" and outcome["LOSE"] == "miss"
     assert track["overall"]["hit_rate"] == 0.5
+
+
+# --------------------------------------------------------------- per-stock chip
+def test_chip_shaping():
+    c = altdata_signals.chip({
+        "ticker": "EFX", "channels": ["gov_contract", "trump"], "convergence_score": 2,
+        "trump_linked": True, "gov_contract_usd_30d": 74_700_004.0, "trump_side": "buy"})
+    assert c["tier"] == "high"                       # convergent + trump-linked
+    assert len(c["channels"]) == 2
+    assert "convergence" in c["headline"]["en"]
+    assert c["trump_linked"] is True
+    assert "gov contracts" in c["detail"]["en"].lower()
+    assert all(k in c for k in ("headline", "detail", "caveat"))  # bilingual chip shape
+    # single-channel name -> still a chip, medium/low tier
+    c1 = altdata_signals.chip({"channels": ["congress_buy"], "convergence_score": 1, "congress_members": 4})
+    assert c1["tier"] == "low" and c1["score"] == 1
+    # nothing to show -> None
+    assert altdata_signals.chip({"channels": []}) is None
+    assert altdata_signals.chip(None) is None

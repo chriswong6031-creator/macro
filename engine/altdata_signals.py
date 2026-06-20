@@ -124,3 +124,61 @@ def load() -> dict:
         return json.loads(p.read_text())
     except Exception:  # noqa: BLE001
         return {}
+
+
+# --------------------------------------------------------------------------- chip view
+# Display-only per-stock chip derived from a by_ticker record (used by the US stock page,
+# mirroring stock_macro_sensitivity). Keeps by_ticker.json itself lean.
+_CH = {
+    "congress_buy":  ("Congress buying", "国会买入"),
+    "insider_buy":   ("Insider buying", "内部人买入"),
+    "gov_contract":  ("Gov contracts", "政府合同"),
+    "lobbying":      ("Lobbying", "游说"),
+    "darkpool_accum": ("Dark-pool accumulation", "暗池吸筹"),
+    "13f_add":       ("13F adds", "机构加仓"),
+    "cnbc_pick":     ("CNBC pick", "CNBC推荐"),
+    "trump":         ("Donald Trump trade", "特朗普交易"),
+}
+
+
+def chip(rec: dict | None) -> dict | None:
+    """Shape a by_ticker record into a display-only stock-page chip, or None."""
+    if not rec:
+        return None
+    chans = rec.get("channels") or []
+    if not chans:
+        return None
+    score = int(rec.get("convergence_score", 0) or 0)
+    trump = bool(rec.get("trump_linked"))
+    tier = "high" if (score >= 3 or (score >= 2 and trump)) else "medium" if score >= 2 else "low"
+    labels = [{"en": _CH.get(c, (c, c))[0], "zh": _CH.get(c, (c, c))[1]} for c in chans]
+    if score >= 2:
+        head = {"en": f"{score}-channel alt-data convergence", "zh": f"{score}通道替代数据汇聚"}
+    else:
+        en, zh = _CH.get(chans[0], (chans[0], chans[0]))
+        head = {"en": en, "zh": zh}
+    en_bits, zh_bits = [], []
+    if rec.get("congress_members"):
+        en_bits.append(f"{rec['congress_members']} in Congress net-buying")
+        zh_bits.append(f"{rec['congress_members']}位国会议员净买入")
+    if rec.get("gov_contract_usd_30d"):
+        en_bits.append(f"${rec['gov_contract_usd_30d']:,.0f} gov contracts (30d)")
+        zh_bits.append(f"政府合同 ${rec['gov_contract_usd_30d']:,.0f}（30天）")
+    if rec.get("insider_net_usd", 0) and rec["insider_net_usd"] > 0:
+        en_bits.append(f"${rec['insider_net_usd']:,.0f} net insider buying")
+        zh_bits.append(f"内部人净买入 ${rec['insider_net_usd']:,.0f}")
+    if rec.get("dpi_lean") == "accumulation":
+        en_bits.append("dark-pool accumulation")
+        zh_bits.append("暗池吸筹")
+    if rec.get("trump_side"):
+        en_bits.append(f"Donald Trump {rec['trump_side']}")
+        zh_bits.append(f"特朗普{'买入' if rec['trump_side'] == 'buy' else '卖出'}")
+    return {
+        "tier": tier, "score": score, "trump_linked": trump, "channels": labels,
+        "headline": head,
+        "detail": {"en": "; ".join(en_bits) or "alt-data signal present",
+                   "zh": "；".join(zh_bits) or "存在替代数据信号"},
+        "caveat": {"en": "Public-record alt-data flow — display-only, never scored. Convergence is "
+                         "unusual activity, not a validated forward edge.",
+                   "zh": "公开记录替代数据流——仅供展示、不计入评分。汇聚为异常活动，非已验证的前瞻优势。"},
+    }

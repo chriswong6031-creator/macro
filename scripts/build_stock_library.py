@@ -719,6 +719,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("macro-sensitivity context unavailable (%s)", e)
         macro_sens_ctx = None
+    # Alt-data per-stock chip (engine/altdata.py suite -> engine/altdata_signals.by_ticker).
+    # DISPLAY-ONLY: politician/insider/contract/Trump flow convergence per name. Absent
+    # file => no chip. Built by build_alt_data, which runs before build_site.
+    try:
+        from engine import altdata_signals as _altdata
+        altdata_ctx = _altdata.load().get("tickers", {})
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("alt-data context unavailable (%s)", e)
+        altdata_ctx = {}
     # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
     # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
     # NEUTRAL => gate_go False => Conviction ships as display-only context.
@@ -1010,6 +1019,14 @@ def main() -> int:
                     rec["macro_sensitivity"] = ms
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.warning("macro-sensitivity for %s failed (%s)", ticker, e)
+        # ---- Alt-data convergence chip (display-only) -------------------------
+        if altdata_ctx:
+            try:
+                ad = _altdata.chip(altdata_ctx.get(ticker))
+                if ad:
+                    rec["altdata"] = ad
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.warning("alt-data chip for %s failed (%s)", ticker, e)
         # ---- DannyTrades CONTRARIAN read (display-only) -----------------------
         # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
         # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
