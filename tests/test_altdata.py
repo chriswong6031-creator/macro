@@ -302,6 +302,28 @@ def test_top_holder_lookup(tmp_path, monkeypatch):
     assert graph._top_holder("NOPE") is None
 
 
+# --------------------------------------------------------------- promote (human gate)
+def test_promote_match_and_build():
+    from scripts import promote_trumpflow_candidates as P
+    intel = {
+        "people": [{"id": "eric_trump", "name": "Eric Trump"}],
+        "entities": [{"id": "hut8", "name": "Hut 8 Corp"}, {"id": "american_bitcoin", "name": "American Bitcoin"}],
+        "themes": {"ai": {"en": "AI infra"}}, "edges": [],
+    }
+    assert P.match_node("Eric Trump", intel) == "eric_trump"
+    assert P.match_node("Hut 8", intel) == "hut8"             # substring resolves to the node id
+    assert P.match_node("Unknown Co", intel) is None
+    cands = [
+        {"src": "Hut 8", "rel": "HOLDS_STAKE", "dst": "American Bitcoin",
+         "citation": "retains an 80% stake", "confidence": 0.5},
+        {"src": "Some New Co", "rel": "CONTROLS", "dst": "American Bitcoin", "citation": "x"},
+    ]
+    new, promoted, skipped = P.promote(cands, None, intel)
+    assert len(new) == 1 and new[0]["src"] == "hut8" and new[0]["dst"] == "american_bitcoin"
+    assert new[0]["provenance"] == "INFERRED" and new[0]["source"] == "llm_extract"
+    assert len(skipped) == 1                                  # the unmatched src is reported, not promoted
+
+
 # --------------------------------------------------------------- latent-stake graph
 def test_graph_catches_label_mismatch():
     mm = tfgraph.label_mismatches(_SYNTH_INTEL)
