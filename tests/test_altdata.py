@@ -244,6 +244,37 @@ def test_chip_shaping():
     assert altdata_signals.chip(None) is None
 
 
+# --------------------------------------------------------------- noise filter / picks
+def test_is_passive_classifier():
+    from engine import altdata_picks as ap
+    assert ap.is_passive("VANGUARD S&P 500 ETF UNSOLICITED", None) is True
+    assert ap.is_passive("Ishares Tr Russell 1000 Etf", None) is True
+    assert ap.is_passive("Some Money Market Fund", None) is True
+    assert ap.is_passive(None, "SPY") is True                  # broad ETF ticker
+    # specific operating companies must NOT be flagged (incl. the 'Fidelity National' trap)
+    assert ap.is_passive("Equifax Inc", "EFX") is False
+    assert ap.is_passive("NVIDIA Corp", "NVDA") is False
+    assert ap.is_passive("Fidelity National Information Services", "FIS") is False
+
+
+def test_build_picks_filters_passive(monkeypatch):
+    from engine import altdata_picks as ap
+    monkeypatch.setattr(ap, "_rs_vs_spy", lambda tk, root, win=60: 3.5)
+    feed = {"signals": {"trump": [
+        {"ticker": "EFX", "company": "Equifax Inc", "side": "buy"},
+        {"ticker": None, "company": "VANGUARD S&P 500 ETF", "side": "buy"},
+        {"ticker": "VOO", "company": "Vanguard 500 Index", "side": "buy"},
+    ]}}
+    bt = {"tickers": {"EFX": {"convergence_score": 2, "channels": ["gov_contract", "trump"], "trump_linked": True}}}
+    out = ap.build_picks(feed, bt, root=None, top=10)
+    assert out["filtered_passive"] == 2                        # the two Vanguard/ETF rows
+    tickers = [p["ticker"] for p in out["picks"]]
+    assert "EFX" in tickers and "VOO" not in tickers           # specific kept, passive dropped
+    efx = next(p for p in out["picks"] if p["ticker"] == "EFX")
+    assert efx["convergence"] == 2 and efx["trump_linked"] is True
+    assert "leading" in efx["verdict"]["en"]                   # +3.5pp vs SPY
+
+
 # --------------------------------------------------------------- latent-stake graph
 def test_graph_catches_label_mismatch():
     mm = tfgraph.label_mismatches(_SYNTH_INTEL)

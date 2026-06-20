@@ -72,6 +72,25 @@
   {% else %}<p class="mut2">{{ t('No multi-channel convergence in the current window.', '当前窗口无多渠道汇聚。') }}</p>{% endif %}
 </div>
 
+{# ---------------- Picks worth examining (noise filtered) ---------------- #}
+{% if picks and picks.picks %}
+<div class="ad-card span2">
+  <h2>🎯 {{ t('Picks worth examining', '值得审视的标的') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('specific conviction names; passive/broad holdings filtered out', '具体高信念标的；已过滤被动/宽基持仓') }}{% if picks.filtered_passive %} ({{ picks.filtered_passive }} {{ t('filtered','已过滤') }}){% endif %}</span></h2>
+  <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Why','原因') }}</th><th class="num">{{ t('vs SPY 60d','相对标普60日') }}</th><th>{{ t('Read','研判') }}</th></tr></thead><tbody>
+  {% for p in picks.picks %}
+    <tr><td class="tk">{{ p.ticker }}{% if p.trump_linked %} 🟥{% endif %}</td>
+        <td class="mut2">{{ p.reasons|join(' · ') }}</td>
+        <td class="num {{ 'r-pos' if (p.rs_vs_spy_60d or 0) > 0 else 'r-neg' if (p.rs_vs_spy_60d or 0) < 0 else '' }}">{% if p.rs_vs_spy_60d is not none %}{{ '%+.1f'|format(p.rs_vs_spy_60d) }}pp{% else %}—{% endif %}</td>
+        <td><span class="l-en">{{ p.verdict.en }}</span><span class="l-zh">{{ p.verdict.zh }}</span></td></tr>
+  {% endfor %}
+  </tbody></table>
+  <p class="mut2" style="font-size:11px;margin-top:8px">{{ t(
+    'A wealthy figure disclosed trades are mostly portfolio plumbing (broad ETFs, money-market, Treasury). Only specific, idiosyncratic conviction bets are shown here; the deep good-pick verdict lives on each stock page.',
+    '富有人士披露的交易大多是组合管理（宽基ETF、货币基金、国债）。此处仅显示具体、特异的高信念押注；深入的择股研判见各股票页面。') }}</p>
+</div>
+{% endif %}
+
 {# ---------------- Latent stakes & entity graph (the ABTC catch) ---------------- #}
 {% if latent and (latent.mismatches or latent.paths) %}
 <div class="ad-card span2">
