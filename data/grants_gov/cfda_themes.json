@@ -1,0 +1,27 @@
+{
+  "_note": "CFDA / Assistance-Listing-Number -> narrative-basket map for the Grants.gov FOA (Funding Opportunity Announcement) pre-award flow (collectors/grants_gov.py). FOAs are posted weeks-to-months before any award is obligated on USAspending, so this is the earliest federal-money signal — but it is THEME-level only (no recipient ticker exists pre-award). Mapping is by federal program; numbers verified against common DOE/NIST/NSF/DARPA/NASA/NIH assistance listings and may need tuning once the key is live. Each CFDA maps to one or more basket ids.",
+  "cfda": {
+    "81.049": ["energy_complex", "quantum_computing", "nuclear_power"],
+    "81.086": ["power_grid", "energy_complex"],
+    "81.087": ["power_grid", "energy_complex"],
+    "81.112": ["defense", "nuclear_power"],
+    "81.113": ["nuclear_power", "uranium_miners"],
+    "81.121": ["nuclear_power"],
+    "81.135": ["power_grid", "energy_complex", "critical_minerals"],
+    "81.214": ["critical_minerals", "energy_complex"],
+    "11.617": ["ai_semiconductors", "semicap_equipment", "memory_storage"],
+    "11.618": ["ai_semiconductors", "semicap_equipment"],
+    "47.041": ["robotics_automation", "semicap_equipment"],
+    "47.049": ["quantum_computing"],
+    "47.070": ["ai_software", "ai_agents", "cybersecurity", "quantum_computing"],
+    "47.084": ["ai_semiconductors", "quantum_computing", "robotics_automation"],
+    "12.910": ["defense", "quantum_computing", "space_economy", "ai_software"],
+    "12.800": ["defense", "space_economy"],
+    "12.901": ["quantum_computing"],
+    "43.001": ["space_economy"],
+    "43.012": ["space_economy"],
+    "93.310": ["obesity_glp1", "managed_care"],
+    "93.847": ["obesity_glp1"],
+    "93.286": ["obesity_glp1"]
+  }
+}

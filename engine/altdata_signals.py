@@ -92,8 +92,13 @@ _CH = {
     "insider_cluster":   ("Insider cluster-buy", "内部人集群买入"),
     "gov_contract":      ("Gov contracts", "政府合同"),
     "gov_contract_accel": ("Gov contracts accelerating", "政府合同加速"),
+    "gov_grant":         ("Federal grant/loan", "联邦补助/贷款"),
+    "gov_grant_accel":   ("Federal grants accelerating", "联邦补助加速"),
     "lobbying":          ("Lobbying", "游说"),
     "lobbying_spike":    ("Lobbying spike", "游说激增"),
+    "fda_approval":      ("FDA approval", "FDA批准"),
+    "fda_label_expansion": ("FDA label expansion", "FDA适应症扩展"),
+    "material_8k":       ("Material 8-K cluster", "重大8-K集群"),
     "darkpool_accum":    ("Dark-pool accumulation", "暗池吸筹"),
     "13f_add":           ("13F adds", "机构加仓"),
     "smart_money_13f":   ("Smart-money 13F add", "聪明钱13F加仓"),
@@ -103,6 +108,14 @@ _CH = {
     "app_demand":        ("App-store demand", "应用商店需求"),
     "patent_cluster":    ("Patent cluster", "专利集群"),
     "retail_buzz":       ("Retail buzz", "散户热度"),
+    "hf_model_momentum": ("AI model adoption", "AI模型采用"),
+    "unusual_options":   ("Unusual options flow", "异常期权流"),
+    "analyst_upgrade_cluster": ("Analyst upgrades", "分析师上调"),
+    "insider_mspr":      ("Insider sentiment", "内部人情绪"),
+    "earnings_beat":     ("Earnings beat", "财报超预期"),
+    "news_sentiment":    ("Bullish news flow", "看多新闻流"),
+    "clinical_phase3_start": ("Phase-3 trial start", "三期试验启动"),
+    "github_momentum":   ("Developer adoption", "开发者采用"),
 }
 
 

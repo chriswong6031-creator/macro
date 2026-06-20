@@ -229,6 +229,401 @@ def gov_contract_leaders(window_days: int = 30, top: int = 15) -> list[dict]:
     return rows[:top]
 
 
+# --------------------------------------------------------------------------- gov grants/loans
+def gov_grant_leaders(recent_m: int = 6, top: int = 20) -> list[dict]:
+    """Per-ticker federal GRANT/LOAN money (USAspending assistance awards) — the CHIPS/DOE/IRA
+    flow the contracts feed and Quiver are both blind to. Reads the monthly
+    [month x ticker] grants_loans store frame; emits recent-window $ + recent-vs-prior accel.
+    Grant obligations are lumpy/monthly, so the window is wider than the daily-contract one."""
+    try:
+        from lib import store
+        wide = store.read("usaspending", "grants_loans")
+    except Exception:  # noqa: BLE001
+        return []
+    if wide is None or wide.empty:
+        return []
+    monthly = wide.sort_index()
+    lag = 2  # most-recent grant months are still posting
+    if lag and len(monthly) > lag:
+        monthly = monthly.iloc[:-lag]
+    if monthly.empty:
+        return []
+    recent = monthly.iloc[-recent_m:].sum(min_count=1)
+    prior = monthly.iloc[-2 * recent_m:-recent_m].sum(min_count=1) if len(monthly) >= 2 * recent_m else None
+    rows = []
+    for tk in monthly.columns:
+        v = recent.get(tk)
+        tot = float(v) if pd.notna(v) else 0.0
+        if tot <= 0:
+            continue
+        p = float(prior.get(tk)) if (prior is not None and pd.notna(prior.get(tk))) else 0.0
+        rows.append({
+            "ticker": tk,
+            "total_usd": round(tot, 0),
+            "accel_x": round(tot / p, 2) if p > 0 else None,
+        })
+    rows.sort(key=lambda r: r["total_usd"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- finnhub trio
+def _finnhub(dataset: str) -> pd.DataFrame | None:
+    p = config.data_dir() / "finnhub" / f"{dataset}.parquet"
+    if not p.exists():
+        return None
+    try:
+        return pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read finnhub/%s: %s", dataset, e)
+        return None
+
+
+def analyst_trends(top: int = 25) -> list[dict]:
+    """Analyst recommendation tilt (Finnhub): (strongBuy+buy)/total per ticker, flagged `hot`
+    when the bullish share is high AND rising vs the prior month — a fresh upgrade cluster."""
+    df = _finnhub("recommendation")
+    if df is None or df.empty:
+        return []
+    rows = []
+    for _, r in df.iterrows():
+        tk = _s(r.get("ticker"))
+        sb, b, h, s, ss = (_f(r.get(k)) for k in ("strongBuy", "buy", "hold", "sell", "strongSell"))
+        tot = sum(x for x in (sb, b, h, s, ss) if pd.notna(x))
+        if not tk or tot <= 0:
+            continue
+        bull = (((sb if pd.notna(sb) else 0) + (b if pd.notna(b) else 0)) / tot)
+        prev = _f(r.get("prev_buy"))
+        rising = pd.notna(prev) and ((sb if pd.notna(sb) else 0) + (b if pd.notna(b) else 0)) > prev
+        rows.append({"ticker": tk, "bull_ratio": round(bull, 2), "rising": bool(rising),
+                     "hot": bull >= 0.6 and bool(rising)})
+    rows.sort(key=lambda r: r["bull_ratio"], reverse=True)
+    return rows[:top]
+
+
+def insider_mspr(top: int = 25) -> list[dict]:
+    """Finnhub insider sentiment (MSPR, monthly net-buy score -100..100). `hot` when the latest
+    MSPR is strongly positive — a pre-aggregated cross-check on the open-market insider feeds."""
+    df = _finnhub("insider_sentiment")
+    if df is None or df.empty:
+        return []
+    df = df.assign(_ym=df.get("year").astype("float") * 100 + df.get("month").astype("float"))
+    rows = []
+    for tk, g in df.groupby("ticker"):
+        tk = _s(tk)
+        if not tk:
+            continue
+        latest = g.sort_values("_ym").iloc[-1]
+        mspr = _f(latest.get("mspr"))
+        if pd.isna(mspr):
+            continue
+        rows.append({"ticker": tk, "mspr": round(float(mspr), 1), "hot": mspr >= 20})
+    rows.sort(key=lambda r: r["mspr"], reverse=True)
+    return rows[:top]
+
+
+def earnings_beats(top: int = 25) -> list[dict]:
+    """Finnhub earnings surprises. `hot` when the most recent quarter beat estimates clearly."""
+    df = _finnhub("earnings")
+    if df is None or df.empty:
+        return []
+    df = df.assign(_d=_dt(df.get("period")))
+    rows = []
+    for tk, g in df.groupby("ticker"):
+        tk = _s(tk)
+        if not tk:
+            continue
+        latest = g.sort_values("_d").iloc[-1]
+        sp = _f(latest.get("surprisePercent"))
+        if pd.isna(sp):
+            continue
+        rows.append({"ticker": tk, "surprise_pct": round(float(sp), 1), "hot": sp >= 5.0})
+    rows.sort(key=lambda r: r["surprise_pct"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- unusual options
+def unusual_options(min_oi: float = 5000.0, mult_hot: float = 3.0, top: int = 20) -> list[dict]:
+    """Per-underlying UNUSUAL options activity from the ALREADY-STORED Polygon per-strike chains
+    (data/polygon_gex/chains/*.parquet — no new API calls). For each name: today's total
+    volume/open-interest ratio vs its own recent baseline. A vol/OI ratio spiking >= `mult_hot`x
+    the baseline = an options-flow surge (institutional positioning) the tape may not price yet;
+    the put/call volume split gives the lean. Display/context only."""
+    import glob
+    d = config.data_dir() / "polygon_gex" / "chains"
+    files = sorted(glob.glob(str(d / "*.parquet")))[-12:]
+    if len(files) < 2:
+        return []
+    frames = []
+    for f in files:
+        try:
+            frames.append(pd.read_parquet(f, columns=["underlying", "oi", "volume", "is_call", "asof"]))
+        except Exception:  # noqa: BLE001
+            continue
+    if len(frames) < 2:
+        return []
+    df = pd.concat(frames, ignore_index=True)
+    df["asof"] = _dt(df.get("asof"))
+    df = df[df["underlying"].map(_s).notna() & df["asof"].notna()]
+    if df.empty:
+        return []
+    rows = []
+    for tk, g in df.groupby("underlying"):
+        by_day = g.groupby("asof").agg(vol=("volume", "sum"), oi=("oi", "sum"))
+        by_day = by_day[by_day["oi"] > 0].sort_index()
+        if len(by_day) < 2:
+            continue
+        ratio = (by_day["vol"] / by_day["oi"])
+        latest_day = by_day.index.max()
+        cur = float(ratio.iloc[-1])
+        base = float(ratio.iloc[:-1].median())
+        if base <= 1e-9 or float(by_day["oi"].iloc[-1]) < min_oi:
+            continue
+        mult = cur / base
+        today = g[g["asof"] == latest_day]
+        call_v = float(today.loc[today["is_call"] == True, "volume"].sum())  # noqa: E712
+        put_v = float(today.loc[today["is_call"] == False, "volume"].sum())  # noqa: E712
+        pc = round(put_v / call_v, 2) if call_v > 0 else None
+        rows.append({
+            "ticker": _s(tk), "vol_oi": round(cur, 3), "mult": round(mult, 2),
+            "put_call": pc, "lean": ("put-skew" if pc and pc > 1.3 else "call-skew" if pc and pc < 0.7 else "balanced"),
+            "hot": mult >= mult_hot,
+        })
+    rows.sort(key=lambda r: r["mult"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- clinical trials
+def clinical_events(start_days: int = 120, halt_days: int = 120, top: int = 25) -> list[dict]:
+    """Per-ticker clinical pipeline events (collectors/clinicaltrials.py ->
+    data/clinicaltrials/trials.parquet): a new Phase-3 START (first_post in window, positive
+    pipeline channel) and/or a recent HALT (TERMINATED/SUSPENDED/WITHDRAWN — a risk flag carried
+    as a caption, NOT a bullish channel)."""
+    p = config.data_dir() / "clinicaltrials" / "trials.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read clinicaltrials: %s", e)
+        return []
+    if df.empty:
+        return []
+    d = pd.DataFrame({
+        "ticker": df.get("ticker", pd.Series(dtype=object)).map(_s),
+        "first_post": _dt(df.get("first_post")),
+        "last_update": _dt(df.get("last_update")),
+        "is_halt": df.get("is_halt", pd.Series(dtype=bool)).fillna(False).astype(bool),
+        "title": df.get("title", pd.Series(dtype=object)).map(_s),
+    })
+    d = d[d["ticker"].notna()]
+    if d.empty:
+        return []
+    now = _now()
+    out = []
+    for tk, g in d.groupby("ticker"):
+        starts = g[(g["first_post"].notna()) & (g["first_post"] >= now - pd.Timedelta(days=start_days))]
+        halts = g[(g["is_halt"]) & (g["last_update"].notna()) & (g["last_update"] >= now - pd.Timedelta(days=halt_days))]
+        if starts.empty and halts.empty:
+            continue
+        rec = {"ticker": tk, "phase3_starts": int(len(starts)), "halts": int(len(halts)),
+               "hot": len(starts) >= 1}
+        if len(starts):
+            rec["sample"] = starts.sort_values("first_post", ascending=False).iloc[0]["title"]
+        out.append(rec)
+    out.sort(key=lambda r: (r["phase3_starts"], -r["halts"]), reverse=True)
+    return out[:top]
+
+
+# --------------------------------------------------------------------------- news sentiment
+def news_sentiment_signals(top: int = 25) -> list[dict]:
+    """Per-ticker editorial-news lean (Polygon news insights -> data/polygon/news_sentiment.parquet).
+    `hot` when the latest snapshot's bullish ratio is high over a real article base. Low-weight
+    context — abundant but noisy."""
+    p = config.data_dir() / "polygon" / "news_sentiment.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read polygon news_sentiment: %s", e)
+        return []
+    if df.empty:
+        return []
+    df = df.assign(_d=_dt(df.get("snapshot_date")))
+    rows = []
+    for tk, g in df.groupby("ticker"):
+        tk = _s(tk)
+        if not tk:
+            continue
+        latest = g.sort_values("_d").iloc[-1]
+        arts = _f(latest.get("articles"))
+        br = _f(latest.get("bull_ratio"))
+        if pd.isna(arts) or arts < 5 or pd.isna(br):
+            continue
+        rows.append({"ticker": tk, "bull_ratio": round(float(br), 2), "articles": int(arts),
+                     "hot": br >= 0.6})
+    rows.sort(key=lambda r: r["bull_ratio"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- hugging face
+def hf_momentum(top: int = 15) -> list[dict]:
+    """Per-ticker Hugging Face model-download VELOCITY (collectors/huggingface.py ->
+    data/huggingface/downloads.parquet snapshots). The level is not a signal; the WoW change in
+    the trailing-30d download rate is. `hot` = rising AND at/above the cross-section's median
+    rise — relative AI-model adoption momentum. Needs >=2 snapshots (else degrades to empty)."""
+    p = config.data_dir() / "huggingface" / "downloads.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read huggingface downloads: %s", e)
+        return []
+    if df.empty:
+        return []
+    df = df.assign(d=_dt(df.get("snapshot_date")))
+    df = df[df["d"].notna()]
+    rows = []
+    for tk, g in df.groupby("ticker"):
+        g = g.sort_values("d")
+        if g["d"].nunique() < 2:
+            continue
+        latest = g.iloc[-1]
+        cutoff = latest["d"] - pd.Timedelta(days=7)
+        earlier = g[g["d"] <= cutoff]
+        prior = earlier.iloc[-1] if len(earlier) else g.iloc[-2]
+        cur, pre = float(latest["downloads_30d"]), float(prior["downloads_30d"])
+        if pre <= 0:
+            continue
+        rows.append({"ticker": _s(tk), "downloads_30d": round(cur, 0),
+                     "wow_pct": round((cur - pre) / pre * 100, 1)})
+    risers = [r["wow_pct"] for r in rows if r["wow_pct"] > 0]
+    if risers:
+        med = float(pd.Series(risers).median())
+        for r in rows:
+            r["hot"] = r["wow_pct"] > 0 and r["wow_pct"] >= med
+    rows.sort(key=lambda r: r["wow_pct"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- github momentum
+def github_momentum(top: int = 20) -> list[dict]:
+    """Per-ticker GitHub star VELOCITY (collectors/github_repos.py -> data/github/repo_stars.parquet
+    snapshots). `hot` = rising AND at/above the cross-section's median rise — developer-mindshare
+    momentum. Needs >=2 snapshots (else empty). Low-weight context."""
+    p = config.data_dir() / "github" / "repo_stars.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read github repo_stars: %s", e)
+        return []
+    if df.empty:
+        return []
+    df = df.assign(d=_dt(df.get("snapshot_date")))
+    df = df[df["d"].notna()]
+    rows = []
+    for tk, g in df.groupby("ticker"):
+        g = g.sort_values("d")
+        if g["d"].nunique() < 2:
+            continue
+        latest = g.iloc[-1]
+        cutoff = latest["d"] - pd.Timedelta(days=7)
+        earlier = g[g["d"] <= cutoff]
+        prior = earlier.iloc[-1] if len(earlier) else g.iloc[-2]
+        cur, pre = float(latest["stars"]), float(prior["stars"])
+        if pre <= 0:
+            continue
+        rows.append({"ticker": _s(tk), "stars": int(cur),
+                     "wow_pct": round((cur - pre) / pre * 100, 2)})
+    risers = [r["wow_pct"] for r in rows if r["wow_pct"] > 0]
+    if risers:
+        med = float(pd.Series(risers).median())
+        for r in rows:
+            r["hot"] = r["wow_pct"] > 0 and r["wow_pct"] >= med
+    rows.sort(key=lambda r: r["wow_pct"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- openFDA
+def fda_events(approval_days: int = 45, label_days: int = 120, top: int = 25) -> list[dict]:
+    """Per-ticker FDA catalysts (collectors/openfda.py -> data/openfda/approvals.parquet):
+    a NEW approval (ORIG/AP) in the last `approval_days`, or a LABEL expansion (SUPPL/EFFICACY/AP)
+    in the last `label_days`. The healthcare catalyst layer the political/contract feeds miss."""
+    p = config.data_dir() / "openfda" / "approvals.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read openfda approvals: %s", e)
+        return []
+    if df.empty:
+        return []
+    d = pd.DataFrame({
+        "ticker": df.get("ticker", pd.Series(dtype=object)).map(_s),
+        "kind": df.get("kind", pd.Series(dtype=object)).map(_s),
+        "date": pd.to_datetime(df.get("status_date"), format="%Y%m%d", errors="coerce"),
+        "drug": df.get("drug_name", pd.Series(dtype=object)).map(_s),
+    })
+    d = d[d["ticker"].notna() & d["kind"].notna() & d["date"].notna()]
+    if d.empty:
+        return []
+    now = _now()
+    out, seen = [], set()
+    # newest first so the most recent catalyst per (ticker,kind) wins
+    for _, r in d.sort_values("date", ascending=False).iterrows():
+        win = approval_days if r["kind"] == "approval" else label_days
+        if r["date"] < now - pd.Timedelta(days=win):
+            continue
+        key = (r["ticker"], r["kind"])
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"ticker": r["ticker"], "kind": r["kind"], "drug": r["drug"],
+                    "date": r["date"].date().isoformat()})
+        if len(out) >= top:
+            break
+    return out
+
+
+# --------------------------------------------------------------------------- material 8-K
+def material_events(window_days: int = 30, top: int = 25) -> list[dict]:
+    """Per-ticker count of MATERIAL 8-K filings in the last `window_days` (collectors/edgar_8k.py
+    -> data/edgar/material_8k_events.parquet). A cluster (>=2) = a burst of filing-time
+    corporate activity (material agreements / acquisitions / financings / leadership) the tape
+    may not have fully digested."""
+    p = config.data_dir() / "edgar" / "material_8k_events.parquet"
+    if not p.exists():
+        return []
+    try:
+        df = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("altdata: cannot read material_8k_events: %s", e)
+        return []
+    if df.empty:
+        return []
+    d = pd.DataFrame({
+        "ticker": df.get("ticker", pd.Series(dtype=object)).map(_s),
+        "date": _dt(df.get("filing_date")),
+        "items": df.get("items", pd.Series(dtype=object)).map(_s),
+    })
+    d = d[d["ticker"].notna() & d["date"].notna()]
+    if d.empty:
+        return []
+    d = d[d["date"] >= _now() - pd.Timedelta(days=window_days)]
+    if d.empty:
+        return []
+    rows = []
+    for tk, g in d.groupby("ticker"):
+        items = sorted({c for blob in g["items"].dropna() for c in str(blob).split(",") if c})
+        rows.append({"ticker": tk, "count": int(len(g)), "items": ", ".join(items[:6])})
+    rows.sort(key=lambda r: r["count"], reverse=True)
+    return rows[:top]
+
+
 # --------------------------------------------------------------------------- lobbying
 def lobbying_spikes(window_days: int = 45, top: int = 15) -> list[dict]:
     df = _read("lobbying")
@@ -489,6 +884,18 @@ def build_feed() -> dict:
     safe = lambda fn, default: _safe(fn, default)
     signals["political"] = safe(political_netflow, {"buys": [], "sells": []})
     signals["gov_contracts"] = safe(gov_contract_leaders, [])
+    signals["gov_grants"] = safe(gov_grant_leaders, [])
+    signals["fda"] = safe(fda_events, [])
+    signals["hf"] = safe(hf_momentum, [])
+    signals["material_8k"] = safe(material_events, [])
+    # deferred sources (existing keys / keyless; gated ones degrade to empty)
+    signals["unusual_options"] = safe(unusual_options, [])
+    signals["analyst"] = safe(analyst_trends, [])
+    signals["insider_mspr"] = safe(insider_mspr, [])
+    signals["earnings"] = safe(earnings_beats, [])
+    signals["news_sentiment"] = safe(news_sentiment_signals, [])
+    signals["clinical"] = safe(clinical_events, [])
+    signals["github"] = safe(github_momentum, [])
     signals["lobbying"] = safe(lobbying_spikes, [])
     signals["offexchange"] = safe(offexchange_flow, [])
     signals["insiders"] = safe(insider_netflow, {"buys": [], "sells": []})

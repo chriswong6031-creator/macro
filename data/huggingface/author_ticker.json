@@ -1,0 +1,14 @@
+{
+  "_note": "Hugging Face Hub author/org -> ticker map for the AI model-adoption channel (collectors/huggingface.py). The only direct non-price read on AI MODEL adoption (downloads), filling the developer-adoption blind spot for the AI themes. Multiple authors fold into one ticker. BIAS CAVEAT: blind to API-only providers (OpenAI/Anthropic publish no open weights) and to private labs (Mistral/DeepSeek) -> this favors open-weight names; it is a low-weight context channel, never a standalone signal.",
+  "authors": {
+    "META": ["meta-llama", "facebook"],
+    "GOOGL": ["google", "google-deepmind", "google-bert", "google-t5"],
+    "MSFT": ["microsoft"],
+    "NVDA": ["nvidia"],
+    "IBM": ["ibm-granite", "ibm", "ibm-research"],
+    "BABA": ["Qwen", "Alibaba-NLP"],
+    "AMZN": ["amazon"],
+    "AAPL": ["apple"],
+    "CRM": ["Salesforce"]
+  }
+}

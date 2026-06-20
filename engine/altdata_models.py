@@ -80,21 +80,34 @@ def _read(dataset: str) -> pd.DataFrame | None:
 CHANNEL_WEIGHTS: dict[str, float] = {
     "insider_cluster":    1.00,   # >=3 open-market insider buyers — the strongest tell
     "gov_contract_accel": 0.90,   # federal $ accelerating >=2x off a real base
+    "gov_grant_accel":    0.85,   # federal GRANT $ (CHIPS/DOE/IRA) accelerating off a real base
     "smart_money_13f":    0.85,   # a tracked marquee fund initiated/added
+    "fda_approval":       0.80,   # new drug/biologic approval (ORIG/AP) — a hard dated catalyst
     "congress_cluster":   0.80,   # >=3 members net-buying the same name
+    "fda_label_expansion": 0.70,  # sNDA EFFICACY supplement — widens the addressable market
+    "unusual_options":    0.65,   # options-flow surge (vol/OI spiking off baseline) — positioning
     "insider_buy":        0.60,   # single open-market insider buy
+    "insider_mspr":       0.55,   # Finnhub insider sentiment (MSPR) strongly positive — cross-check
+    "material_8k":        0.55,   # cluster of material 8-K filings (filing-time corporate activity)
     "darkpool_accum":     0.55,   # off-exchange accumulation (z-scored)
     "lobbying_spike":     0.50,   # lobbying spend spiking off a real base
     "trump":              0.50,   # Donald-Trump trade / branded affiliation
     "affiliation":        0.50,   # influence-graph edge (actor -> this name)
+    "gov_grant":          0.50,   # federal grant/loan present (CHIPS/DOE/IRA), not accelerating
     "gov_contract":       0.45,   # federal contracts present (not accelerating)
     "congress_buy":       0.45,   # single member net-buying
     "13f_add":            0.40,   # institutional 13F add (non-marquee)
     "patent_cluster":     0.40,   # patent-grant cluster (innovation cadence)
     "app_demand":         0.40,   # app-store rating + review momentum
+    "analyst_upgrade_cluster": 0.35,  # Finnhub: bullish analyst consensus rising (lagging, noisy)
+    "clinical_phase3_start": 0.35,  # new Phase-3 trial registration (biotech pipeline advancing)
+    "hf_model_momentum":  0.35,   # Hugging Face model-download velocity (AI adoption proxy)
+    "github_momentum":    0.30,   # GitHub star velocity (developer-mindshare proxy)
+    "earnings_beat":      0.30,   # Finnhub earnings surprise — single beat is weak context
     "lobbying":           0.30,   # lobbying present (no spike)
     "bill_catalyst":      0.30,   # pending legislation tied to the name's sector
     "cnbc_pick":          0.25,   # CNBC desk pick
+    "news_sentiment":     0.20,   # Polygon editorial-news bullish lean — abundant but noisy
     "retail_buzz":        0.15,   # WSB / retail attention — context, lowest weight
 }
 
@@ -107,6 +120,7 @@ SMART_MONEY = (
 )
 
 _GOV_FLOOR = 5_000_000.0      # absolute $ floor below which "acceleration" is noise
+_GRANT_FLOOR = 5_000_000.0    # absolute $ floor for a federal grant/loan to register
 _LOBBY_FLOOR = 100_000.0      # absolute $ floor for a lobbying "spike"
 
 
@@ -408,6 +422,17 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         else:
             add(r["ticker"], "gov_contract", f"${tot:,.0f} awarded")
 
+    # --- federal GRANTS/LOANS: CHIPS/DOE/IRA money the contracts feed can't see ---
+    for r in signals.get("gov_grants", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"].update(gov_grant_usd=r.get("total_usd"), gov_grant_accel=r.get("accel_x"))
+        ax, tot = r.get("accel_x"), r.get("total_usd") or 0
+        if ax is not None and ax >= 2.0 and tot >= _GRANT_FLOOR:
+            add(r["ticker"], "gov_grant_accel", f"${tot:,.0f}, {ax:.1f}x grant accel", drops=("gov_grant",))
+        elif tot >= _GRANT_FLOOR:
+            add(r["ticker"], "gov_grant", f"${tot:,.0f} federal grant/loan")
+
     # --- lobbying: spike off a real base outranks presence ---
     for r in signals.get("lobbying", []):
         m = rec(r["ticker"])
@@ -455,6 +480,23 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         else:
             add(r["ticker"], "13f_add", f"{r.get('fund')} +${r.get('chg_usd', 0):,.0f}")
 
+    # --- openFDA drug catalysts: new approval / label expansion (healthcare blind spot) ---
+    for r in signals.get("fda", []):
+        kind = r.get("kind")
+        if kind == "approval":
+            add(r["ticker"], "fda_approval", r.get("drug") or "new FDA approval")
+        elif kind == "label_expansion":
+            add(r["ticker"], "fda_label_expansion", r.get("drug") or "FDA label expansion")
+
+    # --- SEC 8-K material-event cluster (filing-time corporate activity) ---
+    for r in signals.get("material_8k", []):
+        n = int(r.get("count") or 0)
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["material_8k_30d"] = n
+        if n >= 2:
+            add(r["ticker"], "material_8k", f"{n} material 8-Ks (items {r.get('items', '')})")
+
     # --- CNBC desk picks ---
     for r in signals.get("cnbc", []):
         if (r.get("Direction") or "").lower() in ("buy", "final trade"):
@@ -488,6 +530,57 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
             m["metrics"]["wsb_mentions"] = r.get("mentions")
         if r.get("hot"):
             add(r["ticker"], "retail_buzz", f"{r.get('mentions')} WSB mentions")
+    for r in signals.get("hf", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["hf_downloads_30d"] = r.get("downloads_30d")
+        if r.get("hot"):
+            add(r["ticker"], "hf_model_momentum", f"+{r.get('wow_pct')}% model downloads")
+
+    # --- deferred sources: options flow, analyst/insider/earnings (Finnhub), news, clinical, github ---
+    for r in signals.get("unusual_options", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"].update(opt_vol_oi=r.get("vol_oi"), opt_put_call=r.get("put_call"))
+        if r.get("hot"):
+            add(r["ticker"], "unusual_options", f"{r.get('mult')}× vol/OI, {r.get('lean')}")
+    for r in signals.get("analyst", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["analyst_bull_ratio"] = r.get("bull_ratio")
+        if r.get("hot"):
+            add(r["ticker"], "analyst_upgrade_cluster", f"{r.get('bull_ratio')} bullish, rising")
+    for r in signals.get("insider_mspr", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["insider_mspr"] = r.get("mspr")
+        if r.get("hot"):
+            add(r["ticker"], "insider_mspr", f"MSPR {r.get('mspr')}", drops=("insider_buy",))
+    for r in signals.get("earnings", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["earnings_surprise_pct"] = r.get("surprise_pct")
+        if r.get("hot"):
+            add(r["ticker"], "earnings_beat", f"+{r.get('surprise_pct')}% surprise")
+    for r in signals.get("news_sentiment", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["news_bull_ratio"] = r.get("bull_ratio")
+        if r.get("hot"):
+            add(r["ticker"], "news_sentiment", f"{r.get('bull_ratio')} bullish news ({r.get('articles')} art)")
+    for r in signals.get("clinical", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"].update(clinical_phase3_starts=r.get("phase3_starts"), clinical_halts=r.get("halts"))
+        if r.get("hot"):
+            add(r["ticker"], "clinical_phase3_start",
+                f"{r.get('phase3_starts')} new Phase-3" + (f", {r['halts']} halt(s)" if r.get("halts") else ""))
+    for r in signals.get("github", []):
+        m = rec(r["ticker"])
+        if m is not None:
+            m["metrics"]["github_stars"] = r.get("stars")
+        if r.get("hot"):
+            add(r["ticker"], "github_momentum", f"+{r.get('wow_pct')}% stars")
 
     # --- congressional position SIZE context (size, not a vote) ---
     for tk, slot in (signals.get("congress_holdings") or {}).items():

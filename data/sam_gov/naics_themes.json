@@ -1,0 +1,19 @@
+{
+  "_note": "NAICS code -> narrative-basket map for SAM.gov contract OPPORTUNITY (pre-award) flow (collectors/sam_gov.py). Pre-solicitations/solicitations are posted weeks-to-12+ months before a contract award hits USAspending, so this is the earliest procurement signal — theme-level only (pre-award has no awardee ticker). Counts EARLY notice types (Presolicitation/Solicitation/Sources Sought/Combined Synopsis) per basket via NAICS. ncode is queried one code at a time (SAM.gov takes a single NAICS per call).",
+  "naics": {
+    "336411": ["defense", "space_economy"],
+    "336414": ["defense", "space_economy"],
+    "336415": ["space_economy"],
+    "334511": ["defense"],
+    "541715": ["defense", "quantum_computing", "ai_semiconductors"],
+    "334413": ["ai_semiconductors", "semicap_equipment"],
+    "333242": ["semicap_equipment"],
+    "325180": ["critical_minerals"],
+    "212290": ["critical_minerals", "uranium_miners"],
+    "221113": ["nuclear_power"],
+    "541512": ["ai_software", "cybersecurity"],
+    "518210": ["data_center_power", "ai_infra"],
+    "561621": ["cybersecurity"],
+    "333611": ["power_grid"]
+  }
+}
