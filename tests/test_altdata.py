@@ -294,3 +294,23 @@ def test_extractor_citation_gate():
     # garbage reply / no key path -> empty, never raises
     assert extract._extract_edges(source, "not json at all") == []
     assert extract._extract_edges(source, None) == []
+
+
+# --------------------------------------------------------------- EDGAR early channel
+def test_edgar_parse():
+    from collectors.edgar_trumpflow import EdgarTrumpflowAdapter as A
+    hit = {"_id": "0001558370-25-007236:hut-20250509xex99d1.htm", "_source": {
+        "ciks": ["0001964789"], "adsh": "0001558370-25-007236", "form": "8-K",
+        "file_type": "EX-99.1", "file_date": "2025-05-12",
+        "display_names": ["Hut 8 Corp.  (HUT)  (CIK 0001964789)"], "items": ["7.01", "8.01"]}}
+    row = A._parse(hit, "Hut 8")
+    assert row["ticker"] == "HUT"
+    assert row["form"] == "8-K" and row["company"] == "Hut 8 Corp."
+    assert row["cik"] == "0001964789" and row["items"] == "7.01,8.01"
+    assert row["url"] == ("https://www.sec.gov/Archives/edgar/data/1964789/"
+                          "000155837025007236/hut-20250509xex99d1.htm")
+    assert row["query"] == "Hut 8" and row["form"] in A.RELEVANT_FORMS
+    # no id -> None; a company without a parenthesized ticker -> ticker None
+    assert A._parse({"_source": {}}, "x") is None
+    noticker = A._parse({"_id": "x:y.htm", "_source": {"display_names": ["Some LLC"], "form": "8-K"}}, "q")
+    assert noticker["ticker"] is None and noticker["company"] == "Some LLC"
