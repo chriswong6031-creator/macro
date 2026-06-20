@@ -467,6 +467,21 @@
   .nbb-validated { color: var(--up); border-color: color-mix(in srgb, var(--up) 35%, var(--line)); }
   .nbb-literature { color: var(--g-cold); border-color: color-mix(in srgb, var(--g-cold) 35%, var(--line)); }
   .nbb-screen { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  /* the two new VERIFIERS — dealer-gamma "Options check" + the single-stock vol black hole */
+  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px;
+              border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .vf-confirm { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line));
+                background: color-mix(in srgb, var(--up) 10%, var(--panel)); }
+  .vf-caution { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 38%, var(--line));
+                background: color-mix(in srgb, var(--warn) 10%, var(--panel)); }
+  .vf-neutral { color: var(--muted); }
+  .vf-coil { color: var(--link); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
+             background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
+  .vf-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
+           background: color-mix(in srgb, var(--up) 13%, var(--panel)); }
+  .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
   /* market dealer-gamma vol-regime context banner */
   .gamma-note { margin-top: 9px; padding: 7px 11px; border-radius: 9px; font-size: 11.5px;
                 line-height: 1.5; border: 1px solid var(--line); border-left-width: 3px; }
@@ -835,16 +850,13 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
-        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
-        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
-        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
-        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -908,10 +920,13 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
         <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
         <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
@@ -1010,8 +1025,8 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px"><span class="l-en">Standout individual stocks</span><span class="l-zh">表现突出的个股</span></span>
-        <span class="muted" style="font-size:11.5px">120 <span class="l-en">of</span><span class="l-zh">/</span> 385 <span class="l-en">cleared the +0.5 α floor · ranked across the full S&P 1500 by validated residual momentum · each card carries the unified Conviction profile (cycle state caps the verdict)</span><span class="l-zh">只通过 +0.5 α 门槛 · 在整个标普1500内按已验证残差动量排序 · 每张卡片附带统一确信度画像（周期状态会封顶结论）</span>
-          <span class="help">?<span class="tip"><span class="l-en">The bench is ranked by the VALIDATED sector-neutral residual-momentum leg (α) across the full S&P 1500 — so it surfaces leaders that aren't in any sector ETF's top-10. Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and a single honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — which is why this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability); the composite is shown as context until a deep Phase-0 clears it. Click any card for the full breakdown.</span><span class="l-zh">榜单按已验证的行业中性残差动量（α）在整个标普1500内排序——因此能发掘不在任何行业ETF前十大持仓中的领涨股。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示“买入”，而显示“强势但趋势不利”——这正是该卡片与个股自身页面永不矛盾的原因。0-100 分是市场内百分位的展示皮肤（非概率）；在深度 Phase-0 通过前，综合分仅作情境展示。点击任意卡片查看完整拆解。</span></span></span></span>
+        <span class="muted" style="font-size:11.5px">120 <span class="l-en">of</span><span class="l-zh">/</span> 385 <span class="l-en">passed the entry-quality gate (not in a downtrend / parabolic, and a constructive entry) · ranked by the multi-factor Conviction composite — event edge + entry timing + quality + tailwind — an honest DISPLAY ordering, not a standalone validated alpha · each card carries the unified profile plus the Options (dealer-gamma) and volatility-squeeze verifiers (cycle state caps the verdict)</span><span class="l-zh">通过入场质量门槛（非下行／抛物线，且入场具建设性）· 按多因子确信度综合分排序 — 事件优势＋入场择时＋质量＋顺风 — 为诚实的展示排序，并非独立已验证超额收益 · 每张卡片附带统一画像，外加期权（做市商 Gamma）与波动压缩验证器（周期状态会封顶结论）</span>
+          <span class="help">?<span class="tip"><span class="l-en">The bench is ranked by the multi-factor Conviction COMPOSITE (event edge + entry timing + quality + tailwind) across the full S&P 1500 — so it surfaces leaders that aren't in any sector ETF's top-10. This is an honest DISPLAY ordering, NOT a standalone validated alpha: the α (residual-momentum) leg is just one light, regime-scaled input, not the rank key. Each card carries the four transparent axes (selection / entry / tailwind / quality), a single honest verdict, and two new VERIFIERS — an Options (dealer-gamma) check and a single-stock volatility-squeeze read. The verifiers sharpen the ENTRY only (display + a small bounded tilt); they can lower conviction but never manufacture a buy, and never touch the selection rank. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — which is why this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability); the composite is context until a deep Phase-0 clears it. Click any card for the full breakdown.</span><span class="l-zh">榜单按多因子确信度综合分（事件优势＋入场择时＋质量＋顺风）在整个标普1500内排序——因此能发掘不在任何行业ETF前十大持仓中的领涨股。这是诚实的展示排序，并非独立已验证的超额收益：α（残差动量）维度只是一个轻量、随行情缩放的输入，并非排序关键。每张卡片附带四条透明维度（选股／入场／顺风／质量）、一个诚实结论，以及两个新验证器——期权（做市商 Gamma）检查与个股波动压缩读数。验证器只优化“入场”（展示＋小幅有界倾斜）；它们可降低确信度，但绝不制造买入信号，也不触及选股排序。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示“买入”，而显示“强势但趋势不利”。0-100 分是市场内百分位展示皮肤（非概率）；在深度 Phase-0 通过前综合分仅作情境。点击任意卡片查看完整拆解。</span></span></span></span>
         
       </div>
       
@@ -1080,9 +1095,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +3.0</span><span class="nbb nbb-literature">revisions +1.3</span><span class="nbb nbb-context">momentum +1.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.21</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.21</span>
             <span class="nb-rk">#29/253</span>
             
           </div>
@@ -1136,9 +1155,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.3</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +1.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.64</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.64</span>
             <span class="nb-rk">#7/257</span>
             
           </div>
@@ -1192,9 +1215,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.4</span><span class="nbb nbb-context">momentum +1.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.45</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.45</span>
             <span class="nb-rk">#12/257</span>
             
           </div>
@@ -1248,9 +1275,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.7</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.07</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.07</span>
             <span class="nb-rk">#131/257</span>
             
           </div>
@@ -1313,9 +1344,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +3.0</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum -0.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.17</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.17</span>
             <span class="nb-rk">#35/60</span>
             
           </div>
@@ -1378,9 +1413,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.0</span><span class="nbb nbb-literature">revisions +2.4</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.67</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.67</span>
             <span class="nb-rk">#19/107</span>
             
           </div>
@@ -1434,9 +1473,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.0</span><span class="nbb nbb-literature">revisions +0.8</span><span class="nbb nbb-context">momentum +0.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.28</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.28</span>
             <span class="nb-rk">#71/168</span>
             
           </div>
@@ -1499,9 +1542,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.4</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.84</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.84</span>
             <span class="nb-rk">#63/253</span>
             
           </div>
@@ -1564,9 +1611,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.8</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.00</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.00</span>
             <span class="nb-rk">#47/253</span>
             
           </div>
@@ -1629,9 +1680,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +2.4</span><span class="nbb nbb-context">momentum +0.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.34</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.34</span>
             <span class="nb-rk">#22/60</span>
             
           </div>
@@ -1694,9 +1749,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.1</span><span class="nbb nbb-context">momentum +2.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +2.62</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +2.62</span>
             <span class="nb-rk">#1/195</span>
             
           </div>
@@ -1750,9 +1809,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.9</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.14</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.14</span>
             <span class="nb-rk">#122/257</span>
             
           </div>
@@ -1806,9 +1869,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.0</span><span class="nbb nbb-literature">revisions +0.4</span><span class="nbb nbb-context">momentum +1.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.14</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.14</span>
             <span class="nb-rk">#21/168</span>
             
           </div>
@@ -1871,9 +1938,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.6</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.28</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.28</span>
             <span class="nb-rk">#23/253</span>
             
           </div>
@@ -1927,9 +1998,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.6</span><span class="nbb nbb-context">momentum +2.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +2.28</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +2.28</span>
             <span class="nb-rk">#1/257</span>
             
           </div>
@@ -1992,9 +2067,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.2</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.69</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.69</span>
             <span class="nb-rk">#72/253</span>
             
           </div>
@@ -2057,9 +2136,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.0</span><span class="nbb nbb-literature">revisions +1.2</span><span class="nbb nbb-context">momentum +1.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.75</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.75</span>
             <span class="nb-rk">#5/77</span>
             
           </div>
@@ -2113,9 +2196,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.4</span><span class="nbb nbb-literature">revisions +1.9</span><span class="nbb nbb-context">momentum +2.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +2.39</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +2.39</span>
             <span class="nb-rk">#1/168</span>
             
           </div>
@@ -2178,9 +2265,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.60</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.60</span>
             <span class="nb-rk">#46/195</span>
             
           </div>
@@ -2234,9 +2325,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.0</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.56</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.56</span>
             <span class="nb-rk">#82/257</span>
             
           </div>
@@ -2290,9 +2385,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.9</span><span class="nbb nbb-literature">revisions +0.2</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.47</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.47</span>
             <span class="nb-rk">#92/257</span>
             
           </div>
@@ -2355,9 +2454,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.0</span><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +1.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.21</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.21</span>
             <span class="nb-rk">#28/253</span>
             
           </div>
@@ -2420,9 +2523,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +2.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.97</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.97</span>
             <span class="nb-rk">#8/253</span>
             
           </div>
@@ -2476,9 +2583,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.8</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +0.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.44</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.44</span>
             <span class="nb-rk">#55/168</span>
             
           </div>
@@ -2541,9 +2652,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.7</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.46</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.46</span>
             <span class="nb-rk">#25/76</span>
             
           </div>
@@ -2597,9 +2712,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.9</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.75</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.75</span>
             <span class="nb-rk">#36/168</span>
             
           </div>
@@ -2653,9 +2772,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.7</span><span class="nbb nbb-literature">revisions -0.1</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.67</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.67</span>
             <span class="nb-rk">#65/257</span>
             
           </div>
@@ -2709,9 +2832,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.1</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.76</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.76</span>
             <span class="nb-rk">#55/257</span>
             
           </div>
@@ -2774,9 +2901,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.5</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.86</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.86</span>
             <span class="nb-rk">#11/69</span>
             
           </div>
@@ -2830,9 +2961,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.5</span><span class="nbb nbb-literature">revisions +0.0</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.72</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.72</span>
             <span class="nb-rk">#59/257</span>
             
           </div>
@@ -2886,9 +3021,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.3</span><span class="nbb nbb-context">momentum -0.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.24</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.24</span>
             <span class="nb-rk">#162/257</span>
             
           </div>
@@ -2951,9 +3090,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.8</span><span class="nbb nbb-context">momentum +0.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.44</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.44</span>
             <span class="nb-rk">#74/186</span>
             
           </div>
@@ -3016,9 +3159,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.0</span><span class="nbb nbb-context">momentum +1.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.77</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.77</span>
             <span class="nb-rk">#4/77</span>
             
           </div>
@@ -3081,9 +3228,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.6</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.65</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.65</span>
             <span class="nb-rk">#22/107</span>
             
           </div>
@@ -3146,9 +3297,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.9</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.90</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.90</span>
             <span class="nb-rk">#56/253</span>
             
           </div>
@@ -3202,9 +3357,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.0</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.29</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.29</span>
             <span class="nb-rk">#18/257</span>
             
           </div>
@@ -3258,9 +3417,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.1</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.86</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.86</span>
             <span class="nb-rk">#45/257</span>
             
           </div>
@@ -3323,9 +3486,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.3</span><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.94</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.94</span>
             <span class="nb-rk">#38/257</span>
             
           </div>
@@ -3388,9 +3555,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.1</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.29</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.29</span>
             <span class="nb-rk">#9/107</span>
             
           </div>
@@ -3444,9 +3615,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.7</span><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum +0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.13</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.13</span>
             <span class="nb-rk">#125/257</span>
             
           </div>
@@ -3500,9 +3675,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +1.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.41</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.41</span>
             <span class="nb-rk">#13/257</span>
             
           </div>
@@ -3556,9 +3735,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +1.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.18</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.18</span>
             <span class="nb-rk">#25/257</span>
             
           </div>
@@ -3621,9 +3804,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.8</span><span class="nbb nbb-context">momentum -1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.99</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.99</span>
             <span class="nb-rk">#95/107</span>
             
           </div>
@@ -3686,9 +3873,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.2</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.29</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.29</span>
             <span class="nb-rk">#13/195</span>
             
           </div>
@@ -3751,9 +3942,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.2</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.05</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.05</span>
             <span class="nb-rk">#130/253</span>
             
           </div>
@@ -3816,9 +4011,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.72</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.72</span>
             <span class="nb-rk">#13/69</span>
             
           </div>
@@ -3881,9 +4080,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.6</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum -0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.53</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.53</span>
             <span class="nb-rk">#115/186</span>
             
           </div>
@@ -3946,9 +4149,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.2</span><span class="nbb nbb-literature">revisions +1.0</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.56</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.56</span>
             <span class="nb-rk">#82/253</span>
             
           </div>
@@ -4002,9 +4209,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.0</span><span class="nbb nbb-literature">revisions -0.1</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.30</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.30</span>
             <span class="nb-rk">#17/257</span>
             
           </div>
@@ -4058,9 +4269,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.01</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.01</span>
             <span class="nb-rk">#26/168</span>
             
           </div>
@@ -4123,9 +4338,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.52</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.52</span>
             <span class="nb-rk">#87/253</span>
             
           </div>
@@ -4179,9 +4398,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.4</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum -0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.61</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.61</span>
             <span class="nb-rk">#121/168</span>
             
           </div>
@@ -4244,9 +4467,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.5</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.63</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.63</span>
             <span class="nb-rk">#42/195</span>
             
           </div>
@@ -4309,9 +4536,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.2</span><span class="nbb nbb-literature">revisions -1.6</span><span class="nbb nbb-context">momentum +1.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.80</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.80</span>
             <span class="nb-rk">#3/195</span>
             
           </div>
@@ -4374,9 +4605,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +1.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.59</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.59</span>
             <span class="nb-rk">#8/76</span>
             
           </div>
@@ -4430,9 +4665,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum +2.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +2.22</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +2.22</span>
             <span class="nb-rk">#2/195</span>
             
           </div>
@@ -4495,9 +4734,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +2.0</span><span class="nbb nbb-context">momentum +1.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.45</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.45</span>
             <span class="nb-rk">#18/253</span>
             
           </div>
@@ -4560,9 +4803,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.1</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.58</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.58</span>
             <span class="nb-rk">#74/257</span>
             
           </div>
@@ -4616,9 +4863,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.3</span><span class="nbb nbb-literature">revisions +1.1</span><span class="nbb nbb-context">momentum +1.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.11</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.11</span>
             <span class="nb-rk">#31/257</span>
             
           </div>
@@ -4681,9 +4932,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.9</span><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum -1.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -1.43</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -1.43</span>
             <span class="nb-rk">#239/257</span>
             
           </div>
@@ -4746,9 +5001,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.8</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.14</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.14</span>
             <span class="nb-rk">#123/257</span>
             
           </div>
@@ -4802,9 +5061,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.8</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +0.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.36</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.36</span>
             <span class="nb-rk">#64/168</span>
             
           </div>
@@ -4858,9 +5121,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.5</span><span class="nbb nbb-context">momentum +0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.11</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.11</span>
             <span class="nb-rk">#88/168</span>
             
           </div>
@@ -4914,9 +5181,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.8</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.85</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.85</span>
             <span class="nb-rk">#47/257</span>
             
           </div>
@@ -4970,9 +5241,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.3</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +1.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.35</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.35</span>
             <span class="nb-rk">#15/257</span>
             
           </div>
@@ -5026,9 +5301,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.2</span><span class="nbb nbb-context">momentum +1.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.50</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.50</span>
             <span class="nb-rk">#10/257</span>
             
           </div>
@@ -5082,9 +5361,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.6</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum -0.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.22</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.22</span>
             <span class="nb-rk">#158/257</span>
             
           </div>
@@ -5147,9 +5430,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.70</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.70</span>
             <span class="nb-rk">#70/253</span>
             
           </div>
@@ -5212,9 +5499,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.5</span><span class="nbb nbb-literature">revisions +1.5</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.85</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.85</span>
             <span class="nb-rk">#59/253</span>
             
           </div>
@@ -5277,9 +5568,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.5</span><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum -0.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.13</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.13</span>
             <span class="nb-rk">#66/107</span>
             
           </div>
@@ -5342,9 +5637,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.5</span><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.97</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.97</span>
             <span class="nb-rk">#17/76</span>
             
           </div>
@@ -5398,9 +5697,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.80</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.80</span>
             <span class="nb-rk">#52/257</span>
             
           </div>
@@ -5463,9 +5766,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.8</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.04</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.04</span>
             <span class="nb-rk">#3/60</span>
             
           </div>
@@ -5528,9 +5835,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.2</span><span class="nbb nbb-context">momentum +1.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.58</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.58</span>
             <span class="nb-rk">#7/195</span>
             
           </div>
@@ -5593,9 +5904,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.5</span><span class="nbb nbb-literature">revisions +1.0</span><span class="nbb nbb-context">momentum +0.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.27</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.27</span>
             <span class="nb-rk">#68/195</span>
             
           </div>
@@ -5658,9 +5973,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.93</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.93</span>
             <span class="nb-rk">#24/195</span>
             
           </div>
@@ -5714,9 +6033,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.8</span><span class="nbb nbb-literature">revisions -0.2</span><span class="nbb nbb-context">momentum -0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.65</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.65</span>
             <span class="nb-rk">#130/168</span>
             
           </div>
@@ -5779,9 +6102,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-literature">revisions +0.3</span><span class="nbb nbb-context">momentum +1.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.06</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.06</span>
             <span class="nb-rk">#18/195</span>
             
           </div>
@@ -5844,9 +6171,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.3</span><span class="nbb nbb-context">momentum +0.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.21</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.21</span>
             <span class="nb-rk">#74/195</span>
             
           </div>
@@ -5909,9 +6240,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +0.8</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.31</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.31</span>
             <span class="nb-rk">#8/107</span>
             
           </div>
@@ -5974,9 +6309,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.6</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.61</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.61</span>
             <span class="nb-rk">#13/48</span>
             
           </div>
@@ -6030,9 +6369,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.3</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.57</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.57</span>
             <span class="nb-rk">#79/257</span>
             
           </div>
@@ -6095,9 +6438,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.3</span><span class="nbb nbb-literature">revisions +1.1</span><span class="nbb nbb-context">momentum +1.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.32</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.32</span>
             <span class="nb-rk">#8/77</span>
             
           </div>
@@ -6160,9 +6507,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.1</span><span class="nbb nbb-context">momentum +1.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.87</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.87</span>
             <span class="nb-rk">#3/48</span>
             
           </div>
@@ -6216,9 +6567,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.4</span><span class="nbb nbb-literature">revisions -0.4</span><span class="nbb nbb-context">momentum +1.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.49</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.49</span>
             <span class="nb-rk">#10/195</span>
             
           </div>
@@ -6281,9 +6636,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.2</span><span class="nbb nbb-literature">revisions +1.5</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.62</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.62</span>
             <span class="nb-rk">#79/253</span>
             
           </div>
@@ -6337,9 +6696,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.1</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +1.1</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.09</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.09</span>
             <span class="nb-rk">#24/168</span>
             
           </div>
@@ -6393,9 +6756,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.6</span><span class="nbb nbb-context">momentum -0.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.16</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.16</span>
             <span class="nb-rk">#151/257</span>
             
           </div>
@@ -6458,9 +6825,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-literature">revisions +0.4</span><span class="nbb nbb-context">momentum +2.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +2.01</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +2.01</span>
             <span class="nb-rk">#2/77</span>
             
           </div>
@@ -6514,9 +6885,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.4</span><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.93</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.93</span>
             <span class="nb-rk">#39/257</span>
             
           </div>
@@ -6570,9 +6945,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.2</span><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.04</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.04</span>
             <span class="nb-rk">#34/257</span>
             
           </div>
@@ -6626,9 +7005,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.6</span><span class="nbb nbb-context">momentum -0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.48</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.48</span>
             <span class="nb-rk">#180/257</span>
             
           </div>
@@ -6682,9 +7065,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.1</span><span class="nbb nbb-literature">revisions +1.2</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.83</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.83</span>
             <span class="nb-rk">#50/257</span>
             
           </div>
@@ -6747,9 +7134,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.88</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.88</span>
             <span class="nb-rk">#42/257</span>
             
           </div>
@@ -6803,9 +7194,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.4</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.01</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.01</span>
             <span class="nb-rk">#36/257</span>
             
           </div>
@@ -6868,9 +7263,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.9</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.50</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.50</span>
             <span class="nb-rk">#52/195</span>
             
           </div>
@@ -6933,9 +7332,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.6</span><span class="nbb nbb-literature">revisions -1.1</span><span class="nbb nbb-context">momentum +1.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.59</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.59</span>
             <span class="nb-rk">#3/107</span>
             
           </div>
@@ -6998,9 +7401,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-literature">revisions +0.1</span><span class="nbb nbb-context">momentum +0.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.44</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.44</span>
             <span class="nb-rk">#26/76</span>
             
           </div>
@@ -7054,9 +7461,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.5</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.33</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.33</span>
             <span class="nb-rk">#104/257</span>
             
           </div>
@@ -7119,9 +7530,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.2</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.92</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.92</span>
             <span class="nb-rk">#7/60</span>
             
           </div>
@@ -7184,9 +7599,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.6</span><span class="nbb nbb-literature">revisions -0.9</span><span class="nbb nbb-context">momentum +1.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.22</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.22</span>
             <span class="nb-rk">#12/77</span>
             
           </div>
@@ -7240,9 +7659,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.7</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.8</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.79</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.79</span>
             <span class="nb-rk">#53/257</span>
             
           </div>
@@ -7296,9 +7719,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions -0.9</span><span class="nbb nbb-context">momentum +0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.57</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.57</span>
             <span class="nb-rk">#80/257</span>
             
           </div>
@@ -7352,9 +7779,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.9</span><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.49</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.49</span>
             <span class="nb-rk">#86/257</span>
             
           </div>
@@ -7408,9 +7839,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.5</span><span class="nbb nbb-literature">revisions +0.8</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.47</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.47</span>
             <span class="nb-rk">#93/257</span>
             
           </div>
@@ -7473,9 +7908,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.1</span><span class="nbb nbb-context">momentum +1.9</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.87</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.87</span>
             <span class="nb-rk">#4/48</span>
             
           </div>
@@ -7529,9 +7968,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.50</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.50</span>
             <span class="nb-rk">#85/257</span>
             
           </div>
@@ -7585,9 +8028,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.2</span><span class="nbb nbb-literature">revisions +0.1</span><span class="nbb nbb-context">momentum -0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.49</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.49</span>
             <span class="nb-rk">#114/168</span>
             
           </div>
@@ -7641,9 +8088,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.0</span><span class="nbb nbb-literature">revisions +0.2</span><span class="nbb nbb-context">momentum -0.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.30</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.30</span>
             <span class="nb-rk">#169/257</span>
             
           </div>
@@ -7706,9 +8157,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum -0.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.36</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.36</span>
             <span class="nb-rk">#135/195</span>
             
           </div>
@@ -7762,9 +8217,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.2</span><span class="nbb nbb-literature">revisions +0.6</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.68</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.68</span>
             <span class="nb-rk">#63/257</span>
             
           </div>
@@ -7827,9 +8286,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +1.1</span><span class="nbb nbb-context">momentum +0.3</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.31</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.31</span>
             <span class="nb-rk">#107/253</span>
             
           </div>
@@ -7892,9 +8355,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum +0.4</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.38</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.38</span>
             <span class="nb-rk">#101/257</span>
             
           </div>
@@ -7957,9 +8424,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +1.3</span><span class="nbb nbb-literature">revisions +0.7</span><span class="nbb nbb-context">momentum -0.6</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.60</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.60</span>
             <span class="nb-rk">#50/76</span>
             
           </div>
@@ -8013,9 +8484,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +2.1</span><span class="nbb nbb-literature">revisions -0.6</span><span class="nbb nbb-context">momentum +0.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.47</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.47</span>
             <span class="nb-rk">#53/168</span>
             
           </div>
@@ -8069,9 +8544,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.1</span><span class="nbb nbb-literature">revisions +1.0</span><span class="nbb nbb-context">momentum +0.7</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.66</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.66</span>
             <span class="nb-rk">#66/257</span>
             
           </div>
@@ -8125,9 +8604,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE -0.0</span><span class="nbb nbb-literature">revisions +0.3</span><span class="nbb nbb-context">momentum +1.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.16</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.16</span>
             <span class="nb-rk">#27/257</span>
             
           </div>
@@ -8190,9 +8673,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-validated">SUE +0.2</span><span class="nbb nbb-literature">revisions +0.5</span><span class="nbb nbb-context">momentum +1.0</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +0.98</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +0.98</span>
             <span class="nb-rk">#17/77</span>
             
           </div>
@@ -8246,9 +8733,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.8</span><span class="nbb nbb-context">momentum -0.2</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span>
-            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α -0.25</span>
+            <span class="nb-az az-dn" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α -0.25</span>
             <span class="nb-rk">#163/257</span>
             
           </div>
@@ -8302,9 +8793,13 @@
           </div>
           
           <div class="nb-basis"><span class="nbb nbb-literature">revisions -0.6</span><span class="nbb nbb-context">momentum +1.5</span></div>
+          
+          
+          
+          
           <div class="nb-bot">
             <span class="nb-state"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span>
-            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — the validated ranking leg · 行业中性残差动量（z）— 已验证的排序维度">α +1.46</span>
+            <span class="nb-az az-up" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α +1.46</span>
             <span class="nb-rk">#11/257</span>
             
           </div>
