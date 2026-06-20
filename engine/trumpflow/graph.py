@@ -199,11 +199,35 @@ def build_view(by_ticker: dict | None = None, root=None) -> dict:
         "n_nodes": len(people) + len(ents) + len(intel.get("themes", {})),
         "n_edges": len(intel.get("edges", [])),
         "n_candidates": n_candidates,
+        "filings": _recent_filings(root),
     }
     _write(view)
     log.info("trumpflow graph: %d paths, %d mismatches, %d watch tickers",
              len(paths), len(mismatches), len(watch))
     return view
+
+
+def _recent_filings(root=None, n: int = 12) -> list[dict]:
+    """Recent Trump-entity SEC filings (the early channel), newest first."""
+    try:
+        import pandas as pd
+        p = (config.data_dir() if root is None else (root / "data")) / "trumpflow" / "edgar_filings.parquet"
+        if not p.exists():
+            return []
+        df = pd.read_parquet(p)
+    except Exception:  # noqa: BLE001
+        return []
+    df = df.assign(_d=pd.to_datetime(df["file_date"], errors="coerce")).sort_values("_d", ascending=False)
+    out = []
+    for _, r in df.head(n).iterrows():
+        tk = r.get("ticker")
+        out.append({
+            "date": r.get("file_date"), "form": r.get("form"),
+            "company": r.get("company"),
+            "ticker": (tk if (tk is not None and str(tk) != "nan") else None),
+            "items": r.get("items") or "", "url": r.get("url"), "query": r.get("query"),
+        })
+    return out
 
 
 def _write(view: dict) -> None:

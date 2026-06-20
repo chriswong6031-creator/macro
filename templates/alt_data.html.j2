@@ -113,6 +113,17 @@
   </tbody></table>
   {% endif %}
 
+  {% if latent.filings %}
+  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">📄 {{ t('Recent SEC filings — the early channel (hits at filing time, before the news):', '近期SEC文件——早期信号渠道（文件提交即出现，先于新闻）：') }}</div>
+  <table class="ad"><thead><tr><th>{{ t('Date','日期') }}</th><th>{{ t('Form','表格') }}</th><th>{{ t('Company','公司') }}</th><th>{{ t('Items','条目') }}</th></tr></thead><tbody>
+  {% for f in latent.filings[:10] %}
+    <tr><td class="num mut2">{{ f.date }}</td>
+        <td>{% if f.url %}<a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.form }}</a>{% else %}{{ f.form }}{% endif %}</td>
+        <td>{% if f.ticker %}<span class="tk">{{ f.ticker }}</span> {% endif %}<span class="mut2">{{ (f.company or '')[:26] }}</span></td>
+        <td class="mut2">{{ f.items }}</td></tr>
+  {% endfor %}
+  </tbody></table>
+  {% endif %}
   {% if latent.n_candidates %}<div class="mut2" style="font-size:11px;margin-top:8px">🤖 {{ latent.n_candidates }} {{ t('LLM-extracted candidate edge(s) pending human review', 'LLM抽取的候选关系待人工审核') }}</div>{% endif %}
   <p class="mut2" style="font-size:11px;margin-top:10px">{{ t(
     'Curated public-record graph + an optional gated LLM extractor. Worked example: American Bitcoin is branded a bitcoin company, but ~80% is owned and operated by Hut 8 — an AI-power-infrastructure hyperscaler — so the real thesis was the equity stake in a future hyperscaler, not the bitcoin narrative. Display-only.',

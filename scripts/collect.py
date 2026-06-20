@@ -137,6 +137,9 @@ def all_adapters() -> dict:
         ("quiver_congressholdings", "collectors.quiver", "CongressHoldingsAdapter"),
         ("quiver_bills", "collectors.quiver", "BillSummariesAdapter"),
         ("quiver_appratings", "collectors.quiver", "AppRatingsAdapter"),
+        # SEC EDGAR full-text search for Trump-linked entity filings — the genuinely-early
+        # channel (8-K/S-4/425/EX-99 at filing time). Keyless (UA only). See collectors/edgar_trumpflow.py.
+        ("edgar_trumpflow", "collectors.edgar_trumpflow", "EdgarTrumpflowAdapter"),
     ]
     for key, mod, cls in specs:
         try:
