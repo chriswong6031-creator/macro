@@ -470,6 +470,11 @@
   .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
                  color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
+  /* honesty notes — percentile-rank caveat + favourable-risk-cone read (AVGO/NVDA alignment) */
+  .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
+             color: var(--muted); background: color-mix(in srgb, var(--ink) 4%, var(--panel)); }
+  .nb-note-anticipation { color: var(--g-cold, var(--link));
+             background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
   /* per-leg EDGE basis chips (top-3 firing legs, tier-colored) */
   .nb-basis { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
   .nbb { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
@@ -2408,6 +2413,7 @@
               {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
           {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+          {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
           <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
           {% endif %}
         </a>
