@@ -1,0 +1,48 @@
+{
+  "schema": "trumpflow.intel.v1",
+  "as_of": "2026-06-19",
+  "note": "Hand-curated Trump-family / administration investment graph seed. Public-record only. provenance = FACT (filing / widely-reported) | DISCLOSED (self-reported) | INFERRED (analytical link). The LLM extractor (engine/trumpflow/extract.py) proposes ADDITIONAL candidate edges into a separate file; a human promotes them here. Nothing here is scored — it feeds the latent-stake view + the brain.",
+  "people": [
+    {"id": "eric_trump", "name": "Eric Trump", "name_zh": "埃里克·特朗普"},
+    {"id": "don_jr", "name": "Donald Trump Jr.", "name_zh": "小唐纳德·特朗普"}
+  ],
+  "themes": {
+    "ai_power_infra": {"en": "AI power & data-center infrastructure", "zh": "AI电力与数据中心基础设施"},
+    "crypto": {"en": "Crypto / digital assets", "zh": "加密资产"},
+    "media": {"en": "Media & social", "zh": "媒体与社交"}
+  },
+  "entities": [
+    {"id": "american_bitcoin", "name": "American Bitcoin", "ticker": "ABTC", "brand_theme": "crypto",
+     "note": "Branded a bitcoin miner / treasury; the Trump sons hold ~20%, Hut 8 ~80%. Public via Gryphon merger (Nasdaq: ABTC)."},
+    {"id": "hut8", "name": "Hut 8 Corp", "ticker": "HUT", "brand_theme": "crypto",
+     "note": "Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthropic/Fluidstack 245MW $7B Dec-2025; $9.8B Beacon Point lease May-2026; >$16.8B pipeline; 8.6GW in development)."},
+    {"id": "american_data_centers", "name": "American Data Centers", "ticker": null, "brand_theme": "ai_power_infra",
+     "note": "Trump-led vehicle behind American Bitcoin's formation (the AI/data-center mandate was explicit at inception, before the bitcoin rebrand)."},
+    {"id": "trump_media", "name": "Trump Media & Technology Group", "ticker": "DJT", "brand_theme": "media",
+     "note": "Truth Social; Trump-family majority holder."},
+    {"id": "world_liberty", "name": "World Liberty Financial", "ticker": null, "brand_theme": "crypto",
+     "note": "Trump-family-linked DeFi project; USD1 stablecoin. Private / token — not a listed equity."}
+  ],
+  "edges": [
+    {"src": "eric_trump", "rel": "CONTROLS", "dst": "american_bitcoin", "provenance": "FACT", "confidence": 0.95,
+     "note": "Chief Strategy Officer; ~20% with Don Jr.", "url": "https://www.coindesk.com/markets/2025/05/12/trump-family-backed-american-bitcoin-to-go-public-via-merger-with-gryphon-digital"},
+    {"src": "don_jr", "rel": "CONTROLS", "dst": "american_bitcoin", "provenance": "FACT", "confidence": 0.9,
+     "note": "Co-founder; ~20% with Eric Trump."},
+    {"src": "eric_trump", "rel": "CONTROLS", "dst": "american_data_centers", "provenance": "DISCLOSED", "confidence": 0.8,
+     "note": "Trump-led data-center vehicle behind ABTC's formation."},
+    {"src": "american_data_centers", "rel": "FORMED", "dst": "american_bitcoin", "provenance": "FACT", "confidence": 0.8,
+     "note": "AI/data-center mandate at inception, before the bitcoin rebrand."},
+    {"src": "american_bitcoin", "rel": "OPERATED_BY", "dst": "hut8", "provenance": "FACT", "confidence": 0.95,
+     "note": "Hut 8 is the exclusive infrastructure & operations partner.", "url": "https://www.datacenterdynamics.com/en/news/hut-8s-american-bitcoin-to-go-public-in-gryphon-digital-merger/"},
+    {"src": "hut8", "rel": "HOLDS_STAKE", "dst": "american_bitcoin", "provenance": "FACT", "confidence": 0.95,
+     "note": "~80% majority stake retained post-merger."},
+    {"src": "american_bitcoin", "rel": "MEMBER_OF", "dst": "theme:crypto", "provenance": "FACT", "confidence": 0.9,
+     "note": "Brand / stated identity."},
+    {"src": "hut8", "rel": "MEMBER_OF", "dst": "theme:ai_power_infra", "provenance": "INFERRED", "confidence": 0.85,
+     "note": "The real value engine: AI power/data-center hyperscaler (Anthropic/Fluidstack; $16.8B+ contracted pipeline).", "url": "https://www.coindesk.com/business/2026/05/06/hut-8-shares-jump-nearly-30-on-news-of-usd9-8-billion-ai-data-center-lease"},
+    {"src": "eric_trump", "rel": "CONTROLS", "dst": "trump_media", "provenance": "FACT", "confidence": 0.85},
+    {"src": "trump_media", "rel": "MEMBER_OF", "dst": "theme:media", "provenance": "FACT", "confidence": 0.8},
+    {"src": "eric_trump", "rel": "LINKED_TO", "dst": "world_liberty", "provenance": "DISCLOSED", "confidence": 0.65},
+    {"src": "world_liberty", "rel": "MEMBER_OF", "dst": "theme:crypto", "provenance": "DISCLOSED", "confidence": 0.7}
+  ]
+}

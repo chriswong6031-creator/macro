@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
-from engine import altdata  # noqa: E402
+from engine import altdata, altdata_alerts, altdata_ledger, altdata_signals  # noqa: E402
+from engine.trumpflow import graph as trumpflow_graph  # noqa: E402
 from lib import config  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -29,13 +30,34 @@ def main() -> int:
         log.warning("alt-data feed failed — skipping (additive): %s", e)
         return 0
 
+    # Per-ticker substrate (score/narrative/model layers read this) + the Alert Center
+    # narrative hook (change-detected convergence alerts). Both additive/non-fatal.
+    alerts, track, latent = [], {}, {}
+    try:
+        by_ticker = altdata_signals.build(feed)
+        altdata_alerts.rebuild(by_ticker)
+        alerts = altdata_alerts.recent(days=30)
+        # falsifiable ledger: log convergence theses vs SPY + grade matured ones
+        track = altdata_ledger.rebuild(by_ticker) or {}
+        # optional gated LLM extractor — grows the graph w/ candidate edges from news
+        # (default off; needs DEEPSEEK_API_KEY). No-op + non-fatal otherwise.
+        try:
+            from engine.trumpflow import extract as trumpflow_extract
+            trumpflow_extract.run()
+        except Exception as e:  # noqa: BLE001
+            log.warning("trumpflow extractor skipped (%s)", e)
+        # latent-stake entity graph (the deals Quiver can't see), cross-ref'd w/ alt-data
+        latent = trumpflow_graph.build_view(by_ticker) or {}
+    except Exception as e:  # noqa: BLE001
+        log.warning("alt-data signals/alerts/ledger/graph step failed (non-fatal): %s", e)
+
     site = config.ROOT / "site"
     site.mkdir(exist_ok=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     try:
         html = env.get_template("alt_data.html.j2").render(
-            feed=feed, generated_utc=built,
+            feed=feed, alerts=alerts, track=track, latent=latent, generated_utc=built,
             active_section="research", active_page="alt_data",
         )
     except Exception as e:  # noqa: BLE001

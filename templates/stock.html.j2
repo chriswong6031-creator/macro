@@ -68,6 +68,10 @@
   .ms-chip.ms-negative { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .ms-chip.ms-tier-low { color:var(--muted); }
   .macro-sens .ms-cav { margin:6px 0 0; font-size:11px; color:var(--muted); font-style:italic; }
+  /* alt-data convergence chip reuses .macro-sens chrome; tier sets the accent */
+  .macro-sens.ad-tier-high { border-left-color:#e0607a; }
+  .macro-sens.ad-tier-medium { border-left-color:#5b8def; }
+  .ms-chip.ad-score { font-weight:700; color:#5b8def; border-color:color-mix(in srgb,#5b8def 40%,transparent); }
 
   /* DannyTrades CONTRARIAN read (display-only) — extension flag + whale-fade. Border by
      the contrarian verdict: fade=caution (red), bounce=opportunity (green). */
@@ -428,6 +432,7 @@
       <p id="r_early" class="early" style="display:none"></p>
       <p id="r_macro" class="macro-caution" style="display:none"></p>
       <div id="r_macrosens" class="macro-sens" style="display:none"></div>
+      <div id="r_altdata" class="macro-sens" style="display:none"></div>
       <div id="r_dtcontra" class="dt-contra" style="display:none"></div>
       <ul id="r_points" class="points"></ul>
       <div id="r_cyclebox" class="cyclebox"></div>
@@ -806,6 +811,30 @@
       '<div class="muted" style="font-size:12px;margin-top:5px">' +
         esc(lz(ms.detail.en, ms.detail.zh)) + '</div>' +
       '<div class="ms-cav">' + esc(lz(ms.caveat.en, ms.caveat.zh)) + '</div>';
+    box.style.display = 'block';
+  }
+
+  // Alt-data convergence chip (engine/altdata_signals.chip) — politician / insider /
+  // government-contract / Trump flow lit on this name. Display-only, never scored.
+  function renderAltData(d) {
+    var box = el('r_altdata'), a = d.altdata;
+    if (!box) return;
+    if (!a) { box.style.display = 'none'; return; }
+    box.className = 'macro-sens ad-tier-' + a.tier;
+    var ttl = lang() === 'zh' ? '替代数据' : 'Alternative data';
+    var chips = (a.channels || []).map(function (c) {
+      return '<span class="ms-chip">' + esc(lz(c.en, c.zh)) + '</span>'; });
+    if (a.score >= 2) {
+      chips.unshift('<span class="ms-chip ad-score">' + a.score + ' ' +
+        (lang() === 'zh' ? '通道' : 'signals') + '</span>');
+    }
+    box.innerHTML =
+      '<div class="ms-head"><span class="ms-ttl">' + ttl + '</span>' +
+        esc(lz(a.headline.en, a.headline.zh)) + (a.trump_linked ? ' 🟥' : '') + '</div>' +
+      '<div class="ms-chips">' + chips.join('') + '</div>' +
+      '<div class="muted" style="font-size:12px;margin-top:5px">' +
+        esc(lz(a.detail.en, a.detail.zh)) + '</div>' +
+      '<div class="ms-cav">' + esc(lz(a.caveat.en, a.caveat.zh)) + '</div>';
     box.style.display = 'block';
   }
 
@@ -1684,6 +1713,7 @@
     if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
     else { macro.style.display = 'none'; }
     renderMacroSens(d);
+    renderAltData(d);
     renderDtContra(d);
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
@@ -1743,7 +1773,7 @@
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
-    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
+    ['r_eq', 'r_bc', 'r_age', 'r_early', 'r_macro', 'r_macrosens', 'r_altdata', 'r_dtcontra', 'r_archetype', 'r_glance', 'r_afbtn', 'panel_mtf', 'panel_cal']
       .forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = 'none'; });
     if (afCtl) afCtl.close();
     hideFundamentals();

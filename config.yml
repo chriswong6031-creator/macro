@@ -22,6 +22,13 @@ quiver:
   base_url: https://api.quiverquant.com
   timeout: 60
   retries: 3
+
+# TrumpFlow latent-stake entity graph. The graph is deterministic (curated
+# data/trumpflow/intel.json). `extract` gates the OPTIONAL LLM edge-extractor
+# (engine/trumpflow/extract.py) that proposes candidate edges from the Quiver news feed
+# — default OFF so it never incurs LLM cost without opt-in; needs DEEPSEEK_API_KEY.
+trumpflow:
+  extract: false
 fred:
   # group -> {series_id: column_name}. Stored one parquet per series under data/fred/.
   api_url: https://api.stlouisfed.org/fred/series/observations

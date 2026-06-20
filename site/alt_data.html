@@ -11,6 +11,7 @@
   /* ---------- shared Research-Reports chrome ---------- */
   * { box-sizing:border-box; }
   body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
   a { color:var(--link); text-decoration:none; }
   .wrap { max-width:1060px; margin:0 auto; }
   /* unambiguous move colours (NOT tied to the zh red=up swap) */
@@ -74,13 +75,14 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
-        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
         <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
       </div>
     </div>
@@ -89,8 +91,8 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
-        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
       </div>
     </div>
@@ -221,6 +223,116 @@
   </div>
   
 </div>
+
+
+
+<div class="ad-card span2">
+  <h2>🕵️ <span class="l-en">Latent stakes & entity graph</span><span class="l-zh">潜在持股与实体图谱</span>
+      <span class="mut2" style="font-weight:400;font-size:12px">— <span class="l-en">the deals Quiver cannot see — family vehicles, equity-for-partnership, pre-IPO</span><span class="l-zh">Quiver看不到的交易——家族载体、以股权换合作、上市前</span></span></h2>
+
+  
+  <div class="mut2" style="font-size:11.5px;margin-bottom:8px"><span class="l-en">Label mismatch — branded one theme, value accrues to another:</span><span class="l-zh">标签错配——表面属于某主题，价值实归另一主题：</span></div>
+  <div class="conv">
+    
+    <div class="conv-item" style="border-color:#e0607a55">
+      <div class="top"><span class="tk">ABTC</span><span class="ch trump">→ HUT</span></div>
+      <div style="font-size:12.5px;margin-bottom:4px"><s class="mut2">Crypto / digital assets</s> → <b>AI power &amp; data-center infrastructure</b></div>
+      <div class="mut2" style="font-size:11px"><span class="l-en">via</span><span class="l-zh">经由</span> Hut 8 Corp · Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthrop</div>
+    </div>
+    
+  </div>
+  
+
+  
+  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px"><span class="l-en">Trump → theme paths (the early-detection chain):</span><span class="l-zh">特朗普 → 主题路径（早期发现链）：</span></div>
+  <table class="ad"><thead><tr><th><span class="l-en">Chain</span><span class="l-zh">链路</span></th><th><span class="l-en">Proxy</span><span class="l-zh">代理</span></th><th class="num"><span class="l-en">Conf</span><span class="l-zh">置信</span></th></tr></thead><tbody>
+  
+    <tr><td>Eric Trump <span class="mut2">→</span> American Bitcoin <span class="mut2">→</span> Crypto / digital assets</td>
+        <td class="tk">ABTC</td><td class="num">0.9</td></tr>
+  
+    <tr><td>Donald Trump Jr. <span class="mut2">→</span> American Bitcoin <span class="mut2">→</span> Crypto / digital assets</td>
+        <td class="tk">ABTC</td><td class="num">0.9</td></tr>
+  
+    <tr><td>Eric Trump <span class="mut2">→</span> American Bitcoin <span class="mut2">→</span> Hut 8 Corp <span class="mut2">→</span> AI power &amp; data-center infrastructure</td>
+        <td class="tk">HUT</td><td class="num">0.85</td></tr>
+  
+    <tr><td>Donald Trump Jr. <span class="mut2">→</span> American Bitcoin <span class="mut2">→</span> Hut 8 Corp <span class="mut2">→</span> AI power &amp; data-center infrastructure</td>
+        <td class="tk">HUT</td><td class="num">0.85</td></tr>
+  
+    <tr><td>Eric Trump <span class="mut2">→</span> Trump Media &amp; Technology Group <span class="mut2">→</span> Media &amp; social</td>
+        <td class="tk">DJT</td><td class="num">0.8</td></tr>
+  
+  </tbody></table>
+  
+
+  
+  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px"><span class="l-en">Watch — graph tickers cross-referenced with live alt-data:</span><span class="l-zh">关注——图谱标的与实时替代数据交叉验证：</span></div>
+  <table class="ad"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th><span class="l-en">Name</span><span class="l-zh">名称</span></th><th><span class="l-en">Themes</span><span class="l-zh">主题</span></th><th><span class="l-en">Trump</span><span class="l-zh">特朗普</span></th><th><span class="l-en">Alt-data</span><span class="l-zh">替代数据</span></th></tr></thead><tbody>
+  
+    <tr><td class="tk">ABTC</td><td class="mut2">American Bitcoin</td>
+        <td><span class="ch">Crypto / digital assets</span> </td>
+        <td class="mut2">Don Jr, Eric</td>
+        <td><span class="mut2">—</span></td></tr>
+  
+    <tr><td class="tk">HUT</td><td class="mut2">Hut 8 Corp</td>
+        <td><span class="ch">AI power &amp; data-center infrastructure</span> </td>
+        <td class="mut2">Don Jr, Eric</td>
+        <td><span class="mut2">—</span></td></tr>
+  
+    <tr><td class="tk">DJT</td><td class="mut2">Trump Media &amp; Technolo</td>
+        <td><span class="ch">Media &amp; social</span> </td>
+        <td class="mut2">Eric</td>
+        <td><span class="mut2">—</span></td></tr>
+  
+  </tbody></table>
+  
+
+  
+  <p class="mut2" style="font-size:11px;margin-top:10px"><span class="l-en">Curated public-record graph + an optional gated LLM extractor. Worked example: American Bitcoin is branded a bitcoin company, but ~80% is owned and operated by Hut 8 — an AI-power-infrastructure hyperscaler — so the real thesis was the equity stake in a future hyperscaler, not the bitcoin narrative. Display-only.</span><span class="l-zh">基于公开记录的人工图谱 + 可选的受控LLM抽取器。示例：American Bitcoin 表面是比特币公司，但约80%由 Hut 8 持有并运营——一家AI电力基础设施超大规模厂商——真正的逻辑是对未来超大规模厂商的股权，而非比特币叙事。仅供展示。</span></p>
+</div>
+
+
+
+
+<div class="ad-card span2">
+  <h2>🔔 <span class="l-en">Live alerts</span><span class="l-zh">实时警报</span>
+      <span class="mut2" style="font-weight:400;font-size:12px">— <span class="l-en">also surfaced in the</span><span class="l-zh">同时显示于</span> <a href="alerts.html"><span class="l-en">Alert Center</span><span class="l-zh">警报中心</span></a></span></h2>
+  <table class="ad"><tbody>
+  
+    <tr><td style="white-space:nowrap"><span class="chip tag-event">high</span></td>
+        <td><span class="l-en">🔗 2-channel convergence on CARR (Trump-linked)</span><span class="l-zh">🔗 CARR 2通道汇聚（特朗普关联）</span>
+            <div class="mut2" style="font-size:10.5px">2026-06-20</div></td></tr>
+  
+    <tr><td style="white-space:nowrap"><span class="chip tag-event">high</span></td>
+        <td><span class="l-en">🔗 2-channel convergence on EFX (Trump-linked)</span><span class="l-zh">🔗 EFX 2通道汇聚（特朗普关联）</span>
+            <div class="mut2" style="font-size:10.5px">2026-06-20</div></td></tr>
+  
+    <tr><td style="white-space:nowrap"><span class="chip ">medium</span></td>
+        <td><span class="l-en">🔗 2-channel convergence on NVDA</span><span class="l-zh">🔗 NVDA 2通道汇聚</span>
+            <div class="mut2" style="font-size:10.5px">2026-06-20</div></td></tr>
+  
+    <tr><td style="white-space:nowrap"><span class="chip tag-event">high</span></td>
+        <td><span class="l-en">🔗 2-channel convergence on META (Trump-linked)</span><span class="l-zh">🔗 META 2通道汇聚（特朗普关联）</span>
+            <div class="mut2" style="font-size:10.5px">2026-06-20</div></td></tr>
+  
+  </tbody></table>
+</div>
+
+
+
+
+<div class="ad-card span2">
+  <h2>📈 <span class="l-en">Signals scored vs SPY</span><span class="l-zh">信号对标普评分</span>
+      <span class="mut2" style="font-weight:400;font-size:12px">— <span class="l-en">convergence held accountable, not assumed</span><span class="l-zh">汇聚信号需问责，而非假定</span></span></h2>
+  <div class="ad-meta">
+    <span class="chip"><b>0</b>&nbsp;<span class="l-en">scored</span><span class="l-zh">已评分</span></span>
+    <span class="chip"><b>4</b>&nbsp;<span class="l-en">open</span><span class="l-zh">进行中</span></span>
+    
+  </div>
+  <p class="mut2" style="font-size:11.5px;margin:8px 0"><span class="l-en">No theses scored yet — the track record begins once the first check-by dates pass. Keep conviction modest until it does.</span><span class="l-zh">尚无判断被评分 —— 待首批核查日到期后开始累积战绩；在此之前置信保持克制。</span></p>
+  
+</div>
+
 
 <div class="ad-grid">
   

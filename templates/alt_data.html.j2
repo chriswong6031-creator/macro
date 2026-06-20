@@ -72,6 +72,93 @@
   {% else %}<p class="mut2">{{ t('No multi-channel convergence in the current window.', '当前窗口无多渠道汇聚。') }}</p>{% endif %}
 </div>
 
+{# ---------------- Latent stakes & entity graph (the ABTC catch) ---------------- #}
+{% if latent and (latent.mismatches or latent.paths) %}
+<div class="ad-card span2">
+  <h2>🕵️ {{ t('Latent stakes & entity graph', '潜在持股与实体图谱') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('the deals Quiver cannot see — family vehicles, equity-for-partnership, pre-IPO', 'Quiver看不到的交易——家族载体、以股权换合作、上市前') }}</span></h2>
+
+  {% if latent.mismatches %}
+  <div class="mut2" style="font-size:11.5px;margin-bottom:8px">{{ t('Label mismatch — branded one theme, value accrues to another:', '标签错配——表面属于某主题，价值实归另一主题：') }}</div>
+  <div class="conv">
+    {% for m in latent.mismatches %}
+    <div class="conv-item" style="border-color:#e0607a55">
+      <div class="top"><span class="tk">{{ m.entity_ticker or m.entity }}</span><span class="ch trump">→ {{ m.repointed_ticker }}</span></div>
+      <div style="font-size:12.5px;margin-bottom:4px"><s class="mut2">{{ m.brand_theme.en }}</s> → <b>{{ m.real_theme.en }}</b></div>
+      <div class="mut2" style="font-size:11px">{{ t('via','经由') }} {{ m.parent }} · {{ (m.note or '')[:130] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if latent.paths %}
+  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">{{ t('Trump → theme paths (the early-detection chain):', '特朗普 → 主题路径（早期发现链）：') }}</div>
+  <table class="ad"><thead><tr><th>{{ t('Chain','链路') }}</th><th>{{ t('Proxy','代理') }}</th><th class="num">{{ t('Conf','置信') }}</th></tr></thead><tbody>
+  {% for p in latent.paths %}
+    <tr><td>{{ p.hops[0].src_name }}{% for h in p.hops %} <span class="mut2">→</span> {{ h.dst_name }}{% endfor %}</td>
+        <td class="tk">{{ p.endpoint_ticker or '—' }}</td><td class="num">{{ p.min_confidence }}</td></tr>
+  {% endfor %}
+  </tbody></table>
+  {% endif %}
+
+  {% if latent.watch %}
+  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">{{ t('Watch — graph tickers cross-referenced with live alt-data:', '关注——图谱标的与实时替代数据交叉验证：') }}</div>
+  <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Name','名称') }}</th><th>{{ t('Themes','主题') }}</th><th>{{ t('Trump','特朗普') }}</th><th>{{ t('Alt-data','替代数据') }}</th></tr></thead><tbody>
+  {% for w in latent.watch %}
+    <tr><td class="tk">{{ w.ticker }}</td><td class="mut2">{{ (w.name or '')[:22] }}</td>
+        <td>{% for th in w.themes %}<span class="ch">{{ th.en }}</span> {% endfor %}</td>
+        <td class="mut2">{{ w.trump_people|join(', ')|replace('Donald Trump Jr.','Don Jr')|replace('Eric Trump','Eric') }}</td>
+        <td>{% if w.alt_corroborated %}<span class="r-pos">✓ {{ w.alt_score }}</span>{% else %}<span class="mut2">—</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody></table>
+  {% endif %}
+
+  {% if latent.n_candidates %}<div class="mut2" style="font-size:11px;margin-top:8px">🤖 {{ latent.n_candidates }} {{ t('LLM-extracted candidate edge(s) pending human review', 'LLM抽取的候选关系待人工审核') }}</div>{% endif %}
+  <p class="mut2" style="font-size:11px;margin-top:10px">{{ t(
+    'Curated public-record graph + an optional gated LLM extractor. Worked example: American Bitcoin is branded a bitcoin company, but ~80% is owned and operated by Hut 8 — an AI-power-infrastructure hyperscaler — so the real thesis was the equity stake in a future hyperscaler, not the bitcoin narrative. Display-only.',
+    '基于公开记录的人工图谱 + 可选的受控LLM抽取器。示例：American Bitcoin 表面是比特币公司，但约80%由 Hut 8 持有并运营——一家AI电力基础设施超大规模厂商——真正的逻辑是对未来超大规模厂商的股权，而非比特币叙事。仅供展示。') }}</p>
+</div>
+{% endif %}
+
+{# ---------------- Live alerts (flow into the Alert Center) ---------------- #}
+{% if alerts %}
+<div class="ad-card span2">
+  <h2>🔔 {{ t('Live alerts', '实时警报') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('also surfaced in the', '同时显示于') }} <a href="alerts.html">{{ t('Alert Center', '警报中心') }}</a></span></h2>
+  <table class="ad"><tbody>
+  {% for a in alerts[:10] %}
+    <tr><td style="white-space:nowrap"><span class="chip {{ 'tag-event' if a.severity=='high' else '' }}">{{ a.severity }}</span></td>
+        <td><span class="l-en">{{ a.headline }}</span><span class="l-zh">{{ a.headline_zh }}</span>
+            <div class="mut2" style="font-size:10.5px">{{ a.ts[:10] }}</div></td></tr>
+  {% endfor %}
+  </tbody></table>
+</div>
+{% endif %}
+
+{# ---------------- Falsifiable ledger: convergence scored vs SPY ---------------- #}
+{% if track %}
+<div class="ad-card span2">
+  <h2>📈 {{ t('Signals scored vs SPY', '信号对标普评分') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('convergence held accountable, not assumed', '汇聚信号需问责，而非假定') }}</span></h2>
+  <div class="ad-meta">
+    <span class="chip"><b>{{ track.scored_total or 0 }}</b>&nbsp;{{ t('scored', '已评分') }}</span>
+    <span class="chip"><b>{{ track.open or 0 }}</b>&nbsp;{{ t('open', '进行中') }}</span>
+    {% if track.overall and track.overall.n %}<span class="chip tag-equities"><b>{{ track.overall.hit_rate }}</b>&nbsp;{{ t('hit rate', '命中率') }}</span>{% endif %}
+  </div>
+  <p class="mut2" style="font-size:11.5px;margin:8px 0"><span class="l-en">{{ track.calibration_note }}</span><span class="l-zh">{{ track.calibration_note_zh or track.calibration_note }}</span></p>
+  {% if track.recent %}
+  <table class="ad"><thead><tr><th>{{ t('Thesis','论点') }}</th><th>{{ t('Lean','倾向') }}</th><th>{{ t('Outcome','结果') }}</th><th class="num">{{ t('vs SPY','对标普') }}</th><th class="num">{{ t('Check by','核查日') }}</th></tr></thead><tbody>
+  {% for r in track.recent[:8] %}
+    <tr><td class="tk">{{ r.subject }}</td><td class="mut2">{{ r.lean }}</td>
+        <td class="{{ 'r-pos' if r.outcome=='hit' else 'r-neg' if r.outcome=='miss' else 'mut2' }}">{{ r.outcome }}</td>
+        <td class="num">{% if r.realized is not none %}{{ '%+.1f%%'|format(r.realized*100) }}{% else %}—{% endif %}</td>
+        <td class="num mut2">{{ r.check_by }}</td></tr>
+  {% endfor %}
+  </tbody></table>
+  {% endif %}
+</div>
+{% endif %}
+
 <div class="ad-grid">
   {# ---------------- Donald Trump trades ---------------- #}
   <div class="ad-card">

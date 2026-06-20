@@ -1,14 +1,35 @@
 """Tests for the Quiver alt-data collector + engine (no network)."""
 from __future__ import annotations
 
+import json
 import math
+from datetime import date
 
 import pandas as pd
 import pytest
 
 from collectors import quiver
-from engine import altdata
+from engine import altdata, altdata_alerts, altdata_ledger, altdata_signals
+from engine.trumpflow import graph as tfgraph
 from lib import config
+
+
+_SYNTH_INTEL = {
+    "as_of": "2026-06-19",
+    "people": [{"id": "p1", "name": "Eric Trump", "name_zh": "埃里克"}],
+    "themes": {"crypto": {"en": "Crypto", "zh": "加密"}, "ai": {"en": "AI infra", "zh": "AI基建"}},
+    "entities": [
+        {"id": "abtc", "name": "American Bitcoin", "ticker": "ABTC", "brand_theme": "crypto"},
+        {"id": "hut", "name": "Hut 8", "ticker": "HUT", "brand_theme": "crypto"},
+    ],
+    "edges": [
+        {"src": "p1", "rel": "CONTROLS", "dst": "abtc", "confidence": 0.95, "provenance": "FACT"},
+        {"src": "abtc", "rel": "OPERATED_BY", "dst": "hut", "confidence": 0.95, "provenance": "FACT"},
+        {"src": "hut", "rel": "HOLDS_STAKE", "dst": "abtc", "confidence": 0.95, "provenance": "FACT"},
+        {"src": "abtc", "rel": "MEMBER_OF", "dst": "theme:crypto", "confidence": 0.9, "provenance": "FACT"},
+        {"src": "hut", "rel": "MEMBER_OF", "dst": "theme:ai", "confidence": 0.85, "provenance": "INFERRED"},
+    ],
+}
 
 
 # --------------------------------------------------------------- coercion helpers
@@ -119,3 +140,157 @@ def test_convergence_ignores_single_channel():
                "gov_contracts": [], "trump": [], "lobbying": [], "insiders": {"buys": []},
                "offexchange": [], "cnbc": [], "inst_13f": {"adds": []}}
     assert altdata.convergence(signals) == []
+
+
+# --------------------------------------------------------------- per-ticker substrate
+def test_by_ticker_inversion(monkeypatch):
+    monkeypatch.setattr(altdata_signals, "_write", lambda out: None)
+    feed = {"as_of": "2026-06-19", "signals": {
+        "political": {"buys": [{"ticker": "EFX", "net": 2, "members": 2}]},
+        "gov_contracts": [{"ticker": "EFX", "total_usd": 1_000_000}],
+        "trump": [{"ticker": "EFX", "side": "buy"},
+                  {"ticker": "BKNG", "side": "buy"}, {"ticker": "BKNG", "side": "sell"}],
+        "lobbying": [], "insiders": {"buys": []}, "offexchange": [],
+        "inst_13f": {"adds": []}, "cnbc": [], "corporate_donors": [{"ticker": "EFX", "total_usd": 50000}],
+    }}
+    out = altdata_signals.build(feed)
+    efx = out["tickers"]["EFX"]
+    # congress + gov_contract + trump = 3 real channels; the donor row is recorded but
+    # must NOT count toward the score (else it would be 4)
+    assert efx["convergence_score"] == 3
+    assert set(efx["channels"]) == {"congress_buy", "gov_contract", "trump"}
+    assert efx["trump_linked"] is True
+    assert efx["donor_usd"] == 50000
+    # a Trump buy+sell round-trip on one name is ONE channel, not two
+    bkng = out["tickers"]["BKNG"]
+    assert bkng["convergence_score"] == 1 and bkng["channels"] == ["trump"]
+
+
+# --------------------------------------------------------------- alert change-detection
+def test_alerts_fire_on_enter_only(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    bt = {"as_of": "2026-06-19", "tickers": {
+        "EFX": {"convergence_score": 2, "channels": ["gov_contract", "trump"], "trump_linked": True},
+        "NVDA": {"convergence_score": 2, "channels": ["13f_add", "darkpool_accum"], "trump_linked": False},
+        "AAA": {"convergence_score": 1, "channels": ["congress_buy"], "trump_linked": False},
+    }}
+    fired1 = altdata_alerts.rebuild(bt)
+    assert len(fired1) == 2                                    # EFX + NVDA; AAA below MIN_SCORE
+    assert any(e["severity"] == "high" and "EFX" in e["headline"] for e in fired1)  # trump-linked => high
+    assert any(e["severity"] == "medium" and "NVDA" in e["headline"] for e in fired1)
+
+    assert altdata_alerts.rebuild(bt) == []                   # unchanged -> nothing new
+
+    bt2 = {"as_of": "2026-06-19", "tickers": dict(bt["tickers"])}
+    bt2["tickers"]["NVDA"] = {"convergence_score": 3, "channels": ["13f_add", "darkpool_accum", "congress_buy"], "trump_linked": False}
+    fired3 = altdata_alerts.rebuild(bt2)                       # score increase -> re-fires
+    assert len(fired3) == 1 and "NVDA" in fired3[0]["headline"]
+
+
+# --------------------------------------------------------------- falsifiable ledger
+def test_ledger_logs_scorable_and_scores(tmp_path, monkeypatch):
+    import json
+    idx = pd.date_range("2026-01-01", "2026-05-01", freq="B")
+    n = len(idx)
+
+    def fake_closes(tk, root):  # WIN beats SPY; LOSE lags; PRIV has no price
+        if tk == "SPY":
+            return pd.Series([100 * (1 + 0.05 * i / n) for i in range(n)], index=idx)
+        if tk == "WIN":
+            return pd.Series([50 * (1 + 0.20 * i / n) for i in range(n)], index=idx)
+        if tk == "LOSE":
+            return pd.Series([50 * (1 - 0.15 * i / n) for i in range(n)], index=idx)
+        return None
+    # one patch covers build (via _level_asof) AND score (via the scorer's reads)
+    monkeypatch.setattr(altdata_ledger._desk, "_close_series", fake_closes)
+
+    bt = {"as_of": "2026-01-02", "tickers": {
+        "WIN": {"convergence_score": 2, "channels": ["congress_buy", "trump"], "trump_linked": True},
+        "LOSE": {"convergence_score": 2, "channels": ["insider_buy", "gov_contract"], "trump_linked": False},
+        "PRIV": {"convergence_score": 3, "channels": ["a", "b", "c"], "trump_linked": False},
+    }}
+    new = altdata_ledger.build_theses(bt, root=tmp_path, today=date(2026, 1, 2))
+    assert {r["ticker"] for r in new} == {"WIN", "LOSE"}       # PRIV unscorable -> skipped
+    assert all(r["lean"] == "overweight" and r["conviction"] == "low" for r in new)
+
+    # vintage dedupe — same day, windows still active -> nothing new
+    assert altdata_ledger.build_theses(bt, root=tmp_path, today=date(2026, 1, 2)) == []
+
+    # score once the window has elapsed (check_by ~2026-04-03; data runs to 2026-05-01)
+    track = altdata_ledger.score(root=tmp_path, today=date(2026, 5, 2))
+    assert track["scored_total"] == 2
+    scored = [json.loads(l) for l in (tmp_path / "data" / "altdata" / "scored.jsonl").read_text().splitlines()]
+    outcome = {r["id"].split("-")[-2]: r["outcome"] for r in scored}
+    assert outcome["WIN"] == "hit" and outcome["LOSE"] == "miss"
+    assert track["overall"]["hit_rate"] == 0.5
+
+
+# --------------------------------------------------------------- per-stock chip
+def test_chip_shaping():
+    c = altdata_signals.chip({
+        "ticker": "EFX", "channels": ["gov_contract", "trump"], "convergence_score": 2,
+        "trump_linked": True, "gov_contract_usd_30d": 74_700_004.0, "trump_side": "buy"})
+    assert c["tier"] == "high"                       # convergent + trump-linked
+    assert len(c["channels"]) == 2
+    assert "convergence" in c["headline"]["en"]
+    assert c["trump_linked"] is True
+    assert "gov contracts" in c["detail"]["en"].lower()
+    assert all(k in c for k in ("headline", "detail", "caveat"))  # bilingual chip shape
+    # single-channel name -> still a chip, medium/low tier
+    c1 = altdata_signals.chip({"channels": ["congress_buy"], "convergence_score": 1, "congress_members": 4})
+    assert c1["tier"] == "low" and c1["score"] == 1
+    # nothing to show -> None
+    assert altdata_signals.chip({"channels": []}) is None
+    assert altdata_signals.chip(None) is None
+
+
+# --------------------------------------------------------------- latent-stake graph
+def test_graph_catches_label_mismatch():
+    mm = tfgraph.label_mismatches(_SYNTH_INTEL)
+    assert len(mm) == 1                                       # deduped (parent reached 2 ways)
+    m = mm[0]
+    assert m["entity_ticker"] == "ABTC"                       # branded crypto
+    assert m["real_theme"]["id"] == "ai"                      # value accrues to AI infra
+    assert m["repointed_ticker"] == "HUT"                     # flip the subject to the parent
+
+
+def test_graph_short_path_to_real_theme():
+    paths = tfgraph.short_paths(_SYNTH_INTEL)
+    ai = [p for p in paths if p["theme"]["id"] == "ai"]
+    assert ai, "expected an Eric Trump -> ... -> AI infra path"
+    assert ai[0]["endpoint_ticker"] == "HUT"                  # the investable proxy is the parent
+
+
+def test_graph_view_cross_references_altdata(monkeypatch):
+    monkeypatch.setattr(tfgraph, "load_intel", lambda root=None: _SYNTH_INTEL)
+    monkeypatch.setattr(tfgraph, "_write", lambda v: None)
+    bt = {"tickers": {"HUT": {"convergence_score": 2, "channels": ["gov_contract", "trump"]}}}
+    v = tfgraph.build_view(bt)
+    hut = next(w for w in v["watch"] if w["ticker"] == "HUT")
+    assert hut["alt_corroborated"] is True and hut["alt_score"] == 2
+    abtc = next(w for w in v["watch"] if w["ticker"] == "ABTC")
+    assert abtc["alt_corroborated"] is False                  # not in the live alt-data set
+
+
+# --------------------------------------------------------------- LLM extractor (gate)
+def test_extractor_citation_gate():
+    from engine.trumpflow import extract
+    source = ("Eric Trump's American Bitcoin is majority-owned by Hut 8, which retains "
+              "an 80% stake and serves as its exclusive infrastructure partner.")
+    reply = json.dumps({"edges": [
+        # valid — citation is verbatim in the source
+        {"src": "Hut 8", "rel": "HOLDS_STAKE", "dst": "American Bitcoin",
+         "citation": "retains an 80% stake"},
+        # hallucinated citation — not in the source -> must be DROPPED
+        {"src": "Eric Trump", "rel": "CONTROLS", "dst": "World Liberty",
+         "citation": "Eric Trump owns a controlling interest in World Liberty Financial"},
+        # invalid rel -> dropped
+        {"src": "Hut 8", "rel": "BANANA", "dst": "American Bitcoin", "citation": "Hut 8"},
+    ]})
+    edges = extract._extract_edges(source, reply)
+    assert len(edges) == 1
+    assert edges[0]["rel"] == "HOLDS_STAKE" and edges[0]["dst"] == "American Bitcoin"
+    assert edges[0]["provenance"] == "INFERRED" and edges[0]["status"] == "candidate"
+    # garbage reply / no key path -> empty, never raises
+    assert extract._extract_edges(source, "not json at all") == []
+    assert extract._extract_edges(source, None) == []
