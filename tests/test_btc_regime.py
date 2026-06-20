@@ -74,6 +74,20 @@ def test_exposure_band_monotone():
     assert btc_regime.exposure_band(None) is None
 
 
+def test_curve_fed_prescored_passthrough():
+    """curve_score/fed_score are emitted by btc_signals already in {-2..+2}; btc_regime
+    must pass them through verbatim (oriented), NOT re-z-score them."""
+    d = _synth()
+    d["curve_score"] = -2.0          # bear-flattening every day
+    d["fed_score"] = 1.0             # cutting every day
+    out = btc_regime.compute(d)
+    t3 = [f for f in out["factors"] if f["tier"] == "T3" and f["present"]]
+    assert {f["key"] for f in t3} == {"curve", "fed"}
+    curve = next(f for f in t3 if f["key"] == "curve")
+    fed = next(f for f in t3 if f["key"] == "fed")
+    assert curve["score"] == -2 and fed["score"] == 1   # verbatim, want=+1 keeps sign
+
+
 def test_missing_factor_renormalizes():
     d = _synth().drop(columns=["dxy", "real_yield"])
     out = btc_regime.compute(d)

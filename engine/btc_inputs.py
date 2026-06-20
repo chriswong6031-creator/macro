@@ -123,6 +123,12 @@ def load_all() -> dict[str, pd.Series | pd.DataFrame | None]:
         "hy_oas": _col("fred", "BAMLH0A0HYM2"),   # high-yield credit spread (%)
         "vix": _col("fred", "VIXCLS"),
         "dxy": _col("yahoo", "DX-Y.NYB", "close"),
+        # Tier-3 curve / Fed-path overlay (all FRED, already collected — config maps
+        # DGS2/DGS10/T10Y2Y/DFF). Used to score the 4 yield-curve regimes + Fed direction.
+        "us2y": _col("fred", "DGS2"),             # 2y nominal yield (%) — front-end
+        "us10y": _col("fred", "DGS10"),           # 10y nominal yield (%) — long-end
+        "spread_2s10s": _col("fred", "T10Y2Y"),   # 10y-2y term spread (%)
+        "fed_funds": _col("fred", "DFF"),         # effective fed funds rate (%)
         # New-factor hunt: positioning + cross-asset (all on disk already)
         "cot_net_pct": _col("cot", "cot_bitcoin", "net_spec_pct_oi"),  # CME net-spec % of OI
         "spx": _col("yahoo", "SPY", "close"),
