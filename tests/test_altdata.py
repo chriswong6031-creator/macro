@@ -296,6 +296,34 @@ def test_extractor_citation_gate():
     assert extract._extract_edges(source, None) == []
 
 
+def test_extract_strip_html():
+    from engine.trumpflow import extract
+    html = "<html><body><p>Hut 8 retains an <b>80%</b> stake &amp; more.</p></body></html>"
+    txt = extract._strip_html(html)
+    assert "Hut 8 retains an 80% stake & more." in txt and "<" not in txt
+
+
+def test_extract_run_watermark(tmp_path, monkeypatch):
+    from engine.trumpflow import extract
+    src = "Hut 8 retains an 80% stake in American Bitcoin."
+    reply = json.dumps({"edges": [{"src": "Hut 8", "rel": "HOLDS_STAKE",
+                                   "dst": "American Bitcoin", "citation": "retains an 80% stake"}]})
+    monkeypatch.setattr(extract, "enabled", lambda: True)
+    monkeypatch.setattr(extract._ct, "_client", lambda cfg: object())   # non-None => not gated on key
+    monkeypatch.setattr(extract, "_call", lambda text, cfg: reply)
+    monkeypatch.setattr(extract, "_news_items", lambda root=None, limit=40: [
+        {"text": src, "url": "http://x", "time": "2026-06-01", "source_id": "filing:abc", "source_type": "filing"}])
+    monkeypatch.setattr(extract, "_filing_items", lambda root=None, limit=15: [])
+
+    r1 = extract.run(root=tmp_path)
+    assert r1["extracted"] == 1 and r1["processed"] == 1
+    cands = extract.load_candidates(tmp_path)
+    assert len(cands) == 1 and cands[0]["rel"] == "HOLDS_STAKE" and cands[0]["source_type"] == "filing"
+    # watermarked — the same source is not re-processed on the next run
+    r2 = extract.run(root=tmp_path)
+    assert r2["processed"] == 0 and r2["extracted"] == 0
+
+
 # --------------------------------------------------------------- EDGAR early channel
 def test_edgar_parse():
     from collectors.edgar_trumpflow import EdgarTrumpflowAdapter as A
