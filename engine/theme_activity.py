@@ -55,6 +55,8 @@ SOURCES: list[dict] = [
      "weight": 0.6, "signed": True, "min_base": 0.0, "label_en": "Congress net-buy", "label_zh": "国会净买入"},
     {"name": "lobbying_ramp", "group": "quiver", "series": "lobbying",
      "weight": 0.7, "signed": False, "min_base": 1e5, "label_en": "Lobbying ramp", "label_zh": "游说支出"},
+    {"name": "quiver_patents", "group": "quiver", "series": "patents",
+     "weight": 0.4, "signed": False, "min_base": 1.0, "label_en": "Patents", "label_zh": "专利"},
 ]
 
 
