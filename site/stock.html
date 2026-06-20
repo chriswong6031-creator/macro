@@ -300,6 +300,8 @@
   .dc-chainhead { font-size:12.5px; font-weight:600; margin-top:6px; line-height:1.4; }
   .dc-arrow { color:var(--muted); align-self:center; font-size:12px; }
   .dc-chainread { font-size:12.5px; line-height:1.5; margin-top:2px; }
+  .dc-ledger { font-size:11.5px; font-weight:600; color:var(--g-cold); margin-top:6px;
+               font-variant-numeric:tabular-nums; }
   .dc-cav { color:var(--muted); font-size:11px; line-height:1.45; margin-top:6px;
             border-top:1px dotted var(--line); padding-top:5px; }
   @media (max-width:640px){ .dc-row { grid-template-columns:1fr; gap:6px; } .dc-rl { max-width:none; } }
@@ -965,10 +967,26 @@
       var ser = (dch.series || []).slice(-3).map(function (p) {
         return '<span class="dc-chip">FY' + (p[0] % 100) + ' <span class="dc-cv">$' + p[1] + 'B</span></span>';
       }).join('<span class="dc-arrow">→</span>');
+      // accountability line (leading chains only): this divergence call is logged to
+      // a falsifiable ledger (engine/demand_ledger) and scored forward vs SPY.
+      var led = dch.ledger, ledLine = '';
+      if (led) {
+        if (led.scored > 0) {
+          ledLine = '<div class="dc-ledger">📒 ' + lz('Variant calls scored so far: ','已评分的变体判断：') +
+            led.hits + '/' + led.scored + lz(' hit','命中') +
+            (led.hit_rate != null ? ' (' + Math.round(led.hit_rate * 100) + '%)' : '') +
+            (led.open ? ' · ' + led.open + lz(' open','个未结') : '') + '</div>';
+        } else {
+          ledLine = '<div class="dc-ledger">📒 ' + lz('Being scored forward vs SPY — ','正在对 SPY 前向评分——') +
+            (led.open || 0) + lz(' open variant call(s)','个未结变体判断') +
+            (led.since ? ' ' + lz('since ','自 ') + led.since : '') + '</div>';
+        }
+      }
       t3 = '<div><span class="dc-badge ' + dm.cls + '">' + lz(dm.en, dm.zh) + '</span></div>' +
         '<div class="dc-chainhead">' + esc(lz(dch.headline.en, dch.headline.zh)) + '</div>' +
         '<div class="dc-vals" style="margin:7px 0">' + ser + '</div>' +
         '<div class="dc-chainread">' + esc(lz(dch.read.en, dch.read.zh)) + '</div>' +
+        ledLine +
         '<div class="dc-cav">' + esc(lz(dch.caveat.en, dch.caveat.zh)) + '</div>';
     } else {
       t3 = '<span class="dc-na">' + lz(
