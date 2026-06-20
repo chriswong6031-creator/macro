@@ -93,13 +93,71 @@
       bi("📰 Recent news", "📰 近期新闻") + "</div>" + items + "</div>";
   }
 
+  // additive (Phase 2): the new scored edge axis + the cross-source confirmation legs
+  function edgeColor(e) { return e >= 70 ? "#16a34a" : e >= 45 ? "#e0a030" : "#8b93a1"; }
+  function edgeBadge(f) {
+    if (f.edge_score == null) return "";
+    var e = f.edge_score, col = edgeColor(e);
+    return '<span title="edge score (salience × confirmation × regime − crowding)" ' +
+      'style="margin-left:auto;font-weight:700;font-size:11px;padding:1px 7px;border-radius:7px;' +
+      'background:color-mix(in srgb,' + col + ' 18%,transparent);color:' + col + '">edge ' + e + "</span>";
+  }
+  function confirmChips(f) {
+    var c = f.confirm; if (!c) return "";
+    var out = [];
+    function leg(name, lg) {
+      if (!lg || !lg.present) return;
+      var d = lg.lean > 0 ? "▲" : lg.lean < 0 ? "▼" : "·";
+      var col = lg.lean > 0 ? "#16a34a" : lg.lean < 0 ? "#dc2626" : "#8b93a1";
+      out.push('<span class="dr-chip" style="color:' + col + '">' + name + " " + d + "</span>");
+    }
+    leg(bi("smart $", "聪明钱"), c.alt); leg("ETF", c.flows); leg(bi("options", "期权"), c.options);
+    if (c.crowd && c.crowd.penalty > 0) out.push('<span class="dr-chip" style="color:#e0a030">' + bi("crowd", "拥挤") + " −" + c.crowd.penalty + "</span>");
+    if (f.regime && f.regime.mult != null) out.push('<span class="dr-chip dr-mut">' + bi("regime", "周期") + " ×" + f.regime.mult + "</span>");
+    if (f.decay && f.decay.days_in_state > 1) out.push('<span class="dr-chip dr-mut">' + f.decay.days_in_state + bi("d in state", "天") + "</span>");
+    return out.length ? '<div class="dr-chips" style="margin-top:5px">' + out.join("") + "</div>" : "";
+  }
+
+  // additive (Phase 2): per-NAME divergence table (radar_ticker.json)
+  function tickerRow(x) {
+    var s = st(x.state), e = x.edge_score, col = edgeColor(e), legs = [];
+    if (x.flows && x.flows.present) legs.push("ETF " + (x.flows.lean > 0 ? "▲" : x.flows.lean < 0 ? "▼" : "·"));
+    if (x.options && x.options.present) legs.push("opt " + (x.options.lean > 0 ? "▲" : x.options.lean < 0 ? "▼" : "·"));
+    return '<tr style="border-top:1px solid var(--line)">' +
+      '<td style="padding:5px 8px;font-family:ui-monospace,Menlo,monospace;font-weight:600">' + esc(x.ticker) + "</td>" +
+      '<td><span class="dr-badge ' + s.cls + '" style="font-size:10px">' + bi(s.en, s.zh) + "</span></td>" +
+      '<td style="font-weight:700;color:' + col + '">' + e + "</td>" +
+      "<td>" + (x.signal_score == null ? "—" : x.signal_score) + "</td>" +
+      "<td>" + (x.rs_vs_spy_60d == null ? "—" : (x.rs_vs_spy_60d > 0 ? "+" : "") + x.rs_vs_spy_60d + "%") + "</td>" +
+      '<td class="dr-mut" style="font-size:11px">' + esc(legs.join(" · ")) + "</td></tr>";
+  }
+  window.renderTickerRadar = function (opts) {
+    var base = (opts && opts.base) || "basketdata/";
+    var mount = document.getElementById("radar-ticker"); if (!mount) return;
+    fetchJSON(base + "radar_ticker.json").then(function (d) {
+      if (!d || !d.tickers || !d.tickers.length) { mount.style.display = "none"; return; }
+      var divs = d.tickers.filter(function (x) { return x.state.indexOf("DIVERGENCE") >= 0; });
+      var rows = (divs.length ? divs : d.tickers.slice(0, 12)).slice(0, 18).map(tickerRow).join("");
+      mount.innerHTML =
+        '<h2 style="font-size:16px;margin:18px 0 2px">' + bi("🎯 Per-name divergence", "🎯 个股背离") + "</h2>" +
+        '<div class="dr-mut" style="font-size:12.5px;margin:2px 0 8px">' +
+          bi(d.n_divergences + " names where smart-money activity and price disagree — ranked by edge score (context only).",
+             d.n_divergences + " 个聪明钱活动与价格背离的个股 —— 按 edge 分排序（仅供参考）。") + "</div>" +
+        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px">' +
+        '<thead><tr style="text-align:left;color:var(--muted);font-size:11px">' +
+        '<th style="padding:4px 8px">' + bi("Name", "名称") + "</th><th>" + bi("State", "状态") + "</th><th>edge</th><th>" +
+        bi("signal", "信号") + "</th><th>" + bi("RS 60d", "相对强度") + "</th><th>" + bi("confirm", "确认") + "</th></tr></thead><tbody>" +
+        rows + "</tbody></table></div>";
+    });
+  };
+
   function spotlightCard(f) {
     var s = st(f.state), o = f.observable || {}, c = f.consensus || {};
     var cov = (o.covered || []).slice(0, 8).join(", ") + ((o.covered || []).length > 8 ? "…" : "");
     return '<div class="dr-card ' + s.cls + '">' +
       '<div class="dr-card-h"><span class="dr-badge ' + s.cls + '">' + s.ico + " " + bi(s.en, s.zh) + "</span>" +
       lifePill(f) +
-      '<b class="dr-theme">' + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</b></div>" +
+      '<b class="dr-theme">' + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</b>" + edgeBadge(f) + "</div>" +
       '<div class="dr-note">' + bi(f.note, f.note_zh) + "</div>" +
       srcChips(o) +
       '<div class="dr-chips">' +
@@ -109,7 +167,7 @@
         '<span class="dr-chip">' + bi("price 60d", "价格60日") + " <b>" + relpct(c.rel_60d) + "</b></span>" +
         newsChip(f) +
         '<span class="dr-cov">' + esc(cov) + "</span>" +
-      "</div>" + headlinesBlock(f) + "</div>";
+      "</div>" + confirmChips(f) + headlinesBlock(f) + "</div>";
   }
 
   function tableRow(f) {

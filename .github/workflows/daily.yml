@@ -431,6 +431,18 @@ jobs:
         # alt-data signal into ONE site/intelligence/by_ticker.json the Mastermind bot pulls.
         # Facts side by side, never pre-blended. No keys needed; pure JSON merge; never aborts.
         run: python -m scripts.build_intelligence || echo "intelligence skipped (additive)"
+      - name: radar upgrade (build_radar_plus + IC)
+        # ADDITIVE Phase-2 radar: enrich site/basketdata/radar.json with edge_score +
+        # cross-source confirmation legs (alt/flows/options) + regime + decay (no edits to
+        # the radar kernel), emit site/basketdata/radar_ticker.json (per-name divergence),
+        # accrue the edge-snapshot IC ledger, then re-render radar.html with the mounts.
+        # Runs after build_baskets (radar.json) + build_alt_data + build_intelligence. Resilient.
+        run: |
+          set +e
+          python -m scripts.build_radar_plus > /tmp/radarplus.log 2>&1; tail -4 /tmp/radarplus.log
+          python -m scripts.build_radar_ic   > /tmp/radaric.log   2>&1; tail -3 /tmp/radaric.log
+          python -m scripts.build_radar_page  > /tmp/radarpage.log 2>&1; tail -1 /tmp/radarpage.log
+          exit 0
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
