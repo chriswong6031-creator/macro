@@ -64,6 +64,7 @@ def all_adapters() -> dict:
         ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
+        ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations/mo per curated federally-exposed ticker -> Divergence Radar (engine/radar.py)
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md

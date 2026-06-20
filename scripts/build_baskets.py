@@ -123,6 +123,20 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme add-ons failed: %s", e)
 
+    # 🛰️ DIVERGENCE RADAR (display-only): federal contract spend (collectors.usaspending)
+    # vs each theme's already-priced 60-day relative strength -> per-theme divergence
+    # states + falsifiable watch-hypotheses (data/radar/theses.jsonl, graded later).
+    # Read client-side via site/radar_panel.js (the _radar_panel.html.j2 panel).
+    # Additive — never breaks the page.
+    try:
+        from engine.radar import append_ledger, compute_radar
+        radar = compute_radar(data)
+        if radar:
+            (fdir / "radar.json").write_text(json.dumps(radar, separators=(",", ":"), default=str))
+            append_ledger(radar)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("divergence radar failed: %s", e)
+
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
     chart = data.pop("chart")
