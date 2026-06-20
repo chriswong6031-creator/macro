@@ -425,24 +425,32 @@ jobs:
           tail -3 /tmp/altbrain_render.log
           [ "$rc" -ne 0 ] && echo "::warning title=altdata_brain::rc=$rc (non-fatal)"
           exit 0
-      - name: unified intelligence bundle (build_intelligence)
-        # AFTER build_news (site/news/by_ticker.json) + build_alt_data + the Alt-Data Brain
-        # re-emit (site/altdata/mastermind.json): merges the per-ticker news flow + the scored
-        # alt-data signal into ONE site/intelligence/by_ticker.json the Mastermind bot pulls.
-        # Facts side by side, never pre-blended. No keys needed; pure JSON merge; never aborts.
-        run: python -m scripts.build_intelligence || echo "intelligence skipped (additive)"
       - name: radar upgrade (build_radar_plus + IC)
         # ADDITIVE Phase-2 radar: enrich site/basketdata/radar.json with edge_score +
         # cross-source confirmation legs (alt/flows/options) + regime + decay (no edits to
         # the radar kernel), emit site/basketdata/radar_ticker.json (per-name divergence),
         # accrue the edge-snapshot IC ledger, then re-render radar.html with the mounts.
-        # Runs after build_baskets (radar.json) + build_alt_data + build_intelligence. Resilient.
+        # Runs after build_baskets (radar.json) + build_alt_data + the Alt-Data Brain, and
+        # BEFORE build_intelligence (which absorbs radar_ticker.json). Resilient.
         run: |
           set +e
           python -m scripts.build_radar_plus > /tmp/radarplus.log 2>&1; tail -4 /tmp/radarplus.log
           python -m scripts.build_radar_ic   > /tmp/radaric.log   2>&1; tail -3 /tmp/radaric.log
           python -m scripts.build_radar_page  > /tmp/radarpage.log 2>&1; tail -1 /tmp/radarpage.log
           exit 0
+      - name: unified intelligence bundle (build_intelligence)
+        # AFTER build_news (news/by_ticker.json) + build_alt_data + the Alt-Data Brain re-emit
+        # (altdata/mastermind.json) + build_radar_plus (radar_ticker.json): merges all per-ticker
+        # facets — news flow + alt-data signal + radar divergence + factor buy-board — into ONE
+        # site/intelligence/by_ticker.json (v2) the Mastermind bot pulls. Facts side by side,
+        # never pre-blended. No keys needed; pure JSON merge; never aborts.
+        run: python -m scripts.build_intelligence || echo "intelligence skipped (additive)"
+      - name: brain briefing tunnel (build_briefing)
+        # AFTER build_intelligence: reduces the per-ticker bundle to a RANKED, brain-facing
+        # triage — site/intelligence/briefing.json — that the Mastermind brain (Claude Opus)
+        # pulls once per cycle: priority queue (confidence × strength), the demand-vs-supply
+        # divergence subset, and a regime/catalyst macro frame. Pure; resilient; never aborts.
+        run: python -m scripts.build_briefing || echo "briefing skipped (additive)"
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
