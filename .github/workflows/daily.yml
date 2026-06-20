@@ -403,6 +403,28 @@ jobs:
           cat /tmp/radar_score.log
           [ "$rc" -ne 0 ] && echo "::warning title=radar_scorer::rc=$rc (non-fatal)"
           exit 0
+      - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
+        # Reads the deterministic weighted-convergence substrate + influence graph (written by
+        # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
+        # (action/conviction/direction + a falsifiable thesis graded vs SPY) -> site/altdata/
+        # brain.json + data/altdata/brain_theses.jsonl, then re-runs build_alt_data to re-emit
+        # mastermind.json + re-render alt_data.html with the fresh read. Claude via the user's
+        # Claude-Code OAuth token (Bearer + oauth beta), ANTHROPIC_API_KEY fallback — the SAME
+        # auth as the Narrative Brain step (the build_alt_data step above only carries the
+        # DeepSeek key, so the Opus/Haiku calls must run HERE). NO-OP unless altdata_brain.enabled
+        # AND a token is set. A hard CODE clamp blocks ACCUMULATE on an extended name; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.altdata_brain > /tmp/altbrain.log 2>&1; rc=$?
+          cat /tmp/altbrain.log
+          # re-emit the Mastermind feed + re-render the page with the fresh Opus read
+          python -m scripts.build_alt_data > /tmp/altbrain_render.log 2>&1
+          tail -3 /tmp/altbrain_render.log
+          [ "$rc" -ne 0 ] && echo "::warning title=altdata_brain::rc=$rc (non-fatal)"
+          exit 0
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;

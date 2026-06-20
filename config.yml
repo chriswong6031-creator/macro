@@ -2136,6 +2136,40 @@ narrative_brain:
   rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
 
 # =============================================================================
+# Alt-Data Brain — Claude-Opus convergence analyst for the Signal Intelligence desk
+# (engine/altdata_brain.py). Reads the deterministic weighted-convergence substrate +
+# the influence graph as an EVIDENCE PACK and emits an ACTIONABLE scored axis (action /
+# conviction / direction + a FALSIFIABLE thesis graded vs SPY) that the Mastermind bot
+# consumes. Runs in its OWN gated daily step (after build_alt_data) with the OAuth token,
+# then re-renders the page. No-op without a token. A hard CODE clamp prevents ACCUMULATE
+# on an extended name. Haiku does the cheap high-volume tagging (influence.extract below).
+# =============================================================================
+altdata_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  models:
+    reasoning: claude-opus-4-8      # the cross-signal convergence reasoning (deep)
+    tagging: claude-haiku-4-5-20251001   # cheap high-volume tagging (influence extractor)
+  interval_days: 1
+  max_clusters: 12               # cap the per-day clusters reasoned over (cost + focus)
+  max_tokens: 8000
+  horizon_d: 63                  # ~3 trading months — alt-data flow is medium-horizon
+  rel_threshold: 0.05            # ±5% name-vs-SPY = the wrong-way threshold
+  min_weighted: 0.9             # weighted-convergence floor to enter the evidence pack
+
+# Influence graph — multi-actor affiliation graph (engine/influence). The curated seed
+# (data/altdata/influence_seed.json) is always on; the LLM extractor that GROWS it from
+# news is gated + default-off (cheap Haiku tagging via the OAuth path).
+influence:
+  extract:
+    extract: false               # MASTER SWITCH for the LLM edge extractor (default off)
+    oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+    api_key_env: ANTHROPIC_API_KEY
+    model: claude-haiku-4-5-20251001
+    news_limit: 50
+
+# =============================================================================
 # Stock desk — accountable AI JUDGMENT layer on the US standout top-picks
 # (engine/stock_desk.py; T9). The per-stock sibling of ai_desk: turns each top pick's
 # deterministic Conviction profile into a FALSIFIABLE LEAN (constructive/neutral/

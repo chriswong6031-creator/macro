@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-20T05:25:24.350779+00:00",
+  "generated_utc": "2026-06-20T06:54:26.028581+00:00",
   "as_of": "2026-06-20",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -7964,14 +7964,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "MSFT",
-        "mentions": 25,
-        "sentiment": 0.015
-      },
-      {
         "ticker": "QQQ",
         "mentions": 25,
         "sentiment": 0.074
+      },
+      {
+        "ticker": "MSFT",
+        "mentions": 25,
+        "sentiment": 0.015
       },
       {
         "ticker": "OKLO",
@@ -8211,42 +8211,1520 @@
         "_first_seen": "2026-06-20T00:51:47.866703+00:00"
       }
     ],
-    "convergence": [
+    "app_ratings": [
+      {
+        "ticker": "UBER",
+        "rating": 4.84,
+        "reviews": 29349730,
+        "apps": 6,
+        "top_app": "Uber - Request a ride",
+        "review_velocity": 21091.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "GOOGL",
+        "rating": 4.71,
+        "reviews": 25559380,
+        "apps": 5,
+        "top_app": "Google Drive",
+        "review_velocity": 22040.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "MSFT",
+        "rating": 4.77,
+        "reviews": 19642764,
+        "apps": 8,
+        "top_app": "Microsoft Outlook",
+        "review_velocity": 11803.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "WMT",
+        "rating": 4.82,
+        "reviews": 18378629,
+        "apps": 5,
+        "top_app": "Walmart: Shopping & Savings",
+        "review_velocity": 9305.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "LYFT",
+        "rating": 4.91,
+        "reviews": 17569683,
+        "apps": 3,
+        "top_app": "Lyft",
+        "review_velocity": 18285.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "SBUX",
+        "rating": 4.89,
+        "reviews": 8050118,
+        "apps": 4,
+        "top_app": "Starbucks",
+        "review_velocity": 7196.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "Z",
+        "rating": 4.8,
+        "reviews": 7627700,
+        "apps": 4,
+        "top_app": "Zillow Real Estate & Rentals",
+        "review_velocity": 74.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "ETSY",
+        "rating": 4.92,
+        "reviews": 7187376,
+        "apps": 2,
+        "top_app": "Etsy: Shop Home, Style & More",
+        "review_velocity": 3744.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "LUV",
+        "rating": 4.84,
+        "reviews": 7073677,
+        "apps": 1,
+        "top_app": "Southwest Airlines: Travel App",
+        "review_velocity": 1583.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "DAL",
+        "rating": 4.85,
+        "reviews": 7005976,
+        "apps": 3,
+        "top_app": "Fly Delta",
+        "review_velocity": -83.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "SHOP",
+        "rating": 4.81,
+        "reviews": 7040209,
+        "apps": 4,
+        "top_app": "Shop: All your favorite brands",
+        "review_velocity": 2144.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "NFLX",
+        "rating": 4.75,
+        "reviews": 6701348,
+        "apps": 2,
+        "top_app": "Netflix",
+        "review_velocity": 13402.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "PINS",
+        "rating": 4.78,
+        "reviews": 5685153,
+        "apps": 1,
+        "top_app": "Pinterest",
+        "review_velocity": 2239.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "ROKU",
+        "rating": 4.74,
+        "reviews": 5707799,
+        "apps": 1,
+        "top_app": "The Roku App (Official)",
+        "review_velocity": 9715.0,
+        "lean": "strong"
+      },
+      {
+        "ticker": "SNAP",
+        "rating": 4.5,
+        "reviews": 5837411,
+        "apps": 1,
+        "top_app": "Snapchat",
+        "review_velocity": 1056.0,
+        "lean": "strong"
+      }
+    ],
+    "patents": [
+      {
+        "ticker": "QCOM",
+        "patents": 64,
+        "ipc_classes": 15,
+        "sample_title": "modulation and coding scheme table change based on constellation and code rate"
+      },
+      {
+        "ticker": "TSM",
+        "patents": 46,
+        "ipc_classes": 13,
+        "sample_title": "backside contact"
+      },
+      {
+        "ticker": "IBM",
+        "patents": 39,
+        "ipc_classes": 14,
+        "sample_title": "double-sided integrated circuit with electrostatic guard ring"
+      },
+      {
+        "ticker": "AAPL",
+        "patents": 33,
+        "ipc_classes": 16,
+        "sample_title": "method and system for generating at least one image of a real environment"
+      },
+      {
+        "ticker": "MU",
+        "patents": 26,
+        "ipc_classes": 8,
+        "sample_title": "advanced interconnection for wafer on wafer packaging"
+      },
+      {
+        "ticker": "INTC",
+        "patents": 22,
+        "ipc_classes": 11,
+        "sample_title": "viewport switch latency reduction in live streaming"
+      },
+      {
+        "ticker": "MSFT",
+        "patents": 22,
+        "ipc_classes": 8,
+        "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
+      },
+      {
+        "ticker": "NVDA",
+        "patents": 20,
+        "ipc_classes": 9,
+        "sample_title": "highlight determination using one or more neural networks"
+      },
+      {
+        "ticker": "BA",
+        "patents": 15,
+        "ipc_classes": 14,
+        "sample_title": "wind tunnel turbulent airflow laser sensor system"
+      },
+      {
+        "ticker": "LPL",
+        "patents": 13,
+        "ipc_classes": 6,
+        "sample_title": "display apparatus having a light-emitting device"
+      },
+      {
+        "ticker": "SLB",
+        "patents": 13,
+        "ipc_classes": 6,
+        "sample_title": "monitoring an industrial facilty employing industrial internet of things (iiot) sensors using a tactical compute application"
+      },
+      {
+        "ticker": "HON",
+        "patents": 12,
+        "ipc_classes": 10,
+        "sample_title": "event notification device"
+      },
+      {
+        "ticker": "SONY",
+        "patents": 12,
+        "ipc_classes": 9,
+        "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
+      },
+      {
+        "ticker": "ORCL",
+        "patents": 12,
+        "ipc_classes": 3,
+        "sample_title": "application driven data change conflict handling system"
+      },
+      {
+        "ticker": "HMC",
+        "patents": 11,
+        "ipc_classes": 8,
+        "sample_title": "courteous mode for adjusting vehicle functions"
+      }
+    ],
+    "bills": [
+      {
+        "title": "Department of Homeland Security Appropriations Act, 2027",
+        "sector": "Homeland / Immigration",
+        "chamber": "House",
+        "bill": "HR9310",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-12",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9310?format=json",
+        "summary": "Department of Homeland Security Appropriations Act, 2027   This bill provides FY2027 appropriations for the Department of Homeland Security (DHS).  Specifically, the bill provides appropriations to DHS for Departmental Management, Intelligence, Situational Awareness, and Oversight, including   the O"
+      },
+      {
+        "title": "Departments of Labor, Health and Human Services, and Education, and Related Agencies Appropriations Act, 2027",
+        "sector": "Semiconductors",
+        "chamber": "House",
+        "bill": "HR9260",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-11",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9260?format=json",
+        "summary": "Departments of Labor, Health and Human Services, and Education, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations to the Departments of Labor, Health and Human Services, and Education; and related agencies.  The bill provides appropriations to the Department of"
+      },
+      {
+        "title": "Transportation, Housing and Urban Development, and Related Agencies Appropriations Act, 2027",
+        "sector": "Energy",
+        "chamber": "House",
+        "bill": "HR9170",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-05",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9170?format=json",
+        "summary": "Transportation, Housing and Urban Development, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations to the Department of Transportation (DOT), the Department of Housing and Urban Development (HUD), and several related agencies.  The bill provides appropriations to"
+      },
+      {
+        "title": "Secure America Act",
+        "sector": "Homeland / Immigration",
+        "chamber": "Senate",
+        "bill": "S2",
+        "last_action": "Passed Senate",
+        "last_action_date": "2026-06-05",
+        "url": "https://api.congress.gov/v3/bill/119/s/2?format=json",
+        "summary": "Secure America Act   This bill provides funding to the Department of Homeland Security (DHS), U.S. Customs and Border Protection (CBP), and U.S. Immigration and Customs Enforcement (ICE) through FY2029 for immigration enforcement and related activities.  It is known as a reconciliation bill and incl"
+      },
+      {
+        "title": "Department of the Interior, Environment, and Related Agencies Appropriations Act, 2027",
+        "sector": "Energy",
+        "chamber": "House",
+        "bill": "HR9171",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-06-05",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9171?format=json",
+        "summary": "Department of the Interior, Environment, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations for the Department of the Interior, the Environmental Protection Agency (EPA), and several related agencies.  The bill provides appropriations to Interior for   the Burea"
+      },
+      {
+        "title": "Agriculture, Rural Development, Food and Drug Administration, and Related Agency Appropriations Act, 2027",
+        "sector": "Financials",
+        "chamber": "House",
+        "bill": "HR8646",
+        "last_action": "Passed House",
+        "last_action_date": "2026-06-04",
+        "url": "https://api.congress.gov/v3/bill/119/hr/8646?format=json",
+        "summary": "Agriculture, Rural Development, Food and Drug Administration, and Related Agency Appropriations Act, 2027   This bill provides FY2027 appropriations for the Department of Agriculture (USDA), the Food and Drug Administration, and related agencies.  The bill provides appropriations to USDA for agricul"
+      },
+      {
+        "title": "Fraud Prevention and Accountability Act",
+        "sector": "Financials",
+        "chamber": "House",
+        "bill": "HR8312",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-03",
+        "url": "https://api.congress.gov/v3/bill/119/hr/8312?format=json",
+        "summary": "Fraud Prevention and Accountability Act   This bill (1) assigns financial integrity, improper payment prevention, and spending transparency functions to the Bureau of the Fiscal Service (BFS) within the Department of the Treasury; (2) establishes an Office of the Inspector General for Fraud, Account"
+      },
+      {
+        "title": "Main Street Competes Act",
+        "sector": "Trade",
+        "chamber": "House",
+        "bill": "HR8882",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-03",
+        "url": "https://api.congress.gov/v3/bill/119/hr/8882?format=json",
+        "summary": "Main Street Competes Act   This bill requires the Department of Justice (DOJ) and the Federal Trade Commission (FTC) to separately report biennially to the Small Business Administration (SBA) on how such agency's enforcement of federal antitrust law has promoted competition and deterred anticompetit"
+      },
+      {
+        "title": "SBA Artificial Intelligence Utilization Act of 2026",
+        "sector": "Technology / AI",
+        "chamber": "House",
+        "bill": "HR8881",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-03",
+        "url": "https://api.congress.gov/v3/bill/119/hr/8881?format=json",
+        "summary": "SBA Artificial Intelligence Utilization Act of 2026   This bill requires the Small Business Administration (SBA) to annually report on the SBA's&nbsp;use of artificial intelligence and machine learning.  The report must include information about&nbsp;(1) the benefits and risks posed by the SBA's use"
+      },
+      {
+        "title": "Small Business Technological Act of 2025",
+        "sector": "Financials",
+        "chamber": "House",
+        "bill": "HR915",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-03",
+        "url": "https://api.congress.gov/v3/bill/119/hr/915?format=json",
+        "summary": "Small Business Technological Act of 2025   This bill authorizes the Small Business Administration (SBA) to finance under the 7(a) loan program business software or cloud computing services that facilitate business operations, product or service delivery, payroll processing, human resources functions"
+      },
+      {
+        "title": "COOL Online Act",
+        "sector": "Trade",
+        "chamber": "House",
+        "bill": "HR9057",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-05-29",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9057?format=json",
+        "summary": "Country of Origin Labeling Requirement Act or the COOL Online Act     This bill requires sellers of imported products online to conspicuously disclose the country of origin of the products and the country where the seller's principal place of business is located.   This requirement does not apply to"
+      },
+      {
+        "title": "Energy and Water Development and Related Agencies Appropriations Act, 2027",
+        "sector": "Defense",
+        "chamber": "House",
+        "bill": "HR9022",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-05-22",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9022?format=json",
+        "summary": "Energy and Water Development and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations for U.S. Army Corps of Engineers civil works projects, the Department of the Interior's Bureau of Reclamation, the Department of Energy (DOE), and several independent agencies.  The "
+      },
+      {
+        "title": "A bill to designate the facility of the United States Postal Service located at 12109 New Kent Highway in New Kent, Virginia, as the \"Patric",
+        "sector": "Infrastructure",
+        "chamber": "Senate",
+        "bill": "S4623",
+        "last_action": "Introduced in Senate",
+        "last_action_date": "2026-05-21",
+        "url": "https://api.congress.gov/v3/bill/119/s/4623?format=json",
+        "summary": "This bill designates the facility of the United States Postal Service located at 12109 New Kent Highway in New Kent, Virginia, as the \"Patricia Paige Post Office\"."
+      },
+      {
+        "title": "Legalizing Premium Health Care Act of 2026",
+        "sector": "Healthcare",
+        "chamber": "Senate",
+        "bill": "S4583",
+        "last_action": "Introduced in Senate",
+        "last_action_date": "2026-05-20",
+        "url": "https://api.congress.gov/v3/bill/119/s/4583?format=json",
+        "summary": "Legalizing Premium Health Care Act of 2026     This bill allows any Medicare beneficiary to enter into a contract with an eligible professional, regardless of whether the professional is participating in Medicare, for any item or service covered by Medicare.  Such beneficiaries may submit a claim fo"
+      },
+      {
+        "title": "Geothermal Energy Advancement Act",
+        "sector": "Energy",
+        "chamber": "House",
+        "bill": "HR5631",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-05-20",
+        "url": "https://api.congress.gov/v3/bill/119/hr/5631?format=json",
+        "summary": "Geothermal Ombudsman for National Deployment and Optimal Reviews Act   This bill establishes a geothermal ombudsman and&nbsp;task force to oversee geothermal project permitting and authorizations on federal land.  The Department of the Interior must appoint a geothermal ombudsman from within the Bur"
+      },
+      {
+        "title": "License to Drill Act",
+        "sector": "Energy",
+        "chamber": "House",
+        "bill": "HR7831",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-05-20",
+        "url": "https://api.congress.gov/v3/bill/119/hr/7831?format=json",
+        "summary": "License to Drill Act   This bill extends through FY2037 the Bureau of Land Management\u2019s (BLM\u2019s) authority to collect oil and gas permit processing fees. For each new permit application, BLM collects a fee that is transferred to the BLM Permit Processing Improvement Fund.&nbsp;(Under current law, the"
+      },
+      {
+        "title": "Crystal Reservoir Conveyance Act",
+        "sector": "Aerospace",
+        "chamber": "House",
+        "bill": "HR5911",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-05-20",
+        "url": "https://api.congress.gov/v3/bill/119/hr/5911?format=json",
+        "summary": "Crystal Reservoir Conveyance Act   This bill directs the Forest Service to convey specified property and water rights in&nbsp;Ouray County, Colorado, to the City of Ouray, Colorado, for use as open space for recreational activities (such as fishing) at no cost to the public.  The property and water "
+      },
+      {
+        "title": "Increasing Access to Lung Cancer Screening Act",
+        "sector": "Healthcare",
+        "chamber": "Senate",
+        "bill": "S4566",
+        "last_action": "Introduced in Senate",
+        "last_action_date": "2026-05-19",
+        "url": "https://api.congress.gov/v3/bill/119/s/4566?format=json",
+        "summary": "Increasing Access to Lung Cancer Screening Act   This bill provides for coverage without prior authorization requirements of annual lung cancer screenings under Medicaid, Medicare, and private health insurance for individuals for whom screenings are recommended under U.S. Preventive Services Task Fo"
+      }
+    ],
+    "congress_holdings": {
+      "ICE": {
+        "position_usd": 47713500.0,
+        "holders": 12
+      },
+      "MSFT": {
+        "position_usd": 21406500.0,
+        "holders": 69
+      },
+      "AAPL": {
+        "position_usd": 17770000.0,
+        "holders": 79
+      },
+      "AMZN": {
+        "position_usd": 9915500.0,
+        "holders": 56
+      },
+      "SPY": {
+        "position_usd": 8335500.0,
+        "holders": 9
+      },
+      "FB": {
+        "position_usd": 8112500.0,
+        "holders": 35
+      },
+      "GOOGL": {
+        "position_usd": 5288000.0,
+        "holders": 38
+      },
+      "V": {
+        "position_usd": 3848000.0,
+        "holders": 33
+      },
+      "NFLX": {
+        "position_usd": 3746500.0,
+        "holders": 19
+      },
+      "CHTR": {
+        "position_usd": 3731500.0,
+        "holders": 8
+      },
+      "NVDA": {
+        "position_usd": 3357000.0,
+        "holders": 28
+      },
+      "PYPL": {
+        "position_usd": 3249500.0,
+        "holders": 24
+      },
+      "CRM": {
+        "position_usd": 3168500.0,
+        "holders": 17
+      },
+      "DDOG": {
+        "position_usd": 3032500.0,
+        "holders": 2
+      },
+      "XON": {
+        "position_usd": 3008000.0,
+        "holders": 3
+      },
+      "BRP": {
+        "position_usd": 3008000.0,
+        "holders": 2
+      },
+      "BXS": {
+        "position_usd": 3002000.0,
+        "holders": 3
+      },
+      "ALLO": {
+        "position_usd": 3000000.0,
+        "holders": 1
+      },
+      "XOM": {
+        "position_usd": 2903500.0,
+        "holders": 40
+      },
+      "JPM": {
+        "position_usd": 2672500.0,
+        "holders": 44
+      },
+      "JNJ": {
+        "position_usd": 2667000.0,
+        "holders": 44
+      },
+      "TFX": {
+        "position_usd": 2598000.0,
+        "holders": 4
+      },
+      "T": {
+        "position_usd": 2506000.0,
+        "holders": 44
+      },
+      "DIS": {
+        "position_usd": 2423000.0,
+        "holders": 47
+      },
+      "TRUP": {
+        "position_usd": 2375000.0,
+        "holders": 2
+      },
+      "A": {
+        "position_usd": 2357000.0,
+        "holders": 5
+      },
+      "ET": {
+        "position_usd": 2305000.0,
+        "holders": 10
+      },
+      "AB": {
+        "position_usd": 2250000.0,
+        "holders": 1
+      },
+      "MA": {
+        "position_usd": 2247500.0,
+        "holders": 25
+      },
+      "LHCG": {
+        "position_usd": 2073500.0,
+        "holders": 5
+      },
+      "VZ": {
+        "position_usd": 2033500.0,
+        "holders": 33
+      },
+      "SHLX": {
+        "position_usd": 1900500.0,
+        "holders": 5
+      },
+      "NEE": {
+        "position_usd": 1844000.0,
+        "holders": 22
+      },
+      "FDX": {
+        "position_usd": 1819500.0,
+        "holders": 23
+      },
+      "USAC": {
+        "position_usd": 1794500.0,
+        "holders": 2
+      },
+      "LEN": {
+        "position_usd": 1783000.0,
+        "holders": 2
+      },
+      "BABA": {
+        "position_usd": 1772000.0,
+        "holders": 26
+      },
+      "CAPL": {
+        "position_usd": 1758000.0,
+        "holders": 3
+      },
+      "WMT": {
+        "position_usd": 1756000.0,
+        "holders": 34
+      },
+      "AM": {
+        "position_usd": 1753000.0,
+        "holders": 7
+      },
+      "HD": {
+        "position_usd": 1746500.0,
+        "holders": 32
+      },
+      "ENBL": {
+        "position_usd": 1696000.0,
+        "holders": 2
+      },
+      "GE": {
+        "position_usd": 1640000.0,
+        "holders": 41
+      },
+      "CVX": {
+        "position_usd": 1585500.0,
+        "holders": 33
+      },
+      "TXN": {
+        "position_usd": 1574500.0,
+        "holders": 17
+      },
+      "UNH": {
+        "position_usd": 1541500.0,
+        "holders": 30
+      },
+      "UBS": {
+        "position_usd": 1516000.0,
+        "holders": 5
+      },
+      "DFS": {
+        "position_usd": 1512500.0,
+        "holders": 11
+      },
+      "RGC": {
+        "position_usd": 1508000.0,
+        "holders": 2
+      },
+      "COST": {
+        "position_usd": 1492000.0,
+        "holders": 32
+      },
+      "PG": {
+        "position_usd": 1439500.0,
+        "holders": 33
+      },
+      "INFO": {
+        "position_usd": 1400500.0,
+        "holders": 7
+      },
+      "LIN": {
+        "position_usd": 1393500.0,
+        "holders": 17
+      },
+      "CRWD": {
+        "position_usd": 1391500.0,
+        "holders": 9
+      },
+      "HON": {
+        "position_usd": 1374500.0,
+        "holders": 20
+      },
+      "WFC": {
+        "position_usd": 1374000.0,
+        "holders": 26
+      },
+      "BAYRY": {
+        "position_usd": 1365500.0,
+        "holders": 4
+      },
+      "BAC": {
+        "position_usd": 1354000.0,
+        "holders": 29
+      },
+      "ALK": {
+        "position_usd": 1306500.0,
+        "holders": 5
+      },
+      "MCD": {
+        "position_usd": 1304000.0,
+        "holders": 24
+      },
+      "SPG": {
+        "position_usd": 1301500.0,
+        "holders": 12
+      },
+      "BRK.B": {
+        "position_usd": 1260500.0,
+        "holders": 27
+      },
+      "SBUX": {
+        "position_usd": 1242000.0,
+        "holders": 34
+      },
+      "PBFX": {
+        "position_usd": 1218500.0,
+        "holders": 2
+      },
+      "LUV": {
+        "position_usd": 1212000.0,
+        "holders": 16
+      },
+      "AMZA": {
+        "position_usd": 1200000.0,
+        "holders": 2
+      },
+      "ACN": {
+        "position_usd": 1188500.0,
+        "holders": 23
+      },
+      "FTAI": {
+        "position_usd": 1182500.0,
+        "holders": 1
+      },
+      "INTC": {
+        "position_usd": 1163500.0,
+        "holders": 37
+      },
+      "PODD": {
+        "position_usd": 1148500.0,
+        "holders": 4
+      },
+      "EMR": {
+        "position_usd": 1144500.0,
+        "holders": 14
+      },
+      "CSCO": {
+        "position_usd": 1144000.0,
+        "holders": 31
+      },
+      "ZAYO": {
+        "position_usd": 1141500.0,
+        "holders": 3
+      },
+      "CAT": {
+        "position_usd": 1106500.0,
+        "holders": 26
+      },
+      "DHR": {
+        "position_usd": 1106500.0,
+        "holders": 20
+      },
+      "WMB": {
+        "position_usd": 1105000.0,
+        "holders": 10
+      },
+      "CEQP": {
+        "position_usd": 1086000.0,
+        "holders": 3
+      },
+      "QCOM": {
+        "position_usd": 1079000.0,
+        "holders": 30
+      },
+      "RCKY": {
+        "position_usd": 1075000.0,
+        "holders": 1
+      },
+      "TSLA": {
+        "position_usd": 1063000.0,
+        "holders": 23
+      },
+      "MMM": {
+        "position_usd": 1058000.0,
+        "holders": 21
+      },
+      "RPM": {
+        "position_usd": 1054500.0,
+        "holders": 6
+      },
+      "BKCC": {
+        "position_usd": 1050000.0,
+        "holders": 1
+      },
+      "BMY": {
+        "position_usd": 1044500.0,
+        "holders": 18
+      },
+      "ZBRA": {
+        "position_usd": 1032500.0,
+        "holders": 3
+      },
+      "AJRD": {
+        "position_usd": 1008000.0,
+        "holders": 2
+      },
+      "PEP": {
+        "position_usd": 1000000.0,
+        "holders": 32
+      },
+      "ABBV": {
+        "position_usd": 991000.0,
+        "holders": 23
+      },
+      "PM": {
+        "position_usd": 980500.0,
+        "holders": 14
+      },
+      "TMO": {
+        "position_usd": 973500.0,
+        "holders": 21
+      },
+      "RTX": {
+        "position_usd": 969500.0,
+        "holders": 10
+      },
+      "IBM": {
+        "position_usd": 968000.0,
+        "holders": 26
+      },
+      "CB": {
+        "position_usd": 966000.0,
+        "holders": 20
+      },
+      "ADBE": {
+        "position_usd": 957500.0,
+        "holders": 14
+      },
+      "IHRT": {
+        "position_usd": 932500.0,
+        "holders": 1
+      },
+      "DGRO": {
+        "position_usd": 929000.0,
+        "holders": 2
+      },
+      "REZI": {
+        "position_usd": 920000.0,
+        "holders": 7
+      },
+      "VEEV": {
+        "position_usd": 907000.0,
+        "holders": 4
+      },
+      "UPS": {
+        "position_usd": 889500.0,
+        "holders": 17
+      },
+      "LLY": {
+        "position_usd": 888000.0,
+        "holders": 12
+      },
+      "CVS": {
+        "position_usd": 874500.0,
+        "holders": 30
+      },
+      "KO": {
+        "position_usd": 864000.0,
+        "holders": 28
+      },
+      "BIDU": {
+        "position_usd": 850000.0,
+        "holders": 8
+      },
+      "MCHP": {
+        "position_usd": 846500.0,
+        "holders": 5
+      },
+      "MIC": {
+        "position_usd": 840500.0,
+        "holders": 3
+      },
+      "NSRGY": {
+        "position_usd": 839500.0,
+        "holders": 18
+      },
+      "PXD": {
+        "position_usd": 838000.0,
+        "holders": 6
+      },
+      "ULTI": {
+        "position_usd": 824000.0,
+        "holders": 2
+      },
+      "LH": {
+        "position_usd": 815500.0,
+        "holders": 5
+      },
+      "UBER": {
+        "position_usd": 796500.0,
+        "holders": 9
+      },
+      "CTSH": {
+        "position_usd": 791500.0,
+        "holders": 10
+      },
+      "LOW": {
+        "position_usd": 778000.0,
+        "holders": 20
+      },
+      "NS": {
+        "position_usd": 775000.0,
+        "holders": 2
+      },
+      "PEGA": {
+        "position_usd": 774500.0,
+        "holders": 2
+      },
+      "HALO": {
+        "position_usd": 774000.0,
+        "holders": 3
+      },
+      "ROK": {
+        "position_usd": 772500.0,
+        "holders": 6
+      },
+      "TIP": {
+        "position_usd": 772000.0,
+        "holders": 3
+      },
+      "GOOG": {
+        "position_usd": 767500.0,
+        "holders": 27
+      },
+      "TSM": {
+        "position_usd": 765500.0,
+        "holders": 16
+      },
+      "ABT": {
+        "position_usd": 764000.0,
+        "holders": 22
+      },
+      "DD": {
+        "position_usd": 760000.0,
+        "holders": 15
+      },
+      "STT": {
+        "position_usd": 760000.0,
+        "holders": 15
+      },
+      "PFE": {
+        "position_usd": 756000.0,
+        "holders": 33
+      },
+      "TWOU": {
+        "position_usd": 750000.0,
+        "holders": 1
+      },
+      "RNR": {
+        "position_usd": 750000.0,
+        "holders": 1
+      },
+      "AMLP": {
+        "position_usd": 750000.0,
+        "holders": 1
+      },
+      "EFA": {
+        "position_usd": 750000.0,
+        "holders": 1
+      },
+      "NVS": {
+        "position_usd": 737500.0,
+        "holders": 15
+      },
+      "CL": {
+        "position_usd": 734000.0,
+        "holders": 15
+      },
+      "AMGN": {
+        "position_usd": 731500.0,
+        "holders": 21
+      },
+      "LMT": {
+        "position_usd": 724000.0,
+        "holders": 19
+      },
+      "DEO": {
+        "position_usd": 710000.0,
+        "holders": 17
+      },
+      "BA": {
+        "position_usd": 703000.0,
+        "holders": 26
+      },
+      "NGL": {
+        "position_usd": 700500.0,
+        "holders": 3
+      },
+      "XLE": {
+        "position_usd": 698000.0,
+        "holders": 2
+      },
+      "MO": {
+        "position_usd": 696000.0,
+        "holders": 21
+      },
+      "F": {
+        "position_usd": 691000.0,
+        "holders": 24
+      },
+      "IWN": {
+        "position_usd": 682000.0,
+        "holders": 5
+      },
+      "PAA": {
+        "position_usd": 681500.0,
+        "holders": 5
+      },
+      "ORCL": {
+        "position_usd": 670000.0,
+        "holders": 14
+      },
+      "TJX": {
+        "position_usd": 658500.0,
+        "holders": 26
+      },
+      "RMD": {
+        "position_usd": 657000.0,
+        "holders": 5
+      },
+      "AMAT": {
+        "position_usd": 649500.0,
+        "holders": 14
+      },
+      "NKE": {
+        "position_usd": 649000.0,
+        "holders": 14
+      },
+      "MDY": {
+        "position_usd": 641000.0,
+        "holders": 2
+      },
+      "VMC": {
+        "position_usd": 638000.0,
+        "holders": 8
+      },
+      "KHC": {
+        "position_usd": 635500.0,
+        "holders": 19
+      },
+      "TTWO": {
+        "position_usd": 633000.0,
+        "holders": 2
+      },
+      "EPD": {
+        "position_usd": 627000.0,
+        "holders": 7
+      },
+      "AMN": {
+        "position_usd": 627000.0,
+        "holders": 2
+      },
+      "VTV": {
+        "position_usd": 625000.0,
+        "holders": 1
+      },
+      "GLP": {
+        "position_usd": 621500.0,
+        "holders": 2
+      },
+      "MRK": {
+        "position_usd": 619000.0,
+        "holders": 27
+      },
+      "CCI": {
+        "position_usd": 618000.0,
+        "holders": 16
+      },
+      "PRU": {
+        "position_usd": 613500.0,
+        "holders": 13
+      },
+      "MDLZ": {
+        "position_usd": 610000.0,
+        "holders": 14
+      },
+      "DXCM": {
+        "position_usd": 606000.0,
+        "holders": 8
+      },
+      "IWD": {
+        "position_usd": 593000.0,
+        "holders": 2
+      },
+      "SQ": {
+        "position_usd": 586500.0,
+        "holders": 12
+      },
+      "HHC": {
+        "position_usd": 581000.0,
+        "holders": 4
+      },
+      "D": {
+        "position_usd": 577000.0,
+        "holders": 17
+      },
+      "ARNA": {
+        "position_usd": 571500.0,
+        "holders": 3
+      },
+      "DAL": {
+        "position_usd": 571000.0,
+        "holders": 13
+      },
+      "TTD": {
+        "position_usd": 566000.0,
+        "holders": 3
+      },
+      "DOCU": {
+        "position_usd": 565500.0,
+        "holders": 4
+      },
+      "CUTR": {
+        "position_usd": 558000.0,
+        "holders": 1
+      },
+      "KEYS": {
+        "position_usd": 557000.0,
+        "holders": 5
+      },
+      "C": {
+        "position_usd": 553500.0,
+        "holders": 20
+      },
+      "OSW": {
+        "position_usd": 553000.0,
+        "holders": 2
+      },
+      "TCEHY": {
+        "position_usd": 552000.0,
+        "holders": 6
+      },
+      "PNR": {
+        "position_usd": 550000.0,
+        "holders": 3
+      },
+      "CTL": {
+        "position_usd": 548500.0,
+        "holders": 8
+      },
+      "ADP": {
+        "position_usd": 545000.0,
+        "holders": 9
+      },
+      "TFC": {
+        "position_usd": 536000.0,
+        "holders": 15
+      },
+      "PGR": {
+        "position_usd": 531500.0,
+        "holders": 13
+      },
+      "IFNNY": {
+        "position_usd": 522500.0,
+        "holders": 3
+      },
+      "AVGO": {
+        "position_usd": 515500.0,
+        "holders": 13
+      },
+      "MSM": {
+        "position_usd": 515000.0,
+        "holders": 3
+      },
+      "SLB": {
+        "position_usd": 513500.0,
+        "holders": 29
+      },
+      "BRK-B": {
+        "position_usd": 513500.0,
+        "holders": 5
+      },
+      "IR": {
+        "position_usd": 512500.0,
+        "holders": 7
+      },
+      "AZO": {
+        "position_usd": 511000.0,
+        "holders": 8
+      },
+      "UNP": {
+        "position_usd": 508500.0,
+        "holders": 17
+      },
+      "BBVA": {
+        "position_usd": 508500.0,
+        "holders": 4
+      },
+      "CMCSA": {
+        "position_usd": 506500.0,
+        "holders": 27
+      },
+      "SU": {
+        "position_usd": 503500.0,
+        "holders": 9
+      },
+      "USB": {
+        "position_usd": 500000.0,
+        "holders": 21
+      },
+      "MIDD": {
+        "position_usd": 498500.0,
+        "holders": 3
+      },
+      "GS": {
+        "position_usd": 489500.0,
+        "holders": 18
+      },
+      "DG": {
+        "position_usd": 485000.0,
+        "holders": 11
+      },
+      "MPLX": {
+        "position_usd": 484500.0,
+        "holders": 6
+      },
+      "MS": {
+        "position_usd": 483500.0,
+        "holders": 15
+      },
+      "TDOC": {
+        "position_usd": 481500.0,
+        "holders": 5
+      },
+      "GLW": {
+        "position_usd": 479000.0,
+        "holders": 6
+      },
+      "RAND": {
+        "position_usd": 478500.0,
+        "holders": 1
+      },
+      "CSGP": {
+        "position_usd": 471500.0,
+        "holders": 5
+      },
+      "CME": {
+        "position_usd": 470000.0,
+        "holders": 12
+      },
+      "BP": {
+        "position_usd": 468000.0,
+        "holders": 10
+      },
+      "UTX": {
+        "position_usd": 464000.0,
+        "holders": 20
+      },
+      "OKE": {
+        "position_usd": 459500.0,
+        "holders": 9
+      }
+    },
+    "flights": [
+      {
+        "ticker": "BAC",
+        "flights": 12,
+        "last_date": "2025-07-23",
+        "sample_route": "Melbourne \u2192 Brisbane",
+        "stale": true
+      },
+      {
+        "ticker": "GLW",
+        "flights": 12,
+        "last_date": "2025-07-23",
+        "sample_route": "Morristown \u2192 Athens",
+        "stale": true
+      },
+      {
+        "ticker": "AFL",
+        "flights": 9,
+        "last_date": "2025-07-23",
+        "sample_route": "Blairstown \u2192 Morristown",
+        "stale": true
+      },
+      {
+        "ticker": "SENEA",
+        "flights": 9,
+        "last_date": "2025-07-22",
+        "sample_route": "Lebanon \u2192 Penn Yan",
+        "stale": true
+      },
+      {
+        "ticker": "SNE",
+        "flights": 4,
+        "last_date": "2025-07-22",
+        "sample_route": "North Kingstown \u2192 Reading",
+        "stale": true
+      },
+      {
+        "ticker": "CCK",
+        "flights": 2,
+        "last_date": "2025-07-23",
+        "sample_route": "Seattle \u2192 Boise",
+        "stale": true
+      },
+      {
+        "ticker": "COP",
+        "flights": 2,
+        "last_date": "2025-07-21",
+        "sample_route": "Rio Hondo \u2192 Mount Vernon",
+        "stale": true
+      },
+      {
+        "ticker": "LVS",
+        "flights": 2,
+        "last_date": "2025-07-23",
+        "sample_route": "Tel Aviv \u2192 Alghero",
+        "stale": true
+      },
+      {
+        "ticker": "NSP",
+        "flights": 1,
+        "last_date": "2025-07-21",
+        "sample_route": "Elkins \u2192 New Lexington",
+        "stale": true
+      }
+    ],
+    "exec_comp": [
+      {
+        "ticker": "HUT",
+        "top_exec": "Asher Genoot",
+        "role": "CEO",
+        "total_comp": 239909042.0,
+        "year": 2025
+      },
       {
         "ticker": "CARR",
-        "score": 2,
+        "top_exec": "David L. Gitlin",
+        "role": "CEO",
+        "total_comp": 65734245.0,
+        "year": 2024
+      },
+      {
+        "ticker": "NVDA",
+        "top_exec": "Jen-Hsun Huang",
+        "role": "President & CEO",
+        "total_comp": 49866251.0,
+        "year": 2025
+      },
+      {
+        "ticker": "DJT",
+        "top_exec": "Devin Nunes",
+        "role": "CEO",
+        "total_comp": 46883031.0,
+        "year": 2024
+      },
+      {
+        "ticker": "EFX",
+        "top_exec": "Mark W. Begor",
+        "role": "CEO",
+        "total_comp": 37245853.0,
+        "year": 2022
+      },
+      {
+        "ticker": "META",
+        "top_exec": "Mark Zuckerberg",
+        "role": "CEO",
+        "total_comp": 27219874.0,
+        "year": 2024
+      },
+      {
+        "ticker": "ABTC",
+        "top_exec": "Steve Gutterman",
+        "role": "Former CEO",
+        "total_comp": 1347065.0,
+        "year": 2024
+      }
+    ],
+    "retail": [
+      {
+        "ticker": "SMCI",
+        "mentions": 373,
+        "sentiment": 0.055,
+        "hot": true
+      },
+      {
+        "ticker": "SPY",
+        "mentions": 249,
+        "sentiment": 0.009,
+        "hot": true
+      },
+      {
+        "ticker": "NVDA",
+        "mentions": 207,
+        "sentiment": -0.004,
+        "hot": true
+      },
+      {
+        "ticker": "HIMS",
+        "mentions": 117,
+        "sentiment": 0.007,
+        "hot": true
+      },
+      {
+        "ticker": "TSLA",
+        "mentions": 110,
+        "sentiment": -0.008,
+        "hot": true
+      },
+      {
+        "ticker": "PLTR",
+        "mentions": 91,
+        "sentiment": -0.032,
+        "hot": true
+      },
+      {
+        "ticker": "LUNR",
+        "mentions": 81,
+        "sentiment": 0.035,
+        "hot": true
+      },
+      {
+        "ticker": "CVNA",
+        "mentions": 60,
+        "sentiment": 0.053,
+        "hot": true
+      },
+      {
+        "ticker": "AMD",
+        "mentions": 51,
+        "sentiment": -0.085,
+        "hot": true
+      },
+      {
+        "ticker": "V",
+        "mentions": 43,
+        "sentiment": 0.133,
+        "hot": false
+      },
+      {
+        "ticker": "INTC",
+        "mentions": 40,
+        "sentiment": 0.029,
+        "hot": false
+      },
+      {
+        "ticker": "AI",
+        "mentions": 39,
+        "sentiment": -0.068,
+        "hot": false
+      },
+      {
+        "ticker": "NBIS",
+        "mentions": 37,
+        "sentiment": -0.016,
+        "hot": false
+      },
+      {
+        "ticker": "AAPL",
+        "mentions": 36,
+        "sentiment": -0.012,
+        "hot": false
+      },
+      {
+        "ticker": "RDDT",
+        "mentions": 30,
+        "sentiment": -0.058,
+        "hot": false
+      }
+    ],
+    "convergence": [
+      {
+        "ticker": "NVDA",
+        "score": 4,
+        "weighted_score": 1.5,
         "channel_list": [
-          "congress_buy",
-          "trump_buy"
+          "13f_add",
+          "darkpool_accum",
+          "patent_cluster",
+          "retail_buzz"
         ],
-        "why": "congress_buy: 2 members net +6 \u00b7 trump_buy: CARRIER GLOBAL CORPORATION COM"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 patent_cluster: 20 grants, 9 IPC classes \u00b7 retail_buzz: 207 WSB mentions"
       },
       {
         "ticker": "EFX",
         "score": 2,
+        "weighted_score": 1.4,
         "channel_list": [
-          "gov_contract",
-          "trump_buy"
+          "gov_contract_accel",
+          "trump"
         ],
-        "why": "gov_contract: $74,700,004 awarded \u00b7 trump_buy: EQUIFAX INC"
+        "why": "gov_contract_accel: $74,700,004, 291.3x accel \u00b7 trump: EQUIFAX INC COM"
       },
       {
-        "ticker": "NVDA",
-        "score": 2,
+        "ticker": "MSFT",
+        "score": 3,
+        "weighted_score": 1.2,
         "channel_list": [
-          "darkpool_accum",
-          "13f_add"
+          "13f_add",
+          "app_demand",
+          "patent_cluster"
         ],
-        "why": "darkpool_accum: DPI 0.292 \u00b7 13f_add: STOREBRAND ASSET MANAGEMENT AS +$501,958,272"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,642,764 reviews \u00b7 patent_cluster: 22 grants, 8 IPC classes"
+      },
+      {
+        "ticker": "CARR",
+        "score": 2,
+        "weighted_score": 0.95,
+        "channel_list": [
+          "congress_buy",
+          "trump"
+        ],
+        "why": "congress_buy: 2 member(s) net +6 \u00b7 trump: CARRIER GLOBAL CORPORATION COM"
+      },
+      {
+        "ticker": "WMT",
+        "score": 2,
+        "weighted_score": 0.9,
+        "channel_list": [
+          "app_demand",
+          "trump"
+        ],
+        "why": "app_demand: 4.82\u2605 \u00d7 18,378,629 reviews \u00b7 trump: WALMART INC"
+      },
+      {
+        "ticker": "GOOGL",
+        "score": 2,
+        "weighted_score": 0.8,
+        "channel_list": [
+          "13f_add",
+          "app_demand"
+        ],
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,559,380 reviews"
       },
       {
         "ticker": "META",
         "score": 2,
+        "weighted_score": 0.75,
         "channel_list": [
           "cnbc_pick",
-          "trump_buy"
+          "trump"
         ],
-        "why": "cnbc_pick: Jim Cramer \u00b7 trump_buy: META PLATFORMS INC CLASS A"
+        "why": "cnbc_pick: Jim Cramer \u00b7 trump: META PLATFORMS INC CL A"
+      },
+      {
+        "ticker": "CVNA",
+        "score": 2,
+        "weighted_score": 0.65,
+        "channel_list": [
+          "retail_buzz",
+          "trump"
+        ],
+        "why": "retail_buzz: 60 WSB mentions \u00b7 trump: CARVANA CO CL A"
+      },
+      {
+        "ticker": "AMD",
+        "score": 2,
+        "weighted_score": 0.6,
+        "channel_list": [
+          "congress_buy",
+          "retail_buzz"
+        ],
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 retail_buzz: 51 WSB mentions"
       }
     ]
   }

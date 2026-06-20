@@ -6,307 +6,321 @@
 {% if v is none or v != v %}—{% else %}${{ '{:,.0f}'.format(v|float) }}{% endif %}
 {%- endmacro %}
 {% set s = feed.signals %}
+{% set CH = {
+  'congress_buy': ['Congress buy','国会买入'], 'congress_cluster': ['Congress cluster-buy','国会集群买入'],
+  'insider_buy': ['Insider buy','内部人买入'], 'insider_cluster': ['Insider cluster-buy','内部人集群买入'],
+  'gov_contract': ['Gov contracts','政府合同'], 'gov_contract_accel': ['Contracts accelerating','合同加速'],
+  'lobbying': ['Lobbying','游说'], 'lobbying_spike': ['Lobbying spike','游说激增'],
+  'darkpool_accum': ['Dark-pool accum','暗池吸筹'], '13f_add': ['13F add','机构加仓'],
+  'smart_money_13f': ['Smart-money 13F','聪明钱13F'], 'cnbc_pick': ['CNBC pick','CNBC推荐'],
+  'trump': ['Trump trade','特朗普交易'], 'affiliation': ['Influence link','影响力关联'],
+  'app_demand': ['App demand','应用需求'], 'patent_cluster': ['Patent cluster','专利集群'],
+  'retail_buzz': ['Retail buzz','散户热度']
+} %}
+{% macro ch(c) %}{% set p = CH.get(c, [c, c]) %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] }}</span>{% endmacro %}
 
-{% block title %}{{ t('Alternative Data', '替代数据') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+{% block title %}{{ t('Alternative Data — Signal Intelligence', '替代数据 — 信号情报') }}{% endblock %}
 
 {% block base_css %}
-  .ad-hero { margin:26px auto 10px; max-width:1060px; }
-  .ad-hero h1 { font-size:26px; margin:6px 0 4px; }
-  .ad-sub { color:var(--muted); font-size:13px; max-width:780px; }
-  .ad-meta { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
-  .ad-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; max-width:1060px; margin:0 auto; }
-  @media (max-width:760px){ .ad-grid { grid-template-columns:1fr; } }
-  .ad-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:14px auto; max-width:1060px; }
-  .ad-card h2 { font-size:15px; margin:0 0 10px; display:flex; align-items:center; gap:7px; }
-  .ad-card.span2 { grid-column:1 / -1; }
-  table.ad { width:100%; border-collapse:collapse; font-size:12.5px; }
-  table.ad th { text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); padding:5px 8px; white-space:nowrap; }
-  table.ad td { padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
-  table.ad tr:last-child td { border-bottom:none; }
-  .tk { font-weight:700; font-variant-numeric:tabular-nums; }
-  .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .mut2 { color:var(--muted); }
-  .conv { display:flex; flex-wrap:wrap; gap:10px; }
-  .conv-item { flex:1 1 280px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--panel2); }
-  .conv-item .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-  .score { font-size:11px; padding:2px 8px; border-radius:999px; background:#5b8def22; color:#5b8def; border:1px solid #5b8def55; }
-  .chs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px; }
-  .ch { font-size:10.5px; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
-  .ch.pol { color:#c77dff; border-color:#c77dff55; } .ch.gov { color:#3fb6c0; border-color:#3fb6c055; }
-  .ch.ins { color:#46b87a; border-color:#46b87a55; } .ch.trump { color:#e0607a; border-color:#e0607a55; }
-  .ad-cov { display:flex; flex-wrap:wrap; gap:8px; max-width:1060px; margin:8px auto; }
-  .cov { font-size:11px; padding:6px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
-  .cov b { font-variant-numeric:tabular-nums; } .cov.empty { opacity:.45; }
-  .feedlink { font-size:11.5px; }
+  .sid { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }
+  .sid-eyebrow { font:600 12px/1 var(--num); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .sid h1 { font-size:clamp(26px,4vw,38px); margin:.28em 0 .15em; letter-spacing:-.01em; }
+  .sid-sub { color:var(--muted); max-width:760px; font-size:14px; line-height:1.55; }
+  .sid-meta { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 6px; }
+  .sid-meta .chip { font-family:var(--num); }
+  .sid-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:20px 0; }
+  .sid-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
+  .sid-stat .k { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .sid-stat .v { font:650 25px/1.1 var(--num); margin-top:7px; }
+  .sid-stat .m { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .sid-regime { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
+                border-radius:10px; padding:12px 15px; margin:8px 0 4px; font-size:13.5px; line-height:1.55; }
+  .sid-regime .lab { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; color:var(--info); display:block; margin-bottom:6px; }
+  .sid-sec { margin:30px 0 8px; }
+  .sid-sec h2 { font-size:18px; margin:0 0 3px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .sid-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+  .sid-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:12px; }
+  .conv-list { display:flex; flex-direction:column; gap:10px; }
+  .conv-row { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:12px 14px;
+              display:grid; grid-template-columns:64px 1fr; gap:14px; align-items:start; }
+  .conv-row.act-ACCUMULATE { border-left:3px solid var(--up); }
+  .conv-row.act-AVOID { border-left:3px solid var(--down); }
+  .conv-row.act-WATCH { border-left:3px solid var(--info); }
+  .conv-score { text-align:center; }
+  .conv-score .sc { font:700 27px/1 var(--num); }
+  .conv-score .scl { font:600 9px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .conv-main .tkline { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .conv-main .tk { font:700 17px/1 var(--num); }
+  .conv-chips { display:flex; flex-wrap:wrap; gap:5px; margin:7px 0; }
+  .pill { font:600 10.5px/1 var(--num); padding:4px 8px; border-radius:999px; border:1px solid var(--line);
+          color:var(--muted); background:var(--panel2); white-space:nowrap; }
+  .pill.act-ACCUMULATE { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, transparent); }
+  .pill.act-AVOID { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, transparent); }
+  .pill.act-WATCH { color:var(--info); border-color:color-mix(in srgb, var(--info) 45%, transparent); }
+  .pill.cv-high { color:var(--text); border-color:var(--text); font-weight:700; }
+  .pill.ext { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 45%, transparent); }
+  .pill.trump { color:var(--down); border-color:color-mix(in srgb, var(--down) 40%, transparent); }
+  .pill.ch { color:var(--info); border-color:color-mix(in srgb, var(--info) 30%, transparent); }
+  .pill.src-brain { color:#c77dff; border-color:#c77dff66; }
+  .conv-thesis { font-size:13px; line-height:1.55; margin:6px 0 2px; }
+  .conv-actors { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .conv-so { font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .conv-so b { color:var(--text); font-weight:600; }
+  table.sid-t { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+  table.sid-t th { text-align:left; font:600 10px/1.2 var(--num); letter-spacing:.06em; text-transform:uppercase;
+                   color:var(--muted); padding:5px 9px 7px; border-bottom:1px solid var(--line); }
+  table.sid-t td { padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.sid-t tr:last-child td { border-bottom:none; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .tkc { font-weight:700; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .mut { color:var(--muted); }
+  .sid-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:12px; }
+  .sid-grid h3 { margin:0 0 6px; font-size:14px; }
+  .kind-row { display:flex; flex-wrap:wrap; gap:7px 16px; margin:4px 0 10px; }
+  .kind-grp { font-size:11.5px; }
+  .kind-grp .kl { font:600 9.5px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .repoint { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--warn);
+             border-radius:9px; padding:9px 12px; margin-top:9px; font-size:12.5px; line-height:1.5; }
+  .repoint .strike { text-decoration:line-through; color:var(--muted); }
+  details.sid-more { margin-top:10px; }
+  details.sid-more > summary { cursor:pointer; font-size:12px; color:var(--info); list-style:none; }
+  details.sid-more > summary::-webkit-details-marker { display:none; }
+  .feedlink { font-family:var(--num); font-size:11.5px; }
+  .sid-cov { display:flex; flex-wrap:wrap; gap:7px; }
+  .cov { font:600 11px/1 var(--num); padding:5px 9px; border-radius:8px; border:1px solid var(--line); color:var(--muted); }
+  .cov.empty { opacity:.4; }
+  @media (max-width:760px){ .sid-stats{grid-template-columns:repeat(2,1fr);} .sid-grid{grid-template-columns:1fr;}
+    .conv-row{grid-template-columns:52px 1fr;gap:10px;} }
 {% endblock %}
 
 {% block content %}
-<section class="ad-hero">
-  <p class="eyebrow">📊 {{ t('Alternative Data Desk', '替代数据桌') }}</p>
-  <h1>{{ t('Alternative Data', '替代数据') }}</h1>
-  <p class="ad-sub">{{ t(
-     'Politician trades, government contracts, insider activity, lobbying, off-exchange flow, institutional 13F changes, Donald Trump trades and crowd attention — normalized into deterministic signals and a structured feed for the reasoning brain. Display / context-only.',
-     '政客交易、政府合同、内部人活动、游说、场外资金流、机构13F变化、特朗普交易与散户热度——标准化为确定性信号和供推理大脑使用的结构化数据流。仅供展示/参考。') }}</p>
-  <div class="ad-meta">
-    <span class="chip tag-event">{{ feed.source }}</span>
-    <span class="chip">{{ t('As of', '截至') }} {{ feed.as_of }}</span>
-    <span class="chip">{{ '{:,}'.format(feed.datasets.values()|map(attribute='rows')|sum) }} {{ t('events', '事件') }}</span>
-    <a class="chip feedlink" href="altdata/feed.json">🧠 {{ t('Brain feed (JSON)', '大脑数据流 (JSON)') }}</a>
-  </div>
-</section>
+<div class="sid">
 
-{# ---------------- Convergence: the connection layer ---------------- #}
-<div class="ad-card span2">
-  <h2>🔗 {{ t('Cross-signal convergence', '跨信号汇聚') }}
-      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('tickers lit by ≥2 independent channels', '被≥2个独立渠道同时触发的标的') }}</span></h2>
-  {% if s.convergence %}
-  <div class="conv">
-    {% for c in s.convergence %}
-    <div class="conv-item">
-      <div class="top"><span class="tk">{{ c.ticker }}</span><span class="score">{{ c.score }} {{ t('signals', '信号') }}</span></div>
-      <div class="chs">{% for ch in c.channel_list %}<span class="ch {{ 'pol' if 'congress' in ch else 'gov' if 'gov' in ch or 'lobby' in ch else 'ins' if 'insider' in ch or '13f' in ch else 'trump' if 'trump' in ch else '' }}">{{ ch }}</span>{% endfor %}</div>
-      <div class="mut2" style="font-size:11px">{{ c.why }}</div>
+  {# ---------- HERO ---------- #}
+  <section class="sid-hero">
+    <p class="sid-eyebrow">📡 {{ t('Signal Intelligence Desk', '信号情报台') }}</p>
+    <h1>{{ t('Alternative Data', '替代数据') }}</h1>
+    <p class="sid-sub">{{ t(
+      'Where independent public-record channels — congressional & insider buying, federal-contract acceleration, lobbying, dark-pool flow, smart-money 13F, app-store demand, patents — and the affiliations of influential actors line up on the same name. We surface the connection, score the conviction, grade every call against the tape, and emit it to the portfolio bot.',
+      '当多条独立的公开记录信号——国会与内部人买入、联邦合同加速、游说、暗池资金流、聪明钱13F、应用商店需求、专利——与有影响力人物的关联在同一标的上对齐时浮现出来。我们呈现关联、评估置信、用市场检验每个判断，并将其传输给组合机器人。') }}</p>
+    <div class="sid-meta">
+      <span class="chip">{{ feed.source }}</span>
+      <span class="chip">{{ t('As of', '截至') }} {{ feed.as_of }}</span>
+      {% if influence %}<span class="chip">{{ influence.n_actors }} {{ t('actors', '人物') }} · {{ influence.n_edges }} {{ t('edges', '关系') }}</span>{% endif %}
+      <span class="chip"><a class="feedlink" href="altdata/mastermind.json">mastermind.json ↗</a></span>
+      <span class="chip"><a class="feedlink" href="altdata/feed.json">feed.json ↗</a></span>
     </div>
-    {% endfor %}
-  </div>
-  {% else %}<p class="mut2">{{ t('No multi-channel convergence in the current window.', '当前窗口无多渠道汇聚。') }}</p>{% endif %}
-</div>
 
-{# ---------------- Picks worth examining (noise filtered) ---------------- #}
-{% if picks and picks.picks %}
-<div class="ad-card span2">
-  <h2>🎯 {{ t('Picks worth examining', '值得审视的标的') }}
-      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('specific conviction names; passive/broad holdings filtered out', '具体高信念标的；已过滤被动/宽基持仓') }}{% if picks.filtered_passive %} ({{ picks.filtered_passive }} {{ t('filtered','已过滤') }}){% endif %}</span></h2>
-  <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Why','原因') }}</th><th class="num">{{ t('vs SPY 60d','相对标普60日') }}</th><th>{{ t('Read','研判') }}</th></tr></thead><tbody>
-  {% for p in picks.picks %}
-    <tr><td class="tk">{{ p.ticker }}{% if p.trump_linked %} 🟥{% endif %}</td>
-        <td class="mut2">{{ p.reasons|join(' · ') }}</td>
-        <td class="num {{ 'r-pos' if (p.rs_vs_spy_60d or 0) > 0 else 'r-neg' if (p.rs_vs_spy_60d or 0) < 0 else '' }}">{% if p.rs_vs_spy_60d is not none %}{{ '%+.1f'|format(p.rs_vs_spy_60d) }}pp{% else %}—{% endif %}</td>
-        <td><span class="l-en">{{ p.verdict.en }}</span><span class="l-zh">{{ p.verdict.zh }}</span></td></tr>
-  {% endfor %}
-  </tbody></table>
-  <p class="mut2" style="font-size:11px;margin-top:8px">{{ t(
-    'A wealthy figure disclosed trades are mostly portfolio plumbing (broad ETFs, money-market, Treasury). Only specific, idiosyncratic conviction bets are shown here; the deep good-pick verdict lives on each stock page.',
-    '富有人士披露的交易大多是组合管理（宽基ETF、货币基金、国债）。此处仅显示具体、特异的高信念押注；深入的择股研判见各股票页面。') }}</p>
-</div>
-{% endif %}
-
-{# ---------------- Latent stakes & entity graph (the ABTC catch) ---------------- #}
-{% if latent and (latent.mismatches or latent.paths) %}
-<div class="ad-card span2">
-  <h2>🕵️ {{ t('Latent stakes & entity graph', '潜在持股与实体图谱') }}
-      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('the deals Quiver cannot see — family vehicles, equity-for-partnership, pre-IPO', 'Quiver看不到的交易——家族载体、以股权换合作、上市前') }}</span></h2>
-
-  {% if latent.mismatches %}
-  <div class="mut2" style="font-size:11.5px;margin-bottom:8px">{{ t('Label mismatch — branded one theme, value accrues to another:', '标签错配——表面属于某主题，价值实归另一主题：') }}</div>
-  <div class="conv">
-    {% for m in latent.mismatches %}
-    <div class="conv-item" style="border-color:#e0607a55">
-      <div class="top"><span class="tk">{{ m.entity_ticker or m.entity }}</span><span class="ch trump">→ {{ m.repointed_ticker }}</span></div>
-      <div style="font-size:12.5px;margin-bottom:4px"><s class="mut2">{{ m.brand_theme.en }}</s> → <b>{{ m.real_theme.en }}</b></div>
-      <div class="mut2" style="font-size:11px">{{ t('via','经由') }} {{ m.parent }} · {{ (m.note or '')[:130] }}</div>
+    <div class="sid-stats">
+      <div class="sid-stat"><div class="k">{{ t('Actionable signals', '可操作信号') }}</div>
+        <div class="v">{{ mastermind.n_signals or 0 }}</div>
+        <div class="m">{{ t('ranked, ≥2 channels or an affiliation', '已排名，≥2通道或一项关联') }}</div></div>
+      <div class="sid-stat"><div class="k">{{ t('Top conviction', '最高置信') }}</div>
+        {% set top = (mastermind.signals or [{}])[0] %}
+        <div class="v">{{ top.ticker or '—' }}</div>
+        <div class="m">{% if top.ticker %}{{ t('score', '评分') }} {{ top.signal_score }} · {{ top.conviction }}{% else %}{{ t('no convergence today', '今日无汇聚') }}{% endif %}</div></div>
+      <div class="sid-stat"><div class="k">{{ t('Affiliated tickers', '关联标的') }}</div>
+        <div class="v">{{ (influence.watch | length) if influence else 0 }}</div>
+        <div class="m">{{ t('actor → name connections', '人物→标的连接') }}</div></div>
+      <div class="sid-stat"><div class="k">{{ t('Ledger', '战绩') }}</div>
+        {% set ov = (track.overall or {}) if track else {} %}
+        <div class="v">{% if ov.hit_rate is not none %}{{ (ov.hit_rate*100)|round|int }}%{% else %}—{% endif %}</div>
+        <div class="m">{% if ov.n %}{{ ov.n }} {{ t('scored vs SPY', '对标普已评分') }}{% else %}{{ t('accruing', '累积中') }} · {{ track.open or 0 }} {{ t('open', '未到期') }}{% endif %}</div></div>
     </div>
-    {% endfor %}
-  </div>
+
+    {% set rr = (brain.regime_read if brain else none) or mastermind.regime_read %}
+    {% if rr %}
+    <div class="sid-regime"><span class="lab">{{ t('Brain read', 'AI解读') }}{% if brain and brain.degraded_reason %} ({{ t('deterministic — AI offline','确定性—AI离线') }}){% endif %}</span>
+      <span class="l-en">{{ rr }}</span><span class="l-zh">{{ (brain.regime_read_zh if brain else none) or rr }}</span></div>
+    {% endif %}
+  </section>
+
+  {# ---------- CONVICTION BOARD ---------- #}
+  <section class="sid-sec">
+    <h2>🎯 {{ t('Conviction board', '置信榜') }}
+      <span class="h-note">{{ t('ranked actionable signals — convergence × affiliation × AI conviction, graded vs SPY', '已排名的可操作信号——汇聚×关联×AI置信，对标普评分') }}</span></h2>
+    {% if mastermind and mastermind.signals %}
+    <div class="conv-list">
+      {% for sg in mastermind.signals[:14] %}
+      <div class="conv-row act-{{ sg.action }}">
+        <div class="conv-score">
+          <div class="sc">{{ sg.signal_score }}</div>
+          <div class="scl">{{ t('score', '评分') }}</div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">{{ sg.ticker }}</span>
+            <span class="pill act-{{ sg.action }}">{{ sg.action }}</span>
+            <span class="pill cv-{{ sg.conviction }}">{{ sg.conviction }}</span>
+            {% if sg.direction and sg.direction != 'neutral' %}<span class="pill">{{ sg.direction }}</span>{% endif %}
+            {% if sg.source == 'brain' %}<span class="pill src-brain">AI</span>{% endif %}
+            {% if sg.extended %}<span class="pill ext">{{ t('extended', '已拉伸') }}</span>{% endif %}
+            {% if sg.trump_linked %}<span class="pill trump">{{ t('Trump-linked', '特朗普关联') }}</span>{% endif %}
+            {% if sg.rs_vs_spy_60d is not none %}<span class="pill {{ 'r-pos' if sg.rs_vs_spy_60d>0 else 'r-neg' }}">{{ '%+.0f'|format(sg.rs_vs_spy_60d) }}pp 60d</span>{% endif %}
+          </div>
+          <div class="conv-chips">
+            {% for c in sg.channels %}<span class="pill ch">{{ ch(c) }}</span>{% endfor %}
+          </div>
+          {% if sg.thesis %}<div class="conv-thesis"><span class="l-en">{{ sg.thesis }}</span><span class="l-zh">{{ sg.thesis }}</span></div>{% endif %}
+          {% if sg.affiliations %}
+          <div class="conv-actors">🔗 {% for a in sg.affiliations %}{{ a.actor }} <span class="mut">({{ a.rel|replace('_',' ')|lower }})</span>{% if not loop.last %} · {% endif %}{% endfor %}
+            {% if sg.n_affiliated_actors > sg.affiliations|length %}<span class="mut"> +{{ sg.n_affiliated_actors - sg.affiliations|length }}</span>{% endif %}</div>
+          {% endif %}
+          {% if sg.second_order %}<div class="conv-so">↳ <b>{{ t('2nd/3rd-order', '二三级') }}:</b> {{ sg.second_order|join(' · ') }}</div>{% endif %}
+          {% if sg.clamped %}<div class="conv-so mut">⚠ {{ sg.clamped }}</div>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="mut" style="font-size:11.5px;margin-top:10px;">{{ t(
+      'signal_score = weighted convergence + AI conviction + price confirmation − extension. action/direction from the Opus brain when present; otherwise a deterministic WATCH. Never an order — the bot sizes it through its own risk framework.',
+      'signal_score = 加权汇聚 + AI置信 + 价格确认 − 拉伸。存在时由Opus大脑给出action/direction；否则为确定性WATCH。绝非下单——机器人通过自身风险框架进行仓位管理。') }}</p>
+    {% else %}
+    <div class="sid-card"><span class="mut">{{ t('No multi-channel convergence today.', '今日无多通道汇聚。') }}</span></div>
+    {% endif %}
+  </section>
+
+  {# ---------- INFLUENCE GRAPH ---------- #}
+  {% if influence and influence.watch %}
+  <section class="sid-sec">
+    <h2>🕸️ {{ t('Influence graph', '影响力图谱') }}
+      <span class="h-note">{{ t('important actors → the names they control, hold, talk about, or partner with', '重要人物→他们控制、持有、谈论或合作的标的') }}</span></h2>
+
+    <div class="sid-card">
+      <div class="kind-row">
+        {% for k, names in (influence.roster or {}).items() %}
+        <div class="kind-grp"><span class="kl">{{ (influence.kind_label.get(k, [k,k]))[0] }}</span> ·
+          <span class="l-en">{{ names|join(', ') }}</span><span class="l-zh">{{ names|join('、') }}</span></div>
+        {% endfor %}
+      </div>
+
+      {% for m in (influence.mismatches or []) %}
+      <div class="repoint">🔁 <b>{{ m.entity }}{% if m.entity_ticker %} ({{ m.entity_ticker }}){% endif %}</b> —
+        {{ t('branded', '标榜为') }} <span class="strike">{{ m.brand_theme.en }}</span>,
+        {{ t('but value accrues to', '但价值归属于') }} <b>{{ m.real_theme.en }}</b>
+        {{ t('via', '经由') }} {{ m.parent }}{% if m.repointed_ticker %} → <b>{{ m.repointed_ticker }}</b>{% endif %}.
+        {% if m.note %}<span class="mut">{{ m.note }}</span>{% endif %}</div>
+      {% endfor %}
+
+      <table class="sid-t" style="margin-top:12px;">
+        <thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Connected actors','关联人物') }}</th>
+          <th class="num">{{ t('Actors','人数') }}</th><th>{{ t('Alt-data','替代数据') }}</th><th>{{ t('Top holder','最大股东') }}</th></tr></thead>
+        <tbody>
+        {% for w in influence.watch[:16] %}
+        <tr>
+          <td class="tkc">{{ w.ticker }}</td>
+          <td>{% for a in w.actors %}{{ a.actor }} <span class="mut">{{ a.rel|replace('_',' ')|lower }}</span>{% if not loop.last %}; {% endif %}{% endfor %}</td>
+          <td class="num">{{ w.n_actors }}</td>
+          <td>{% if w.alt_corroborated %}<span class="pill ch">{{ t('corroborated','已印证') }} {{ w.alt_score }}ch</span>{% else %}<span class="mut">—</span>{% endif %}</td>
+          <td class="mut">{% if w.top_holder and w.top_holder.owner %}{{ w.top_holder.owner }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+
+      {% if influence.recent %}
+      <details class="sid-more"><summary>{{ t('New affiliations (45d)','新增关联（45天）') }} — {{ influence.recent|length }}</summary>
+        <table class="sid-t" style="margin-top:8px;">
+          <thead><tr><th>{{ t('Date','日期') }}</th><th>{{ t('Actor','人物') }}</th><th>{{ t('Link','关系') }}</th><th>{{ t('Target','目标') }}</th></tr></thead>
+          <tbody>{% for r in influence.recent[:12] %}<tr><td class="mut">{{ r.date }}</td><td>{{ r.actor }}</td>
+            <td class="mut">{{ r.rel|replace('_',' ')|lower }}</td>
+            <td>{% if r.url %}<a href="{{ r.url }}">{{ r.target }}{% if r.ticker %} ({{ r.ticker }}){% endif %}</a>{% else %}{{ r.target }}{% endif %}</td></tr>{% endfor %}</tbody>
+        </table></details>
+      {% endif %}
+      {% if influence.paths %}
+      <details class="sid-more"><summary>{{ t('Actor → theme chains','人物→主题链条') }} — {{ influence.paths|length }}</summary>
+        <table class="sid-t" style="margin-top:8px;">
+          <thead><tr><th>{{ t('Actor','人物') }}</th><th>{{ t('Theme','主题') }}</th><th>{{ t('Proxy','投资标的') }}</th><th class="num">{{ t('Conf','置信') }}</th></tr></thead>
+          <tbody>{% for p in influence.paths[:14] %}<tr><td>{{ p.actor }}</td><td>{{ p.theme.en }}</td>
+            <td class="tkc">{{ p.endpoint_ticker or '—' }}</td><td class="num">{{ p.min_confidence }}</td></tr>{% endfor %}</tbody>
+        </table></details>
+      {% endif %}
+      {% if influence.n_candidates %}<p class="mut" style="font-size:11px;margin:10px 0 0;">{{ t('LLM extractor has proposed', 'LLM提取器已提出') }} {{ influence.n_candidates }} {{ t('candidate edge(s) awaiting human review.', '条候选关系待人工审核。') }}</p>{% endif %}
+    </div>
+  </section>
   {% endif %}
 
-  {% if latent.paths %}
-  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">{{ t('Trump → theme paths (the early-detection chain):', '特朗普 → 主题路径（早期发现链）：') }}</div>
-  <table class="ad"><thead><tr><th>{{ t('Chain','链路') }}</th><th>{{ t('Proxy','代理') }}</th><th class="num">{{ t('Conf','置信') }}</th></tr></thead><tbody>
-  {% for p in latent.paths %}
-    <tr><td>{{ p.hops[0].src_name }}{% for h in p.hops %} <span class="mut2">→</span> {{ h.dst_name }}{% endfor %}</td>
-        <td class="tk">{{ p.endpoint_ticker or '—' }}</td><td class="num">{{ p.min_confidence }}</td></tr>
-  {% endfor %}
-  </tbody></table>
+  {# ---------- FALSIFIABLE LEDGER ---------- #}
+  {% if track and (track.scored_total is not none) %}
+  <section class="sid-sec">
+    <h2>📊 {{ t('Track record', '战绩') }}
+      <span class="h-note">{{ t('every convergence logged as a dated, falsifiable thesis vs SPY', '每次汇聚记为带日期、可证伪的对标普论点') }}</span></h2>
+    <div class="sid-card">
+      <div class="sid-meta">
+        <span class="chip">{{ track.scored_total }} {{ t('scored','已评分') }}</span>
+        <span class="chip">{{ track.open or 0 }} {{ t('open','未到期') }}</span>
+        {% if track.overall and track.overall.hit_rate is not none %}<span class="chip">{{ t('hit-rate','命中率') }} {{ track.overall.hit_rate }}</span>{% endif %}
+      </div>
+      <p class="mut" style="font-size:12.5px;"><span class="l-en">{{ track.calibration_note }}</span><span class="l-zh">{{ track.calibration_note_zh or track.calibration_note }}</span></p>
+      {% if track.recent %}
+      <table class="sid-t">
+        <thead><tr><th>{{ t('Thesis','论点') }}</th><th>{{ t('Lean','倾向') }}</th><th>{{ t('Outcome','结果') }}</th><th class="num">{{ t('vs SPY','对标普') }}</th><th>{{ t('Check by','核查日') }}</th></tr></thead>
+        <tbody>{% for r in track.recent[:8] %}<tr>
+          <td>{{ r.subject }}</td><td class="mut">{{ r.lean }}</td>
+          <td>{% if r.outcome=='hit' %}<span class="r-pos">{{ t('hit','命中') }}</span>{% elif r.outcome=='miss' %}<span class="r-neg">{{ t('miss','落空') }}</span>{% else %}<span class="mut">{{ r.outcome }}</span>{% endif %}</td>
+          <td class="num">{% if r.realized is not none %}{{ '%+.1f'|format(r.realized*100) }}%{% else %}—{% endif %}</td>
+          <td class="mut">{{ r.check_by }}</td></tr>{% endfor %}</tbody>
+      </table>
+      {% endif %}
+    </div>
+  </section>
   {% endif %}
 
-  {% if latent.watch %}
-  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">{{ t('Watch — graph tickers cross-referenced with live alt-data:', '关注——图谱标的与实时替代数据交叉验证：') }}</div>
-  <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Name','名称') }}</th><th>{{ t('Themes','主题') }}</th><th>{{ t('Trump','特朗普') }}</th><th>{{ t('Top holder','最大股东') }}</th><th>{{ t('Alt-data','替代数据') }}</th></tr></thead><tbody>
-  {% for w in latent.watch %}
-    <tr><td class="tk">{{ w.ticker }}</td><td class="mut2">{{ (w.name or '')[:22] }}</td>
-        <td>{% for th in w.themes %}<span class="ch">{{ th.en }}</span> {% endfor %}</td>
-        <td class="mut2">{{ w.trump_people|join(', ')|replace('Donald Trump Jr.','Don Jr')|replace('Eric Trump','Eric') }}</td>
-        <td class="mut2">{% if w.top_holder %}{{ (w.top_holder.owner or '')[:18] }}{% endif %}</td>
-        <td>{% if w.alt_corroborated %}<span class="r-pos">✓ {{ w.alt_score }}</span>{% else %}<span class="mut2">—</span>{% endif %}</td></tr>
-  {% endfor %}
-  </tbody></table>
-  {% endif %}
+  {# ---------- SIGNAL CARDS (per-feed derived signals) ---------- #}
+  <section class="sid-sec">
+    <h2>🔬 {{ t('Signal feeds', '信号源') }}
+      <span class="h-note">{{ t('each Quiver feed as its derived signal', '每个Quiver源呈现为其衍生信号') }}</span></h2>
+    <div class="sid-grid">
 
-  {% if latent.filings %}
-  <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">📄 {{ t('Recent SEC filings — the early channel (hits at filing time, before the news):', '近期SEC文件——早期信号渠道（文件提交即出现，先于新闻）：') }}</div>
-  <table class="ad"><thead><tr><th>{{ t('Date','日期') }}</th><th>{{ t('Form','表格') }}</th><th>{{ t('Company','公司') }}</th><th>{{ t('Items','条目') }}</th></tr></thead><tbody>
-  {% for f in latent.filings[:10] %}
-    <tr><td class="num mut2">{{ f.date }}</td>
-        <td>{% if f.url %}<a href="{{ f.url }}" target="_blank" rel="noopener">{{ f.form }}</a>{% else %}{{ f.form }}{% endif %}</td>
-        <td>{% if f.ticker %}<span class="tk">{{ f.ticker }}</span> {% endif %}<span class="mut2">{{ (f.company or '')[:26] }}</span></td>
-        <td class="mut2">{{ f.items }}</td></tr>
-  {% endfor %}
-  </tbody></table>
-  {% endif %}
-  {% if latent.n_candidates %}<div class="mut2" style="font-size:11px;margin-top:8px">🤖 {{ latent.n_candidates }} {{ t('LLM-extracted candidate edge(s) pending human review', 'LLM抽取的候选关系待人工审核') }}</div>{% endif %}
-  <p class="mut2" style="font-size:11px;margin-top:10px">{{ t(
-    'Curated public-record graph + an optional gated LLM extractor. Worked example: American Bitcoin is branded a bitcoin company, but ~80% is owned and operated by Hut 8 — an AI-power-infrastructure hyperscaler — so the real thesis was the equity stake in a future hyperscaler, not the bitcoin narrative. Display-only.',
-    '基于公开记录的人工图谱 + 可选的受控LLM抽取器。示例：American Bitcoin 表面是比特币公司，但约80%由 Hut 8 持有并运营——一家AI电力基础设施超大规模厂商——真正的逻辑是对未来超大规模厂商的股权，而非比特币叙事。仅供展示。') }}</p>
-</div>
-{% endif %}
+      <div class="sid-card"><h3>📜 {{ t('Gov-contract leaders','政府合同领先') }} <span class="mut" style="font-size:11px;">30d</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Awarded','授予') }}</th><th class="num">{{ t('Accel','加速') }}</th><th>{{ t('Top agency','主要机构') }}</th></tr></thead>
+        <tbody>{% for r in s.gov_contracts[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td>
+          <td class="num">{% if r.accel_x %}{{ '%.1f'|format(r.accel_x) }}×{% else %}—{% endif %}</td><td class="mut">{{ r.top_agency or '—' }}</td></tr>{% endfor %}</tbody></table></div>
 
-{# ---------------- Live alerts (flow into the Alert Center) ---------------- #}
-{% if alerts %}
-<div class="ad-card span2">
-  <h2>🔔 {{ t('Live alerts', '实时警报') }}
-      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('also surfaced in the', '同时显示于') }} <a href="alerts.html">{{ t('Alert Center', '警报中心') }}</a></span></h2>
-  <table class="ad"><tbody>
-  {% for a in alerts[:10] %}
-    <tr><td style="white-space:nowrap"><span class="chip {{ 'tag-event' if a.severity=='high' else '' }}">{{ a.severity }}</span></td>
-        <td><span class="l-en">{{ a.headline }}</span><span class="l-zh">{{ a.headline_zh }}</span>
-            <div class="mut2" style="font-size:10.5px">{{ a.ts[:10] }}</div></td></tr>
-  {% endfor %}
-  </tbody></table>
-</div>
-{% endif %}
+      <div class="sid-card"><h3>🏛️ {{ t('Congress net buying','国会净买入') }} <span class="mut" style="font-size:11px;">90d</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net','净') }}</th><th class="num">{{ t('Members','人数') }}</th><th class="num">{{ t('Est.$','估值') }}</th></tr></thead>
+        <tbody>{% for r in s.political.buys[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">+{{ r.net }}</td><td class="num">{{ r.members }}</td><td class="num">{{ money(r.est_usd) }}</td></tr>{% endfor %}</tbody></table></div>
 
-{# ---------------- Falsifiable ledger: convergence scored vs SPY ---------------- #}
-{% if track %}
-<div class="ad-card span2">
-  <h2>📈 {{ t('Signals scored vs SPY', '信号对标普评分') }}
-      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('convergence held accountable, not assumed', '汇聚信号需问责，而非假定') }}</span></h2>
-  <div class="ad-meta">
-    <span class="chip"><b>{{ track.scored_total or 0 }}</b>&nbsp;{{ t('scored', '已评分') }}</span>
-    <span class="chip"><b>{{ track.open or 0 }}</b>&nbsp;{{ t('open', '进行中') }}</span>
-    {% if track.overall and track.overall.n %}<span class="chip tag-equities"><b>{{ track.overall.hit_rate }}</b>&nbsp;{{ t('hit rate', '命中率') }}</span>{% endif %}
-  </div>
-  <p class="mut2" style="font-size:11.5px;margin:8px 0"><span class="l-en">{{ track.calibration_note }}</span><span class="l-zh">{{ track.calibration_note_zh or track.calibration_note }}</span></p>
-  {% if track.recent %}
-  <table class="ad"><thead><tr><th>{{ t('Thesis','论点') }}</th><th>{{ t('Lean','倾向') }}</th><th>{{ t('Outcome','结果') }}</th><th class="num">{{ t('vs SPY','对标普') }}</th><th class="num">{{ t('Check by','核查日') }}</th></tr></thead><tbody>
-  {% for r in track.recent[:8] %}
-    <tr><td class="tk">{{ r.subject }}</td><td class="mut2">{{ r.lean }}</td>
-        <td class="{{ 'r-pos' if r.outcome=='hit' else 'r-neg' if r.outcome=='miss' else 'mut2' }}">{{ r.outcome }}</td>
-        <td class="num">{% if r.realized is not none %}{{ '%+.1f%%'|format(r.realized*100) }}{% else %}—{% endif %}</td>
-        <td class="num mut2">{{ r.check_by }}</td></tr>
-  {% endfor %}
-  </tbody></table>
-  {% endif %}
-</div>
-{% endif %}
+      <div class="sid-card"><h3>👔 {{ t('Insider net buying','内部人净买入') }} <span class="mut" style="font-size:11px;">90d</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net $','净额') }}</th><th class="num">{{ t('Buyers','买家') }}</th></tr></thead>
+        <tbody>{% for r in s.insiders.buys[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num r-pos">{{ money(r.net_usd) }}</td><td class="num">{{ r.buyers }}</td></tr>{% endfor %}</tbody></table></div>
 
-<div class="ad-grid">
-  {# ---------------- Donald Trump trades ---------------- #}
-  <div class="ad-card">
-    <h2>🟥 {{ t('Donald Trump trades', '特朗普交易') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('Side','方向') }}</th><th class="num">{{ t('Est. $','估值') }}</th><th class="num">{{ t('Filed','申报') }}</th></tr></thead><tbody>
-    {% for r in s.trump[:14] %}
-      <tr><td><span class="tk">{{ r.ticker or '' }}</span> <span class="mut2">{{ (r.company or '')[:22] }}</span></td>
-          <td class="{{ 'r-pos' if r.side=='buy' else 'r-neg' if r.side=='sell' else '' }}">{{ r.side or r.transaction or '' }}</td>
-          <td class="num">{{ money(r.est_usd) }}</td><td class="num mut2">{{ r.filed or '' }}</td></tr>
-    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+      <div class="sid-card"><h3>📱 {{ t('App-store demand','应用商店需求') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Rating','评分') }}</th><th class="num">{{ t('Reviews','评论') }}</th><th>{{ t('App','应用') }}</th></tr></thead>
+        <tbody>{% for r in s.app_ratings[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.rating }}★</td><td class="num">{{ '{:,.0f}'.format(r.reviews) }}</td><td class="mut">{{ r.top_app }}</td></tr>{% endfor %}</tbody></table></div>
 
-  {# ---------------- Congress net flow ---------------- #}
-  <div class="ad-card">
-    <h2>🏛️ {{ t('Congress net buying (90d)', '国会净买入 (90天)') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net','净') }}</th><th class="num">{{ t('Members','议员') }}</th><th class="num">{{ t('Est. $','估值') }}</th><th>{{ t('Party','党') }}</th></tr></thead><tbody>
-    {% for r in s.political.buys[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="num r-pos">+{{ r.net }}</td><td class="num">{{ r.members }}</td><td class="num">{{ money(r.est_usd) }}</td><td class="mut2">{{ r.parties or '' }}</td></tr>
-    {% else %}<tr><td colspan="5" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+      <div class="sid-card"><h3>🔬 {{ t('Patent clusters','专利集群') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Grants','授权') }}</th><th class="num">{{ t('IPC','分类') }}</th></tr></thead>
+        <tbody>{% for r in s.patents[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.patents }}</td><td class="num">{{ r.ipc_classes }}</td></tr>{% endfor %}</tbody></table></div>
 
-  {# ---------------- Gov contracts ---------------- #}
-  <div class="ad-card">
-    <h2>📜 {{ t('Government contract leaders (30d)', '政府合同领先 (30天)') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Awarded','金额') }}</th><th class="num">{{ t('#','数') }}</th><th>{{ t('Top agency','主要机构') }}</th></tr></thead><tbody>
-    {% for r in s.gov_contracts[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td><td class="num">{{ r.contracts }}</td><td class="mut2">{{ (r.top_agency or '')[:26] }}</td></tr>
-    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+      <div class="sid-card"><h3>💼 {{ t('Lobbying spend','游说支出') }} <span class="mut" style="font-size:11px;">45d</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Spend','支出') }}</th><th class="num">{{ t('Spike','激增') }}</th></tr></thead>
+        <tbody>{% for r in s.lobbying[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ money(r.spend_usd) }}</td><td class="num">{% if r.spike_x %}{{ '%.1f'|format(r.spike_x) }}×{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
 
-  {# ---------------- Lobbying ---------------- #}
-  <div class="ad-card">
-    <h2>💼 {{ t('Lobbying spend (45d)', '游说支出 (45天)') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Spend','支出') }}</th><th class="num">{{ t('Spike×','激增×') }}</th><th>{{ t('Top issue','主要议题') }}</th></tr></thead><tbody>
-    {% for r in s.lobbying[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.spend_usd) }}</td><td class="num">{{ ('%.1f×' % r.spike_x) if r.spike_x else '·' }}</td><td class="mut2">{{ (r.top_issue or '')[:26] }}</td></tr>
-    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+      <div class="sid-card"><h3>🏦 {{ t('Institutional 13F adds','机构13F加仓') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Fund','基金') }}</th><th class="num">{{ t('Δ $','变化') }}</th></tr></thead>
+        <tbody>{% for r in s.inst_13f.adds[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="mut">{{ r.fund }}</td><td class="num">{{ money(r.chg_usd) }}</td></tr>{% endfor %}</tbody></table></div>
 
-  {# ---------------- Insiders ---------------- #}
-  <div class="ad-card">
-    <h2>👔 {{ t('Insider net buying (90d, open-market)', '内部人净买入 (90天, 公开市场)') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net $','净额') }}</th><th class="num">{{ t('Buyers','买方') }}</th></tr></thead><tbody>
-    {% for r in s.insiders.buys[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="num r-pos">{{ money(r.net_usd) }}</td><td class="num">{{ r.buyers }}</td></tr>
-    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+      <div class="sid-card"><h3>📑 {{ t('Bill catalysts','法案催化') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Sector','板块') }}</th><th>{{ t('Bill','法案') }}</th><th>{{ t('Action','进展') }}</th></tr></thead>
+        <tbody>{% for r in s.bills[:8] %}<tr><td>{{ r.sector }}</td><td class="mut">{% if r.url %}<a href="{{ r.url }}">{{ r.bill }}</a>{% else %}{{ r.bill }}{% endif %}</td><td class="mut">{{ r.last_action_date }}</td></tr>{% endfor %}</tbody></table></div>
 
-  {# ---------------- 13F ---------------- #}
-  <div class="ad-card">
-    <h2>🏦 {{ t('Institutional 13F adds', '机构13F加仓') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Fund','基金') }}</th><th class="num">{{ t('Δ $','Δ金额') }}</th></tr></thead><tbody>
-    {% for r in s.inst_13f.adds[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="mut2">{{ (r.fund or '')[:22] }}</td><td class="num r-pos">{{ money(r.chg_usd) }}</td></tr>
-    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+    </div>
+  </section>
 
-  {# ---------------- Off-exchange ---------------- #}
-  <div class="ad-card">
-    <h2>🌑 {{ t('Off-exchange / dark-pool flow', '场外/暗池资金流') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('OTC vol','场外量') }}</th><th class="num">{{ t('DPI','DPI') }}</th><th>{{ t('Lean','倾向') }}</th></tr></thead><tbody>
-    {% for r in s.offexchange[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.otc_total) }}</td><td class="num">{{ r.dpi }}</td><td class="{{ 'r-pos' if r.lean=='accumulation' else 'r-neg' if r.lean=='distribution' else 'mut2' }}">{{ r.lean }}</td></tr>
-    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
+  {# ---------- COVERAGE ---------- #}
+  <section class="sid-sec">
+    <div class="sid-card">
+      <div class="sid-cov">
+        {% for ds, d in feed.datasets.items() %}
+        <span class="cov{% if not d.rows %} empty{% endif %}">{{ d.emoji }} <span class="l-en">{{ d.label_en }}</span><span class="l-zh">{{ d.label_zh }}</span> · {{ '{:,}'.format(d.rows) }}</span>
+        {% endfor %}
+      </div>
+      <p class="mut" style="font-size:11px;margin:11px 0 0;">{{ t(
+        'Source: Quiver Quantitative (Trader plan) + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.',
+        '数据来源：Quiver Quantitative（Trader计划）+ 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
+    </div>
+  </section>
 
-  {# ---------------- CNBC + WSB ---------------- #}
-  <div class="ad-card">
-    <h2>📺 {{ t('CNBC picks & crowd', 'CNBC选股与散户') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Direction','方向') }}</th><th>{{ t('Trader','交易员') }}</th></tr></thead><tbody>
-    {% for r in s.cnbc[:8] %}
-      <tr><td class="tk">{{ r.Ticker }}</td><td class="{{ 'r-pos' if (r.Direction or '')|lower in ['buy','final trade'] else '' }}">{{ r.Direction }}</td><td class="mut2">{{ (r.Traders or '')[:20] }}</td></tr>
-    {% endfor %}
-    </tbody></table>
-    {% if s.wsb %}<div class="mut2" style="margin-top:8px;font-size:11.5px">🦍 {{ t('WSB top:','WSB热度:') }}
-      {% for r in s.wsb[:8] %}<span class="tk">{{ r.ticker }}</span><span class="mut2">({{ r.mentions }})</span>{{ ' · ' if not loop.last }}{% endfor %}</div>{% endif %}
-  </div>
-
-  {# ---------------- Corporate donors ---------------- #}
-  <div class="ad-card">
-    <h2>💸 {{ t('Corporate PAC donors', '企业PAC捐赠') }}</h2>
-    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Donated','捐赠额') }}</th><th class="num">{{ t('Pols','议员') }}</th></tr></thead><tbody>
-    {% for r in s.corporate_donors[:12] %}
-      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td><td class="num">{{ r.politicians }}</td></tr>
-    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
-
-  {# ---------------- Quiver news feed ---------------- #}
-  <div class="ad-card">
-    <h2>📰 {{ t('Quiver news feed', 'Quiver新闻') }}</h2>
-    <table class="ad"><tbody>
-    {% for r in s.news[:10] %}
-      <tr><td>{% if r.ticker %}<span class="tk">{{ r.ticker }}</span> {% endif %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ (r.headline or '')[:78] }}</a>
-          <div class="mut2" style="font-size:10.5px">{{ r.category }} · {{ r.time }}</div></td></tr>
-    {% else %}<tr><td class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
-    </tbody></table>
-  </div>
-</div>
-
-{# ---------------- Coverage strip ---------------- #}
-<div class="ad-card span2">
-  <h2>🗂️ {{ t('Dataset coverage', '数据集覆盖') }}</h2>
-  <div class="ad-cov">
-    {% for k, d in feed.datasets.items() %}
-      <span class="cov {{ 'empty' if d.rows==0 }}">{{ d.emoji }} {{ t(d.label_en, d.label_zh) }} · <b>{{ '{:,}'.format(d.rows) }}</b>{% if d.last_seen %} · {{ d.last_seen }}{% endif %}</span>
-    {% endfor %}
-  </div>
-  <p class="mut2" style="font-size:11px;margin-top:10px">{{ t(
-    'Source: Quiver Quantitative. Public-record data only (SEC, OGE, STOCK Act, USASpending, FINRA). Deterministic and display-only — these signals do not feed any scored axis or allocation. The structured feed above powers the reasoning brain that connects them to themes and the stock database.',
-    '数据来源：Quiver Quantitative。仅公开记录数据（SEC、OGE、STOCK法案、USASpending、FINRA）。确定性且仅供展示——这些信号不进入任何评分轴或配置。上方结构化数据流为将其与主题及股票数据库关联的推理大脑提供输入。') }}</p>
 </div>
 {% endblock %}

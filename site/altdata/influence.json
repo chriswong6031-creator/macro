@@ -1,0 +1,1702 @@
+{
+  "schema": "influence.graph.v1",
+  "as_of": "2026-06-19",
+  "generated_utc": "2026-06-20T06:54:28.712089+00:00",
+  "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
+  "n_actors": 22,
+  "n_entities": 19,
+  "n_themes": 14,
+  "n_edges": 105,
+  "kind_label": {
+    "politician": [
+      "Politician",
+      "\u653f\u754c"
+    ],
+    "trump_family": [
+      "Trump family",
+      "\u7279\u6717\u666e\u5bb6\u65cf"
+    ],
+    "exec": [
+      "Founder / exec",
+      "\u521b\u59cb\u4eba/\u9ad8\u7ba1"
+    ],
+    "fund": [
+      "Fund / activist",
+      "\u57fa\u91d1/\u6fc0\u8fdb\u6295\u8d44\u8005"
+    ],
+    "influencer": [
+      "Influencer",
+      "\u610f\u89c1\u9886\u8896"
+    ]
+  },
+  "roster": {
+    "trump_family": [
+      "Eric Trump",
+      "Donald Trump Jr."
+    ],
+    "influencer": [
+      "Paul Pelosi",
+      "Jim Cramer"
+    ],
+    "politician": [
+      "Nancy Pelosi",
+      "Tommy Tuberville",
+      "Marjorie Taylor Greene",
+      "Ro Khanna",
+      "Dan Crenshaw",
+      "Michael McCaul"
+    ],
+    "exec": [
+      "Elon Musk",
+      "Jensen Huang",
+      "Michael Saylor",
+      "Mark Zuckerberg",
+      "Sam Altman",
+      "Larry Ellison"
+    ],
+    "fund": [
+      "Warren Buffett",
+      "Bill Ackman",
+      "Carl Icahn",
+      "Cathie Wood",
+      "Michael Burry",
+      "Paul Singer"
+    ]
+  },
+  "paths": [
+    {
+      "actor": "Mark Zuckerberg",
+      "actor_zh": "\u9a6c\u514b\u00b7\u624e\u514b\u4f2f\u683c",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "social_media_ai",
+        "en": "Social media platforms & AI integration",
+        "zh": "\u793e\u4ea4\u5a92\u4f53\u5e73\u53f0\u4e0eAI\u878d\u5408"
+      },
+      "hops": [
+        {
+          "src": "mark_zuckerberg",
+          "src_name": "Mark Zuckerberg",
+          "rel": "CONTROLS",
+          "dst": "meta_platforms",
+          "dst_name": "Meta Platforms",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "meta_platforms",
+          "src_name": "Meta Platforms",
+          "rel": "MEMBER_OF",
+          "dst": "theme:social_media_ai",
+          "dst_name": "Social media platforms & AI integration",
+          "provenance": "FACT",
+          "confidence": 0.95
+        }
+      ],
+      "min_confidence": 0.95,
+      "endpoint_ticker": "META"
+    },
+    {
+      "actor": "Elon Musk",
+      "actor_zh": "\u57c3\u9686\u00b7\u9a6c\u65af\u514b",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "ev_autonomous",
+        "en": "Electric vehicles & autonomous driving",
+        "zh": "\u7535\u52a8\u6c7d\u8f66\u4e0e\u81ea\u52a8\u9a7e\u9a76"
+      },
+      "hops": [
+        {
+          "src": "elon_musk",
+          "src_name": "Elon Musk",
+          "rel": "AFFILIATES_WITH",
+          "dst": "theme:ev_autonomous",
+          "dst_name": "Electric vehicles & autonomous driving",
+          "provenance": "FACT",
+          "confidence": 0.95
+        }
+      ],
+      "min_confidence": 0.95,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Jensen Huang",
+      "actor_zh": "\u9ec4\u4ec1\u52cb",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "ai_compute",
+        "en": "AI compute & data centers",
+        "zh": "AI\u7b97\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3"
+      },
+      "hops": [
+        {
+          "src": "jensen_huang",
+          "src_name": "Jensen Huang",
+          "rel": "AFFILIATES_WITH",
+          "dst": "theme:ai_compute",
+          "dst_name": "AI compute & data centers",
+          "provenance": "FACT",
+          "confidence": 0.95
+        }
+      ],
+      "min_confidence": 0.95,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Michael Saylor",
+      "actor_zh": "\u8fc8\u514b\u5c14\u00b7\u585e\u52d2",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "crypto_digital_assets",
+        "en": "Crypto & digital assets",
+        "zh": "\u52a0\u5bc6\u8d27\u5e01\u4e0e\u6570\u5b57\u8d44\u4ea7"
+      },
+      "hops": [
+        {
+          "src": "michael_saylor",
+          "src_name": "Michael Saylor",
+          "rel": "TALKS_ABOUT",
+          "dst": "theme:crypto_digital_assets",
+          "dst_name": "Crypto & digital assets",
+          "provenance": "FACT",
+          "confidence": 0.93
+        }
+      ],
+      "min_confidence": 0.93,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Michael Saylor",
+      "actor_zh": "\u8fc8\u514b\u5c14\u00b7\u585e\u52d2",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "bitcoin_treasury",
+        "en": "Bitcoin treasury corporate strategy",
+        "zh": "\u4f01\u4e1a\u6bd4\u7279\u5e01\u56fd\u5e93\u7b56\u7565"
+      },
+      "hops": [
+        {
+          "src": "michael_saylor",
+          "src_name": "Michael Saylor",
+          "rel": "CONTROLS",
+          "dst": "strategy_inc",
+          "dst_name": "Strategy Inc (formerly MicroStrategy)",
+          "provenance": "FACT",
+          "confidence": 0.92
+        },
+        {
+          "src": "strategy_inc",
+          "src_name": "Strategy Inc (formerly MicroStrategy)",
+          "rel": "MEMBER_OF",
+          "dst": "theme:bitcoin_treasury",
+          "dst_name": "Bitcoin treasury corporate strategy",
+          "provenance": "FACT",
+          "confidence": 0.95
+        }
+      ],
+      "min_confidence": 0.92,
+      "endpoint_ticker": "MSTR"
+    },
+    {
+      "actor": "Eric Trump",
+      "actor_zh": "\u57c3\u91cc\u514b\u00b7\u7279\u6717\u666e",
+      "actor_kind": "trump_family",
+      "theme": {
+        "id": "crypto",
+        "en": "Crypto / digital assets",
+        "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+      },
+      "hops": [
+        {
+          "src": "eric_trump",
+          "src_name": "Eric Trump",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "MEMBER_OF",
+          "dst": "theme:crypto",
+          "dst_name": "Crypto / digital assets",
+          "provenance": "FACT",
+          "confidence": 0.9
+        }
+      ],
+      "min_confidence": 0.9,
+      "endpoint_ticker": "ABTC"
+    },
+    {
+      "actor": "Donald Trump Jr.",
+      "actor_zh": "\u5c0f\u5510\u7eb3\u5fb7\u00b7\u7279\u6717\u666e",
+      "actor_kind": "trump_family",
+      "theme": {
+        "id": "crypto",
+        "en": "Crypto / digital assets",
+        "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+      },
+      "hops": [
+        {
+          "src": "don_jr",
+          "src_name": "Donald Trump Jr.",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.9
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "MEMBER_OF",
+          "dst": "theme:crypto",
+          "dst_name": "Crypto / digital assets",
+          "provenance": "FACT",
+          "confidence": 0.9
+        }
+      ],
+      "min_confidence": 0.9,
+      "endpoint_ticker": "ABTC"
+    },
+    {
+      "actor": "Sam Altman",
+      "actor_zh": "\u5c71\u59c6\u00b7\u5965\u7279\u66fc",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "ai_compute",
+        "en": "AI compute & data centers",
+        "zh": "AI\u7b97\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3"
+      },
+      "hops": [
+        {
+          "src": "sam_altman",
+          "src_name": "Sam Altman",
+          "rel": "CONTROLS",
+          "dst": "openai",
+          "dst_name": "OpenAI",
+          "provenance": "FACT",
+          "confidence": 0.9
+        },
+        {
+          "src": "openai",
+          "src_name": "OpenAI",
+          "rel": "MEMBER_OF",
+          "dst": "theme:ai_compute",
+          "dst_name": "AI compute & data centers",
+          "provenance": "FACT",
+          "confidence": 0.95
+        }
+      ],
+      "min_confidence": 0.9,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Larry Ellison",
+      "actor_zh": "\u62c9\u91cc\u00b7\u57c3\u91cc\u68ee",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "cloud_enterprise_software",
+        "en": "Cloud infrastructure & enterprise software",
+        "zh": "\u4e91\u57fa\u7840\u8bbe\u65bd\u4e0e\u4f01\u4e1a\u8f6f\u4ef6"
+      },
+      "hops": [
+        {
+          "src": "larry_ellison",
+          "src_name": "Larry Ellison",
+          "rel": "CONTROLS",
+          "dst": "oracle_corp",
+          "dst_name": "Oracle Corporation",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "oracle_corp",
+          "src_name": "Oracle Corporation",
+          "rel": "MEMBER_OF",
+          "dst": "theme:cloud_enterprise_software",
+          "dst_name": "Cloud infrastructure & enterprise software",
+          "provenance": "FACT",
+          "confidence": 0.9
+        }
+      ],
+      "min_confidence": 0.9,
+      "endpoint_ticker": "ORCL"
+    },
+    {
+      "actor": "Carl Icahn",
+      "actor_zh": "\u5361\u5c14\u00b7\u4f0a\u574e",
+      "actor_kind": "fund",
+      "theme": {
+        "id": "activist_value",
+        "en": "Activist value investing",
+        "zh": "\u79ef\u6781\u7ef4\u6743\u4ef7\u503c\u6295\u8d44"
+      },
+      "hops": [
+        {
+          "src": "carl_icahn",
+          "src_name": "Carl Icahn",
+          "rel": "CONTROLS",
+          "dst": "icahn_enterprises",
+          "dst_name": "Icahn Enterprises",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "icahn_enterprises",
+          "src_name": "Icahn Enterprises",
+          "rel": "MEMBER_OF",
+          "dst": "theme:activist_value",
+          "dst_name": "Activist value investing",
+          "provenance": "FACT",
+          "confidence": 0.88
+        }
+      ],
+      "min_confidence": 0.88,
+      "endpoint_ticker": "IEP"
+    },
+    {
+      "actor": "Cathie Wood",
+      "actor_zh": "\u51ef\u897f\u00b7\u4f0d\u5fb7",
+      "actor_kind": "fund",
+      "theme": {
+        "id": "crypto_digital_assets",
+        "en": "Crypto & digital assets",
+        "zh": "\u52a0\u5bc6\u8d27\u5e01\u4e0e\u6570\u5b57\u8d44\u4ea7"
+      },
+      "hops": [
+        {
+          "src": "cathie_wood",
+          "src_name": "Cathie Wood",
+          "rel": "CONTROLS",
+          "dst": "ark_invest",
+          "dst_name": "ARK Invest",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "ark_invest",
+          "src_name": "ARK Invest",
+          "rel": "MEMBER_OF",
+          "dst": "theme:crypto_digital_assets",
+          "dst_name": "Crypto & digital assets",
+          "provenance": "FACT",
+          "confidence": 0.88
+        }
+      ],
+      "min_confidence": 0.88,
+      "endpoint_ticker": "ARKK"
+    },
+    {
+      "actor": "Ro Khanna",
+      "actor_zh": "\u7f57\u00b7\u5361\u7eb3",
+      "actor_kind": "politician",
+      "theme": {
+        "id": "semiconductor_chips",
+        "en": "Semiconductors & chip supply chain",
+        "zh": "\u534a\u5bfc\u4f53\u4e0e\u82af\u7247\u4f9b\u5e94\u94fe"
+      },
+      "hops": [
+        {
+          "src": "ro_khanna",
+          "src_name": "Ro Khanna",
+          "rel": "AFFILIATES_WITH",
+          "dst": "theme:semiconductor_chips",
+          "dst_name": "Semiconductors & chip supply chain",
+          "provenance": "FACT",
+          "confidence": 0.88
+        }
+      ],
+      "min_confidence": 0.88,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Eric Trump",
+      "actor_zh": "\u57c3\u91cc\u514b\u00b7\u7279\u6717\u666e",
+      "actor_kind": "trump_family",
+      "theme": {
+        "id": "ai_power_infra",
+        "en": "AI power & data-center infrastructure",
+        "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+      },
+      "hops": [
+        {
+          "src": "eric_trump",
+          "src_name": "Eric Trump",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "OPERATED_BY",
+          "dst": "hut8",
+          "dst_name": "Hut 8 Corp",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "hut8",
+          "src_name": "Hut 8 Corp",
+          "rel": "MEMBER_OF",
+          "dst": "theme:ai_power_infra",
+          "dst_name": "AI power & data-center infrastructure",
+          "provenance": "INFERRED",
+          "confidence": 0.85
+        }
+      ],
+      "min_confidence": 0.85,
+      "endpoint_ticker": "HUT"
+    },
+    {
+      "actor": "Donald Trump Jr.",
+      "actor_zh": "\u5c0f\u5510\u7eb3\u5fb7\u00b7\u7279\u6717\u666e",
+      "actor_kind": "trump_family",
+      "theme": {
+        "id": "ai_power_infra",
+        "en": "AI power & data-center infrastructure",
+        "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+      },
+      "hops": [
+        {
+          "src": "don_jr",
+          "src_name": "Donald Trump Jr.",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.9
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "OPERATED_BY",
+          "dst": "hut8",
+          "dst_name": "Hut 8 Corp",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "hut8",
+          "src_name": "Hut 8 Corp",
+          "rel": "MEMBER_OF",
+          "dst": "theme:ai_power_infra",
+          "dst_name": "AI power & data-center infrastructure",
+          "provenance": "INFERRED",
+          "confidence": 0.85
+        }
+      ],
+      "min_confidence": 0.85,
+      "endpoint_ticker": "HUT"
+    },
+    {
+      "actor": "Elon Musk",
+      "actor_zh": "\u57c3\u9686\u00b7\u9a6c\u65af\u514b",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "ai_compute",
+        "en": "AI compute & data centers",
+        "zh": "AI\u7b97\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3"
+      },
+      "hops": [
+        {
+          "src": "elon_musk",
+          "src_name": "Elon Musk",
+          "rel": "TALKS_ABOUT",
+          "dst": "theme:ai_compute",
+          "dst_name": "AI compute & data centers",
+          "provenance": "FACT",
+          "confidence": 0.85
+        }
+      ],
+      "min_confidence": 0.85,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Eric Trump",
+      "actor_zh": "\u57c3\u91cc\u514b\u00b7\u7279\u6717\u666e",
+      "actor_kind": "trump_family",
+      "theme": {
+        "id": "media",
+        "en": "Media & social",
+        "zh": "\u5a92\u4f53\u4e0e\u793e\u4ea4"
+      },
+      "hops": [
+        {
+          "src": "eric_trump",
+          "src_name": "Eric Trump",
+          "rel": "CONTROLS",
+          "dst": "trump_media",
+          "dst_name": "Trump Media & Technology Group",
+          "provenance": "FACT",
+          "confidence": 0.85
+        },
+        {
+          "src": "trump_media",
+          "src_name": "Trump Media & Technology Group",
+          "rel": "MEMBER_OF",
+          "dst": "theme:media",
+          "dst_name": "Media & social",
+          "provenance": "FACT",
+          "confidence": 0.8
+        }
+      ],
+      "min_confidence": 0.8,
+      "endpoint_ticker": "DJT"
+    },
+    {
+      "actor": "Larry Ellison",
+      "actor_zh": "\u62c9\u91cc\u00b7\u57c3\u91cc\u68ee",
+      "actor_kind": "exec",
+      "theme": {
+        "id": "ai_compute",
+        "en": "AI compute & data centers",
+        "zh": "AI\u7b97\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3"
+      },
+      "hops": [
+        {
+          "src": "larry_ellison",
+          "src_name": "Larry Ellison",
+          "rel": "AFFILIATES_WITH",
+          "dst": "theme:ai_compute",
+          "dst_name": "AI compute & data centers",
+          "provenance": "FACT",
+          "confidence": 0.8
+        }
+      ],
+      "min_confidence": 0.8,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Tommy Tuberville",
+      "actor_zh": "\u6c64\u7c73\u00b7\u5854\u4f2f\u7ef4\u5c14",
+      "actor_kind": "politician",
+      "theme": {
+        "id": "defense_industrials",
+        "en": "Defense & industrial companies",
+        "zh": "\u56fd\u9632\u4e0e\u5de5\u4e1a\u80a1"
+      },
+      "hops": [
+        {
+          "src": "tommy_tuberville",
+          "src_name": "Tommy Tuberville",
+          "rel": "AFFILIATES_WITH",
+          "dst": "theme:defense_industrials",
+          "dst_name": "Defense & industrial companies",
+          "provenance": "INFERRED",
+          "confidence": 0.72
+        }
+      ],
+      "min_confidence": 0.72,
+      "endpoint_ticker": null
+    },
+    {
+      "actor": "Paul Singer",
+      "actor_zh": "\u4fdd\u7f57\u00b7\u8f9b\u683c",
+      "actor_kind": "fund",
+      "theme": {
+        "id": "activist_value",
+        "en": "Activist value investing",
+        "zh": "\u79ef\u6781\u7ef4\u6743\u4ef7\u503c\u6295\u8d44"
+      },
+      "hops": [
+        {
+          "src": "paul_singer",
+          "src_name": "Paul Singer",
+          "rel": "CONTROLS",
+          "dst": "elliott_mgmt",
+          "dst_name": "Elliott Investment Management",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "elliott_mgmt",
+          "src_name": "Elliott Investment Management",
+          "rel": "HOLDS_STAKE",
+          "dst": "southwest_airlines",
+          "dst_name": "Southwest Airlines",
+          "provenance": "DISCLOSED",
+          "confidence": 0.9
+        },
+        {
+          "src": "southwest_airlines",
+          "src_name": "Southwest Airlines",
+          "rel": "MEMBER_OF",
+          "dst": "theme:activist_value",
+          "dst_name": "Activist value investing",
+          "provenance": "INFERRED",
+          "confidence": 0.7
+        }
+      ],
+      "min_confidence": 0.7,
+      "endpoint_ticker": "LUV"
+    },
+    {
+      "actor": "Jim Cramer",
+      "actor_zh": "\u5409\u59c6\u00b7\u514b\u83b1\u9ed8",
+      "actor_kind": "influencer",
+      "theme": {
+        "id": "ai_compute",
+        "en": "AI compute & data centers",
+        "zh": "AI\u7b97\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3"
+      },
+      "hops": [
+        {
+          "src": "jim_cramer",
+          "src_name": "Jim Cramer",
+          "rel": "AFFILIATES_WITH",
+          "dst": "theme:ai_compute",
+          "dst_name": "AI compute & data centers",
+          "provenance": "INFERRED",
+          "confidence": 0.65
+        }
+      ],
+      "min_confidence": 0.65,
+      "endpoint_ticker": null
+    }
+  ],
+  "mismatches": [
+    {
+      "entity": "American Bitcoin",
+      "entity_ticker": "ABTC",
+      "brand_theme": {
+        "id": "crypto",
+        "en": "Crypto / digital assets",
+        "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+      },
+      "real_theme": {
+        "id": "ai_power_infra",
+        "en": "AI power & data-center infrastructure",
+        "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+      },
+      "parent": "Hut 8 Corp",
+      "parent_ticker": "HUT",
+      "confidence": 0.85,
+      "note": "Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthropic/Fluidstack 245MW $7B Dec-2025; $9.8B Beacon Point lease May-2026; >$16.8B pipeline; 8.6GW in development).",
+      "repointed_ticker": "HUT"
+    },
+    {
+      "entity": "CVR Energy",
+      "entity_ticker": "CVI",
+      "brand_theme": {
+        "id": "energy_transition",
+        "en": "Energy transition & oil majors",
+        "zh": "\u80fd\u6e90\u8f6c\u578b\u4e0e\u77f3\u6cb9\u5de8\u5934"
+      },
+      "real_theme": {
+        "id": "activist_value",
+        "en": "Activist value investing",
+        "zh": "\u79ef\u6781\u7ef4\u6743\u4ef7\u503c\u6295\u8d44"
+      },
+      "parent": "Icahn Enterprises",
+      "parent_ticker": "IEP",
+      "confidence": 0.88,
+      "note": "Carl Icahn's diversified holding company; operates energy (CVR Energy), automotive, real estate segments",
+      "repointed_ticker": "IEP"
+    }
+  ],
+  "watch": [
+    {
+      "ticker": "NVDA",
+      "actors": [
+        {
+          "actor": "Jensen Huang",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Nancy Pelosi",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Michael McCaul",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "TALKS_ABOUT",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        },
+        {
+          "actor": "Paul Pelosi",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 6,
+      "alt_corroborated": true,
+      "alt_score": 5,
+      "alt_weighted": 2.0,
+      "alt_channels": [
+        "13f_add",
+        "affiliation",
+        "darkpool_accum",
+        "patent_cluster",
+        "retail_buzz"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 2266683275
+      }
+    },
+    {
+      "ticker": "META",
+      "actors": [
+        {
+          "actor": "Mark Zuckerberg",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Mark Zuckerberg",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Dan Crenshaw",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Bill Ackman",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 4,
+      "alt_corroborated": true,
+      "alt_score": 3,
+      "alt_weighted": 1.25,
+      "alt_channels": [
+        "affiliation",
+        "cnbc_pick",
+        "trump"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 199995630
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "actors": [
+        {
+          "actor": "Nancy Pelosi",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Paul Pelosi",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        },
+        {
+          "actor": "Dan Crenshaw",
+          "kind": "politician",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        },
+        {
+          "actor": "Bill Ackman",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 4,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "13f_add",
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "AAPL",
+      "actors": [
+        {
+          "actor": "Dan Crenshaw",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Paul Pelosi",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "kind": "politician",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        },
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 4,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "TSLA",
+      "actors": [
+        {
+          "actor": "Elon Musk",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 3,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
+      "alt_channels": [
+        "affiliation",
+        "retail_buzz"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "MSFT",
+      "actors": [
+        {
+          "actor": "Sam Altman",
+          "kind": "exec",
+          "rel": "PARTNERS_WITH",
+          "provenance": "FACT",
+          "qualitative": true
+        },
+        {
+          "actor": "Bill Ackman",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 4,
+      "alt_weighted": 1.7,
+      "alt_channels": [
+        "13f_add",
+        "affiliation",
+        "app_demand",
+        "patent_cluster"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "ORCL",
+      "actors": [
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "GOOGL",
+      "actors": [
+        {
+          "actor": "Nancy Pelosi",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Paul Pelosi",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 3,
+      "alt_weighted": 1.3,
+      "alt_channels": [
+        "13f_add",
+        "affiliation",
+        "app_demand"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "PLTR",
+      "actors": [
+        {
+          "actor": "Marjorie Taylor Greene",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.65,
+      "alt_channels": [
+        "affiliation",
+        "retail_buzz"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "BA",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "ENDORSES",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "QCOM",
+      "actors": [
+        {
+          "actor": "Tommy Tuberville",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "MU",
+      "actors": [
+        {
+          "actor": "Ro Khanna",
+          "kind": "politician",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "GOOG",
+      "actors": [
+        {
+          "actor": "Dan Crenshaw",
+          "kind": "politician",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.0,
+      "alt_channels": [
+        "affiliation",
+        "trump"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "UBER",
+      "actors": [
+        {
+          "actor": "Bill Ackman",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "LUV",
+      "actors": [
+        {
+          "actor": "Paul Singer",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "ABTC",
+      "actors": [
+        {
+          "actor": "Eric Trump",
+          "kind": "trump_family",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Donald Trump Jr.",
+          "kind": "trump_family",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "BlackRock, Inc.",
+        "title": "Institution",
+        "shares": 3648400
+      }
+    },
+    {
+      "ticker": "MSTR",
+      "actors": [
+        {
+          "actor": "Michael Saylor",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Michael Saylor",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "IEP",
+      "actors": [
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "ASML",
+      "actors": [
+        {
+          "actor": "Ro Khanna",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Michael McCaul",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "DJT",
+      "actors": [
+        {
+          "actor": "Eric Trump",
+          "kind": "trump_family",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "Trump Donald J. JR",
+        "title": "",
+        "shares": 114787498
+      }
+    },
+    {
+      "ticker": "BRK.B",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "ARKK",
+      "actors": [
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "UCTT",
+      "actors": [
+        {
+          "actor": "Ro Khanna",
+          "kind": "politician",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "OXY",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "AXP",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "KO",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "CVI",
+      "actors": [
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "COIN",
+      "actors": [
+        {
+          "actor": "Cathie Wood",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "MOH",
+      "actors": [
+        {
+          "actor": "Michael Burry",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "LULU",
+      "actors": [
+        {
+          "actor": "Michael Burry",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "BP",
+      "actors": [
+        {
+          "actor": "Paul Singer",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    }
+  ],
+  "recent": [
+    {
+      "actor": "Warren Buffett",
+      "rel": "CONTROLS",
+      "target": "Berkshire Hathaway",
+      "ticker": "BRK.B",
+      "provenance": "FACT",
+      "note": "Chairman and CEO of Berkshire Hathaway; largest shareholder",
+      "url": "https://www.gurufocus.com/guru/warren%2Bbuffett/stock-picks?view=table",
+      "date": "2026-05-15"
+    },
+    {
+      "actor": "Bill Ackman",
+      "rel": "CONTROLS",
+      "target": "Pershing Square Capital Management",
+      "ticker": null,
+      "provenance": "FACT",
+      "note": "Founder and CEO of Pershing Square Capital Management",
+      "url": "https://www.gurufocus.com/guru/bill+ackman/current-portfolio/portfolio?view=table",
+      "date": "2026-05-15"
+    },
+    {
+      "actor": "Carl Icahn",
+      "rel": "CONTROLS",
+      "target": "Icahn Enterprises",
+      "ticker": "IEP",
+      "provenance": "FACT",
+      "note": "Founder and Chairman of IEP; owns ~549M IEP units (~49% of his 13F) per Q4 2025 filings",
+      "url": "https://www.gurufocus.com/guru/carl+icahn/current-portfolio/portfolio?view=table",
+      "date": "2026-05-15"
+    }
+  ],
+  "n_candidates": 0,
+  "filings": [
+    {
+      "date": "2026-06-17",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126025585/ef20076341_425.htm"
+    },
+    {
+      "date": "2026-06-12",
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "5.07",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926073505/tm2617732d1_8k.htm"
+    },
+    {
+      "date": "2026-06-10",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024736/ef20075853_425.htm"
+    },
+    {
+      "date": "2026-06-10",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_8k.htm"
+    },
+    {
+      "date": "2026-06-10",
+      "form": "S-1",
+      "company": "American Ventures Acquisition Corp. I",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/2111009/000121390026066994/ea0293721-s1_american1.htm"
+    },
+    {
+      "date": "2026-06-10",
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "1.01,2.03,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926071952/tm2617190d1_8k.htm"
+    },
+    {
+      "date": "2026-06-10",
+      "form": "8-K",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024735/ef20075853_ex99-1.htm"
+    },
+    {
+      "date": "2026-06-05",
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070744/tm2616926d1_ex99-1.htm"
+    },
+    {
+      "date": "2026-06-05",
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070744/tm2616926d1_8k.htm"
+    },
+    {
+      "date": "2026-06-04",
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070393/tm2616869d1_8k.htm"
+    },
+    {
+      "date": "2026-06-04",
+      "form": "8-K",
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070393/tm2616869d1_ex99-1.htm"
+    },
+    {
+      "date": "2026-06-01",
+      "form": "8-K",
+      "company": "Vertical Data Inc.",
+      "ticker": "VDTA",
+      "items": "8.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/2033264/000149315226026649/ex99-1.htm"
+    }
+  ]
+}

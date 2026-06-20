@@ -29,6 +29,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from lib import config
+from engine import altdata_models as models
 
 log = logging.getLogger(__name__)
 
@@ -443,46 +444,26 @@ def news_recent(n: int = 20) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- convergence
-def convergence(signals: dict, top: int = 25) -> list[dict]:
+def convergence(signals: dict, top: int = 25, affiliations: dict | None = None) -> list[dict]:
     """Tickers lit up by several independent channels at once — the connection /
-    unusual-activity layer. Each channel votes once; score = distinct channels."""
-    channels: dict[str, dict] = {}
-
-    def add(ticker, channel, detail):
-        tk = _s(ticker)
-        if not tk:
-            return
-        channels.setdefault(tk, {"ticker": tk, "channels": {}, "score": 0})
-        if channel not in channels[tk]["channels"]:
-            channels[tk]["channels"][channel] = detail
-            channels[tk]["score"] += 1
-
-    for r in signals.get("political", {}).get("buys", []):
-        add(r["ticker"], "congress_buy", f"{r['members']} members net +{r['net']}")
-    for r in signals.get("gov_contracts", []):
-        add(r["ticker"], "gov_contract", f"${r['total_usd']:,.0f} awarded")
-    for r in signals.get("lobbying", []):
-        add(r["ticker"], "lobbying", f"${r['spend_usd']:,.0f} lobbied")
-    for r in signals.get("insiders", {}).get("buys", []):
-        add(r["ticker"], "insider_buy", f"${r['net_usd']:,.0f} net insider buy")
-    for r in signals.get("offexchange", []):
-        if r.get("lean") == "accumulation":
-            add(r["ticker"], "darkpool_accum", f"DPI {r['dpi']}")
-    for r in signals.get("cnbc", []):
-        if (r.get("Direction") or "").lower() in ("buy", "final trade"):
-            add(r.get("Ticker"), "cnbc_pick", r.get("Traders"))
-    for r in signals.get("inst_13f", {}).get("adds", [])[:10]:
-        add(r["ticker"], "13f_add", f"{r['fund']} +${r['chg_usd']:,.0f}")
-    for r in signals.get("trump", []):
-        if r.get("side") == "buy":
-            add(r["ticker"], "trump_buy", r.get("company"))
-
-    rows = [c for c in channels.values() if c["score"] >= 2]
-    for c in rows:
-        c["channel_list"] = list(c["channels"].keys())
-        c["why"] = " · ".join(f"{k}: {v}" for k, v in c["channels"].items() if v)
-        del c["channels"]
-    rows.sort(key=lambda r: r["score"], reverse=True)
+    unusual-activity layer. Delegates to the single WEIGHTED kernel
+    (``altdata_models.channel_records``) so the cross-sectional display and the per-ticker
+    substrate agree. ``score`` = distinct channels (count); ``weighted_score`` ranks by
+    channel QUALITY (an insider cluster outranks a WSB mention). Ranked by weight."""
+    recs = models.channel_records(signals, affiliations=affiliations)
+    rows = []
+    for tk, r in recs.items():
+        if r["count"] < 2:
+            continue
+        detail = r.get("channel_detail", {})
+        rows.append({
+            "ticker": tk,
+            "score": r["count"],
+            "weighted_score": r["weighted_score"],
+            "channel_list": r["channels"],
+            "why": " · ".join(f"{c}: {detail[c]}" for c in r["channels"] if detail.get(c)),
+        })
+    rows.sort(key=lambda r: (r["weighted_score"], r["score"]), reverse=True)
     return rows[:top]
 
 
@@ -517,6 +498,14 @@ def build_feed() -> dict:
     signals["news"] = safe(news_recent, [])
     signals["wsb"] = safe(wsb_top, [])
     signals["cnbc"] = datasets.get("cnbc", {}).get("recent", [])[:25]
+    # newly-activated Quiver feeds (were collected-but-unused) — now real signals
+    signals["app_ratings"] = safe(models.app_ratings_momentum, [])
+    signals["patents"] = safe(models.patent_velocity, [])
+    signals["bills"] = safe(models.bill_catalysts, [])
+    signals["congress_holdings"] = safe(models.congress_holdings, {})
+    signals["flights"] = safe(models.flights_proximity, [])
+    signals["exec_comp"] = safe(models.exec_comp, [])
+    signals["retail"] = _safe(lambda: models.retail_attention(signals.get("wsb", [])), [])
     signals["convergence"] = _safe(lambda: convergence(signals), [])
 
     feed = {
