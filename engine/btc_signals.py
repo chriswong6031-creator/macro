@@ -1472,6 +1472,31 @@ def macro_overlay(inputs: dict, cfg: dict) -> pd.DataFrame:
         out["dxy"] = dxy
         drivers["dxy"] = -np.tanh(dxy.pct_change(cfg["dxy_roc_window_d"]) / cfg["dxy_roc_scale"])
 
+    # Tier-3 curve regime + Fed path — emitted as oriented {-2..+2} sub-scores for the
+    # macro-regime composite (engine/btc_regime). DELIBERATELY NOT folded into
+    # macro_score: the calibrated score stays unchanged; these are display-only.
+    spread, us10, dff = s("spread_2s10s"), s("us10y"), s("fed_funds")
+    if spread is not None and us10 is not None:
+        cw = cfg.get("curve_chg_window_d", 20)
+        steepening = spread.diff(cw) > 0          # term spread widening
+        bull = us10.diff(cw) < 0                   # long-end yields falling = "bull"
+        cs = pd.Series(np.nan, index=idx)
+        cs[bull & steepening] = 2                  # bull steepening — recovery fuel (best)
+        cs[bull & ~steepening] = 1                 # bull flattening — mixed-positive
+        cs[~bull & steepening] = -1                # bear steepening — ambiguous
+        cs[~bull & ~steepening] = -2               # bear flattening — worst (Fed choking)
+        out["curve_score"] = cs.where(spread.diff(cw).notna() & us10.diff(cw).notna())
+    if dff is not None:
+        fw = cfg.get("fed_chg_window_d", 60)
+        d_fed = dff.diff(fw)                        # <0 easing (bullish), >0 hiking (bearish)
+        fs = pd.Series(np.nan, index=idx)
+        fs[d_fed.notna()] = 0.0
+        fs[d_fed < -0.25] = 1                       # cutting
+        fs[d_fed < -0.75] = 2                       # cutting fast / post-pivot
+        fs[d_fed > 0.25] = -1                       # hiking
+        fs[d_fed > 0.75] = -2                       # hiking fast
+        out["fed_score"] = fs
+
     if drivers:
         dd = pd.DataFrame(drivers)
         w = cfg["weights"]

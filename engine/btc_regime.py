@@ -117,6 +117,7 @@ FACTORS = [
 TIER_LABELS = {"T1": "Liquidity", "T2": "Rates / Dollar", "T3": "Curve / Fed",
                "T4": "Equity / VIX", "T5": "Crypto-native"}
 _ALREADY_Z = {"etf_flow_z", "stbl_growth_z"}
+_PRESCORED = {"curve_score", "fed_score"}   # already emitted in {-2..+2} by btc_signals
 
 
 def _factor_score(key: str, col: str, want: int, df: pd.DataFrame) -> pd.Series | None:
@@ -130,6 +131,8 @@ def _factor_score(key: str, col: str, want: int, df: pd.DataFrame) -> pd.Series 
             return None
         if df[col].dropna().empty:
             return None
+        if col in _PRESCORED:               # pass through the pre-oriented discrete score
+            return (df[col].clip(-2, 2) * (1 if want >= 0 else -1)).round()
         if col == "onchain" or key == "onchain":
             return (-_score_z(_zc(df[col]))).round()
         return _lvl_chg(df[col], want, already_z=(col in _ALREADY_Z))
