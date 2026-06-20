@@ -394,6 +394,15 @@ def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | 
         return "fading"
     if vh_state == "EXPANSION_DOWN":
         return "fading"
+    # ROLLOVER GUARD — momentum scores look great right up until the top. A high-scoring theme
+    # rolling over on the 5-day (a MATERIAL negative 5d relative) while NO LONGER making net new
+    # highs (breadth stalling at the top) is FADING, not DOMINANT — even if its longer-window
+    # acceleration still reads positive. This spares a strong theme still printing new highs after
+    # a small wobble (net_nh > 0) but catches the early top. (Fix: 'regional_banks' read
+    # DOMINANT/ACCUMULATE on a 66 score with 5d rel -2.4% and zero net new highs.)
+    if (falling and (delta_5d or 0.0) <= -0.015 and net_nh <= 0
+            and score >= 62 and mom_pos and breadth_ok and not long_dn):
+        return "fading"
     if score >= 62 and mom_pos and breadth_ok and accel > -0.5 and not long_dn:
         return "dominant"
     if ((accel > 0.4 or vh_state in ("EXPANSION_UP", "COILED_UP")) and long_up
