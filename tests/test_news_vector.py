@@ -181,15 +181,36 @@ def test_news_vector_is_a_leaf():
             assert sub in _ALLOWED_ENGINE, f"news_vector may only import sibling leaves, not engine.{sub}"
 
 
+def _imports_news_vector_bus(py_path: Path) -> bool:
+    """True iff the file actually IMPORTS engine.news_vector (any form) — as opposed to
+    merely naming the module in a comment/docstring. ast.walk catches lazy in-function
+    imports too. Forms covered:
+        import engine.news_vector [as nv]
+        from engine.news_vector import X
+        from engine import news_vector [as nv]
+    """
+    tree = ast.parse(py_path.read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            if any(a.name == "engine.news_vector" for a in node.names):
+                return True
+        elif isinstance(node, ast.ImportFrom):
+            mod = node.module or ""
+            if mod == "engine.news_vector":
+                return True
+            if mod == "engine" and any(a.name == "news_vector" for a in node.names):
+                return True
+    return False
+
+
 def test_no_engine_module_imports_news_vector():
-    """Nothing in engine/ (the scoring core) may import the bus — it is read only by
-    the display path (scripts/build_site.py)."""
-    offenders = []
-    for p in (ROOT / "engine").glob("*.py"):
-        if p.name == "news_vector.py":
-            continue
-        if "news_vector" in p.read_text():
-            offenders.append(p.name)
+    """Nothing in engine/ (the scoring core) may IMPORT the bus — it is read only by the
+    display path (scripts/build_site.py). Enforced at the IMPORT level (AST), so a passing
+    documentary mention of the module name in a comment/docstring is NOT a violation: a
+    scoring leg may legitimately read the bus's OUTPUT parquet and say so (e.g. news_flow).
+    A real ``import engine.news_vector`` — including a lazy in-function one — is the violation."""
+    offenders = [p.name for p in (ROOT / "engine").glob("*.py")
+                 if p.name != "news_vector.py" and _imports_news_vector_bus(p)]
     assert not offenders, f"scoring-core modules import the bus: {offenders}"
 
 
