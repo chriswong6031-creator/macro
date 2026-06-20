@@ -26,14 +26,41 @@ from engine import intelligence  # noqa: E402
 log = logging.getLogger(__name__)
 
 
+def _crosssurface_radar(site) -> None:
+    """Cross-surface: add a per-flag `headlines` field to the Divergence Radar from the
+    financial-news basket sections — display-only context, NEVER fused into the radar's
+    z-score (it leaves the existing news-velocity `news` leg untouched). Degrade-safe."""
+    radar_p = site / "basketdata" / "radar.json"
+    fin_p = site / "news" / "financial.json"
+    if not (radar_p.exists() and fin_p.exists()):
+        return
+    try:
+        radar = json.loads(radar_p.read_text())
+        baskets = (json.loads(fin_p.read_text()) or {}).get("baskets", {}) or {}
+        n = 0
+        for f in radar.get("flags", []):
+            hs = (baskets.get(f.get("basket"), {}) or {}).get("headlines", []) or []
+            f["headlines"] = [{"title": h.get("title"), "url": h.get("url"),
+                               "source": h.get("source") or h.get("domain"),
+                               "sentiment": h.get("sentiment")} for h in hs[:3]]
+            n += bool(f["headlines"])
+        radar_p.write_text(json.dumps(radar, default=str))
+        log.info("radar cross-surface: news headlines added to %d/%d flags",
+                 n, len(radar.get("flags", [])))
+    except Exception as e:  # noqa: BLE001
+        log.warning("radar cross-surface failed (%s)", e)
+
+
 def build(write: bool = True) -> dict:
     vm = intelligence.load_and_build()
     if write:
-        outdir = config.ROOT / config.load()["storage"]["site_dir"] / "intelligence"
+        site = config.ROOT / config.load()["storage"]["site_dir"]
+        outdir = site / "intelligence"
         outdir.mkdir(parents=True, exist_ok=True)
         (outdir / "by_ticker.json").write_text(json.dumps(vm, default=str))
         log.info("built site/intelligence/by_ticker.json — %d tickers (%d with both news+alt)",
                  vm.get("n_tickers", 0), vm.get("n_with_both", 0))
+        _crosssurface_radar(site)
     return vm
 
 

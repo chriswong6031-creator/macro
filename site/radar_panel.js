@@ -76,6 +76,23 @@
       "</span>";
   }
 
+  // additive: recent financial-news headlines for the flag's theme (cross-surfaced from
+  // engine.financial_news; display-only context, NEVER part of the divergence z-score).
+  function headlinesBlock(f) {
+    var hs = f.headlines || [];
+    if (!hs.length) return "";
+    var items = hs.map(function (h) {
+      var sent = h.sentiment === "pos" ? " ▲" : h.sentiment === "neg" ? " ▼" : "";
+      return '<div style="margin:3px 0;font-size:12px;line-height:1.4">' +
+        '<a href="' + esc(h.url || "#") + '" target="_blank" rel="noopener noreferrer" ' +
+        'style="color:var(--link);text-decoration:none">' + esc(h.title || "") + "</a> " +
+        '<span style="opacity:.55">· ' + esc(h.source || "") + sent + "</span></div>";
+    }).join("");
+    return '<div style="margin-top:8px;padding-top:7px;border-top:1px solid rgba(128,128,128,.18)">' +
+      '<div style="font-size:11px;font-weight:600;opacity:.6;margin-bottom:3px">' +
+      bi("📰 Recent news", "📰 近期新闻") + "</div>" + items + "</div>";
+  }
+
   function spotlightCard(f) {
     var s = st(f.state), o = f.observable || {}, c = f.consensus || {};
     var cov = (o.covered || []).slice(0, 8).join(", ") + ((o.covered || []).length > 8 ? "…" : "");
@@ -92,7 +109,7 @@
         '<span class="dr-chip">' + bi("price 60d", "价格60日") + " <b>" + relpct(c.rel_60d) + "</b></span>" +
         newsChip(f) +
         '<span class="dr-cov">' + esc(cov) + "</span>" +
-      "</div></div>";
+      "</div>" + headlinesBlock(f) + "</div>";
   }
 
   function tableRow(f) {
