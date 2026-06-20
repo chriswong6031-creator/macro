@@ -4,20 +4,28 @@ Fuses several INDEPENDENT non-price observables of "is real activity actually ha
 on this theme" into one per-basket signal, laid against price (in engine/radar.py):
 
   * usaspending      — federal contract obligations  (collectors/usaspending.py)   [strong]
-  * quiver_govcontract — Quiver new-award $          (collectors/quiver.py)         [strong]
-  * congress_netbuy  — congressional net-buy $         (Quiver, signed)             [medium]
-  * lobbying_ramp    — lobbying spend ramp             (Quiver)                      [medium]
+  * quiver_govcontract — Quiver new-award $          (collectors/quiver.py event tbl)[strong]
+  * congress_netbuy  — congressional net-buy $         (Quiver event tbl, signed)   [medium]
+  * lobbying_ramp    — lobbying spend ramp             (Quiver event tbl)           [medium]
   * news_velocity    — modeled macro-news flow         (engine/news_flow.py)        [weak/context]
 
-Each source → a self-referential YoY acceleration + a cross-sectional robust-z leg; the
-legs are weight-fused into `fused_obs_z` (the divergence/salience input) and `fused_accel`
-(the up/down direction). Sources that are absent (no key, no parquet, thin coverage) are
-simply skipped and down-weighted to zero — so the radar degrades gracefully and improves
-monotonically as data sources are added.
+TWO SOURCE KINDS, two metrics:
+  * "wide"  (usaspending): a deep date-indexed [month x ticker] store series read YoY
+    (recent 3 months vs the same 3 months a year ago) — kills federal seasonality.
+  * "quiver": one of MAIN's append-only Quiver EVENT tables (collectors/quiver.py ->
+    data/quiver/<dataset>.parquet, read via engine.altdata). These are forward-accumulating
+    (no year of history yet), so the metric is recent-60d vs prior-60d, aggregated over the
+    basket's members. Reuses altdata's _read/_usd/_side/_dt parsers — does NOT add a parallel
+    collector.
+Each source → a metric → a cross-sectional robust-z leg; legs are weight-fused into
+`fused_obs_z` (the divergence/salience input) and `fused_accel` (the up/down direction).
+Absent sources (no key, no table, thin coverage) are skipped and down-weighted to zero — the
+radar degrades gracefully and sharpens as sources fill in. Raw ratios are winsorised
+(ACCEL_CLAMP) against small-denominator blow-ups on thin windows.
 
-CROWDING sources (off-exchange short ratio, WSB) are deliberately NOT fused here — they
-feed a separate down-size-only `crowd_context` (the asymmetry invariant: independent
-real-activity divergence UPGRADES ahead of price; crowding only ever trims).
+CROWDING sources (off-exchange short ratio, WSB) are deliberately NOT fused here (the
+asymmetry invariant: independent real-activity divergence UPGRADES ahead of price; crowding
+only ever trims).
 
 This module owns the shared primitives (robust_z + source_accel + the YoY constants);
 engine/radar.py imports them. It does NOT import radar (no cycle). Display/context only.
@@ -41,22 +49,29 @@ MIN_COVERED = 2          # a basket needs >=2 covered members in a source to use
 MIN_BASE_USD = 10e6      # ignore trivially small footprints (year-ago 3-month spend)
 ACCEL_UP = 1.25          # recent / year-ago >= this -> accelerating
 ACCEL_DOWN = 0.80        # <= this -> cooling
+ACCEL_CLAMP = (0.05, 20.0)  # winsorise the raw ratio (small-denominator blow-ups on thin windows)
 Z_CLAMP = 3.5            # winsorise robust-z (tight cross-section -> tiny MAD -> blow-ups)
 NEWS_WEIGHT = 0.5        # the modeled-news leg carries a deliberately low fusion weight
+QUIVER_RECENT_D = 60     # Quiver event tables are forward-accumulating -> recent vs prior window
+QUIVER_PRIOR_D = 60      # (NOT YoY: those tables don't have a year of history yet)
 
 # fusable spend/activity sources (crowding sources are handled separately, down-size only).
-# label_* are bilingual display strings for the source-fusion bar.
+# Two kinds: "wide" = a date-indexed [month x ticker] store series read YoY (usaspending);
+# "quiver" = one of main's append-only Quiver EVENT tables (collectors/quiver.py ->
+# data/quiver/<dataset>.parquet), read via engine.altdata on a recent-vs-prior window and
+# aggregated to the basket. label_* are the bilingual source-fusion-bar strings.
 SOURCES: list[dict] = [
-    {"name": "usaspending", "group": "usaspending", "series": "obligations",
+    {"name": "usaspending", "kind": "wide", "group": "usaspending", "series": "obligations",
      "weight": 1.0, "signed": False, "min_base": 10e6, "label_en": "Federal contracts", "label_zh": "联邦合同"},
-    {"name": "quiver_govcontract", "group": "quiver", "series": "govcontracts",
-     "weight": 1.0, "signed": False, "min_base": 1e6, "label_en": "Gov contracts (Quiver)", "label_zh": "政府合同"},
-    {"name": "congress_netbuy", "group": "quiver", "series": "congress",
-     "weight": 0.6, "signed": True, "min_base": 0.0, "label_en": "Congress net-buy", "label_zh": "国会净买入"},
-    {"name": "lobbying_ramp", "group": "quiver", "series": "lobbying",
-     "weight": 0.7, "signed": False, "min_base": 1e5, "label_en": "Lobbying ramp", "label_zh": "游说支出"},
-    {"name": "quiver_patents", "group": "quiver", "series": "patents",
-     "weight": 0.4, "signed": False, "min_base": 1.0, "label_en": "Patents", "label_zh": "专利"},
+    {"name": "quiver_govcontract", "kind": "quiver", "dataset": "govcontracts",
+     "date": ["Date", "action_date"], "value": ["Amount"], "signed": False, "min_prior": 5e5,
+     "weight": 1.0, "label_en": "Gov contracts (Quiver)", "label_zh": "政府合同"},
+    {"name": "congress_netbuy", "kind": "quiver", "dataset": "congress",
+     "date": ["TransactionDate", "ReportDate", "Date"], "value": ["Range", "Amount"], "signed": True,
+     "txn_col": "Transaction", "min_prior": 0.0, "weight": 0.6, "label_en": "Congress net-buy", "label_zh": "国会净买入"},
+    {"name": "lobbying_ramp", "kind": "quiver", "dataset": "lobbying",
+     "date": ["Date"], "value": ["Amount"], "signed": False, "min_prior": 5e4,
+     "weight": 0.7, "label_en": "Lobbying ramp", "label_zh": "游说支出"},
 ]
 
 
@@ -96,8 +111,8 @@ def source_accel(wide: pd.DataFrame, covered: list[str], *, signed: bool = False
     else:
         if prior < min_base or prior <= 0:
             return None
-        accel = recent / prior
-        metric = float(np.log(max(accel, 1e-6)))
+        accel = float(np.clip(recent / prior, *ACCEL_CLAMP))
+        metric = float(np.log(accel))
     return {"accel": None if accel is None else round(accel, 3),
             "recent_3m_usd": round(recent, 0), "base_3m_usd": round(prior, 0),
             "metric": float(metric), "n_covered": len(cols), "covered": cols}
@@ -107,15 +122,81 @@ def _live_members(b: dict) -> list[str]:
     return [m.get("symbol") for m in b.get("members", []) if m.get("symbol")]
 
 
+def _ok(df) -> pd.DataFrame | None:
+    return df if df is not None and not df.empty else None
+
+
 def _load_source(src: dict, sources_data: dict | None) -> pd.DataFrame | None:
-    if sources_data is not None and src["name"] in sources_data:
-        df = sources_data[src["name"]]
-        return df if df is not None and not df.empty else None
+    """Load a 'wide' source: a date-indexed [month x ticker] store series (usaspending).
+    When sources_data is injected (test mode) it is authoritative — never fall through to disk."""
+    if sources_data is not None:
+        return _ok(sources_data.get(src["name"]))
     try:
-        df = store.read(src["group"], src["series"])
-        return df if df is not None and not df.empty else None
+        return _ok(store.read(src["group"], src["series"]))
     except Exception:  # noqa: BLE001
         return None
+
+
+def _load_quiver(src: dict, sources_data: dict | None) -> pd.DataFrame | None:
+    """Load a Quiver EVENT table (main's collectors/quiver.py). Injectable by dataset name;
+    injection is authoritative (hermetic) — never read the real disk tables under injection."""
+    if sources_data is not None:
+        return _ok(sources_data.get(src["dataset"]))
+    try:
+        from engine import altdata
+        return _ok(altdata._read(src["dataset"]))
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _quiver_basket_metric(src: dict, members: list[str], *, today=None,
+                          event_df: pd.DataFrame | None = None) -> dict | None:
+    """Per-basket recent-vs-prior activity from one Quiver event table. Filters the event
+    stream to the basket's members, then compares the last QUIVER_RECENT_D days to the prior
+    window. Unsigned (gov-contract / lobbying $): accel = recent/prior. Signed (congress
+    net-buy: purchase +, sale −): metric = (recent − prior)/scale. Reuses engine.altdata
+    parsers (_s / _usd / _side / _dt)."""
+    df = event_df
+    if df is None or df.empty or "Ticker" not in df.columns:
+        return None
+    from engine import altdata
+    tk = df["Ticker"].map(altdata._s)
+    mask = tk.isin(set(members))
+    if not mask.any():
+        return None
+    sub = df[mask]
+    covered = sorted({t for t in tk[mask].dropna()})
+    if len(covered) < MIN_COVERED:
+        return None
+    dcol = next((c for c in src["date"] if c in sub.columns), None)
+    vcol = next((c for c in src["value"] if c in sub.columns), None)
+    if not dcol or not vcol:
+        return None
+    dt = altdata._dt(sub[dcol])
+    t0 = pd.Timestamp(today) if today is not None else dt.max()
+    if pd.isna(t0):
+        return None
+    rec = (dt > t0 - pd.Timedelta(days=QUIVER_RECENT_D)) & (dt <= t0)
+    pri = (dt > t0 - pd.Timedelta(days=QUIVER_RECENT_D + QUIVER_PRIOR_D)) & (dt <= t0 - pd.Timedelta(days=QUIVER_RECENT_D))
+    val = sub[vcol].map(altdata._usd)
+    if src["signed"]:
+        tcol = src.get("txn_col", "Transaction")
+        if tcol in sub.columns:
+            sgn = sub[tcol].map(lambda t: -1.0 if altdata._side(t) == "sell" else (1.0 if altdata._side(t) == "buy" else 0.0))
+            val = val * sgn
+    recent = float(np.nansum(val[rec].to_numpy(dtype=float)))
+    prior = float(np.nansum(val[pri].to_numpy(dtype=float)))
+    if src["signed"]:
+        scale = max(abs(prior), abs(recent), 1.0)
+        metric, accel = (recent - prior) / scale, None
+    else:
+        if prior < src.get("min_prior", 5e5) or prior <= 0:
+            return None
+        accel = float(np.clip(recent / prior, *ACCEL_CLAMP))
+        metric = float(np.log(accel))
+    return {"accel": None if accel is None else round(accel, 3),
+            "recent_3m_usd": round(recent, 0), "base_3m_usd": round(prior, 0),
+            "metric": float(metric), "n_covered": len(covered), "covered": covered}
 
 
 def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = None,
@@ -127,8 +208,10 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
     if not baskets:
         return {}
 
-    # pass 1 — per-basket, per-source raw metrics
-    frames = {src["name"]: _load_source(src, sources_data) for src in SOURCES}
+    # pass 1 — per-basket, per-source raw metrics. Preload each source once: 'wide' sources
+    # are date-indexed store frames (YoY); 'quiver' sources are main's event tables (recent window).
+    loaded = {src["name"]: (_load_source(src, sources_data) if src["kind"] == "wide"
+                            else _load_quiver(src, sources_data)) for src in SOURCES}
     events = None
     if news:
         try:
@@ -142,10 +225,13 @@ def compute_real_activity(baskets_payload: dict, *, sources_data: dict | None = 
         members = _live_members(b)
         per_src = {}
         for src in SOURCES:
-            wide = frames.get(src["name"])
-            if wide is None:
+            data = loaded.get(src["name"])
+            if data is None:
                 continue
-            acc = source_accel(wide, members, signed=src["signed"], min_base=src["min_base"])
+            if src["kind"] == "wide":
+                acc = source_accel(data, members, signed=src["signed"], min_base=src["min_base"])
+            else:
+                acc = _quiver_basket_metric(src, members, today=today, event_df=data)
             if acc is not None:
                 per_src[src["name"]] = acc
         news_leg = None

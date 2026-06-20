@@ -36,19 +36,49 @@ def test_single_source_fused_equals_source_z():
     assert d["primary"]["n_covered"] == 2
 
 
+def _qevent(tickers, recent_amt, prior_amt, txn="Purchase"):
+    """A synthetic Quiver EVENT table: per ticker, one row in the recent 60d window and one
+    in the prior window. Columns mirror main's collectors/quiver.py output."""
+    base = pd.Timestamp("2026-06-19")
+    rows = []
+    for tk in tickers:
+        rows.append({"Ticker": tk, "Date": (base - pd.Timedelta(days=20)).strftime("%Y-%m-%d"),
+                     "Amount": recent_amt, "Range": f"${recent_amt:,.0f}", "Transaction": txn})
+        rows.append({"Ticker": tk, "Date": (base - pd.Timedelta(days=90)).strftime("%Y-%m-%d"),
+                     "Amount": prior_amt, "Range": f"${prior_amt:,.0f}", "Transaction": txn})
+    return pd.DataFrame(rows)
+
+
 def test_two_sources_fuse_and_missing_source_downweights():
-    gc = _wide({"LMT": (2 * M, 12 * M), "NOC": (2 * M, 12 * M)})   # gov-contract covers defense only
-    out = ta.compute_real_activity(PAYLOAD, sources_data={"usaspending": US, "quiver_govcontract": gc}, news=False)
+    gc = _qevent(["LMT", "NOC"], 12 * M, 2 * M)   # Quiver gov-contracts event table covers defense only
+    out = ta.compute_real_activity(PAYLOAD, sources_data={"usaspending": US, "govcontracts": gc},
+                                   news=False, today="2026-06-19")
     assert out["defense"]["n_sources"] == 2
     assert {s["name"] for s in out["defense"]["sources"]} == {"usaspending", "quiver_govcontract"}
-    assert out["nuclear_power"]["n_sources"] == 1               # gc absent → simply down-weighted away
+    assert out["nuclear_power"]["n_sources"] == 1               # gc covers defense only → down-weighted away
 
 
-def test_signed_source_has_no_ratio_accel():
-    cong = _wide({"LMT": (-1 * M, 5 * M), "NOC": (-1 * M, 5 * M)})  # congress net-buy flips positive
-    out = ta.compute_real_activity(PAYLOAD, sources_data={"usaspending": US, "congress_netbuy": cong}, news=False)
+def test_signed_congress_has_no_ratio_accel():
+    cong = _qevent(["LMT", "NOC"], 50_000, 10_000, txn="Purchase")   # net-buy, signed
+    out = ta.compute_real_activity(PAYLOAD, sources_data={"usaspending": US, "congress": cong},
+                                   news=False, today="2026-06-19")
     legs = {s["name"]: s for s in out["defense"]["sources"]}
     assert "congress_netbuy" in legs and legs["congress_netbuy"]["accel"] is None  # signed → no ratio
+
+
+def test_quiver_metric_recent_vs_prior():
+    src = next(s for s in ta.SOURCES if s["name"] == "quiver_govcontract")
+    ev = _qevent(["LMT", "NOC"], 5 * M, 1 * M)                  # 5x recent vs prior
+    m = ta._quiver_basket_metric(src, ["LMT", "NOC"], today="2026-06-19", event_df=ev)
+    assert m is not None and abs(m["accel"] - 5.0) < 1e-6 and m["n_covered"] == 2
+    # below the prior floor -> None
+    thin = _qevent(["LMT", "NOC"], 1000, 1000)
+    assert ta._quiver_basket_metric(src, ["LMT", "NOC"], today="2026-06-19", event_df=thin) is None
+    # congress net-buy: a sale flips the sign negative
+    csrc = next(s for s in ta.SOURCES if s["name"] == "congress_netbuy")
+    sale = _qevent(["LMT", "NOC"], 50_000, 0, txn="Sale")
+    cm = ta._quiver_basket_metric(csrc, ["LMT", "NOC"], today="2026-06-19", event_df=sale)
+    assert cm is not None and cm["accel"] is None and cm["metric"] < 0    # net selling → negative
 
 
 def test_hard_source_required_news_alone_does_not_qualify():
