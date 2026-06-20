@@ -256,6 +256,21 @@
   .cv-size .cv-szk { color:var(--muted); text-transform:uppercase; letter-spacing:.04em; font-size:10px; }
   .cv-size .cv-szv { font-weight:800; }
   .cv-size .cv-szt { color:var(--muted); font-weight:600; font-size:10.5px; }
+  /* pullback buy-zone: actionable companion to an "Extended — don't chase" verdict (display-only) */
+  .pz { margin-top:9px; padding:9px 11px; border-radius:9px; border:1px solid var(--line);
+        border-left-width:3px; }
+  .pz-acc { background:color-mix(in srgb,var(--up) 8%,var(--panel)); border-left-color:var(--up); }
+  .pz-chase { background:color-mix(in srgb,var(--down) 8%,var(--panel)); border-left-color:var(--down); }
+  .pz-h { font-size:11px; font-weight:800; letter-spacing:.03em; text-transform:uppercase;
+          display:flex; align-items:center; gap:6px; }
+  .pz-acc .pz-h { color:var(--up); } .pz-chase .pz-h { color:var(--down); }
+  .pz-head { font-size:12.5px; color:var(--text); line-height:1.5; margin:5px 0 7px; }
+  .pz-lvls { display:flex; flex-wrap:wrap; gap:7px; }
+  .pz-lvl { font-size:11.5px; border:1px solid var(--line); background:var(--panel2);
+            border-radius:7px; padding:3px 8px; display:inline-flex; align-items:baseline; gap:6px; }
+  .pz-lvl b { font-variant-numeric:tabular-nums; }
+  .pz-lvl .pz-pull { font-weight:700; font-variant-numeric:tabular-nums; color:var(--down); }
+  .pz-lvl em { color:var(--muted); font-style:normal; }
   .cv-regime.rg-calm { color:var(--up); background:color-mix(in srgb,var(--up) 11%,var(--panel));
                        border-color:color-mix(in srgb,var(--up) 30%,var(--line)); }
   .cv-regime.rg-stress { color:var(--warn); background:color-mix(in srgb,var(--warn) 12%,var(--panel));
@@ -1305,6 +1320,25 @@
           (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
         '</div>';
     }
+    // PULLBACK BUY-ZONE (display-only) — turns "Extended — don't chase" into a concrete level:
+    // the rising 50d / out-of-chase line for a timeable leader, or a "reset is X% lower, not a
+    // pullback" read for a blow-off. Self-gated server-side (present only in don't-chase territory).
+    var pz = d.pullback_zone, pzbar = '';
+    if (pz && pz.levels && pz.levels.length) {
+      var isChase = pz.stance === 'chase';
+      var lv = pz.levels.map(function (x) {
+        return '<span class="pz-lvl"><b>$' + Number(x.price).toFixed(2) + '</b>' +
+          '<span class="pz-pull">' + (x.pull_pct >= 0 ? '+' : '') + x.pull_pct + '%</span>' +
+          '<em>' + esc(lz(x.label_en, x.label_zh)) + '</em></span>';
+      }).join('');
+      pzbar = '<div class="pz ' + (isChase ? 'pz-chase' : 'pz-acc') + '">' +
+        '<div class="pz-h"><span>' + (isChase ? '🚩' : '🎯') + '</span>' +
+        esc(lz(isChase ? 'No dip-buy here — regime reset, not a pullback'
+                       : 'Buy-zone — let the leader come to you',
+               isChase ? '此处勿逢低 — 状态重置而非回调' : '买入区 — 等领涨股回来')) + '</div>' +
+        '<div class="pz-head">' + esc(lz(pz.headline_en, pz.headline_zh)) + '</div>' +
+        '<div class="pz-lvls">' + lv + '</div></div>';
+    }
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
@@ -1312,7 +1346,7 @@
         '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
       (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
         '</span>' + basis + '</div>' : '') +
-      rgbar + szbar +
+      rgbar + szbar + pzbar +
       '<div class="cv-axes">' + ax + '</div>' +
       (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
       '<div class="cv-note">' + lz(
