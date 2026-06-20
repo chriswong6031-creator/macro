@@ -49,6 +49,8 @@ class QuiverAdapter(Adapter):
     endpoint: str = ""             # e.g. /beta/live/congresstrading
     key_cols: tuple[str, ...] = () # natural composite key for append-only dedup
     snapshot: bool = False         # feed carries no event-date -> stamp _collected
+    data_key: str | None = None    # some endpoints wrap rows: {"data": [...]} etc.
+    query: dict | None = None      # optional query params (page_size, latest, ...)
 
     def __init__(self) -> None:
         cfg = config.load().get("quiver", {})
@@ -96,12 +98,20 @@ class QuiverAdapter(Adapter):
             params=params or {},
         )
         data = r.json()
-        return data if isinstance(data, list) else []
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict):
+            if self.data_key and isinstance(data.get(self.data_key), list):
+                return data[self.data_key]
+            for k in ("data", "ownership", "results"):
+                if isinstance(data.get(k), list):
+                    return data[k]
+        return []
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         if not self.api_key:
             raise RuntimeError("QUIVER_API_KEY not set")
-        rows = self._get(self.endpoint)
+        rows = self._get(self.endpoint, self.query)
         if not rows:
             raise RuntimeError(f"quiver/{self.dataset}: empty response from {self.endpoint}")
         df = pd.DataFrame(rows)
@@ -215,3 +225,44 @@ class TrumpTradesAdapter(QuiverAdapter):
     name = "quiver_trump"; dataset = "trump"
     endpoint = "/beta/bulk/trumpstocktrades"
     key_cols = ("Company", "Ticker", "Transaction", "Amount", "Filed", "Traded")
+
+
+class CorporateDonorsAdapter(QuiverAdapter):
+    """Company-PAC donations to politicians (campaign-finance linkage)."""
+    name = "quiver_corpdonors"; dataset = "corpdonors"
+    endpoint = "/beta/bulk/corporatedonors"
+    data_key = "data"
+    query = {"page": 1, "page_size": 5000}
+    key_cols = ("BioGuideID", "Ticker", "CompanyCMTEID", "Cycle", "TransactionAmount", "TransactionDate")
+
+
+class QuiverNewsAdapter(QuiverAdapter):
+    """Quiver news feed — ticker-tagged headlines + summaries (brain input)."""
+    name = "quiver_news"; dataset = "news"
+    endpoint = "/beta/live/quivernews"
+    data_key = "data"
+    query = {"page": 1, "page_size": 500}
+    key_cols = ("url",)
+
+
+class CongressHoldingsAdapter(QuiverAdapter):
+    """Current aggregate congressional holdings per politician (snapshot)."""
+    name = "quiver_congressholdings"; dataset = "congressholdings"
+    endpoint = "/beta/live/congressholdings"
+    snapshot = True
+    key_cols = ("Politician", "_collected")
+
+
+class BillSummariesAdapter(QuiverAdapter):
+    """Recent legislation summaries (policy catalysts)."""
+    name = "quiver_bills"; dataset = "bills"
+    endpoint = "/beta/live/bill_summaries"
+    query = {"page": 1, "page_size": 200}
+    key_cols = ("billType", "number", "congress")
+
+
+class AppRatingsAdapter(QuiverAdapter):
+    """App-store ratings per ticker (consumer-demand proxy)."""
+    name = "quiver_appratings"; dataset = "appratings"
+    endpoint = "/beta/live/appratings"
+    key_cols = ("Ticker", "App", "Time")

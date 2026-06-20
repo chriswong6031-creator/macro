@@ -130,6 +130,11 @@ def all_adapters() -> dict:
         ("quiver_cnbc", "collectors.quiver", "CnbcAdapter"),
         ("quiver_spacs", "collectors.quiver", "SpacsAdapter"),
         ("quiver_trump", "collectors.quiver", "TrumpTradesAdapter"),
+        ("quiver_corpdonors", "collectors.quiver", "CorporateDonorsAdapter"),
+        ("quiver_news", "collectors.quiver", "QuiverNewsAdapter"),
+        ("quiver_congressholdings", "collectors.quiver", "CongressHoldingsAdapter"),
+        ("quiver_bills", "collectors.quiver", "BillSummariesAdapter"),
+        ("quiver_appratings", "collectors.quiver", "AppRatingsAdapter"),
     ]
     for key, mod, cls in specs:
         try:

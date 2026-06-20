@@ -156,6 +156,27 @@
     {% if s.wsb %}<div class="mut2" style="margin-top:8px;font-size:11.5px">🦍 {{ t('WSB top:','WSB热度:') }}
       {% for r in s.wsb[:8] %}<span class="tk">{{ r.ticker }}</span><span class="mut2">({{ r.mentions }})</span>{{ ' · ' if not loop.last }}{% endfor %}</div>{% endif %}
   </div>
+
+  {# ---------------- Corporate donors ---------------- #}
+  <div class="ad-card">
+    <h2>💸 {{ t('Corporate PAC donors', '企业PAC捐赠') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Donated','捐赠额') }}</th><th class="num">{{ t('Pols','议员') }}</th></tr></thead><tbody>
+    {% for r in s.corporate_donors[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td><td class="num">{{ r.politicians }}</td></tr>
+    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Quiver news feed ---------------- #}
+  <div class="ad-card">
+    <h2>📰 {{ t('Quiver news feed', 'Quiver新闻') }}</h2>
+    <table class="ad"><tbody>
+    {% for r in s.news[:10] %}
+      <tr><td>{% if r.ticker %}<span class="tk">{{ r.ticker }}</span> {% endif %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ (r.headline or '')[:78] }}</a>
+          <div class="mut2" style="font-size:10.5px">{{ r.category }} · {{ r.time }}</div></td></tr>
+    {% else %}<tr><td class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
 </div>
 
 {# ---------------- Coverage strip ---------------- #}

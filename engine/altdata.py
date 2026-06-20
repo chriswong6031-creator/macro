@@ -50,6 +50,11 @@ DATASETS: dict[str, tuple[str, str, str, str]] = {
     "spacs":          ("🛰️", "SPAC sentiment", "SPAC情绪", "Time"),
     "patents":        ("🔬", "US patents", "美国专利", "Date"),
     "flights":        ("✈️", "Corporate flights", "企业航班", "Date"),
+    "corpdonors":     ("💸", "Corporate donors", "企业捐赠", "Uploaded"),
+    "news":           ("📰", "Quiver news feed", "Quiver新闻", "time"),
+    "congressholdings": ("📁", "Congress holdings", "国会持仓", "_collected"),
+    "bills":          ("📑", "Bill summaries", "法案摘要", "_first_seen"),
+    "appratings":     ("📱", "App ratings", "应用评分", "Time"),
 }
 
 _MISSING = {"", "nan", "none", "nat", "null", "<na>"}
@@ -392,6 +397,49 @@ def wsb_top(top: int = 20) -> list[dict]:
             for r in d.itertuples()]
 
 
+# --------------------------------------------------------------------------- corporate donors
+def corporate_donors(top: int = 15) -> list[dict]:
+    df = _read("corpdonors")
+    if df is None or df.empty:
+        return []
+    d = pd.DataFrame({
+        "ticker": df.get("Ticker", pd.Series(dtype=object)).map(_s),
+        "amount": df.get("TransactionAmount", pd.Series(dtype=object)).map(_f),
+        "politician": df.get("CandidateName", pd.Series(dtype=object)).map(_s),
+    })
+    d = d[d["ticker"].notna()]
+    if d.empty:
+        return []
+    rows = []
+    for tk, g in d.groupby("ticker"):
+        rows.append({
+            "ticker": tk,
+            "total_usd": round(float(g["amount"].sum(skipna=True)), 0),
+            "donations": int(len(g)),
+            "politicians": int(g["politician"].nunique()),
+        })
+    rows.sort(key=lambda r: r["total_usd"], reverse=True)
+    return rows[:top]
+
+
+# --------------------------------------------------------------------------- news
+def news_recent(n: int = 20) -> list[dict]:
+    df = _read("news")
+    if df is None or df.empty:
+        return []
+    d = df.assign(_d=_dt(df.get("time"))).sort_values("_d", ascending=False, na_position="last").head(n)
+    out = []
+    for _, r in d.iterrows():
+        out.append({
+            "headline": _s(r.get("headline")),
+            "ticker": _s(r.get("Ticker")),
+            "category": _s(r.get("category")),
+            "time": _s(r.get("time")),
+            "url": _s(r.get("url")),
+        })
+    return out
+
+
 # --------------------------------------------------------------------------- convergence
 def convergence(signals: dict, top: int = 25) -> list[dict]:
     """Tickers lit up by several independent channels at once — the connection /
@@ -463,6 +511,8 @@ def build_feed() -> dict:
     signals["insiders"] = safe(insider_netflow, {"buys": [], "sells": []})
     signals["inst_13f"] = safe(inst_13f_changes, {"adds": [], "trims": []})
     signals["trump"] = safe(trump_trades, [])
+    signals["corporate_donors"] = safe(corporate_donors, [])
+    signals["news"] = safe(news_recent, [])
     signals["wsb"] = safe(wsb_top, [])
     signals["cnbc"] = datasets.get("cnbc", {}).get("recent", [])[:25]
     signals["convergence"] = _safe(lambda: convergence(signals), [])
