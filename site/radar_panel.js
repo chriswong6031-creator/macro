@@ -107,6 +107,33 @@
       "</tr>";
   }
 
+  // 🧠 Narrative Brain — the Claude reasoning layer (display-only; hidden if degraded/absent).
+  var NBV = {
+    ENTER:   { en: "Enter", zh: "进入", c: "var(--up)" },
+    MONITOR: { en: "Monitor", zh: "观察", c: "var(--muted)" },
+    AVOID:   { en: "Avoid", zh: "回避", c: "var(--down)" }
+  };
+  function brainHTML(b) {
+    if (!b || b.degraded_reason || !(b.assessments && b.assessments.length)) return "";
+    var rows = b.assessments.map(function (a) {
+      var v = NBV[a.verdict] || NBV.MONITOR;
+      return '<div class="dr-nb-row">' +
+        '<span class="dr-nb-badge" style="color:' + v.c + ';border-color:' + v.c + '">' + bi(v.en, v.zh) + "</span>" +
+        '<b class="dr-nb-theme">' + bi(a.name || a.basket, a.name_zh || a.name || a.basket) + "</b>" +
+        '<span class="dr-mut">' + bi("durability", "持续力") + " " + (a.composite == null ? "—" : a.composite) +
+          " · " + esc(a.confidence || "") + "</span>" +
+        '<div class="dr-nb-why">' + bi(a.rationale || "", a.rationale_zh || a.rationale || "") +
+          (a.override_reason ? ' <em class="dr-mut">(' + bi("clamped by risk control", "受风险控制下调") + ")</em>" : "") +
+        "</div></div>";
+    }).join("");
+    var rot = b.rotation && b.rotation.summary
+      ? '<div class="dr-nb-rot">🔁 ' + bi(b.rotation.summary, b.rotation.summary_zh || b.rotation.summary) + "</div>" : "";
+    return '<div class="dr-nb"><div class="dr-nb-h">🧠 ' + bi("Narrative Brain", "叙事大脑") +
+      '<span class="dr-mut"> · ' + bi("AI durability read, graded later", "AI 持续力解读，事后评分") + "</span></div>" +
+      rot + rows +
+      '<p class="dr-cav">' + bi(b.disclaimer || "", b.disclaimer || "") + "</p></div>";
+  }
+
   window.renderDivergenceRadar = function (opts) {
     opts = opts || {};
     var base = opts.base || "basketdata/";
@@ -145,7 +172,12 @@
           "<th>" + bi("Price 60d", "价格60日") + "</th>" +
           "<th>" + bi("Read", "解读") + "</th>" +
         "</tr></thead><tbody>" + d.flags.map(tableRow).join("") + "</tbody></table></div>" +
-        caveat;
+        caveat + '<div id="dr-brain"></div>';
+      // append the Claude reasoning layer when present (hidden if degraded/absent)
+      fetchJSON(base + "narrative_brain.json").then(function (b) {
+        var slot = mount.querySelector("#dr-brain");
+        if (slot) slot.innerHTML = brainHTML(b);
+      });
     });
   };
 })();

@@ -360,6 +360,21 @@ jobs:
           cat /tmp/aidesk.log
           [ "$rc" -ne 0 ] && echo "::warning title=ai_desk::rc=$rc (non-fatal)"
           exit 0
+      - name: Narrative Brain (Claude radar-reasoning desk; context-only, resilient)
+        # Reads the deterministic radar (site/basketdata/radar.json from build_baskets) as an
+        # evidence pack and writes a FALSIFIABLE durability + rotation read (site/basketdata/
+        # narrative_brain.json) + appends data/narrative_brain/theses.jsonl. Claude via the
+        # user's Claude-Code OAuth token (Bearer + oauth beta header), ANTHROPIC_API_KEY fallback.
+        # NO-OP unless narrative_brain.enabled AND a token is set. Context-only; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.narrative_brain > /tmp/nbrain.log 2>&1; rc=$?
+          cat /tmp/nbrain.log
+          [ "$rc" -ne 0 ] && echo "::warning title=narrative_brain::rc=$rc (non-fatal)"
+          exit 0
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
