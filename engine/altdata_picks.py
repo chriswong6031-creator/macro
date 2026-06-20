@@ -82,6 +82,13 @@ def build_picks(feed: dict | None, by_ticker: dict | None, root=None, top: int =
     trump = sig.get("trump", []) or []
     passive_n = sum(1 for t in trump if is_passive(t.get("company"), t.get("ticker")))
 
+    # federal contract-spend acceleration per ticker (recent vs year-ago) — the
+    # "money moving ahead of the tape" signal. The Divergence Radar owns the BASKET-level
+    # version off the authoritative USAspending source; here it's a NAME-level flag on the
+    # specific picks, off the gov-contract leaders the engine already computes.
+    gov_accel = {g["ticker"]: g["accel_x"] for g in (sig.get("gov_contracts", []) or [])
+                 if g.get("ticker") and g.get("accel_x") is not None}
+
     cand: dict[str, set] = {}
     # specific (non-passive) Trump single-name trades
     for t in trump:
@@ -93,15 +100,23 @@ def build_picks(feed: dict | None, by_ticker: dict | None, root=None, top: int =
     for tk, rec in bt.items():
         if int(rec.get("convergence_score", 0) or 0) >= 2:
             cand.setdefault(tk, set()).add(f"{rec['convergence_score']}-channel convergence")
+    # strongly-accelerating federal contract recipients (spend running ahead of price)
+    for tk, ax in gov_accel.items():
+        if ax >= 2.0:
+            cand.setdefault(tk, set()).add(f"fed-spend accel {ax:.1f}x")
 
     picks = []
     for tk, reasons in cand.items():
         rec = bt.get(tk, {})
         score = int(rec.get("convergence_score", 0) or 0)
+        ax = gov_accel.get(tk)
+        if ax is not None and ax >= 1.25:
+            reasons.add(f"fed-spend accel {ax:.1f}x")
         rs = _rs_vs_spy(tk, root)
         picks.append({
             "ticker": tk, "reasons": sorted(reasons), "convergence": score,
             "trump_linked": bool(rec.get("trump_linked")),
+            "gov_contract_accel": round(ax, 2) if ax is not None else None,
             "rs_vs_spy_60d": rs, "verdict": _verdict(score, rs, bool(rec.get("trump_linked"))),
         })
     picks.sort(key=lambda p: (p["convergence"], p["rs_vs_spy_60d"] if p["rs_vs_spy_60d"] is not None else -999),
@@ -112,5 +127,6 @@ def build_picks(feed: dict | None, by_ticker: dict | None, root=None, top: int =
         "picks": picks[:top],
         "filtered_passive": passive_n,
         "note": ("Passive / broad holdings (ETFs, index, money-market, Treasury, "
-                 "broker-managed) filtered out — only specific conviction names are examined."),
+                 "broker-managed) filtered out — only specific conviction names are examined. "
+                 "'fed-spend accel' = federal contract $ running ahead of the tape."),
     }
