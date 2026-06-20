@@ -22,6 +22,7 @@ import logging
 from datetime import datetime, timezone
 
 from lib import config
+from engine import altdata_picks
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +76,9 @@ def build(feed: dict) -> dict:
             if rec and "cnbc_pick" not in rec["channels"]:
                 rec["channels"].append("cnbc_pick")
     for r in s.get("trump", []):
-        if r.get("side"):
+        # skip passive / broad holdings (ETFs, index, money-market) — a Vanguard-ETF buy
+        # is portfolio plumbing, not a conviction signal, so it must not create a channel
+        if r.get("side") and not altdata_picks.is_passive(r.get("company"), r.get("ticker")):
             rec = _slot(by, r.get("ticker"))
             if rec:
                 rec["trump_side"] = r.get("side")
