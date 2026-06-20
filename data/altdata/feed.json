@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-20T06:54:26.028581+00:00",
+  "generated_utc": "2026-06-20T09:08:45.014295+00:00",
   "as_of": "2026-06-20",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -5471,7 +5471,7 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 1338,
+      "rows": 4546,
       "last_seen": "2026-06-20",
       "recent": [
         {
@@ -5482,171 +5482,171 @@
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Flinn Joseph",
-          "owner_title": null,
-          "shares": "17324",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "Mariner, LLC",
+          "ticker": "MSFT",
+          "owner_name": "Universal- Beteiligungs- und Servicegesellschaft mbH",
           "owner_title": "Institution",
-          "shares": "17952",
+          "shares": "7051592",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
+          "ticker": "MSFT",
+          "owner_name": "Ensign Peak Advisors, Inc",
           "owner_title": "Institution",
-          "shares": "18184",
+          "shares": "6631072",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Creative Planning",
-          "owner_title": "Institution",
-          "shares": "18934",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "NATIONAL BANK OF CANADA /FI/",
-          "owner_title": "Institution",
-          "shares": "18993",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "NISA INVESTMENT ADVISORS, LLC",
-          "owner_title": "Institution",
-          "shares": "19157",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
+          "ticker": "MSFT",
           "owner_name": "Pictet Asset Management Holding SA",
           "owner_title": "Institution",
-          "shares": "19182",
+          "shares": "6689245",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Arosa Capital Management LP",
+          "ticker": "MSFT",
+          "owner_name": "DIAMANT ASSET MANAGEMENT, INC.",
           "owner_title": "Institution",
-          "shares": "20000",
+          "shares": "6810388",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Defiance ETFs, LLC",
+          "ticker": "MSFT",
+          "owner_name": "BESSEMER GROUP INC",
           "owner_title": "Institution",
-          "shares": "20169",
+          "shares": "6921677",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "STRS OHIO",
+          "ticker": "MSFT",
+          "owner_name": "PRUDENTIAL FINANCIAL INC",
           "owner_title": "Institution",
-          "shares": "20200",
+          "shares": "6950519",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "US BANCORP \\DE\\",
+          "ticker": "MSFT",
+          "owner_name": "SEI INVESTMENTS CO",
           "owner_title": "Institution",
-          "shares": "20355",
+          "shares": "7000712",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "FMR LLC",
+          "ticker": "MSFT",
+          "owner_name": "STIFEL FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "20403",
+          "shares": "7124971",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Independent Advisor Alliance",
-          "owner_title": "Institution",
-          "shares": "20459",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "Dockside LLC",
-          "owner_title": "Institution",
-          "shares": "20609",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "BNP PARIBAS FINANCIAL MARKETS",
-          "owner_title": "Institution",
-          "shares": "21115",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "GLENMEDE TRUST CO NA",
-          "owner_title": "Institution",
-          "shares": "21161",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "Clear Street Group Inc.",
-          "owner_title": "Institution",
-          "shares": "21586",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "Huntleigh Advisors, Inc.",
-          "owner_title": "Institution",
-          "shares": "21755",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "owner_name": "ProShare Advisors LLC",
-          "owner_title": "Institution",
-          "shares": "17908",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
+          "ticker": "MSFT",
           "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "17190",
+          "shares": "6560549",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Caitong International Asset Management Co., Ltd",
+          "ticker": "MSFT",
+          "owner_name": "AVIVA PLC",
           "owner_title": "Institution",
-          "shares": "22570",
+          "shares": "7131470",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Marnell Management LLC",
+          "ticker": "MSFT",
+          "owner_name": "PRIMECAP MANAGEMENT CO/CA/",
           "owner_title": "Institution",
-          "shares": "17143",
+          "shares": "7287520",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "ROYAL BANK OF CANADA",
+          "ticker": "MSFT",
+          "owner_name": "Robeco Institutional Asset Management B.V.",
           "owner_title": "Institution",
-          "shares": "14404",
+          "shares": "7308123",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "HUT",
-          "owner_name": "Squarepoint Ops LLC",
+          "ticker": "MSFT",
+          "owner_name": "Allianz Asset Management GmbH",
           "owner_title": "Institution",
-          "shares": "14429",
+          "shares": "7452381",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "DekaBank Deutsche Girozentrale",
+          "owner_title": "Institution",
+          "shares": "7567273",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "FAYEZ SAROFIM & CO",
+          "owner_title": "Institution",
+          "shares": "7698013",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
+          "owner_title": "Institution",
+          "shares": "6575643",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "CIBC Private Wealth Group LLC",
+          "owner_title": "Institution",
+          "shares": "6533586",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "NEW YORK STATE COMMON RETIREMENT FUND",
+          "owner_title": "Institution",
+          "shares": "8872181",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "ProShare Advisors LLC",
+          "owner_title": "Institution",
+          "shares": "5790914",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "APG Asset Management N.V.",
+          "owner_title": "Institution",
+          "shares": "5656313",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "Corient Private Wealth LLC",
+          "owner_title": "Institution",
+          "shares": "5668485",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
+          "owner_title": "Institution",
+          "shares": "5685840",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "NATIXIS ADVISORS, LLC",
+          "owner_title": "Institution",
+          "shares": "5772393",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "owner_name": "Baird Financial Group, Inc.",
+          "owner_title": "Institution",
+          "shares": "5782718",
           "_collected": "2026-06-20"
         }
       ]
@@ -5655,7 +5655,7 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 94,
+      "rows": 381,
       "last_seen": "2026-06-20",
       "recent": [
         {
@@ -5669,243 +5669,243 @@
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "META",
-          "name": "Mark Zuckerberg",
-          "role": "CEO",
-          "year": "2024",
-          "total_comp": "27219874.0",
-          "salary": "1.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Susan Li",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "23456207.0",
-          "salary": "871154.0",
-          "bonus": "980049.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Andrew Bosworth",
-          "role": "CTO",
-          "year": "2023",
-          "total_comp": "23494034.0",
-          "salary": "936346.0",
-          "bonus": "1053392.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Christopher K. Cox",
-          "role": "CPO",
-          "year": "2023",
-          "total_comp": "23506959.0",
-          "salary": "936346.0",
-          "bonus": "1053392.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Mark Zuckerberg",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "24399968.0",
-          "salary": "1.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Javier Olivan",
-          "role": "COO",
-          "year": "2023",
-          "total_comp": "25558488.0",
-          "salary": "1104234.0",
-          "bonus": "1238568.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Andrew Bosworth",
-          "role": "CTO",
-          "year": "2024",
-          "total_comp": "23594826.0",
-          "salary": "985385.0",
-          "bonus": "923799.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Christopher K. Cox",
-          "role": "CPO",
-          "year": "2024",
-          "total_comp": "23609319.0",
-          "salary": "996289.0",
-          "bonus": "923799.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Susan Li",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "23620488.0",
-          "salary": "946731.0",
-          "bonus": "877826.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Javier Olivan",
-          "role": "COO",
-          "year": "2024",
-          "total_comp": "25506684.0",
-          "salary": "1082979.0",
-          "bonus": "1015293.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Jaime Leverton",
-          "role": "Former CEO",
-          "year": "2023",
-          "total_comp": "47258.0",
-          "salary": "47258.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Christopher K. Cox",
-          "role": "CPO",
-          "year": "2022",
-          "total_comp": "22591304.0",
-          "salary": "893846.0",
-          "bonus": "940214.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Asher Genoot",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "1451636.0",
-          "salary": "265692.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Michael Ho",
-          "role": "CSO",
-          "year": "2023",
-          "total_comp": "5956568.0",
-          "salary": "271465.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Aniss Amdiss",
-          "role": "Former Chief Legal Officer",
-          "year": "2024",
-          "total_comp": "795919.0",
-          "salary": "38943.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Shenif Visram",
-          "role": "Former CFO",
-          "year": "2024",
-          "total_comp": "960900.0",
-          "salary": "259616.0",
-          "bonus": "680000.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Jaime Leverton",
-          "role": "Former CEO",
-          "year": "2024",
-          "total_comp": "1513429.0",
-          "salary": "57116.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Sean Glennan",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "1513880.0",
-          "salary": "155385.0",
-          "bonus": "145356.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Victor Semah",
-          "role": "Chief Legal Officer & Corporate Secretary",
-          "year": "2024",
-          "total_comp": "2440606.0",
-          "salary": "262501.0",
-          "bonus": "318750.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Michael Ho",
-          "role": "CSO",
-          "year": "2024",
-          "total_comp": "10131864.0",
-          "salary": "490000.0",
-          "bonus": "980000.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "HUT",
-          "name": "Asher Genoot",
-          "role": "CEO",
-          "year": "2024",
-          "total_comp": "10280140.0",
-          "salary": "534616.0",
-          "bonus": "1100000.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Mark Zuckerberg",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "27110418.0",
-          "salary": "1.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "META",
-          "name": "Javier Olivan",
+          "ticker": "LUV",
+          "name": "Andrew M. Watterson",
           "role": "COO",
           "year": "2022",
-          "total_comp": "21267164.0",
-          "salary": "987046.0",
-          "bonus": "786552.0",
+          "total_comp": "2589311.0",
+          "salary": "538754.0",
+          "bonus": "110535.0",
           "_collected": "2026-06-20"
         },
         {
-          "ticker": "ABTC",
-          "name": "Matt Prusak",
-          "role": "President and Interim CFO",
+          "ticker": "MSFT",
+          "name": "Bradford L. Smith",
+          "role": "Vice Chair and President",
+          "year": "2024",
+          "total_comp": "23439793.0",
+          "salary": "1000000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Amy E. Hood",
+          "role": "CFO",
+          "year": "2024",
+          "total_comp": "25799206.0",
+          "salary": "1000000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Satya Nadella",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "79106183.0",
+          "salary": "2500000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Takeshi Numoto",
+          "role": "CMO",
           "year": "2025",
-          "total_comp": "576923.0",
-          "salary": "76923.0",
-          "bonus": "500000.0",
+          "total_comp": "11876630.0",
+          "salary": "800000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Judson B. Althoff",
+          "role": "CEO Microsoft Commercial",
+          "year": "2025",
+          "total_comp": "28198734.0",
+          "salary": "993333.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Bradford L. Smith",
+          "role": "Vice Chair and President",
+          "year": "2025",
+          "total_comp": "28267295.0",
+          "salary": "1000000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Amy E. Hood",
+          "role": "CFO",
+          "year": "2025",
+          "total_comp": "29481551.0",
+          "salary": "1000000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Satya Nadella",
+          "role": "CEO",
+          "year": "2025",
+          "total_comp": "96496790.0",
+          "salary": "2500000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Mark R. Shaw",
+          "role": "Former EVP & Chief Legal & Regulatory Officer and Corporate Secretary",
+          "year": "2022",
+          "total_comp": "2573576.0",
+          "salary": "492600.0",
+          "bonus": "82941.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Tammy Romo",
+          "role": "CFO",
+          "year": "2022",
+          "total_comp": "2781103.0",
+          "salary": "534737.0",
+          "bonus": "101292.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Christopher D. Young",
+          "role": "Executive Vice President, Business Development, Strategy, and Ventures",
+          "year": "2024",
+          "total_comp": "12034703.0",
+          "salary": "850000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Gary C. Kelly",
+          "role": "Former Executive Chairman of the Board",
+          "year": "2022",
+          "total_comp": "5069203.0",
+          "salary": "509375.0",
+          "bonus": "132810.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Robert E. Jordan",
+          "role": "CEO",
+          "year": "2022",
+          "total_comp": "5333960.0",
+          "salary": "676875.0",
+          "bonus": "195720.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Mark R. Shaw",
+          "role": "Former EVP & Chief Legal & Regulatory Officer and Corporate Secretary",
+          "year": "2023",
+          "total_comp": "4181256.0",
+          "salary": "494400.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Andrew M. Watterson",
+          "role": "COO",
+          "year": "2023",
+          "total_comp": "5014885.0",
+          "salary": "575000.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Tammy Romo",
+          "role": "Former Executive Vice President & CFO",
+          "year": "2023",
+          "total_comp": "5629568.0",
+          "salary": "536700.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Gary C. Kelly",
+          "role": "Former Executive Chairman of the Board",
+          "year": "2023",
+          "total_comp": "9058978.0",
+          "salary": "475000.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Robert E. Jordan",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "9307298.0",
+          "salary": "700000.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Ryan C. Green",
+          "role": "CTO",
+          "year": "2024",
+          "total_comp": "3409797.0",
+          "salary": "505417.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Linda B. Rutherford",
+          "role": "CAO",
+          "year": "2024",
+          "total_comp": "3519167.0",
+          "salary": "539583.0",
+          "bonus": null,
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Judson B. Althoff",
+          "role": "CEO Microsoft Commercial",
+          "year": "2024",
+          "total_comp": "23050327.0",
+          "salary": "960000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Satya Nadella",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "48512537.0",
+          "salary": "2500000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-20"
+        },
+        {
+          "ticker": "LUV",
+          "name": "Tammy Romo",
+          "role": "Former Executive Vice President & CFO",
+          "year": "2024",
+          "total_comp": "4563199.0",
+          "salary": "594729.0",
+          "bonus": null,
           "_collected": "2026-06-20"
         }
       ]
@@ -7964,14 +7964,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -9498,6 +9498,48 @@
         "year": 2025
       },
       {
+        "ticker": "GOOG",
+        "top_exec": "Sundar Pichai",
+        "role": "CEO",
+        "total_comp": 225985145.0,
+        "year": 2022
+      },
+      {
+        "ticker": "GOOGL",
+        "top_exec": "Sundar Pichai",
+        "role": "CEO",
+        "total_comp": 225985145.0,
+        "year": 2022
+      },
+      {
+        "ticker": "TSLA",
+        "top_exec": "Vaibhav Taneja",
+        "role": "CFO",
+        "total_comp": 139472935.0,
+        "year": 2024
+      },
+      {
+        "ticker": "ORCL",
+        "top_exec": "Lawrence J. Ellison",
+        "role": "CTO",
+        "total_comp": 138652063.0,
+        "year": 2022
+      },
+      {
+        "ticker": "AAPL",
+        "top_exec": "Tim Cook",
+        "role": "CEO",
+        "total_comp": 99420097.0,
+        "year": 2022
+      },
+      {
+        "ticker": "MSFT",
+        "top_exec": "Satya Nadella",
+        "role": "CEO",
+        "total_comp": 96496790.0,
+        "year": 2025
+      },
+      {
         "ticker": "CARR",
         "top_exec": "David L. Gitlin",
         "role": "CEO",
@@ -9519,11 +9561,60 @@
         "year": 2024
       },
       {
+        "ticker": "AMZN",
+        "top_exec": "Douglas J. Herrington",
+        "role": "CEO",
+        "total_comp": 43215779.0,
+        "year": 2022
+      },
+      {
+        "ticker": "UBER",
+        "top_exec": "Dara Khosrowshahi",
+        "role": "CEO & Director",
+        "total_comp": 39408629.0,
+        "year": 2024
+      },
+      {
         "ticker": "EFX",
         "top_exec": "Mark W. Begor",
         "role": "CEO",
         "total_comp": 37245853.0,
         "year": 2022
+      },
+      {
+        "ticker": "AMD",
+        "top_exec": "Jean Hu",
+        "role": "Executive Vice President, CFO and Treasurer",
+        "total_comp": 32813869.0,
+        "year": 2023
+      },
+      {
+        "ticker": "BA",
+        "top_exec": "David L. Calhoun",
+        "role": "Former President and CEO",
+        "total_comp": 32770519.0,
+        "year": 2023
+      },
+      {
+        "ticker": "MU",
+        "top_exec": "Sanjay Mehrotra",
+        "role": "CEO",
+        "total_comp": 30940146.0,
+        "year": 2025
+      },
+      {
+        "ticker": "QCOM",
+        "top_exec": "Cristiano R. Amon",
+        "role": "CEO",
+        "total_comp": 29701097.0,
+        "year": 2025
+      },
+      {
+        "ticker": "PLTR",
+        "top_exec": "David Glazer",
+        "role": "CFO & Treasurer",
+        "total_comp": 27971876.0,
+        "year": 2025
       },
       {
         "ticker": "META",
@@ -9533,11 +9624,11 @@
         "year": 2024
       },
       {
-        "ticker": "ABTC",
-        "top_exec": "Steve Gutterman",
-        "role": "Former CEO",
-        "total_comp": 1347065.0,
-        "year": 2024
+        "ticker": "LUV",
+        "top_exec": "Robert E. Jordan",
+        "role": "CEO",
+        "total_comp": 16587882.0,
+        "year": 2025
       }
     ],
     "retail": [

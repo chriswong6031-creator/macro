@@ -18,9 +18,9 @@
     "GBPUSD": {
       "label": "GBP/USD",
       "quote": 1.3237,
-      "chg": -1.5,
+      "chg": -1.8,
       "action": "FLAT",
-      "score": 16.4
+      "score": 15.7
     },
     "USDJPY": {
       "label": "USD/JPY",

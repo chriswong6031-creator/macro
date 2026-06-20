@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-20T06:54:28.712089+00:00",
+  "generated_utc": "2026-06-20T09:08:52.378114+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -851,7 +851,11 @@
         "13f_add",
         "affiliation"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "BEZOS JEFFREY P",
+        "title": "Executive Chair",
+        "shares": 880948653
+      }
     },
     {
       "ticker": "AAPL",
@@ -893,7 +897,11 @@
         "affiliation",
         "patent_cluster"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 1426283914
+      }
     },
     {
       "ticker": "TSLA",
@@ -928,7 +936,11 @@
         "affiliation",
         "retail_buzz"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "Musk Elon",
+        "title": "CEO",
+        "shares": 1140856643
+      }
     },
     {
       "ticker": "MSFT",
@@ -958,7 +970,11 @@
         "app_demand",
         "patent_cluster"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "BARCLAYS PLC",
+        "title": "Institution",
+        "shares": 794117000
+      }
     },
     {
       "ticker": "ORCL",
@@ -986,7 +1002,11 @@
         "affiliation",
         "patent_cluster"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 174802084
+      }
     },
     {
       "ticker": "GOOGL",
@@ -1015,7 +1035,11 @@
         "affiliation",
         "app_demand"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 528969322
+      }
     },
     {
       "ticker": "PLTR",
@@ -1043,7 +1067,11 @@
         "affiliation",
         "retail_buzz"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 215444098
+      }
     },
     {
       "ticker": "BA",
@@ -1064,7 +1092,11 @@
         "affiliation",
         "patent_cluster"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 70989438
+      }
     },
     {
       "ticker": "QCOM",
@@ -1085,7 +1117,11 @@
         "affiliation",
         "patent_cluster"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 114144068
+      }
     },
     {
       "ticker": "MU",
@@ -1106,7 +1142,11 @@
         "affiliation",
         "patent_cluster"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 106608094
+      }
     },
     {
       "ticker": "GOOG",
@@ -1127,7 +1167,11 @@
         "affiliation",
         "trump"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 421013782
+      }
     },
     {
       "ticker": "UBER",
@@ -1148,7 +1192,11 @@
         "affiliation",
         "app_demand"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VOYA INVESTMENT MANAGEMENT LLC",
+        "title": "Institution",
+        "shares": 198470000
+      }
     },
     {
       "ticker": "LUV",
@@ -1169,7 +1217,11 @@
         "affiliation",
         "app_demand"
       ],
-      "top_holder": null
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 60577139
+      }
     },
     {
       "ticker": "ABTC",

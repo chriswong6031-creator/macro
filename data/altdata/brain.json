@@ -2,7 +2,7 @@
   "schema": "altdata_brain.v1",
   "is_context_only": false,
   "actionable": true,
-  "generated_at": "2026-06-20T06:57:21.770161+00:00",
+  "generated_at": "2026-06-20T09:08:43.776388+00:00",
   "state_asof": "2026-06-20",
   "model": "claude-opus-4-8",
   "regime_read": null,
@@ -10,7 +10,7 @@
   "theses": [],
   "track_record": {
     "schema": "altdata_brain_track_record.v1",
-    "as_of": "2026-06-19",
+    "as_of": "2026-06-20",
     "scored_total": 0,
     "open": 0,
     "unscored_soft": 0,
@@ -69,6 +69,6 @@
   "confidence": "low",
   "n_clusters": 12,
   "raw_text": null,
-  "degraded_reason": "no_client_or_token",
+  "degraded_reason": "llm_error",
   "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and falsifiable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
 }

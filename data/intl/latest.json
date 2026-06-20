@@ -311,8 +311,8 @@
         "unemployment": 4.9,
         "unemployment_chg6m": -0.2,
         "m2_yoy": -3.66,
-        "fx": 1.3237,
-        "fx_strength_3m": -1.39,
+        "fx": 1.3202,
+        "fx_strength_3m": -1.66,
         "realvol": 10.2,
         "drawdown": -5.0
       },
@@ -586,7 +586,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": -1.39
+          "value": -1.66
         },
         {
           "cc": "EZ",
