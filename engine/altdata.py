@@ -55,6 +55,8 @@ DATASETS: dict[str, tuple[str, str, str, str]] = {
     "congressholdings": ("📁", "Congress holdings", "国会持仓", "_collected"),
     "bills":          ("📑", "Bill summaries", "法案摘要", "_first_seen"),
     "appratings":     ("📱", "App ratings", "应用评分", "Time"),
+    "topshareholders": ("🏛️", "Top shareholders", "主要股东", "_collected"),
+    "execcomp":       ("💰", "Executive comp", "高管薪酬", "_collected"),
 }
 
 _MISSING = {"", "nan", "none", "nat", "null", "<na>"}

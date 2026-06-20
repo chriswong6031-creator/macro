@@ -275,6 +275,33 @@ def test_build_picks_filters_passive(monkeypatch):
     assert "leading" in efx["verdict"]["en"]                   # +3.5pp vs SPY
 
 
+# --------------------------------------------------------------- watchlist (per-ticker)
+def test_watchlist_derivation(tmp_path, monkeypatch):
+    from collectors.quiver_watchlist import QuiverWatchlistAdapter
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    (tmp_path / "trumpflow").mkdir(parents=True)
+    (tmp_path / "altdata").mkdir(parents=True)
+    (tmp_path / "trumpflow" / "intel.json").write_text(
+        json.dumps({"entities": [{"ticker": "HUT"}, {"ticker": "DJT"}, {"name": "no-ticker"}]}))
+    (tmp_path / "altdata" / "by_ticker.json").write_text(
+        json.dumps({"tickers": {"NVDA": {"convergence_score": 2}, "AAA": {"convergence_score": 1}}}))
+    wl = QuiverWatchlistAdapter()._watchlist()
+    assert set(wl) == {"HUT", "DJT", "NVDA"}                   # AAA below threshold; entity w/o ticker skipped
+
+
+def test_top_holder_lookup(tmp_path, monkeypatch):
+    from engine.trumpflow import graph
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    (tmp_path / "quiver").mkdir(parents=True)
+    pd.DataFrame([
+        {"ticker": "DJT", "owner_name": "Trump Revocable Trust", "owner_title": "", "shares": "114750000"},
+        {"ticker": "DJT", "owner_name": "Small Holder", "owner_title": "Institution", "shares": "1000"},
+    ]).to_parquet(tmp_path / "quiver" / "topshareholders.parquet")
+    th = graph._top_holder("DJT")
+    assert th["owner"] == "Trump Revocable Trust" and th["shares"] == 114750000
+    assert graph._top_holder("NOPE") is None
+
+
 # --------------------------------------------------------------- latent-stake graph
 def test_graph_catches_label_mismatch():
     mm = tfgraph.label_mismatches(_SYNTH_INTEL)

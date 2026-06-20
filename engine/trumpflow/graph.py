@@ -179,6 +179,7 @@ def build_view(by_ticker: dict | None = None, root=None) -> dict:
             "alt_corroborated": int(adrec.get("convergence_score", 0) or 0) >= 2,
             "alt_score": adrec.get("convergence_score"),
             "alt_channels": adrec.get("channels", []),
+            "top_holder": _top_holder(tk, root),
         })
     watch.sort(key=lambda w: (w["alt_corroborated"], len(w["trump_people"])), reverse=True)
 
@@ -205,6 +206,25 @@ def build_view(by_ticker: dict | None = None, root=None) -> dict:
     log.info("trumpflow graph: %d paths, %d mismatches, %d watch tickers",
              len(paths), len(mismatches), len(watch))
     return view
+
+
+def _top_holder(ticker: str, root=None) -> dict | None:
+    """The largest reported shareholder of a ticker (Quiver topshareholders)."""
+    try:
+        import pandas as pd
+        p = (config.data_dir() if root is None else (root / "data")) / "quiver" / "topshareholders.parquet"
+        if not p.exists():
+            return None
+        df = pd.read_parquet(p)
+        df = df[df["ticker"].astype(str).str.upper() == str(ticker).upper()]
+        if df.empty:
+            return None
+        df = df.assign(_sh=pd.to_numeric(df["shares"], errors="coerce")).sort_values("_sh", ascending=False)
+        r = df.iloc[0]
+        return {"owner": r.get("owner_name"), "title": r.get("owner_title"),
+                "shares": int(r["_sh"]) if pd.notna(r["_sh"]) else None}
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _recent_filings(root=None, n: int = 12) -> list[dict]:
