@@ -808,6 +808,25 @@ def main() -> int:
             log.info("demand-chain: RPO bookings for %d names", len(rpo_by_ticker))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("rpo.parquet unreadable (%s)", e)
+    # Headcount / hiring (engine/demand_chain.hiring_read) — the per-name COINCIDENT
+    # hiring-confidence read (10-K employee growth), the honest free stand-in for live
+    # job postings. Last display fallback when a name is not on a chain and has no RPO.
+    headcount_by_ticker: dict[str, list[dict]] = {}
+    try:                                        # drip headcount (cached 90d; gentle SEC doc fetch)
+        from collectors.edgar_headcount import fetch_headcount
+        fetch_headcount(max_new=10)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("headcount drip skipped (%s)", e)
+    _hcp = config.data_dir() / "edgar" / "headcount.parquet"
+    if _hcp.exists():
+        try:
+            _hc = pd.read_parquet(_hcp)
+            for t, g in _hc.groupby("ticker"):
+                headcount_by_ticker[str(t)] = [{"fy": int(r.fy), "employees": int(r.employees)}
+                                               for r in g.itertuples()]
+            log.info("demand-chain: headcount for %d names", len(headcount_by_ticker))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("headcount.parquet unreadable (%s)", e)
     # scored-ledger track record (engine/demand_ledger, prior build) for the panel's
     # accountability line; absent on first run — degrade silently.
     demand_track = None
@@ -936,11 +955,13 @@ def main() -> int:
             rec["baskets_membership"] = bsk_mem[ticker]
         if revision_raw.get(ticker):           # raw analyst-revision fields → Demand Context (L1 consensus)
             rec["revisions"] = revision_raw[ticker]
-        if demand_signals or rpo_by_ticker:    # customer-demand chains / RPO → Demand Context (L2 variant)
+        if demand_signals or rpo_by_ticker or headcount_by_ticker:   # demand chains / RPO / hiring → L2
             dchread = (dchain.chain_read(demand_signals, rec.get("baskets_membership"),
                                          rec.get("revisions"), ticker=ticker) if demand_signals else None)
             if dchread is None and rpo_by_ticker.get(ticker):   # software complex: own forward bookings
                 dchread = dchain.rpo_read(rpo_by_ticker[ticker], rec.get("revisions"))
+            if dchread is None and headcount_by_ticker.get(ticker):   # last fallback: hiring/headcount
+                dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
             if dchread:
                 # attach the scored-ledger summary (leading chains only) for the
                 # panel's accountability line — global, same for every name
@@ -950,8 +971,9 @@ def main() -> int:
                                          "hit_rate": o.get("hit_rate"), "open": demand_track.get("open"),
                                          "since": demand_track.get("as_of")}
                 rec["demand_chain"] = dchread
-                # surface the actionable divergence on the standout board chip (below)
-                if dchread["divergence"] in ("ahead_of_consensus", "consensus_at_risk"):
+                # board chip flags the LEADING variant only (capex / RPO) — coincident
+                # cross-reads (housing, hiring) stay on the panel + Demand Desk page.
+                if dchread.get("leading") and dchread["divergence"] in ("ahead_of_consensus", "consensus_at_risk"):
                     demand_chip[ticker] = {"div": dchread["divergence"], "chain": dchread["chain_key"],
                                            "tier": dchread["tier"], "yoy": dchread.get("yoy_pct")}
         # ---- unified Conviction Profile (engine/stock_score) -----------------
