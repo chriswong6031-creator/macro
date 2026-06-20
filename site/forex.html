@@ -242,6 +242,19 @@ html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-men
 .nav-dd-menu .nav-sub>.nav-dd-menu{top:-7px;left:100%;z-index:95;}
 .nav-dd-menu .nav-sub::after{content:"";position:absolute;top:0;left:100%;width:12px;height:100%;}
 
+/* The section menu (8 dropdowns + AI-brief / theme / lang) outgrew the 1180px
+   content rail, so on desktop it wrapped onto a second row — orphaning "Research"
+   and floating the toggles in the vertical middle (looked broken). Give the sticky
+   bar the SAME wider rail the .site-nav (macro) family uses — a centred 1500 max
+   with a 40px min gutter — so the whole menu sits on ONE row again, congruent with
+   those pages. Only the bar widens; the page body keeps its 1180 rail. Scoped to
+   ≥701px so the ≤700px JS hamburger (theme.js) is untouched. */
+@media (min-width:701px){
+  .topbar>.wrap{max-width:none;
+    padding-left:max(40px,calc((100vw - 1500px)/2));
+    padding-right:max(40px,calc((100vw - 1500px)/2));}
+}
+
 /* toggles — subtle hover feedback (their slide animations are untouched) */
 .theme-switch,.lang-toggle{transition:border-color .18s ease,box-shadow .18s ease;}
 .theme-switch:hover,.lang-toggle:hover{border-color:color-mix(in srgb,var(--blue) 55%,var(--grid));
