@@ -88,11 +88,15 @@
   function tickerChip(r) {
     const col = GRADE_COLOR[r.grade] || 'var(--muted)';
     const ext = r.ext == null ? '' : ` <small>${pct(r.ext)}</small>`;
-    const label = esc(r.name || r.ticker);          // the chip now reads as the company name…
-    const code = esc(r.ticker);                       // …with the stock code in a tap/hover popover.
+    // the chip reads as the company name (full native name in 中文 where the market has one,
+    // e.g. A-shares; English elsewhere) — with the stock code in a tap/hover popover.
+    const nm_en = r.name || r.ticker;
+    const nm_zh = r.name_zh || r.name || r.ticker;
+    const label = L(esc(nm_en), esc(nm_zh));
+    const code = esc(r.ticker);
     const grade = L(esc(r.grade_en || r.grade) + ' entry', esc(r.grade_zh || r.grade) + ' 入场');
     const sect = r.sector ? esc(r.sector) + ' · ' : '';
-    const aria = esc((r.name || r.ticker) + ' (' + r.ticker + ')');
+    const aria = esc(nm_en + ' (' + r.ticker + ')');
     return `<span class="ne-tk" tabindex="0" role="button" aria-label="${aria}">`
       + `<span class="ne-dot" style="background:${col}"></span>`
       + `<b class="ne-tk-nm">${label}</b>${ext}`
