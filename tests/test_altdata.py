@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from collectors import quiver
-from engine import altdata
+from engine import altdata, altdata_alerts, altdata_signals
 from lib import config
 
 
@@ -119,3 +119,48 @@ def test_convergence_ignores_single_channel():
                "gov_contracts": [], "trump": [], "lobbying": [], "insiders": {"buys": []},
                "offexchange": [], "cnbc": [], "inst_13f": {"adds": []}}
     assert altdata.convergence(signals) == []
+
+
+# --------------------------------------------------------------- per-ticker substrate
+def test_by_ticker_inversion(monkeypatch):
+    monkeypatch.setattr(altdata_signals, "_write", lambda out: None)
+    feed = {"as_of": "2026-06-19", "signals": {
+        "political": {"buys": [{"ticker": "EFX", "net": 2, "members": 2}]},
+        "gov_contracts": [{"ticker": "EFX", "total_usd": 1_000_000}],
+        "trump": [{"ticker": "EFX", "side": "buy"},
+                  {"ticker": "BKNG", "side": "buy"}, {"ticker": "BKNG", "side": "sell"}],
+        "lobbying": [], "insiders": {"buys": []}, "offexchange": [],
+        "inst_13f": {"adds": []}, "cnbc": [], "corporate_donors": [{"ticker": "EFX", "total_usd": 50000}],
+    }}
+    out = altdata_signals.build(feed)
+    efx = out["tickers"]["EFX"]
+    # congress + gov_contract + trump = 3 real channels; the donor row is recorded but
+    # must NOT count toward the score (else it would be 4)
+    assert efx["convergence_score"] == 3
+    assert set(efx["channels"]) == {"congress_buy", "gov_contract", "trump"}
+    assert efx["trump_linked"] is True
+    assert efx["donor_usd"] == 50000
+    # a Trump buy+sell round-trip on one name is ONE channel, not two
+    bkng = out["tickers"]["BKNG"]
+    assert bkng["convergence_score"] == 1 and bkng["channels"] == ["trump"]
+
+
+# --------------------------------------------------------------- alert change-detection
+def test_alerts_fire_on_enter_only(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    bt = {"as_of": "2026-06-19", "tickers": {
+        "EFX": {"convergence_score": 2, "channels": ["gov_contract", "trump"], "trump_linked": True},
+        "NVDA": {"convergence_score": 2, "channels": ["13f_add", "darkpool_accum"], "trump_linked": False},
+        "AAA": {"convergence_score": 1, "channels": ["congress_buy"], "trump_linked": False},
+    }}
+    fired1 = altdata_alerts.rebuild(bt)
+    assert len(fired1) == 2                                    # EFX + NVDA; AAA below MIN_SCORE
+    assert any(e["severity"] == "high" and "EFX" in e["headline"] for e in fired1)  # trump-linked => high
+    assert any(e["severity"] == "medium" and "NVDA" in e["headline"] for e in fired1)
+
+    assert altdata_alerts.rebuild(bt) == []                   # unchanged -> nothing new
+
+    bt2 = {"as_of": "2026-06-19", "tickers": dict(bt["tickers"])}
+    bt2["tickers"]["NVDA"] = {"convergence_score": 3, "channels": ["13f_add", "darkpool_accum", "congress_buy"], "trump_linked": False}
+    fired3 = altdata_alerts.rebuild(bt2)                       # score increase -> re-fires
+    assert len(fired3) == 1 and "NVDA" in fired3[0]["headline"]

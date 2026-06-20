@@ -185,6 +185,10 @@ jobs:
           # below — it, NOT residual-alpha, was the real engine bottleneck. build_site reads
           # the COMMITTED factor_series.json (degrade-never-raise), so a <=1-run-old series
           # is fine and the deep walk no longer gates the daily dashboard/deploy.
+          # Alt-data desk BEFORE build_site so today's convergence alerts are already in
+          # data/altdata/alerts.jsonl when build_site assembles the Alert Center. Reads the
+          # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
+          run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           exit 0
       - name: build china a-share dashboard
@@ -263,11 +267,6 @@ jobs:
         # curated data/policy/intel.json substrate (falsifiable prediction ledger + rotation
         # map) + the intent-desk output. Display/context-only; additive, returns 0 on any error.
         run: python -m scripts.build_policy_watch || echo "policy watch skipped (additive)"
-      - name: alternative data desk (build_alt_data)
-        # Quiver alt-data suite -> deterministic signals + cross-signal convergence +
-        # the structured brain feed (site/altdata/feed.json) -> site/alt_data.html.
-        # Display/context-only; additive, returns 0 on any error.
-        run: python -m scripts.build_alt_data || echo "alt data skipped (additive)"
       - name: cross-asset vector (build_crossasset)
         # after the commodity/forex/bonds pages, before build_vector (hub last):
         # TSMOM trend + intermarket ratios + correlation regime over keyless

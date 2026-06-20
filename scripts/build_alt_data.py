@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
-from engine import altdata  # noqa: E402
+from engine import altdata, altdata_alerts, altdata_signals  # noqa: E402
 from lib import config  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -29,13 +29,23 @@ def main() -> int:
         log.warning("alt-data feed failed — skipping (additive): %s", e)
         return 0
 
+    # Per-ticker substrate (score/narrative/model layers read this) + the Alert Center
+    # narrative hook (change-detected convergence alerts). Both additive/non-fatal.
+    alerts = []
+    try:
+        by_ticker = altdata_signals.build(feed)
+        altdata_alerts.rebuild(by_ticker)
+        alerts = altdata_alerts.recent(days=30)
+    except Exception as e:  # noqa: BLE001
+        log.warning("alt-data signals/alerts step failed (non-fatal): %s", e)
+
     site = config.ROOT / "site"
     site.mkdir(exist_ok=True)
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     try:
         html = env.get_template("alt_data.html.j2").render(
-            feed=feed, generated_utc=built,
+            feed=feed, alerts=alerts, generated_utc=built,
             active_section="research", active_page="alt_data",
         )
     except Exception as e:  # noqa: BLE001

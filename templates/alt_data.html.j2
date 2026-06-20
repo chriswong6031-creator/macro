@@ -72,6 +72,21 @@
   {% else %}<p class="mut2">{{ t('No multi-channel convergence in the current window.', '当前窗口无多渠道汇聚。') }}</p>{% endif %}
 </div>
 
+{# ---------------- Live alerts (flow into the Alert Center) ---------------- #}
+{% if alerts %}
+<div class="ad-card span2">
+  <h2>🔔 {{ t('Live alerts', '实时警报') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('also surfaced in the', '同时显示于') }} <a href="alerts.html">{{ t('Alert Center', '警报中心') }}</a></span></h2>
+  <table class="ad"><tbody>
+  {% for a in alerts[:10] %}
+    <tr><td style="white-space:nowrap"><span class="chip {{ 'tag-event' if a.severity=='high' else '' }}">{{ a.severity }}</span></td>
+        <td><span class="l-en">{{ a.headline }}</span><span class="l-zh">{{ a.headline_zh }}</span>
+            <div class="mut2" style="font-size:10.5px">{{ a.ts[:10] }}</div></td></tr>
+  {% endfor %}
+  </tbody></table>
+</div>
+{% endif %}
+
 <div class="ad-grid">
   {# ---------------- Donald Trump trades ---------------- #}
   <div class="ad-card">
