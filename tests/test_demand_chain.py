@@ -153,3 +153,34 @@ def test_rpo_read_consensus_at_risk():
 def test_rpo_read_none_when_too_short():
     assert dc.rpo_read(_rpo([(2025, 50e9, 30e9)]), None) is None
     assert dc.rpo_read([], None) is None
+
+
+# ── hiring / headcount read (coincident, display-only) ────────────────────────
+def _hc(rows):
+    return [{"fy": fy, "employees": n} for (fy, n) in rows]
+
+
+def test_hiring_read_shape_and_coincident():
+    r = dc.hiring_read(_hc([(2023, 26000), (2024, 30000), (2025, 42000)]), None)
+    assert r is not None
+    assert r["chain_key"] == "hiring" and r["leading"] is False and r["tier"] == "headcount"
+    assert r["divergence"] == "signal_only" and r["series"][-1] == [2025, 42.0]   # thousands
+    assert "coincident" in r["caveat"]["en"].lower()
+
+
+def test_hiring_read_ahead_when_growing_vs_flat_consensus():
+    r = dc.hiring_read(_hc([(2023, 20000), (2024, 26000), (2025, 40000)]),
+                       {"est_chg_90d": 0.2, "breadth": 0.0})
+    assert r["trend"] == "accelerating" and r["divergence"] == "ahead_of_consensus"
+
+
+def test_hiring_read_at_risk_on_layoffs_vs_rising_consensus():
+    # headcount contracting (layoffs) while consensus still rising
+    r = dc.hiring_read(_hc([(2023, 40000), (2024, 41000), (2025, 33000)]),
+                       {"est_chg_90d": 6.0, "breadth": 0.6})
+    assert r["trend"] == "contracting" and r["divergence"] == "consensus_at_risk"
+
+
+def test_hiring_read_none_when_too_short():
+    assert dc.hiring_read(_hc([(2025, 42000)]), None) is None
+    assert dc.hiring_read([], None) is None

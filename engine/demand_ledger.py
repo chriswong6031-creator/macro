@@ -145,6 +145,17 @@ def _rpo_map(root: Path) -> dict[str, list[dict]]:
     return out
 
 
+def _headcount_map(root: Path) -> dict[str, list[dict]]:
+    p = root / "data" / "edgar" / "headcount.parquet"
+    if not p.exists():
+        return {}
+    df = pd.read_parquet(p)
+    out: dict[str, list[dict]] = {}
+    for t, g in df.groupby("ticker"):
+        out[str(t)] = [{"fy": int(r.fy), "employees": int(r.employees)} for r in g.itertuples()]
+    return out
+
+
 def build_theses(root=None, today=None) -> list[dict]:
     """Compute today's actionable theses across all LEADING reads — the customer-
     capex chains AND per-name RPO (contracted forward bookings). Pure of writes."""

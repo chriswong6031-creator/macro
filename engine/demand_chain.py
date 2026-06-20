@@ -314,6 +314,65 @@ def rpo_read(rpo_rows: list[dict], revisions: dict | None) -> dict | None:
     }
 
 
+def hiring_read(headcount_rows: list[dict], revisions: dict | None) -> dict | None:
+    """A name's own employee-HEADCOUNT growth (from its 10-Ks) as an L2 read — the
+    company's revealed hiring bet, a management-independent demand-confidence signal.
+    COINCIDENT, not leading (firms hire with/just after demand, and headcount is
+    annual), so — like the housing chain — it is display-only and never a scored
+    thesis. Same shape as chain_read/rpo_read. The honest, free stand-in for live
+    job postings (which have no reliable free per-company source).
+
+    `headcount_rows`: list of {fy, employees} for ONE ticker. None if <2 years."""
+    rows = sorted((r for r in (headcount_rows or []) if r.get("employees")),
+                  key=lambda r: r["fy"])
+    if len(rows) < 2:
+        return None
+    series = [[int(r["fy"]), round(r["employees"] / 1000.0, 1)] for r in rows][-4:]  # in thousands
+    latest, prior = rows[-1], rows[-2]
+    n_now, n_prev = latest["employees"], prior["employees"]
+    yoy = round((n_now / n_prev - 1.0) * 100.0, 1) if n_prev else None
+    yoy_prev = None
+    if len(rows) >= 3 and rows[-3]["employees"]:
+        yoy_prev = round((n_prev / rows[-3]["employees"] - 1.0) * 100.0, 1)
+    trend = _trend(yoy, yoy_prev)
+    cons = _consensus_dir(revisions)
+    div = _divergence(trend, cons)
+    tw_en, tw_zh = _TREND_WORD.get(trend, _TREND_WORD["unknown"])
+    yoy_s = (("+" if yoy >= 0 else "") + f"{yoy:.0f}%") if yoy is not None else "n/a"
+    n_k = round(n_now / 1000.0, 1)
+
+    headline_en = (f"Headcount {tw_en} ({yoy_s} YoY to ~{n_k:g}k) — the company's revealed hiring bet")
+    headline_zh = (f"员工人数{tw_zh}（同比{yoy_s}，约 {n_k:g}k）——公司用招聘表达的需求押注")
+    DIV = {
+        "aligned": ("Hiring is growing AND analyst estimates already reflect it — the demand confidence "
+                    "is consistent and largely in the price.",
+                    "招聘在增长，且分析师预期已反映——需求信心一致，且基本已计入价格。"),
+        "ahead_of_consensus": ("The company is HIRING faster than its analyst revisions imply — a coincident "
+                               "cross-read that management is betting on demand the consensus hasn't priced.",
+                               "公司招聘的增速快于其分析师评级调整所暗示的——一个同步交叉印证：管理层在押注共识尚未计入的需求。"),
+        "consensus_at_risk": ("Headcount is CONTRACTING (layoffs) while analyst estimates still rise — the "
+                              "consensus may be ahead of what the company itself is staffing for. Caution.",
+                              "员工人数在收缩（裁员），而分析师预期仍在上修——共识可能领先于公司自身的人员配置。需谨慎。"),
+        "signal_only": ("No analyst-revision data for this name; we show the headcount-growth trend on its own.",
+                        "该股暂无分析师评级调整数据，故仅单独展示员工人数增长趋势。"),
+    }
+    read_en, read_zh = DIV[div]
+    caveat_en = ("Annual employee headcount from the company's own 10-K filings — a COINCIDENT hiring-"
+                 "confidence cross-read (firms staff with/just after demand), NOT a leading live-postings "
+                 "signal (those have no reliable free source). Display-only; not a buy signal.")
+    caveat_zh = ("来自公司自身 10-K 财报的年度员工人数——一个同步的招聘信心交叉读数（企业随需求同步/稍后配置人员），"
+                 "并非领先的实时招聘信号（后者无可靠免费来源）。仅作展示，非买入信号。")
+    return {
+        "chain_key": "hiring", "leading": False, "tier": "headcount", "tier_slug": "hiring",
+        "divergence": div, "consensus_dir": cons, "trend": trend, "yoy_pct": yoy,
+        "total_latest_bn": n_k, "fy_latest": int(latest["fy"]), "horizon_d": 63,
+        "series": series, "spenders": ["self"],
+        "headline": {"en": headline_en, "zh": headline_zh},
+        "read": {"en": read_en, "zh": read_zh},
+        "caveat": {"en": caveat_en, "zh": caveat_zh},
+    }
+
+
 def _build_read(chain: dict, sig: dict, tier: dict, revisions: dict | None) -> dict:
     trend = sig["trend"]
     cons = _consensus_dir(revisions)

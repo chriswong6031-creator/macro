@@ -67,6 +67,12 @@ def _collect(root: Path):
         r = dc.rpo_read(rows, revs.get(tkr))
         if r:
             reads[tkr] = r
+    for tkr, rows in dl._headcount_map(root).items():     # hiring/headcount: last fallback (coincident)
+        if tkr in reads:
+            continue
+        r = dc.hiring_read(rows, revs.get(tkr))
+        if r:
+            reads[tkr] = r
     return signals, reads
 
 
