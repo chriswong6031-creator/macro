@@ -419,7 +419,7 @@
         "个股 — 此处做市商持仓符号为假设、可能出错（备兑基金或散户大量买看涨可使其翻转）。这些价位仅作宽松背景，切勿据此逆向交易。")) + "</div>";
     }
 
-    return '<div class="gx-gameplan ' + V.cls + '">' + head + levels + range + chip + "</div>";
+    return '<div class="gx-gameplan ' + V.cls + '">' + head + levels + range + dirTiltHTML() + chip + "</div>";
   }
 
   function lvlRow(icon, lab_en, lab_zh, val, trig_en, trig_zh, help_en, help_zh) {
@@ -427,6 +427,100 @@
       '<span class="gp-ll">' + esc(lz(lab_en, lab_zh)) + '</span> <b class="gp-lv">' + price(val) + "</b>" +
       help(lz(help_en, help_zh)) + "</div>" +
       '<div class="gp-lt">' + esc(lz(trig_en, trig_zh)) + "</div></div>";
+  }
+
+  // ---- directional tilt (a ROUGH, approximate probability lean — risk & context only) ----
+  // Built ONLY from the genuinely directional-ish (but weak) options pressures, never from
+  // the GEX sign (which is about volatility, not direction). Every leg is shown so the read
+  // is interpretable, and the output is deliberately near coin-flip most of the time.
+  function skewPts(smile, spot) {
+    if (!smile || !smile.strikes || smile.strikes.length < 3 || !spot) return null;
+    var ks = smile.strikes, pv = smile.put_iv || [], cv = smile.call_iv || [], put = [], call = [];
+    for (var i = 0; i < ks.length; i++) {
+      if (ks[i] <= spot * 0.97 && pv[i] != null) put.push(pv[i]);
+      if (ks[i] >= spot * 1.03 && cv[i] != null) call.push(cv[i]);
+    }
+    if (!put.length || !call.length) return null;
+    var mean = function (a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; };
+    return mean(put) - mean(call);          // vol points; + = downside skew (puts richer)
+  }
+
+  function directionalLean() {
+    var s = cur.summary, em = cur.expected_move || {};
+    if (!s || s.spot == null) return null;
+    var legs = [], score = 0, riskLegs = [], riskScore = 0;
+
+    // ---- DIRECTIONAL legs: only forces that actually differ across names / over time ----
+    // (charm drift & raw equity skew are structurally one-signed here — they carry no
+    //  cross-sectional direction, so they feed the TAIL-RISK read below, not the tilt.)
+    // 1) max-pain pin — only meaningful when price is genuinely NEAR the magnet
+    if (s.max_pain != null) {
+      var d = (s.max_pain - s.spot) / s.spot * 100;
+      var near = Math.max(2.5, (em.weekly_pct || 0) * 1.3);
+      if (Math.abs(d) >= 0.4 && Math.abs(d) <= near) {
+        var mdir = d > 0 ? 1 : -1; score += mdir;
+        legs.push({ dir: mdir, en: "Near the " + price(s.max_pain) + " max-pain magnet (" + (d > 0 ? "+" : "") + d.toFixed(1) + "%) — a mild pin pull " + (d > 0 ? "up" : "down") + " into expiry.",
+          zh: "接近最大痛点 " + price(s.max_pain) + "（" + (d > 0 ? "+" : "") + d.toFixed(1) + "%）— 临近到期有轻微" + (d > 0 ? "上" : "下") + "磁吸。" });
+      } else {
+        legs.push({ dir: 0, en: "Max-pain " + price(s.max_pain) + " is " + (Math.abs(d) > near ? "far from price — negligible pull" : "right at price — no pull") + ".",
+          zh: "最大痛点 " + price(s.max_pain) + (Math.abs(d) > near ? " 距现价较远 — 拉力可忽略" : " 正处于现价 — 无拉力") + "。" });
+      }
+    }
+    // 2) put/call positioning — extreme readings are a weak CONTRARIAN tilt
+    if (s.put_call_oi_ratio != null) {
+      if (s.put_call_oi_ratio > 1.5) { score += 0.5; legs.push({ dir: 1, en: "Heavy put/call (" + s.put_call_oi_ratio.toFixed(2) + ") — the crowd is well-hedged; a weak contrarian-up read.", zh: "认沽/认购偏高（" + s.put_call_oi_ratio.toFixed(2) + "）— 人群对冲充分；弱反向偏上。" }); }
+      else if (s.put_call_oi_ratio < 0.55) { score -= 0.5; legs.push({ dir: -1, en: "Light put/call (" + s.put_call_oi_ratio.toFixed(2) + ") — the crowd is call-heavy / unhedged; a weak contrarian-down read.", zh: "认沽/认购偏低（" + s.put_call_oi_ratio.toFixed(2) + "）— 人群偏看涨/对冲不足；弱反向偏下。" }); }
+      else { legs.push({ dir: 0, en: "Put/call (" + s.put_call_oi_ratio.toFixed(2) + ") is unremarkable — no contrarian tilt.", zh: "认沽/认购（" + s.put_call_oi_ratio.toFixed(2) + "）无异常 — 无反向倾向。" }); }
+    }
+
+    // ---- TAIL-RISK read: which way a surprise is likelier to break (NOT the tilt) ----
+    if (s.regime === "short") { riskScore++; riskLegs.push(lz("Jumpy short-gamma regime — moves amplify and air-pockets skew to the downside.", "跳动空头Gamma体制 — 走势放大、急跌偏下行。")); }
+    else { riskLegs.push(lz("Calm long-gamma regime — dealer hedging dampens both directions.", "平静多头Gamma体制 — 做市商对冲双向抑制。")); }
+    var sk = skewPts(cur.smile, s.spot);
+    if (sk != null && sk > 6) { riskScore++; riskLegs.push(lz("Steep put skew — the market is paying up for downside protection.", "看跌偏斜陡峭 — 市场为下行保护付溢价。")); }
+    else if (sk != null && sk < 0) { riskScore--; riskLegs.push(lz("Inverted skew — calls bid over puts (upside / squeeze risk).", "偏斜反转 — 看涨比看跌更贵（上行/逼空风险）。")); }
+
+    return { score: score, legs: legs, riskScore: riskScore, riskLegs: riskLegs };
+  }
+
+  function leanBucket(score) {
+    if (score >= 1.5) return { cls: "up", en: "Upside tilt", zh: "偏上行", odds_en: "≈60 / 40 up", odds_zh: "≈60 / 40 偏上" };
+    if (score >= 0.5) return { cls: "up", en: "Leans higher", zh: "略偏上", odds_en: "≈55 / 45 up", odds_zh: "≈55 / 45 偏上" };
+    if (score > -0.5) return { cls: "neu", en: "Balanced", zh: "均衡", odds_en: "≈50 / 50 — a coin flip", odds_zh: "≈50 / 50 — 接近抛硬币" };
+    if (score > -1.5) return { cls: "down", en: "Leans lower", zh: "略偏下", odds_en: "≈55 / 45 down", odds_zh: "≈55 / 45 偏下" };
+    return { cls: "down", en: "Downside tilt", zh: "偏下行", odds_en: "≈60 / 40 down", odds_zh: "≈60 / 40 偏下" };
+  }
+
+  function riskBucket(rs) {
+    if (rs >= 2) return { cls: "down", en: "Elevated · downside", zh: "偏高 · 下行" };
+    if (rs === 1) return { cls: "warn", en: "Moderate · downside-tilted", zh: "中等 · 偏下行" };
+    if (rs < 0) return { cls: "up", en: "Upside / squeeze", zh: "上行 / 逼空" };
+    return { cls: "neu", en: "Low / normal", zh: "低 / 正常" };
+  }
+
+  function dirTiltHTML() {
+    var d = directionalLean(); if (!d) return "";
+    var b = leanBucket(d.score), rb = riskBucket(d.riskScore);
+    var pos = Math.max(3, Math.min(97, 50 + d.score / 1.5 * 47));
+    var arrow = b.cls === "up" ? "▲" : b.cls === "down" ? "▼" : "●";
+    var dHelp = help(lz(
+      "A ROUGH directional lean from options positioning — built only from the forces that actually vary: a max-pain pin pull when price is near it, and an extreme put/call (contrarian) reading. Charm drift and equity skew are deliberately excluded from the tilt because they're one-signed across all names (they feed the Tail-risk read instead). It's a probabilistic lean, not a forecast — direction is inherently far less reliable than the volatility regime above, and most names sit near a coin-flip.",
+      "由期权持仓推算的粗略方向倾向 — 仅采用真正会变化的因素：价格接近最大痛点时的磁吸，以及极端认沽/认购（反向）读数。Charm漂移与股票偏斜被刻意排除在倾向之外，因为它们对所有标的同号（改而计入尾部风险）。这是概率性倾向、并非预测 — 方向本质上远不如上方的波动体制可靠，多数标的接近抛硬币。"));
+    var head = '<div class="dt-head"><span class="dt-k">🧭 ' + lz("Directional tilt", "方向倾向") + ' <span class="muted">' + lz("(rough, approximate)", "（粗略、近似）") + "</span>" + dHelp + "</span>" +
+      '<span class="dt-verdict dt-' + b.cls + '">' + arrow + " " + esc(lz(b.en, b.zh)) + ' <span class="dt-odds">' + esc(lz(b.odds_en, b.odds_zh)) + "</span></span></div>";
+    var meter = '<div class="dt-meter"><div class="dt-track"></div><div class="dt-mid"></div>' +
+      '<div class="dt-needle dt-' + b.cls + '" style="left:' + pos.toFixed(1) + '%"></div>' +
+      '<span class="dt-end l">↓ ' + lz("downside", "下行") + '</span><span class="dt-end r">' + lz("upside", "上行") + " ↑</span></div>";
+    var legs = '<ul class="dt-legs">' + d.legs.map(function (l) {
+      var ic = l.dir > 0 ? '<span class="pos">↑</span>' : l.dir < 0 ? '<span class="neg">↓</span>' : '<span class="muted">•</span>';
+      return "<li>" + ic + " " + esc(lz(l.en, l.zh)) + "</li>";
+    }).join("") + "</ul>";
+    var risk = '<div class="dt-risk"><span class="dt-rk">' + lz("Tail risk", "尾部风险") + ': <b class="dt-' + rb.cls + '">' + esc(lz(rb.en, rb.zh)) + "</b></span>" +
+      '<span class="muted xs">' + esc(d.riskLegs.join(lz("  ·  ", "  ·  "))) + "</span></div>";
+    var disc = '<div class="dt-disc">⚠ ' + lz(
+      "Approximate probability tilt from options positioning — NOT a trade signal. Use it for risk &amp; context (what to hedge, how to size), never as a reason to buy or sell. Most of the time it sits near a coin-flip; direction is far less reliable than the volatility read above.",
+      "由期权持仓推算的近似概率倾向 — 并非交易信号。仅用于风险与背景（对冲什么、如何控制仓位），切勿作为买卖理由。多数时候接近抛硬币；方向远不如上方的波动读数可靠。") + "</div>";
+    return '<div class="dt">' + head + meter + legs + risk + disc + "</div>";
   }
 
   // ---- volatility hole (dealer-gamma compression band, DannyTrades framing) ----

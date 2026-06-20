@@ -64,6 +64,7 @@ def all_adapters() -> dict:
         ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
+        ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations/mo per curated federally-exposed ticker -> Divergence Radar (engine/radar.py)
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
@@ -110,6 +111,7 @@ def all_adapters() -> dict:
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
         ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
+        ("farside", "collectors.farside", "FarsideAdapter"),  # per-fund spot-BTC-ETF flows (US$m, 2024->)
         # Quiver Quantitative alt-data suite (Trader plan) — cross-sectional EVENT
         # feeds -> data/quiver/<dataset>.parquet (append-only, key-deduped). Feeds the
         # Alternative Data desk + the Claude-CLI brain feed. Each needs QUIVER_API_KEY
@@ -223,6 +225,18 @@ def main() -> int:
         fetch_basket_extras()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket extras step failed: %s", e)
+
+    # Baskets-only DEEP OHLCV store (data/baskets/ohlcv/<T>.parquet): full open/high/low/
+    # close/VOLUME per member, the candle the consolidated-index engines (basket_index ->
+    # basket_mtf + basket_tape) render whale accumulation / Chaikin money-flow / vol-hole on.
+    # The close-only extras store above can't feed volume. Separate per-ticker store, merged
+    # onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
+    try:
+        from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
+        log.info("=== refreshing thematic-basket OHLCV (volume) ===")
+        fetch_basket_ohlcv([])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket OHLCV step failed: %s", e)
 
     # Polygon options-OI accrual: snapshot the GEX universe's chains and store the RAW
     # per-strike open interest the Cboe path throws away (the one thing that can't be

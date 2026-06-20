@@ -1,7 +1,7 @@
-"""Theme-discovery radar — a CANDIDATE GENERATOR for emerging thematic baskets (US).
+"""Theme-discovery radar — a CANDIDATE GENERATOR for emerging thematic baskets (multi-market).
 
-DISPLAY-ONLY, human-curated. It does NOT trade, score, or auto-add anything. It scans the
-US equity cross-section for cohesive groups of names that (a) move together strongly, (b)
+DISPLAY-ONLY, human-curated. It does NOT trade, score, or auto-add anything. It scans an
+equity cross-section for cohesive groups of names that (a) move together strongly, (b)
 are TIGHTENING (rising co-movement = a theme forming), (c) are NOT already repackaged
 existing exposure (low overlap with our thematic baskets and not just one GICS sector), and
 (d) optionally have a recent-IPO cluster (a new-listing wave often marks a nascent theme).
@@ -17,6 +17,12 @@ HONEST BY CONSTRUCTION (and confirmed by scripts/theme_discovery_phase0.py + the
 So the output is framed as "candidate themes for review", never a buy list, and the AI
 desk's narrative-scout may turn one into a FALSIFIABLE watch-hypothesis (graded later),
 never a thesis. Pure/additive — returns None on shortfall, never raises.
+
+REGION SUPPORT. The US path is unchanged (S&P-1500 breadth cache + GICS labels). China /
+Canada / Intl reuse their full search-universe close matrices + a sector column for the
+novelty test; Hong Kong runs best-effort off the breadth cache and DEGRADES gracefully to
+the basket-overlap-only novelty test when no sector map is present (label "New cluster",
+novelty unknown). Any region whose caches are absent simply returns None.
 """
 from __future__ import annotations
 
@@ -47,6 +53,26 @@ _DEFAULTS = {
     "top_k": 6,                  # candidates surfaced
 }
 
+REGIONS = ("us", "china", "hk", "canada", "intl")
+
+# region → (engine module, membership accessor) for the "already-basketed" overlap test.
+_MEMBERSHIP_SRC = {
+    "us": ("engine.baskets", "_membership"),
+    "china": ("engine.baskets_china", "_membership"),
+    "hk": ("engine.baskets_hk", "_membership"),
+    "canada": ("engine.baskets_canada", "_membership"),
+    "intl": ("engine.baskets_intl", "_membership"),
+}
+
+# region → (closes parquet rel-path, members parquet rel-path | None). US is special-cased
+# (it reads the breadth caches via engine.equity_factors); HK has no sector map → None.
+_REGION_CACHE = {
+    "china": ("china_search/closes.parquet", "china_search/members.parquet"),
+    "canada": ("canada_search/closes.parquet", "canada_search/members.parquet"),
+    "intl": ("intl_search/closes.parquet", "intl_search/members.parquet"),
+    "hk": ("hk_breadth/_closes_cache.parquet", None),
+}
+
 
 def _cfg(cfg: dict | None = None) -> dict:
     if cfg is not None:
@@ -57,13 +83,15 @@ def _cfg(cfg: dict | None = None) -> dict:
         return dict(_DEFAULTS)
 
 
-def _basket_members() -> set[str]:
+def _basket_members(region: str = "us") -> set[str]:
+    mod_name, fn_name = _MEMBERSHIP_SRC.get(region, _MEMBERSHIP_SRC["us"])
     try:
-        from engine.baskets import _membership
-        mem = _membership() or {}
+        import importlib
+        mem = getattr(importlib.import_module(mod_name), fn_name)() or {}
         b = mem.get("baskets") or {}
-        items = b.items() if isinstance(b, dict) else [(x["id"], x) for x in b]
-        return {m["ticker"] for _bid, v in items for m in v.get("members", [])}
+        items = b.items() if isinstance(b, dict) else [(x.get("id"), x) for x in b]
+        return {str(m["ticker"]).upper() for _bid, v in items
+                for m in (v.get("members") or []) if m.get("ticker")}
     except Exception:  # noqa: BLE001
         return set()
 
@@ -81,6 +109,57 @@ def _recent_ipos(lookback_d: int, asof: pd.Timestamp) -> set[str]:
         return {str(t).upper() for t in recent["ticker"].dropna()}
     except Exception:  # noqa: BLE001
         return set()
+
+
+def _names_sectors_from_parquet(rel: str) -> dict[str, tuple[str, str]]:
+    """Build {TICKER: (name, sector)} from a regional search members.parquet. The ticker is
+    the index (or a 'ticker'/'symbol' column); name prefers an English/display name, sector
+    falls back to '—' when the column is absent. Best-effort; never raises."""
+    out: dict[str, tuple[str, str]] = {}
+    try:
+        p = config.data_dir() / rel
+        if not p.exists():
+            return out
+        df = pd.read_parquet(p)
+        tcol = next((c for c in ("ticker", "symbol", "code") if c in df.columns), None)
+        ncol = next((c for c in ("name_en", "name", "name_zh") if c in df.columns), None)
+        scol = "sector" if "sector" in df.columns else None
+        for idx, row in df.iterrows():
+            t = str(row[tcol] if tcol else idx).upper()
+            name = str(row[ncol]) if ncol and pd.notna(row.get(ncol)) else t
+            sec = str(row[scol]) if scol and pd.notna(row.get(scol)) else "—"
+            out.setdefault(t, (name[:24], sec or "—"))
+    except Exception as e:  # noqa: BLE001
+        log.warning("theme_discovery: members parquet %s unreadable (%s)", rel, e)
+    return out
+
+
+def _universe(region: str) -> tuple[pd.DataFrame | None, dict[str, tuple[str, str]]]:
+    """Return (closes [Date × ticker], {TICKER: (name, sector)}) for a region, or (None, {})."""
+    if region == "us":
+        try:
+            from engine.equity_factors import _closes, _names_sectors
+            return _closes(), {str(k).upper(): v for k, v in (_names_sectors() or {}).items()}
+        except Exception as e:  # noqa: BLE001
+            log.warning("theme_discovery: US universe load failed (%s)", e)
+            return None, {}
+    spec = _REGION_CACHE.get(region)
+    if not spec:
+        return None, {}
+    closes_rel, members_rel = spec
+    try:
+        p = config.data_dir() / closes_rel
+        if not p.exists():
+            return None, {}
+        closes = pd.read_parquet(p)
+        closes.index = pd.DatetimeIndex(closes.index)
+        closes = closes.sort_index()
+        closes.columns = [str(c).upper() for c in closes.columns]
+    except Exception as e:  # noqa: BLE001
+        log.warning("theme_discovery: %s closes unreadable (%s)", region, e)
+        return None, {}
+    ns = _names_sectors_from_parquet(members_rel) if members_rel else {}
+    return closes, ns
 
 
 def _mean_offdiag(c: np.ndarray) -> float:
@@ -113,20 +192,22 @@ def _cluster(R: pd.DataFrame, cfg: dict) -> list[list[str]]:
 
 def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
                         asof=None) -> dict | None:
-    """Scan the US cross-section for candidate emerging themes. region!='us' → None for now
-    (US has the GICS sector map needed for the novelty test; regional discovery is a follow-up)."""
-    if region != "us":
+    """Scan a market's cross-section for candidate emerging themes. Region-parameterized:
+    US uses the S&P-1500 breadth cache + GICS labels; China/Canada/Intl reuse their full
+    search-universe close matrices + a sector column; HK degrades to overlap-only novelty
+    (no sector map). Returns None where the region's caches are absent."""
+    region = (region or "us").lower()
+    if region not in REGIONS:
         return None
     c = _cfg(cfg)
     try:
-        from engine.equity_factors import _closes, _names_sectors
-        closes = _closes()
+        closes, ns = _universe(region)
         if closes is None or closes.empty:
             return None
         if asof is not None:
             closes = closes.loc[:pd.Timestamp(asof)]
-        ns = _names_sectors()
-        members = _basket_members()
+        members = _basket_members(region)
+        has_sectors = sum(1 for v in ns.values() if v[1] not in ("—", "", "nan")) >= 10
         win = int(c["window_d"])
         R = closes.pct_change(fill_method=None).tail(win)
         R = R.dropna(axis=1, thresh=int(win * 0.8))
@@ -134,7 +215,7 @@ def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
         if R.shape[1] < 30 or len(R) < win // 2:
             return None
         asof_ts = R.index.max()
-        ipos = _recent_ipos(int(c["ipo_lookback_d"]), asof_ts)
+        ipos = _recent_ipos(int(c["ipo_lookback_d"]), asof_ts) if region == "us" else set()
 
         cands = []
         for grp in _cluster(R, c):
@@ -153,10 +234,15 @@ def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
             secs = Counter(ns.get(g, (g, "—"))[1] for g in grp)
             top_sec, top_n = secs.most_common(1)[0]
             top_share = top_n / len(grp)
-            novel = top_share < c["max_sector_share"]      # cross-sector = novel theme
-            covered = overlap > 0.25                        # partly tracked already
-            if not novel and covered:
-                continue                                    # a sector we already basket → skip
+            if not has_sectors:
+                # no sector map for this region → novelty unknown; rely on overlap + cohesion.
+                novel, label = True, "New cluster"
+            else:
+                novel = top_share < c["max_sector_share"]   # cross-sector = novel theme
+                label = "Cross-sector" if novel else top_sec
+                covered = overlap > 0.25                     # partly tracked already
+                if not novel and covered:
+                    continue                                 # a sector we already basket → skip
             ipo_hits = [g for g in grp if g in ipos]
             # recent EW momentum (context only)
             mom = float((1.0 + sub.mean(axis=1)).prod() - 1.0)
@@ -166,7 +252,7 @@ def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
             cands.append({
                 "n": len(grp), "cohesion": round(cohesion, 3),
                 "cohesion_chg": round(coh_chg, 3),
-                "label": ("Cross-sector" if novel else top_sec),
+                "label": label,
                 "top_sector": top_sec, "top_sector_share": round(top_share, 2),
                 "basket_overlap": round(overlap, 2),
                 "recent_ipos": sorted(ipo_hits), "ipo_wave": len(ipo_hits) >= 2,
@@ -179,9 +265,10 @@ def discover_candidates(region: str = "us", root=None, cfg: dict | None = None,
             "as_of": asof_ts.strftime("%Y-%m-%d"),
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "n_universe": int(R.shape[1]), "window_d": win,
+            "has_sector_map": bool(has_sectors),
             "candidates": cands,
             "verdict": "display_only_candidate_radar",
-            "note": ("Coherent, TIGHTENING groups of US names not already covered by a basket — "
+            "note": ("Coherent, TIGHTENING groups of names not already covered by a basket — "
                      "CANDIDATES for human review, not a buy list. Detection is noisy (~half are "
                      "real, persistent themes) and early-entry return edge is ~0 and negatively "
                      "skewed (themes launch near the top). Use for the watchlist / avoid-the-peak, "

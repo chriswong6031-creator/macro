@@ -1,0 +1,12 @@
+{# 🔥 Forming Narratives panel (display-only): emerging themes our models detect — coherent,
+   TIGHTENING groups of names not yet in a basket — with clean-entry recommended tickers.
+
+   DROP-IN: add `{% include "_forming_narratives.html.j2" %}` to a baskets template (just
+   after the Theme Rotation Desk reads well), and copy site/forming_narratives.js into site/
+   in the builder (like lightweight-charts.js). Reads <base>/narrative_emergence.json emitted
+   by the builder via engine.narrative_emergence. Self-contained: renders nothing
+   (display:none) if the JSON is absent, so it is always safe to include. `ne_base` is the
+   page's basketdata folder (default 'basketdata/' for US). #}
+<section id="forming-narratives"></section>
+<script src="forming_narratives.js"></script>
+<script>renderFormingNarratives({ base: "{{ ne_base | default('basketdata/') }}" });</script>

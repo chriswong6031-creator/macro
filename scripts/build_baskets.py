@@ -47,63 +47,6 @@ def _write_score_snapshot(ti: dict) -> None:
     p.write_text(json.dumps(slim, separators=(",", ":"), default=str))
 
 
-_CONV_CACHE: dict = {}
-
-
-def _member_conviction(ticker: str) -> dict | None:
-    """Pluck the per-stock Conviction Profile from site/stockdata/<T>.json (already computed
-    by build_stock_library). None if the name has no library record (off-index / thin)."""
-    if ticker in _CONV_CACHE:
-        return _CONV_CACHE[ticker]
-    val = None
-    p = config.ROOT / "site" / "stockdata" / (ticker + ".json")
-    if p.exists():
-        try:
-            c = json.loads(p.read_text()).get("conviction") or {}
-            if c:
-                val = {"score": c.get("score"), "band": c.get("band"),
-                       "band_zh": c.get("band_zh"),
-                       "verdict": c.get("verdict") if isinstance(c.get("verdict"), str) else None,
-                       "verdict_zh": c.get("verdict_zh"),
-                       "cycle_blocked": bool(c.get("cycle_blocked")),
-                       "entry_pct": ((c.get("axes") or {}).get("entry") or {}).get("pct"),
-                       "trust": (c.get("trust_tier") or {}).get("tier")}
-        except Exception:  # noqa: BLE001
-            val = None
-    _CONV_CACHE[ticker] = val
-    return val
-
-
-def _build_detail_pages(data: dict, site: Path, env) -> int:
-    """One site/basket/<id>.html per theme: holdings scoreboard w/ per-member conviction,
-    advanced textures, signals, score history + change timeline. Additive."""
-    from engine import basket_history, basket_score
-    ti = data.get("theme_intel") or {}
-    tmap = {t["id"]: t for t in ti.get("themes", [])}
-    out_dir = site / "basket"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    tmpl = env.get_template("basket_detail.html.j2")
-    built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    n = 0
-    for b in data.get("baskets", []):
-        bid = b["id"]
-        members = [{**m, "conviction": _member_conviction(m["symbol"])} for m in b.get("members", [])]
-        detail = {
-            "basket": b, "members": members, "theme": tmap.get(bid, {}),
-            "act_now": basket_score.act_now_stocks(members, tmap.get(bid, {})),
-            "history": basket_history.score_series(bid, "score"),
-            "timeline": basket_history.change_timeline(bid),
-            "as_of": ti.get("as_of") or b.get("created"),
-            "market_concentration": ti.get("market_concentration") or {},
-        }
-        html = tmpl.render(detail_json=json.dumps(detail, separators=(",", ":"), default=str),
-                           basket_name=b.get("name", bid), generated_utc=built)
-        (out_dir / (bid + ".html")).write_text(html)
-        n += 1
-    log.info("wrote %d theme detail pages -> %s/basket/", n, site)
-    return n
-
-
 def main() -> int:
     site = config.ROOT / "site"
     try:
@@ -134,9 +77,28 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme rotation desk failed: %s", e)
 
+    # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — fuse the theme-discovery radar
+    # (coherent, TIGHTENING name-groups not yet in a basket) with the GDELT attention
+    # backdrop + the AI desk's emerging_watch into a ranked, surfaced read with clean-entry
+    # recommended tickers. engine.emergence_alerts diffs vs the prior snapshot and fires a
+    # "narrative_forming" event (picked up by alert_triage). Display-only, additive, noisy —
+    # a watchlist / avoid-the-peak lens, never a buy list. Never fatal.
+    emergence = None
+    try:
+        from engine.narrative_emergence import compute_emergence
+        emergence = compute_emergence("us")
+        if emergence:
+            from engine import emergence_alerts
+            emergence_alerts.rebuild(emergence, "us")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("narrative emergence desk failed: %s", e)
+
     fdir = site / "basketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    if emergence:
+        (fdir / "narrative_emergence.json").write_text(
+            json.dumps(emergence, separators=(",", ":"), default=str))
 
     # Engine-1 FLOW LENS (display-only characterization + the AI-handoff payload). It
     # ranks where cross-sectional flow is CONCENTRATING (PIT sectors + baskets), maps the
@@ -160,6 +122,20 @@ def main() -> int:
         _build_theme_addons()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme add-ons failed: %s", e)
+
+    # 🛰️ DIVERGENCE RADAR (display-only): federal contract spend (collectors.usaspending)
+    # vs each theme's already-priced 60-day relative strength -> per-theme divergence
+    # states + falsifiable watch-hypotheses (data/radar/theses.jsonl, graded later).
+    # Read client-side via site/radar_panel.js (the _radar_panel.html.j2 panel).
+    # Additive — never breaks the page.
+    try:
+        from engine.radar import append_ledger, compute_radar
+        radar = compute_radar(data)
+        if radar:
+            (fdir / "radar.json").write_text(json.dumps(radar, separators=(",", ":"), default=str))
+            append_ledger(radar)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("divergence radar failed: %s", e)
 
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
@@ -188,6 +164,10 @@ def main() -> int:
     sc = config.ROOT / "templates" / "allocation_scorecard.js"
     if sc.exists():
         (site / "allocation_scorecard.js").write_text(sc.read_text())
+    # ship the Forming Narratives renderer (all baskets pages use it)
+    ne = config.ROOT / "templates" / "forming_narratives.js"
+    if ne.exists():
+        (site / "forming_narratives.js").write_text(ne.read_text())
     log.info("wrote %s/baskets.html (%d baskets, %d categories, %d KB)",
              site, len(data["baskets"]), len(data.get("categories", [])), len(html) // 1024)
 

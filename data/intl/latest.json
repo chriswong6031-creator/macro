@@ -41,7 +41,7 @@
         "unemployment": 2.5,
         "unemployment_chg6m": -0.1,
         "m2_yoy": 4.22,
-        "fx": 161.281,
+        "fx": 161.28,
         "fx_strength_3m": -1.77,
         "realvol": 32.1,
         "drawdown": 0.0
@@ -95,8 +95,8 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.5,
         "m2_yoy": 5.73,
-        "fx": 1530.13,
-        "fx_strength_3m": -3.01,
+        "fx": 1529.89,
+        "fx_strength_3m": -3.0,
         "realvol": 64.9,
         "drawdown": -0.1
       },
@@ -188,7 +188,7 @@
       "inflation_score": -0.5,
       "confidence": 0.417,
       "liquidity": "unknown",
-      "recession_score": 36.0,
+      "recession_score": 35.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 7.02,
@@ -203,10 +203,10 @@
         "unemployment": null,
         "unemployment_chg6m": null,
         "m2_yoy": null,
-        "fx": 94.44,
-        "fx_strength_3m": -1.28,
-        "realvol": 12.4,
-        "drawdown": -9.0
+        "fx": 94.31,
+        "fx_strength_3m": -1.14,
+        "realvol": 12.5,
+        "drawdown": -8.8
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -215,13 +215,13 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 23969.05,
-        "off_52w_high": -9.0,
+        "price": 24013.1,
+        "off_52w_high": -8.8,
         "above_50d": true,
         "above_200d": false,
-        "realvol": 12.4,
-        "rsi": 57.0,
-        "ext_z": -1.05,
+        "realvol": 12.5,
+        "rsi": 58.0,
+        "ext_z": -1.0,
         "ext_grade": "intrend",
         "drawdown_risk": 48.0,
         "drawdown_band": "watch",
@@ -257,9 +257,9 @@
         "unemployment": 4.49,
         "unemployment_chg6m": 0.37,
         "m2_yoy": null,
-        "fx": 0.7013,
-        "fx_strength_3m": 0.1,
-        "realvol": 15.8,
+        "fx": 0.7016,
+        "fx_strength_3m": 0.14,
+        "realvol": 14.5,
         "drawdown": -4.0
       },
       "macro_asof": {
@@ -273,11 +273,11 @@
         "off_52w_high": -4.0,
         "above_50d": true,
         "above_200d": true,
-        "realvol": 15.8,
-        "rsi": 55.0,
+        "realvol": 14.5,
+        "rsi": 54.0,
         "ext_z": -0.68,
         "ext_grade": "intrend",
-        "drawdown_risk": 9.0,
+        "drawdown_risk": 8.0,
         "drawdown_band": "low",
         "bubble_flag": false
       },
@@ -296,7 +296,7 @@
       "inflation_score": -0.5,
       "confidence": 0.35,
       "liquidity": "unknown",
-      "recession_score": 19.0,
+      "recession_score": 20.0,
       "recession_band": "low",
       "macro": {
         "yield_10y": 4.94,
@@ -311,10 +311,10 @@
         "unemployment": 4.9,
         "unemployment_chg6m": -0.2,
         "m2_yoy": -3.66,
-        "fx": 1.3198,
-        "fx_strength_3m": -1.69,
-        "realvol": 10.1,
-        "drawdown": -4.7
+        "fx": 1.3237,
+        "fx_strength_3m": -1.39,
+        "realvol": 10.2,
+        "drawdown": -5.0
       },
       "macro_asof": {
         "cpi_yoy": "2025-03",
@@ -323,15 +323,15 @@
         "yield_10y": "2026-05"
       },
       "equity": {
-        "price": 10399.92,
-        "off_52w_high": -4.7,
+        "price": 10363.27,
+        "off_52w_high": -5.0,
         "above_50d": false,
         "above_200d": true,
-        "realvol": 10.1,
-        "rsi": 51.0,
-        "ext_z": -1.47,
+        "realvol": 10.2,
+        "rsi": 49.0,
+        "ext_z": -1.62,
         "ext_grade": "intrend",
-        "drawdown_risk": 9.0,
+        "drawdown_risk": 10.0,
         "drawdown_band": "low",
         "bubble_flag": false
       },
@@ -365,10 +365,10 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.1451,
-        "fx_strength_3m": -1.35,
+        "fx": 1.1469,
+        "fx_strength_3m": -1.19,
         "realvol": 9.4,
-        "drawdown": -0.3
+        "drawdown": -0.4
       },
       "macro_asof": {
         "cpi_yoy": "2026-04",
@@ -377,13 +377,13 @@
         "yield_10y": "2026-01"
       },
       "equity": {
-        "price": 637.12,
-        "off_52w_high": -0.3,
+        "price": 637.06,
+        "off_52w_high": -0.4,
         "above_50d": true,
         "above_200d": true,
         "realvol": 9.4,
-        "rsi": 65.0,
-        "ext_z": 0.82,
+        "rsi": 64.0,
+        "ext_z": 0.81,
         "ext_grade": "steady",
         "drawdown_risk": 1.0,
         "drawdown_band": "low",
@@ -402,7 +402,7 @@
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": 36.0
+          "value": 35.0
         },
         {
           "cc": "AU",
@@ -414,7 +414,7 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 19.0
+          "value": 20.0
         },
         {
           "cc": "KR",
@@ -472,16 +472,16 @@
           "value": 14.0
         },
         {
-          "cc": "AU",
-          "flag": "\ud83c\udde6\ud83c\uddfa",
-          "name": "Australia",
-          "value": 9.0
-        },
-        {
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": 9.0
+          "value": 10.0
+        },
+        {
+          "cc": "AU",
+          "flag": "\ud83c\udde6\ud83c\uddfa",
+          "name": "Australia",
+          "value": 8.0
         },
         {
           "cc": "EZ",
@@ -574,7 +574,7 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": -3.01
+          "value": -3.0
         },
         {
           "cc": "JP",
@@ -586,25 +586,25 @@
           "cc": "GB",
           "flag": "\ud83c\uddec\ud83c\udde7",
           "name": "United Kingdom",
-          "value": -1.69
+          "value": -1.39
         },
         {
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": -1.35
+          "value": -1.19
         },
         {
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": -1.28
+          "value": -1.14
         },
         {
           "cc": "AU",
           "flag": "\ud83c\udde6\ud83c\uddfa",
           "name": "Australia",
-          "value": 0.1
+          "value": 0.14
         },
         {
           "cc": "TW",

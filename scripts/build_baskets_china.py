@@ -52,9 +52,25 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china theme desk failed: %s", e)
 
+    # 🔥 FORMING NARRATIVES (engine.narrative_emergence) — coherent, TIGHTENING A-share
+    # groups not yet in a basket, with clean-entry recommended tickers. emergence_alerts
+    # diffs vs prior + fires a "narrative_forming" event. Display-only, additive, noisy.
+    emergence = None
+    try:
+        from engine.narrative_emergence import compute_emergence
+        emergence = compute_emergence("china")
+        if emergence:
+            from engine import emergence_alerts
+            emergence_alerts.rebuild(emergence, "china")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("china narrative emergence failed: %s", e)
+
     fdir = site / "chinabasketdata"
     fdir.mkdir(parents=True, exist_ok=True)
     (fdir / "baskets.json").write_text(json.dumps(data, separators=(",", ":"), default=str))
+    if emergence:
+        (fdir / "narrative_emergence.json").write_text(
+            json.dumps(emergence, separators=(",", ":"), ensure_ascii=False, default=str))
 
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
@@ -75,6 +91,9 @@ def main() -> int:
         deskjs = config.ROOT / "templates" / "baskets_desk.js"
         if deskjs.exists():
             (site / "baskets_desk.js").write_text(deskjs.read_text())
+        ne = config.ROOT / "templates" / "forming_narratives.js"
+        if ne.exists():
+            (site / "forming_narratives.js").write_text(ne.read_text())
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china theme detail pages failed: %s", e)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page

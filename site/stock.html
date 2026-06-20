@@ -264,6 +264,47 @@
   .srcline { color:var(--muted); font-size:11px; margin:8px 0 0; }
   .stub { color:var(--muted); font-size:13px; padding:11px 13px; border-radius:8px;
           background:var(--panel2); border:1px dashed var(--line); }
+  /* Demand Context (Phase 0): three stacked layers — trailing / consensus / variant */
+  .dc-row { display:grid; grid-template-columns:max-content 1fr; gap:12px; align-items:start;
+            padding:10px 0 11px; border-top:1px solid var(--line); }
+  .dc-row:first-child { border-top:0; padding-top:2px; }
+  .dc-rl { max-width:178px; }
+  .dc-rn { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px;
+           border-radius:50%; font-size:11px; font-weight:800; color:var(--bg); margin-right:6px;
+           vertical-align:1px; }
+  .dc-lab { font-weight:700; font-size:13px; }
+  .dc-sub { display:block; color:var(--muted); font-size:11.5px; line-height:1.45; margin-top:2px; }
+  .dc-l1 .dc-rn { background:var(--muted); }
+  .dc-l2 .dc-rn { background:var(--warn); }
+  .dc-l3 .dc-rn { background:var(--g-cold); }
+  .dc-l2 .dc-lab { color:var(--warn); }
+  .dc-vals { display:flex; flex-wrap:wrap; gap:6px; align-content:flex-start; }
+  .dc-chip { display:inline-flex; align-items:baseline; gap:5px; padding:3px 9px; border-radius:8px;
+             background:var(--panel2); border:1px solid var(--line); font-size:12px;
+             font-variant-numeric:tabular-nums; }
+  .dc-chip.dc-priced { border-style:dashed;
+             border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
+             background:color-mix(in srgb,var(--warn) 7%,var(--panel2)); }
+  .dc-ck { color:var(--muted); } .dc-cv { font-weight:700; }
+  .dc-na { color:var(--muted); font-size:12px; line-height:1.5; }
+  .dc-foot { color:var(--muted); font-size:11.5px; line-height:1.5; margin:10px 0 0;
+             padding-top:9px; border-top:1px solid var(--line); }
+  /* Demand chain (L3 customer-capex read) */
+  .dc-badge { display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.04em;
+              padding:2px 8px; border-radius:7px; border:1px solid var(--line); }
+  .dc-div-up { color:var(--up); background:color-mix(in srgb,var(--up) 14%,transparent);
+               border-color:color-mix(in srgb,var(--up) 40%,var(--line)); }
+  .dc-div-risk { color:var(--down); background:color-mix(in srgb,var(--down) 14%,transparent);
+                 border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .dc-div-mut { color:var(--muted); background:var(--panel2); }
+  .dc-chainhead { font-size:12.5px; font-weight:600; margin-top:6px; line-height:1.4; }
+  .dc-arrow { color:var(--muted); align-self:center; font-size:12px; }
+  .dc-chainread { font-size:12.5px; line-height:1.5; margin-top:2px; }
+  .dc-ledger { font-size:11.5px; font-weight:600; color:var(--g-cold); margin-top:6px;
+               font-variant-numeric:tabular-nums; }
+  .dc-cav { color:var(--muted); font-size:11px; line-height:1.45; margin-top:6px;
+            border-top:1px dotted var(--line); padding-top:5px; }
+  @media (max-width:640px){ .dc-row { grid-template-columns:1fr; gap:6px; } .dc-rl { max-width:none; } }
   .valbar { display:grid; grid-template-columns:148px 72px 1fr; gap:10px; align-items:center; margin:6px 0; }
   .valbar .vlab { color:var(--muted); font-size:12.5px; }
   .valbar .vval { font-weight:700; font-size:13.5px; text-align:right; }
@@ -334,10 +375,10 @@
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
-        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
@@ -349,8 +390,8 @@
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
-        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
       </div>
     </div>
@@ -377,6 +418,7 @@
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
         <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -500,6 +542,12 @@
       <p id="r_profile_desc" style="margin:0 0 8px"></p>
       <div id="r_profile_chips" class="chips"></div>
       <p id="r_profile_src" class="srcline"></p>
+    </div>
+
+    <div class="panel" id="panel_demand" style="display:none">
+      <h2>🧭 <span class="l-en">Demand context — is the rally already priced?</span><span class="l-zh">需求背景 — 涨势是否已被定价？</span>
+        <span class="help">?<span class="tip"><span class="l-en">A framing of WHERE a rally's demand story sits, in three honest layers. (1) Trailing = demand that already converted to financials — backward-looking by accounting construction. (2) Consensus = the forward view the market has ALREADY bought (forward P/E, next-quarter estimate, analyst revisions, SUE); agreeing with it is exposure, not edge, because it is already in the price. (3) Independent observable = a management-independent read on FORWARD demand (bookings/backlog, customer-capex, hiring) — the only layer that could say a rally is MIS-priced. It is not yet measured (Phase 1 of the Demand Desk). DISPLAY-ONLY context; nothing here is a buy signal.</span><span class="l-zh">用三个诚实的层次界定涨势的“需求故事”所处位置。(1) 历史＝已转化为财报的需求——按会计口径天然滞后。(2) 共识＝市场已经买入的前瞻预期（前瞻市盈率、下季预估、分析师评级调整、SUE）；认同它只是承担敞口而非优势，因为它已被定价。(3) 独立观测＝对前瞻需求、不依赖管理层口径的读数（订单/在手订单、客户资本开支、招聘）——这是唯一可能判断涨势被错误定价的层次。该层尚未度量（需求台第一阶段）。仅作背景展示，均非买入信号。</span></span></span></h2>
+      <div id="r_demand"></div>
     </div>
 
     <div class="panel" id="panel_val" style="display:none">
@@ -798,7 +846,7 @@
              low_beta:['Low beta','低贝塔'], accruals:['Low accruals','低应计'], short_interest:['Low short int.','低做空'] };
 
   function hideFundamentals() {
-    ['panel_profile','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
+    ['panel_profile','panel_demand','panel_val','panel_fin','panel_aq','panel_earn','panel_fac','panel_alpha','panel_gex','panel_pos','panel_analyst']
       .forEach(function (id) { show(id, false); });
     show('r_archetype', false); show('r_glance', false);
   }
@@ -853,6 +901,114 @@
         esc(lz(dc.detail.en, dc.detail.zh)) + '</div>' +
       '<div class="dtc-cav">' + esc(lz(dc.caveat.en, dc.caveat.zh)) + '</div>';
     box.style.display = 'block';
+  }
+
+  // Demand Context (Phase 0) — the L0/L1/L2 framing. Trailing (delivered) ·
+  // Consensus (already priced) · Independent observable (variant — not yet measured).
+  // Makes the PRICED consensus explicit and labels the variant slot empty, so the page
+  // never implies a rally is UNDER-priced from backward-looking + already-in-the-price
+  // data alone. DISPLAY-ONLY. Phase 1 fills L2 (bookings/backlog/customer-capex); see
+  // memory demand-desk-divergence.
+  function renderDemandContext(d) {
+    var box = el('r_demand'); if (!box) return;
+    var prof = d.profile, val = d.valuation, fin = d.financials, an = d.analyst, ev = d.earnings || {}, rv = d.revisions;
+    var dch = d.demand_chain;
+    var isEquity = !!(prof || val || fin || d.factors);
+    // Show for equities, OR for any name carrying a demand-chain signal even without
+    // full SEC fundamentals (recent AI IPOs / foreign filers — exactly where the
+    // forward-demand read matters most). Hide only when there's nothing to say.
+    if (!isEquity && !(dch && dch.headline)) { show('panel_demand', false); return; }
+    var r1 = function (n) { return n == null ? null : (Math.round(n * 10) / 10); };
+    function sg(n, suf) {            // signed, rounded, colour-classed chip value
+      if (n == null) return null;
+      var c = n > 0 ? 'pos' : n < 0 ? 'neg' : 'muted';
+      return '<span class="' + c + '">' + (n > 0 ? '+' : '') + (Math.round(n * 10) / 10) + (suf || '') + '</span>';
+    }
+    function chip(lab, v, cls) {
+      return v == null ? '' : '<span class="dc-chip' + (cls ? ' ' + cls : '') + '"><span class="dc-ck">' +
+        lab + '</span><span class="dc-cv">' + v + '</span></span>';
+    }
+    // L1 — Trailing (delivered): demand that already converted to financials
+    var t1 = [];
+    if (fin) {
+      t1.push(chip(lz('Revenue growth','营收增长'), sg(fin.rev_growth, '%')));
+      t1.push(chip(lz('Net income growth','净利润增长'), sg(fin.ni_growth, '%')));
+      t1.push(chip(lz('Net margin','净利率'), fin.net_margin == null ? null : r1(fin.net_margin) + '%'));
+      t1.push(chip(lz('ROE','净资产收益率'), fin.roe == null ? null : r1(fin.roe) + '%'));
+    }
+    t1 = t1.filter(Boolean);
+    if (!t1.length) t1 = ['<span class="dc-na">' + lz('no SEC filing data yet','暂无SEC财报数据') + '</span>'];
+    // L2 — Consensus (already in the price): the forward view the market has bought
+    var t2 = [], fpe = (val && val.forward_pe != null) ? val.forward_pe : (an && an.forward_pe != null ? an.forward_pe : null);
+    t2.push(chip(lz('Forward P/E','前瞻市盈率'), fpe == null ? null : fpe.toFixed(1) + '×', 'dc-priced'));
+    t2.push(chip(lz('Next-Q est. EPS','下季预期EPS'), ev.eps_forecast == null ? null : '$' + ev.eps_forecast + (ev.next_date ? ' · ' + esc(ev.next_date) : ''), 'dc-priced'));
+    if (rv) {
+      t2.push(chip(lz('Net upgrades 30d','30天净上调'), sg(rv.net_up_30d), 'dc-priced'));
+      t2.push(chip(lz('Revision breadth','评级调整广度'), rv.breadth == null ? null : sg(Math.round(rv.breadth * 100) / 100), 'dc-priced'));
+      t2.push(chip(lz('Est. drift 30d','预期漂移30天'), sg(rv.est_chg_30d, '%'), 'dc-priced'));
+      t2.push(chip(lz('Est. drift 90d','预期漂移90天'), sg(rv.est_chg_90d, '%'), 'dc-priced'));
+      t2.push(chip(lz('Analysts','分析师数'), rv.n_analysts == null ? null : Math.round(rv.n_analysts), 'dc-priced'));
+    }
+    t2.push(chip(lz('SUE (earnings momentum)','SUE 盈利动量'), ev.sue_z == null ? null : sg(Math.round(ev.sue_z * 100) / 100), 'dc-priced'));
+    t2.push(chip(lz('Beat rate','超预期率'), (ev.summary && ev.summary.total) ? (ev.summary.beats + '/' + ev.summary.total) : null, 'dc-priced'));
+    t2 = t2.filter(Boolean);
+    if (!t2.length) t2 = ['<span class="dc-na">' + lz('no consensus / estimate data for this name','该标的暂无共识／预期数据') + '</span>'];
+    // L3 — Independent observable (variant?): the customer-capex demand chain
+    // (engine/demand_chain) for AI-infra names (Phase 1); honest placeholder
+    // otherwise. The whole point: a MANAGEMENT-INDEPENDENT forward-demand read.
+    var t3;
+    if (dch && dch.headline) {
+      var DIVMAP = {
+        ahead_of_consensus: { cls:'dc-div-up',   en:'AHEAD OF CONSENSUS', zh:'领先共识' },
+        consensus_at_risk:  { cls:'dc-div-risk', en:'CONSENSUS AT RISK',  zh:'共识承压' },
+        aligned:            { cls:'dc-div-mut',  en:'IN THE PRICE',       zh:'已计入价格' },
+        signal_only:        { cls:'dc-div-mut',  en:'SIGNAL ONLY',        zh:'仅信号' } };
+      var dm = DIVMAP[dch.divergence] || DIVMAP.signal_only;
+      var ser = (dch.series || []).slice(-3).map(function (p) {
+        return '<span class="dc-chip">FY' + (p[0] % 100) + ' <span class="dc-cv">$' + p[1] + 'B</span></span>';
+      }).join('<span class="dc-arrow">→</span>');
+      // accountability line (leading chains only): this divergence call is logged to
+      // a falsifiable ledger (engine/demand_ledger) and scored forward vs SPY.
+      var led = dch.ledger, ledLine = '';
+      if (led) {
+        if (led.scored > 0) {
+          ledLine = '<div class="dc-ledger">📒 ' + lz('Variant calls scored so far: ','已评分的变体判断：') +
+            led.hits + '/' + led.scored + lz(' hit','命中') +
+            (led.hit_rate != null ? ' (' + Math.round(led.hit_rate * 100) + '%)' : '') +
+            (led.open ? ' · ' + led.open + lz(' open','个未结') : '') + '</div>';
+        } else {
+          ledLine = '<div class="dc-ledger">📒 ' + lz('Being scored forward vs SPY — ','正在对 SPY 前向评分——') +
+            (led.open || 0) + lz(' open variant call(s)','个未结变体判断') +
+            (led.since ? ' ' + lz('since ','自 ') + led.since : '') + '</div>';
+        }
+      }
+      t3 = '<div><span class="dc-badge ' + dm.cls + '">' + lz(dm.en, dm.zh) + '</span></div>' +
+        '<div class="dc-chainhead">' + esc(lz(dch.headline.en, dch.headline.zh)) + '</div>' +
+        '<div class="dc-vals" style="margin:7px 0">' + ser + '</div>' +
+        '<div class="dc-chainread">' + esc(lz(dch.read.en, dch.read.zh)) + '</div>' +
+        ledLine +
+        '<div class="dc-cav">' + esc(lz(dch.caveat.en, dch.caveat.zh)) + '</div>';
+    } else {
+      t3 = '<span class="dc-na">' + lz(
+        'Not yet measured for this name. This is where a management-independent read on forward demand — bookings / backlog &amp; RPO, customer-capex (e.g. hyperscaler → semis), hiring &amp; web-traffic — is flagged ONLY where it diverges from the consensus above. Live now for the AI-infrastructure chain; expanding from there.',
+        '该标的尚未度量。此处放置不依赖管理层口径的前瞻需求读数——订单/在手订单与RPO、客户资本开支（如云厂商→半导体）、招聘与网站流量——且仅在其与上方共识背离时标记。AI 基础设施链已上线，后续扩展。') + '</span>';
+    }
+    var row = function (cls, n, lab, sub, body) {
+      return '<div class="dc-row ' + cls + '"><div class="dc-rl"><span class="dc-rn">' + n + '</span>' +
+        '<span class="dc-lab">' + lab + '</span><span class="dc-sub">' + sub + '</span></div>' +
+        '<div class="dc-vals">' + body + '</div></div>';
+    };
+    var foot = dch && dch.headline ? lz(
+      'Row 3 is an INDEPENDENT customer-demand read (the spenders\' own filings, not this company\'s guidance). Where it diverges from row 2 is where the rally may be mis-priced; where they agree, the demand is already in the price.',
+      '第3行是独立的客户需求读数（来自买方自身财报，而非本公司指引）。它与第2行背离之处，正是涨势可能被错误定价之处；二者一致时，需求已计入价格。') : lz(
+      'Rows 1–2 are backward-looking truth and already-priced consensus. Until row 3 is populated, this panel can only tell you what is already in the price — not that the rally is under-priced.',
+      '第1–2行是滞后的事实与已被定价的共识。在第3行填充之前，本面板只能告诉你价格里已包含什么——而非涨势是否被低估。');
+    box.innerHTML =
+      row('dc-l1', '1', lz('Trailing','历史'), lz('demand already delivered — backward-looking','已兑现的需求——本质滞后'), t1.join('')) +
+      row('dc-l2', '2', lz('Consensus','共识'), lz('already in the price — agreeing is exposure, not edge','已计入价格——认同只是敞口而非优势'), t2.join('')) +
+      row('dc-l3', '3', lz('Independent observable','独立观测'), lz('the only layer that can say a rally is MIS-priced','唯一能判断涨势被错误定价的层次'), t3) +
+      '<p class="dc-foot">' + foot + '</p>';
+    show('panel_demand', true);
   }
 
   function renderFundamentals(d) {
@@ -1621,6 +1777,7 @@
     document.getElementById('r_cal').innerHTML = cs;
 
     renderFundamentals(d);
+    renderDemandContext(d);
     renderFundFlow(d);
     renderAlpha(d);
     renderFragility(d);
@@ -1805,7 +1962,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-06-19 07:57 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-06-20 00:24 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
