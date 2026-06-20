@@ -178,9 +178,13 @@ def test_momentum_alone_is_weak_edge():
     z, present = ss._axis_selection(rec, "US")
     assert present == ["alpha"]
     assert z is not None and z < 1.0            # 0.10*3.0/0.5 = 0.6 — weak, ranks low
-    # whereas a real SUE of the same magnitude dominates
-    z2, _ = ss._axis_selection({"sue": 3.0}, "US")
-    assert z2 > z + 0.5
+    # whereas a strong literature/validated leg of the same magnitude dominates. v2.1: analyst
+    # REVISIONS now lead the non-insider legs (0.32) — SUE was down-weighted (0.18) because its
+    # cross-sectional edge collapsed on deep history, so it no longer dominates by the old margin.
+    z_rev, _ = ss._axis_selection({"revision_z": 3.0}, "US")   # 0.32*3/0.5 = 1.92
+    assert z_rev > z + 0.5
+    z_sue, _ = ss._axis_selection({"sue": 3.0}, "US")          # 0.18*3/0.5 = 1.08 — still > momentum
+    assert z_sue > z
 
 
 def test_revision_feeds_edge():
@@ -618,3 +622,53 @@ def test_profile_surfaces_confirmers_for_display():
     p = ss.conviction_profile(rec, "US")
     assert p["gex_confirm"]["verdict"] == "confirm"
     assert p["vol_squeeze"]["state"] == "COILED"
+
+
+# --- AVGO/NVDA alignment: quality is durability-only; anticipation risk-shape; honesty notes ---
+def test_quality_axis_is_durability_only_not_value_or_vol():
+    # an expensive (value<0), volatile (low_vol<0) but PROFITABLE name: value/low_vol must NOT
+    # drag the quality (durability) axis — the AVGO/NVDA growth-leader mis-score fix.
+    rec = {"factor": {"profitability": 1.0, "quality": 0.5, "value": -2.5, "low_vol": -2.5}}
+    qz, present, _ = ss._axis_quality(rec, "US")
+    assert "factors" in present
+    assert qz == pytest.approx(0.75)          # mean(profitability, quality) only, not the 4-leg mean
+
+
+def test_anticipation_tilt_risk_shape():
+    fav = {"anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}}   # asym 2.0
+    adv = {"anticipation": {"horizons": {"medium": {"mfe_med": 4.0, "dd_avg": -8.0}}}}    # asym 0.5
+    thin = {"anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0, "thin": True}}}}
+    assert ss._anticipation_tilt(fav) == 0.25
+    assert ss._anticipation_tilt(adv) == -0.25
+    assert ss._anticipation_tilt(thin) is None    # too few analog cells -> don't trust the shape
+    assert ss._anticipation_tilt({}) is None      # no cone -> no tilt (direction is never bet)
+
+
+def test_anticipation_tilt_lifts_entry():
+    base = {"ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
+            "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
+    z0, _, _ = ss._axis_entry(base)
+    fav, present, _ = ss._axis_entry({**base, "anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}})
+    assert fav > z0 and "risk-shape" in present
+
+
+def test_rank_note_fires_on_high_band_mid_selection():
+    # the NVDA case: ranks top-of-board (band high via percentile) but selection hasn't cleared
+    # the absolute high-conviction bar -> a note clarifies 'score is a percentile rank'.
+    rec = {"revision_z": 1.0,        # sel_z ~0.64 = MID tier (not high), but band high via percentile
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
+    p = ss.conviction_profile(rec, "US", ctx={"score_pct": 97})
+    assert p["band"] == "high" and ss._tier(p["axes"]["selection"]["z"]) != "high"
+    assert p["notes"] and any(n["kind"] == "rank" for n in p["notes"])
+
+
+def test_anticipation_note_fires_on_favorable_cone_muted_score():
+    # the AVGO case: favourable forward cone but a muted conviction score -> surface the asymmetry.
+    rec = {"alpha": 0.3,
+           "anticipation": {"anticipation_index": 74.0,
+                            "horizons": {"medium": {"mfe_med": 11.0, "dd_avg": -7.0}}},
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "hold"}},
+           "tech": {"off_52w_high_pct": -10.0, "rsi14": 50.0}}
+    p = ss.conviction_profile(rec, "US", ctx={"score_pct": 50})
+    assert p["notes"] and any(n["kind"] == "anticipation" for n in p["notes"])

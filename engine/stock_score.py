@@ -74,7 +74,14 @@ _SEL_KIND = {
 # leg that actually survives FDR. Revision is literature-strong; residual momentum is light,
 # regime-scaled context. None is a standalone alpha -> this is a DISPLAY/confluence composite,
 # never a validated sizer. Renormalized over whichever legs are present per name.
-_EDGE_W = {"insider": 0.40, "sue": 0.30, "revision": 0.20, "mom": 0.10}
+# v2.1 (AVGO/NVDA alignment): SUE down-weighted 0.30->0.18 and analyst REVISIONS up 0.20->0.32.
+# SUE's cross-sectional edge COLLAPSED on deep PIT history (reports/sue-deep-history-phase0.md,
+# IC .039->.0006) yet at 0.30 weight a slightly-negative SUE rank actively CANCELLED a strong
+# revision signal (AVGO: revision z +1.14 dragged to selection 0.24 by SUE z -0.22). Analyst
+# revisions are literature-strong and locally accruing, so they now lead the non-insider legs.
+# Insider (the lone borderline FDR survivor) keeps the top weight; momentum stays a light,
+# regime-scaled context leg. Sums to 1.0; renormalized over whichever legs are present.
+_EDGE_W = {"insider": 0.40, "sue": 0.18, "revision": 0.32, "mom": 0.10}
 
 # REGIME-CONDITIONAL momentum weight (research/STOCK_CONVICTION_V2 §3 + the regime audit in
 # scripts/conviction_v2_regime.py). The deep+PIT S&P panel (2008-2026, 63d) shows residual
@@ -665,6 +672,28 @@ def _gex_confirm_tilt(gc: dict | None) -> float | None:
     return None
 
 
+def _anticipation_tilt(rec: dict) -> float | None:
+    """Forward-cone RISK SHAPE as a bounded entry tilt (the AVGO/NVDA alignment fix). The
+    anticipation engine measures an upside/downside cone; its DIRECTION (p_up) is ~a coin-flip
+    so we never bet on it — but the ASYMMETRY (median favourable excursion vs average drawdown)
+    is a genuine risk-reward read. A favourable shape (mfe >> |dd|) is a small constructive nudge,
+    an adverse one a small trim. This mirrors the Mastermind 'asymmetry' lens so the two systems
+    treat the cone the same way, and it surfaces the 'high upside / low downside' the dashboard
+    score previously ignored. Display-derived risk shape, not a validated direction signal."""
+    h = ((rec.get("anticipation") or {}).get("horizons") or {}).get("medium") or {}
+    if h.get("thin"):                       # too few analog cells -> don't trust the shape
+        return None
+    mfe, dd = _f(h.get("mfe_med")), _f(h.get("dd_avg"))
+    if mfe is None or dd is None or dd == 0:
+        return None
+    asym = mfe / abs(dd)
+    if asym >= 1.6:
+        return 0.25
+    if asym <= 0.8:
+        return -0.25
+    return None
+
+
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis).
 
@@ -705,6 +734,9 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     gq = _gex_confirm_tilt(rec.get("gex_confirm"))
     if gq is not None:
         conf += gq; present.append("options")
+    aq = _anticipation_tilt(rec)
+    if aq is not None:
+        conf += aq; present.append("risk-shape")
     conf = float(np.clip(conf, -_ENTRY_CONFIRM_CAP, _ENTRY_CONFIRM_CAP))
 
     hard: list[float] = []
@@ -765,13 +797,17 @@ def _axis_quality(rec: dict, market: str) -> tuple[float | None, list[str], dict
     present: list[str] = []
     parts: list[float | None] = []
 
-    # prefer a precomputed orthogonal composite; else mean of the durable factor legs
-    # (profitability first — gross profitability is the validated durability proxy).
+    # prefer a precomputed orthogonal composite; else mean of the DURABILITY legs only.
+    # FIX (AVGO/NVDA alignment): the fallback used to average in `value` (cheapness) and
+    # `low_vol` (the low-volatility anomaly) — neither is durability. Blending them mis-scored
+    # expensive, volatile GROWTH LEADERS (AVGO, NVDA) on the quality axis for being correctly
+    # expensive/volatile (a value/vol read leaking into 'will the business survive'). The axis
+    # now uses only profitability + the quality (ROE/accruals/leverage) composite, matching the
+    # docstring's stated DURABILITY intent. (value/low_vol still live in the factor board.)
     qc = _f(rec.get("quality_context_z"))
     if qc is None:
         fac = rec.get("factor") or {}
-        qc = _mean_avail([_f(fac.get(k)) for k in
-                          ("profitability", "quality", "value", "low_vol")])
+        qc = _mean_avail([_f(fac.get(k)) for k in ("profitability", "quality")])
     if qc is not None:
         parts.append(float(np.clip(qc, -3, 3))); present.append("factors")
 
@@ -1054,6 +1090,33 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress)
     band = _band(score)
 
+    # --- honesty NOTES (AVGO/NVDA alignment): make the two places a user gets confused explicit.
+    notes: list[dict] = []
+    # (1) the SCORE is a within-board PERCENTILE rank; the VERDICT is an absolute-tier read. When a
+    # name ranks top-of-board (band high/constructive) but the verb isn't "high-conviction" (its
+    # selection z hasn't cleared the absolute bar — the NVDA 97-vs-"Constructive" case), say so, so
+    # "97" is never misread as an absolute 97/100 conviction.
+    if band["band"] in ("high", "constructive") and _tier(sel_z) not in ("high",) \
+            and not blocked and score is not None:
+        notes.append({
+            "kind": "rank",
+            "en": "Score is a within-board percentile RANK (top of today's board), not an absolute "
+                  "0-100 conviction — the verdict reflects the absolute read.",
+            "zh": "评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数。"})
+    # (2) the forward risk-cone is favourable but the conviction score is muted — surface the
+    # 'high upside / low downside' the factor axes don't capture (the AVGO complaint).
+    _ah = ((rec.get("anticipation") or {}).get("horizons") or {}).get("medium") or {}
+    _aidx = _f((rec.get("anticipation") or {}).get("anticipation_index"))
+    _mfe, _dd = _f(_ah.get("mfe_med")), _f(_ah.get("dd_avg"))
+    if (_aidx is not None and _aidx >= 65 and not _ah.get("thin") and _mfe and _dd and _dd != 0
+            and (_mfe / abs(_dd)) >= 1.5 and (score is None or score < 65)):
+        notes.append({
+            "kind": "anticipation",
+            "en": f"Forward risk cone is favourable (≈{_mfe:.0f}% median upside vs ≈{abs(_dd):.0f}% "
+                  "average drawdown) — a constructive risk SHAPE the factor axes don't price.",
+            "zh": f"前瞻风险锥形态有利（中位上行约 {_mfe:.0f}% 对平均回撤约 {abs(_dd):.0f}%）——"
+                  "因子维度未计入的有利风险形态。"})
+
     # provenance — what is present vs missing, never read missing as neutral.
     all_legs = {"selection": sel_present, "entry": ent_present,
                 "tailwind": tw_present, "quality": q_present}
@@ -1086,6 +1149,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         # bounded tilt into the entry axis above — never the selection rank).
         "gex_confirm": rec.get("gex_confirm"),
         "vol_squeeze": rec.get("vol_squeeze"),
+        "notes": notes or None,       # honesty notes: percentile-rank caveat + favourable-cone read
         "n_axes": n_axes,
         "cycle_blocked": blocked,
         "provenance": {"present": present, "n_axes": n_axes,
@@ -1177,6 +1241,10 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "gex": record.get("gex"),
         "gex_confirm": record.get("gex_confirm"),
         "vol_squeeze": record.get("vol_squeeze"),
+        # forward anticipation cone — its risk-SHAPE asymmetry feeds a bounded entry tilt + a
+        # display note (the 'high upside / low downside' the score used to ignore); direction is
+        # never bet (p_up ~ coin-flip).
+        "anticipation": record.get("anticipation"),
     }
 
 
