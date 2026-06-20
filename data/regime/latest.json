@@ -260,14 +260,7 @@
       "chg_20d_pct": 9.49
     }
   },
-  "alerts": [
-    {
-      "rule": "circuit_breaker_open",
-      "severity": "warn",
-      "message": "Source 'farside' marked dead after 3 consecutive failures \u2014 collector skipped until it recovers; affected signals degrade",
-      "message_zh": "\u6570\u636e\u6e90 'farside' \u8fde\u7eed 3 \u6b21\u5931\u8d25\u540e\u88ab\u6807\u8bb0\u4e3a\u4e2d\u65ad \u2014\u91c7\u96c6\u5668\u6682\u505c\u76f4\u81f3\u6062\u590d\uff1b\u76f8\u5173\u4fe1\u53f7\u7f6e\u4fe1\u5ea6\u4e0b\u964d"
-    }
-  ],
+  "alerts": [],
   "conditions": {
     "financial_conditions": {
       "nfci": -0.505,
@@ -414,14 +407,27 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
-    "tone_score": 0.0,
-    "guidance_direction": "unknown",
-    "risk_delta": 0.0,
+    "tone_score": 0.3,
+    "guidance_direction": "on_hold",
+    "risk_delta": 0.3,
     "shock_reversible": "unknown",
-    "confidence": "low",
-    "confidence_gated": true,
+    "confidence": "high",
+    "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
+    "evidence": [
+      {
+        "field": "tone_score",
+        "quote_span": "inflation remains elevated relative to the Committee's 2 percent goal"
+      },
+      {
+        "field": "guidance_direction",
+        "quote_span": "decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+      },
+      {
+        "field": "risk_delta",
+        "quote_span": "elevated uncertainty that owes, in part, to the conflict in the Middle East"
+      }
+    ],
     "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
@@ -924,7 +930,7 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-20T03:54:17.351092+00:00",
+    "built": "2026-06-20T05:25:14.338117+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -986,16 +992,18 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -2.0,
-    "guidance": "unknown",
+    "guidance": "on_hold",
     "market_vs_fed_bp": 18.0,
     "market_vs_fed_en": "market more hawkish than the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e",
     "drivers_en": [
       "market prices ~2.0 hike(s) over 12m",
+      "statement guidance on-hold",
       "market more hawkish than the Fed (+18bp)"
     ],
     "drivers_zh": [
       "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea62.0\u6b21\u52a0\u606f",
+      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
       "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+18bp\uff09"
     ],
     "is_context_only": true,

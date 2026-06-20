@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-20T03:54:25.281661+00:00",
+  "generated_utc": "2026-06-20T05:25:24.350779+00:00",
   "as_of": "2026-06-20",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4101,7 +4101,7 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 466,
+      "rows": 467,
       "last_seen": "2026-06-14",
       "recent": [
         {
@@ -4315,16 +4315,16 @@
           "_first_seen": "2026-06-20T01:08:30.606406+00:00"
         },
         {
-          "BioGuideID": "B000740",
-          "CandidateName": "BICE, STEPHANIE",
-          "CompanyCMTENM": "SOUTHERN COMPANY GAS EMPLOYEES PAC",
-          "TransactionDate": "2026-04-28",
-          "TransactionAmount": "2500",
-          "Ticker": "SO",
-          "CommitteeName": "BICE FOR CONGRESS",
+          "BioGuideID": "G000574",
+          "CandidateName": "GALLEGO, RUBEN",
+          "CompanyCMTENM": "STATE STREET BANK AND TRUST COMPANY VOLUNTARY POLITICAL ACTION COMMITTEE",
+          "TransactionDate": "2026-04-23",
+          "TransactionAmount": "1500",
+          "Ticker": "STT",
+          "CommitteeName": "GALLEGO FOR ARIZONA",
           "Cycle": "2026",
           "TransactionType": "24K",
-          "CompanyCMTEID": "C00145037",
+          "CompanyCMTEID": "C00072751",
           "Uploaded": "2026-06-14 23:34:06.059174",
           "_first_seen": "2026-06-20T01:08:30.606406+00:00"
         },
@@ -7686,6 +7686,12 @@
         "politicians": 6
       },
       {
+        "ticker": "CXW",
+        "total_usd": 33500.0,
+        "donations": 6,
+        "politicians": 4
+      },
+      {
         "ticker": "EIX",
         "total_usd": 30000.0,
         "donations": 14,
@@ -7702,12 +7708,6 @@
         "total_usd": 30000.0,
         "donations": 6,
         "politicians": 6
-      },
-      {
-        "ticker": "CXW",
-        "total_usd": 28500.0,
-        "donations": 5,
-        "politicians": 4
       },
       {
         "ticker": "BAC",

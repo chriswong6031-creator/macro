@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v1",
   "as_of": "2026-06-20",
-  "generated_utc": "2026-06-20T03:54:27.586690+00:00",
+  "generated_utc": "2026-06-20T05:25:27.531549+00:00",
   "n_tickers": 116,
   "note": "Display/context-only per-ticker alt-data rollup. convergence_score = distinct independent channels; donors excluded from the score.",
   "tickers": {
@@ -990,6 +990,13 @@
       "convergence_score": 0,
       "trump_linked": false
     },
+    "CXW": {
+      "ticker": "CXW",
+      "channels": [],
+      "donor_usd": 33500.0,
+      "convergence_score": 0,
+      "trump_linked": false
+    },
     "EIX": {
       "ticker": "EIX",
       "channels": [],
@@ -1001,13 +1008,6 @@
       "ticker": "MATX",
       "channels": [],
       "donor_usd": 30000.0,
-      "convergence_score": 0,
-      "trump_linked": false
-    },
-    "CXW": {
-      "ticker": "CXW",
-      "channels": [],
-      "donor_usd": 28500.0,
       "convergence_score": 0,
       "trump_linked": false
     },
