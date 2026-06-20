@@ -1,0 +1,145 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro bl(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('China News', '中国财经新闻') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .cn-hero { max-width:1060px; margin:18px auto 0; }
+  .cn-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .cn-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .cn-hero h1 { letter-spacing:0; }
+  .cn-hero .lens { font-size:12px; color:var(--muted); }
+  .cn-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .card .v { font-size:26px; font-weight:700; margin-top:3px; }
+  .card .s { font-size:12px; color:var(--muted); margin-top:4px; }
+  .band { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; }
+  .band.supportive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .band.cautious { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .band.steady, .band.building, .band.unknown { color:var(--muted); background:var(--panel2); }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
+  .tchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
+  .tchip b { color:var(--link); }
+  .th-geopolitics{color:#e0607a}.th-trade{color:#e0973a}.th-industrial_policy{color:#5b8def}
+  .th-monetary{color:#c77dff}.th-credit{color:#3fb6c0}.th-policy{color:#46b87a}
+  .th-markets{color:#3f9fd8}.th-growth{color:#46b87a}.th-inflation{color:#e0973a}.th-fiscal{color:#9aa0a6}
+  .feed { list-style:none; padding:0; margin:10px 0; }
+  .feed li { padding:9px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start; }
+  .feed .meta { display:flex; flex-direction:column; gap:3px; min-width:96px; }
+  .feed .tt { font-size:14px; line-height:1.45; }
+  .feed .tt a { color:var(--text); }
+  .feed .tt a:hover { color:var(--link); }
+  .tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); white-space:nowrap; }
+  .tier1 { color:#1f9a55; border-color:#1f9a5555; }
+  .tier2 { color:#5b8def; border-color:#5b8def55; }
+  .tier3 { color:var(--muted); }
+  .sched { font-size:10px; color:#e0973a; font-weight:700; }
+  .bk { font-size:10px; color:var(--muted); }
+  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
+  .callout.brief { border-left:4px solid #c77dff; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.55; }
+  .schedrow { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .sx { font-size:11.5px; padding:4px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
+  .sx b { color:#e0973a; }
+{% endblock %}
+
+{% block content %}
+<section class="cn-hero">
+  <p class="eyebrow">📰 {{ t('China News', '中国财经新闻') }}</p>
+  <h1>{{ t('China News & Policy Tape', '中国财经新闻与政策脉搏') }}</h1>
+  <p class="lens">{{ t('Multi-source flash wires + state RSS · media-sentiment index · point-in-time event bus · context only · as of', '多源快讯＋官方RSS · 媒体情绪指数 · 时间点事件总线 · 仅供参考 · 截至') }} {{ (news.feed.asof if news and news.feed else news.asof) }}</p>
+</section>
+
+<div class="cn-wrap">
+{% if not news %}
+  <div class="callout">{{ t('The China news tape is still warming up — no accrued headlines or sentiment history yet. This page populates after the first collect + build cycle.', '中国新闻脉搏仍在预热——尚无累计头条或情绪历史。本页将在首次采集与构建周期后填充。') }}</div>
+{% else %}
+
+  <!-- ===== media-sentiment + counts ===== -->
+  <div class="grid">
+    {% set sent = news.sentiment %}
+    <div class="card">
+      <div class="k">{{ t('Media sentiment', '媒体情绪') }}</div>
+      {% if sent %}
+      <div class="v"><span class="band {{ sent.band }}">{{ bl(sent.label_en, sent.label_zh) }}</span></div>
+      <div class="s">z {{ '%+.2f'|format(sent.z) }} · {{ sent.n_days }}{{ t('d window', '天窗口') }} · {{ t('CCTV + wire tone', '央视＋快讯基调') }}</div>
+      {% else %}
+      <div class="v">—</div><div class="s">{{ t('building history', '积累历史中') }}</div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <div class="k">{{ t('Headlines (7d)', '头条（7天）') }}</div>
+      <div class="v">{{ news.feed.n_recent if news.feed else '—' }}</div>
+      <div class="s">{{ t('point-in-time, keep-first accrual', '时间点首次出现累计') }}</div>
+    </div>
+    <div class="card">
+      <div class="k">{{ t('Dominant themes', '主导主题') }}</div>
+      <div class="chips" style="margin-top:6px">
+        {% for th in (news.feed.top_themes if news.feed else [])[:4] %}
+          {% set lab = news.feed.theme_label.get(th, [th, th]) %}
+          <span class="tchip"><span class="th-{{ th }}">●</span> {{ bl(lab[0], lab[1]) }} <b>{{ news.feed.by_theme.get(th) }}</b></span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== scheduled ahead ===== -->
+  {% if news.feed and news.feed.scheduled_ahead %}
+  <h2 class="sec">📅 {{ t('Scheduled ahead', '即将发布') }}</h2>
+  <div class="schedrow">
+    {% for ev in news.feed.scheduled_ahead %}
+    <span class="sx"><b>{{ ev.md }}</b> · {{ bl(ev.name_en, ev.name_zh) }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== optional AI brief ===== -->
+  {% if news.brief and news.brief.text %}
+  <div class="callout brief">🤖 {{ news.brief.text }}</div>
+  {% endif %}
+
+  <!-- ===== event feed ===== -->
+  <h2 class="sec">🛰️ {{ t('News event bus', '新闻事件总线') }}</h2>
+  {% if news.feed and news.feed['items'] %}
+  <ul class="feed">
+    {% for it in news.feed['items'] %}
+    <li>
+      <div class="meta">
+        {% set lab = news.feed.theme_label.get(it.theme, [it.theme_en, it.theme_zh]) %}
+        <span class="tag th-{{ it.theme }}">{{ bl(lab[0], lab[1]) }}</span>
+        <span class="tag tier{{ it.tier }}">{{ it.source or ('T' ~ it.tier) }}</span>
+        {% if it.scheduled_ref %}<span class="sched">📅 {{ it.scheduled_ref }}</span>{% endif %}
+      </div>
+      <div class="tt">
+        {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>{% else %}{{ it.title }}{% endif %}
+        {% if it.baskets %}<div class="bk">🏷️ {{ it.baskets | join(' · ') }}</div>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="callout">{{ t('No themed headlines accrued in the recent window yet.', '近期窗口内尚无主题化头条累计。') }}</div>
+  {% endif %}
+
+  <!-- ===== by-basket tallies ===== -->
+  {% if news.feed and news.feed.by_basket %}
+  <h2 class="sec">🧺 {{ t('Themes in the news', '新闻中的主题') }}</h2>
+  <div class="chips">
+    {% for bid, ct in news.feed.by_basket.items() %}
+    <span class="tchip">{{ bid }} <b>{{ ct }}</b></span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="disc">{{ bl(news.disclaimer, news.disclaimer_zh) }}</p>
+{% endif %}
+</div>
+{% endblock %}

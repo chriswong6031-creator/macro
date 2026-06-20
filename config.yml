@@ -2006,6 +2006,34 @@ china_news:
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
 
+# China News powerhouse — multi-source wire + PIT event bus + media-sentiment
+# (engine/china_news_intel.py + collectors/china_news_wire.py). The China sibling of
+# news_vector: a first-print, point-in-time, keep-FIRST headline log across several free
+# wires + EN state RSS, theme-gated + scheduled-ref stamped, plus a media-sentiment index
+# (CCTV tone blended with a daily multi-source wire tone). CONTEXT-ONLY, never scored.
+# See research/CHINA_INTEL_POWERHOUSE.md §1.
+china_news_intel:
+  enabled: true                   # MASTER SWITCH for the multi-source headline fetch + accrual
+  wire_sources:                   # akshare flash endpoints tried in order (each degrades)
+    - stock_info_global_em
+    - stock_info_global_sina
+    - stock_info_global_ths
+    - stock_info_global_futu
+  rss_sources:                    # keyless English state-wire RSS (stdlib XML parse)
+    - https://english.news.cn/rss/businessrss.xml
+    - https://www.chinadaily.com.cn/rss/bizchina_rss.xml
+  max_per_source: 60              # raw items pulled per wire before the theme gate
+  max_show: 14                    # headlines shown in the feed after filtering
+  sentiment_window: 90            # z-score window (days) for the media-sentiment index
+  sentiment_smooth: 5             # rolling-mean smoothing of the blended daily tone
+  cache_dir: data/china_news/intel_cache
+  cache_ttl_hours: 6
+  # OPTIONAL AI brief — same provider stack as china_news; off even with a key.
+  llm_brief: false
+  llm_model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic
+  api_key_env: DEEPSEEK_API_KEY
+
 # =============================================================================
 # Financial / sector / Mag-7 / thematic-basket news (engine/financial_news.py) — the
 # flagship feed for the Research → News page. A LEAF: imports only lib.config +

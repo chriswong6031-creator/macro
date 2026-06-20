@@ -797,6 +797,27 @@ def main() -> int:
             _build_sector_pages(env)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china sector pages build failed (%s); skipping", e)
+
+        # China Intelligence surfaces (News powerhouse → Policy Watch → Alt-Data →
+        # Divergence Radar) + the transmission bus that bundles them for the future
+        # China Mastermind. Each is additive + None-safe; standalone pages built here so
+        # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
+        for _name, _mod, _fn in (
+            ("china news powerhouse", "scripts.build_china_news", "build"),
+            # ("china policy watch", "scripts.build_china_policy_watch", "build"),  # Phase 2
+            # ("china alt-data desk", "scripts.build_china_altdata", "build"),      # Phase 3
+            # ("china divergence radar", "scripts.build_china_radar", "build"),     # Phase 4
+        ):
+            try:
+                import importlib
+                getattr(importlib.import_module(_mod), _fn)()
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("%s build failed (%s); skipping", _name, e)
+        try:
+            from engine import china_intel_bus
+            china_intel_bus.build()   # fan-in the surfaces for the China Mastermind
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china intel bus build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0
