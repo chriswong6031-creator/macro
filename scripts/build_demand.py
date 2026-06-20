@@ -140,6 +140,15 @@ def build(root=None) -> str:
     n_variants = len(groups["ahead_of_consensus"])
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     as_of = (track or {}).get("as_of") or built[:10]
+    # change-detect new/flipped variants into the Alert Center (engine.demand_alerts) —
+    # the last discoverability surface. Resilient; seeds silent on the first run.
+    try:
+        from engine import demand_alerts
+        fired = demand_alerts.rebuild(reads, as_of=as_of)
+        if fired:
+            log.info("build_demand: %d new demand-variant alert(s)", len(fired))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("demand alerts skipped (%s)", e)
 
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     env.globals.update(tr=tr, td=td)
