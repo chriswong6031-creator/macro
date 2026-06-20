@@ -65,6 +65,18 @@ def test_2x2_states():
     assert st["uranium_miners"] == "QUIET"
 
 
+def test_v2_schema_lifecycle_and_sources():
+    res = radar.compute_radar(_payload(), obligations=_obligations())
+    assert res["schema"] == "radar.v2"
+    for f in res["flags"]:
+        assert f["lifecycle"]                                    # every flag has a stage
+        assert f["observable"]["n_sources"] >= 1
+        assert isinstance(f["observable"]["sources"], list) and f["observable"]["sources"]
+    d = next(f for f in res["flags"] if f["basket"] == "defense")
+    assert d["state"] == "POSITIVE_DIVERGENCE" and d["lifecycle"] in ("forming", "emerging")
+    assert next(f for f in res["flags"] if f["basket"] == "nuclear_power")["lifecycle"] == "fading"
+
+
 def test_off_diagonal_sorted_first():
     res = radar.compute_radar(_payload(), obligations=_obligations())
     states = [f["state"] for f in res["flags"]]

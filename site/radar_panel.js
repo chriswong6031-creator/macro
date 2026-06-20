@@ -41,27 +41,67 @@
   };
   function st(s) { return STATE[s] || STATE.QUIET; }
 
+  var LIFE = {
+    emerging:   { en: "Emerging", zh: "新兴", c: "var(--up)" },
+    forming:    { en: "Forming", zh: "形成中", c: "var(--up)" },
+    confirming: { en: "Confirming", zh: "确认中", c: "var(--link)" },
+    mature:     { en: "Mature · priced", zh: "成熟 · 已反映", c: "var(--muted)" },
+    fading:     { en: "Fading", zh: "退潮", c: "var(--down)" },
+    quiet:      { en: "Quiet", zh: "平静", c: "var(--muted)" }
+  };
+  function lifePill(f) {
+    var l = LIFE[f.lifecycle];
+    if (!l) return "";
+    return '<span class="dr-life" style="color:' + l.c + ';border-color:' + l.c + '">' + bi(l.en, l.zh) + "</span>";
+  }
+  // the source-fusion read: WHAT is driving the signal (per-source signed z), so the
+  // multi-source observable is legible rather than a black box.
+  function srcChips(o) {
+    var ss = o.sources || [];
+    if (!ss.length) return "";
+    var chips = ss.map(function (s) {
+      var z = s.z == null ? 0 : s.z, col = z > 0.2 ? "var(--up)" : z < -0.2 ? "var(--down)" : "var(--muted)";
+      return '<span class="dr-src" style="border-color:' + col + '">' +
+        bi(s.label_en || s.name, s.label_zh || s.name) +
+        ' <b style="color:' + col + '">' + (z > 0 ? "+" : "") + z.toFixed(1) + "</b></span>";
+    });
+    return '<div class="dr-srcs"><span class="dr-mut">' + bi("drivers", "驱动来源") + "</span>" + chips.join("") + "</div>";
+  }
+  function newsChip(f) {
+    var n = f.news;
+    if (!n || n.velocity == null) return "";
+    var up = (n.acceleration || 0) > 0;
+    return '<span class="dr-chip">' + bi("news", "新闻") + " " + (up ? "▲" : "▼") + " <b>" + n.velocity + "</b>" +
+      (n.unscheduled_share != null ? ' <span class="dr-mut">· ' + bi("unscheduled", "非日程") + " " + Math.round(n.unscheduled_share * 100) + "%</span>" : "") +
+      "</span>";
+  }
+
   function spotlightCard(f) {
     var s = st(f.state), o = f.observable || {}, c = f.consensus || {};
     var cov = (o.covered || []).slice(0, 8).join(", ") + ((o.covered || []).length > 8 ? "…" : "");
     return '<div class="dr-card ' + s.cls + '">' +
       '<div class="dr-card-h"><span class="dr-badge ' + s.cls + '">' + s.ico + " " + bi(s.en, s.zh) + "</span>" +
+      lifePill(f) +
       '<b class="dr-theme">' + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</b></div>" +
       '<div class="dr-note">' + bi(f.note, f.note_zh) + "</div>" +
+      srcChips(o) +
       '<div class="dr-chips">' +
-        '<span class="dr-chip">' + bi("fed spend", "联邦支出") + " <b>" + (o.accel == null ? "—" : o.accel.toFixed(2) + "×") + "</b> " +
+        '<span class="dr-chip">' + bi("activity", "活动") + " <b>" + (o.accel == null ? "—" : o.accel.toFixed(2) + "×") + "</b> " +
           bi("YoY", "同比") + "</span>" +
-        '<span class="dr-chip">' + bi("vs $ yr-ago", "对比去年") + " <b>" + usd(o.recent_3m_usd) + "</b> / " + usd(o.base_3m_usd) + "</span>" +
+        (o.recent_3m_usd != null ? '<span class="dr-chip">' + bi("vs $ yr-ago", "对比去年") + " <b>" + usd(o.recent_3m_usd) + "</b> / " + usd(o.base_3m_usd) + "</span>" : "") +
         '<span class="dr-chip">' + bi("price 60d", "价格60日") + " <b>" + relpct(c.rel_60d) + "</b></span>" +
+        newsChip(f) +
         '<span class="dr-cov">' + esc(cov) + "</span>" +
       "</div></div>";
   }
 
   function tableRow(f) {
-    var s = st(f.state), o = f.observable || {}, c = f.consensus || {};
+    var s = st(f.state), o = f.observable || {}, c = f.consensus || {}, l = LIFE[f.lifecycle];
     return "<tr>" +
-      "<td>" + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</td>" +
-      '<td class="dr-num"><b>' + (o.accel == null ? "—" : o.accel.toFixed(2) + "×") + "</b> <span class=\"dr-mut\">" + usd(o.recent_3m_usd) + "</span></td>" +
+      "<td>" + bi(f.name || f.basket, f.name_zh || f.name || f.basket) +
+        (l ? '<div class="dr-life-sm" style="color:' + l.c + '">' + bi(l.en, l.zh) + "</div>" : "") + "</td>" +
+      '<td class="dr-num"><b>' + (o.accel == null ? "—" : o.accel.toFixed(2) + "×") + "</b> " +
+        '<span class="dr-mut">' + bi(((o.n_sources || 1) + "src"), ((o.n_sources || 1) + "源")) + "</span></td>" +
       '<td class="dr-num" style="color:' + (c.rel_60d > 0 ? "var(--up)" : c.rel_60d < 0 ? "var(--down)" : "var(--muted)") + '">' + relpct(c.rel_60d) + "</td>" +
       '<td><span class="dr-badge ' + s.cls + '">' + bi(s.en, s.zh) + "</span></td>" +
       "</tr>";
