@@ -122,11 +122,12 @@
 
   {% if latent.watch %}
   <div class="mut2" style="font-size:11.5px;margin:14px 0 6px">{{ t('Watch — graph tickers cross-referenced with live alt-data:', '关注——图谱标的与实时替代数据交叉验证：') }}</div>
-  <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Name','名称') }}</th><th>{{ t('Themes','主题') }}</th><th>{{ t('Trump','特朗普') }}</th><th>{{ t('Alt-data','替代数据') }}</th></tr></thead><tbody>
+  <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Name','名称') }}</th><th>{{ t('Themes','主题') }}</th><th>{{ t('Trump','特朗普') }}</th><th>{{ t('Top holder','最大股东') }}</th><th>{{ t('Alt-data','替代数据') }}</th></tr></thead><tbody>
   {% for w in latent.watch %}
     <tr><td class="tk">{{ w.ticker }}</td><td class="mut2">{{ (w.name or '')[:22] }}</td>
         <td>{% for th in w.themes %}<span class="ch">{{ th.en }}</span> {% endfor %}</td>
         <td class="mut2">{{ w.trump_people|join(', ')|replace('Donald Trump Jr.','Don Jr')|replace('Eric Trump','Eric') }}</td>
+        <td class="mut2">{% if w.top_holder %}{{ (w.top_holder.owner or '')[:18] }}{% endif %}</td>
         <td>{% if w.alt_corroborated %}<span class="r-pos">✓ {{ w.alt_score }}</span>{% else %}<span class="mut2">—</span>{% endif %}</td></tr>
   {% endfor %}
   </tbody></table>
