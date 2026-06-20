@@ -2134,6 +2134,45 @@ def main() -> int:
         log.warning("master signal synthesis failed (%s)", e)
         master = {"ok": False}
 
+    # Five-tier macro-regime composite (engine/btc_regime.py). DISPLAY-ONLY — the P0
+    # kill-test showed it does NOT beat the hand-tuned allocator OOS, so it never sizes;
+    # it is a transparent, falsifiable avoidance instrument. Never break the build.
+    try:
+        from engine import btc_regime
+        regime = btc_regime.compute(sig, calib)
+    except Exception as e:  # noqa: BLE001 — the regime scorecard is optional
+        log.warning("regime composite failed (%s)", e)
+        regime = {"ok": False}
+    if regime.get("ok"):           # deferred CONTEXT legs (display-only; each degrades to ok:False)
+        legs = {}
+        for _mod, _key in (("btc_netliq", "netliq"), ("btc_leverage_cascade", "leverage"),
+                           ("btc_dat", "dat"), ("etf_perfund", "etf_perfund")):
+            try:
+                _m = __import__(f"engine.{_mod}", fromlist=["x"])
+                if _mod == "etf_perfund":
+                    legs[_key] = _m.read_perfund()
+                elif _mod == "btc_dat":               # reads a manual json drop + parquet close, not the df
+                    legs[_key] = _m.compute()
+                else:
+                    legs[_key] = _m.compute(sig)       # btc_netliq / btc_leverage_cascade take the df
+            except Exception as _le:  # noqa: BLE001 — context legs are optional
+                legs[_key] = {"ok": False, "reason": f"{type(_le).__name__}"}
+        regime["context_legs"] = legs
+    if regime.get("ok"):           # accrue the falsifiable forward ledger (context-only, separate)
+        try:
+            from engine import btc_regime_ledger
+            btc_regime_ledger.stamp(regime)
+            btc_regime_ledger.falsifier_status()          # writes regime_falsifiers.json
+            regime["ledger"] = btc_regime_ledger.render_summary()
+        except Exception as le:    # noqa: BLE001 — ledger is optional / may not exist yet
+            log.warning("regime ledger failed (%s)", le)
+    if regime.get("ok"):           # persist the COMPLETE scorecard (legs + ledger included)
+        try:
+            (config.data_dir() / "vector" / "regime_latest.json").write_text(
+                json.dumps(regime, default=str, separators=(",", ":")))
+        except Exception as we:    # noqa: BLE001
+            log.warning("regime persist failed (%s)", we)
+
     # Forward-return CONES (empirical, regime-conditioned) + the RECOMMENDATION engine —
     # the command-center decision layer (engine/btc_recommend.py). Never break the build.
     try:
@@ -2405,6 +2444,7 @@ def main() -> int:
         },
         "breadth": breadth,
         "master": master,
+        "regime": regime,
         "cones": cones,
         "rec": recommendation,
         "newf": newf,
