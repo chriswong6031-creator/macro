@@ -180,4 +180,36 @@
       });
     });
   };
+
+  // Lifecycle pipeline (for the dedicated radar.html page): themes grouped by stage.
+  var LANES = [
+    { key: "emerging", en: "Emerging", zh: "新兴" }, { key: "forming", en: "Forming", zh: "形成中" },
+    { key: "confirming", en: "Confirming", zh: "确认中" }, { key: "mature", en: "Mature", zh: "成熟" },
+    { key: "fading", en: "Fading", zh: "退潮" }, { key: "quiet", en: "Quiet", zh: "平静" }
+  ];
+  function lifeChip(f) {
+    var s = st(f.state), o = f.observable || {}, dv = f.divergence;
+    return '<div class="rl-chip" style="border-left-color:' + (LIFE[f.lifecycle] || LIFE.quiet).c + '">' +
+      '<b>' + bi(f.name || f.basket, f.name_zh || f.name || f.basket) + "</b>" +
+      '<span class="dr-mut"> ' + s.ico + " " + bi(s.en, s.zh) + "</span>" +
+      '<div class="rl-meta">' + bi("divergence", "背离") + " <b>" + (dv == null ? "—" : (dv > 0 ? "+" : "") + dv.toFixed(1)) +
+        "</b> · " + (o.n_sources || 1) + bi("src", "源") + "</div></div>";
+  }
+  window.renderRadarLifecycle = function (opts) {
+    opts = opts || {};
+    var base = opts.base || "basketdata/";
+    var mount = document.querySelector(opts.mount || "#radar-lifecycle");
+    if (!mount) return;
+    fetchJSON(base + "radar.json").then(function (d) {
+      if (!d || !d.flags || !d.flags.length) { mount.style.display = "none"; return; }
+      var lanes = LANES.map(function (L) {
+        var chips = d.flags.filter(function (f) { return f.lifecycle === L.key; });
+        return '<div class="rl-lane"><div class="rl-lane-h">' + bi(L.en, L.zh) +
+          ' <span class="dr-mut">' + chips.length + "</span></div>" +
+          (chips.length ? chips.map(lifeChip).join("") : '<div class="rl-empty">—</div>') + "</div>";
+      }).join("");
+      mount.style.display = "";
+      mount.innerHTML = '<div class="rl-pipe">' + lanes + "</div>";
+    });
+  };
 })();

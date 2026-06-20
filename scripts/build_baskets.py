@@ -136,6 +136,12 @@ def main() -> int:
             append_ledger(radar)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("divergence radar failed: %s", e)
+    # dedicated Divergence Radar page (site/radar.html) — pure render of the radar/brain JSON
+    try:
+        from scripts.build_radar_page import main as _build_radar_page
+        _build_radar_page()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("radar page failed: %s", e)
 
     # split the dense CHART (level matrix, for the interactive chart + live σ/sort table)
     # from the BASKETS metadata (thesis/members/rationale/perf/changelog/reference).
