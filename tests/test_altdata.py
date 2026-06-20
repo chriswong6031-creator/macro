@@ -9,7 +9,26 @@ import pytest
 
 from collectors import quiver
 from engine import altdata, altdata_alerts, altdata_ledger, altdata_signals
+from engine.trumpflow import graph as tfgraph
 from lib import config
+
+
+_SYNTH_INTEL = {
+    "as_of": "2026-06-19",
+    "people": [{"id": "p1", "name": "Eric Trump", "name_zh": "埃里克"}],
+    "themes": {"crypto": {"en": "Crypto", "zh": "加密"}, "ai": {"en": "AI infra", "zh": "AI基建"}},
+    "entities": [
+        {"id": "abtc", "name": "American Bitcoin", "ticker": "ABTC", "brand_theme": "crypto"},
+        {"id": "hut", "name": "Hut 8", "ticker": "HUT", "brand_theme": "crypto"},
+    ],
+    "edges": [
+        {"src": "p1", "rel": "CONTROLS", "dst": "abtc", "confidence": 0.95, "provenance": "FACT"},
+        {"src": "abtc", "rel": "OPERATED_BY", "dst": "hut", "confidence": 0.95, "provenance": "FACT"},
+        {"src": "hut", "rel": "HOLDS_STAKE", "dst": "abtc", "confidence": 0.95, "provenance": "FACT"},
+        {"src": "abtc", "rel": "MEMBER_OF", "dst": "theme:crypto", "confidence": 0.9, "provenance": "FACT"},
+        {"src": "hut", "rel": "MEMBER_OF", "dst": "theme:ai", "confidence": 0.85, "provenance": "INFERRED"},
+    ],
+}
 
 
 # --------------------------------------------------------------- coercion helpers
@@ -222,3 +241,31 @@ def test_chip_shaping():
     # nothing to show -> None
     assert altdata_signals.chip({"channels": []}) is None
     assert altdata_signals.chip(None) is None
+
+
+# --------------------------------------------------------------- latent-stake graph
+def test_graph_catches_label_mismatch():
+    mm = tfgraph.label_mismatches(_SYNTH_INTEL)
+    assert len(mm) == 1                                       # deduped (parent reached 2 ways)
+    m = mm[0]
+    assert m["entity_ticker"] == "ABTC"                       # branded crypto
+    assert m["real_theme"]["id"] == "ai"                      # value accrues to AI infra
+    assert m["repointed_ticker"] == "HUT"                     # flip the subject to the parent
+
+
+def test_graph_short_path_to_real_theme():
+    paths = tfgraph.short_paths(_SYNTH_INTEL)
+    ai = [p for p in paths if p["theme"]["id"] == "ai"]
+    assert ai, "expected an Eric Trump -> ... -> AI infra path"
+    assert ai[0]["endpoint_ticker"] == "HUT"                  # the investable proxy is the parent
+
+
+def test_graph_view_cross_references_altdata(monkeypatch):
+    monkeypatch.setattr(tfgraph, "load_intel", lambda root=None: _SYNTH_INTEL)
+    monkeypatch.setattr(tfgraph, "_write", lambda v: None)
+    bt = {"tickers": {"HUT": {"convergence_score": 2, "channels": ["gov_contract", "trump"]}}}
+    v = tfgraph.build_view(bt)
+    hut = next(w for w in v["watch"] if w["ticker"] == "HUT")
+    assert hut["alt_corroborated"] is True and hut["alt_score"] == 2
+    abtc = next(w for w in v["watch"] if w["ticker"] == "ABTC")
+    assert abtc["alt_corroborated"] is False                  # not in the live alt-data set

@@ -1,0 +1,265 @@
+{
+  "schema": "trumpflow.graph.v1",
+  "as_of": "2026-06-19",
+  "generated_utc": "2026-06-20T02:16:17.792399+00:00",
+  "note": "Hand-curated Trump-family / administration investment graph seed. Public-record only. provenance = FACT (filing / widely-reported) | DISCLOSED (self-reported) | INFERRED (analytical link). The LLM extractor (engine/trumpflow/extract.py) proposes ADDITIONAL candidate edges into a separate file; a human promotes them here. Nothing here is scored \u2014 it feeds the latent-stake view + the brain.",
+  "paths": [
+    {
+      "person": "Eric Trump",
+      "person_zh": "\u57c3\u91cc\u514b\u00b7\u7279\u6717\u666e",
+      "theme": {
+        "id": "crypto",
+        "en": "Crypto / digital assets",
+        "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+      },
+      "hops": [
+        {
+          "src": "eric_trump",
+          "src_name": "Eric Trump",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "MEMBER_OF",
+          "dst": "theme:crypto",
+          "dst_name": "Crypto / digital assets",
+          "provenance": "FACT",
+          "confidence": 0.9
+        }
+      ],
+      "min_confidence": 0.9,
+      "endpoint_ticker": "ABTC"
+    },
+    {
+      "person": "Donald Trump Jr.",
+      "person_zh": "\u5c0f\u5510\u7eb3\u5fb7\u00b7\u7279\u6717\u666e",
+      "theme": {
+        "id": "crypto",
+        "en": "Crypto / digital assets",
+        "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+      },
+      "hops": [
+        {
+          "src": "don_jr",
+          "src_name": "Donald Trump Jr.",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.9
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "MEMBER_OF",
+          "dst": "theme:crypto",
+          "dst_name": "Crypto / digital assets",
+          "provenance": "FACT",
+          "confidence": 0.9
+        }
+      ],
+      "min_confidence": 0.9,
+      "endpoint_ticker": "ABTC"
+    },
+    {
+      "person": "Eric Trump",
+      "person_zh": "\u57c3\u91cc\u514b\u00b7\u7279\u6717\u666e",
+      "theme": {
+        "id": "ai_power_infra",
+        "en": "AI power & data-center infrastructure",
+        "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+      },
+      "hops": [
+        {
+          "src": "eric_trump",
+          "src_name": "Eric Trump",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "OPERATED_BY",
+          "dst": "hut8",
+          "dst_name": "Hut 8 Corp",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "hut8",
+          "src_name": "Hut 8 Corp",
+          "rel": "MEMBER_OF",
+          "dst": "theme:ai_power_infra",
+          "dst_name": "AI power & data-center infrastructure",
+          "provenance": "INFERRED",
+          "confidence": 0.85
+        }
+      ],
+      "min_confidence": 0.85,
+      "endpoint_ticker": "HUT"
+    },
+    {
+      "person": "Donald Trump Jr.",
+      "person_zh": "\u5c0f\u5510\u7eb3\u5fb7\u00b7\u7279\u6717\u666e",
+      "theme": {
+        "id": "ai_power_infra",
+        "en": "AI power & data-center infrastructure",
+        "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+      },
+      "hops": [
+        {
+          "src": "don_jr",
+          "src_name": "Donald Trump Jr.",
+          "rel": "CONTROLS",
+          "dst": "american_bitcoin",
+          "dst_name": "American Bitcoin",
+          "provenance": "FACT",
+          "confidence": 0.9
+        },
+        {
+          "src": "american_bitcoin",
+          "src_name": "American Bitcoin",
+          "rel": "OPERATED_BY",
+          "dst": "hut8",
+          "dst_name": "Hut 8 Corp",
+          "provenance": "FACT",
+          "confidence": 0.95
+        },
+        {
+          "src": "hut8",
+          "src_name": "Hut 8 Corp",
+          "rel": "MEMBER_OF",
+          "dst": "theme:ai_power_infra",
+          "dst_name": "AI power & data-center infrastructure",
+          "provenance": "INFERRED",
+          "confidence": 0.85
+        }
+      ],
+      "min_confidence": 0.85,
+      "endpoint_ticker": "HUT"
+    },
+    {
+      "person": "Eric Trump",
+      "person_zh": "\u57c3\u91cc\u514b\u00b7\u7279\u6717\u666e",
+      "theme": {
+        "id": "media",
+        "en": "Media & social",
+        "zh": "\u5a92\u4f53\u4e0e\u793e\u4ea4"
+      },
+      "hops": [
+        {
+          "src": "eric_trump",
+          "src_name": "Eric Trump",
+          "rel": "CONTROLS",
+          "dst": "trump_media",
+          "dst_name": "Trump Media & Technology Group",
+          "provenance": "FACT",
+          "confidence": 0.85
+        },
+        {
+          "src": "trump_media",
+          "src_name": "Trump Media & Technology Group",
+          "rel": "MEMBER_OF",
+          "dst": "theme:media",
+          "dst_name": "Media & social",
+          "provenance": "FACT",
+          "confidence": 0.8
+        }
+      ],
+      "min_confidence": 0.8,
+      "endpoint_ticker": "DJT"
+    }
+  ],
+  "mismatches": [
+    {
+      "entity": "American Bitcoin",
+      "entity_ticker": "ABTC",
+      "brand_theme": {
+        "id": "crypto",
+        "en": "Crypto / digital assets",
+        "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+      },
+      "real_theme": {
+        "id": "ai_power_infra",
+        "en": "AI power & data-center infrastructure",
+        "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+      },
+      "parent": "Hut 8 Corp",
+      "parent_ticker": "HUT",
+      "confidence": 0.85,
+      "note": "Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthropic/Fluidstack 245MW $7B Dec-2025; $9.8B Beacon Point lease May-2026; >$16.8B pipeline; 8.6GW in development).",
+      "repointed_ticker": "HUT"
+    }
+  ],
+  "watch": [
+    {
+      "ticker": "ABTC",
+      "name": "American Bitcoin",
+      "brand_theme": "crypto",
+      "themes": [
+        {
+          "id": "crypto",
+          "en": "Crypto / digital assets",
+          "zh": "\u52a0\u5bc6\u8d44\u4ea7"
+        }
+      ],
+      "trump_people": [
+        "Donald Trump Jr.",
+        "Eric Trump"
+      ],
+      "note": "Branded a bitcoin miner / treasury; the Trump sons hold ~20%, Hut 8 ~80%. Public via Gryphon merger (Nasdaq: ABTC).",
+      "alt_corroborated": false,
+      "alt_score": null,
+      "alt_channels": []
+    },
+    {
+      "ticker": "HUT",
+      "name": "Hut 8 Corp",
+      "brand_theme": "crypto",
+      "themes": [
+        {
+          "id": "ai_power_infra",
+          "en": "AI power & data-center infrastructure",
+          "zh": "AI\u7535\u529b\u4e0e\u6570\u636e\u4e2d\u5fc3\u57fa\u7840\u8bbe\u65bd"
+        }
+      ],
+      "trump_people": [
+        "Donald Trump Jr.",
+        "Eric Trump"
+      ],
+      "note": "Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthropic/Fluidstack 245MW $7B Dec-2025; $9.8B Beacon Point lease May-2026; >$16.8B pipeline; 8.6GW in development).",
+      "alt_corroborated": false,
+      "alt_score": null,
+      "alt_channels": []
+    },
+    {
+      "ticker": "DJT",
+      "name": "Trump Media & Technology Group",
+      "brand_theme": "media",
+      "themes": [
+        {
+          "id": "media",
+          "en": "Media & social",
+          "zh": "\u5a92\u4f53\u4e0e\u793e\u4ea4"
+        }
+      ],
+      "trump_people": [
+        "Eric Trump"
+      ],
+      "note": "Truth Social; Trump-family majority holder.",
+      "alt_corroborated": false,
+      "alt_score": null,
+      "alt_channels": []
+    }
+  ],
+  "n_nodes": 10,
+  "n_edges": 12
+}
