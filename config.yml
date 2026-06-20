@@ -1988,6 +1988,8 @@ financial_news:
   gdelt_window_days: 2
   gdelt_max_records: 40
   finnhub_company: true           # per-Mag7 company-news (7 extra Finnhub calls)
+  include_quiver: true            # fold the Quiver /quivernews tail into the one news surface
+  quiver_max: 60                  # most-recent Quiver press-release rows to fold in
   # per-section display caps (after dedup + quality rank)
   top_market: 18
   top_sector: 8

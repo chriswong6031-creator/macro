@@ -322,5 +322,53 @@
     </div>
   </section>
 
+  {# ---------- NEWS CROSS-SURFACE (additive; client-fetched — no server coupling) ---------- #}
+  <section class="sid-sec">
+    <h2>📰 <span class="l-en">News on these names</span><span class="l-zh">这些标的的新闻</span>
+      <span class="h-note"><span class="l-en">the demand-side tape beside the supply-side signal — context only, never blended</span><span class="l-zh">需求侧舆情与供给侧信号并列——仅作背景，绝不混合</span></span></h2>
+    <div id="sid-news" class="sid-card"><p class="mut" style="font-size:12px"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
+  </section>
+
 </div>
+<script>
+(function () {
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function j(u) { return fetch(u, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  function hl(h) {
+    var sent = h.sentiment === "pos" ? " ▲" : h.sentiment === "neg" ? " ▼" : "";
+    return '<a href="' + esc(h.url || "#") + '" target="_blank" rel="noopener noreferrer" style="color:var(--link);text-decoration:none">' +
+      esc(h.title || "") + '</a> <span style="opacity:.5">· ' + esc(h.source || h.domain || "") + sent + "</span>";
+  }
+  Promise.all([j("altdata/mastermind.json"), j("news/by_ticker.json"), j("news/financial.json")]).then(function (res) {
+    var mount = document.getElementById("sid-news"); if (!mount) return;
+    var sigs = ((res[0] || {}).signals || []).slice(0, 12);
+    var bt = (res[1] || {}).tickers || {};
+    var fin = res[2] || {};
+    var rows = [];
+    sigs.forEach(function (sg) {
+      var n = bt[sg.ticker];
+      if (!n || !(n.top && n.top.length)) return;
+      rows.push('<div style="padding:8px 0;border-top:1px solid rgba(128,128,128,.15)">' +
+        '<b style="font-family:ui-monospace,Menlo,monospace">' + esc(sg.ticker) + "</b> " +
+        '<span style="opacity:.55;font-size:11px">' + esc(n.sentiment_lean || "neutral") + " · " + (n.n_recent || 0) +
+        ' hl · alt signal ' + (sg.signal_score == null ? "—" : sg.signal_score) + "</span>" +
+        '<div style="font-size:12px;margin-top:3px;line-height:1.5">' + n.top.slice(0, 2).map(hl).join("<br>") + "</div></div>");
+    });
+    if (rows.length) {
+      mount.innerHTML = '<div style="font-size:11px;opacity:.6;margin-bottom:4px">' +
+        '<span class="l-en">Recent news for the top conviction-board names that the tape is also talking about — the overlap (or its absence) is the early-edge / crowded read.</span>' +
+        '<span class="l-zh">置信榜上同时被舆情讨论的标的的近期新闻——重叠（或其缺失）即"早期边际/拥挤"读数。</span></div>' + rows.join("");
+      return;
+    }
+    // fallback: no per-name overlap yet → show the market tape
+    var mk = (fin.market || []).slice(0, 6);
+    if (mk.length) {
+      mount.innerHTML = '<div style="font-size:11px;opacity:.6;margin-bottom:4px"><span class="l-en">No news yet on today\'s signals — broad market tape:</span><span class="l-zh">今日信号暂无对应新闻——大盘舆情：</span></div>' +
+        mk.map(function (h) { return '<div style="padding:5px 0;font-size:12px;border-top:1px solid rgba(128,128,128,.12)">' + hl(h) + "</div>"; }).join("");
+    } else {
+      mount.innerHTML = '<p class="mut" style="font-size:12px"><span class="l-en">News surface not built yet — runs on the next daily build.</span><span class="l-zh">新闻层尚未生成——将在下次每日构建后出现。</span></p>';
+    }
+  });
+})();
+</script>
 {% endblock %}

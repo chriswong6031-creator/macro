@@ -117,7 +117,7 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
     domain = (domain or _domain_of(url)).lower().lstrip("www.")
     tier = nc.source_tier(domain)
     if tier == 0:
-        if provider in ("polygon", "finnhub"):
+        if provider in ("polygon", "finnhub", "quiver"):
             tier = 3            # provider curated it — keep, rank as aggregator
         else:
             return None         # unfiltered GDELT web result not in the allowlist
@@ -226,6 +226,47 @@ def _finnhub_news(cfg: dict, now: datetime) -> tuple[list[dict], list[dict]]:
 
 
 # --------------------------------------------------------------------------- #
+# Quiver news tail — the /quivernews press-release/AI-summary feed collected by
+# collectors/quiver.py. Folded in here so there is ONE editorial-news surface
+# (it's just more headlines → the same quality pipeline ranks it below real wires).
+# --------------------------------------------------------------------------- #
+def _quiver_news(cfg: dict, emap: dict, now: datetime) -> list[dict]:
+    if not cfg.get("include_quiver", True):
+        return []
+    try:
+        import pandas as pd
+        p = config.ROOT / "data" / "quiver" / "news.parquet"
+        if not p.exists():
+            return []
+        df = pd.read_parquet(p)
+        out: list[dict] = []
+        for _, r in df.tail(int(cfg.get("quiver_max", 60))).iterrows():
+            title = str(r.get("headline") or "").strip()
+            if not title or title.lower() == "nan":
+                continue
+            url = str(r.get("url") or "")
+            tk = str(r.get("ticker") or "").upper().strip()
+            tks = [tk] if tk and tk != "NAN" else sorted(nc.match_entities(title, emap))
+            tval = r.get("time")
+            iso = ""
+            try:
+                iso = pd.Timestamp(tval).tz_localize("UTC").isoformat() if tval is not None \
+                    and pd.Timestamp(tval).tzinfo is None else (pd.Timestamp(tval).isoformat()
+                                                                if tval is not None else "")
+            except Exception:  # noqa: BLE001
+                iso = str(tval or "")
+            summ = str(r.get("summary") or "")[:240]
+            h = _normalise(title, url, _domain_of(url) or "quiverquant.com", iso, "Quiver",
+                           tks, summ, None, "quiver", 0.7, now)
+            if h:
+                out.append(h)
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("quiver news fold failed (%s)", e)
+        return []
+
+
+# --------------------------------------------------------------------------- #
 # GDELT — keyless thematic supplement (market + sectors)
 # --------------------------------------------------------------------------- #
 def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
@@ -322,9 +363,10 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
 
     poly = _polygon_news(cfg, now)
     fh_market, fh_company = _finnhub_news(cfg, now)
+    quiver = _quiver_news(cfg, emap, now)            # folded Quiver press-release tail
     gd = _gdelt_thematic(cfg, emap, now)
 
-    tagged = poly + fh_company                       # ticker-tagged corpus
+    tagged = poly + fh_company + quiver              # ticker-tagged corpus
     all_items = tagged + fh_market + gd["market"] + [h for v in gd["sectors"].values() for h in v]
     sources = sorted({h.get("source", "") for h in all_items if h.get("source")})
 
@@ -375,6 +417,7 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
         "fetched_at": now.isoformat(), "asof": today.isoformat(),
         "sources": sources,
         "providers": {"polygon": bool(poly), "finnhub": bool(fh_market or fh_company),
+                      "quiver": bool(quiver),
                       "gdelt": bool(gd["market"] or any(gd["sectors"].values()))},
         "counts": {"raw": len(all_items), "tagged": len(tagged),
                    "tickers_covered": len(by_ticker)},
