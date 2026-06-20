@@ -445,6 +445,12 @@ jobs:
         # site/intelligence/by_ticker.json (v2) the Mastermind bot pulls. Facts side by side,
         # never pre-blended. No keys needed; pure JSON merge; never aborts.
         run: python -m scripts.build_intelligence || echo "intelligence skipped (additive)"
+      - name: brain briefing tunnel (build_briefing)
+        # AFTER build_intelligence: reduces the per-ticker bundle to a RANKED, brain-facing
+        # triage — site/intelligence/briefing.json — that the Mastermind brain (Claude Opus)
+        # pulls once per cycle: priority queue (confidence × strength), the demand-vs-supply
+        # divergence subset, and a regime/catalyst macro frame. Pure; resilient; never aborts.
+        run: python -m scripts.build_briefing || echo "briefing skipped (additive)"
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;

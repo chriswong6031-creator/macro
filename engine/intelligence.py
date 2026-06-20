@@ -125,6 +125,102 @@ def _synthesize(news: dict | None, alt: dict | None, radar: dict | None) -> dict
             "supply_dir": (1 if up > dn else -1 if dn > up else 0) if supply else None}
 
 
+def _f(x):
+    """Coerce to float, guarding dict/str/bool/None — returns None on failure."""
+    if x is None or isinstance(x, (dict, list, bool)):
+        return None
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
+def _dir_news(news):
+    return {"pos": 1, "neg": -1}.get((news or {}).get("sentiment_lean")) if news else None
+
+
+def _dir_alt(alt):
+    if not alt:
+        return None
+    s = _f(alt.get("signal_score"))
+    act = alt.get("action")
+    if s is not None and s >= 65 and act != "AVOID":
+        return 1
+    if act == "AVOID" or (s is not None and s < 35):
+        return -1
+    return 0
+
+
+def _dir_radar(radar):
+    st = (radar or {}).get("state")
+    if st in _POS_RADAR:
+        return 1
+    if st in _NEG_RADAR:
+        return -1
+    return 0 if radar else None
+
+
+def _dir_standout(s):
+    if not s:
+        return None
+    lab = (s.get("label") or "").upper()
+    state = (s.get("state") or "").upper()
+    if "AVOID" in lab or "AVOID" in state or "DON'T CHASE" in lab:
+        return -1
+    return 1  # on the factor buy-board → bullish candidate
+
+
+def _brain(news, alt, radar, standout, read: dict) -> dict:
+    """Opus-facing per-ticker summary: how MANY independent facets fired, whether they
+    AGREE, how STRONG the signal is, and the single ranking key (priority). Deterministic;
+    no LLM. This is what the bot's intake reads to triage a name without re-deriving facts."""
+    nd, ad, rd, sd = _dir_news(news), _dir_alt(alt), _dir_radar(radar), _dir_standout(standout)
+    present = [(name, obj) for name, obj in
+               (("news", news), ("alt", alt), ("radar", radar), ("standout", standout)) if obj]
+    breadth = len(present) / 4.0
+
+    dirs = [d for d in (nd, ad, rd, sd) if d is not None]
+    nz = [d for d in dirs if d != 0]
+    agreement = abs(sum(nz)) / len(nz) if nz else 0.0          # 1 unanimous … 0 evenly split
+    confidence = round(0.5 * breadth + 0.5 * agreement, 3)
+    lean = (1 if sum(nz) > 0 else -1 if sum(nz) < 0 else 0) if nz else 0
+
+    mags = []
+    re = _f((radar or {}).get("edge_score"))
+    if re is not None:
+        mags.append(min(abs(re) / 100.0, 1.0))
+    a_s = _f((alt or {}).get("signal_score"))
+    if a_s is not None:
+        mags.append(min(abs(a_s - 50.0) / 50.0, 1.0))
+    so_c = _f((standout or {}).get("conviction"))
+    if so_c is not None:
+        mags.append(min(abs(so_c), 1.0))
+    strength = round(max(mags), 3) if mags else 0.0
+
+    parts = []
+    if radar:
+        parts.append(f"radar {(radar.get('state') or '')[:4]} edge{radar.get('edge_score')}")
+    if alt:
+        parts.append(f"alt{alt.get('signal_score') if alt.get('signal_score') is not None else alt.get('weighted_score')} {alt.get('action') or ''}".strip())
+    if news:
+        parts.append(f"news {news.get('sentiment_lean')} n{news.get('n_recent')}")
+    if standout:
+        parts.append(f"standout {standout.get('label') or standout.get('state') or ''}".strip())
+    falsifier = (alt or {}).get("falsifier") or (radar or {}).get("falsifier")
+
+    return {
+        "confidence": confidence,                     # 0..1 — breadth × agreement
+        "strength": strength,                         # 0..1 — normalized signal magnitude
+        "priority": round(confidence * strength, 3),  # the single ranking key for intake
+        "lean": lean,                                 # +1 / 0 / -1 net directional read
+        "n_facets": len(present),
+        "source_mix": [name for name, _ in present],
+        "label": read.get("label"),
+        "evidence": " · ".join(parts),
+        "falsifier": falsifier,
+    }
+
+
 def build(news_tickers: dict | None, alt_signals: list | None,
           alt_by_ticker: dict | None, radar_tickers: list | None = None,
           standouts: list | None = None, today: date | None = None) -> dict:
@@ -154,9 +250,11 @@ def build(news_tickers: dict | None, alt_signals: list | None,
         standout = _standout_for(t, sidx)
         if not any((news, alt, radar, standout)):
             continue
+        read = _synthesize(news, alt, radar)
         out[t] = {"ticker": t, "news": news, "alt": alt, "radar": radar, "standout": standout,
                   "has_news": bool(news), "has_alt": bool(alt), "has_radar": bool(radar),
-                  "has_standout": bool(standout), "read": _synthesize(news, alt, radar),
+                  "has_standout": bool(standout), "read": read,
+                  "brain": _brain(news, alt, radar, standout, read),
                   "note": "Demand-side tape (news) + supply-side smart-money/activity (alt + radar) + "
                           "factor buy-board (standout) — facts side by side, never pre-blended."}
 
