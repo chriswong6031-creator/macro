@@ -14,6 +14,14 @@ storage:
 # -----------------------------------------------------------------------------
 # Collectors
 # -----------------------------------------------------------------------------
+# Quiver Quantitative alternative-data API (Trader plan). Token via QUIVER_API_KEY.
+# Cross-sectional event feeds (congress/insider/contracts/lobbying/off-exchange/
+# flights/patents/13F/CNBC/social/Trump trades) -> data/quiver/*.parquet -> the
+# Alternative Data desk (engine/altdata.py) + the brain feed (site/altdata/feed.json).
+quiver:
+  base_url: https://api.quiverquant.com
+  timeout: 60
+  retries: 3
 fred:
   # group -> {series_id: column_name}. Stored one parquet per series under data/fred/.
   api_url: https://api.stlouisfed.org/fred/series/observations

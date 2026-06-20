@@ -69,6 +69,7 @@ jobs:
           FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
           POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}   # massive.com options-OI accrual (GEX foundation)
           MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}   # accepted alias (same key, prior .env name)
+          QUIVER_API_KEY: ${{ secrets.QUIVER_API_KEY }}     # Quiver alt-data suite (collectors/quiver.py); absent -> 'blocked', non-fatal
         run: |
           if [ -n "$FRED_API_KEY" ]; then echo "::notice::FRED_API_KEY present — using official API"; else echo "::warning::FRED_API_KEY ABSENT — check repo Settings > Secrets and variables > Actions > Repository secrets"; fi
           python -m scripts.collect
@@ -262,6 +263,11 @@ jobs:
         # curated data/policy/intel.json substrate (falsifiable prediction ledger + rotation
         # map) + the intent-desk output. Display/context-only; additive, returns 0 on any error.
         run: python -m scripts.build_policy_watch || echo "policy watch skipped (additive)"
+      - name: alternative data desk (build_alt_data)
+        # Quiver alt-data suite -> deterministic signals + cross-signal convergence +
+        # the structured brain feed (site/altdata/feed.json) -> site/alt_data.html.
+        # Display/context-only; additive, returns 0 on any error.
+        run: python -m scripts.build_alt_data || echo "alt data skipped (additive)"
       - name: cross-asset vector (build_crossasset)
         # after the commodity/forex/bonds pages, before build_vector (hub last):
         # TSMOM trend + intermarket ratios + correlation regime over keyless

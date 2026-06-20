@@ -1,0 +1,194 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro money(v) -%}
+{% if v is none or v != v %}—{% else %}${{ '{:,.0f}'.format(v|float) }}{% endif %}
+{%- endmacro %}
+{% set s = feed.signals %}
+
+{% block title %}{{ t('Alternative Data', '替代数据') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .ad-hero { margin:26px auto 10px; max-width:1060px; }
+  .ad-hero h1 { font-size:26px; margin:6px 0 4px; }
+  .ad-sub { color:var(--muted); font-size:13px; max-width:780px; }
+  .ad-meta { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
+  .ad-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; max-width:1060px; margin:0 auto; }
+  @media (max-width:760px){ .ad-grid { grid-template-columns:1fr; } }
+  .ad-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:14px auto; max-width:1060px; }
+  .ad-card h2 { font-size:15px; margin:0 0 10px; display:flex; align-items:center; gap:7px; }
+  .ad-card.span2 { grid-column:1 / -1; }
+  table.ad { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.ad th { text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); padding:5px 8px; white-space:nowrap; }
+  table.ad td { padding:5px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.ad tr:last-child td { border-bottom:none; }
+  .tk { font-weight:700; font-variant-numeric:tabular-nums; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .mut2 { color:var(--muted); }
+  .conv { display:flex; flex-wrap:wrap; gap:10px; }
+  .conv-item { flex:1 1 280px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:var(--panel2); }
+  .conv-item .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .score { font-size:11px; padding:2px 8px; border-radius:999px; background:#5b8def22; color:#5b8def; border:1px solid #5b8def55; }
+  .chs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:5px; }
+  .ch { font-size:10.5px; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--muted); }
+  .ch.pol { color:#c77dff; border-color:#c77dff55; } .ch.gov { color:#3fb6c0; border-color:#3fb6c055; }
+  .ch.ins { color:#46b87a; border-color:#46b87a55; } .ch.trump { color:#e0607a; border-color:#e0607a55; }
+  .ad-cov { display:flex; flex-wrap:wrap; gap:8px; max-width:1060px; margin:8px auto; }
+  .cov { font-size:11px; padding:6px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
+  .cov b { font-variant-numeric:tabular-nums; } .cov.empty { opacity:.45; }
+  .feedlink { font-size:11.5px; }
+{% endblock %}
+
+{% block content %}
+<section class="ad-hero">
+  <p class="eyebrow">📊 {{ t('Alternative Data Desk', '替代数据桌') }}</p>
+  <h1>{{ t('Alternative Data', '替代数据') }}</h1>
+  <p class="ad-sub">{{ t(
+     'Politician trades, government contracts, insider activity, lobbying, off-exchange flow, institutional 13F changes, Donald Trump trades and crowd attention — normalized into deterministic signals and a structured feed for the reasoning brain. Display / context-only.',
+     '政客交易、政府合同、内部人活动、游说、场外资金流、机构13F变化、特朗普交易与散户热度——标准化为确定性信号和供推理大脑使用的结构化数据流。仅供展示/参考。') }}</p>
+  <div class="ad-meta">
+    <span class="chip tag-event">{{ feed.source }}</span>
+    <span class="chip">{{ t('As of', '截至') }} {{ feed.as_of }}</span>
+    <span class="chip">{{ '{:,}'.format(feed.datasets.values()|map(attribute='rows')|sum) }} {{ t('events', '事件') }}</span>
+    <a class="chip feedlink" href="altdata/feed.json">🧠 {{ t('Brain feed (JSON)', '大脑数据流 (JSON)') }}</a>
+  </div>
+</section>
+
+{# ---------------- Convergence: the connection layer ---------------- #}
+<div class="ad-card span2">
+  <h2>🔗 {{ t('Cross-signal convergence', '跨信号汇聚') }}
+      <span class="mut2" style="font-weight:400;font-size:12px">— {{ t('tickers lit by ≥2 independent channels', '被≥2个独立渠道同时触发的标的') }}</span></h2>
+  {% if s.convergence %}
+  <div class="conv">
+    {% for c in s.convergence %}
+    <div class="conv-item">
+      <div class="top"><span class="tk">{{ c.ticker }}</span><span class="score">{{ c.score }} {{ t('signals', '信号') }}</span></div>
+      <div class="chs">{% for ch in c.channel_list %}<span class="ch {{ 'pol' if 'congress' in ch else 'gov' if 'gov' in ch or 'lobby' in ch else 'ins' if 'insider' in ch or '13f' in ch else 'trump' if 'trump' in ch else '' }}">{{ ch }}</span>{% endfor %}</div>
+      <div class="mut2" style="font-size:11px">{{ c.why }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="mut2">{{ t('No multi-channel convergence in the current window.', '当前窗口无多渠道汇聚。') }}</p>{% endif %}
+</div>
+
+<div class="ad-grid">
+  {# ---------------- Donald Trump trades ---------------- #}
+  <div class="ad-card">
+    <h2>🟥 {{ t('Donald Trump trades', '特朗普交易') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Name','名称') }}</th><th>{{ t('Side','方向') }}</th><th class="num">{{ t('Est. $','估值') }}</th><th class="num">{{ t('Filed','申报') }}</th></tr></thead><tbody>
+    {% for r in s.trump[:14] %}
+      <tr><td><span class="tk">{{ r.ticker or '' }}</span> <span class="mut2">{{ (r.company or '')[:22] }}</span></td>
+          <td class="{{ 'r-pos' if r.side=='buy' else 'r-neg' if r.side=='sell' else '' }}">{{ r.side or r.transaction or '' }}</td>
+          <td class="num">{{ money(r.est_usd) }}</td><td class="num mut2">{{ r.filed or '' }}</td></tr>
+    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Congress net flow ---------------- #}
+  <div class="ad-card">
+    <h2>🏛️ {{ t('Congress net buying (90d)', '国会净买入 (90天)') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net','净') }}</th><th class="num">{{ t('Members','议员') }}</th><th class="num">{{ t('Est. $','估值') }}</th><th>{{ t('Party','党') }}</th></tr></thead><tbody>
+    {% for r in s.political.buys[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num r-pos">+{{ r.net }}</td><td class="num">{{ r.members }}</td><td class="num">{{ money(r.est_usd) }}</td><td class="mut2">{{ r.parties or '' }}</td></tr>
+    {% else %}<tr><td colspan="5" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Gov contracts ---------------- #}
+  <div class="ad-card">
+    <h2>📜 {{ t('Government contract leaders (30d)', '政府合同领先 (30天)') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Awarded','金额') }}</th><th class="num">{{ t('#','数') }}</th><th>{{ t('Top agency','主要机构') }}</th></tr></thead><tbody>
+    {% for r in s.gov_contracts[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td><td class="num">{{ r.contracts }}</td><td class="mut2">{{ (r.top_agency or '')[:26] }}</td></tr>
+    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Lobbying ---------------- #}
+  <div class="ad-card">
+    <h2>💼 {{ t('Lobbying spend (45d)', '游说支出 (45天)') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Spend','支出') }}</th><th class="num">{{ t('Spike×','激增×') }}</th><th>{{ t('Top issue','主要议题') }}</th></tr></thead><tbody>
+    {% for r in s.lobbying[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.spend_usd) }}</td><td class="num">{{ ('%.1f×' % r.spike_x) if r.spike_x else '·' }}</td><td class="mut2">{{ (r.top_issue or '')[:26] }}</td></tr>
+    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Insiders ---------------- #}
+  <div class="ad-card">
+    <h2>👔 {{ t('Insider net buying (90d, open-market)', '内部人净买入 (90天, 公开市场)') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Net $','净额') }}</th><th class="num">{{ t('Buyers','买方') }}</th></tr></thead><tbody>
+    {% for r in s.insiders.buys[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num r-pos">{{ money(r.net_usd) }}</td><td class="num">{{ r.buyers }}</td></tr>
+    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- 13F ---------------- #}
+  <div class="ad-card">
+    <h2>🏦 {{ t('Institutional 13F adds', '机构13F加仓') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Fund','基金') }}</th><th class="num">{{ t('Δ $','Δ金额') }}</th></tr></thead><tbody>
+    {% for r in s.inst_13f.adds[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="mut2">{{ (r.fund or '')[:22] }}</td><td class="num r-pos">{{ money(r.chg_usd) }}</td></tr>
+    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Off-exchange ---------------- #}
+  <div class="ad-card">
+    <h2>🌑 {{ t('Off-exchange / dark-pool flow', '场外/暗池资金流') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('OTC vol','场外量') }}</th><th class="num">{{ t('DPI','DPI') }}</th><th>{{ t('Lean','倾向') }}</th></tr></thead><tbody>
+    {% for r in s.offexchange[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.otc_total) }}</td><td class="num">{{ r.dpi }}</td><td class="{{ 'r-pos' if r.lean=='accumulation' else 'r-neg' if r.lean=='distribution' else 'mut2' }}">{{ r.lean }}</td></tr>
+    {% else %}<tr><td colspan="4" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- CNBC + WSB ---------------- #}
+  <div class="ad-card">
+    <h2>📺 {{ t('CNBC picks & crowd', 'CNBC选股与散户') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Direction','方向') }}</th><th>{{ t('Trader','交易员') }}</th></tr></thead><tbody>
+    {% for r in s.cnbc[:8] %}
+      <tr><td class="tk">{{ r.Ticker }}</td><td class="{{ 'r-pos' if (r.Direction or '')|lower in ['buy','final trade'] else '' }}">{{ r.Direction }}</td><td class="mut2">{{ (r.Traders or '')[:20] }}</td></tr>
+    {% endfor %}
+    </tbody></table>
+    {% if s.wsb %}<div class="mut2" style="margin-top:8px;font-size:11.5px">🦍 {{ t('WSB top:','WSB热度:') }}
+      {% for r in s.wsb[:8] %}<span class="tk">{{ r.ticker }}</span><span class="mut2">({{ r.mentions }})</span>{{ ' · ' if not loop.last }}{% endfor %}</div>{% endif %}
+  </div>
+
+  {# ---------------- Corporate donors ---------------- #}
+  <div class="ad-card">
+    <h2>💸 {{ t('Corporate PAC donors', '企业PAC捐赠') }}</h2>
+    <table class="ad"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Donated','捐赠额') }}</th><th class="num">{{ t('Pols','议员') }}</th></tr></thead><tbody>
+    {% for r in s.corporate_donors[:12] %}
+      <tr><td class="tk">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td><td class="num">{{ r.politicians }}</td></tr>
+    {% else %}<tr><td colspan="3" class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+
+  {# ---------------- Quiver news feed ---------------- #}
+  <div class="ad-card">
+    <h2>📰 {{ t('Quiver news feed', 'Quiver新闻') }}</h2>
+    <table class="ad"><tbody>
+    {% for r in s.news[:10] %}
+      <tr><td>{% if r.ticker %}<span class="tk">{{ r.ticker }}</span> {% endif %}<a href="{{ r.url }}" target="_blank" rel="noopener">{{ (r.headline or '')[:78] }}</a>
+          <div class="mut2" style="font-size:10.5px">{{ r.category }} · {{ r.time }}</div></td></tr>
+    {% else %}<tr><td class="mut2">{{ t('No data yet.','暂无数据。') }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+</div>
+
+{# ---------------- Coverage strip ---------------- #}
+<div class="ad-card span2">
+  <h2>🗂️ {{ t('Dataset coverage', '数据集覆盖') }}</h2>
+  <div class="ad-cov">
+    {% for k, d in feed.datasets.items() %}
+      <span class="cov {{ 'empty' if d.rows==0 }}">{{ d.emoji }} {{ t(d.label_en, d.label_zh) }} · <b>{{ '{:,}'.format(d.rows) }}</b>{% if d.last_seen %} · {{ d.last_seen }}{% endif %}</span>
+    {% endfor %}
+  </div>
+  <p class="mut2" style="font-size:11px;margin-top:10px">{{ t(
+    'Source: Quiver Quantitative. Public-record data only (SEC, OGE, STOCK Act, USASpending, FINRA). Deterministic and display-only — these signals do not feed any scored axis or allocation. The structured feed above powers the reasoning brain that connects them to themes and the stock database.',
+    '数据来源：Quiver Quantitative。仅公开记录数据（SEC、OGE、STOCK法案、USASpending、FINRA）。确定性且仅供展示——这些信号不进入任何评分轴或配置。上方结构化数据流为将其与主题及股票数据库关联的推理大脑提供输入。') }}</p>
+</div>
+{% endblock %}
