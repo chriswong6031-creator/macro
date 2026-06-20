@@ -53,9 +53,14 @@ EXT_FLOOR = 20.0
 BEYOND_REL = 10.0         # >10pp above the basket's MEDIAN % over 200d MA = extended beyond theme
 # leads its theme on 20d relative strength
 LEAD_RANK = 0.55
-# a laggard with room (catch-up candidate territory — RS-slope detection is a later move)
+# a laggard with room (catch-up candidate territory)
 LAG_RANK = 0.35
 LAG_EXT = 10.0
+# CATCH-UP laggard (the alternative entry when the leaders' entry is gone): a laggard whose
+# SHORT-window relative strength has turned UP — it lags the theme over 20d but now LEADS it over
+# the last ~10d. In a hot theme that divergence is the rotation-down-the-quality-ladder setup.
+FAST_WIN = 10             # trading-day lookback for the "turning up now" relative-strength read
+TURN_RANK = 0.55          # ...and it must lead the basket over that fast window (top ~45%)
 # a theme has "run hot" only when its TYPICAL member is meaningfully extended. Gating on the
 # median (not just "≥2 names extended") keeps the panel on its premise — re-reading extension
 # inside a theme that actually rallied — and drops flat, high-dispersion themes where a couple of
@@ -67,12 +72,13 @@ HOT_MEDIAN = 12.0
 # "leader" = extended + leads its theme + NOT parabolic vs its own history => the name to TIME an
 # entry on (wait for a pullback), not to blanket-veto for tripping the absolute brake.
 BANDS = {
-    "leader":   ("Leader · time the entry", "领涨 · 等回调",  "pos"),
-    "extended": ("Extended",                "延展偏高",       "warn"),
-    "beyond":   ("Extended beyond theme",   "延展超出主题",   "neg"),
-    "laggard":  ("Laggard · room",          "落后 · 有空间",  "neu"),
-    "in_range": ("In range",                "区间内",         "neu"),
-    "na":       ("—",                       "—",             "neu"),
+    "leader":   ("Leader · time the entry",      "领涨 · 等回调",  "pos"),
+    "extended": ("Extended",                     "延展偏高",       "warn"),
+    "beyond":   ("Extended beyond theme",        "延展超出主题",   "neg"),
+    "catch_up": ("Laggard turning up · catch-up", "落后转强 · 补涨", "pos"),
+    "laggard":  ("Laggard · room",               "落后 · 有空间",  "neu"),
+    "in_range": ("In range",                     "区间内",         "neu"),
+    "na":       ("—",                            "—",             "neu"),
 }
 _PARABOLIC_LABEL = ("Parabolic — chase", "抛物 — 追高")
 
@@ -112,14 +118,19 @@ def _r(x, n: int = 2):
     return round(float(x), n)
 
 
-def _ret20(s: pd.Series) -> float | None:
+def _ret_n(s: pd.Series, n: int) -> float | None:
+    """% return over the last n trading days (last close / close n bars ago − 1)."""
     s = s.dropna()
-    if len(s) < 21:
+    if len(s) < n + 1:
         return None
-    a, b = s.iloc[-21], s.iloc[-1]
+    a, b = s.iloc[-(n + 1)], s.iloc[-1]
     if not np.isfinite(a) or a == 0 or not np.isfinite(b):
         return None
     return (b / a - 1.0) * 100.0
+
+
+def _ret20(s: pd.Series) -> float | None:
+    return _ret_n(s, 20)
 
 
 def _mt(m: dict):
@@ -158,6 +169,7 @@ def _theme_rows(closes: pd.DataFrame, ext_sig: dict[str, dict], bid: str, b: dic
             "ext_z": _r(sig.get("ext_z")),           # own-history extension z
             "grade": sig.get("grade"),
             "ret20": _r(_ret20(closes[t]), 1),
+            "ret_fast": _r(_ret_n(closes[t], FAST_WIN), 1),   # short-window return → the "turning up" read
         })
     # the cross-section needs members with an extension read
     ext_vals = [r["ext"] for r in recs if r["ext"] is not None]
@@ -166,33 +178,52 @@ def _theme_rows(closes: pd.DataFrame, ext_sig: dict[str, dict], bid: str, b: dic
     med = float(np.median(ext_vals))
     ext_rank = pd.Series({r["ticker"]: r["ext"] for r in recs if r["ext"] is not None}).rank(pct=True)
     rs_rank = pd.Series({r["ticker"]: r["ret20"] for r in recs if r["ret20"] is not None}).rank(pct=True)
+    # within-basket rank of the SHORT-window return — leading it now = relative strength turning up
+    rs_fast_rank = pd.Series({r["ticker"]: r["ret_fast"]
+                              for r in recs if r["ret_fast"] is not None}).rank(pct=True)
 
     out = []
     for r in recs:
         er = ext_rank.get(r["ticker"])
         rr = rs_rank.get(r["ticker"])
+        rfr = rs_fast_rank.get(r["ticker"])
         rel = None if r["ext"] is None else r["ext"] - med
         band, parab = classify_member(r["ext"], rel,
                                       None if rr is None else float(rr), r["grade"])
         en, zh, tone = _band_labels(band, parab)
         out.append({**r, "ext_rel": _r(rel, 1), "ext_rank": _r(er), "rs_rank": _r(rr),
+                    "rs_fast_rank": _r(rfr),
                     "band": band, "band_en": en, "band_zh": zh, "tone": tone,
                     "parabolic": parab})
-    # leaders + the chase read at the top; then by extension desc
-    _order = {"beyond": 0, "leader": 1, "extended": 2, "in_range": 3, "laggard": 4, "na": 5}
+
+    n_ext = sum(1 for x in out if x["band"] in ("leader", "extended", "beyond"))
+    hot = med >= HOT_MEDIAN and n_ext >= 2            # typical member extended = the "theme ran hot" case
+    # CATCH-UP upgrade: a laggard that now LEADS the basket over the short window, inside a hot
+    # theme = the rotation-down-the-quality-ladder entry. Only meaningful when the theme has
+    # actually run (catch up to WHAT otherwise), so it is gated on `hot`.
+    if hot:
+        for x in out:
+            if x["band"] == "laggard" and x["rs_fast_rank"] is not None \
+                    and x["rs_fast_rank"] >= TURN_RANK:
+                x["band"] = "catch_up"
+                x["band_en"], x["band_zh"], x["tone"] = _band_labels("catch_up", False)
+
+    # actionable reads first (leaders + catch-ups), then the chase/extended, then the rest
+    _order = {"beyond": 0, "leader": 1, "catch_up": 2, "extended": 3,
+              "in_range": 4, "laggard": 5, "na": 6}
     out.sort(key=lambda x: (_order.get(x["band"], 9), -(x["ext"] if x["ext"] is not None else -1e9)))
 
-    n_leaders = sum(1 for x in out if x["band"] == "leader")
-    n_beyond = sum(1 for x in out if x["band"] == "beyond")
-    n_ext = sum(1 for x in out if x["band"] in ("leader", "extended", "beyond"))
     return {
         "id": bid, "name": b.get("name", bid),
         "name_zh": b.get("name_zh", b.get("name", bid)),
         "category": b.get("category", "Other"),
         "n": len([r for r in recs if r["ext"] is not None]),
         "median_ext": _r(med, 1),
-        "n_leaders": n_leaders, "n_beyond": n_beyond, "n_extended": n_ext,
-        "hot": med >= HOT_MEDIAN and n_ext >= 2,      # typical member extended = the "theme ran hot" case
+        "n_leaders": sum(1 for x in out if x["band"] == "leader"),
+        "n_beyond": sum(1 for x in out if x["band"] == "beyond"),
+        "n_extended": n_ext,
+        "n_catchup": sum(1 for x in out if x["band"] == "catch_up"),
+        "hot": hot,
         "members": out,
     }
 
@@ -225,7 +256,8 @@ def compute_member_context(region: str = "us") -> dict | None:
                 "band": m["band"], "band_en": m["band_en"], "band_zh": m["band_zh"],
                 "tone": m["tone"], "parabolic": m["parabolic"],
                 "ext": m["ext"], "ext_rel": m["ext_rel"], "ext_rank": m["ext_rank"],
-                "rs_rank": m["rs_rank"], "median_ext": row["median_ext"],
+                "rs_rank": m["rs_rank"], "rs_fast_rank": m["rs_fast_rank"],
+                "median_ext": row["median_ext"],
             })
     if not themes:
         return None
@@ -236,10 +268,12 @@ def compute_member_context(region: str = "us") -> dict | None:
         "as_of": last.strftime("%Y-%m-%d"),
         "region": s.get("region", region),
         "method": ("Per live member: % above its own 200d MA (ext), own-history extension grade, "
-                   "and 20d return — each ranked WITHIN its basket. ext_rel = member ext − basket "
-                   "median ext."),
+                   "and 20d + " + str(FAST_WIN) + "d returns — each ranked WITHIN its basket. "
+                   "ext_rel = member ext − basket median ext. A laggard (low 20d rank) leading the "
+                   "basket over the " + str(FAST_WIN) + "d window inside a hot theme = catch-up."),
         "thresholds": {"ext_floor": EXT_FLOOR, "beyond_rel": BEYOND_REL,
-                       "lead_rank": LEAD_RANK, "hot_median": HOT_MEDIAN},
+                       "lead_rank": LEAD_RANK, "hot_median": HOT_MEDIAN,
+                       "fast_win": FAST_WIN, "turn_rank": TURN_RANK},
         "disclaimer_en": ("Display-only cohort context for the validated per-name extension brake: "
                           "is a name extended because it LEADS a moving theme (so the trade is to "
                           "wait for a pullback, not to veto it) or because it spiked BEYOND its "
