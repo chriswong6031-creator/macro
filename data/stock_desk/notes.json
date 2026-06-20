@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-18",
-  "generated_at": "2026-06-20T04:26:43.957851+00:00",
+  "generated_at": "2026-06-20T06:01:56.762692+00:00",
   "degraded": null,
   "notes": [
     {
@@ -11,16 +11,16 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The FRESH BUY cycle off the 246.55 swing low and the reclaim of the 10-day average support a constructive lean, reinforced by a strong earnings surprise (SUE z=3.0) and analyst revisions; the entry axis shows -2% off the 52-week high, avoiding the 'don't chase' brake.",
+      "thesis": "Fresh buy signal with strong event-edge selection (SUE z=3.0, revisions, insider) and a minimal 2% off highs after a cycle low \u2014 the risk-controlled entry supports a relative outperformance lean despite macro liquidity headwinds.",
       "evidence": [
-        "selection axis: SUE z=3.0 fresh 19 days (validated leg)",
-        "entry axis: off-high pct -2.0%, RSI 62 not overbought",
-        "cycle: daily_phase approaching_band, no failed_cycle",
-        "verdict: High-conviction, no cycle_blocked"
+        "selection axis: SUE fresh 19d, revisions, momentum positive",
+        "entry axis: off-high -2%, RSI 62 not overbought, urgent buy zone",
+        "cycle_blocked false, ladder_state FRESH BUY",
+        "risk control: no caution flags, earnings proximity not flagged"
       ],
-      "dissent": "Contraction in US net liquidity and the elevated macro-risk flag for a macro-sensitive name could abruptly end the young bullish cycle.",
+      "dissent": "Macro net liquidity contraction and elevated macro risk for industrial names could stall the rally; high selection score does not imply a guaranteed edge over the S&P 500.",
       "falsifier": {
-        "text": "A daily close below the 246.55 swing low would invalidate the fresh buy cycle.",
+        "text": "If HWM closes below the recent swing low of $246.55 within 20 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "HWM",
@@ -37,29 +37,29 @@
       "id": "2026-06-18-MCY-2",
       "ticker": "MCY",
       "name": "Mercury General",
-      "lean": "cautious",
+      "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "MCY is at its 52-week high (0.0% off) and extended within its RALLY ON phase; the 'don't chase' entry brake applies, and the contracting macro liquidity backdrop warrants a cautious lean despite the high selection scores.",
+      "horizon_d": 20,
+      "thesis": "Uptrend intact with earnings/insider/revisions edge and clean fundamentals; the hold signal at 52-week highs avoids immediate extension risk, favoring modest relative strength over the market.",
       "evidence": [
-        "entry axis: off-high 0.0%, pullback/extended flag present",
-        "entry_urgency: hold, not buy",
-        "macro points: US net liquidity contracting",
-        "selection SUE z=1.26, revisions z=1.99 (display-only at this horizon)"
+        "selection axis: SUE 1.26, revisions 1.99, momentum 1.64",
+        "entry axis: off-high 0% but not extended, RSI 59, above MAs",
+        "quality axis: factors positive, accounting clean",
+        "cycle_blocked false, ladder_state RALLY ON"
       ],
-      "dissent": "Sustained trend momentum and a positive earnings surprise could drive further gains if macro conditions stabilize.",
+      "dissent": "Being at exact 52-week highs leaves no buffer against a quick mean-reversion; small-cap financial sector rotations could undercut event-driven narratives.",
       "falsifier": {
-        "text": "A daily close below the 10-day moving average would signal a trend break and support the cautious view.",
+        "text": "If MCY closes below its 50-day moving average (~$98.0) within 20 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MCY",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 15
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-09",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
@@ -69,16 +69,15 @@
       "lean": "cautious",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The TURN SIGNALED bottoming setup is forming, but the mixed weekly timeframe and elevated macro risk for a macro-sensitive name keep conviction low; the engine's HALF SIZE tag acknowledges the partial signal.",
+      "thesis": "Early bottoming signal with event edge (revisions, momentum) but weekly trend not yet confirmed and entry tagged HALF SIZE \u2014 the cautious lean reflects the elevated macro headwind and incomplete turnaround structure.",
       "evidence": [
-        "entry axis: pullback/extended present, off-high -7.6%",
-        "selection axis: revision z=1.36, alpha z=1.45, no SUE leg",
-        "regime_label: MIXED, weekly not yet turned",
-        "macro: aggregate macro risk elevated"
+        "selection axis: revisions 1.36, momentum 1.45, no SUE present",
+        "entry axis: pullback/extended, off-high -7.6%, RSI 51, MACD still negative",
+        "signal: TURN SIGNALED, half-size entry, macro-sensitive name with liquidity contraction"
       ],
-      "dissent": "If the weekly trend shifts bullish, the deep pullback could produce a powerful bounce given the early cycle entry.",
+      "dissent": "Insider-buying event edge and strong revisions could accelerate a bounce that outperforms despite macro; the half-size entry already accounts for risk.",
       "falsifier": {
-        "text": "A daily close below the 16.77 swing low would negate the bottoming pattern.",
+        "text": "If WT closes below the swing low of $16.77 within 20 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "WT",
@@ -97,27 +96,26 @@
       "name": "OFG Bancorp",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "OFG is in BOTTOM WATCH with price still below the 10-day average; the engine's WAIT directive makes a constructive lean premature, and macro headwinds exacerbate caution.",
+      "horizon_d": 20,
+      "thesis": "Bottom-watch setup with high SUE but still below the 10-day average and the engine marking 'WAIT'; the bullish bigger picture is offset by a not-yet-confirmed entry, so cautious until price reclaims the trigger.",
       "evidence": [
-        "ladder_state: BOTTOM WATCH, entry_urgency: later",
-        "technical: price still below 10-day average",
-        "macro: US net liquidity contracting",
-        "selection SUE z=2.69 but cross-sectional rank not a validated return predictor at this horizon"
+        "selection axis: SUE 2.69, revisions 0.93, momentum modest",
+        "entry axis: off-high -2.9%, RSI 55, but still below 10-day MA",
+        "ladder_state: BOTTOM WATCH, entry urgency later"
       ],
-      "dissent": "The strong earnings surprise (SUE z=2.69) could quickly attract buying if price reclaims the 10-day average, making the setup high-probability.",
+      "dissent": "Financials with strong SUE and 11% above 200-day MA could break higher quickly once the 10-day average is recovered, leaving the cautious lean behind.",
       "falsifier": {
-        "text": "A daily close above the 10-day moving average would resolve the bottom watch and support a shift to constructive.",
+        "text": "If OFG fails to reclaim and hold above its 10-day moving average within 15 trading days, or closes below the 50-day MA (~$45.2).",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "OFG",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 10
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-02",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
@@ -126,52 +124,52 @@
       "name": "Atmos Energy",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The RALLY ON uptrend runs counter to a bearish bigger picture (price below both 50- and 200-day averages), and the prior left-translated cycle hints at tired trend structure; the accounting watch flag adds risk.",
+      "horizon_d": 20,
+      "thesis": "Counter-trend rally in a bearish weekly structure with left-translated prior cycle and accounting watch; while SUE is high, the larger down-trend and below-200-day positioning warrant a cautious lean despite the ongoing daily uptrend.",
       "evidence": [
-        "regime_label: BEARISH, counter-trend",
-        "technical: below 50- and 200-day moving averages",
-        "cycle: prior cycle left-translated",
-        "caution: accounting watch"
+        "signal: bigger picture bearish, prior cycle topped early",
+        "selection: SUE z=3.0 but momentum negative",
+        "quality axis: accounting flagged 'watch'",
+        "technicals: price below 50/200-day MAs, RSI 42"
       ],
-      "dissent": "As a utility, ATO might attract safe-haven flows in a risk-off macro environment, but the bearish technical damage outweighs that narrative.",
+      "dissent": "Stable utility SUE and potential safe-haven flows could create a sustained mean-reversion rally that outperforms the S&P 500.",
       "falsifier": {
-        "text": "A daily close above the 200-day moving average would challenge the bearish regime and weaken the cautious lean.",
+        "text": "If ATO's daily MACD histogram turns negative and price closes below its rising 10-day moving average within 15 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ATO",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-09",
+      "check_by": "2026-07-16",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
       "id": "2026-06-18-GNL-6",
       "ticker": "GNL",
       "name": "Global Net Lease, Inc.",
-      "lean": "cautious",
+      "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "GNL shows a bottoming signal with a swing low, but price has not reclaimed the 10-day average and daily momentum just crossed down; the 'BUY SOON' urgency advises waiting for confirmation, and macro headwinds support a cautious lean.",
+      "thesis": "Turn-signaled bottoming with insider/revisions event edge and imminent buy trigger, despite momentum just crossing down \u2014 the risk-controlled setup with a nearby swing low offers a constructive relative lean over the market.",
       "evidence": [
-        "ladder_state: TURN SIGNALED but still below 10-day average",
-        "entry_tag: BUY SOON, not BUY NOW",
-        "daily momentum crossed down",
-        "macro: aggregate macro risk elevated"
+        "selection axis: revisions z=2.44, SUE 1.04, momentum positive overall",
+        "entry axis: off-high -5.6%, RSI 45 not stretched, urgency imminent",
+        "entry tag: BUY SOON with half-size risk control implied by bottoming structure",
+        "cycle_blocked false"
       ],
-      "dissent": "Strong analyst revisions (z=2.44) and SUE (z=1.04) could drive a rapid technical recovery once the bottom is confirmed.",
+      "dissent": "Momentum just crossed down and still below the 10-day average, while the 'accounting watch' flag raises fundamental uncertainty; the bottom may not be fully formed.",
       "falsifier": {
-        "text": "A daily close above the 10-day moving average would confirm the bottoming and support a shift to constructive.",
+        "text": "If GNL closes below the swing low printed on 2026-06-17 (approx $9.00) within 20 trading days.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "GNL",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
+          "op": "<",
+          "threshold": -0.05,
           "horizon_d": 20
         }
       },
