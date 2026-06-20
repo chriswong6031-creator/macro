@@ -1,6 +1,10 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{% macro b(d) -%}
+<span class="l-en">{{ d.en }}</span><span class="l-zh">{{ d.zh }}</span>
+{%- endmacro %}
+{% macro pct(v) -%}{{ (v*100)|round|int if v is not none else '—' }}{%- endmacro %}
 {% macro vg(verdict) -%}
 {%- if verdict == 'CONFIRMED' -%}<span class="lvg vg-measured" title="split-half forward-IC confirmed">✓</span>
 {%- elif verdict == 'DIRECTIONAL' -%}<span class="lvg vg-directional" title="full-sample only">~</span>
@@ -110,6 +114,48 @@ table.gate{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
 table.gate th,table.gate td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--grid)}
 table.gate th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em}
 table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
+/* === yield-curve scorecards === */
+.pcabar{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 4px;border:1px solid var(--grid)}
+.pcabar span{display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.pcabar .pc-l{background:var(--indigo)}.pcabar .pc-s{background:var(--blue)}.pcabar .pc-c{background:var(--teal)}.pcabar .pc-r{background:var(--faint)}
+.pcalegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:2px}
+.pcalegend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:baseline}
+.regchip{display:inline-block;padding:6px 15px;border-radius:999px;font-size:16px;font-weight:800;color:#fff;letter-spacing:.01em}
+.favrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px;align-items:center}
+.favrow .fl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-right:2px}
+.favrow .fl.fav{color:var(--green)}.favrow .fl.pres{color:var(--red)}
+.tkpill{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.tkpill.fav{background:rgba(26,127,67,.12);color:var(--green)}
+.tkpill.pres{background:rgba(211,11,11,.10);color:var(--red)}
+.recgauges{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:8px 0 4px}
+.recg{padding:9px 11px;border-radius:11px;background:#eef1f6}
+html[data-theme="dark"] .recg{background:#222732}
+.recg .rgl{font-size:11px;color:var(--muted);line-height:1.3}
+.recg .rgv{font-size:18px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:1px}
+.recg.flag-on{background:rgba(211,11,11,.12)}
+.recg.flag-on .rgv{color:var(--red)}
+.sectilt{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-top:8px}
+.stile{padding:7px 9px;border-radius:10px;font-size:12px;border:1px solid var(--grid);background:var(--card)}
+.stile .se{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.stile .sb{float:right;font-size:9px;font-weight:700;padding:1px 5px;border-radius:5px;background:#eef1f6;color:var(--muted)}
+html[data-theme="dark"] .stile .sb{background:#222732}
+.stile .sb.meas{background:rgba(26,127,67,.14);color:var(--green)}
+.stile .sm{font-size:10.5px;color:var(--faint);margin-top:3px;line-height:1.35}
+.stile.tail{background:rgba(26,127,67,.07);border-color:rgba(26,127,67,.28)}
+.stile.head{background:rgba(211,11,11,.06);border-color:rgba(211,11,11,.28)}
+table.slopes{width:100%;border-collapse:collapse;font-size:12.5px}
+table.slopes th,table.slopes td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--grid)}
+table.slopes th:first-child,table.slopes td:first-child{text-align:left}
+table.slopes tr:last-child td{border-bottom:none}
+table.slopes th{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.03em}
+table.slopes td{font-variant-numeric:tabular-nums;color:var(--text)}
+table.slopes td.nm{color:var(--ink);font-weight:600}
+table.slopes td.inv{color:var(--red);font-weight:700}
+.facrow{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.facpill{display:inline-flex;flex-direction:column;padding:7px 13px;border-radius:11px;background:#eef1f6;min-width:120px}
+html[data-theme="dark"] .facpill{background:#222732}
+.facpill .fk{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.facpill .fv{font-size:15px;font-weight:800;color:var(--ink)}
 </style>
 {% include "_vector_polish.html.j2" %}
 </head>
@@ -129,7 +175,7 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="wrap">
   <div class="brand">🔀 {{ t('Rate & Inflation', '利率与通胀') }} <span class="gn">{{ t('Transmission', '传导') }}</span></div>
-  <p class="lead">{{ t('How the interest-rate, rate-expectations and inflation (CPI · core PCE) state propagates — first, second and third order — into every asset class we track: the headwind / tailwind each one faces now, the causal chains behind it, and what a rate or inflation shock would imply. Coefficients are MEASURED (split-half forward IC); display-only, never a trade call — repricing is reactive.', '利率、利率预期与通胀（CPI · 核心PCE）的当前状态如何一阶、二阶、三阶地传导至我们跟踪的每一类资产：各资产当前面临的逆风/顺风、其背后的因果链，以及一次利率或通胀冲击意味着什么。系数均为实测（前后半段前瞻IC）；仅供展示，绝非交易建议——重定价是被动的。') }}
+  <p class="lead">{{ t('How the interest-rate, rate-expectations and inflation (CPI · core PCE) state propagates — first, second and third order — into every asset class we track: the full yield-curve read (shape, regime, recession & cross-asset signals), the headwind / tailwind each asset faces now, the causal chains behind it, and what a rate or inflation shock would imply. Coefficients are MEASURED (split-half forward IC); display-only, never a trade call — repricing is reactive.', '利率、利率预期与通胀（CPI · 核心PCE）的当前状态如何一阶、二阶、三阶地传导至我们跟踪的每一类资产：完整的收益率曲线解读（形态、状态、衰退与跨资产信号）、各资产当前面临的逆风/顺风、其背后的因果链，以及一次利率或通胀冲击意味着什么。系数均为实测（前后半段前瞻IC）；仅供展示，绝非交易建议——重定价是被动的。') }}
   <span class="faint">· {{ t('As of', '截至') }} {{ as_of }}</span></p>
 
   {% set S = tx.state %}
@@ -184,6 +230,128 @@ table.gate td.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="dc"><div class="dcl">{{ t('Actual − market-priced','实际−市场定价') }}</div><div class="dcv">{{ D.actual_vs_market_bp|round|int if D.actual_vs_market_bp is not none else '—' }}bp</div><div class="dcn">{{ t('core CPI vs 10y breakeven','核心CPI vs 10年盈亏平衡') }}</div></div>
     </div>
   </div>
+
+  {% if yc %}
+  <!-- ===================== YIELD CURVE ===================== -->
+  <div class="sec-head">{{ t('Yield curve — shape, regime, recession & cross-asset signals', '收益率曲线 — 形态、状态、衰退与跨资产信号') }}</div>
+  <p class="sub" style="margin:-4px 0 14px">{{ b(yc.signals.core_macro) }}</p>
+  <div class="grid cols-3">
+    <!-- ---- Curve shape & decomposition ---- -->
+    <div class="card">
+      <h2>{{ t('Curve shape', '曲线形态') }}</h2>
+      {% set SH = yc.shape %}
+      <div class="decomp" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="dc"><div class="dcl">{{ t('Level (avg yield)','水平（平均收益率）') }}</div><div class="dcv">{{ '%.2f'|format(SH.level.value) if SH.level.value is not none else '—' }}<small style="font-size:11px;color:var(--muted)">%</small></div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.level.pctile) }} · {{ '%+d'|format(SH.level.chg_63d|int) if SH.level.chg_63d is not none else '—' }}bp/63d</div></div>
+        <div class="dc"><div class="dcl">{{ t('Slope (2s10s)','斜率（2-10年）') }}</div><div class="dcv">{{ '%+.2f'|format(SH.slope_2s10s.value) if SH.slope_2s10s.value is not none else '—' }}</div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.slope_2s10s.pctile) }} · {{ '%+d'|format(SH.slope_2s10s.chg_63d|int) if SH.slope_2s10s.chg_63d is not none else '—' }}bp/63d</div></div>
+        <div class="dc"><div class="dcl">{{ t('Curvature (2s5s10s fly)','曲率（2-5-10年蝶式）') }}</div><div class="dcv">{{ '%+.2f'|format(SH.fly_2s5s10s.value) if SH.fly_2s5s10s.value is not none else '—' }}</div><div class="dcn">{{ t('pctile','分位') }} {{ pct(SH.fly_2s5s10s.pctile) }} · {{ t('+ humped / − bowed','+隆起／−凹陷') }}</div></div>
+      </div>
+      {% if SH.pca and SH.pca.factors %}
+      <div style="margin-top:12px">
+        <div class="sub" style="font-size:11.5px">{{ t('Principal components of daily curve changes (Litterman-Scheinkman)','日度曲线变动的主成分（Litterman-Scheinkman）') }}</div>
+        <div class="pcabar">
+          {% for fct in SH.pca.factors %}<span class="{{ 'pc-l' if fct.key=='level' else 'pc-s' if fct.key=='slope' else 'pc-c' }}" style="width:{{ (fct.var_explained*100)|round(1) }}%">{{ (fct.var_explained*100)|round|int }}%</span>{% endfor %}
+          {% set resid = 1 - SH.pca.first3_var %}{% if resid and resid > 0.005 %}<span class="pc-r" style="width:{{ (resid*100)|round(1) }}%"></span>{% endif %}
+        </div>
+        <div class="pcalegend"><span><i style="background:var(--indigo)"></i>{{ t('Level','水平') }}</span><span><i style="background:var(--blue)"></i>{{ t('Slope','斜率') }}</span><span><i style="background:var(--teal)"></i>{{ t('Curvature','曲率') }}</span></div>
+        <p class="sub" style="font-size:11px;margin-top:6px">{{ t('The three classic factors span','三个经典因子合计解释') }} <b>{{ (SH.pca.first3_var*100)|round(1) }}%</b> {{ t('of curve variance — the textbook result, measured on our data.','的曲线方差——教科书结论，在我方数据上实测。') }}</p>
+      </div>
+      {% endif %}
+    </div>
+    <!-- ---- Curve regime ---- -->
+    <div class="card">
+      <h2>{{ t('Curve regime', '曲线状态') }}</h2>
+      {% set RG = yc.regime %}
+      {% if RG.key %}
+      {% set rc = {'bull_steepener': C.green, 'bear_steepener': C.amber, 'bull_flattener': C.indigo, 'bear_flattener': C.red} %}
+      <div class="curve-regime">
+        <span class="regchip" style="background:{{ rc.get(RG.key, C.muted) }}">{{ b(RG.label) }}</span>
+        <div class="sub" style="line-height:1.45">{{ b(RG.desc) }}</div>
+        <div class="sub" style="font-size:11.5px"><b style="color:var(--ink)">{{ t('Fed-cycle phase','美联储周期阶段') }}:</b> {{ b(RG.fed_phase) }}{% if RG.slope_chg_bp is not none %} · {{ t('slope','斜率') }} {{ '%+d'|format(RG.slope_chg_bp|int) }}bp/{{ RG.window_d }}d{% endif %}{% if RG.term_premium_dir %} · {{ t('term premium','期限溢价') }} {{ t(RG.term_premium_dir, {'rising':'上行','falling':'下行','stable':'平稳'}.get(RG.term_premium_dir, RG.term_premium_dir)) }}{% endif %}</div>
+        {% if RG.favored %}<div class="favrow"><span class="fl fav">{{ t('Favoured','受益') }}</span>{% for tk in RG.favored %}<span class="tkpill fav">{{ tk }}</span>{% endfor %}</div>{% endif %}
+        {% if RG.pressured %}<div class="favrow"><span class="fl pres">{{ t('Pressured','承压') }}</span>{% for tk in RG.pressured %}<span class="tkpill pres">{{ tk }}</span>{% endfor %}</div>{% endif %}
+        <p class="note" style="font-size:12px;margin-top:4px">{{ b(RG.note) }}</p>
+      </div>
+      {% else %}<p class="sub">{{ t('Curve move indeterminate right now.','当前曲线移动不明确。') }}</p>{% endif %}
+    </div>
+    <!-- ---- Recession dashboard ---- -->
+    <div class="card">
+      <h2>{{ t('Recession dashboard', '衰退面板') }}</h2>
+      {% set RC = yc.recession %}
+      {% set rkc = {'low': C.green, 'watch': C.amber, 'elevated': C.amber, 'high': C.red} %}
+      <span class="band-chip" style="background:{{ rkc.get(RC.risk, C.muted) }}">{{ t(RC.risk, {'low':'低','watch':'观察','elevated':'升高','high':'高'}.get(RC.risk, RC.risk)) }} · {{ RC.n_flags }}/4 {{ t('flags','项亮起') }}</span>
+      <div class="recgauges">
+        <div class="recg {{ 'flag-on' if 'ntfs' in RC.flags else '' }}"><div class="rgl">{{ t('Near-term fwd spread','近端远期利差') }}</div><div class="rgv">{{ '%+.2f'|format(RC.ntfs) if RC.ntfs is not none else '—' }}</div></div>
+        <div class="recg {{ 'flag-on' if 'probit' in RC.flags else '' }}"><div class="rgl">{{ t('NY Fed 10y-3m probit','纽约联储10年-3月概率') }}</div><div class="rgv">{{ RC.nyfed_prob|int if RC.nyfed_prob is not none else '—' }}%</div></div>
+        <div class="recg {{ 'flag-on' if 'uninversion' in RC.flags else '' }}"><div class="rgl">{{ t('Un-inversion alarm','重新变陡警报') }}</div><div class="rgv">{{ t('YES','是') if RC.uninversion else t('no','否') }}</div></div>
+        <div class="recg {{ 'flag-on' if 'tp_adj' in RC.flags else '' }}"><div class="rgl">{{ t('TP-adjusted 2s10s','期限溢价调整2-10年') }}</div><div class="rgv">{{ '%+.2f'|format(RC.tp_adj_curve) if RC.tp_adj_curve is not none else '—' }}</div></div>
+      </div>
+      {% if RC.policy_stance %}{% set PS = RC.policy_stance %}<div class="flag {{ 'warn' if PS.stance=='restrictive' else 'ok' if PS.stance=='accommodative' else 'info' }}" style="display:block;margin:2px 0 6px">{{ t('Policy stance','政策立场') }}: <b>{{ '%.2f'|format(PS.fed_funds) }}%</b> {{ t('funds vs','基金 vs') }} ~{{ '%.1f'|format(PS.neutral_anchor) }}% = {{ t(PS.stance, {'restrictive':'偏紧','accommodative':'宽松','neutral':'中性'}.get(PS.stance, PS.stance)) }} ({{ '%+.2f'|format(PS.gap_pp) }}pp)</div>{% endif %}
+      <p class="note" style="font-size:11.5px;margin-top:4px">{{ b(RC.lead_time_note) }}{% if RC.policy_stance %} {{ b(RC.policy_stance.note) }}{% endif %}</p>
+    </div>
+  </div>
+
+  <!-- ---- slopes table + forwards ---- -->
+  <div class="grid cols-2" style="margin-top:14px">
+    <div class="card">
+      <h2>{{ t('Slopes & momentum', '斜率与动能') }}</h2>
+      <table class="slopes">
+        <tr><th>{{ t('Spread','利差') }}</th><th>{{ t('Level','水平') }}</th><th>{{ t('%ile','分位') }}</th><th>{{ t('63d Δ','63日变动') }}</th></tr>
+        {% for k, s in yc.slopes.items() %}
+        <tr><td class="nm">{{ b(s.label) }}</td><td class="{{ 'inv' if s.inverted else '' }}">{{ '%+.2f'|format(s.value) if s.value is not none else '—' }}</td><td>{{ pct(s.pctile) }}</td><td>{{ '%+d'|format(s.chg_63d_bp|int) if s.chg_63d_bp is not none else '—' }}bp</td></tr>
+        {% endfor %}
+      </table>
+      {% set M = yc.momentum %}
+      <p class="sub" style="font-size:11.5px;margin-top:8px">{{ t('Curve speed (63d)','曲线速度（63日）') }}: {{ t('real 10y','实际10年') }} {{ '%+d'|format(M.real10y_speed_bp|int) if M.real10y_speed_bp is not none else '—' }}bp · {{ t('front 2y','前端2年') }} {{ '%+d'|format(M.front2y_speed_bp|int) if M.front2y_speed_bp is not none else '—' }}bp · {{ t('|real-speed| pctile','|实际速度|分位') }} {{ pct(M.real_speed_pctile) }}. {{ t('Rate-of-change beats level — the SPEED of a real-yield move breaks equities more than its level.','变动速度胜过水平——实际收益率移动的速度比其水平更能冲击股票。') }}</p>
+      {% if M.trend_spread is not none %}<p class="sub" style="font-size:11.5px;margin-top:4px">{{ t('Term-spread trend (2y smooth)','期限利差趋势（2年平滑）') }}: <b style="color:var(--ink)">{{ '%+.2f'|format(M.trend_spread) }}</b>{% if M.trend_spread_dir %} · {{ t(M.trend_spread_dir, {'rising':'上行','falling':'下行','flat':'平稳'}.get(M.trend_spread_dir, M.trend_spread_dir)) }}{% endif %}. {{ t('The literature flags the smoothed, business-cycle-frequency component of the 3m10y spread as the curve read with genuine equity-premium content (Faria-Verona 2020) — but OUR calibration finds it regime-dependent (the IC sign flips post-2015), so we carry it as context, never a timing signal.','文献认为3月-10年利差经平滑的商业周期频率成分是收益率曲线中具有真正股权溢价含义的读数（Faria-Verona 2020）——但我方校准发现其依赖状态（IC符号在2015年后翻转），故仅作背景，绝非择时信号。') }}</p>{% endif %}
+    </div>
+    <div class="card">
+      <h2>{{ t('Forward rates & carry', '远期利率与持有收益') }}</h2>
+      {% set FW = yc.forwards %}
+      <div class="kpis">
+        <div class="kpi">{{ t('1y1y fwd','1年1年远期') }}<b>{{ '%.2f'|format(FW.f_1y1y) if FW.f_1y1y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('2y1y fwd','2年1年远期') }}<b>{{ '%.2f'|format(FW.f_2y1y) if FW.f_2y1y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('5y5y fwd','5年5年远期') }}<b>{{ '%.2f'|format(FW.f_5y5y) if FW.f_5y5y is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('10y carry','10年持有') }}<b>{{ '%.2f'|format(FW.carry_10y_pct) if FW.carry_10y_pct is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('10y roll-down','10年滚动') }}<b>{{ '%+.2f'|format(FW.rolldown_10y_pct) if FW.rolldown_10y_pct is not none else '—' }}%</b></div>
+        <div class="kpi">{{ t('carry + roll','持有＋滚动') }}<b>{{ '%.2f'|format(FW.carry_roll_10y_pct) if FW.carry_roll_10y_pct is not none else '—' }}%</b></div>
+      </div>
+      <p class="note" style="font-size:12px;margin-top:10px">{{ b(FW.note) }}</p>
+    </div>
+  </div>
+
+  <!-- ---- signal families: sector tilt + factor + market tendency ---- -->
+  <div class="card" style="margin-top:14px">
+    <h2>{{ t('Curve signals — sector, style & market tendency', '曲线信号 — 板块、风格与市场倾向') }}</h2>
+    {% set SG = yc.signals %}
+    <div class="sub" style="font-size:11.5px">{{ t('Per-sector curve tilt under the current regime. ✓meas = a calibrated forward-IC edge in the transmission matrix; ·thy = textbook channel only.','当前状态下各板块的曲线倾向。✓实测＝传导矩阵中存在校准的前瞻IC优势；·理论＝仅教科书传导。') }}</div>
+    <div class="sectilt">
+      {% for s in SG.sector %}
+      <div class="stile {{ 'tail' if s.tilt=='tailwind' else 'head' if s.tilt=='headwind' else '' }}">
+        <span class="se">{{ s.etf }}</span><span class="sb {{ 'meas' if s.basis=='measured' else '' }}" title="{{ 'measured forward IC ('+(s.verdict|lower)+')' if s.basis=='measured' else 'textbook channel, no measured edge' }}">{{ '✓'+(s.ic_driver or '')+' '+('%+.2f'|format(s.ic) if s.ic is not none else '') if s.basis=='measured' else '·thy' }}</span>
+        <div class="sm">{{ t(s.tilt, {'tailwind':'顺风','headwind':'逆风','neutral':'中性'}.get(s.tilt,s.tilt)) }} · {{ t(s.duration, {'long':'长久期','short':'短久期','neutral':'久期中性'}.get(s.duration,s.duration)) }}<br>{{ b(s.mech) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="margin-top:16px">
+      <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)">{{ t('Equity style / factor','股票风格／因子') }}</div>
+      {% set FC = SG.stock_factor %}
+      <div class="facrow">
+        <div class="facpill"><span class="fk">{{ t('Value vs growth','价值vs成长') }}</span><span class="fv">{{ t(FC.value_vs_growth|capitalize, {'value':'价值','growth':'成长','neutral':'中性'}.get(FC.value_vs_growth, FC.value_vs_growth)) }}</span></div>
+        <div class="facpill"><span class="fk">{{ t('Size','规模') }}</span><span class="fv">{{ t({'small':'Small caps','large':'Large caps','neutral':'Neutral'}.get(FC.size, FC.size), {'small':'小盘','large':'大盘','neutral':'中性'}.get(FC.size, FC.size)) }}</span></div>
+        <div class="facpill"><span class="fk">{{ t('Duration factor','久期因子') }}</span><span class="fv">{{ t(FC.duration_factor, {'headwind':'逆风','tailwind':'顺风','neutral':'中性'}.get(FC.duration_factor, FC.duration_factor)) }}</span></div>
+      </div>
+      <p class="note" style="font-size:12px">{{ b(FC.note) }}</p>
+    </div>
+    <div style="margin-top:12px">
+      <div class="sub" style="font-size:11.5px;font-weight:700;color:var(--ink)">{{ t('Market tendency (curve-speed → drawdown risk)','市场倾向（曲线速度→回撤风险）') }}</div>
+      {% set MT = SG.market_tendency %}
+      {% set mtc = {'calm': C.green, 'watch': C.amber, 'elevated': C.red} %}
+      <span class="band-chip" style="background:{{ mtc.get(MT.drawdown_risk, C.muted) }};margin:6px 0">{{ t(MT.drawdown_risk, {'calm':'平静','watch':'观察','elevated':'升高'}.get(MT.drawdown_risk, MT.drawdown_risk)) }}</span>
+      <p class="note" style="font-size:12px">{{ b(MT.label) }}</p>
+    </div>
+    <div class="flag info" style="display:block;margin-top:10px">{{ b(yc.scored_status) }}</div>
+  </div>
+  {% endif %}
 
   <!-- ===================== CROSS-ASSET HEADWIND / TAILWIND ===================== -->
   <div class="sec-head">{{ t('Cross-asset transmission — what each asset faces now', '跨资产传导 — 各资产当前所面对的') }}</div>

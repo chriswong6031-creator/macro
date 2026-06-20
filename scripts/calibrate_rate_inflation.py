@@ -176,6 +176,12 @@ SCORED_CANDIDATES = [
     ("exp_wedge", +1, "Expectations unanchoring (market>model)"),
     ("curve_tp_adj", -1, "TP-adjusted curve inversion (flip: low=stress)"),
     ("nom10y_chg63", +1, "Nominal-rate SPEED (63d rise)"),
+    # --- yield-curve SHAPE candidates (engine/yield_curve.py) — tested on the same bar
+    ("ntfs", -1, "Near-term forward spread inversion (flip: low=stress; Engstrom-Sharpe beats 2s10s)"),
+    ("curvature", +1, "Curve curvature (2s5s10s butterfly — humped = late-cycle)"),
+    ("real_speed_abs", +1, "Real-rate move VIOLENCE (|63d speed|, either direction)"),
+    ("slope_chg63", -1, "Curve flattening impulse (flip: − = flattening = stress; INVERTED if post-inversion steepening is the tell)"),
+    ("trend_spread", -1, "3m10y TREND inversion (flip: low trend = stress) — Faria-Verona OOS equity-premium claim, tested on the return-forecast bar"),
 ]
 
 
