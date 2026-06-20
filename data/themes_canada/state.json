@@ -3,9 +3,9 @@
     "label": "neutral",
     "name": "Asset Managers & Alternatives",
     "name_zh": "\u8d44\u4ea7\u7ba1\u7406\u4e0e\u53e6\u7c7b\u6295\u8d44",
-    "rank": 11,
+    "rank": 10,
     "reco": "hold",
-    "score": 46
+    "score": 47
   },
   "ca_banks": {
     "label": "dominant",
@@ -13,7 +13,7 @@
     "name_zh": "\u5927\u578b\u94f6\u884c",
     "rank": 1,
     "reco": "accumulate",
-    "score": 63
+    "score": 64
   },
   "ca_base_metals": {
     "label": "neutral",
@@ -67,9 +67,9 @@
     "label": "deteriorating",
     "name": "Pipelines & Midstream",
     "name_zh": "\u7ba1\u9053\u4e0e\u4e2d\u6e38",
-    "rank": 12,
+    "rank": 11,
     "reco": "avoid",
-    "score": 46
+    "score": 47
   },
   "ca_rails_ind": {
     "label": "neutral",
@@ -99,9 +99,9 @@
     "label": "neutral",
     "name": "Technology",
     "name_zh": "\u79d1\u6280",
-    "rank": 10,
+    "rank": 12,
     "reco": "hold",
-    "score": 48
+    "score": 47
   },
   "ca_telecom": {
     "label": "deteriorating",

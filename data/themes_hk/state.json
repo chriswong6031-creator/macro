@@ -69,7 +69,7 @@
     "name_zh": "\u6fb3\u95e8\u535a\u5f69",
     "rank": 14,
     "reco": "avoid",
-    "score": 29
+    "score": 30
   },
   "hk_industrials": {
     "label": "neutral",
@@ -85,7 +85,7 @@
     "name_zh": "\u4fdd\u9669",
     "rank": 6,
     "reco": "enter",
-    "score": 42
+    "score": 43
   },
   "hk_materials": {
     "label": "deteriorating",

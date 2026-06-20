@@ -3,41 +3,41 @@
     "label": "deteriorating",
     "name": "AI Agents & Applications",
     "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
-    "rank": 28,
+    "rank": 30,
     "reco": "avoid",
-    "score": 36
+    "score": 33
   },
   "ai_infra": {
     "label": "dominant",
     "name": "AI Infrastructure",
     "name_zh": "AI \u57fa\u7840\u8bbe\u65bd",
-    "rank": 1,
+    "rank": 2,
     "reco": "hold",
-    "score": 77
+    "score": 78
   },
   "ai_neoclouds": {
     "label": "dominant",
     "name": "AI Neoclouds & HPC Hosting",
     "name_zh": "AI \u65b0\u4e91\u4e0e\u9ad8\u6027\u80fd\u7b97\u529b\u6258\u7ba1",
-    "rank": 4,
+    "rank": 5,
     "reco": "hold",
-    "score": 70
+    "score": 74
   },
   "ai_semiconductors": {
-    "label": "dominant",
+    "label": "neutral",
     "name": "AI Semiconductors",
     "name_zh": "AI\u534a\u5bfc\u4f53",
-    "rank": 9,
+    "rank": 8,
     "reco": "hold",
-    "score": 67
+    "score": 71
   },
   "ai_software": {
     "label": "deteriorating",
     "name": "AI Software & Platforms",
     "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
-    "rank": 24,
+    "rank": 22,
     "reco": "avoid",
-    "score": 46
+    "score": 50
   },
   "critical_minerals": {
     "label": "deteriorating",
@@ -51,25 +51,25 @@
     "label": "neutral",
     "name": "Crypto & Digital Assets",
     "name_zh": "\u52a0\u5bc6\u4e0e\u6570\u5b57\u8d44\u4ea7",
-    "rank": 23,
+    "rank": 19,
     "reco": "hold",
-    "score": 47
+    "score": 54
   },
   "cybersecurity": {
     "label": "neutral",
     "name": "Cybersecurity",
     "name_zh": "\u7f51\u7edc\u5b89\u5168",
-    "rank": 19,
+    "rank": 17,
     "reco": "hold",
-    "score": 52
+    "score": 58
   },
   "data_center_power": {
-    "label": "dominant",
+    "label": "neutral",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 7,
+    "rank": 9,
     "reco": "hold",
-    "score": 68
+    "score": 70
   },
   "defense": {
     "label": "neutral",
@@ -77,7 +77,7 @@
     "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
     "rank": 26,
     "reco": "hold",
-    "score": 41
+    "score": 42
   },
   "defensives": {
     "label": "neutral",
@@ -85,7 +85,7 @@
     "name_zh": "\u9632\u5fa1\u677f\u5757",
     "rank": 27,
     "reco": "hold",
-    "score": 38
+    "score": 37
   },
   "energy_complex": {
     "label": "deteriorating",
@@ -99,33 +99,33 @@
     "label": "dominant",
     "name": "Housing Chain",
     "name_zh": "\u4f4f\u623f\u4ea7\u4e1a\u94fe",
-    "rank": 12,
+    "rank": 13,
     "reco": "hold",
-    "score": 63
+    "score": 65
   },
   "mag7": {
     "label": "deteriorating",
     "name": "Magnificent Seven",
     "name_zh": "\u4e03\u5de8\u5934",
-    "rank": 22,
+    "rank": 24,
     "reco": "avoid",
-    "score": 49
+    "score": 46
   },
   "managed_care": {
     "label": "fading",
     "name": "Managed Care & Insurers",
     "name_zh": "\u7ba1\u7406\u5f0f\u533b\u7597\u4e0e\u4fdd\u9669",
-    "rank": 20,
+    "rank": 16,
     "reco": "trim",
-    "score": 51
+    "score": 59
   },
   "memory_storage": {
     "label": "dominant",
     "name": "Memory, HBM & Storage",
     "name_zh": "\u5185\u5b58\u3001HBM \u4e0e\u5b58\u50a8",
-    "rank": 2,
+    "rank": 1,
     "reco": "hold",
-    "score": 76
+    "score": 79
   },
   "non_ai_software": {
     "label": "deteriorating",
@@ -133,15 +133,15 @@
     "name_zh": "\u975eAI\u8f6f\u4ef6",
     "rank": 29,
     "reco": "avoid",
-    "score": 34
+    "score": 33
   },
   "non_ai_tech": {
     "label": "dominant",
     "name": "Non-AI Tech & Hardware",
     "name_zh": "\u975eAI\u79d1\u6280\u4e0e\u786c\u4ef6",
-    "rank": 6,
+    "rank": 7,
     "reco": "hold",
-    "score": 68
+    "score": 72
   },
   "nuclear_power": {
     "label": "dominant",
@@ -149,15 +149,15 @@
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
     "rank": 10,
     "reco": "accumulate",
-    "score": 64
+    "score": 68
   },
   "obesity_glp1": {
     "label": "neutral",
     "name": "GLP-1 & Obesity",
     "name_zh": "GLP-1 \u4e0e\u51cf\u80a5\u836f",
-    "rank": 17,
+    "rank": 15,
     "reco": "hold",
-    "score": 53
+    "score": 61
   },
   "payments_fintech": {
     "label": "deteriorating",
@@ -173,7 +173,7 @@
     "name_zh": "\u7535\u529b\u4e0e\u7535\u7f51",
     "rank": 14,
     "reco": "hold",
-    "score": 59
+    "score": 62
   },
   "quantum_computing": {
     "label": "dominant",
@@ -181,39 +181,39 @@
     "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
     "rank": 11,
     "reco": "accumulate",
-    "score": 64
+    "score": 68
   },
   "regional_banks": {
-    "label": "neutral",
+    "label": "dominant",
     "name": "Regional Banks",
     "name_zh": "\u533a\u57df\u94f6\u884c",
-    "rank": 13,
-    "reco": "hold",
-    "score": 60
+    "rank": 12,
+    "reco": "accumulate",
+    "score": 67
   },
   "reshoring": {
     "label": "dominant",
     "name": "Reshoring & Industrial Capex",
     "name_zh": "\u56de\u6d41\u4e0e\u5de5\u4e1a\u8d44\u672c\u5f00\u652f",
-    "rank": 8,
+    "rank": 4,
     "reco": "hold",
-    "score": 67
+    "score": 74
   },
   "retail": {
     "label": "neutral",
     "name": "Retail",
     "name_zh": "\u96f6\u552e",
-    "rank": 18,
+    "rank": 23,
     "reco": "hold",
-    "score": 52
+    "score": 47
   },
   "robotics_automation": {
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 16,
+    "rank": 20,
     "reco": "hold",
-    "score": 54
+    "score": 52
   },
   "semicap_equipment": {
     "label": "dominant",
@@ -221,30 +221,30 @@
     "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
     "rank": 3,
     "reco": "hold",
-    "score": 73
+    "score": 77
   },
   "space_economy": {
     "label": "deteriorating",
     "name": "Space Economy",
     "name_zh": "\u592a\u7a7a\u7ecf\u6d4e",
-    "rank": 30,
+    "rank": 28,
     "reco": "avoid",
-    "score": 33
+    "score": 35
   },
   "travel": {
-    "label": "dominant",
+    "label": "emerging",
     "name": "Travel & Experiences",
     "name_zh": "\u65c5\u884c\u4e0e\u4f53\u9a8c",
-    "rank": 5,
-    "reco": "accumulate",
-    "score": 69
+    "rank": 6,
+    "reco": "hold",
+    "score": 73
   },
   "uranium_miners": {
     "label": "emerging",
     "name": "Uranium & Nuclear Fuel",
     "name_zh": "\u94c0\u77ff\u4e0e\u6838\u71c3\u6599",
-    "rank": 15,
+    "rank": 18,
     "reco": "enter",
-    "score": 55
+    "score": 56
   }
 }

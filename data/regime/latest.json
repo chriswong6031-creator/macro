@@ -417,15 +417,11 @@
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "The Committee decided to maintain the target range"
+        "quote_span": "decided to maintain the target range for the federal funds rate"
       },
       {
         "field": "guidance_direction",
-        "quote_span": "maintain the target range"
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "Economic activity is expanding at a solid pace"
+        "quote_span": "decided to maintain the target range for the federal funds rate"
       }
     ],
     "degraded_reason": null,
@@ -930,7 +926,7 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-19T22:29:00.717239+00:00",
+    "built": "2026-06-20T00:24:00.920668+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,

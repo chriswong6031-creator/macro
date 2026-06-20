@@ -13,13 +13,13 @@
     "name_zh": "\u5bb6\u7535",
     "rank": 16,
     "reco": "avoid",
-    "score": 30
+    "score": 31
   },
   "cn_autos": {
     "label": "deteriorating",
     "name": "Autos & NEV Makers",
     "name_zh": "\u6c7d\u8f66\u6574\u8f66",
-    "rank": 18,
+    "rank": 19,
     "reco": "avoid",
     "score": 28
   },
@@ -37,7 +37,7 @@
     "name_zh": "\u94f6\u884c",
     "rank": 12,
     "reco": "avoid",
-    "score": 35
+    "score": 36
   },
   "cn_battery": {
     "label": "deteriorating",
@@ -83,7 +83,7 @@
     "label": "deteriorating",
     "name": "Food & Beverage",
     "name_zh": "\u98df\u54c1\u996e\u6599",
-    "rank": 20,
+    "rank": 21,
     "reco": "avoid",
     "score": 27
   },
@@ -93,23 +93,23 @@
     "name_zh": "\u9ec4\u91d1",
     "rank": 13,
     "reco": "avoid",
-    "score": 35
+    "score": 36
   },
   "cn_insurers": {
     "label": "deteriorating",
     "name": "Insurers",
     "name_zh": "\u4fdd\u9669",
-    "rank": 19,
+    "rank": 18,
     "reco": "avoid",
-    "score": 28
+    "score": 29
   },
   "cn_med_devices": {
     "label": "deteriorating",
     "name": "Medical Devices & TCM",
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
-    "rank": 21,
+    "rank": 20,
     "reco": "avoid",
-    "score": 27
+    "score": 28
   },
   "cn_metals": {
     "label": "emerging",
@@ -125,7 +125,7 @@
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
     "rank": 7,
     "reco": "avoid",
-    "score": 44
+    "score": 43
   },
   "cn_rare_earth": {
     "label": "dominant",
@@ -149,7 +149,7 @@
     "name_zh": "\u534a\u5bfc\u4f53",
     "rank": 3,
     "reco": "hold",
-    "score": 66
+    "score": 65
   },
   "cn_soe_value": {
     "label": "deteriorating",
@@ -157,7 +157,7 @@
     "name_zh": "\u4e2d\u7279\u4f30\u00b7\u592e\u4f01",
     "rank": 17,
     "reco": "avoid",
-    "score": 29
+    "score": 30
   },
   "cn_software": {
     "label": "deteriorating",
@@ -173,6 +173,6 @@
     "name_zh": "\u5149\u4f0f",
     "rank": 15,
     "reco": "avoid",
-    "score": 33
+    "score": 34
   }
 }

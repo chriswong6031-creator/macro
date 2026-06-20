@@ -33,6 +33,8 @@
   .prow:first-of-type { border-top:0; } .prow:hover { background:var(--panel2); }
   .pverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
   .prow .pn { font-weight:650; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sb-badge { font-size:10px; font-weight:700; color:var(--warn); margin-left:5px;
+              padding:0 4px; border-radius:6px; background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .prow .pw { font-variant-numeric:tabular-nums; font-weight:700; }
   .palert { display:flex; gap:9px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .palert:first-of-type { border-top:0; }
@@ -750,7 +752,7 @@
 
 <footer>
   <span class="l-en">Read-only analytics for informational purposes only — NOT investment advice and NOT a buy/sell list. The thematic baskets are equal-weight, point-in-time dated-membership trackers over a free ~3-5y price cache, benchmarked to CSI 300 and curated with knowledge of the period — so they are HINDSIGHT-descriptive, not an out-of-sample backtest. The allocation ALGORITHM is validated on multi-decade sector-ETF history (see panel 04), where its only repeatable edge is drawdown/shake-out control via the absolute-trend gate; cross-sectional momentum has ~0 forward rank-IC and basket-level crowding has no forward drawdown edge (it only sizes down). Durability, crowding and rotation are coincident, display-only context — none of them feeds any score. See LIMITATIONS.md and scripts/thematic_rotation_phase0.py.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议，也非买卖清单。主题篮子为等权、按时点日期管理成分、基于免费约3-5年价格缓存，以 CSI 300 为基准，且在已知该期表现下整理 — 故为事后描述性序列，并非样本外回测。该配置&#34;算法&#34;在跨越数十年的行业 ETF 历史上验证（见面板04），其唯一可重复的优势是通过绝对趋势门控制回撤/被甩出；横截面动量前瞻rank-IC约为0，篮子层面拥挤无前瞻回撤优势（仅用于降仓）。持续性、拥挤与轮动均为同步的、仅展示的背景 — 都不进入任何评分。参见 LIMITATIONS.md 与 scripts/thematic_rotation_phase0.py。</span>
-  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-19 22:50 UTC.
+  <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-20 00:45 UTC.
 </footer>
 <script>
 // ---- PR2 strategic playbook: buy/sell entries · risk over time · rotation alerts ----
@@ -758,7 +760,10 @@ const ALLOC = {"as_of":"2026-06-18","region":"china","market_en":"China A-shares
 const ROT_ALERTS = [];
 const RISK_HIST = [{"date":"2026-06-18","cash":0.201,"n_held":4}];
 const ACT_NOW = null;
+const STANDOUTS = {};   // theme id -> # members on the US standout buy board
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+// ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
+const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US standout buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const bid = s => /^[a-z0-9_-]+$/i.test(s||'') ? s : '';
@@ -770,11 +775,11 @@ function renderEntries(){
   // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
   let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="basket/${bid(w.id)}.html">
     <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
-    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
+    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
     buy.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
-      <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
+      <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];
