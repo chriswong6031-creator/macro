@@ -29,7 +29,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "intelligence.by_ticker.v1"
+SCHEMA = "intelligence.by_ticker.v2"
 
 DISCLAIMER = (
     "Context only. Two independent reads per name — editorial news flow (what the tape is "
@@ -69,23 +69,80 @@ def _alt_for(t: str, mm_index: dict, bt: dict) -> dict | None:
     return None
 
 
-def build(news_tickers: dict | None, alt_signals: list | None,
-          alt_by_ticker: dict | None, today: date | None = None) -> dict:
-    """Merge the three already-built artifacts into one per-ticker bundle. PURE.
+_POS_RADAR = {"POSITIVE_DIVERGENCE", "CONFIRMED_UP"}
+_NEG_RADAR = {"NEGATIVE_DIVERGENCE", "CONFIRMED_DOWN"}
 
-    news_tickers   — site/news/by_ticker.json   ["tickers"]  (T -> compact news dict)
-    alt_signals    — site/altdata/mastermind.json["signals"] (list of scored signals)
-    alt_by_ticker  — site/altdata/by_ticker.json["tickers"]  (T -> v2 record)
+
+def _radar_for(t: str, ridx: dict) -> dict | None:
+    """Per-name radar divergence (Divergence Radar Phase-2)."""
+    r = ridx.get(t)
+    if not r or r.get("state") == "QUIET":
+        return None
+    return {k: r.get(k) for k in ("state", "lifecycle", "edge_score", "signal_score",
+                                  "rs_vs_spy_60d", "note") if r.get(k) is not None}
+
+
+def _standout_for(t: str, sidx: dict) -> dict | None:
+    """The factor buy-board read (us_standouts) for a name."""
+    s = sidx.get(t)
+    if not s:
+        return None
+    return {k: s.get(k) for k in ("state", "label", "alpha", "alpha_entry", "conviction",
+                                  "urgency", "dir", "setup", "off_high") if s.get(k) is not None}
+
+
+def _synthesize(news: dict | None, alt: dict | None, radar: dict | None) -> dict:
+    """Cross-facet read: demand-side tape (news) vs supply-side smart-money/activity
+    (alt + radar). The divergence between them is the edge. FACTS-derived label only."""
+    news_dir = {"pos": 1, "neg": -1}.get((news or {}).get("sentiment_lean")) if news else None
+    a_score = (alt or {}).get("signal_score")
+    alt_dir = None
+    if alt:
+        if a_score is not None and a_score >= 65 and (alt.get("action") != "AVOID"):
+            alt_dir = 1
+        elif (alt.get("action") == "AVOID") or (a_score is not None and a_score < 35):
+            alt_dir = -1
+        else:
+            alt_dir = 0
+    rstate = (radar or {}).get("state")
+    radar_dir = 1 if rstate in _POS_RADAR else -1 if rstate in _NEG_RADAR else (0 if radar else None)
+
+    supply = [d for d in (alt_dir, radar_dir) if d is not None]
+    up = sum(1 for d in supply if d > 0)
+    dn = sum(1 for d in supply if d < 0)
+    label, read = "quiet", "No strong cross-signal."
+    if up and rstate == "POSITIVE_DIVERGENCE" and (news_dir or 0) <= 0:
+        label, read = "early_edge", "Smart-money / activity is bullish while the tape is quiet — early edge before the crowd notices."
+    elif up and (news_dir or 0) > 0:
+        label, read = "confirmed", "Activity and the tape agree (bullish) — confirmed; less edge left."
+    elif dn and (news_dir or 0) > 0:
+        label, read = "crowded_top", "Tape is loud-bullish but smart money is fading — crowded-top / distribution risk."
+    elif dn:
+        label, read = "fading", "Smart-money / activity cooling."
+    elif up:
+        label, read = "accumulation", "Smart-money / activity building, tape not yet bullish."
+    return {"label": label, "read": read, "news_dir": news_dir,
+            "supply_dir": (1 if up > dn else -1 if dn > up else 0) if supply else None}
+
+
+def build(news_tickers: dict | None, alt_signals: list | None,
+          alt_by_ticker: dict | None, radar_tickers: list | None = None,
+          standouts: list | None = None, today: date | None = None) -> dict:
+    """Merge every per-ticker dashboard signal into ONE bundle (4 facets + a read). PURE.
+
+    news_tickers   — site/news/by_ticker.json     ["tickers"]  (T -> compact news dict)
+    alt_signals    — site/altdata/mastermind.json ["signals"]  (list of scored alt signals)
+    alt_by_ticker  — site/altdata/by_ticker.json  ["tickers"]  (T -> v2 record, fallback)
+    radar_tickers  — site/basketdata/radar_ticker.json["tickers"] (per-name divergence)
+    standouts      — site/factordata/us_standouts.json["buy"]  (factor buy-board)
     """
     news_tickers = news_tickers or {}
     alt_by_ticker = alt_by_ticker or {}
-    mm_index = {}
-    for s in (alt_signals or []):
-        t = (s.get("ticker") or "").upper()
-        if t:
-            mm_index[t] = s
+    mm_index = {(s.get("ticker") or "").upper(): s for s in (alt_signals or []) if s.get("ticker")}
+    ridx = {(r.get("ticker") or "").upper(): r for r in (radar_tickers or []) if r.get("ticker")}
+    sidx = {(s.get("ticker") or "").upper(): s for s in (standouts or []) if s.get("ticker")}
 
-    universe = set(news_tickers) | set(mm_index) | set(alt_by_ticker)
+    universe = set(news_tickers) | set(mm_index) | set(alt_by_ticker) | set(ridx) | set(sidx)
     out: dict[str, dict] = {}
     for t in sorted(universe):
         t = (t or "").upper()
@@ -93,12 +150,15 @@ def build(news_tickers: dict | None, alt_signals: list | None,
             continue
         news = news_tickers.get(t)
         alt = _alt_for(t, mm_index, alt_by_ticker)
-        if not news and not alt:
+        radar = _radar_for(t, ridx)
+        standout = _standout_for(t, sidx)
+        if not any((news, alt, radar, standout)):
             continue
-        out[t] = {"ticker": t, "news": news, "alt": alt,
-                  "has_news": bool(news), "has_alt": bool(alt),
-                  "note": "News flow (demand-side tape) + alt-data signal (supply-side flow), "
-                          "side by side — facts only, never pre-blended."}
+        out[t] = {"ticker": t, "news": news, "alt": alt, "radar": radar, "standout": standout,
+                  "has_news": bool(news), "has_alt": bool(alt), "has_radar": bool(radar),
+                  "has_standout": bool(standout), "read": _synthesize(news, alt, radar),
+                  "note": "Demand-side tape (news) + supply-side smart-money/activity (alt + radar) + "
+                          "factor buy-board (standout) — facts side by side, never pre-blended."}
 
     today = today or date.today()
     return {"schema": SCHEMA, "is_context_only": True,
@@ -106,6 +166,8 @@ def build(news_tickers: dict | None, alt_signals: list | None,
             "generated_utc": datetime.now(timezone.utc).isoformat(),
             "n_tickers": len(out),
             "n_with_both": sum(1 for v in out.values() if v["has_news"] and v["has_alt"]),
+            "n_4facet": sum(1 for v in out.values()
+                            if v["has_news"] and v["has_alt"] and (v["has_radar"] or v["has_standout"])),
             "tickers": out, "disclaimer": DISCLAIMER}
 
 
@@ -119,9 +181,12 @@ def _read(rel: str) -> dict | None:
 
 
 def load_and_build(today: date | None = None) -> dict:
-    """Read the three published artifacts from site/ and merge. Never raises;
-    empty sub-objects degrade gracefully."""
+    """Read every published per-ticker artifact and merge into the 4-facet bundle.
+    Never raises; absent inputs degrade to empty sub-objects."""
     news = _read("site/news/by_ticker.json") or {}
     mm = _read("site/altdata/mastermind.json") or {}
     bt = _read("site/altdata/by_ticker.json") or {}
-    return build(news.get("tickers"), mm.get("signals"), bt.get("tickers"), today)
+    rt = _read("site/basketdata/radar_ticker.json") or {}
+    so = _read("site/factordata/us_standouts.json") or {}
+    return build(news.get("tickers"), mm.get("signals"), bt.get("tickers"),
+                 rt.get("tickers"), so.get("buy"), today)

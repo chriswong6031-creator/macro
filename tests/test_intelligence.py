@@ -216,6 +216,42 @@ def test_today_parameter_propagates():
     assert result["as_of"] == "2025-01-15"
 
 
+# --------------------------------------------------------------------------- #
+# 11. Phase 3 — 4-facet bundle (news + alt + radar + standout) + cross-facet read
+# --------------------------------------------------------------------------- #
+def test_synthesize_labels():
+    assert intel._synthesize({"sentiment_lean": "neutral"},
+                             {"signal_score": 80, "action": "WATCH"},
+                             {"state": "POSITIVE_DIVERGENCE"})["label"] == "early_edge"
+    assert intel._synthesize({"sentiment_lean": "pos"},
+                             {"signal_score": 20, "action": "AVOID"}, None)["label"] == "crowded_top"
+    assert intel._synthesize({"sentiment_lean": "pos"},
+                             {"signal_score": 80, "action": "ACCUMULATE"},
+                             {"state": "CONFIRMED_UP"})["label"] == "confirmed"
+    assert intel._synthesize(None, None, None)["label"] == "quiet"
+
+
+def test_build_four_facets():
+    r = intel.build(
+        {"NVDA": _news("NVDA", lean="neutral")},
+        [_scored_signal("NVDA")],
+        {},
+        [{"ticker": "NVDA", "state": "POSITIVE_DIVERGENCE", "edge_score": 75}],
+        [{"ticker": "NVDA", "state": "FRESH BUY", "label": "BUY ZONE", "conviction": 0.8}],
+        today=_TODAY)
+    assert r["schema"] == "intelligence.by_ticker.v2"
+    v = r["tickers"]["NVDA"]
+    assert v["has_news"] and v["has_alt"] and v["has_radar"] and v["has_standout"]
+    assert v["radar"]["edge_score"] == 75 and v["standout"]["label"] == "BUY ZONE"
+    assert "read" in v and r["n_4facet"] == 1
+
+
+def test_radar_quiet_dropped():
+    # a QUIET radar entry is not a signal — must not create a phantom ticker
+    r = intel.build({}, None, {}, [{"ticker": "X", "state": "QUIET", "edge_score": 5}], None)
+    assert "X" not in r["tickers"]
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:
