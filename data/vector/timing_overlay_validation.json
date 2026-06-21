@@ -1,0 +1,95 @@
+{
+  "verdict": "GO",
+  "decision": "Ship it as a net-exposure / drawdown overlay (a RISK lever, like vol-managed sizing \u2014 it trades a little CAGR for far shallower drawdowns), orthogonal to the dispersion (selection) gate. It IS worth having as a net-exposure / drawdown overlay: lifts Sharpe 0.42\u21920.582 and cuts maxDD -86.2%\u2192-52.0% net of cost. Leg attribution (same-span): breadth is REDUNDANT with trend (deep 1962+); net-liquidity ADDS over breadth+trend (2014+).",
+  "leg_attribution": {
+    "breadth_adds_over_trend_deep": false,
+    "netliq_adds_over_bt_2014": true
+  },
+  "reasons": [],
+  "cost_bps": 3.0,
+  "span": "1927-12-30..2026-06-12",
+  "legs": [
+    "trend",
+    "breadth",
+    "netliq"
+  ],
+  "results": {
+    "buy_hold": {
+      "sharpe": 0.42,
+      "cagr_pct": 6.35,
+      "maxdd_pct": -86.2,
+      "vol_pct": 18.9,
+      "n_days": 24728
+    },
+    "overlay_combined": {
+      "sharpe": 0.582,
+      "cagr_pct": 6.6,
+      "maxdd_pct": -52.0,
+      "vol_pct": 12.3,
+      "n_days": 24728
+    },
+    "leg_trend": {
+      "sharpe": 0.586,
+      "cagr_pct": 6.58,
+      "maxdd_pct": -52.0,
+      "vol_pct": 12.1,
+      "n_days": 24728
+    },
+    "leg_breadth": {
+      "sharpe": 0.59,
+      "cagr_pct": 6.79,
+      "maxdd_pct": -54.6,
+      "vol_pct": 12.5,
+      "n_days": 16020
+    },
+    "leg_netliq": {
+      "sharpe": 0.627,
+      "cagr_pct": 8.09,
+      "maxdd_pct": -33.9,
+      "vol_pct": 14.0,
+      "n_days": 2704
+    },
+    "overlay_breadth_trend_deep": {
+      "sharpe": 0.581,
+      "cagr_pct": 6.63,
+      "maxdd_pct": -52.0,
+      "vol_pct": 12.4,
+      "n_days": 24728
+    },
+    "overlay_2014_breadth_trend": {
+      "sharpe": 0.821,
+      "cagr_pct": 9.66,
+      "maxdd_pct": -21.0,
+      "vol_pct": 12.1,
+      "n_days": 2704
+    },
+    "overlay_2014_plus_netliq": {
+      "sharpe": 0.856,
+      "cagr_pct": 9.35,
+      "maxdd_pct": -24.5,
+      "vol_pct": 11.2,
+      "n_days": 2704
+    }
+  },
+  "sharpe_gap_combined_vs_bh": {
+    "mean_daily": -3.2e-05,
+    "annualized_pct": -0.81,
+    "bootstrap_ci": {
+      "sharpe_ci": [
+        -0.31,
+        -0.07,
+        0.16
+      ],
+      "maxdd_ci_pct": [
+        -99.1,
+        -90.8,
+        -65.2
+      ],
+      "sharpe_gt0_prob": 0.272,
+      "block": 21,
+      "B": 2000,
+      "n": 24728
+    }
+  },
+  "note": "Net-exposure (TIME-SERIES) timer \u2014 orthogonal to the dispersion gate (CROSS-SECTIONAL selection gross): a book uses both. Cash earns 0 (conservative). Trend/breadth legs are deep (1962-2026); net-liq is 2014+, so its marginal value is judged on the 2014-block rows. Timing typically trades return for drawdown \u2014 judge on Sharpe + maxDD, not CAGR."
+}
