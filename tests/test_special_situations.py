@@ -574,6 +574,21 @@ def test_llm_verdict_promotes_in_engine(tmp_path, monkeypatch):
     assert df.loc["e1", "stage"] == "initiated"          # default stage for Strategic Reviews
 
 
+def test_llm_management_changes_not_promoted(tmp_path, monkeypatch):
+    """Verification found the LLM over-fires 'Management Changes' on routine foreign-6-K
+    meeting/circular notices -> it must NOT auto-promote to the desk (stays unshown)."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    _mock_llm(monkeypatch, '{"category": "Management Changes", "role": "issuer",'
+                           ' "confidence": "high", "summary": "AGM notice", "deal_terms": {}}')
+    _seed_defer_event(tmp_path)
+    ss.enrich_classify()
+    df = sse.build_situations().set_index("id")
+    assert df.loc["e1", "status"] != "ok"                 # not promoted to the desk
+    assert df.loc["e1", "category"] != "Management Changes"
+    assert "Management Changes" in sse.MATURE_CATEGORIES and "Management Changes" not in sse.LLM_PROMOTABLE
+
+
 def test_llm_none_kills_false_positive(tmp_path, monkeypatch):
     """The precision fix: a deferred filing the LLM judges NOT a situation is dropped,
     even if the keyword text-lane had promoted it."""
