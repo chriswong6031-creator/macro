@@ -30,7 +30,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "intel_hub.command.v1"
+SCHEMA = "intel_hub.command.v2"   # v2: ranked by edge-remaining/opportunity (not desk agreement)
 
 DISCLAIMER = (
     "Context only. A central command that fuses five independent desks — news flow, "
@@ -59,6 +59,33 @@ _PROXY_TO_SECTOR = {
 
 _POS_RADAR = {"POSITIVE_DIVERGENCE", "CONFIRMED_UP"}
 _NEG_RADAR = {"NEGATIVE_DIVERGENCE", "CONFIRMED_DOWN"}
+
+# ── EDGE-REMAINING reframe (V2) ──────────────────────────────────────────── #
+# Leading desks see smart-money/activity FLOW before price; lagging desks only
+# confirm AFTER the move is already visible. The pre-consensus edge is a LEADING
+# desk firing while the lagging desks are still quiet — the opposite of the
+# agreement the v1 composite rewarded.
+_LEADING = ("alt", "radar")
+_LAGGING = ("news", "standout", "policy")
+
+# radar lifecycle → how much of the move is still ahead (1 = all ahead, 0 = late)
+_LIFECYCLE_EDGE = {"emerging": 1.0, "forming": 0.82, "mature": 0.34, "fading": 0.12}
+# factor buy-board label → how early in the move (keyword match, first hit wins)
+_LABEL_EDGE = (
+    ("BOTTOMING", 0.95), ("NEARING A LOW", 0.95), ("EMERGING", 0.92),
+    ("BUY ZONE", 0.74), ("UNCONFIRMED TURN", 0.70), ("TURN", 0.70),
+    ("ACCUMULAT", 0.80), ("UPTREND", 0.40), ("CONFIRMED", 0.40), ("EXTENDED", 0.12),
+)
+# special-situation categories that carry genuine forward optionality (a fresh,
+# dated, under-reacted catalyst) vs administrative/terminal events
+_CATALYST_LIVE = {"Acquisitions", "Activist Campaigns", "Strategic Reviews", "Spin-Offs",
+                  "Going-Private", "Tender Offers", "Issuer Tenders", "Capital Returns",
+                  "Restructuring", "Rights Offerings", "M&A / Divestitures", "Divestitures"}
+_CATALYST_FRESH_D = 45        # a catalyst older than this has been digested
+
+
+def _clamp01(x: float) -> float:
+    return 0.0 if x < 0 else 1.0 if x > 1 else x
 
 
 def _f(x):
@@ -185,9 +212,124 @@ def _dirs(v: dict, policy: dict | None) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# EDGE REMAINING — how much of the move is still AHEAD (V2 pricing-in axis).
+# Built entirely from fields the feeders already compute and the v1 hub threw
+# away. 1.0 = early / lots of room; 0.0 = late / fully priced-in. Degrades to a
+# neutral 0.5 when a name has no priced-in inputs (e.g. news-only).
+# --------------------------------------------------------------------------- #
+def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None) -> dict:
+    radar = v.get("radar") or {}
+    standout = v.get("standout") or {}
+    alt = v.get("alt") or {}
+    news = v.get("news") or {}
+    comps: list[tuple[float, float, str]] = []   # (weight, score, driver)
+
+    lc = (radar.get("lifecycle") or "").lower()
+    if lc in _LIFECYCLE_EDGE:
+        comps.append((1.4, _LIFECYCLE_EDGE[lc], f"radar {lc}"))
+
+    wbp = _f(radar.get("within_basket_pct"))
+    if wbp is not None and radar.get("state") in _POS_RADAR:
+        comps.append((0.8, _clamp01(1.0 - wbp),
+                      "basket laggard (room)" if wbp < 0.4 else "basket leader (priced-in)"))
+
+    lab = (standout.get("label") or "").upper()
+    if lab:
+        le = next((s for k, s in _LABEL_EDGE if k in lab), 0.5)
+        comps.append((0.9, le, f"buy-board {lab.lower()}"))
+
+    oh = _f(standout.get("off_high"))
+    if oh is not None:                                 # 0 = at highs (priced), −22%+ = room
+        comps.append((0.6, _clamp01(0.15 + (-oh) / 22.0),
+                      f"{oh:.0f}% off high" if oh < -2 else "at the highs"))
+
+    # crowding discount — a loud, high-magnitude, accelerating tape is already paid for
+    if news:
+        ns = abs(_f(news.get("sentiment_score")) or 0.0)
+        nrec = int(news.get("n_recent") or 0)
+        accel = vel_rec.get("accel")
+        crowd = 0.45 * _clamp01(nrec / 6.0) + 0.35 * ns + (0.20 if (accel is not None and accel >= 1.0) else 0.0)
+        comps.append((0.9, _clamp01(1.0 - crowd),
+                      "loud, crowded tape" if crowd > 0.55 else "quiet tape (room)"))
+
+    if alt.get("extended") is True:
+        comps.append((0.7, 0.05, "extended (anti-chase)"))
+
+    rs = _f(alt.get("rs_vs_spy_60d"))
+    if rs is None:
+        rs = _f(radar.get("rs_vs_spy_60d"))
+    if rs is not None:
+        comps.append((0.7, _clamp01(1.0 - max(rs, 0.0) / 40.0) if rs > 0 else 1.0,
+                      f"RS {rs:+.0f}% vs SPY"))
+
+    if catalyst and catalyst.get("live"):
+        ds = catalyst.get("days_since")
+        if ds is not None:
+            comps.append((0.7, _clamp01(1.0 - ds / float(_CATALYST_FRESH_D)),
+                          f"fresh {(catalyst.get('category') or 'catalyst').lower()}"))
+
+    if not comps:
+        return {"score": 0.4, "n_components": 0, "drivers": []}   # no priced-in evidence → conservative, not a free 0.5
+    wsum = sum(w for w, _, _ in comps)
+    score = sum(w * s for w, s, _ in comps) / wsum
+    ranked = sorted(comps, key=lambda c: c[1], reverse=True)
+    drivers = [c[2] for c in ranked[:2]]               # the most edge-positive reasons
+    if len(comps) > 2 and ranked[-1][1] < 0.35:        # surface the biggest drag — only if not already shown
+        drivers.append("⚠ " + ranked[-1][2])
+    return {"score": round(_clamp01(score), 3), "n_components": len(comps), "drivers": drivers}
+
+
+# --------------------------------------------------------------------------- #
+# LEADING-vs-LAGGING gap — the inverted agreement reward. Pays a leading desk
+# (smart-money flow / a positive divergence) firing while the lagging desks
+# (news, momentum buy-board, policy) are still quiet. gap > 0 ⇒ flow is AHEAD of
+# the crowd (pre-consensus); gap ≤ 0 ⇒ price/news already lead (late).
+# --------------------------------------------------------------------------- #
+def _leading_gap(v: dict, dirs: dict) -> dict:
+    radar = v.get("radar") or {}
+    rstate = radar.get("state")
+    radar_lead = 1 if rstate == "POSITIVE_DIVERGENCE" else 0   # CONFIRMED_UP is coincident, not leading
+    alt_lead = 1 if dirs.get("alt") == 1 else 0
+    lead_up = radar_lead + alt_lead
+    lag_up = ((1 if dirs.get("news") == 1 else 0)
+              + (1 if dirs.get("standout") == 1 else 0)
+              + (1 if rstate == "CONFIRMED_UP" else 0)
+              + (1 if dirs.get("policy") == 1 else 0))
+    # lagging desks that are PRESENT — a "quiet crowd" only counts when the crowd's desks
+    # exist and are silent, not when their data is merely absent.
+    lag_present = ((1 if v.get("news") else 0)
+                   + (1 if v.get("standout") else 0)
+                   + (1 if dirs.get("policy") is not None else 0)
+                   + (1 if rstate == "CONFIRMED_UP" else 0))
+    return {"lead_up": lead_up, "lag_up": lag_up, "gap": lead_up - lag_up, "lag_present": lag_present}
+
+
+def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag_present: int) -> str:
+    """Place the name on the idea lifecycle. The hub ranks edge-remaining, so this label is
+    the headline read: emerging/early = where the edge is; consensus/exhausted = already
+    priced; distribution = desks lean down and price is rolling over."""
+    if "crowded_top" in flags:                            # loud top — fade regardless of net lean
+        return "exhausted"
+    if lean < 0:                                          # desks lean DOWN
+        return "exhausted" if edge < 0.30 else "distribution"
+    if lean == 0:
+        return "building"
+    # bullish (lean > 0) ----------------------------------------------------------------
+    if edge < 0.30:
+        return "exhausted"
+    # EMERGING (top tier): leading flow ahead of a quiet-but-PRESENT crowd, with room AND
+    # ≥2 pieces of priced-in evidence — never a thin, data-sparse single hit.
+    if edge >= 0.66 and gap >= 1 and n_components >= 2 and lag_present >= 1:
+        return "emerging"
+    if edge >= 0.50 and gap >= 0:                         # leading not behind the crowd
+        return "early"
+    return "consensus"                                    # bullish but priced-in / price-led (gap < 0)
+
+
+# --------------------------------------------------------------------------- #
 # The per-ticker dossier — composite conviction + 2nd/3rd-order flags
 # --------------------------------------------------------------------------- #
-def _dossier(t: str, v: dict, pidx: dict, vel: dict) -> dict:
+def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = None) -> dict:
     news = v.get("news") or {}
     alt = v.get("alt") or {}
     radar = v.get("radar") or {}
@@ -245,13 +387,32 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict) -> dict:
     if nv.get("spike"):
         flags.append("velocity_spike")
 
+    # ── V2: edge-remaining + leading-gap → opportunity (the new ranking key) ──
+    gap = _leading_gap(v, dirs)
+    edge = _edge_remaining(v, dirs, nv, catalyst)
+    signal_core = _f(brain.get("strength")) or 0.0            # genuine magnitude, NOT agreement
+    # continuous leading-gap multiplier — no binary cliff: ±15% per net leading desk, capped ±2
+    gap_mult = 1.0 + 0.15 * max(-2, min(2, gap["gap"]))
+    opportunity = round(min(100.0, 100.0 * signal_core * fals_pen * edge["score"] * gap_mult), 1)
+    stage = _stage(edge["score"], gap["gap"], lean, flags, edge["n_components"], gap["lag_present"])
+    if stage in ("emerging", "early") and "confirmed_trend" in flags:
+        flags.remove("confirmed_trend")                       # pre-consensus ⇒ not a confirmed consensus
+    if stage == "emerging":
+        flags.append("emerging")
+    if catalyst and catalyst.get("live"):
+        flags.append("catalyst")
+
     # a single human-facing read (3rd-order synthesis)
-    read = _read_for(flags, lean, n_confirm, policy)
+    read = _read_for(flags, lean, n_confirm, policy, stage, edge, gap)
 
     return {
         "ticker": t, "name": news.get("name") or (v.get("standout") or {}).get("name") or t,
         "sectors": sectors[:3], "baskets": (news.get("baskets") or [])[:3],
         "composite_conviction": composite, "lean": lean,
+        "opportunity_score": opportunity, "edge_remaining": edge["score"],
+        "edge_drivers": edge["drivers"], "edge_components": edge["n_components"], "stage": stage,
+        "leading_gap": gap["gap"], "lead_up": gap["lead_up"], "lag_up": gap["lag_up"],
+        "lag_present": gap["lag_present"], "catalyst": catalyst,
         "n_confirm": n_confirm, "n_dissent": n_dissent, "n_facets": len(present),
         "agreement": round(agreement, 2),
         "source_mix": present, "directions": dirs,
@@ -265,16 +426,31 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict) -> dict:
     }
 
 
-def _read_for(flags: list, lean: int, n_confirm: int, policy: dict | None) -> str:
+def _read_for(flags: list, lean: int, n_confirm: int, policy: dict | None,
+              stage: str = "", edge: dict | None = None, gap: dict | None = None) -> str:
+    pct = int(round((edge or {}).get("score", 0.5) * 100))
+    g = (gap or {}).get("gap", 0)
+    if stage == "emerging":
+        return (f"A leading desk is firing {('ahead of ' + str(g) + ' still-quiet ') if g else 'into a quiet '}"
+                f"lagging desk{'s' if g != 1 else ''}, with ~{pct}% of the move still ahead"
+                + (" and a policy tailwind" if policy and policy.get("dir") == 1 else "")
+                + (" plus a fresh catalyst" if "catalyst" in flags else "")
+                + " — pre-consensus, where the edge is.")
     if "early_edge" in flags or "stealth_accumulation" in flags:
         return ("Smart money + radar are positioning into a quiet tape"
                 + (" with a policy tailwind" if policy and policy.get("dir") == 1 else "")
-                + " — stealth accumulation before the crowd notices.")
-    if "crowded_top" in flags:
-        return ("The tape is loud-bullish while smart money fades and the radar diverges "
-                "negative — crowded-top / distribution risk; a late entry.")
-    if "confirmed_trend" in flags:
-        return f"{n_confirm} independent desks agree — a confirmed trend; consensus, less edge left."
+                + f" — stealth accumulation, ~{pct}% of the move still ahead.")
+    if stage == "early":
+        return f"A leading desk leads, the tape is still catching up — early, ~{pct}% edge remaining."
+    if "crowded_top" in flags or stage == "exhausted":
+        return ("Loud-bullish tape while smart money fades / radar diverges negative — "
+                f"crowded / distribution risk, only ~{pct}% edge left; a late entry to fade.")
+    if stage == "distribution":
+        return ("Desks lean bearish and price is rolling over — distribution; "
+                "de-risk / avoid, not a long.")
+    if "confirmed_trend" in flags or stage == "consensus":
+        return (f"{n_confirm} desks agree and price has confirmed — consensus, "
+                f"~{pct}% edge remaining; own it, don't chase it.")
     if "fading" in flags:
         return "Smart-money and the radar are cooling — momentum fading; an early de-risk."
     if "policy_conflict" in flags:
@@ -283,7 +459,7 @@ def _read_for(flags: list, lean: int, n_confirm: int, policy: dict | None) -> st
         return ("Desks lean " + ("up" if lean > 0 else "down")
                 + " with policy intent on the same side — aligned momentum.")
     if lean > 0:
-        return "Modestly constructive across the desks that fired."
+        return f"Modestly constructive across the desks that fired (~{pct}% edge remaining)."
     if lean < 0:
         return "Modestly cautious across the desks that fired."
     return "No strong cross-desk signal."
@@ -350,22 +526,57 @@ def _sector_heat(dossiers: list, pidx: dict) -> list:
 
 
 # --------------------------------------------------------------------------- #
+# catalyst index — fuse the already-built Special Situations desk as a dated,
+# under-reacted event leg (6th desk). Strictly context.
+# --------------------------------------------------------------------------- #
+def _catalyst_index(special: dict | None, today: date) -> dict:
+    """ticker → fresh special-situation catalyst with days_since + a live-optionality flag."""
+    out: dict[str, dict] = {}
+    bt = (special or {}).get("by_ticker")
+    for t, rec in (bt.items() if isinstance(bt, dict) else []):
+        k = (t or "").upper().strip()
+        if not k or not isinstance(rec, dict):
+            continue
+        ds, d = None, rec.get("date")
+        if d:
+            try:
+                ds = (today - date.fromisoformat(str(d)[:10])).days
+            except (ValueError, TypeError):
+                ds = None
+        cat = rec.get("category")
+        out[k] = {"category": cat, "stage": rec.get("stage") or "", "date": d,
+                  "days_since": ds, "brief": (rec.get("brief") or "")[:240],
+                  "source": rec.get("source"), "confidence": rec.get("confidence"),
+                  "live": (cat in _CATALYST_LIVE) and (ds is None or ds <= 120)}
+    return out
+
+
+# --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
 def build(bundle: dict | None, policy: dict | None, macro_context: dict | None = None,
-          today: date | None = None, top: int = 30) -> dict:
-    """Fuse the intelligence bundle + policy into the central command view. PURE-ish
-    (load_velocity touches a ledger). Never raises."""
+          today: date | None = None, top: int = 30, special: dict | None = None) -> dict:
+    """Fuse the intelligence bundle + policy + catalysts into the central command view,
+    ranked by EDGE REMAINING (opportunity), not desk agreement. PURE-ish (load_velocity
+    touches a ledger). Never raises."""
     today = today or date.today()
     tickers = (bundle or {}).get("tickers") or {}
     pidx = build_policy_index(policy)
     vel = load_velocity(tickers, today)
+    cidx = _catalyst_index(special, today)
 
-    dossiers = [_dossier(t, v, pidx, vel) for t, v in tickers.items()]
+    dossiers = [_dossier(t, v, pidx, vel, cidx.get(t)) for t, v in tickers.items()]
     _peer_confirm(dossiers)                              # 3rd-order: theme-wide vs isolated
-    # rank by composite conviction, tie-break on confirmation breadth
-    dossiers.sort(key=lambda d: (d["composite_conviction"], d["n_confirm"]), reverse=True)
+    # V2 RANKING: opportunity = signal × edge-remaining × leading-gap. Tie-break on
+    # composite conviction. This DEMOTES the confirmed/consensus cohort the v1 sort floated
+    # to the top and PROMOTES the early, leading-desk-ahead, not-yet-priced names.
+    dossiers.sort(key=lambda d: (d["opportunity_score"], d["composite_conviction"]), reverse=True)
 
+    emerging_hero = [d for d in dossiers if d["stage"] in ("emerging", "early")]
+    exhausted = [d for d in dossiers if d["stage"] in ("exhausted", "distribution")]
+    catalysts = sorted((d for d in dossiers if "catalyst" in d["flags"]),
+                       key=lambda d: ((d.get("catalyst") or {}).get("days_since")
+                                      if (d.get("catalyst") or {}).get("days_since") is not None else 9999))
     early = [d for d in dossiers if {"early_edge", "stealth_accumulation"} & set(d["flags"])]
     crowded = [d for d in dossiers if "crowded_top" in d["flags"]]
     confirmed = [d for d in dossiers if "confirmed_trend" in d["flags"]]
@@ -376,7 +587,11 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     if pidx.get("regime") and "policy_regime" not in mc:
         mc["policy_regime"] = (pidx["regime"] or "")[:400]
 
-    n_actionable = sum(1 for d in dossiers[:top] if d["composite_conviction"] >= 55 and d["n_confirm"] >= 2)
+    n_emerging = sum(1 for d in dossiers if d["stage"] == "emerging")
+    n_early = sum(1 for d in dossiers if d["stage"] == "early")
+    n_actionable = sum(1 for d in dossiers[:top]
+                       if d["stage"] in ("emerging", "early") and d["leading_gap"] >= 0
+                       and d["opportunity_score"] >= 35)
     return {
         "schema": SCHEMA, "is_context_only": True, "as_of": today.isoformat(),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
@@ -387,32 +602,41 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
             "radar": {"live": any(d["facets"].get("radar") for d in dossiers)},
             "standout": {"live": any(d["facets"].get("standout") for d in dossiers)},
             "policy": {"live": bool(pidx["by_ticker"] or pidx["by_sector"])},
+            "special": {"live": bool(cidx)},
         },
-        "n_universe": len(dossiers), "n_actionable": n_actionable,
-        "counts": {"early_edge": len(early), "crowded_top": len(crowded),
+        "n_universe": len(dossiers), "n_actionable": n_actionable, "n_emerging": n_emerging,
+        "counts": {"emerging": n_emerging, "early": n_early, "exhausted": len(exhausted),
+                   "catalyst": len(catalysts),
+                   "early_edge": len(early), "crowded_top": len(crowded),
                    "confirmed": len(confirmed), "policy_conflict": len(policy_conflict),
                    "velocity_spike": len(spikes),
                    "theme_wide": sum(1 for d in dossiers if "theme_wide" in d["flags"]),
                    "isolated": sum(1 for d in dossiers if "isolated" in d["flags"])},
         "command": dossiers[:top],
+        "emerging": [_compact(d) for d in emerging_hero[:14]],
+        "exhausted": [_compact(d) for d in exhausted[:12]],
+        "catalysts": [_compact(d) for d in catalysts[:12]],
         "divergence_alerts": {"early_edge": [_compact(d) for d in early[:12]],
                               "crowded_top": [_compact(d) for d in crowded[:12]]},
         "policy_conflicts": [_compact(d) for d in policy_conflict[:8]],
         "velocity_spikes": [_compact(d) for d in spikes[:8]],
         "sector_heat": _sector_heat(dossiers, pidx),
         "how_to_use": (
-            "Read macro_context for the frame. The command list is ranked by composite "
-            "conviction (independent-desk agreement × strength, docked by an unanswered "
-            "falsifier). Spend depth on divergence_alerts — early_edge = smart money before "
-            "the crowd; crowded_top = distribution risk. sector_heat shows where the desks "
-            "cluster. Every dossier names its falsifier; track it."),
+            "The command list is ranked by OPPORTUNITY = genuine signal magnitude × edge "
+            "remaining × leading-vs-lagging gap — NOT by how many desks agree (agreement is a "
+            "lagging, consensus condition). 'emerging' = a leading desk firing ahead of a quiet "
+            "crowd with most of the move still ahead (where the edge is); 'exhausted' = already "
+            "run, fade-risk. catalysts = fresh dated special-situation events. Every dossier "
+            "names its falsifier and its edge_remaining; track both."),
         "disclaimer": DISCLAIMER,
     }
 
 
 def _compact(d: dict) -> dict:
-    return {k: d[k] for k in ("ticker", "name", "composite_conviction", "lean", "n_confirm",
-                              "flags", "read", "sectors", "falsifier") if k in d}
+    return {k: d[k] for k in ("ticker", "name", "composite_conviction", "opportunity_score",
+                              "edge_remaining", "edge_drivers", "stage", "leading_gap", "lean",
+                              "n_confirm", "flags", "read", "sectors", "falsifier", "catalyst")
+            if k in d}
 
 
 # --------------------------------------------------------------------------- #
@@ -433,4 +657,5 @@ def load_and_build(today: date | None = None, top: int = 30) -> dict:
     bundle = intelligence.load_and_build(today)
     policy = _read("site/policy_intent.json")
     macro = briefing.macro_context(today)
-    return build(bundle, policy, macro, today, top)
+    special = _read("site/allocationdata/special_situations.json")
+    return build(bundle, policy, macro, today, top, special=special)
