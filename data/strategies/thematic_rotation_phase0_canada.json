@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-06-20T11:17:57.872821+00:00",
+  "generated_at": "2026-06-21T01:31:48.985625+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {

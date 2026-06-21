@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-20T11:37:21.478442+00:00",
+  "generated_utc": "2026-06-21T01:49:46.702846+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,12 +749,13 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.0,
+      "alt_score": 6,
+      "alt_weighted": 2.3,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
+        "github_momentum",
         "patent_cluster",
         "retail_buzz"
       ],
@@ -845,11 +846,12 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.45,
       "alt_channels": [
         "13f_add",
-        "affiliation"
+        "affiliation",
+        "material_8k"
       ],
       "top_holder": {
         "owner": "BEZOS JEFFREY P",
@@ -943,6 +945,34 @@
       }
     },
     {
+      "ticker": "MSTR",
+      "actors": [
+        {
+          "actor": "Michael Saylor",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Michael Saylor",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
+      "alt_channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "top_holder": null
+    },
+    {
       "ticker": "MSFT",
       "actors": [
         {
@@ -962,13 +992,15 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.7,
+      "alt_score": 6,
+      "alt_weighted": 2.65,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "patent_cluster"
+        "gov_contract",
+        "patent_cluster",
+        "trump"
       ],
       "top_holder": {
         "owner": "BARCLAYS PLC",
@@ -1028,12 +1060,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.3,
+      "alt_score": 4,
+      "alt_weighted": 1.85,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "app_demand"
+        "app_demand",
+        "material_8k"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1061,10 +1094,11 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.65,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
+        "gov_contract",
         "retail_buzz"
       ],
       "top_holder": {
@@ -1086,10 +1120,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
+        "gov_grant",
         "patent_cluster"
       ],
       "top_holder": {
@@ -1174,6 +1209,27 @@
       }
     },
     {
+      "ticker": "AXP",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
+      "alt_channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "top_holder": null
+    },
+    {
       "ticker": "UBER",
       "actors": [
         {
@@ -1253,33 +1309,6 @@
         "title": "Institution",
         "shares": 3648400
       }
-    },
-    {
-      "ticker": "MSTR",
-      "actors": [
-        {
-          "actor": "Michael Saylor",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Michael Saylor",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        }
-      ],
-      "n_actors": 2,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
     },
     {
       "ticker": "IEP",
@@ -1421,26 +1450,6 @@
     },
     {
       "ticker": "OXY",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
-      "ticker": "AXP",
       "actors": [
         {
           "actor": "Warren Buffett",

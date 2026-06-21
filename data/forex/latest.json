@@ -1,5 +1,5 @@
 {
-  "date": "Jun 20, 2026",
+  "date": "Jun 21, 2026",
   "regime": "Global reflation",
   "favored": [
     "AUD",
@@ -52,10 +52,10 @@
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.309,
+      "quote": 17.348,
       "chg": 0.3,
       "action": "SHORT",
-      "score": -38.3
+      "score": -40.5
     },
     "USDBRL": {
       "label": "USD/BRL",
