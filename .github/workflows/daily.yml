@@ -243,6 +243,17 @@ jobs:
         # SCORED only where data/vol_regime/gate.json marks a leg earned; else display/context.
         # Additive + graceful: returns 0 on any error, never breaks the site.
         run: python -m scripts.build_vol_regime
+      - name: options flow desk (build_options_flow)
+        # after build_gex_board: pulls the OPRA minute-aggregate flat file (massive.com S3) +
+        # the polygon_gex snapshot greeks -> MEASURED dealer positioning + flow -> site/flow/*.json
+        # (the gex page lazy-loads these) + site/flow/mastermind.json. Needs the MASSIVE_S3
+        # flat-file secrets; no-ops gracefully without them. Self-sufficient; returns 0 on error.
+        env:
+          MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
+          MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
+          MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
+          MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
+        run: python -m scripts.build_options_flow || true
       - name: factor seasonality (build_seasonality)
         # after build_site, before build_vector: reads data/french/factors.parquet
         # (Ken French monthly factors, collected in the collect job) and writes

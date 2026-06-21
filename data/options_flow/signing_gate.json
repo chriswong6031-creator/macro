@@ -1,0 +1,33 @@
+{
+  "scored": false,
+  "direction_reliable": false,
+  "magnitude_reliable": true,
+  "net_sign_recovery": 0.4108,
+  "per_trade_agreement": 0.7774,
+  "per_trade_size_weighted": 0.8083,
+  "bar": 0.7,
+  "note": "flow DIRECTION is SOFT \u2014 option minute-ticks are delta-dominated, so net buy/sell is approximate; MAGNITUDE / positioning reads stay reliable",
+  "asof": "2026-06-21",
+  "generated": "2026-06-21T10:41:41.598333+00:00",
+  "n_trades": 101934,
+  "universe": [
+    "SPY",
+    "QQQ",
+    "IWM",
+    "DIA",
+    "NVDA",
+    "AAPL",
+    "TSLA",
+    "AMD",
+    "META",
+    "MSFT"
+  ],
+  "enabled": true,
+  "delta_adjusted": {
+    "tested": true,
+    "improves_direction": false,
+    "tick_minute_agreement": 0.556,
+    "delta_adj_minute_agreement": 0.526,
+    "note": "no improvement on bars \u2014 bid-ask-bounce-limited; reliable direction needs the trade-level NBBO tape"
+  }
+}
