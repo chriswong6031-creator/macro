@@ -353,6 +353,41 @@ def test_backtest_forward_return():
     assert bt._fwd(s, 3, 2) == round(110 / 103 - 1, 10) or abs(bt._fwd(s, 3, 2) - (110/103 - 1)) < 1e-9
 
 
+def test_backtest_agg_stage_groups():
+    import pandas as pd
+    btdf = pd.DataFrame([
+        {"category": "Going-Private", "stage": "live", "ticker": "A", "r5": 0.01, "r20": 0.02, "r60": 0.03, "x5": 0.0, "x20": 0.01, "x60": 0.0},
+        {"category": "Going-Private", "stage": "live", "ticker": "B", "r5": 0.03, "r20": 0.04, "r60": 0.05, "x5": 0.0, "x20": 0.02, "x60": 0.0},
+        {"category": "Going-Private", "stage": "closed", "ticker": "C", "r5": -0.01, "r20": -0.02, "r60": None, "x5": 0.0, "x20": -0.01, "x60": None},
+    ])
+    res = bt._agg_stage(btdf)
+    rows = {(r.category, r.stage): r for _, r in res.iterrows()}
+    assert (("Going-Private", "live") in rows) and (("Going-Private", "closed") in rows)
+    assert rows[("Going-Private", "live")].n == 2
+    assert rows[("Going-Private", "live")].med_r20 == 3.0          # median of 2%, 4%
+
+
+def test_backtest_run_edgar_filing_date_entry(tmp_path, monkeypatch):
+    """run_edgar enters at the first close on/after the FILING date and forward-returns it."""
+    import pandas as pd
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({1: "ABC"}, {"ABC": 500.0}))
+    (tmp_path / "special_situations").mkdir()
+    # one classifiable activist situation on ABC, filed 2026-06-10
+    _events([{"id": "1", "form_type": "SC 13D", "company": "ABC Inc", "cik": "1",
+              "items": None, "date_filed": "2026-06-10"}]
+            ).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    # a price panel where ABC rises 10% over 5 trading days from entry
+    idx = pd.bdate_range("2026-06-01", periods=20)   # idx[7] == 2026-06-10 (entry)
+    (tmp_path / "breadth").mkdir()
+    pd.DataFrame({"ABC": [100.0] * 12 + [110.0] * 8}, index=idx).to_parquet(
+        tmp_path / "breadth" / "_closes_cache.parquet")   # entry 100 -> +5d (idx[12]) 110
+    btdf = bt.run_edgar()
+    row = btdf.set_index("ticker").loc["ABC"]
+    assert row["category"] == "Activist Campaigns" and row["stage"] in ("initiated", "—")
+    assert round(row["r5"], 4) == 0.10                            # 100 -> 110 over 5 days
+
+
 def test_summary_lane_llm_ready_gate(monkeypatch):
     monkeypatch.setattr(config, "secret", lambda n: "key")
     assert ss._llm_ready({"enabled": True, "llm_brief": True}) is True

@@ -146,6 +146,69 @@ def run() -> pd.DataFrame:
     return bt
 
 
+def run_edgar() -> pd.DataFrame:
+    """P5.1 — point-in-time backtest from our OWN EDGAR detections: enter each classified
+    situation at the first close on/after its FILING date (no digest weekly lag), measure
+    forward returns by category AND lifecycle stage. This is the cleaner go-forward signal
+    the digest-date backtest only approximates."""
+    from engine import special_situations as sse
+    df = sse.build_situations()
+    if df.empty:
+        return pd.DataFrame()
+    ok = df[(df.status == "ok") & df.ticker.notna() & df.date_filed.notna()].copy()
+    if "current_stage" in ok.columns:
+        ok["stage"] = ok["current_stage"].fillna(ok["stage"])
+    closes = _us_closes()
+    if closes.empty or ok.empty:
+        return pd.DataFrame()
+    spy = _spy(closes)
+    idx = closes.index
+    recs = []
+    for _, r in ok.iterrows():
+        tkr = str(r.ticker).upper().split(".")[0]
+        if tkr not in closes.columns:
+            continue
+        s = closes[tkr].dropna()
+        if s.empty:
+            continue
+        pos_all = idx.searchsorted(pd.Timestamp(r.date_filed))      # first close >= filing date
+        if pos_all >= len(idx):
+            continue
+        entry_actual = idx[pos_all]
+        epos = s.index.searchsorted(entry_actual)
+        if epos >= len(s) or s.index[epos] < entry_actual:
+            continue
+        spos = spy.index.searchsorted(entry_actual) if spy is not None else -1
+        rec = {"category": r.category, "stage": r.stage or "—", "ticker": tkr}
+        for h in HORIZONS:
+            fr = _fwd(s, epos, h)
+            rec[f"r{h}"] = fr
+            if fr is not None and spy is not None and 0 <= spos < len(spy):
+                sr = _fwd(spy, spos, h)
+                rec[f"x{h}"] = (fr - sr) if sr is not None else None
+            else:
+                rec[f"x{h}"] = None
+        recs.append(rec)
+    return pd.DataFrame(recs)
+
+
+def _agg_stage(bt: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate forward returns by (category, stage) — e.g. a Going-Private 'announced' vs
+    'vote-scheduled' vs 'closed' carry different drift."""
+    out = []
+    for (cat, stage), g in bt.groupby(["category", "stage"]):
+        row = {"category": cat, "stage": stage, "n": len(g)}
+        for h in HORIZONS:
+            v = g[f"r{h}"].dropna()
+            x = g[f"x{h}"].dropna()
+            row[f"n{h}"] = len(v)
+            row[f"med_r{h}"] = round(v.median() * 100, 1) if len(v) else np.nan
+            row[f"win{h}"] = round((v > 0).mean() * 100, 0) if len(v) else np.nan
+            row[f"med_x{h}"] = round(x.median() * 100, 1) if len(x) else np.nan
+        out.append(row)
+    return pd.DataFrame(out).sort_values("n", ascending=False)
+
+
 def _agg(bt: pd.DataFrame) -> pd.DataFrame:
     out = []
     for cat, g in bt.groupby("category"):
@@ -199,6 +262,31 @@ def main() -> int:
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(out, indent=2))
     print(f"\n[priors] wrote {p}")
+
+    # P5.1 — point-in-time EDGAR backtest (filing-date entry, by category x stage)
+    ebt = run_edgar()
+    if not ebt.empty:
+        eres = _agg_stage(ebt)
+        print(f"\n=== EDGAR filing-date entry — {len(ebt)} situations we can price, by category x stage ===")
+        eshow = ["category", "stage", "n", "med_r20", "win20", "med_x20", "med_r60", "n60"]
+        print(eres[eshow].to_string(index=False))
+
+        def _num(v):
+            return None if v is None or (isinstance(v, float) and np.isnan(v)) else float(v)
+        cs = {f"{r['category']} · {r['stage']}": {
+                  "category": r["category"], "stage": r["stage"], "n": int(r["n"]),
+                  "med_ret_20d_pct": _num(r["med_r20"]), "win_20d_pct": _num(r["win20"]),
+                  "med_excess_20d_pct": _num(r["med_x20"]), "med_ret_60d_pct": _num(r["med_r60"])}
+              for _, r in eres.iterrows()}
+        eout = {"schema": "ss_edgar_backtest_priors.v1", "is_context_only": True,
+                "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+                "n_situations": int(len(ebt)), "entry": "first close on/after the EDGAR filing date",
+                "by_category_stage": cs,
+                "note": "Point-in-time forward returns of our own EDGAR detections by category x "
+                        "lifecycle stage. Context/priors only, not a signal."}
+        ep = config.data_dir() / "special_situations" / "edgar_backtest_priors.json"
+        ep.write_text(json.dumps(eout, indent=2))
+        print(f"[priors] wrote {ep}")
     return 0
 
 
