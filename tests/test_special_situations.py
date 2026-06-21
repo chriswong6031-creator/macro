@@ -362,6 +362,54 @@ def test_summary_lane_llm_ready_gate(monkeypatch):
     assert ss._llm_ready({"enabled": True, "llm_brief": True}) is False   # no key
 
 
+# ---- lifecycle / stage tracking (P3.1) --------------------------------------
+def test_lifecycle_links_amendments(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    _events([
+        {"id": "1", "form_type": "SC 13D", "company": "X", "cik": "7", "items": None, "date_filed": "2026-06-01"},
+        {"id": "2", "form_type": "SC 13D/A", "company": "X", "cik": "7", "items": None, "date_filed": "2026-06-10"},
+    ]).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations().set_index("id")
+    assert df.loc["2", "n_amendments"] == 1                 # one /A amendment in the timeline
+    assert df.loc["2", "current_stage"] == "escalation"     # latest filing's stage
+    lc = sse.lifecycle(sse.build_situations())
+    assert lc[("7", "Activist Campaigns")]["n_filings"] == 2
+
+
+def test_lifecycle_terminal_terminated(tmp_path, monkeypatch):
+    """A filer with both a merger proxy AND a deal-termination event -> the deal reads 'terminated'."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    ev = _events([
+        {"id": "1", "form_type": "DEFM14A", "company": "DealCo", "cik": "8", "items": None, "date_filed": "2026-05-01"},
+        {"id": "2", "form_type": "8-K", "company": "DealCo", "cik": "8", "items": "1.02", "date_filed": "2026-06-01"},
+    ])
+    ev["text_category"] = [None, "Deal Terminations"]       # 1.02 + termination keyword -> promoted
+    ev["text_stage"] = [None, "terminated"]
+    ev.to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations().set_index("id")
+    assert df.loc["1", "deal_terminal"] == "terminated"
+    assert df.loc["1", "current_stage"] == "terminated"
+
+
+def test_lifecycle_terminal_closed(tmp_path, monkeypatch):
+    """An 8-K Item 2.01 (completion) by the deal filer flips the deal to 'closed' — even
+    though the 2.01 8-K itself is only a deferred row."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    _events([
+        {"id": "1", "form_type": "DEFM14A", "company": "DealCo", "cik": "9", "items": None, "date_filed": "2026-05-01"},
+        {"id": "2", "form_type": "8-K", "company": "DealCo", "cik": "9", "items": "2.01", "date_filed": "2026-06-01"},
+    ]).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations().set_index("id")
+    assert df.loc["1", "current_stage"] == "closed"
+    assert df.loc["1", "deal_terminal"] == "closed"
+
+
 # ---- LLM verify lane (P1.1) -------------------------------------------------
 def test_parse_llm_json_robust():
     assert ss._parse_llm_json('{"category": "Acquisitions"}')["category"] == "Acquisitions"

@@ -304,6 +304,52 @@ def _universe_caps() -> tuple[dict[int, str], dict[str, float]]:
     return cik_ticker, mc
 
 
+# categories that progress along an announced -> closed / terminated arc (P3.1)
+_DEAL_ARC = frozenset({ACQ, TO, GP, SPIN, DIV})
+
+
+def lifecycle(df: pd.DataFrame) -> dict[tuple, dict]:
+    """Link the SAME deal's filings into a timeline — our edge over the stageless weekly
+    digest. Group classified events by (cik, category), order by filing date, and derive a
+    current stage + stage history + amendment count. Terminal states ("terminated" / "closed")
+    are inferred from the filer's OTHER rows: a Deal-Terminations event, an 8-K Item 2.01
+    completion, or a Form 15 deregistration. Returns {(cik, category): {...}}. Pure."""
+    out: dict[tuple, dict] = {}
+    if df is None or df.empty:
+        return out
+    # per-filer terminal signals, read across ALL of a CIK's rows (not just one category)
+    term: dict[str, set] = {}
+    for cik, g in df.groupby(df.cik.astype(str)):
+        flags: set[str] = set()
+        if (g.category == TERM).any():
+            flags.add("terminated")
+        items = g["items"].astype(str) if "items" in g.columns else pd.Series("", index=g.index)
+        if items.str.contains("2.01", na=False).any() or g.form_type.isin(["15-12B", "15-12G"]).any():
+            flags.add("closed")
+        if flags:
+            term[cik] = flags
+    work = df[df.status == "ok"]
+    for (cik, cat), g in work.groupby([work.cik.astype(str), work.category]):
+        g = g.sort_values("date_filed")
+        hist = [{"date": r.get("date_filed"), "stage": r.get("stage"), "form": r.get("form_type")}
+                for _, r in g.iterrows()]
+        cur = g.iloc[-1].get("stage")
+        terminal = None
+        if cat in _DEAL_ARC:
+            flags = term.get(str(cik), set())
+            if "terminated" in flags:
+                terminal, cur = "terminated", "terminated"
+            elif "closed" in flags:
+                terminal, cur = "closed", "closed"
+        out[(str(cik), cat)] = {
+            "current_stage": cur, "stage_history": hist,
+            "n_amendments": int(g.form_type.astype(str).str.contains(r"/A", na=False).sum()),
+            "n_filings": int(len(g)), "first_date": g.date_filed.min(),
+            "last_date": g.date_filed.max(), "terminal": terminal,
+        }
+    return out
+
+
 def build_situations() -> pd.DataFrame:
     """Classify + enrich + floor every stored event. Returns the full frame
     (all rows, with category/stage/status/ticker/mc/floor_pass/cross_border)."""
@@ -395,6 +441,14 @@ def build_situations() -> pd.DataFrame:
     df["mc_musd"] = df.ticker.apply(lambda t: mc.get(t))
     floor = float(_cfg().get("market_cap_floor_musd", 100))
     df["floor_pass"] = df.mc_musd.apply(lambda m: apply_floor(m, floor))
+
+    # lifecycle / stage tracking (P3.1): link each deal's filings into a timeline and stamp
+    # the current stage (incl. terminal "terminated"/"closed") + amendment count per row.
+    lc = lifecycle(df)
+    keys = list(zip(df.cik.astype(str), df.category))
+    df["current_stage"] = [(lc.get(k) or {}).get("current_stage") for k in keys]
+    df["n_amendments"] = [(lc.get(k) or {}).get("n_amendments") for k in keys]
+    df["deal_terminal"] = [(lc.get(k) or {}).get("terminal") for k in keys]
     return df
 
 
@@ -573,7 +627,10 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
             else:
                 merged[k] = {
                     "id": r.get("id"), "ticker": r.get("ticker"), "company": r.get("company"),
-                    "category": r.get("category"), "stage": r.get("stage") or "",
+                    "category": r.get("category"),
+                    "stage": r.get("current_stage") or r.get("stage") or "",
+                    "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,
+                    "terminal": (r.get("deal_terminal") if pd.notna(r.get("deal_terminal")) else None),
                     "form_type": r.get("form_type"), "cross_border": bool(r.get("cross_border")),
                     "mc_musd": r.get("mc_musd"), "date_filed": r.get("date_filed"),
                     "source_url": r.get("source_url"),
@@ -646,7 +703,9 @@ def mastermind_emit() -> dict:
         for _, r in edf[edf.status == "ok"].iterrows():
             consider(r.get("ticker"), {
                 "ticker": r.get("ticker"), "company": r.get("company"),
-                "category": r.get("category"), "stage": r.get("stage") or "",
+                "category": r.get("category"),
+                "stage": r.get("current_stage") or r.get("stage") or "",
+                "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,
                 "date": r.get("date_filed"), "country": "US",
                 "cross_border": bool(r.get("cross_border")),
                 "source": "edgar", "source_url": r.get("source_url"),

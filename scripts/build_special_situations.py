@@ -49,6 +49,7 @@ STAGE_ZH = {
     "vote-scheduled": "已定投票", "registered": "已登记", "terminated": "已终止",
     "filed": "已申报", "notice": "通知", "completed": "已完成", "change": "变动",
     "proxy-fight": "代理权之争", "target-response": "标的回应",
+    "closed": "已成交", "terminated": "已终止", "de-SPAC": "去SPAC",
 }
 
 
@@ -120,6 +121,7 @@ def build(refresh: bool = True) -> str:
             "url": s.get("edgar_url") or s.get("source_url"),
             "summary": _txt(s.get("summary"), dash=""), "live": bool(s.get("live")),
             "low_conf": s.get("confidence") == "low", "arb": _arb_str(s.get("arb")),
+            "n_amend": int(s.get("n_amendments") or 0), "terminal": s.get("terminal"),
         } for s in rows_src]
         groups.append({"cat": cat, "cat_zh": CAT_ZH.get(cat, cat),
                        "color": CAT_COLOR.get(cat, C["muted"]), "n": len(rows), "rows": rows})
