@@ -378,6 +378,38 @@ def test_velocity_ledger(tmp_path, monkeypatch):
     assert out["NVDA"]["spike"] is True
 
 
+def test_diversify_by_source_caps_prolific_feed():
+    # with diverse alternatives available, no single source exceeds per_source in the pick
+    items = ([{"s": "insider", "i": i} for i in range(10)]
+             + [{"s": "radar", "i": i} for i in range(10)]
+             + [{"s": "federal", "i": i} for i in range(10)])
+    top = H._diversify_by_source(items, 12, 4, src=lambda d: d["s"])
+    srcs = [d["s"] for d in top]
+    assert srcs.count("insider") == 4 and srcs.count("radar") == 4 and srcs.count("federal") == 4
+    assert len(top) == 12
+
+
+def test_diversify_by_source_underfill_tops_up():
+    # only one source available → the cap is ignored to fill n (never returns short)
+    items = [{"s": "insider", "i": i} for i in range(10)]
+    assert len(H._diversify_by_source(items, 6, 3, src=lambda d: d["s"])) == 6
+
+
+def test_discovery_section_diversified_across_sources():
+    # 20 insider clusters at 0.45 + one LOWER-scoring (0.40) activist name. Pure top-by-score
+    # would bury the activist below 20 insiders; the per-source diversity surfaces it anyway.
+    off = [{"ticker": f"OD{i:02d}", "source": "insider_cluster", "disc_score": 0.45,
+            "off_desk": True, "reason": f"{i} insiders"} for i in range(20)]
+    act = {"ticker": "ACT", "source": "activist_ownership", "disc_score": 0.40,
+           "off_desk": True, "reason": "activist 13D"}
+    cands = off + [act]                                      # activist ranks 21st by score
+    disc = {"by_ticker": {c["ticker"]: c for c in cands}, "candidates": cands,
+            "off_desk": cands, "n": len(cands), "n_off_desk": len(cands)}
+    b = _bundle({"NVDA": _news("pos")}, [_sig("NVDA", 85)])
+    sec = H.build(b, None, {}, today=_TODAY, discovery=disc)["discovery"]
+    assert "ACT" in [d["ticker"] for d in sec]              # surfaced despite 20 stronger insiders
+
+
 if __name__ == "__main__":
     import inspect
     g = dict(globals())

@@ -150,3 +150,86 @@ def test_build_marks_off_desk_and_dedups():
 def test_build_degrades_on_empty():
     out = D.build(None, None, bundle_universe=set(), today=_TODAY)
     assert out["n"] == 0 and out["off_desk"] == [] and out["candidates"] == []
+
+
+# --------------------------------------------------------------------------- #
+# Feed 4 — activist beneficial-ownership (Schedule 13D / 13G→13D flip)
+# --------------------------------------------------------------------------- #
+def _reg(state="activist", signal="high", n_13d=1, is_flip=False,
+         latest_date="2026-06-18", filer="STARBOARD VALUE"):
+    return {"state": state, "signal": signal, "n_13d": n_13d, "n_13g": 0,
+            "is_flip": is_flip, "latest_date": latest_date, "latest_filer": filer}
+
+
+def test_activist_admits_high_signal_only():
+    regime = {"ACT": _reg(), "PAS": _reg(state="passive", signal="low"),
+              "CUST": _reg(state="custodial", signal="noise")}
+    cands = D.scan_activist_ownership(regime, None, _TODAY)
+    assert [c["ticker"] for c in cands] == ["ACT"]
+    assert cands[0]["source"] == "activist_ownership" and cands[0]["validated"] is False
+
+
+def test_activist_flip_outranks_plain_and_capped():
+    regime = {"FLIP": _reg(state="flip", is_flip=True, n_13d=2),
+              "PLAIN": _reg()}
+    cands = D.scan_activist_ownership(regime, None, _TODAY)
+    assert cands[0]["ticker"] == "FLIP"                       # flip is the higher-signal escalation
+    assert all(c["disc_score"] <= D._ACTIVIST_CAP_MEASURING for c in cands)
+
+
+def test_activist_stale_filing_dropped():
+    regime = {"OLD": _reg(latest_date="2026-01-01")}          # >90d before today → not a discovery
+    assert D.scan_activist_ownership(regime, None, _TODAY) == []
+
+
+def test_activist_scored_gate_lifts_cap_and_tags():
+    regime = {"ACT": _reg()}
+    measuring = D.scan_activist_ownership(regime, None, _TODAY)[0]
+    scored = D.scan_activist_ownership(regime, {"scored": True, "lead_horizon": 21}, _TODAY)[0]
+    assert scored["disc_score"] > measuring["disc_score"]     # validated → leading-tier cap
+    assert scored["validated"] is True and scored["lead_horizon"] == 21
+    assert scored["disc_score"] <= D._ACTIVIST_CAP_SCORED
+
+
+def test_build_includes_activist_feed():
+    out = D.build(None, None, bundle_universe={"OWNED"}, today=_TODAY,
+                  ownership={"OFFD": _reg(), "OWNED": _reg(state="flip", is_flip=True)})
+    assert out["sources"]["activist_ownership"] == 2
+    assert out["by_ticker"]["OFFD"]["off_desk"] is True
+    assert out["by_ticker"]["OWNED"]["off_desk"] is False
+
+
+# --------------------------------------------------------------------------- #
+# Feed 5 — index-reconstitution forced flow (gate-controlled)
+# --------------------------------------------------------------------------- #
+def _chg(t, kind="add", index="sp500", d="2026-06-16"):
+    return {"ticker": t, "kind": kind, "index": index, "d": d}
+
+
+def test_recon_dormant_without_scored_gate():
+    chgs = [_chg("NEW")]
+    assert D.scan_index_reconstitution(chgs, None, _TODAY) == []          # no gate → dormant
+    assert D.scan_index_reconstitution(chgs, {"scored": True, "add_scored": False}, _TODAY) == []
+
+
+def test_recon_emits_adds_when_validated_with_index_tier():
+    chgs = [_chg("BIG", index="sp500"), _chg("SMALL", index="sp600")]
+    cands = D.scan_index_reconstitution(chgs, {"add_scored": True}, _TODAY)
+    assert [c["ticker"] for c in cands] == ["BIG", "SMALL"]               # sp500 tier > sp600
+    assert cands[0]["source"] == "index_reconstitution"
+    assert cands[0]["disc_score"] > cands[1]["disc_score"]
+
+
+def test_recon_drops_deletes_and_stale():
+    chgs = [_chg("DEL", kind="delete"), _chg("OLD", d="2026-05-01")]      # delete + >15d stale
+    assert D.scan_index_reconstitution(chgs, {"add_scored": True}, _TODAY) == []
+
+
+def test_build_recon_gate_controlled():
+    chgs = [_chg("ADDED")]
+    off = D.build(None, None, bundle_universe=set(), today=_TODAY,
+                  index_changes=chgs, recon_gate={"add_scored": False})
+    assert off["sources"]["index_reconstitution"] == 0                   # dormant
+    on = D.build(None, None, bundle_universe=set(), today=_TODAY,
+                 index_changes=chgs, recon_gate={"add_scored": True})
+    assert on["sources"]["index_reconstitution"] == 1
