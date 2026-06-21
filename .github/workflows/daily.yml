@@ -440,6 +440,11 @@ jobs:
           cat /tmp/radar_score.log
           [ "$rc" -ne 0 ] && echo "::warning title=radar_scorer::rc=$rc (non-fatal)"
           exit 0
+      - name: Calibration Hub (unified self-improvement observability; display-only)
+        # Consolidates every Phase-C desk's track_record + the Trial Ledger into one
+        # surface (data/calibration/summary.json + site/calibration.html). Runs after the
+        # deterministic scorers so it reads fresh track records; never feeds a score.
+        run: python -m scripts.build_calibration || true
       - name: Alt-Data Brain (Claude-Opus convergence analyst; actionable + falsifiable)
         # Reads the deterministic weighted-convergence substrate + influence graph (written by
         # build_alt_data above) as an evidence pack and writes an ACTIONABLE scored read
