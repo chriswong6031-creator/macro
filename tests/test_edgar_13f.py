@@ -155,3 +155,45 @@ def test_overlap_stats_vip_threshold_and_empty():
     assert sm.overlap_stats(many)["is_vip"] is True          # >= _VIP_MIN
     assert sm.overlap_stats(many[:2])["is_vip"] is False
     assert sm.overlap_stats([_holder("X", "exit", 0.0, 1.0)]) == {"vip": 0}
+
+
+def _series(*holder_counts, vals=None):
+    vals = vals or [c * 100.0 for c in holder_counts]
+    return [{"period": f"2024-{3*(i+1):02d}-31", "n_funds": c, "value_usd": v}
+            for i, (c, v) in enumerate(zip(holder_counts, vals))]
+
+
+def test_accumulation_trend_holder_count_drives_direction():
+    up = sm.accumulation_trend(_series(2, 3, 4, 5))
+    assert up["direction"] == "accumulating"
+    assert up["holders_first"] == 2 and up["holders_last"] == 5
+    assert up["holders_delta"] == 3 and up["n_quarters"] == 4
+    assert up["holders_series"] == [2, 3, 4, 5]
+
+    down = sm.accumulation_trend(_series(6, 6, 4, 3))
+    assert down["direction"] == "distributing" and down["holders_delta"] == -3
+
+    # trailing exit-to-zero is the signal — must NOT read as "stable"
+    exited = sm.accumulation_trend(_series(3, 3, 3, 0))
+    assert exited["direction"] == "distributing"
+    assert exited["holders_last"] == 0 and exited["holders_delta"] == -3
+
+
+def test_accumulation_trend_value_breaks_holder_ties():
+    flat_up = sm.accumulation_trend(_series(3, 3, 3, vals=[100.0, 150.0, 200.0]))
+    assert flat_up["direction"] == "accumulating"          # +100% value, holders flat
+    assert flat_up["value_change_pct"] == 100.0
+    flat_down = sm.accumulation_trend(_series(3, 3, vals=[200.0, 100.0]))
+    assert flat_down["direction"] == "distributing"        # -50% value
+    flat_stable = sm.accumulation_trend(_series(3, 3, vals=[100.0, 105.0]))
+    assert flat_stable["direction"] == "stable"            # +5% < threshold
+
+
+def test_accumulation_trend_needs_two_real_quarters():
+    assert sm.accumulation_trend(_series(4)) is None       # one point
+    assert sm.accumulation_trend([]) is None
+    # leading empty quarters (name not yet held) are dropped before the >=2 check
+    assert sm.accumulation_trend(
+        [{"period": "2024-03-31", "n_funds": 0, "value_usd": 0.0},
+         {"period": "2024-06-31", "n_funds": 0, "value_usd": 0.0},
+         {"period": "2024-09-31", "n_funds": 2, "value_usd": 200.0}]) is None

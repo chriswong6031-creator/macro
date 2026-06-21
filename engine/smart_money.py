@@ -206,6 +206,52 @@ def diff_snapshots(prev: pd.DataFrame | None, latest: pd.DataFrame,
     return eq
 
 
+# fraction value-change that, absent a holder-count move, still reads as a trend
+_TREND_VAL_FRAC = 15.0
+
+
+def accumulation_trend(series: list[dict]) -> dict | None:
+    """Multi-quarter "Historical institutional increase/decrease" read for ONE name.
+    PURE. `series` = per-quarter aggregates ascending by period, each
+    {period, n_funds, value_usd} (n_funds = tracked funds holding it that quarter).
+
+    Direction is driven by the holder-count change across the window (broadening
+    vs narrowing super-investor ownership), with aggregate $ value as the
+    tiebreaker when the holder count is flat. Leading quarters before the name was
+    ever held are trimmed, but a trailing exit-to-zero is KEPT (it IS the signal).
+    <2 quarters of history -> None (no trend yet)."""
+    start = next((i for i, p in enumerate(series)
+                  if p.get("n_funds") or p.get("value_usd")), None)
+    if start is None:
+        return None
+    pts = series[start:]
+    if len(pts) < 2:
+        return None
+    first, last = pts[0], pts[-1]
+    h0, h1 = int(first.get("n_funds") or 0), int(last.get("n_funds") or 0)
+    v0 = float(first.get("value_usd") or 0.0)
+    v1 = float(last.get("value_usd") or 0.0)
+    h_delta = h1 - h0
+    v_pct = round((v1 - v0) / v0 * 100, 1) if v0 > 0 else None
+    if h_delta > 0 or (h_delta == 0 and v_pct is not None and v_pct > _TREND_VAL_FRAC):
+        direction = "accumulating"
+    elif h_delta < 0 or (h_delta == 0 and v_pct is not None and v_pct < -_TREND_VAL_FRAC):
+        direction = "distributing"
+    else:
+        direction = "stable"
+    return {
+        "direction": direction,
+        "n_quarters": len(pts),
+        "holders_first": h0,
+        "holders_last": h1,
+        "holders_delta": h_delta,
+        "value_change_pct": v_pct,
+        "from_period": str(first.get("period") or ""),
+        "to_period": str(last.get("period") or ""),
+        "holders_series": [int(p.get("n_funds") or 0) for p in pts],
+    }
+
+
 # --------------------------------------------------------------------------- #
 # Orchestration (reads disk; the heavy lifting above is pure/tested).
 # --------------------------------------------------------------------------- #
@@ -219,6 +265,59 @@ def _read_two(slug: str) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
     latest = pd.read_parquet(snaps[-1])
     prev = pd.read_parquet(snaps[-2]) if len(snaps) >= 2 else None
     return prev, latest
+
+
+def _read_all(slug: str) -> list[tuple[str, pd.DataFrame]]:
+    """Every retained snapshot for a fund, (period_end, frame) ascending by period."""
+    d = config.data_dir() / "smart_money" / slug
+    if not d.exists():
+        return []
+    out: list[tuple[str, pd.DataFrame]] = []
+    for p in sorted(d.glob("*.parquet")):
+        try:
+            df = pd.read_parquet(p)
+        except Exception:  # noqa: BLE001
+            continue
+        if not df.empty:
+            out.append((p.stem, df))
+    return out
+
+
+def _accumulation(funds: dict, name_map: dict[str, str],
+                  cusip_map: dict[str, str]) -> dict[str, dict]:
+    """{ticker: accumulation_trend(...)} across ALL retained quarters of every
+    tracked fund — the multi-quarter "who's been building vs trimming this name"
+    rollup. Reads disk; the per-name math is the pure accumulation_trend above."""
+    # ticker -> period -> [holder_count, total_value]
+    agg: dict[str, dict[str, list]] = {}
+    periods: set[str] = set()
+    for slug in funds:
+        for period_end, snap in _read_all(slug):
+            eq = snap[snap.get("sh_type", "SH") == "SH"]
+            if eq.empty:
+                continue
+            g = (eq.groupby("cusip", as_index=False)
+                   .agg(issuer=("issuer", "first"), value_usd=("value_usd", "sum")))
+            res = resolve_tickers(g, name_map, cusip_map)
+            res = res[res["ticker"].notna()]
+            if res.empty:
+                continue
+            periods.add(period_end)
+            # one fund counted once per ticker (collapse dual-class lots)
+            per = res.groupby("ticker", as_index=False).agg(value_usd=("value_usd", "sum"))
+            for r in per.itertuples(index=False):
+                slot = agg.setdefault(r.ticker, {}).setdefault(period_end, [0, 0.0])
+                slot[0] += 1
+                slot[1] += float(r.value_usd)
+    ordered = sorted(periods)
+    out: dict[str, dict] = {}
+    for tk, pmap in agg.items():
+        series = [{"period": p, "n_funds": pmap.get(p, [0, 0.0])[0],
+                   "value_usd": pmap.get(p, [0, 0.0])[1]} for p in ordered]
+        tr = accumulation_trend(series)
+        if tr is not None:
+            out[tk] = tr
+    return out
 
 
 def compute_smart_money(cfg: dict | None = None) -> dict | None:
@@ -283,6 +382,9 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
     if not by_ticker:
         return None
 
+    # multi-quarter "Historical institutional increase/decrease" trend per name
+    trends = _accumulation(funds, name_map, cusip_map)
+
     _BUY = {"new": 0, "add": 1, "hold": 2, "trim": 3, "exit": 4}
     for t, rec in by_ticker.items():
         h = rec["holders"]
@@ -293,6 +395,8 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         rec["n_buying"] = sum(1 for e in h if e["action"] in ("new", "add"))
         rec["n_selling"] = sum(1 for e in h if e["action"] in ("trim", "exit"))
         rec["as_of"] = max((e["period_end"] for e in h), default="")
+        if t in trends:
+            rec["trend"] = trends[t]
 
     most_held = sorted(overlap.values(), key=lambda r: (-r["n_funds"], -r["total_value"]))[:40]
     for m in most_held:
