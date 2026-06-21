@@ -4002,8 +4002,10 @@ special_situations:                # event-driven Special Situations desk (displ
   market_cap_floor_musd: 100       # keep covered companies >= $100M (decision 2026-06-20)
   eight_k_items:                   # special-situations 8-K items (others discarded)
     ["1.01", "1.02", "1.03", "2.01", "3.01", "5.02", "8.01"]
-  # LLM 88-word summary touchpoint (wired in P1.3; off until then)
-  llm_brief: false
+  # LLM 88-word summary touchpoint — ON (DeepSeek; key via DEEPSEEK_API_KEY secret).
+  # Generates summaries ONLY for EDGAR-only situations lacking a digest summary,
+  # cached per situation id (pays once per new situation). No-op if the key is absent.
+  llm_brief: true
   llm_model: "deepseek-chat"
   api_key_env: "DEEPSEEK_API_KEY"
   llm_base_url: "https://api.deepseek.com/anthropic"

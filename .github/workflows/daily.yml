@@ -319,6 +319,10 @@ jobs:
         # data/regime/special_situations_latest.json (hub card). Runs before
         # build_vector (which writes the landing hub last). Self-sufficient; the
         # build degrades to last-known on any SEC fetch outage and returns 0.
+        # DEEPSEEK_API_KEY enables the gated 88-word summary lane for EDGAR-only
+        # situations (config special_situations.llm_brief); absent -> no-op.
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python -m scripts.build_special_situations
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
