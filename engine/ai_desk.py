@@ -126,10 +126,10 @@ def _read_json(path):
 
 
 def _regime_label(root) -> str | None:
-    """The canonical macro regime quad at log time (data/regime/latest.json), stamped on
-    each thesis so the Phase-C scorer can report hit-rate per regime. Degrades to None."""
-    d = _read_json(Path(root).joinpath("data", "regime", "latest.json")) or {}
-    return d.get("quad_name") or d.get("quad") or None
+    """The canonical macro regime quad at log time, stamped on each thesis so the Phase-C
+    scorer can report hit-rate per regime. Thin alias over the shared engine.regime_label."""
+    from engine.regime_label import quad_label
+    return quad_label(root)
 
 
 def _brief_age_days(prev) -> float | None:

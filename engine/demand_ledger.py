@@ -35,6 +35,7 @@ import pandas as pd
 
 from engine import ai_desk as _desk          # reuse _check_by / _level_asof
 from engine import ai_desk_scorer as _scorer  # reuse the predicate evaluators
+from engine.regime_label import quad_label    # regime stamp → by_regime track record
 from engine import demand_chain as dc
 from lib import config
 
@@ -190,12 +191,14 @@ def build_theses(root=None, today=None) -> list[dict]:
             candidates.append((tkr, read))
 
     out, seen = [], set()
+    regime = quad_label(root)
     for tkr, read in candidates:
         if not read.get("leading") or read.get("divergence") not in _ACTIONABLE:
             continue
         th = _thesis_for(tkr, read, asof, _desk._level_asof(tkr, root, asof), spy_lvl)
         if th and th["vintage"] not in seen:
             seen.add(th["vintage"])
+            th["regime"] = regime
             out.append(th)
     return out
 

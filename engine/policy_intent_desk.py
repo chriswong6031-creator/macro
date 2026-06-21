@@ -36,6 +36,7 @@ from engine import master_brain as _mb              # reuse the DeepSeek/Anthrop
 from engine import ai_desk as _desk                 # reuse _level_asof / _check_by
 from engine import ai_desk_scorer as _scorer        # reuse the predicate evaluators
 from engine.catalyst_tone import _extract_json      # shared tolerant JSON parser
+from engine.regime_label import quad_label          # regime stamp → by_regime track record
 
 log = logging.getLogger(__name__)
 
@@ -334,6 +335,7 @@ def _append_ledger(brief: dict, root) -> None:
         d = Path(root) / "data" / "policy_intent"
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
+        regime = quad_label(root)
         with open(d / "theses.jsonl", "a") as fh:
             for t in theses:
                 check = (t.get("falsifier") or {}).get("check") or {}
@@ -349,7 +351,7 @@ def _append_ledger(brief: dict, root) -> None:
                     "actor": t.get("actor"), "subject": t["subject"], "lean": t["lean"],
                     "conviction": t["conviction"], "horizon_d": t["horizon_d"],
                     "falsifier": t["falsifier"], "check_by": t["check_by"],
-                    "entry_levels": entry,
+                    "entry_levels": entry, "regime": regime,
                     "status": "open", "scored_at": None, "outcome": None, "realized": None,
                 }, default=str) + "\n")
     except Exception as e:  # noqa: BLE001
