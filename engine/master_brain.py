@@ -572,6 +572,27 @@ def gather_china_state(root: Path | None = None) -> dict:
     bonds = _bonds_backdrop(root)
     if bonds:
         state["bonds"] = bonds
+    # China intelligence surfaces (news media-sentiment · PBoC stance · alt-data convergence ·
+    # divergence radar) — the transmission bus already fans these four into one compact,
+    # context-only block. Display/context for the narrator; never scored.
+    try:
+        from engine import china_intel_bus
+        b = china_intel_bus.briefing()
+        # widened whitelist (v2): the central-analysis synthesis + flagged tickers + what-changed
+        # must propagate, not just the four raw surface blocks (the L551 whitelist gates them).
+        keys = ("news", "policy", "altdata", "radar",
+                "analysis", "conviction", "cross_surface", "flagged_tickers",
+                "what_changed", "salience")
+        intel = {k: b.get(k) for k in keys if b.get(k)}
+        if intel:
+            intel["digest"] = b.get("digest")     # the synthesis-led plain-text rollup
+            # the context-only contract MUST travel with the hoisted conviction/flagged tickers
+            intel["is_context_only"] = True
+            intel["disclaimer"] = b.get("disclaimer")
+            intel["disclaimer_zh"] = b.get("disclaimer_zh")
+            state["china_intel"] = intel
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.debug("china_intel state unavailable (%s)", e)
     return state
 
 

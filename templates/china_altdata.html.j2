@@ -1,0 +1,117 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro bl(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro sc(v) -%}
+{% if v is none %}<span class="mut">·</span>{% else %}<span class="{{ 'r-pos' if v>0 else ('r-neg' if v<0 else 'mut') }}">{{ '%+.2f'|format(v) }}</span>{% endif %}
+{%- endmacro %}
+
+{% block title %}{{ t('Alternative Data', '另类数据') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .ad-hero { max-width:1060px; margin:18px auto 0; }
+  .ad-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .ad-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .ad-hero h1 { letter-spacing:0; }
+  .ad-hero .lens { font-size:12px; color:var(--muted); }
+  .ad-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
+  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
+  .callout.warn { border-left:4px solid var(--warn); }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); position:sticky; top:0; }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  table.data td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .conv { font-weight:700; font-variant-numeric:tabular-nums; }
+  .flag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); }
+  .cvband { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .cvband.cv-pos { color:#1f9a55; background:color-mix(in srgb,#1f9a55 12%,transparent); }
+  .cvband.cv-neg { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
+  .nchip { font-size:12px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
+  /* signal-lab tiers */
+  .lab { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin:12px 0; }
+  .tier { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
+  .tier h3 { margin:0 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.05em; display:flex; gap:8px; align-items:center; }
+  .tier .badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .t-scored .badge{color:#1f9a55;background:color-mix(in srgb,#1f9a55 14%,transparent)}
+  .t-confirmer .badge{color:#5b8def;background:color-mix(in srgb,#5b8def 14%,transparent)}
+  .t-display .badge{color:var(--muted);background:var(--panel2)}
+  .t-pending .badge{color:#e0973a;background:color-mix(in srgb,#e0973a 14%,transparent)}
+  .t-killed .badge{color:#d23f3f;background:color-mix(in srgb,#d23f3f 13%,transparent)}
+  .lab .row { padding:7px 0; border-bottom:1px solid var(--line); }
+  .lab .row:last-child { border-bottom:0; }
+  .lab .nm { font-weight:600; font-size:13px; }
+  .lab .wired { font-size:10px; color:var(--link); font-family:ui-monospace,Menlo,monospace; }
+  .lab .nt { font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:2px; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
+{% endblock %}
+
+{% block content %}
+<section class="ad-hero">
+  <p class="eyebrow">🛰️ {{ t('Alternative Data', '另类数据') }}</p>
+  <h1>{{ t('China Alternative-Data Desk', '中国另类数据台') }}</h1>
+  <p class="lens">{{ t('Smart-money convergence (consensus × valuation × financing) + an honest signal scorecard · context only · as of', '主力共振（一致预期 × 估值 × 融资）＋诚实信号记分卡 · 仅供参考 · 截至') }} {{ ad.asof if ad else (lab.generated_utc[:10] if lab else '—') }}</p>
+</section>
+
+<div class="ad-wrap">
+
+  <div class="callout warn">{{ t('No validated edge is claimed. Convergence is a display JOIN of three independent free feeds — where they agree, not a backtest. A-share cross-sectional value Sharpe is negative and sell-side ratings are near-universally "buy"; treat this as a watchlist seed + a Phase-0 candidate, never a sizer.', '不声称任何已验证的优势。共振只是三个独立免费数据源的展示性合并——展示其一致之处，而非回测。A股横截面价值夏普为负、卖方评级近乎全为『买入』；请将其视为自选股种子与Phase-0候选，绝非仓位依据。') }}</div>
+
+  {% if ad and ad.triple %}
+  <h2 class="sec">🎯 {{ t('Triple-confirmed convergence', '三重共振') }} <span style="font-size:12px;color:var(--muted)">{{ t('all three feeds agree', '三源一致') }} · {{ ad.n_triple }}</span></h2>
+  <table class="data">
+    <thead><tr>
+      <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
+      <th class="num">{{ t('Convergence', '共振') }}</th><th>{{ t('Conviction', '置信') }}</th><th class="num">{{ t('%ile', '分位') }}</th>
+      <th class="num">{{ t('Consensus', '一致预期') }}</th><th class="num">{{ t('Value', '估值') }}</th><th class="num">{{ t('Financing', '融资') }}</th>
+      <th>{{ t('Flags', '标记') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for r in ad.triple %}
+      <tr>
+        <td>{{ r.ticker }}</td><td>{{ r.name }}</td>
+        <td class="num conv {{ 'r-pos' if r.convergence>0 else ('r-neg' if r.convergence<0 else '') }}">{{ '%+.2f'|format(r.convergence) }}</td>
+        <td><span class="cvband {{ 'cv-pos' if r.convergence>0 else 'cv-neg' }}">{{ bl(r.conviction_band_en or 'None', r.conviction_band_zh or '无') }}</span></td>
+        <td class="num">{{ r.rank_pctile }}</td>
+        <td class="num">{{ sc(r.analyst) }}</td><td class="num">{{ sc(r.value) }}</td><td class="num">{{ sc(r.margin) }}</td>
+        <td>{% if 'leverage_crowded' in r.flags %}<span class="flag">{{ t('crowded', '拥挤') }}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  {% if ad and ad.crowding_flags %}
+  <h2 class="sec">⚠️ {{ t('Leverage-crowding flags', '杠杆拥挤标记') }}</h2>
+  <p style="font-size:12px;color:var(--muted)">{{ t('Names whose 20-day financing balance jumped most — leverage building (cuts both ways).', '20日融资余额跳升最多的名单——杠杆在累积（双刃剑）。') }}</p>
+  <div class="chips">{% for tk in ad.crowding_flags %}<span class="nchip">{{ tk }}</span>{% endfor %}</div>
+  {% endif %}
+
+  <!-- ===== signal lab scorecard ===== -->
+  {% if lab %}
+  <h2 class="sec">🔬 {{ t('China Signal Lab', '中国信号实验室') }}</h2>
+  <p style="font-size:12px;color:var(--muted)">{{ t('Every China signal with an honest tier — scored (in the allocator) · confirmer · display · Phase-0 pending · killed.', '每个中国信号及其诚实分级——已评分（进入配置）· 确认器 · 展示 · Phase-0待验 · 已淘汰。') }}</p>
+  <div class="lab">
+    {% for tier, items in lab.tiers.items() %}
+    {% if items %}
+    <div class="tier t-{{ tier }}">
+      <h3><span class="badge">{{ t(tier|capitalize, ({'scored':'已评分','confirmer':'确认器','display':'展示','pending':'待验','killed':'已淘汰'}).get(tier, tier)) }}</span> <span style="color:var(--muted)">{{ items|length }}</span></h3>
+      {% for r in items %}
+      <div class="row">
+        <div class="nm">{{ bl(r.name_en, r.name_zh) }} {% if r.wired and r.wired != '—' %}<span class="wired">{{ r.wired }}</span>{% endif %}</div>
+        <div class="nt">{{ bl(r.note_en, r.note_zh) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="disc">{{ t('Context only — not a signal, score or trade. Convergence reuses already-collected free feeds (china_analyst / china_valuation / china_margin_detail) and is a display join; it never feeds any allocation. The scored legs are those already validated inside china_masterminds.', '仅作背景，非信号、评分或交易。共振复用已采集的免费数据（卖方一致预期／自身估值／个股融资）且为展示性合并，绝不进入任何配置。已评分项为china_masterminds中已验证的部分。') }}</p>
+</div>
+{% endblock %}
