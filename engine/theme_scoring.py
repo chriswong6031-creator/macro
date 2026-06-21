@@ -28,7 +28,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine import basket_index, basket_mtf, basket_score, basket_tape, group_flow
+from engine import basket_index, basket_mtf, basket_score, basket_tape, group_flow, vol_regime
 from engine.baskets import _ew_level, _mtd_anchor, _perf
 from engine.equity_factors import _names_sectors
 from lib import config
@@ -520,6 +520,15 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     nm = _names_sectors() if region == "us" else {}    # US GICS names; regions show tickers
     mc = _macro_context(region)
     cal = _signal_calibration()                        # backtested signal-strength verdict (or {})
+    # SUBTRACT-ONLY vol-regime sizing overlay (engine/vol_regime): scales basket gross by the
+    # mechanical vol-target scalar (always-on) + a regime-state caution, and — when the regime is
+    # a risk-off kill-switch state — stands the aggressive recos DOWN (enter/accumulate -> hold).
+    # Never lifts a score, a rank, or a reco; pure caution. Inert when the regime is calm.
+    rg_snap = vol_regime.published_snapshot()
+    rg_size = vol_regime.sizing_overlay(rg_snap, vol_regime.overlay_config())
+    # graduated caution: WARNING shrinks gross (the rg_size scalar) but leaves recos intact;
+    # only the hard backwardation-stress KILL-SWITCH stands the aggressive recos down to hold.
+    rg_kill = bool(rg_snap) and rg_snap.get("regime") == "backwardation-stress"
     i = len(idx) - 1
     i5 = max(0, i - 5)
     ytd_anchor = idx[idx < pd.Timestamp(idx.max().year, 1, 1)].max() \
@@ -608,6 +617,12 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         delta_5d = (perf.get("5d") or {}).get("rel")
         label = _label(score, fp, perf, breadth_d, delta_5d, mtf, tape)
         reco = _reco(label, macro, crowd_pen, fp, mtf, tape)
+        # SUBTRACT-ONLY vol-regime caution: in a risk-off kill-switch regime, stand the
+        # aggressive recos DOWN to "hold" (never the reverse, never touches score/rank). This
+        # is what drops these baskets out of act_now while the regime is stressed.
+        regime_demoted = False
+        if rg_kill and reco in ("enter", "accumulate"):
+            reco, regime_demoted = "hold", True
         reasons = (t_why + mtf_why + m_why + c_why)[:4] or ["mixed signals"]
 
         # advanced display-only textures (bull age / overbought / clean entry / roll-over)
@@ -640,6 +655,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "label": label, "label_en": LABELS[label][0], "label_zh": LABELS[label][1],
             "reco": reco, "reco_en": RECOS[reco][0], "reco_zh": RECOS[reco][1],
             "reco_why_en": _RECO_WHY[reco][0], "reco_why_zh": _RECO_WHY[reco][1],
+            "regime_demoted": regime_demoted,
             "reasons": reasons,
             "signal_strength": _signal_strength(label, cal),
 
@@ -782,6 +798,18 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         "macro_context": mc["display"],
         "weights": WEIGHTS,
         "signal_calibration": cal,
+        "regime_sizing": {
+            **rg_size,
+            "en": ("Index vol-regime sizing (subtract-only): scale basket gross to "
+                   f"~{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}% of normal "
+                   "and stand aggressive recos down in a risk-off regime. Drawdown / "
+                   "capital-efficiency caution, not a return forecast — never lifts a score "
+                   "or rank. The continuous validated score moves money only when its gate is open."),
+            "zh": ("指数波动率状态仓位（仅做减法）：将篮子总仓位缩放至约"
+                   f"{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}%，并在风险偏离"
+                   "状态下将激进建议下调。这是回撤/资金效率提示，并非收益预测——绝不抬高评分或排名。"
+                   "连续验证分数仅在其闸门开启时才动用资金。"),
+        },
         "themes": themes,
         "rotation_5d": {"climbers": climbers, "fallers": fallers},
         "impulse_scorecard": {
