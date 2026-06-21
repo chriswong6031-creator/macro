@@ -34,7 +34,9 @@ EULER_GAMMA = 0.5772156649015329
 # allocation backtest core (turnover-scaled transaction cost)
 # --------------------------------------------------------------------------- #
 def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
-                  cash_yield: pd.Series | None = None) -> dict:
+                  cash_yield: pd.Series | None = None, *,
+                  dollar_adv: pd.Series | None = None, aum_usd: float | None = None,
+                  impact_eta: float = 0.1, vol_window: int = 21) -> dict:
     """Next-bar allocation engine with a one-way transaction cost.
 
     `cost_bps` is the ONE-WAY cost (spread + fee/slippage) in basis points,
@@ -53,11 +55,31 @@ def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
     matching the close-to-close return that also spans the weekend; a >100%
     position pays no phantom rebate (clip lower=0). Default None keeps the
     BTC/commodity/forex callers (where flat = uninvested cash) byte-identical.
+
+    SQUARE-ROOT MARKET IMPACT (optional, capacity realism — roadmap Phase 3). A flat
+    bps can't tell a $5M microcap trade from a $9k mega-cap one. Pass `dollar_adv`
+    (the asset's dollar ADV series, e.g. (close*volume).rolling(21).median()) and a
+    portfolio `aum_usd` to ADD an Almgren-style impact term on top of the linear
+    `cost_bps`: impact_rate = impact_eta · σ · √(participation), with
+    participation = traded$/ADV$ = (aum_usd·|Δpos|)/ADV$ and σ the trailing per-bar
+    return vol. Cost grows with √AUM, so net Sharpe degrades as size rises — the
+    basis of `capacity_curve`. Both None (default) → the legacy flat-cost path,
+    byte-identical for every existing caller.
     """
     ret = close.pct_change().fillna(0)
     pos = alloc.shift(1).reindex(ret.index).ffill().fillna(0)   # act next bar
     turnover = pos.diff().abs().fillna(0.0)                      # |Δpos|, day-1 ramp from 0
-    cost = (cost_bps / 1e4) * turnover
+    if dollar_adv is not None and aum_usd:
+        # per-bar impact rate (fraction of traded notional), added to the linear cost
+        sigma = ret.rolling(vol_window).std()
+        sigma = sigma.fillna(sigma.median()).fillna(0.0)
+        adv = dollar_adv.reindex(ret.index).ffill()
+        traded_usd = float(aum_usd) * turnover
+        participation = (traded_usd / adv.where(adv > 0)).clip(lower=0.0).fillna(0.0)
+        impact_rate = impact_eta * sigma * np.sqrt(participation)
+        cost = (cost_bps / 1e4 + impact_rate) * turnover
+    else:
+        cost = (cost_bps / 1e4) * turnover
     if cash_yield is not None:
         days = pd.Series(ret.index, index=ret.index).diff().dt.days.fillna(0).clip(lower=0)
         rf = (cash_yield.reindex(ret.index).ffill().fillna(0.0) / 100.0) * (days / 365.0)
@@ -70,6 +92,70 @@ def backtest_core(close: pd.Series, alloc: pd.Series, cost_bps: float = 0.0,
     years = (close.index[-1] - close.index[0]).days / 365.25
     return {"ret": ret, "pos": pos, "turnover": turnover,
             "gross": gross, "net": net, "hold": hold, "years": years}
+
+
+def dollar_adv(close: pd.Series, volume: pd.Series, window: int = 21) -> pd.Series:
+    """Rolling-median dollar average daily volume — the ADV$ denominator of the
+    participation rate. Median (not mean) so a single block print doesn't inflate
+    capacity. `volume` is share volume; close*volume is dollar volume."""
+    return (close * volume).rolling(window, min_periods=max(2, window // 2)).median()
+
+
+def _ann_sharpe(r: pd.Series, ppy: int = 252) -> float:
+    r = r.dropna()
+    if len(r) < 3:
+        return float("nan")
+    sd = r.std(ddof=1)
+    return float(r.mean() / sd * np.sqrt(ppy)) if sd else float("nan")
+
+
+def capacity_curve(close: pd.Series, alloc: pd.Series, adv_usd: pd.Series,
+                   aum_grid: list[float], *, cost_bps: float = 0.0,
+                   impact_eta: float = 0.1, cash_yield: pd.Series | None = None,
+                   ppy: int = 252) -> dict:
+    """Net annualized Sharpe of an allocation as a function of deployed AUM, under
+    the square-root impact model — the honest answer to "how much money can this
+    signal hold?".
+
+    Returns the per-AUM curve plus an UNAMBIGUOUS capacity verdict:
+      * `economic`    — gross Sharpe ≥ buy & hold (is there any edge to deploy at all?).
+        When False, capacity is meaningless: the signal does not beat buy & hold even
+        costless, so `capacity_usd` is None and `verdict="no_edge"`.
+      * `capacity_usd`— the largest grid AUM whose NET Sharpe still beats buy & hold.
+      * `grid_capped` — net Sharpe still beats buy & hold at the LARGEST grid AUM, i.e.
+        true capacity exceeds the grid (`verdict="exceeds_grid"`), distinct from no_edge.
+    Gross Sharpe (AUM-independent) and the buy&hold Sharpe anchor the read."""
+    bh = _ann_sharpe(close.pct_change(), ppy)
+    gross = _ann_sharpe(backtest_core(close, alloc, cost_bps=cost_bps,
+                                      cash_yield=cash_yield)["gross"], ppy)
+    grid = sorted(aum_grid)
+    curve, capacity = [], None
+    for aum in grid:
+        bt = backtest_core(close, alloc, cost_bps=cost_bps, cash_yield=cash_yield,
+                           dollar_adv=adv_usd, aum_usd=aum, impact_eta=impact_eta)
+        ns = _ann_sharpe(bt["net"], ppy)
+        # mean participation on rebalancing bars (where turnover>0)
+        part = bt["turnover"]
+        traded = aum * part
+        adv = adv_usd.reindex(bt["turnover"].index).ffill()
+        pr = (traded / adv.where(adv > 0)).replace([np.inf, -np.inf], np.nan)
+        mean_part = float(pr[part > 0].mean()) if (part > 0).any() else 0.0
+        row = {"aum_usd": float(aum), "net_sharpe": ns,
+               "mean_participation": round(mean_part, 4) if mean_part == mean_part else None,
+               "ann_cost_drag": round(float((bt["gross"] - bt["net"]).mean() * ppy), 4)}
+        curve.append(row)
+        if ns == ns and bh == bh and ns >= bh:
+            capacity = float(aum)
+    economic = bool(gross == gross and bh == bh and gross >= bh)
+    grid_capped = bool(capacity is not None and capacity >= grid[-1])
+    verdict = ("no_edge" if not economic else
+               "exceeds_grid" if grid_capped else
+               "capped" if capacity is not None else "no_edge")
+    return {"buyhold_sharpe": round(bh, 3) if bh == bh else None,
+            "gross_sharpe": round(gross, 3) if gross == gross else None,
+            "impact_eta": impact_eta, "cost_bps": cost_bps,
+            "economic": economic, "grid_capped": grid_capped, "verdict": verdict,
+            "capacity_usd": capacity, "curve": curve}
 
 
 # --------------------------------------------------------------------------- #

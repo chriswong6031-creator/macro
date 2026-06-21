@@ -1,0 +1,2344 @@
+{
+  "schema": "capacity_curve.v1",
+  "generated_utc": "2026-06-21T14:53:25+00:00",
+  "model": "net = gross - (cost_bps + eta*sigma*sqrt(traded$/ADV$))*turnover",
+  "impact_eta": 0.1,
+  "cost_bps": 3.0,
+  "demo_signal": "12-1 momentum long/flat (no alpha claimed \u2014 turnover vehicle)",
+  "n_names": 40,
+  "n_skipped": 1,
+  "aum_grid": [
+    1000000.0,
+    5000000.0,
+    25000000.0,
+    100000000.0,
+    500000000.0,
+    2500000000.0,
+    10000000000.0,
+    50000000000.0
+  ],
+  "n_economic": 7,
+  "binding_capacity_usd": 1000000.0,
+  "names": [
+    {
+      "ticker": "BA",
+      "adv_usd_median": 30763262.71057129,
+      "buyhold_sharpe": 0.492,
+      "gross_sharpe": 0.574,
+      "verdict": "capped",
+      "capacity_usd": 1000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5204724602018201,
+          "mean_participation": 2.3299,
+          "ann_cost_drag": 0.0126
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.46277145063715697,
+          "mean_participation": 11.6495,
+          "ann_cost_drag": 0.026
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.3329737818615675,
+          "mean_participation": 58.2475,
+          "ann_cost_drag": 0.0561
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.10373574977320954,
+          "mean_participation": 232.9899,
+          "ann_cost_drag": 0.1104
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.3659623810085662,
+          "mean_participation": 1164.9494,
+          "ann_cost_drag": 0.2447
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.89524028927782,
+          "mean_participation": 5824.747,
+          "ann_cost_drag": 0.5451
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.1732019332521106,
+          "mean_participation": 23298.988,
+          "ann_cost_drag": 1.0885
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.3140026209573477,
+          "mean_participation": 116494.9398,
+          "ann_cost_drag": 2.4317
+        }
+      ]
+    },
+    {
+      "ticker": "DUK",
+      "adv_usd_median": 32435655.343158722,
+      "buyhold_sharpe": 0.626,
+      "gross_sharpe": 0.684,
+      "verdict": "capped",
+      "capacity_usd": 1000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.6507213110011907,
+          "mean_participation": 0.7962,
+          "ann_cost_drag": 0.0055
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.6223252747561172,
+          "mean_participation": 3.9811,
+          "ann_cost_drag": 0.0102
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5581391618063601,
+          "mean_participation": 19.9057,
+          "ann_cost_drag": 0.0206
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.44073066851960996,
+          "mean_participation": 79.6228,
+          "ann_cost_drag": 0.0396
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.15654216204682028,
+          "mean_participation": 398.1142,
+          "ann_cost_drag": 0.0865
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.35405804534444135,
+          "mean_participation": 1990.571,
+          "ann_cost_drag": 0.1913
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.8268241133125297,
+          "mean_participation": 7962.2841,
+          "ann_cost_drag": 0.381
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.1541686565930571,
+          "mean_participation": 39811.4204,
+          "ann_cost_drag": 0.8498
+        }
+      ]
+    },
+    {
+      "ticker": "AMT",
+      "adv_usd_median": 118286088.12618256,
+      "buyhold_sharpe": 0.432,
+      "gross_sharpe": 0.588,
+      "verdict": "capped",
+      "capacity_usd": 100000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5719567682265386,
+          "mean_participation": 0.0231,
+          "ann_cost_drag": 0.0043
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5624596679043008,
+          "mean_participation": 0.1157,
+          "ann_cost_drag": 0.0067
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5411305894582137,
+          "mean_participation": 0.5786,
+          "ann_cost_drag": 0.0123
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.5022559712906802,
+          "mean_participation": 2.3144,
+          "ann_cost_drag": 0.0223
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.40501056245797,
+          "mean_participation": 11.5722,
+          "ann_cost_drag": 0.0471
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.18704194177349492,
+          "mean_participation": 57.8609,
+          "ann_cost_drag": 0.1024
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.17676673308124882,
+          "mean_participation": 231.4437,
+          "ann_cost_drag": 0.2026
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.7664784538621306,
+          "mean_participation": 1157.2183,
+          "ann_cost_drag": 0.4503
+        }
+      ]
+    },
+    {
+      "ticker": "EQIX",
+      "adv_usd_median": 103217397.95837402,
+      "buyhold_sharpe": 0.373,
+      "gross_sharpe": 0.602,
+      "verdict": "capped",
+      "capacity_usd": 100000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5877143534857543,
+          "mean_participation": 0.1083,
+          "ann_cost_drag": 0.0041
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5754403291070186,
+          "mean_participation": 0.5414,
+          "ann_cost_drag": 0.0076
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5472619068118054,
+          "mean_participation": 2.7071,
+          "ann_cost_drag": 0.0154
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.4941656413054323,
+          "mean_participation": 10.8285,
+          "ann_cost_drag": 0.0296
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.35721888773393545,
+          "mean_participation": 54.1424,
+          "ann_cost_drag": 0.0647
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.0789215607115148,
+          "mean_participation": 270.7121,
+          "ann_cost_drag": 0.1431
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.22138163097968114,
+          "mean_participation": 1082.8482,
+          "ann_cost_drag": 0.2849
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.4591135469671645,
+          "mean_participation": 5414.2412,
+          "ann_cost_drag": 0.6356
+        }
+      ]
+    },
+    {
+      "ticker": "AMZN",
+      "adv_usd_median": 905247696.9985962,
+      "buyhold_sharpe": 0.76,
+      "gross_sharpe": 0.853,
+      "verdict": "capped",
+      "capacity_usd": 500000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.8467721818314405,
+          "mean_participation": 0.0023,
+          "ann_cost_drag": 0.0025
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.844599561748685,
+          "mean_participation": 0.0113,
+          "ann_cost_drag": 0.0034
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.8397367370516441,
+          "mean_participation": 0.0564,
+          "ann_cost_drag": 0.0053
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.8309236705152363,
+          "mean_participation": 0.2254,
+          "ann_cost_drag": 0.0088
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.8090519073849212,
+          "mean_participation": 1.1272,
+          "ann_cost_drag": 0.0175
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.7597616389290136,
+          "mean_participation": 5.636,
+          "ann_cost_drag": 0.0369
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.669622990498902,
+          "mean_participation": 22.5442,
+          "ann_cost_drag": 0.0719
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": 0.44600520123031784,
+          "mean_participation": 112.7208,
+          "ann_cost_drag": 0.1586
+        }
+      ]
+    },
+    {
+      "ticker": "CCI",
+      "adv_usd_median": 61651309.0927124,
+      "buyhold_sharpe": 0.42,
+      "gross_sharpe": 0.594,
+      "verdict": "capped",
+      "capacity_usd": 500000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5832537209321501,
+          "mean_participation": 0.022,
+          "ann_cost_drag": 0.003
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5766667488456301,
+          "mean_participation": 0.1098,
+          "ann_cost_drag": 0.0048
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5618882058177624,
+          "mean_participation": 0.549,
+          "ann_cost_drag": 0.0088
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.534994952416761,
+          "mean_participation": 2.1958,
+          "ann_cost_drag": 0.016
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.46783101108464276,
+          "mean_participation": 10.979,
+          "ann_cost_drag": 0.0338
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.31643129721460483,
+          "mean_participation": 54.8952,
+          "ann_cost_drag": 0.0737
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.05298165445613487,
+          "mean_participation": 219.5808,
+          "ann_cost_drag": 0.1458
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.4440526168039747,
+          "mean_participation": 1097.9041,
+          "ann_cost_drag": 0.324
+        }
+      ]
+    },
+    {
+      "ticker": "CTVA",
+      "adv_usd_median": 154324159.79309082,
+      "buyhold_sharpe": 0.62,
+      "gross_sharpe": 0.809,
+      "verdict": "capped",
+      "capacity_usd": 500000000.0,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.7948909083502883,
+          "mean_participation": 0.0073,
+          "ann_cost_drag": 0.0031
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.788346745985868,
+          "mean_participation": 0.0367,
+          "ann_cost_drag": 0.0045
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.7736869537852673,
+          "mean_participation": 0.1834,
+          "ann_cost_drag": 0.0077
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.7470784696549233,
+          "mean_participation": 0.7336,
+          "ann_cost_drag": 0.0135
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.6808678481986368,
+          "mean_participation": 3.668,
+          "ann_cost_drag": 0.0278
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.5312962032049461,
+          "mean_participation": 18.3402,
+          "ann_cost_drag": 0.0599
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.2603363067625383,
+          "mean_participation": 73.3608,
+          "ann_cost_drag": 0.1179
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.3587856637055789,
+          "mean_participation": 366.8041,
+          "ann_cost_drag": 0.2612
+        }
+      ]
+    },
+    {
+      "ticker": "AAPL",
+      "adv_usd_median": 214785087.80517578,
+      "buyhold_sharpe": 0.625,
+      "gross_sharpe": 0.517,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5078485682862541,
+          "mean_participation": 0.0187,
+          "ann_cost_drag": 0.003
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5027342034349741,
+          "mean_participation": 0.0937,
+          "ann_cost_drag": 0.0047
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.49128218612211466,
+          "mean_participation": 0.4683,
+          "ann_cost_drag": 0.0086
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.4705137286821709,
+          "mean_participation": 1.8734,
+          "ann_cost_drag": 0.0157
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.418941560627925,
+          "mean_participation": 9.3669,
+          "ann_cost_drag": 0.0331
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.3030806012692612,
+          "mean_participation": 46.8345,
+          "ann_cost_drag": 0.072
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.09595996149141406,
+          "mean_participation": 187.3381,
+          "ann_cost_drag": 0.1425
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.3603275312030146,
+          "mean_participation": 936.6907,
+          "ann_cost_drag": 0.3167
+        }
+      ]
+    },
+    {
+      "ticker": "ABBV",
+      "adv_usd_median": 482650177.06489563,
+      "buyhold_sharpe": 0.799,
+      "gross_sharpe": 0.549,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5415544140062422,
+          "mean_participation": 0.0022,
+          "ann_cost_drag": 0.0016
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5395460100164304,
+          "mean_participation": 0.0112,
+          "ann_cost_drag": 0.0021
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5350531533089095,
+          "mean_participation": 0.0558,
+          "ann_cost_drag": 0.0031
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.5269189440219237,
+          "mean_participation": 0.2231,
+          "ann_cost_drag": 0.0049
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.5067765331873705,
+          "mean_participation": 1.1155,
+          "ann_cost_drag": 0.0095
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.46159513011259695,
+          "mean_participation": 5.5775,
+          "ann_cost_drag": 0.0196
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.3795837147933013,
+          "mean_participation": 22.3101,
+          "ann_cost_drag": 0.038
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": 0.1779702778724952,
+          "mean_participation": 111.5504,
+          "ann_cost_drag": 0.0834
+        }
+      ]
+    },
+    {
+      "ticker": "ABT",
+      "adv_usd_median": 91407259.93057251,
+      "buyhold_sharpe": 0.655,
+      "gross_sharpe": 0.566,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5452798353870754,
+          "mean_participation": 0.1758,
+          "ann_cost_drag": 0.0045
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5298345043966947,
+          "mean_participation": 0.8788,
+          "ann_cost_drag": 0.0078
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.49513473050793183,
+          "mean_participation": 4.394,
+          "ann_cost_drag": 0.0151
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.43194227612562697,
+          "mean_participation": 17.576,
+          "ann_cost_drag": 0.0283
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.2752816293275993,
+          "mean_participation": 87.88,
+          "ann_cost_drag": 0.061
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.057893290891349355,
+          "mean_participation": 439.3999,
+          "ann_cost_drag": 0.1341
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.5255746687103483,
+          "mean_participation": 1757.5994,
+          "ann_cost_drag": 0.2664
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.0545514547870118,
+          "mean_participation": 8787.997,
+          "ann_cost_drag": 0.5934
+        }
+      ]
+    },
+    {
+      "ticker": "AEP",
+      "adv_usd_median": 1953713.6498451233,
+      "buyhold_sharpe": 0.476,
+      "gross_sharpe": 0.467,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.3370448694036055,
+          "mean_participation": 17.7608,
+          "ann_cost_drag": 0.0191
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.19152318871963006,
+          "mean_participation": 88.804,
+          "ann_cost_drag": 0.0404
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": -0.11628463884595286,
+          "mean_participation": 444.02,
+          "ann_cost_drag": 0.0879
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": -0.5469866525056916,
+          "mean_participation": 1776.08,
+          "ann_cost_drag": 0.174
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -1.033933863403,
+          "mean_participation": 8880.4,
+          "ann_cost_drag": 0.3866
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -1.284746337370994,
+          "mean_participation": 44402.0002,
+          "ann_cost_drag": 0.8622
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.3709976106313426,
+          "mean_participation": 177608.0008,
+          "ann_cost_drag": 1.7225
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.411426209611083,
+          "mean_participation": 888040.0041,
+          "ann_cost_drag": 3.8494
+        }
+      ]
+    },
+    {
+      "ticker": "AMAT",
+      "adv_usd_median": 208302413.11883926,
+      "buyhold_sharpe": 0.649,
+      "gross_sharpe": 0.54,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5166392907580762,
+          "mean_participation": 0.3429,
+          "ann_cost_drag": 0.0086
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.4945526248324023,
+          "mean_participation": 1.7145,
+          "ann_cost_drag": 0.0167
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.4448496703622691,
+          "mean_participation": 8.5727,
+          "ann_cost_drag": 0.0348
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.3543170772052396,
+          "mean_participation": 34.2907,
+          "ann_cost_drag": 0.0675
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.1329575772409228,
+          "mean_participation": 171.4536,
+          "ann_cost_drag": 0.1483
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.2989446666880911,
+          "mean_participation": 857.268,
+          "ann_cost_drag": 0.329
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.7780135145209855,
+          "mean_participation": 3429.0718,
+          "ann_cost_drag": 0.656
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.16675582803016,
+          "mean_participation": 17145.3592,
+          "ann_cost_drag": 1.4643
+        }
+      ]
+    },
+    {
+      "ticker": "AMD",
+      "adv_usd_median": 63976237.5,
+      "buyhold_sharpe": 0.484,
+      "gross_sharpe": 0.295,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.2798485670044968,
+          "mean_participation": 0.0999,
+          "ann_cost_drag": 0.0066
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.2666963219432405,
+          "mean_participation": 0.4997,
+          "ann_cost_drag": 0.0121
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.2372658724457708,
+          "mean_participation": 2.4984,
+          "ann_cost_drag": 0.0244
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.1840125499492415,
+          "mean_participation": 9.9935,
+          "ann_cost_drag": 0.0467
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.053033905181418574,
+          "mean_participation": 49.9676,
+          "ann_cost_drag": 0.1017
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.22855214706692942,
+          "mean_participation": 249.8379,
+          "ann_cost_drag": 0.2249
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.6608077357034373,
+          "mean_participation": 999.3514,
+          "ann_cost_drag": 0.4476
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.265865028569195,
+          "mean_participation": 4996.7572,
+          "ann_cost_drag": 0.9983
+        }
+      ]
+    },
+    {
+      "ticker": "AMGN",
+      "adv_usd_median": 270258367.3736572,
+      "buyhold_sharpe": 0.639,
+      "gross_sharpe": 0.595,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5725921415213161,
+          "mean_participation": 0.5118,
+          "ann_cost_drag": 0.0069
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.55320207164397,
+          "mean_participation": 2.5592,
+          "ann_cost_drag": 0.0128
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5087952019367455,
+          "mean_participation": 12.796,
+          "ann_cost_drag": 0.0259
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.426148026769187,
+          "mean_participation": 51.1839,
+          "ann_cost_drag": 0.0496
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.2249382493308006,
+          "mean_participation": 255.9197,
+          "ann_cost_drag": 0.1083
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.11410567838691828,
+          "mean_participation": 1279.5983,
+          "ann_cost_drag": 0.2395
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.3927062238869857,
+          "mean_participation": 5118.3933,
+          "ann_cost_drag": 0.4768
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.5767481104685854,
+          "mean_participation": 25591.9665,
+          "ann_cost_drag": 1.0634
+        }
+      ]
+    },
+    {
+      "ticker": "APD",
+      "adv_usd_median": 25312366.31825638,
+      "buyhold_sharpe": 0.544,
+      "gross_sharpe": 0.348,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.3168159682403851,
+          "mean_participation": 0.1896,
+          "ann_cost_drag": 0.0068
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.29240604829159905,
+          "mean_participation": 0.948,
+          "ann_cost_drag": 0.0121
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.23772111633113058,
+          "mean_participation": 4.7399,
+          "ann_cost_drag": 0.0241
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.13877575991608998,
+          "mean_participation": 18.9596,
+          "ann_cost_drag": 0.0457
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.10186193302619065,
+          "mean_participation": 94.798,
+          "ann_cost_drag": 0.099
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.5823256787136232,
+          "mean_participation": 473.9898,
+          "ann_cost_drag": 0.2183
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.1624927443952404,
+          "mean_participation": 1895.9593,
+          "ann_cost_drag": 0.4341
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.6749795236909117,
+          "mean_participation": 9479.7965,
+          "ann_cost_drag": 0.9675
+        }
+      ]
+    },
+    {
+      "ticker": "AVGO",
+      "adv_usd_median": 469767119.808197,
+      "buyhold_sharpe": 1.107,
+      "gross_sharpe": 0.895,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.88952965847847,
+          "mean_participation": 0.0111,
+          "ann_cost_drag": 0.0021
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.8868266752189599,
+          "mean_participation": 0.0554,
+          "ann_cost_drag": 0.003
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.8807744537818342,
+          "mean_participation": 0.2769,
+          "ann_cost_drag": 0.0052
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.8697978512837435,
+          "mean_participation": 1.1078,
+          "ann_cost_drag": 0.0091
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.8425153092578167,
+          "mean_participation": 5.5389,
+          "ann_cost_drag": 0.0188
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.7808475781192837,
+          "mean_participation": 27.6945,
+          "ann_cost_drag": 0.0404
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.6676461258181644,
+          "mean_participation": 110.778,
+          "ann_cost_drag": 0.0795
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": 0.38709983954552296,
+          "mean_participation": 553.8902,
+          "ann_cost_drag": 0.1761
+        }
+      ]
+    },
+    {
+      "ticker": "AXP",
+      "adv_usd_median": 109866914.77718163,
+      "buyhold_sharpe": 0.473,
+      "gross_sharpe": 0.38,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.350530422433474,
+          "mean_participation": 0.4399,
+          "ann_cost_drag": 0.0074
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.32363615880983737,
+          "mean_participation": 2.1997,
+          "ann_cost_drag": 0.0141
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.2633930721063401,
+          "mean_participation": 10.9986,
+          "ann_cost_drag": 0.0291
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.1545076297440264,
+          "mean_participation": 43.9946,
+          "ann_cost_drag": 0.0562
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.10866811758336752,
+          "mean_participation": 219.973,
+          "ann_cost_drag": 0.1233
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.6197233212626921,
+          "mean_participation": 1099.865,
+          "ann_cost_drag": 0.2732
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.1976082857016597,
+          "mean_participation": 4399.4599,
+          "ann_cost_drag": 0.5445
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.6705532060193435,
+          "mean_participation": 21997.2993,
+          "ann_cost_drag": 1.215
+        }
+      ]
+    },
+    {
+      "ticker": "BAC",
+      "adv_usd_median": 132137646.301651,
+      "buyhold_sharpe": 0.368,
+      "gross_sharpe": 0.372,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.2998863542313692,
+          "mean_participation": 5.0373,
+          "ann_cost_drag": 0.0152
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.22213275000092342,
+          "mean_participation": 25.1865,
+          "ann_cost_drag": 0.0316
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.05001786397284227,
+          "mean_participation": 125.9323,
+          "ann_cost_drag": 0.0682
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": -0.23627052834868434,
+          "mean_participation": 503.7294,
+          "ann_cost_drag": 0.1343
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.7192126375313451,
+          "mean_participation": 2518.647,
+          "ann_cost_drag": 0.298
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -1.100759150081182,
+          "mean_participation": 12593.2349,
+          "ann_cost_drag": 0.6638
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.2508674542647886,
+          "mean_participation": 50372.9394,
+          "ann_cost_drag": 1.3257
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.3178150167728215,
+          "mean_participation": 251864.6972,
+          "ann_cost_drag": 2.9618
+        }
+      ]
+    },
+    {
+      "ticker": "BKNG",
+      "adv_usd_median": 513197474.00283813,
+      "buyhold_sharpe": 0.435,
+      "gross_sharpe": 0.436,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4227514336446371,
+          "mean_participation": 0.0425,
+          "ann_cost_drag": 0.0046
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.4130918230301511,
+          "mean_participation": 0.2124,
+          "ann_cost_drag": 0.0079
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.39142268566454136,
+          "mean_participation": 1.0621,
+          "ann_cost_drag": 0.0151
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.3520288137358694,
+          "mean_participation": 4.2486,
+          "ann_cost_drag": 0.0282
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.25419439878242894,
+          "mean_participation": 21.2428,
+          "ann_cost_drag": 0.0607
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.03997866048091477,
+          "mean_participation": 106.2141,
+          "ann_cost_drag": 0.1333
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.2964488290927301,
+          "mean_participation": 424.8566,
+          "ann_cost_drag": 0.2646
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.7781777314263685,
+          "mean_participation": 2124.283,
+          "ann_cost_drag": 0.5892
+        }
+      ]
+    },
+    {
+      "ticker": "BKR",
+      "adv_usd_median": 72221695.21026611,
+      "buyhold_sharpe": 0.349,
+      "gross_sharpe": 0.234,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.21005067378081632,
+          "mean_participation": 0.1036,
+          "ann_cost_drag": 0.0066
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.1909343756017194,
+          "mean_participation": 0.5182,
+          "ann_cost_drag": 0.0119
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.14817574504094502,
+          "mean_participation": 2.5911,
+          "ann_cost_drag": 0.0236
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.07091068617301213,
+          "mean_participation": 10.3644,
+          "ann_cost_drag": 0.0449
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.1180242430446623,
+          "mean_participation": 51.8221,
+          "ann_cost_drag": 0.0974
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.5137648830088506,
+          "mean_participation": 259.1104,
+          "ann_cost_drag": 0.2147
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.0735578179185852,
+          "mean_participation": 1036.4416,
+          "ann_cost_drag": 0.4271
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.7257331656600892,
+          "mean_participation": 5182.2081,
+          "ann_cost_drag": 0.952
+        }
+      ]
+    },
+    {
+      "ticker": "BRK-B",
+      "adv_usd_median": 334071295.01342773,
+      "buyhold_sharpe": 0.568,
+      "gross_sharpe": 0.56,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5409847983167828,
+          "mean_participation": 0.0185,
+          "ann_cost_drag": 0.0032
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.533748825272587,
+          "mean_participation": 0.0923,
+          "ann_cost_drag": 0.0044
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5175455820563398,
+          "mean_participation": 0.4613,
+          "ann_cost_drag": 0.007
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.4881622252513017,
+          "mean_participation": 1.8453,
+          "ann_cost_drag": 0.0118
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.4152489300516457,
+          "mean_participation": 9.2265,
+          "ann_cost_drag": 0.0237
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.252188037528993,
+          "mean_participation": 46.1325,
+          "ann_cost_drag": 0.0503
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.033805931030202185,
+          "mean_participation": 184.53,
+          "ann_cost_drag": 0.0983
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.6189210152091568,
+          "mean_participation": 922.65,
+          "ann_cost_drag": 0.2171
+        }
+      ]
+    },
+    {
+      "ticker": "C",
+      "adv_usd_median": 306700165.57373047,
+      "buyhold_sharpe": 0.354,
+      "gross_sharpe": 0.288,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.26138868963199646,
+          "mean_participation": 0.6207,
+          "ann_cost_drag": 0.0065
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.23939081038185975,
+          "mean_participation": 3.1037,
+          "ann_cost_drag": 0.0118
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.19011622622138047,
+          "mean_participation": 15.5187,
+          "ann_cost_drag": 0.0236
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.10112072462294462,
+          "mean_participation": 62.0747,
+          "ann_cost_drag": 0.045
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.11293032353335902,
+          "mean_participation": 310.3735,
+          "ann_cost_drag": 0.0978
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.5192131988164235,
+          "mean_participation": 1551.8676,
+          "ann_cost_drag": 0.216
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.9543926481672944,
+          "mean_participation": 6207.4706,
+          "ann_cost_drag": 0.4299
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.2875417847062274,
+          "mean_participation": 31037.353,
+          "ann_cost_drag": 0.9585
+        }
+      ]
+    },
+    {
+      "ticker": "CAT",
+      "adv_usd_median": 16332539.03388977,
+      "buyhold_sharpe": 0.55,
+      "gross_sharpe": 0.424,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.39250396397060827,
+          "mean_participation": 0.663,
+          "ann_cost_drag": 0.007
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.36412730616196465,
+          "mean_participation": 3.3151,
+          "ann_cost_drag": 0.0134
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.3004755261234849,
+          "mean_participation": 16.5756,
+          "ann_cost_drag": 0.0275
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.18538677975197274,
+          "mean_participation": 66.3023,
+          "ann_cost_drag": 0.0531
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.09008585159336945,
+          "mean_participation": 331.5115,
+          "ann_cost_drag": 0.1163
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.5949616417769897,
+          "mean_participation": 1657.5573,
+          "ann_cost_drag": 0.2578
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.0935095676631696,
+          "mean_participation": 6630.2293,
+          "ann_cost_drag": 0.5136
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.4475790780105868,
+          "mean_participation": 33151.1463,
+          "ann_cost_drag": 1.1462
+        }
+      ]
+    },
+    {
+      "ticker": "CEG",
+      "adv_usd_median": 431021808.09173584,
+      "buyhold_sharpe": 1.125,
+      "gross_sharpe": 0.703,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.6996592146559315,
+          "mean_participation": 0.0017,
+          "ann_cost_drag": 0.0014
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.6985530576217428,
+          "mean_participation": 0.0084,
+          "ann_cost_drag": 0.0018
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.6960783809482171,
+          "mean_participation": 0.0419,
+          "ann_cost_drag": 0.0029
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.6915973555980082,
+          "mean_participation": 0.1676,
+          "ann_cost_drag": 0.0049
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.6804964280454331,
+          "mean_participation": 0.8378,
+          "ann_cost_drag": 0.0098
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.6555602663252995,
+          "mean_participation": 4.189,
+          "ann_cost_drag": 0.0207
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.6100932513443048,
+          "mean_participation": 16.756,
+          "ann_cost_drag": 0.0405
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": 0.4962565112434399,
+          "mean_participation": 83.7798,
+          "ann_cost_drag": 0.0894
+        }
+      ]
+    },
+    {
+      "ticker": "CL",
+      "adv_usd_median": 42533536.45324707,
+      "buyhold_sharpe": 0.523,
+      "gross_sharpe": 0.496,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4441816622163242,
+          "mean_participation": 0.7122,
+          "ann_cost_drag": 0.0106
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.3957781276795021,
+          "mean_participation": 3.5609,
+          "ann_cost_drag": 0.0203
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.2865446690705843,
+          "mean_participation": 17.8044,
+          "ann_cost_drag": 0.0421
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.09199991663516784,
+          "mean_participation": 71.2176,
+          "ann_cost_drag": 0.0816
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.31527458248424745,
+          "mean_participation": 356.088,
+          "ann_cost_drag": 0.1792
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.788050574099971,
+          "mean_participation": 1780.4399,
+          "ann_cost_drag": 0.3973
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.0378340858910668,
+          "mean_participation": 7121.7597,
+          "ann_cost_drag": 0.7919
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.1618651295687008,
+          "mean_participation": 35608.7986,
+          "ann_cost_drag": 1.7674
+        }
+      ]
+    },
+    {
+      "ticker": "COP",
+      "adv_usd_median": 70791587.26111889,
+      "buyhold_sharpe": 0.487,
+      "gross_sharpe": 0.462,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4414732112698903,
+          "mean_participation": 0.1159,
+          "ann_cost_drag": 0.005
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.4255058472303804,
+          "mean_participation": 0.5794,
+          "ann_cost_drag": 0.0088
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.38969181759619115,
+          "mean_participation": 2.8971,
+          "ann_cost_drag": 0.0173
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.3246517195808532,
+          "mean_participation": 11.5885,
+          "ann_cost_drag": 0.0327
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.1641173205103866,
+          "mean_participation": 57.9425,
+          "ann_cost_drag": 0.0708
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.17656302137213556,
+          "mean_participation": 289.7126,
+          "ann_cost_drag": 0.1561
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.6606800029731517,
+          "mean_participation": 1158.8503,
+          "ann_cost_drag": 0.3102
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.2220143479185994,
+          "mean_participation": 5794.2516,
+          "ann_cost_drag": 0.6913
+        }
+      ]
+    },
+    {
+      "ticker": "COST",
+      "adv_usd_median": 123886897.76611328,
+      "buyhold_sharpe": 0.549,
+      "gross_sharpe": 0.46,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4452856885306417,
+          "mean_participation": 0.0508,
+          "ann_cost_drag": 0.0038
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.43517935871935903,
+          "mean_participation": 0.2541,
+          "ann_cost_drag": 0.0063
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.41253006033000594,
+          "mean_participation": 1.2704,
+          "ann_cost_drag": 0.0119
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.3714128181407659,
+          "mean_participation": 5.0815,
+          "ann_cost_drag": 0.0221
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.2693941687125963,
+          "mean_participation": 25.4075,
+          "ann_cost_drag": 0.0472
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.04413405687018972,
+          "mean_participation": 127.0374,
+          "ann_cost_drag": 0.1035
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.326044593797015,
+          "mean_participation": 508.1495,
+          "ann_cost_drag": 0.2052
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.9275467459412935,
+          "mean_participation": 2540.7477,
+          "ann_cost_drag": 0.4567
+        }
+      ]
+    },
+    {
+      "ticker": "CRH",
+      "adv_usd_median": 1227609.146118164,
+      "buyhold_sharpe": 0.523,
+      "gross_sharpe": 0.415,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.2660791565320337,
+          "mean_participation": 9.8794,
+          "ann_cost_drag": 0.0398
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.09228938871200262,
+          "mean_participation": 49.3968,
+          "ann_cost_drag": 0.0864
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": -0.2657322697926748,
+          "mean_participation": 246.984,
+          "ann_cost_drag": 0.1906
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": -0.7317330795661877,
+          "mean_participation": 987.9361,
+          "ann_cost_drag": 0.3792
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -1.1974427264315022,
+          "mean_participation": 4939.6803,
+          "ann_cost_drag": 0.8453
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -1.4122180662897466,
+          "mean_participation": 24698.4015,
+          "ann_cost_drag": 1.8876
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.4824903843381043,
+          "mean_participation": 98793.6061,
+          "ann_cost_drag": 3.7732
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.5147985772965602,
+          "mean_participation": 493968.0306,
+          "ann_cost_drag": 8.4347
+        }
+      ]
+    },
+    {
+      "ticker": "CSCO",
+      "adv_usd_median": 626780059.7648621,
+      "buyhold_sharpe": 0.744,
+      "gross_sharpe": 0.7,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.6925816213895094,
+          "mean_participation": 0.0041,
+          "ann_cost_drag": 0.0021
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.6900569120110526,
+          "mean_participation": 0.0203,
+          "ann_cost_drag": 0.0029
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.6844062965561827,
+          "mean_participation": 0.1013,
+          "ann_cost_drag": 0.0045
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.6741665161344084,
+          "mean_participation": 0.4051,
+          "ann_cost_drag": 0.0075
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.6487608372226638,
+          "mean_participation": 2.0253,
+          "ann_cost_drag": 0.0149
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.5915550378957533,
+          "mean_participation": 10.1265,
+          "ann_cost_drag": 0.0315
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": 0.4872059286722037,
+          "mean_participation": 40.5058,
+          "ann_cost_drag": 0.0614
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": 0.2308946251128404,
+          "mean_participation": 202.5291,
+          "ann_cost_drag": 0.1355
+        }
+      ]
+    },
+    {
+      "ticker": "CVX",
+      "adv_usd_median": 13220476.350784302,
+      "buyhold_sharpe": 0.513,
+      "gross_sharpe": 0.497,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4635192251017186,
+          "mean_participation": 1.5956,
+          "ann_cost_drag": 0.0064
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.4335121055225879,
+          "mean_participation": 7.9779,
+          "ann_cost_drag": 0.0121
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.3660025914399378,
+          "mean_participation": 39.8893,
+          "ann_cost_drag": 0.0249
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.2436183809262364,
+          "mean_participation": 159.5571,
+          "ann_cost_drag": 0.0482
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.046969890382955654,
+          "mean_participation": 797.7856,
+          "ann_cost_drag": 0.1056
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.5491220892275791,
+          "mean_participation": 3988.9281,
+          "ann_cost_drag": 0.2341
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.9882924166769012,
+          "mean_participation": 15955.7123,
+          "ann_cost_drag": 0.4664
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.2721708829374547,
+          "mean_participation": 79778.5613,
+          "ann_cost_drag": 1.0409
+        }
+      ]
+    },
+    {
+      "ticker": "D",
+      "adv_usd_median": 27157794.720458984,
+      "buyhold_sharpe": 0.632,
+      "gross_sharpe": 0.555,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5246078774056485,
+          "mean_participation": 0.792,
+          "ann_cost_drag": 0.0056
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.4998979051129039,
+          "mean_participation": 3.9602,
+          "ann_cost_drag": 0.0102
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.4440746803815928,
+          "mean_participation": 19.8011,
+          "ann_cost_drag": 0.0203
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.3421315912196409,
+          "mean_participation": 79.2044,
+          "ann_cost_drag": 0.0387
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.09686927237413383,
+          "mean_participation": 396.0218,
+          "ann_cost_drag": 0.0842
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.3354211385537587,
+          "mean_participation": 1980.109,
+          "ann_cost_drag": 0.1858
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.7234147337320296,
+          "mean_participation": 7920.4359,
+          "ann_cost_drag": 0.3697
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.9851432373595036,
+          "mean_participation": 39602.1796,
+          "ann_cost_drag": 0.8243
+        }
+      ]
+    },
+    {
+      "ticker": "DE",
+      "adv_usd_median": 23281725.269699097,
+      "buyhold_sharpe": 0.557,
+      "gross_sharpe": 0.423,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.3979520082995996,
+          "mean_participation": 0.3559,
+          "ann_cost_drag": 0.006
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.37700288484904043,
+          "mean_participation": 1.7795,
+          "ann_cost_drag": 0.0111
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.3298928666192186,
+          "mean_participation": 8.8976,
+          "ann_cost_drag": 0.0225
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.2442395574776586,
+          "mean_participation": 35.5904,
+          "ann_cost_drag": 0.0431
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.03611853764951492,
+          "mean_participation": 177.9519,
+          "ann_cost_drag": 0.094
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.3610443207376932,
+          "mean_participation": 889.7597,
+          "ann_cost_drag": 0.2077
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.7807145678491483,
+          "mean_participation": 3559.0388,
+          "ann_cost_drag": 0.4136
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.0999249481001432,
+          "mean_participation": 17795.1942,
+          "ann_cost_drag": 0.9224
+        }
+      ]
+    },
+    {
+      "ticker": "DIS",
+      "adv_usd_median": 44885147.85581589,
+      "buyhold_sharpe": 0.529,
+      "gross_sharpe": 0.455,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4222149483479394,
+          "mean_participation": 2.0534,
+          "ann_cost_drag": 0.0076
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.38979459941260014,
+          "mean_participation": 10.2668,
+          "ann_cost_drag": 0.015
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.31665537177426384,
+          "mean_participation": 51.3339,
+          "ann_cost_drag": 0.0318
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.18421921988569806,
+          "mean_participation": 205.3354,
+          "ann_cost_drag": 0.062
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.12104825976212011,
+          "mean_participation": 1026.6772,
+          "ann_cost_drag": 0.1368
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.5852723623589919,
+          "mean_participation": 5133.386,
+          "ann_cost_drag": 0.304
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.9153080952725132,
+          "mean_participation": 20533.5439,
+          "ann_cost_drag": 0.6065
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.1006136702163483,
+          "mean_participation": 102667.7194,
+          "ann_cost_drag": 1.3543
+        }
+      ]
+    },
+    {
+      "ticker": "DLR",
+      "adv_usd_median": 59443058.197402954,
+      "buyhold_sharpe": 0.676,
+      "gross_sharpe": 0.577,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5631089736914356,
+          "mean_participation": 0.0334,
+          "ann_cost_drag": 0.0035
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.5545884160901241,
+          "mean_participation": 0.1672,
+          "ann_cost_drag": 0.0056
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.5354917743972011,
+          "mean_participation": 0.8361,
+          "ann_cost_drag": 0.0102
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.5008118106351983,
+          "mean_participation": 3.3444,
+          "ann_cost_drag": 0.0187
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.4146002193651487,
+          "mean_participation": 16.7221,
+          "ann_cost_drag": 0.0397
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": 0.22233739637634162,
+          "mean_participation": 83.6105,
+          "ann_cost_drag": 0.0866
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.1054327878037125,
+          "mean_participation": 334.4419,
+          "ann_cost_drag": 0.1713
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.7005933417406714,
+          "mean_participation": 1672.2094,
+          "ann_cost_drag": 0.3809
+        }
+      ]
+    },
+    {
+      "ticker": "EA",
+      "adv_usd_median": 149205631.01844788,
+      "buyhold_sharpe": 0.584,
+      "gross_sharpe": 0.533,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.5127346012495306,
+          "mean_participation": 0.0781,
+          "ann_cost_drag": 0.0077
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.4967423522962823,
+          "mean_participation": 0.3906,
+          "ann_cost_drag": 0.0136
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.46071675753992464,
+          "mean_participation": 1.9529,
+          "ann_cost_drag": 0.0269
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.3949022044489305,
+          "mean_participation": 7.8117,
+          "ann_cost_drag": 0.0509
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.23218615367960274,
+          "mean_participation": 39.0586,
+          "ann_cost_drag": 0.1102
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.09866534404961405,
+          "mean_participation": 195.2928,
+          "ann_cost_drag": 0.2428
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.5009345729649134,
+          "mean_participation": 781.1711,
+          "ann_cost_drag": 0.4827
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -0.8685324835172338,
+          "mean_participation": 3905.8553,
+          "ann_cost_drag": 1.0757
+        }
+      ]
+    },
+    {
+      "ticker": "EOG",
+      "adv_usd_median": 139602852.3891449,
+      "buyhold_sharpe": 0.507,
+      "gross_sharpe": 0.368,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.33966408521744024,
+          "mean_participation": 0.3057,
+          "ann_cost_drag": 0.0078
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.31584900779288266,
+          "mean_participation": 1.5286,
+          "ann_cost_drag": 0.0145
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.2624288061198816,
+          "mean_participation": 7.6432,
+          "ann_cost_drag": 0.0294
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.16578248863066042,
+          "mean_participation": 30.5726,
+          "ann_cost_drag": 0.0564
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.06644297212267024,
+          "mean_participation": 152.8631,
+          "ann_cost_drag": 0.123
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.4991627836636563,
+          "mean_participation": 764.3153,
+          "ann_cost_drag": 0.2721
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.9410200557461228,
+          "mean_participation": 3057.2613,
+          "ann_cost_drag": 0.5417
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.2648609476200683,
+          "mean_participation": 15286.3065,
+          "ann_cost_drag": 1.2082
+        }
+      ]
+    },
+    {
+      "ticker": "ETN",
+      "adv_usd_median": 9790091.3034873,
+      "buyhold_sharpe": 0.606,
+      "gross_sharpe": 0.512,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4376374647444482,
+          "mean_participation": 5.0128,
+          "ann_cost_drag": 0.017
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.3549469800066465,
+          "mean_participation": 25.064,
+          "ann_cost_drag": 0.0355
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.1710286939437475,
+          "mean_participation": 125.3198,
+          "ann_cost_drag": 0.077
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": -0.1341013321771357,
+          "mean_participation": 501.2791,
+          "ann_cost_drag": 0.1521
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.6362004775726561,
+          "mean_participation": 2506.3955,
+          "ann_cost_drag": 0.3377
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -1.023297777036417,
+          "mean_participation": 12531.9776,
+          "ann_cost_drag": 0.7526
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.1803555316609473,
+          "mean_participation": 50127.9105,
+          "ann_cost_drag": 1.5033
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.255238801733685,
+          "mean_participation": 250639.5524,
+          "ann_cost_drag": 3.3591
+        }
+      ]
+    },
+    {
+      "ticker": "ETR",
+      "adv_usd_median": 6715184.838962555,
+      "buyhold_sharpe": 0.527,
+      "gross_sharpe": 0.417,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.3521307975796029,
+          "mean_participation": 2.5748,
+          "ann_cost_drag": 0.0119
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.28780065893225193,
+          "mean_participation": 12.8742,
+          "ann_cost_drag": 0.0237
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.14428858845834064,
+          "mean_participation": 64.3709,
+          "ann_cost_drag": 0.05
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": -0.10259387427139097,
+          "mean_participation": 257.4838,
+          "ann_cost_drag": 0.0976
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.56790147733001,
+          "mean_participation": 1287.4188,
+          "ann_cost_drag": 0.2154
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -1.0123316790091352,
+          "mean_participation": 6437.0941,
+          "ann_cost_drag": 0.4786
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.212299474736183,
+          "mean_participation": 25748.3764,
+          "ann_cost_drag": 0.9548
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.3053002884774758,
+          "mean_participation": 128741.8819,
+          "ann_cost_drag": 2.1321
+        }
+      ]
+    },
+    {
+      "ticker": "EXC",
+      "adv_usd_median": 10439322.106261253,
+      "buyhold_sharpe": 0.535,
+      "gross_sharpe": 0.485,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.4203080597991175,
+          "mean_participation": 6.1586,
+          "ann_cost_drag": 0.0113
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.3527248327192958,
+          "mean_participation": 30.7932,
+          "ann_cost_drag": 0.0229
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.2019991169878107,
+          "mean_participation": 153.966,
+          "ann_cost_drag": 0.0489
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": -0.05543005128795301,
+          "mean_participation": 615.8638,
+          "ann_cost_drag": 0.096
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": -0.5272588529661323,
+          "mean_participation": 3079.3192,
+          "ann_cost_drag": 0.2124
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.9607858836775264,
+          "mean_participation": 15396.5958,
+          "ann_cost_drag": 0.4726
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -1.1560984959968605,
+          "mean_participation": 61586.3833,
+          "ann_cost_drag": 0.9432
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.2506565996827472,
+          "mean_participation": 307931.9167,
+          "ann_cost_drag": 2.1069
+        }
+      ]
+    },
+    {
+      "ticker": "FCX",
+      "adv_usd_median": 264122757.3387146,
+      "buyhold_sharpe": 0.403,
+      "gross_sharpe": 0.272,
+      "verdict": "no_edge",
+      "capacity_usd": null,
+      "curve": [
+        {
+          "aum_usd": 1000000.0,
+          "net_sharpe": 0.2568567397690531,
+          "mean_participation": 0.0669,
+          "ann_cost_drag": 0.0052
+        },
+        {
+          "aum_usd": 5000000.0,
+          "net_sharpe": 0.24502186652054708,
+          "mean_participation": 0.3344,
+          "ann_cost_drag": 0.0091
+        },
+        {
+          "aum_usd": 25000000.0,
+          "net_sharpe": 0.21852174780596736,
+          "mean_participation": 1.6722,
+          "ann_cost_drag": 0.0179
+        },
+        {
+          "aum_usd": 100000000.0,
+          "net_sharpe": 0.17051361450100078,
+          "mean_participation": 6.6887,
+          "ann_cost_drag": 0.0337
+        },
+        {
+          "aum_usd": 500000000.0,
+          "net_sharpe": 0.05217776022757423,
+          "mean_participation": 33.4433,
+          "ann_cost_drag": 0.073
+        },
+        {
+          "aum_usd": 2500000000.0,
+          "net_sharpe": -0.20286597748680413,
+          "mean_participation": 167.2167,
+          "ann_cost_drag": 0.1607
+        },
+        {
+          "aum_usd": 10000000000.0,
+          "net_sharpe": -0.592987691578288,
+          "mean_participation": 668.8669,
+          "ann_cost_drag": 0.3193
+        },
+        {
+          "aum_usd": 50000000000.0,
+          "net_sharpe": -1.1258277533087848,
+          "mean_participation": 3344.3344,
+          "ann_cost_drag": 0.7115
+        }
+      ]
+    }
+  ]
+}
