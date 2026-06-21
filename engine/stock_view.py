@@ -319,9 +319,15 @@ def _ev_trend(rec: dict) -> dict | None:
     val_zh = ("上行" if up else "下行") + (f" · 较200日均线 {pv:+.0f}%" if pv is not None else "")
     if big:
         val += f" · {big[0]}"; val_zh += f" · {big[1]}"
+    adx = _num(tech.get("adx14"))               # trend STRENGTH (main's richer technicals)
+    if adx is not None:
+        if adx >= 25:
+            val += " · strong"; val_zh += " · 强趋势"
+        elif adx < 18:
+            val += " · choppy"; val_zh += " · 震荡"
     return _dim("Trend", "趋势", val, val_zh, tone="good" if up else "bad",
-                gloss="Where price sits vs its long-term average.",
-                gloss_zh="价格相对长期均线的位置。")
+                gloss="Where price sits vs its 200-day average, and how strong the trend is (ADX).",
+                gloss_zh="价格相对200日均线的位置，以及趋势强度（ADX）。")
 
 
 def _ev_momentum(rec: dict) -> dict | None:
@@ -472,6 +478,34 @@ def _ev_volatility(rec: dict, conv: dict) -> dict | None:
                 gloss_zh="预期下行决定建议仓位大小。", expand="cone")
 
 
+# vol-squeeze states (engine/vol_squeeze) → one timing read. A directionally-agnostic
+# compression→expansion confirmer that main computes for every market off close-only OHLCV.
+_SQUEEZE = {
+    "COILED": ("Coiled — compression", "压缩蓄势", "warn"),
+    "COMPRESSED": ("Compressing", "压缩中", "neutral"),
+    "FIRED_UP": ("Fired ↑ — broke out", "向上突破", "good"),
+    "FIRED_DOWN": ("Fired ↓ — broke down", "向下破位", "bad"),
+    "EXPANSION": ("Expansion — move underway", "扩张 — 行情进行中", "neutral"),
+}
+
+
+def _ev_squeeze(rec: dict) -> dict | None:
+    sq = rec.get("vol_squeeze") or {}
+    st = sq.get("state")
+    lab = _SQUEEZE.get(st) if st else None
+    if not lab:
+        return None                                  # NONE / absent → no chip
+    en, zh, tone = lab
+    days = sq.get("days_compressed")
+    if st in ("COILED", "COMPRESSED") and days:
+        en += f" {int(days)}d"; zh += f" {int(days)}天"
+    if st in ("FIRED_UP", "FIRED_DOWN") and sq.get("volume_confirmed") is False:
+        en += " (unconfirmed)"; zh += "（未确认）"
+    return _dim("Vol squeeze", "波动压缩", en, zh, tone=tone,
+                gloss="Compression → a move is loading; direction unconfirmed until it breaks.",
+                gloss_zh="波动压缩——更大行情正在蓄势；突破前方向未定。", expand="cone")
+
+
 def _ev_ownership(rec: dict) -> dict | None:
     ff = rec.get("fund_flows") or []
     sm = rec.get("smart_money") or {}
@@ -546,6 +580,7 @@ def _evidence(rec: dict, conv: dict, market: str) -> dict:
         "valuation": _ev_valuation(rec, market),
         "quality": _ev_quality(rec, conv),
         "positioning": _ev_positioning(rec),
+        "squeeze": _ev_squeeze(rec),
         "volatility": _ev_volatility(rec, conv),
         "ownership": _ev_ownership(rec),
         "macro": _ev_macro(rec),

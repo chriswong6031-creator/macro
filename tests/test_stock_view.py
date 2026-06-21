@@ -133,6 +133,20 @@ def test_hk_is_never_a_buy_verb():
     assert "buy" not in head
 
 
+def test_vol_squeeze_evidence():
+    """The vol-squeeze timing confirmer surfaces as one evidence read, present-gated."""
+    rec = _profiled("US")
+    rec["vol_squeeze"] = {"state": "COILED", "days_compressed": 14, "coiled": True}
+    sq = sv.build_view(rec, "US")["evidence"].get("squeeze")
+    assert sq and "14d" in sq["value"] and sq["tone"] == "warn"
+    # NONE / absent → no chip
+    rec["vol_squeeze"] = {"state": "NONE"}
+    assert "squeeze" not in sv.build_view(rec, "US")["evidence"]
+    # an unconfirmed breakout is flagged as such
+    rec["vol_squeeze"] = {"state": "FIRED_UP", "volume_confirmed": False}
+    assert "unconfirmed" in sv.build_view(rec, "US")["evidence"]["squeeze"]["value"]
+
+
 def test_cn_valuation_tone_is_neutral():
     """Cheapness is not a validated buy in CN — valuation never renders 'good'/green."""
     rec = _profiled("CN", rev_z=0.5, valuation={"value_z": 1.5})
