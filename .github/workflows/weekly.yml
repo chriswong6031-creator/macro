@@ -53,6 +53,8 @@ jobs:
         # calibration just leaves last week's (stale) calibration in place.
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          # see daily.yml: turns ON browser live prices when the repo var is set.
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
         run: |
           set +e
           run_py() {

@@ -154,6 +154,11 @@ jobs:
           # needs the DeepSeek key here too — not only on the master_brain step below.
           # No-op (degrades to neutral) when the secret is absent.
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          # Live intraday layer: set repo VARIABLE LIVE_QUOTES_WORKER_URL (Settings ->
+          # Secrets and variables -> Actions -> Variables) to your deployed Cloudflare
+          # quotes-worker URL to turn ON browser live prices — build_site bakes it into
+          # site/live_config.js. Empty -> live layer stays dormant (no-op). No code edit needed.
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
         run: |
           set +e
           # Marker for the libraries-rebuild guard further down. The four non-US search
