@@ -26,11 +26,12 @@ SCHEMA = "china_altdata.v1"
 
 # convergence weights — DEFAULT prior (used until china_signal_lab.leg_weights_for('altdata')
 # returns earned, forward-return-validated weights). Two-sided signed legs only: value/margin
-# (own-history valuation cheapness + financing trend), comment (千股千评 inst-vs-retail + main-
-# force), lhb (龙虎榜 hot-money net buy), block (大宗交易 premium/discount); analyst is a
-# near-useless GATE (China sell-side ~universally "buy"). The point is cross-sectional agreement.
-_W_DEFAULT = {"value": 0.28, "margin": 0.25, "comment": 0.18, "lhb": 0.12,
-              "block": 0.07, "analyst": 0.10}
+# (own-history valuation cheapness + financing trend), flow (主力资金 net inflow — Tushare-GATED,
+# the push2 replacement, absent without a token), comment (千股千评 inst-vs-retail + main-force),
+# lhb (龙虎榜 hot-money net buy), block (大宗交易 premium/discount); analyst is a near-useless GATE
+# (China sell-side ~universally "buy"). The point is cross-sectional agreement.
+_W_DEFAULT = {"value": 0.24, "margin": 0.20, "flow": 0.18, "comment": 0.15, "lhb": 0.10,
+              "block": 0.05, "analyst": 0.08}
 _W = _W_DEFAULT   # back-compat alias
 _CROWD_CHG = 25.0   # financing 20d change % above which we flag leverage crowding
 
@@ -132,17 +133,19 @@ def _compute_rows(min_signals: int = 2) -> list[dict]:
     comment = ce.comment() or {}
     lhb = ce.lhb() or {}
     block = ce.block_trades() or {}
+    flow = ce.fundflow() or {}        # 主力资金 net inflow — Tushare-GATED ({} without a token)
     try:
         from engine import china_crowding
         crowd_map = china_crowding.compute_crowding_map() or {}
     except Exception:  # noqa: BLE001
         crowd_map = {}
     names = _name_map()
-    for d in (comment, lhb, block):           # backfill names from the new feeds too
+    for d in (comment, lhb, block, flow):     # backfill names from the new feeds too
         for t, v in d.items():
             names.setdefault(t, v.get("name", t) if isinstance(v, dict) else t)
-    universe = set(analyst) | set(valuation) | set(margin) | set(comment) | set(lhb) | set(block)
-    raw = {"analyst": {}, "value": {}, "margin": {}, "comment": {}, "lhb": {}, "block": {}}
+    universe = (set(analyst) | set(valuation) | set(margin) | set(comment) | set(lhb)
+                | set(block) | set(flow))
+    raw = {"analyst": {}, "value": {}, "margin": {}, "comment": {}, "lhb": {}, "block": {}, "flow": {}}
     crowd_legacy = {}
     for t in universe:
         if t in analyst:
@@ -159,6 +162,8 @@ def _compute_rows(min_signals: int = 2) -> list[dict]:
             raw["lhb"][t] = lhb[t]["hotmoney_score"]
         if t in block and block[t].get("block_score") is not None:
             raw["block"][t] = block[t]["block_score"]
+        if t in flow and flow[t].get("flow_score") is not None:
+            raw["flow"][t] = flow[t]["flow_score"]
     pct = {leg: _rank_pct(vals) for leg, vals in raw.items()}
     W = _leg_weights()
     rows: list[dict] = []
