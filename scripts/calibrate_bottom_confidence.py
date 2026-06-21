@@ -130,7 +130,13 @@ def main() -> int:
         print(f"{name:6s} {rec['n']:>6d} {rec['held_pct']:>6}% {rec['dd_p10_pct']:>7} "
               f"{rec['dd_med_pct']:>7} {rec['ret_med_pct']:>7}")
     p = config.data_dir() / "regime" / "bottom_confidence_calibration.json"
-    p.write_text(json.dumps({"fwd": FWD, "bands": out}, indent=1))
+    # BUG-5 disclosure (research/SIGNAL_AUDIT.md): the panel is data/stocks (currently-listed
+    # survivors only), so the per-band held-rate that gates whether the score is "worth
+    # surfacing" is biased high. Temporally leak-free (walk-forward) but NOT delisting-aware.
+    p.write_text(json.dumps(
+        {"fwd": FWD, "bands": out,
+         "survivorship_biased": True, "universe": "data/stocks (current survivors)",
+         "n_names": len(files)}, indent=1))
     log.info("wrote %s", p)
     return 0
 

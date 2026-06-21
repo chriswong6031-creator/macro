@@ -35,6 +35,14 @@ def main() -> int:
             panel[t] = df["close"]
     log.info("calibrating ladder on %d instruments", len(panel))
     cal = calibrate_ladder(panel)
+    # BUG-4 disclosure (research/SIGNAL_AUDIT.md): the panel is currently-listed survivors
+    # only (sector-ETF top holdings + index ETFs), so each state's forward win-rate (hit_pct)
+    # is biased high and drawdown tails too shallow. Stamp it so the UI/consumers can surface
+    # the caveat (and a future delisting-aware PIT panel can flip the flag).
+    for v in cal.values():
+        if isinstance(v, dict):
+            v["survivorship_biased"] = True
+            v["universe_n"] = len(panel)
     p = config.data_dir() / "regime" / "ladder_calibration.json"
     with open(p, "w") as f:
         json.dump(cal, f, indent=1)
