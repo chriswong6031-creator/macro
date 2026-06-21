@@ -59,14 +59,28 @@ def _member_conviction(ticker: str) -> dict | None:
     p = config.ROOT / "site" / "stockdata" / (ticker + ".json")
     if p.exists():
         try:
-            c = json.loads(p.read_text()).get("conviction") or {}
+            rec = json.loads(p.read_text())
+            c = rec.get("conviction") or {}
             if c:
+                # the SECOND gauge: a compact entry-timing read so a basket member reads
+                # "own-it conviction + buy now / wait for the pullback to $X", never a bare score.
+                es = rec.get("entry_signal") or {}
+                entry = None
+                if es:
+                    bz = es.get("buy_zone") or {}
+                    entry = {"status": es.get("status"), "act_level": es.get("act_level"),
+                             "headline": es.get("headline"), "headline_zh": es.get("headline_zh"),
+                             "zone_low": bz.get("low"), "zone_high": bz.get("high"),
+                             "zone_pct": bz.get("pct_from_spot")}
                 val = {"score": c.get("score"), "band": c.get("band"),
                        "band_zh": c.get("band_zh"),
                        "verdict": c.get("verdict") if isinstance(c.get("verdict"), str) else None,
                        "verdict_zh": c.get("verdict_zh"),
                        "cycle_blocked": bool(c.get("cycle_blocked")),
                        "entry_pct": ((c.get("axes") or {}).get("entry") or {}).get("pct"),
+                       "valuation_band": c.get("valuation_band"),
+                       "validation_status": c.get("validation_status"),
+                       "entry": entry,
                        "trust": (c.get("trust_tier") or {}).get("tier")}
         except Exception:  # noqa: BLE001
             val = None

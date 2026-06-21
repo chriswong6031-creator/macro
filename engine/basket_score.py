@@ -207,17 +207,28 @@ def act_now_stocks(members: list, theme: dict) -> dict:
         c = m.get("conviction")
         if not c or c.get("score") is None:
             continue
-        v = (c.get("verdict") or "").lower()
-        is_buy = ("buy" in v or "add" in v) and not c.get("cycle_blocked")
+        # Two-gauge: a member is "act now" only when the ENTRY gauge says the window is
+        # open (buy_now / partial), not when the conviction score is merely high — and
+        # never when the cycle blocks. Falls back to the entry-axis percentile for any
+        # older record that predates the entry_signal block.
+        entry = c.get("entry") or {}
+        status = entry.get("status")
         ep = c.get("entry_pct")
-        good_entry = ep is None or ep >= 0.45
-        if is_buy and (c.get("score") or 0) >= 50 and good_entry:
+        if status:
+            is_buy = status in ("buy_now", "partial") and not c.get("cycle_blocked")
+        else:
+            v = (c.get("verdict") or "").lower()
+            is_buy = ("buy" in v or "add" in v or "leader" in v) and not c.get("cycle_blocked") \
+                and (ep is None or ep >= 0.45)
+        if is_buy and (c.get("score") or 0) >= 50:
             buys.append({"symbol": m.get("symbol"), "name": m.get("name"),
                          "score": c.get("score"), "verdict": c.get("verdict"),
                          "verdict_zh": c.get("verdict_zh"), "entry_pct": ep,
+                         "entry_status": status, "act_level": entry.get("act_level"),
+                         "zone_low": entry.get("zone_low"), "zone_high": entry.get("zone_high"),
                          "ret_20d": m.get("ret_20d"), "ret_ytd": m.get("ret_ytd"),
                          "rationale": m.get("rationale")})
-    buys.sort(key=lambda x: (-(x.get("entry_pct") or 0), -(x.get("score") or 0)))
+    buys.sort(key=lambda x: (-(x.get("act_level") or 0), -(x.get("entry_pct") or 0), -(x.get("score") or 0)))
     if not buys:
         return {"status": "no_clean_entries", "buys": [],
                 "note_en": "Theme is in favour, but no member has a clean entry right now — most are extended or mid-trend. Wait for a pullback.",

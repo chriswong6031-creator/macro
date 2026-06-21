@@ -228,6 +228,31 @@
   .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  /* ENTRY-timing gauge (the second gauge) on the detail conviction hero */
+  .cv-entry { margin:10px 0 2px; padding:8px 10px; border-radius:10px; background:var(--panel);
+              border:1px solid var(--line); border-left:4px solid var(--muted); }
+  .cv-entry.nbe-buy_now, .cv-entry.nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .cv-entry.nbe-buy_soon, .cv-entry.nbe-watch { border-left-color:var(--g-cold); }
+  .cv-entry.nbe-wait_pullback, .cv-entry.nbe-hold { border-left-color:var(--warn); }
+  .cv-entry.nbe-extended, .cv-entry.nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .cv-entry.nbe-exit, .cv-entry.nbe-avoid, .cv-entry.nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
+  .cv-ehead { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; }
+  .cv-entry .nbe-dot { width:9px; height:9px; border-radius:50%; background:var(--muted); flex:none; }
+  .cv-entry .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 22%,transparent); }
+  .cv-entry .nbe-dot.a2 { background:var(--g-cold); }
+  .cv-entry .nbe-dot.a1 { background:var(--warn); }
+  .cv-entry .nbe-dot.a0 { background:var(--down); }
+  .cv-ezone { font-size:12px; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .cv-ezone span { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+  .cv-ecyc { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .cv-etext { font-size:11px; margin-top:5px; line-height:1.35; }
+  .cv-val { font-size:10px; font-weight:700; padding:1px 6px; border-radius:7px; margin-left:6px;
+            color:var(--muted); background:var(--panel); border:1px solid var(--line); }
+  .cv-val.val-extreme, .cv-val.val-stretched { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .cv-val.val-cheap { color:var(--up); border-color:color-mix(in srgb,var(--up) 32%,var(--line)); }
   .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
   .cax { font-size:10.5px; }
   .cax .caxl { color:var(--muted); display:block; }
@@ -1120,11 +1145,38 @@
           (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
         '</div>';
     }
+    // ENTRY-timing gauge (gauge 2) — the WHEN/AT-WHAT-PRICE, kept distinct from the
+    // OWN-IT conviction score so a high score is never mistaken for a buy-now.
+    var es = d.entry_signal, esbar = '';
+    if (es) {
+      var bz = es.buy_zone, zoneTxt = '';
+      if (bz && bz.high != null) {
+        zoneTxt = '$' + bz.low.toFixed(2) + (bz.high !== bz.low ? '–$' + bz.high.toFixed(2) : '') +
+          (bz.pct_from_spot != null ? ' (' + (bz.pct_from_spot >= 0 ? '+' : '') + bz.pct_from_spot + '%)' : '');
+      }
+      var ec = es.cycle_pos || {}, etim = es.timing || {};
+      var win = (etim.opens_in_days_lo != null && es.status !== 'buy_now' && es.status !== 'partial')
+        ? (' · ' + lz('window', '窗口') + ' ~' + etim.opens_in_days_lo +
+           (etim.opens_in_days_hi && etim.opens_in_days_hi !== etim.opens_in_days_lo ? '–' + etim.opens_in_days_hi : '') + 'd') : '';
+      esbar = '<div class="cv-entry nbe-' + es.status + '">' +
+        '<div class="cv-ehead"><span class="nbe-dot a' + es.act_level + '"></span>' +
+        esc(lz(es.headline, es.headline_zh)) + '</div>' +
+        (zoneTxt ? '<div class="cv-ezone"><span>' + lz('Buy zone', '买入区') + '</span> <b>' + zoneTxt + '</b>' +
+          (es.chase_above != null ? ' · ' + lz("don't chase >", '勿追高 >') + ' $' + es.chase_above.toFixed(2) : '') +
+          (es.stop != null ? ' · ' + lz('stop', '止损') + ' $' + es.stop.toFixed(2) : '') + '</div>' : '') +
+        (ec.dc_day != null ? '<div class="cv-ecyc">' + lz('cycle day', '周期第') + ' ' + ec.dc_day + '/' +
+          ec.dc_band[0] + '–' + ec.dc_band[1] + ' · ' + (ec.pct_through || 0) + '%' + win + '</div>' : '') +
+        (es.action ? '<div class="cv-etext muted">' + esc(lz(es.action, es.action_zh)) + '</div>' : '') +
+        '</div>';
+    }
+    var valchip = c.valuation_band ? ('<span class="cv-val val-' + c.valuation_band + '" title="' +
+      esc(c.valuation_note || '') + '">' + esc(c.valuation_band) + '</span>') : '';
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
-        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + '</div>' +
+        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + valchip + '</div>' +
         '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
+        esbar +
       (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
         '</span>' + basis + '</div>' : '') +
       rgbar + szbar +

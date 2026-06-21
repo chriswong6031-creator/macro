@@ -182,7 +182,7 @@ function render(){
       an.buys.map(x=>`<tr><td>${stk(x.symbol)} <span class="muted sm">${esc(x.name||'')}</span></td>
         <td class="num">${convCell({score:x.score})}</td>
         <td>${x.verdict?L(esc(x.verdict),esc(x.verdict_zh||x.verdict)):'—'}</td>
-        <td class="num">${x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—'}</td>
+        <td class="num">${x.entry_status?('<b style="color:'+(x.act_level>=3?cssv('--up'):cssv('--g-cold'))+'">'+esc((x.entry_status||'').replace('_',' '))+'</b>'+(x.zone_low!=null?' <span class="muted sm">$'+x.zone_low.toFixed(2)+(x.zone_high&&x.zone_high!=x.zone_low?'–$'+x.zone_high.toFixed(2):'')+'</span>':'')):(x.entry_pct!=null?Math.round(x.entry_pct*100)+'%':'—')}</td>
         <td class="num ${cls(x.ret_20d)}">${fmtPct(x.ret_20d)}</td>
         <td class="num ${cls(x.ret_ytd)}">${fmtPct(x.ret_ytd)}</td></tr>`).join('')+
       `</tbody></table></div>`;
@@ -235,18 +235,24 @@ function render(){
 
   // ---- holdings scoreboard ----
   const mem=(d.members||[]).slice();
+  // entry-timing chip (the SECOND gauge) per member: buy now / wait for the pullback to $X
+  const entryCell=(c)=>{const e=c&&c.entry; if(!e||!e.status) return '<span class="muted sm">—</span>';
+    const col = e.act_level>=3?cssv('--up'):e.act_level>=2?cssv('--g-cold'):e.act_level>=1?cssv('--warn'):cssv('--down');
+    const zone = e.zone_low!=null?(' $'+e.zone_low.toFixed(2)+(e.zone_high&&e.zone_high!=e.zone_low?'–$'+e.zone_high.toFixed(2):'')):'';
+    return `<span style="font-weight:700;color:${col}">${esc(L(e.headline||e.status,e.headline_zh||e.status))}</span><span class="muted sm">${zone}</span>`;};
   const rows=mem.map(m=>{const c=m.conviction;
     return `<tr>
       <td>${stk(m.symbol)} <span class="muted sm">${esc(m.name||'')}</span></td>
       <td class="num">${convCell(c)}</td>
       <td>${c&&c.verdict?L(esc(c.verdict),esc(c.verdict_zh||c.verdict)):'<span class="muted sm">—</span>'}${c&&c.cycle_blocked?` <span class="chip" title="cycle state blocks a buy">⚠</span>`:''}</td>
+      <td>${entryCell(c)}</td>
       <td class="num ${cls(m.ret_20d)}">${fmtPct(m.ret_20d)}</td>
       <td class="num ${cls(m.ret_ytd)}">${fmtPct(m.ret_ytd)}</td>
       <td class="why">${esc(m.rationale||'')}</td>
     </tr>`;}).join('');
-  h+=`<h2><span class="idx">04</span>${L('Holdings — buy/avoid by conviction','成分股 — 按信念可买/回避')} <span class="chip">${mem.length} ${L('names','只')}</span></h2>
+  h+=`<h2><span class="idx">04</span>${L('Holdings — own-it conviction + entry timing','成分股 — 持有信念 + 入场择时')} <span class="chip">${mem.length} ${L('names','只')}</span></h2>
   <div class="panel"><div class="ts"><table id="hold">
-    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
+    <thead><tr><th>${L('Stock','个股')}</th><th class="num" data-s="conv">${L('Conviction','信念')}</th><th>${L('Verdict','结论')}</th><th>${L('Entry now','入场时机')}</th><th class="num" data-s="r20">20d</th><th class="num" data-s="ytd">YTD</th><th>${L('Why in theme','入选理由')}</th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <div class="disc">${L('Conviction is the per-stock 4-axis Conviction Profile (selection · entry · tailwind · quality) from the stock dashboard — a within-market percentile, event-edge tier, never an order. ⚠ = cycle state blocks a buy.','信念为股票看板的四轴信念档案（选择·入场·顺风·质量）— 市场内百分位、事件型层级，绝非下单。⚠ = 周期状态禁止买入。')}</div>
   </div>`;

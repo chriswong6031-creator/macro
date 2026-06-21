@@ -108,9 +108,19 @@ def test_accounting_warn_flags_leader():
 
 # --- the constructive cases -------------------------------------------------
 def test_high_conviction_when_all_aligned():
+    # validation-gated wording: uncalibrated default reads 'high-confluence (context)',
+    # never the over-confident 'high-conviction'; the entry claim is NOT in the verb.
     p = ss.conviction_profile(_rec(), "US")
-    assert "high-conviction" in p["verdict"].lower()
+    v = p["verdict"].lower()
+    assert "leader" in v
+    assert "high-confluence" in v and "high-conviction" not in v
+    assert "good entry" not in v                       # entry claim moved to the Entry gauge
+    assert p["validation_status"] == "neutral_ic"
     assert p["score"] is not None and p["score"] >= 50
+    # once the deep-PIT gate proves forward edge, the verb upgrades to 'high-conviction'
+    pv = ss.conviction_profile(_rec(), "US", ctx={"gate_go": True})
+    assert "high-conviction" in pv["verdict"].lower()
+    assert pv["validation_status"] == "positive_ic"
 
 
 def test_leader_poor_entry():
@@ -425,8 +435,9 @@ def test_stress_vetoes_high_conviction_on_a_chase():
            "tech": {"off_52w_high_pct": -5.0, "rsi14": 58.0, "pct_vs_200dma": 26.0}}
     calm = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.0}})
     hot = ss.conviction_profile(rec, "US", ctx={"risk_overlay": {"stress": 0.8}})
-    assert "high-conviction" in calm["verdict"].lower()          # calm -> high-conviction
-    assert "high-conviction" not in hot["verdict"].lower()       # stress -> vetoed
+    assert "leader" in calm["verdict"].lower()                   # calm -> leader verb
+    assert "elevated-risk" not in calm["verdict"].lower()
+    assert "leader" not in hot["verdict"].lower()                # stress -> vetoed off the leader verb
     assert "elevated-risk" in hot["verdict"].lower()
     assert hot["composite_z"] < calm["composite_z"]              # and taxed
 
@@ -518,8 +529,9 @@ def test_imminent_earnings_sizes_down_and_cautions():
            "tech": {"off_52w_high_pct": -6.0, "rsi14": 56.0, "pct_vs_200dma": 10.0}}
     base = ss.conviction_profile(rec, "US")
     soon = ss.conviction_profile({**rec, "earnings_days": 1.0}, "US")
-    assert "high-conviction" in base["verdict"].lower()         # no event -> high-conviction
-    assert "earnings" in soon["verdict"].lower()                # event tomorrow -> not high-conviction
+    assert "leader" in base["verdict"].lower()                  # no event -> leader verb
+    assert "earnings" not in base["verdict"].lower()
+    assert "earnings" in soon["verdict"].lower()                # event tomorrow -> not the leader verb
     assert any("earnings" in c for c in soon["cautions"])
     assert soon["size"]["pct"] < base["size"]["pct"]            # sized down
     assert soon["risk"]["total"] >= 0.5
