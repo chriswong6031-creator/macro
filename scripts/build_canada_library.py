@@ -25,6 +25,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import stock_score  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -155,10 +157,21 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
+    # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
+    # HVP / RSI / MA regime) supersede the thin close-only snapshot; the single-stock volatility
+    # black hole is added too — both best-effort so a thin/odd series never breaks the build.
+    try:
+        _tech = stock_technicals.snapshot(c)
+    except Exception:  # noqa: BLE001 — fall back to the thin snapshot
+        _tech = snapshot(c)
+    try:
+        _sq = vol_squeeze.assess(c)
+    except Exception:  # noqa: BLE001
+        _sq = None
     return {
         "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
         "asof": str(c.index.max().date()), "history_days": int(len(c)),
-        "tech": snapshot(c),
+        "tech": _tech, "vol_squeeze": _sq,
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
@@ -350,6 +363,21 @@ def main(alpha: dict | None = None) -> dict | None:
     log.info("canada library: net-liquidity overlay %s · basket-tailwind names %d",
              liq or "unknown", len(basket_tw))
 
+    # forward anticipation cone — hoist the engine + its gate ONCE (the cone is close-driven and the
+    # S&P/TSX benchmark close is read once for the residual-alpha leg; both reads would otherwise repeat
+    # per name). None-safe: if the engine is unavailable, the cone is simply skipped for every name.
+    try:
+        from engine.anticipation import anticipate as _anticipate, load_gate as _load_gate
+        _ant_gate = _load_gate("US")
+    except Exception:  # noqa: BLE001
+        _anticipate = None
+        _ant_gate = None
+    try:
+        _tsx = store.read("canada", TSX_INDEX)
+        _tsx_close = _tsx["close"] if (_tsx is not None and "close" in _tsx.columns) else None
+    except Exception:  # noqa: BLE001
+        _tsx_close = None
+
     # refresh yfinance fundamentals up front (best-effort, capped) so pretty company
     # display names + the fundamentals panel are available for THIS run's records.
     from engine import canada_fundamentals
@@ -391,6 +419,16 @@ def main(alpha: dict | None = None) -> dict | None:
         # HARD verb modifier (a downtrend caps the entry axis and forbids a Buy verb).
         # Canada carries no validated cross-sectional quality leg (no SUE/insider/factor
         # composite), so the quality axis is simply absent — never read as neutral.
+        # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
+        # note in the shared engine; best-effort (skips quietly on thin history).
+        if _anticipate is not None:
+            try:
+                _ant = _anticipate(close.dropna(), bench=_tsx_close, asset_class="ca_equity",
+                                   gate=_ant_gate)
+                if _ant:
+                    rec["anticipation"] = _ant
+            except Exception:  # noqa: BLE001 — additive cone, never fatal
+                pass
         norm = stock_score.normalize_rec(rec, "CA", basket=basket_tw.get(ticker))
         prof = stock_score.conviction_profile(norm, "CA", ctx={"as_of": (alpha or {}).get("as_of"), "gate_go": gate_go})
         rec["conviction"] = prof
