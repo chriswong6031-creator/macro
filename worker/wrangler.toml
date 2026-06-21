@@ -1,0 +1,13 @@
+# Cloudflare Worker that serves live last-prices to the static dashboard.
+#   wrangler secret put POLYGON_API_KEY     # the entitled key, kept server-side
+#   wrangler deploy
+# then paste the deployed https://quotes.<subdomain>.workers.dev URL into
+# config.yml -> live.quotes_worker_url (the nightly build bakes it into
+# site/live_config.js, which the browser live.js reads).
+name = "macro-quotes"
+main = "quotes.worker.js"
+compatibility_date = "2024-11-01"
+
+# POLYGON_API_KEY is set as a secret (not here). POLYGON_BASE_URL is optional.
+# [vars]
+# POLYGON_BASE_URL = "https://api.polygon.io"

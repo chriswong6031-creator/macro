@@ -511,7 +511,7 @@
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ n.name }}</span>
-          {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="hk">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
         <div class="nb-sub">{% if n.sector %}<span>{{ t(n.sector, n.sector_zh or n.sector) }}</span>{% endif %}{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
@@ -1579,5 +1579,7 @@
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
 <script src="timemachine.js"></script>
+<script src="live_config.js"></script>
+<script src="live.js"></script>
 </body>
 </html>

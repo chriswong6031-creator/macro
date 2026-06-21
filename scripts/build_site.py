@@ -2552,10 +2552,17 @@ def main() -> int:
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",
                   "lightweight-charts.js",
-                  "allocation_scorecard.js"):
+                  "allocation_scorecard.js", "live.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # live-price progressive enhancement config (Worker URL + cadence from config.yml);
+    # live.js no-ops when the URL is empty, so this is safe on the static deploy.
+    try:
+        from scripts.build_live_overlay import write_live_config
+        write_live_config(site)
+    except Exception as e:  # noqa: BLE001 — additive, never block the build
+        log.warning("live_config.js skipped: %s", e)
     # per-ticker factor betas for the watchlist's Portfolio Exposure panel — the
     # client aggregates these against the user's holdings (engine/factor_exposure.py;
     # validated in reports/factor-exposure-phase0.md). Additive + graceful.
