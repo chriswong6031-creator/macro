@@ -472,7 +472,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     the verdict never says "Buy". Board is ranked by the gated conviction composite and
     split buy / watch (strong-but-blocked) / laggards. Returns a setups-shaped dict."""
     from collections import defaultdict
-    from engine import extension as ext_eng
+    from engine import dispersion, entry_signal, extension as ext_eng, risk_sizing
     from engine import hk_ah, hk_southbound_stocks, hk_stock_signals
 
     rows = ((scoreboard or {}).get("modes") or {}).get("all") or []
@@ -543,6 +543,19 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
     tickers = [e["ticker"] for e in enriched]
     closes = _closes_matrix()
     factor = _factor_ret()
+    # cross-sectional DISPERSION regime — the dial for WHEN selection pays, computed ONCE over
+    # the whole-universe HK return panel (mirrors build_stock_library). Feeds per-name
+    # vol-managed sizing (engine/risk_sizing). Strictly additive; absence => gross x1.0.
+    disp_regime, regime_gross = None, 1.0
+    if closes is not None:
+        try:
+            disp_regime = dispersion.assess(closes.pct_change(fill_method=None).tail(280))
+            if disp_regime:
+                regime_gross = disp_regime["gross_mult"]
+                log.info("hk dispersion regime: %s (pctile %s) -> gross x%.2f",
+                         disp_regime["state"], disp_regime.get("dispersion_pctile"), regime_gross)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("hk dispersion regime failed (%s)", e)
     betas_pt = {r["ticker"]: {"role": r.get("role"), "tilt": r.get("tilt"), "beta": r.get("beta")}
                 for r in rows}
     betas = {t: v["beta"] for t, v in betas_pt.items() if v.get("beta") is not None}
@@ -590,6 +603,38 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                              "regime": {"calm": calm}})
         profiles[t] = prof
         e["conviction"] = prof
+        # ---- the two propagated engine gauges (US-parity), HK market ----------
+        # close Series for the vol / entry engines: the curated close matrix (proper
+        # date-indexed Series) preferred, else the per-stock chart closes. Both are
+        # pure / point-in-time; every compute is try/except so a bad name never breaks
+        # the build and an absent gauge just leaves the card unchanged.
+        close_s = None
+        try:
+            if closes is not None and t in closes.columns:
+                close_s = closes[t].dropna()
+            if (close_s is None or len(close_s) < 60):
+                ch = (rec.get("chart") or {}).get("c") or []
+                if len(ch) >= 60:
+                    close_s = pd.Series([float(x) for x in ch if x is not None])
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            close_s = None
+        if close_s is not None and len(close_s) >= 60:
+            # ⚖ vol-managed inverse-vol sizing — HOW MUCH to own (risk), orthogonal to the
+            # conviction score (WHAT) and the entry gauge (WHEN). Pure-vol, scaled by the
+            # dispersion regime. Always computable when there's enough history.
+            try:
+                rs = risk_sizing.assess(close_s, regime_gross=regime_gross)
+                if rs:
+                    e["risk_sizing"] = rs
+            except Exception as ex:  # noqa: BLE001 — additive, never fatal
+                log.debug("hk risk-sizing for %s failed (%s)", t, ex)
+            # entry-timing gauge — when & at what price to buy (reads rec['ladder']).
+            try:
+                es = entry_signal.assess(close_s, None, rec)
+                if es:
+                    e["entry_signal"] = es
+            except Exception as ex:  # noqa: BLE001 — additive, never fatal
+                log.debug("hk entry-signal for %s failed (%s)", t, ex)
     stock_score.attach_panel_scores(profiles)        # within-market percentile display score
     # patch the (now percentile-scored) conviction + HK-native legs back into each per-stock
     # JSON so hk_lookup.html renders the identical hero + flow/value chips.
@@ -602,6 +647,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             rec["ah_value"] = e["ah_value"]
         if e.get("edge_basis"):
             rec["edge"] = {"z": e.get("edge_z"), "basis": e["edge_basis"], "regime": risk_state}
+        if e.get("risk_sizing"):
+            rec["risk_sizing"] = e["risk_sizing"]    # vol-managed sizing for hk_lookup
+        if e.get("entry_signal"):
+            rec["entry_signal"] = e["entry_signal"]  # entry-timing gauge for hk_lookup
         try:
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001 — additive, never fatal
@@ -650,6 +699,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "southbound_summary": hk_southbound_stocks.market_summary(),
            "eligible": sum(1 for e in enriched if comp(e) > 0),
            "universe": len(enriched)}
+    if disp_regime:                                  # selection-regime gross dial (board context)
+        out["dispersion_regime"] = disp_regime
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
         fdir = site / "factordata"

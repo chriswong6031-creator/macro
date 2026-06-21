@@ -28,6 +28,9 @@ from engine import stock_technicals  # noqa: E402  — richer close-only technic
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX regime + margin risk
 from engine import stock_view  # noqa: E402
+from engine import dispersion  # noqa: E402  — cross-sectional selection-regime gross dial
+from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timing gauge (market-agnostic)
+from engine import risk_sizing  # noqa: E402  — vol-managed inverse-vol sizing (validated Sharpe lever)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -455,6 +458,12 @@ def compute_china_standouts(setups: dict | None, reversal: dict | None,
                 r["off_high"] = tech.get("off_52w_high_pct")
                 if rec.get("conviction"):
                     r["conviction"] = rec["conviction"]
+                # the two market-agnostic gauges (persisted by main()): WHEN to buy
+                # (entry-timing) + HOW MUCH to own (vol-managed sizing). US-parity chips.
+                if rec.get("entry_signal"):
+                    r["entry_signal"] = rec["entry_signal"]
+                if rec.get("risk_sizing"):
+                    r["risk_sizing"] = rec["risk_sizing"]
             except Exception:  # noqa: BLE001
                 pass
         # confluence: in the reversal watch AND the low-vol sleeve (validated both)
@@ -652,8 +661,26 @@ def main(alpha: dict | None = None) -> dict | None:
     # per-name logistic skin. disp_map carries the standout-card display fields.
     profiles: dict[str, dict] = {}
     disp_map: dict[str, dict] = {}
+    entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (standout rows)
+    risk_sig: dict[str, dict] = {}              # vol-managed sizing per name (standout rows)
     to_write: list[tuple[str, dict]] = []
     uni = universe()
+    # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high dispersion
+    # => selection earns more => take more gross). Computed ONCE over the whole-universe
+    # return panel; feeds per-name vol-managed sizing. Mirrors build_stock_library; the
+    # gauge itself is market-agnostic (reads the return cross-section + each name's vol),
+    # so it propagates to the mean-reversion-flavoured A-share book unchanged.
+    disp_regime, regime_gross = None, 1.0
+    try:
+        _uni_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
+        disp_regime = dispersion.assess(_uni_closes.pct_change(fill_method=None).tail(280))
+        if disp_regime:
+            regime_gross = disp_regime["gross_mult"]
+            log.info("china dispersion regime: %s (pctile %s, avg_corr %s) -> gross x%.2f",
+                     disp_regime["state"], disp_regime.get("dispersion_pctile"),
+                     disp_regime.get("avg_corr"), regime_gross)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("china dispersion regime failed (%s)", e)
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
@@ -691,7 +718,34 @@ def main(alpha: dict | None = None) -> dict | None:
         prof = stock_score.conviction_profile(norm, "CN", ctx={
             "as_of": (alpha or {}).get("as_of"), "risk_overlay": cn_risk_overlay})
         rec["conviction"] = prof
+        # ---- Vol-managed sizing (engine/risk_sizing) — the VALIDATED Sharpe lever -----
+        # Inverse-vol size scaled by the dispersion regime: HOW MUCH to own (risk),
+        # orthogonal to conviction (WHAT) and the entry gauge (WHEN). Pure price-vol, so
+        # market-agnostic — propagates to the A-share book unchanged. Persisted on the rec
+        # so it rides into the per-stock JSON + the standout card (re-read by the board).
+        try:
+            rs = risk_sizing.assess(close, regime_gross=regime_gross)
+            if rs:
+                rec["risk_sizing"] = rs
+                if isinstance(prof, dict) and isinstance(prof.get("size"), dict):
+                    prof["size"]["vol_mult"] = rs["size_mult"]      # additive, never overrides
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china risk-sizing for %s failed (%s)", ticker, e)
+        # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge --------------
+        # Conviction answers "own it?"; this answers "buy now / at what price / when?".
+        # Reads the cycle/ladder (CN recs carry the same ladder) — market-agnostic. China
+        # `high` is None (close-only caches); assess() tolerates that.
+        try:
+            es = entry_signal.assess(close, high, rec)
+            if es:
+                rec["entry_signal"] = es
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("china entry-signal for %s failed (%s)", ticker, e)
         profiles[ticker] = prof
+        if rec.get("entry_signal"):
+            entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
+        if rec.get("risk_sizing"):
+            risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
         _tech = rec.get("tech") or {}
         _dir = (rec.get("ladder") or {}).get("dir")
         disp_map[ticker] = {
@@ -802,10 +856,16 @@ def main(alpha: dict | None = None) -> dict | None:
         for r in wide["buy"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            if entry_sig.get(t):
+                r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            if risk_sig.get(t):
+                r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
         eligible = sum(1 for _s, r in cand if (r.get("alpha") or 0) >= 0.5)
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
+        if disp_regime:                      # selection-regime gross dial (board context)
+            wide["dispersion_regime"] = disp_regime
         if qvix_reg:                         # the market vol-regime banner (GEX-analog for A-shares)
             wide["qvix_regime"] = qvix_reg
         (site / "factordata" / "china_standouts.json").write_text(

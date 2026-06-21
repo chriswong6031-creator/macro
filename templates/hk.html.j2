@@ -273,6 +273,26 @@
   .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
              color: var(--muted); background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
   .nb-note-anticipation { color: var(--link); background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
+  /* ⚖ vol-managed size chip + compact entry-timing chip (US-parity gauges) */
+  .nb-size { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap;
+             padding: 0 5px; border-radius: 7px; color: var(--muted);
+             background: var(--panel); border: 1px solid var(--line); }
+  .nb-size.sz-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 38%, var(--line)); }
+  .nb-size.sz-dn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 42%, var(--line)); }
+  .nb-entry { display: flex; align-items: center; gap: 5px; margin-top: 4px; padding: 3px 6px;
+              border-radius: 7px; border-left: 3px solid var(--muted);
+              background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
+  .nbe-buy_now, .nbe-partial { border-left-color: var(--up); }
+  .nbe-buy_soon, .nbe-watch { border-left-color: var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color: var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color: var(--warn); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color: var(--down); }
+  .nbe-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex: none; }
+  .nbe-dot.a3 { background: var(--up); } .nbe-dot.a2 { background: var(--g-cold); }
+  .nbe-dot.a1 { background: var(--warn); } .nbe-dot.a0 { background: var(--down); }
+  .nbe-status { font-size: 9px; font-weight: 800; color: var(--text); line-height: 1.2; }
+  .nbe-zone { margin-left: auto; font-size: 9px; font-weight: 700; color: var(--muted);
+              font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   /* ---- US/China-parity panels ported to HK (dial / bignum / alerts / risk gauges) ---- */
   .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
@@ -530,8 +550,22 @@
           {% endfor %}
         </div>
         {% endif %}
+        {% set es = n.entry_signal %}
+        {% if es and es.status %}
+        {# ENTRY-timing gauge (US-parity gauge 2): buy now / wait for the pullback / extended,
+           with the buy-zone price. Compact HK skin — the WHEN/AT-WHAT-PRICE the conviction
+           score must never be mistaken for. #}
+        <div class="nb-entry nbe-{{ es.status }}" title="Entry timing — when & at what price to buy, separate from the conviction score (own-it) and the size chip (how much). · 入场择时 — 何时、以何价买入，与确信度（是否持有）和仓位（持仓量）相互独立。">
+          <span class="nbe-dot a{{ es.act_level }}"></span>
+          <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+          {% if es.buy_zone and es.buy_zone.high is not none %}
+          <span class="nbe-zone" title="{{ t('Buy zone', '买入区') }}">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}{% if es.buy_zone.pct_from_spot is not none %} ({{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%){% endif %}</span>
+          {% endif %}
+        </div>
+        {% endif %}
         <div class="nb-bot">
           {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
+          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). HOW MUCH to own — separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。决定持仓量，与选股（确信度）和择时（入场）相互独立。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
         {% if n.alpha is not none or n.alpha_entry %}
         <div class="nb-alpha">
