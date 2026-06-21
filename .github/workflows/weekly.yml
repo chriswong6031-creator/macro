@@ -76,6 +76,10 @@ jobs:
           # reachable from CI; yfinance ~0) so the merged panel can compute dead-name
           # forward returns. Resilient + drip-capped; nothing depends on it.
           run_py "dead-name prices (de-bias)" scripts.build_dead_name_prices --max-new 150
+          # De-biased factor IC scorecard over the survivor+dead MERGED universe ->
+          # data/edgar/ic_scorecard_debiased.json. Self-gating (equals the survivor
+          # scorecard until dead-name prices accrue); never clobbers ic_scorecard.json.
+          run_py "de-biased IC scorecard" scripts.factor_ic_scorecard --debiased --horizon 63
           # Phase-4 breadth honesty: leak-free PIT IC test of the new fundamental-trend
           # legs -> BH-FDR + VIF prune + inverse-corr shrinkage -> data/strategies/
           # signal_factory.json. Ledger-logged (idempotent — dedups by config).

@@ -92,11 +92,15 @@ def main() -> int:
     ap.add_argument("--quick", action="store_true", help="last 12 quarters only")
     ap.add_argument("--deep", action="store_true",
                     help="judge the zoo on the deep-history (survivorship-biased) close panel")
+    ap.add_argument("--debiased", action="store_true",
+                    help="DE-BIASED universe: survivor+dead merged fundamentals & prices "
+                         "(Phase 1A/1B). Self-gating — equals broad until CI accrues dead prices; "
+                         "writes ic_scorecard_debiased.json (never clobbers the live scorecard).")
     ap.add_argument("--horizon", type=int, default=63, help="forward return window (trading days)")
     ap.add_argument("--start", type=int, default=2011)
     args = ap.parse_args()
 
-    universe = "deep" if args.deep else "broad"
+    universe = "debiased" if args.debiased else ("deep" if args.deep else "broad")
     closes = _closes(universe)
     if closes.empty:
         if args.deep:
@@ -211,19 +215,23 @@ def main() -> int:
     # fundamentals panel now recovers (the survivor IC above is an optimistic bound
     # whose tightness this ratio quantifies). Display-only, never gates.
     dead_cov = None
-    cov_p = config.data_dir() / "edgar" / "_dead_name_coverage.json"
-    if cov_p.exists():
-        try:
-            dead_cov = json.loads(cov_p.read_text())
-        except Exception:  # noqa: BLE001
-            dead_cov = None
+    for cov_name in ("_dead_name_coverage.json",
+                     *(("_dead_name_price_coverage.json",) if args.debiased else ())):
+        cov_p = config.data_dir() / "edgar" / cov_name
+        if cov_p.exists():
+            try:
+                dead_cov = {**(dead_cov or {}), cov_name[1:-5]: json.loads(cov_p.read_text())} \
+                    if args.debiased else json.loads(cov_p.read_text())
+            except Exception:  # noqa: BLE001
+                pass
     report = {
         "horizon_d": args.horizon, "rebalances": len(grid),
         "span": f"{grid[0].date()}..{grid[-1].date()}",
         "median_universe": int(np.median(n_names)) if n_names else 0,
         "leak_free": True,
         "universe": universe,
-        "survivorship_biased": bool(args.deep),
+        "survivorship_biased": bool(args.deep),       # the debiased run is the de-biased read, not survivor
+        "debiased": bool(args.debiased),
         "neutralized_against": ["market_beta", "size(log mktcap)", "mom_12_1", "low_vol"],
         "dead_name_coverage": dead_cov,
         "price_span": f"{closes.index.min().date()}..{closes.index.max().date()}",
@@ -233,8 +241,11 @@ def main() -> int:
     }
     outdir = config.data_dir() / "edgar"
     outdir.mkdir(parents=True, exist_ok=True)
-    (outdir / "ic_scorecard.json").write_text(json.dumps(report, indent=2, default=str))
-    _write_md(report)
+    # the de-biased run writes its OWN file so it never clobbers the live survivor scorecard
+    fname = "ic_scorecard_debiased.json" if args.debiased else "ic_scorecard.json"
+    (outdir / fname).write_text(json.dumps(report, indent=2, default=str))
+    if not args.debiased:
+        _write_md(report)
 
     order = sorted(rows, key=lambda c: -(rows[c].get("ic_ir_ann") or -9))
     tag = "DEEP/survivorship-biased" if args.deep else "shallow breadth cache"

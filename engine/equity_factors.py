@@ -251,6 +251,20 @@ def _closes(universe: str = "broad") -> pd.DataFrame:
         out = pd.read_parquet(p)
         out.index = pd.to_datetime(out.index)
         return out.loc[:, ~out.columns.duplicated()].sort_index()
+    if universe == "debiased":
+        # survivor breadth closes + recovered DEAD-name closes (Phase 1A). Self-gating:
+        # when dead-price coverage is ~0 this returns exactly the broad cache, so the
+        # de-biased scorecard equals the survivor one until CI accrues delisted prices.
+        base = _closes("broad")
+        try:
+            from collectors.edgar_deadname_prices import dead_name_closes
+            dead = dead_name_closes()
+        except Exception:  # noqa: BLE001 — additive, never fatal
+            dead = pd.DataFrame()
+        if dead.empty:
+            return base
+        out = pd.concat([base, dead], axis=1)            # dead names are new columns
+        return out.loc[:, ~out.columns.duplicated()].sort_index()
     frames = []
     for grp in _UNIVERSE_GROUPS.get(universe, _UNIVERSE_GROUPS["broad"]):
         p = config.data_dir() / grp / "_closes_cache.parquet"
@@ -306,8 +320,19 @@ def compute_factors(asof=None, universe: str = "broad") -> dict | None:
         fund = pd.read_parquet(fpath)
     else:
         from collectors.edgar import as_of_cross_section
+        # de-biased mode: draw the PIT cross-section from the survivor+dead MERGED
+        # panel (Phase 1B). Self-gating — dead rows without a recovered price are
+        # dropped downstream, so when price coverage is ~0 this equals the survivor
+        # cross-section and grows honest as CI accrues dead-name prices.
+        merged = None
+        if universe == "debiased":
+            try:
+                from collectors.edgar_deadnames import merged_panel
+                merged = merged_panel()
+            except Exception:  # noqa: BLE001 — additive, never fatal
+                merged = None
         try:
-            fund = as_of_cross_section(asof)
+            fund = as_of_cross_section(asof, merged)
         except Exception as e:  # noqa: BLE001 — no panel yet
             log.warning("equity_factors: point-in-time panel unavailable (%s)", e)
             return None
