@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -142,6 +143,7 @@ def test_purged_folds_have_no_label_leakage():
 def test_oof_proba_only_predicts_test_bars():
     """Out-of-fold sanity: predictions land only on event bars, are valid
     probabilities, and never cover a bar outside the fold geometry."""
+    pytest.importorskip("sklearn")   # GBT leaf is sklearn-gated (a declared dep; skip if absent)
     df = _synth(n=900)
     X = meta_label.build_features(df)
     ev = meta_label.primary_events(df["alloc_optimal"])
@@ -198,6 +200,7 @@ def test_full_run_is_available_and_does_not_recommend_noise():
     """End-to-end on synthetic data: the leaf returns a complete result and, on data
     with no real edge, correctly does NOT recommend wiring live (random features can't
     beat the primary out-of-fold). Uses a shrunk GBT so it stays fast."""
+    pytest.importorskip("sklearn")   # GBT leaf is sklearn-gated (a declared dep; skip if absent)
     df = _synth(n=900)
     cfg = {"label_methods": ["forward_sign"], "cv_folds": 3, "horizon": 20,
            "min_train_events": 50, "min_test_events": 10,
