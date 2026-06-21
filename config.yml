@@ -249,6 +249,15 @@ cboe:
   # SKEW = option-implied tail/crash pricing (CBOE CDN serves a clean daily CSV
   # back to 1990 — no API key). Used by engine/conditions.py as a tail-risk gauge.
   skew_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/SKEW_History.csv
+  # VVIX = vol-of-vol (implied vol of VIX options), keyless daily CSV back to 2006/2007.
+  # One fetch carries the whole history (backfill + accrual in one shot). Feeds the
+  # engine/vol_regime VVIX-VIX decoupling / peak-fear leg (retires the short yahoo _VVIX).
+  vvix_url: https://cdn.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv
+  # VIX-futures settlement (collectors/cboe_vix_futures.py): one keyless CSV/date via the
+  # www endpoint serves the FULL VX board. We persist both the front contract (sanitizer)
+  # and the standard-monthly M1..M6 curve (vix_curve) — the latter FORWARD-ACCRUING only
+  # (no bulk history), so curve slope/carry validates in ~12 months. Defaults live in code:
+  # vix_backfill_days=45, vix_recent_days=6, vix_request_pace_s=0.4.
   gex:
     contract_multiplier: 100
     pct_move: 0.01               # GEX expressed per 1% move

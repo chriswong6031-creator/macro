@@ -40,7 +40,8 @@ def all_adapters() -> dict:
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
         ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
-        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle -> VIX thin-quote sanitizer (engine/dislocation.py)
+        ("cboe_vvix", "collectors.cboe_indices", "CboeVvixAdapter"),   # vol-of-vol 2006+ -> engine/vol_regime VVIX-VIX leg (research/VOL_REGIME_DATA_ACCRUAL.md)
+        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle (sanitizer) + full M1..M6 curve (forward-accruing; research/VOL_REGIME_DATA_ACCRUAL.md)
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
         ("frbsf_sentiment", "collectors.frbsf", "NewsSentimentAdapter"),  # SF Fed Daily News Sentiment (real-activity nowcast)

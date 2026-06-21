@@ -1,0 +1,377 @@
+--- a/engine/vol_regime.py
++++ b/engine/vol_regime.py
+@@ -58,7 +58,11 @@
+ # the CONTEXT-only reads. Orientation of every scored leg: POSITIVE = risk-ON /
+ # constructive for forward equity, so the composite is a single signed risk-on score.
+ SCORED_LEGS = ("ts_slope", "move", "vrp")
+-CONTEXT_LEGS = ("ts9", "skew_cost", "downside_vrp")
++# context/candidate legs (display only). `vvix` is the collect-first VVIX-VIX leg: it has
++# 2006+ history (CBOE) so the validator evaluates it as a CANDIDATE, but it stays OUT of the
++# validated scored composite until a deliberate promotion (so adding it never silently
++# changes the gated 3-leg overlay). See scripts/validate_vol_regime.py + VOL_REGIME_DATA_ACCRUAL.md.
++CONTEXT_LEGS = ("ts9", "skew_cost", "downside_vrp", "vvix")
+ 
+ DEFAULTS = dict(
+     z_window_d=504,            # ~2y rolling window for leg z-scores (causal)
+@@ -71,6 +75,10 @@
+     backwardation=1.00, near_backwardation=0.975, deep_contango=0.92,
+     # confluence-flag thresholds
+     move_stress_pctile=0.80, vrp_collapse_pctile=0.20, ts9_stress=1.05,
++    # VVIX (vol-of-vol) state bands — framed by the MEASURED VVIX/VIX forward-vol relationship
++    vvix_peak_pctile=0.90,      # absolute VVIX percentile -> capitulation "peak fear"
++    vvix_rich_pctile=0.80,      # VVIX/VIX ratio percentile -> vol-of-vol rich (fear priced)
++    vvix_cheap_pctile=0.20,     # VVIX/VIX ratio percentile -> vol-of-vol cheap (complacent)
+     # continuous risk-on -> label bands (after /leg_clip normalisation to ~[-1,1])
+     risk_on_band=0.30, risk_off_band=-0.30,
+ )
+@@ -112,12 +120,15 @@
+ # --------------------------------------------------------------------------- #
+ def build_frame(vix: pd.Series, vix3m: pd.Series | None, vix9d: pd.Series | None,
+                 move: pd.Series | None, skew: pd.Series | None, spy: pd.Series | None,
+-                cfg: dict | None = None) -> pd.DataFrame:
++                cfg: dict | None = None, vvix: pd.Series | None = None) -> pd.DataFrame:
+     """Daily per-leg + composite frame. Every column is causal (data <= t). Missing
+     inputs degrade gracefully — a leg simply drops out of the available set. Returns a
+     DataFrame indexed by date with the raw reads, the signed risk-on legs (``leg_*``),
+     the composite ``risk_score`` (in ~[-1,1], risk-on positive), confluence flags, and
+-    the mechanical ``vol_target_scalar``."""
++    the mechanical ``vol_target_scalar``.
++
++    ``vvix`` (CBOE vol-of-vol, 2006+) is OPTIONAL and trails cfg so existing positional
++    callers are unaffected; when present it adds the CONTEXT/candidate VVIX-VIX leg."""
+     cf = {**DEFAULTS, **(cfg or {})}
+     zw, pw = int(cf["z_window_d"]), int(cf["pctile_lookback_d"])
+     if vix is None or vix.dropna().empty:
+@@ -179,6 +190,24 @@
+             # insurance "expensiveness" relative to recent realized downside (>0 = dear)
+             out["downside_vrp"] = (sk - 100.0) / 10.0 - (dsv / vix).fillna(0.0)
+             legs["downside_vrp"] = out["downside_vrp"]
++
++    # CONTEXT (collect-first candidate): VVIX vol-of-vol — the VVIX-VIX ratio (peak-fear vs
++    # complacency). VVIX = 30d implied vol of VIX options (the vol of vol). The MEASURED
++    # relationship over 2006+ (validator: HAC t~15, sign-stable, crisis-robust): a RICH VVIX/VIX
++    # ratio precedes LOWER forward realized vol (fear already priced into vol-of-vol -> mean-
++    # reversion, the "peak-fear" contrarian read), while a CHEAP ratio precedes HIGHER vol
++    # (complacency = the genuine quiet-fragility tell). So the risk-on form is +z(ratio).
++    # CAVEAT (why it stays a candidate): VVIX/VIX is partly the mechanical 1/VIX, so much of this
++    # is plain vol persistence — promotion requires showing INCREMENTAL edge over the VIX level
++    # and the scored legs. History reaches only 2006, so it ships CONTEXT: the validator scores
++    # it as a candidate but it does NOT enter the validated composite until a deliberate promotion.
++    if vvix is not None:
++        vv = vvix.reindex(out.index).astype(float)
++        out["vvix"] = vv
++        out["vvix_vix"] = vv / vix                          # vol-of-vol relative to vol
++        out["vvix_pctile"] = _pctile(vv, pw)                # absolute VVIX (peak-fear) gauge
++        out["vvix_vix_pctile"] = _pctile(out["vvix_vix"], pw)   # ratio-richness percentile
++        legs["vvix"] = _z(out["vvix_vix"], zw)              # high ratio -> lower fwd vol -> risk-on +
+ 
+     # store signed legs
+     for k, s in legs.items():
+@@ -369,6 +398,11 @@
+         "skew_cost_pctile": _r(gv("skew_cost_pctile")),
+         "insurance_cost": _cost_band(gv("skew_cost_pctile")),
+         "downside_vrp": _r(gv("downside_vrp")),
++        "vvix": _r(gv("vvix"), 1),
++        "vvix_vix": _r(gv("vvix_vix")),
++        "vvix_pctile": _r(gv("vvix_pctile")),
++        "vvix_vix_pctile": _r(gv("vvix_vix_pctile")),
++        "vvix_state": _vvix_state(gv("vvix_pctile"), gv("vvix_vix_pctile"), cf),
+         "vol_target_scalar": _r(gv("vol_target_scalar"), 2),
+         "fragility_confluence": None if frag is None else int(frag),
+         "flags": fired,
+@@ -399,3 +433,19 @@
+         return None
+     return ("expensive (fear already priced)" if pctile >= 0.80
+             else "cheap (convexity on sale)" if pctile <= 0.20 else "normal")
++
++
++def _vvix_state(vvix_pctile, ratio_pctile, cfg) -> str | None:
++    """VVIX (vol-of-vol) state, framed by the MEASURED VVIX/VIX forward-vol relationship: a
++    rich ratio historically precedes LOWER realized vol (fear already priced — contrarian-
++    constructive), a cheap ratio precedes HIGHER vol (complacency — the quiet-fragility tell).
++    An extreme ABSOLUTE VVIX flags capitulation peak-fear. Context only (candidate leg)."""
++    if vvix_pctile is None and ratio_pctile is None:
++        return None
++    if vvix_pctile is not None and vvix_pctile >= cfg["vvix_peak_pctile"]:
++        return "peak-fear (vol-of-vol extreme — capitulation, historically mean-reverts)"
++    if ratio_pctile is not None and ratio_pctile >= cfg["vvix_rich_pctile"]:
++        return "fear-priced (vol-of-vol rich vs vol — mild contrarian-constructive)"
++    if ratio_pctile is not None and ratio_pctile <= cfg["vvix_cheap_pctile"]:
++        return "complacent (vol-of-vol cheap vs vol — historically precedes rising vol)"
++    return "normal"
+--- a/engine/options_desk.py
++++ b/engine/options_desk.py
+@@ -43,6 +43,7 @@
+     vt = snap.get("vol_target_scalar")
+     ins = snap.get("insurance_cost")
+     vrp_state = snap.get("vrp_state")
++    vvix_state = snap.get("vvix_state")
+     flags = snap.get("flags") or []
+     ts_state = snap.get("ts_slope_state")
+ 
+@@ -126,6 +127,19 @@
+             "Premium: the vol-risk-premium is thin/collapsing — realized vol is catching up "
+             "to implied, a de-risk tell.",
+             "溢价：波动风险溢价偏薄/正在收缩 — 已实现波动率正在追上隐含，提示降险。"))
++    # vol-of-vol (VVIX) peak-fear vs complacency read (context — candidate, not yet scored)
++    if vvix_state and "complacent" in vvix_state:
++        bullets.append(_bi(
++            "Vol-of-vol: VVIX is CHEAP relative to VIX (complacency) — historically this has "
++            "preceded RISING realized vol. A quiet-fragility tell (context, candidate).",
++            "波动率的波动率：VVIX 相对 VIX 偏便宜（自满）— 历史上往往先行于已实现波动率上升。"
++            "属于平静下的脆弱性提示（参考，候选信号）。"))
++    elif vvix_state and ("peak-fear" in vvix_state or "fear-priced" in vvix_state):
++        bullets.append(_bi(
++            "Vol-of-vol: VVIX is RICH/extreme vs VIX — fear is already priced into vol-of-vol; "
++            "historically this mean-reverts (contrarian-constructive context, candidate).",
++            "波动率的波动率：VVIX 相对 VIX 偏贵/极端 — 恐慌已被计入波动率之波动率；历史上倾向"
++            "均值回归（反向建设性参考，候选信号）。"))
+     # confluence flags
+     if len(flags) >= 2:
+         bullets.append(_bi(
+--- a/scripts/build_vol_regime.py
++++ b/scripts/build_vol_regime.py
+@@ -52,10 +52,15 @@
+     if vix is None:
+         log.warning("vol_regime: no VIX series — skipping")
+         return None
++    # VVIX: prefer the long CBOE history (collectors/cboe_indices.CboeVvixAdapter, 2006+);
++    # fall back to the short yahoo _VVIX so the leg still appears until the CBOE series accrues.
++    vvix = _series("cboe", "vvix", col="vvix")
++    if vvix is None:
++        vvix = _series("yahoo", "_VVIX")
+     frame = vol_regime.build_frame(
+         vix, _series("yahoo", "_VIX3M"), _series("yahoo", "_VIX9D"),
+         _series("yahoo", "_MOVE"), _series("cboe", "skew", col="skew"),
+-        _series("yahoo", "SPY"), cfg)
++        _series("yahoo", "SPY"), cfg, vvix=vvix)
+     if frame.empty:
+         return None
+     snap = vol_regime.snapshot(frame, cfg)
+--- a/scripts/validate_vol_regime.py
++++ b/scripts/validate_vol_regime.py
+@@ -51,6 +51,9 @@
+ HORIZONS = (21, 63)            # ~1m, ~3m forward windows
+ NW_T_BAR = 2.5                 # forward-vol HAC |t| bar for the risk/sizing gate
+ N_FOLDS = 4
++# collect-first CONTEXT legs evaluated for evidence but never gating the scored composite
++# (history just started — VVIX 2006+; the VX-curve leg is forward-accruing, not yet built).
++CANDIDATE_LEGS = ("vvix",)
+ 
+ 
+ # --------------------------------------------------------------------------- #
+@@ -72,6 +75,9 @@
+ 
+ 
+ def load_inputs() -> dict:
++    vvix = _series("cboe", "vvix", col="vvix")
++    if vvix is None:
++        vvix = _series("yahoo", "_VVIX")
+     return {
+         "vix": _series("yahoo", "_VIX"),
+         "vix3m": _series("yahoo", "_VIX3M"),
+@@ -79,6 +85,7 @@
+         "move": _series("yahoo", "_MOVE"),
+         "skew": _series("cboe", "skew", col="skew"),
+         "spy": _series("yahoo", "SPY"),
++        "vvix": vvix,
+     }
+ 
+ 
+@@ -250,7 +257,7 @@
+         return {"status": "no_data", "missing": missing}
+ 
+     frame = vol_regime.build_frame(inp["vix"], inp["vix3m"], inp["vix9d"], inp["move"],
+-                                   inp["skew"], inp["spy"], cfg)
++                                   inp["skew"], inp["spy"], cfg, vvix=inp["vvix"])
+     spy = inp["spy"]
+ 
+     # legs evaluated: the three scored-eligible legs + the composite
+@@ -262,8 +269,19 @@
+     if "risk_score" in frame.columns:
+         targets["composite"] = frame["risk_score"]
+ 
+-    n_trials = len(targets) + 2          # legs + composite + the long/flat variant family
++    # CANDIDATE (collect-first) legs: evaluated for EVIDENCE only — they never gate the
++    # composite or open the money channel. A candidate enters the scored composite only via a
++    # deliberate promotion to vol_regime.SCORED_LEGS (which also re-validates the composite).
++    cand_targets = {}
++    for k in CANDIDATE_LEGS:
++        col = f"leg_{k}"
++        if col in frame.columns:
++            cand_targets[k] = frame[col]
++
++    # count candidates in the trial family so the composite DSR is deflated honestly
++    n_trials = len(targets) + len(cand_targets) + 2   # legs + composite + candidates + long/flat
+     evals = {k: evaluate_leg(k, s, spy, frame) for k, s in targets.items()}
++    cand_evals = {k: evaluate_leg(k, s, spy, frame) for k, s in cand_targets.items()}
+     dsr = long_flat_dsr(frame["risk_score"], spy, n_trials) if "risk_score" in frame else {}
+ 
+     # gate.json: a leg is scored if its own decision passed AND it is a SCORED_LEG
+@@ -273,10 +291,18 @@
+         gate_legs[k] = {"scored": bool(d.get("scored")), "sign": d.get("sign"),
+                         "weight": d.get("weight", 0.0), "basis": d.get("basis")}
+     comp_scored = bool((evals.get("composite") or {}).get("decision", {}).get("scored"))
++    # candidates: record whether each WOULD pass the bar (evidence for a future promotion),
++    # but always scored=false in the gate — they are display/context until promoted.
++    cand_gate = {}
++    for k, e in cand_evals.items():
++        d = (e or {}).get("decision") or {}
++        cand_gate[k] = {"scored": False, "would_pass": bool(d.get("scored")),
++                        "n": e.get("n"), "basis": "candidate — not in the scored composite"}
+     gate = {
+         "asof": str(date.today()),
+         "generated": datetime.now(timezone.utc).isoformat(),
+         "legs": gate_legs,
++        "candidates": cand_gate,
+         "composite": {"scored": comp_scored, "horizon_d": 21,
+                       "basis": "forward-realized-vol predictability"},
+         "note": ("Gate OPEN — at least one leg earned scored status."
+@@ -285,7 +311,7 @@
+         "n_trials": n_trials,
+     }
+ 
+-    report = _render_report(evals, dsr, gate, missing)
++    report = _render_report(evals, dsr, gate, missing, cand_evals)
+     try:
+         rp = config.ROOT / "reports" / "vol-regime-validation.md"
+         rp.parent.mkdir(parents=True, exist_ok=True)
+@@ -301,14 +327,24 @@
+         log.info("wrote gate %s (scored legs: %s)", gp,
+                  [k for k, v in gate_legs.items() if v["scored"]])
+ 
+-    return {"status": "ok", "gate": gate, "evals": evals, "dsr": dsr, "report": report}
++    return {"status": "ok", "gate": gate, "evals": evals, "candidates": cand_evals,
++            "dsr": dsr, "report": report}
+ 
+ 
+ def _f(x, n=3):
+     return "—" if x is None else (f"{x:.{n}f}" if isinstance(x, (int, float)) else str(x))
+ 
+ 
+-def _render_report(evals: dict, dsr: dict, gate: dict, missing: list) -> str:
++def _leg_row(k: str, e: dict, scored_mark: str) -> str:
++    h = e["horizons"].get(21, {})
++    return (f"| {k} | {_f(h.get('fwd_vol_corr'))} | {_f(h.get('fwd_vol_t_hac'),2)} | "
++            f"{_f(h.get('fwd_vol_corr_crisis_excl'))} | {h.get('fwd_vol_fold_signs')} | "
++            f"{_f(h.get('fwd_ret_corr'))} | {_f(h.get('oos_r2'),4)} | {_f(h.get('cw_p'),3)} | "
++            f"{scored_mark} |")
++
++
++def _render_report(evals: dict, dsr: dict, gate: dict, missing: list,
++                   cand_evals: dict | None = None) -> str:
+     L = ["# Vol-Regime validation\n",
+          f"_generated {gate['generated']} · n_trials={gate['n_trials']}_\n",
+          "Honest bar: a leg is SCORED (risk/sizing channel) only if its risk-on form "
+@@ -323,12 +359,19 @@
+              "OOS-R² | CW p | → SCORED |")
+     L.append("|---|---|---|---|---|---|---|---|---|")
+     for k, e in evals.items():
+-        h = e["horizons"].get(21, {})
+         d = e.get("decision", {})
+-        L.append(f"| {k} | {_f(h.get('fwd_vol_corr'))} | {_f(h.get('fwd_vol_t_hac'),2)} | "
+-                 f"{_f(h.get('fwd_vol_corr_crisis_excl'))} | {h.get('fwd_vol_fold_signs')} | "
+-                 f"{_f(h.get('fwd_ret_corr'))} | {_f(h.get('oos_r2'),4)} | {_f(h.get('cw_p'),3)} | "
+-                 f"{'✅' if d.get('scored') else '—'} |")
++        L.append(_leg_row(k, e, "✅" if d.get("scored") else "—"))
++    if cand_evals:
++        L.append("\n## Candidate legs (collect-first — NOT in the scored composite)\n")
++        L.append("These have history but are evaluated for evidence only; promotion into the "
++                 "scored composite is a deliberate, reviewed step (so the gated overlay never "
++                 "changes silently). `would-pass` = would clear the bar today.\n")
++        L.append("| candidate | fwd-vol corr (21d) | HAC t | crisis-excl | folds | fwd-ret corr | "
++                 "OOS-R² | CW p | would-pass |")
++        L.append("|---|---|---|---|---|---|---|---|---|")
++        for k, e in cand_evals.items():
++            d = e.get("decision", {})
++            L.append(_leg_row(k, e, f"⏳ ({e.get('n')} obs)" if d.get("scored") else "—"))
+     if dsr.get("strat"):
+         s = dsr["strat"]
+         L.append("\n## Composite long/flat (context — return channel)\n")
+--- a/tests/test_vol_regime.py
++++ b/tests/test_vol_regime.py
+@@ -127,3 +127,84 @@
+ def test_empty_inputs_degrade():
+     assert vol_regime.build_frame(None, None, None, None, None, None).empty
+     assert vol_regime.snapshot(pd.DataFrame()) == {"available": False}
++
++
++# --------------------------------------------------------------------------- VVIX leg
++def _series_vv(n=700, seed=1):
++    """Add a synthetic VVIX (vol-of-vol) that loosely tracks VIX."""
++    d = _series(n, seed)
++    rng = np.random.default_rng(seed + 9)
++    d["vvix"] = (90 + 1.5 * (d["vix"] - 16)
++                 + pd.Series(np.cumsum(rng.normal(0, 0.5, n)), index=d["vix"].index)).clip(50, 200)
++    return d
++
++
++def _frame_vv(d):
++    return vol_regime.build_frame(d["vix"], d["vix3m"], d["vix9d"], d["move"],
++                                  d["skew"], d["spy"], None, d["vvix"])
++
++
++def test_vvix_leg_is_context_only():
++    d = _series_vv()
++    fr = _frame_vv(d)
++    for c in ("leg_vvix", "vvix", "vvix_vix", "vvix_vix_pctile", "vvix_pctile"):
++        assert c in fr.columns
++    # vvix is a CONTEXT/candidate leg — NOT scored-eligible (must not enter the composite set)
++    assert "vvix" in vol_regime.CONTEXT_LEGS and "vvix" not in vol_regime.SCORED_LEGS
++
++
++def test_vvix_absent_degrades_gracefully():
++    d = _series_vv()
++    fr = vol_regime.build_frame(d["vix"], d["vix3m"], d["vix9d"], d["move"], d["skew"], d["spy"])
++    assert "leg_vvix" not in fr.columns and "vvix" not in fr.columns
++
++
++def test_vvix_does_not_perturb_validated_composite():
++    """Adding the VVIX context leg must NOT move the gated 3-leg composite/risk_score."""
++    d = _series_vv()
++    base = vol_regime.build_frame(d["vix"], d["vix3m"], d["vix9d"], d["move"], d["skew"], d["spy"])
++    withv = _frame_vv(d)
++    a, b = base["risk_score"].dropna(), withv["risk_score"].dropna()
++    common = a.index.intersection(b.index)
++    assert len(common) > 100
++    assert np.allclose(a.loc[common], b.loc[common], rtol=1e-12, atol=1e-12)
++
++
++def test_vvix_ratio_orientation_is_risk_on():
++    """A spiking VVIX/VIX ratio (fear priced into vol-of-vol) reads risk-ON (+) — the MEASURED
++    sign (rich ratio precedes lower forward realized vol)."""
++    d = _series_vv()
++    d["vvix"].iloc[-1] = d["vvix"].iloc[:-1].max() * 1.6
++    fr = _frame_vv(d)
++    assert fr["leg_vvix"].dropna().iloc[-1] > 0
++
++
++def test_vvix_state_bands():
++    cf = vol_regime.DEFAULTS
++    assert "peak-fear" in vol_regime._vvix_state(0.95, 0.50, cf)     # absolute extreme
++    assert "fear-priced" in vol_regime._vvix_state(0.50, 0.85, cf)   # rich ratio
++    assert "complacent" in vol_regime._vvix_state(0.50, 0.10, cf)    # cheap ratio
++    assert vol_regime._vvix_state(0.50, 0.50, cf) == "normal"
++    assert vol_regime._vvix_state(None, None, cf) is None
++
++
++def test_snapshot_surfaces_vvix():
++    snap = vol_regime.snapshot(_frame_vv(_series_vv()))
++    assert snap["available"]
++    assert snap["vvix"] is not None and snap["vvix_vix"] is not None and snap["vvix_state"]
++    # surfaced honestly as display/context — not eligible, not scored
++    assert snap["legs"]["vvix"]["eligible"] is False
++    assert snap["legs"]["vvix"]["scored"] is False
++
++
++def test_vvix_no_look_ahead():
++    d = _series_vv(n=700)
++    full = _frame_vv(d)
++    cut = 500
++    dt = {k: v.iloc[:cut] for k, v in d.items()}
++    trunc = _frame_vv(dt)
++    asof = trunc.index[-1]
++    for col in ("leg_vvix", "vvix_vix", "vvix_vix_pctile"):
++        a, b = full.loc[asof, col], trunc.loc[asof, col]
++        if pd.notna(a) and pd.notna(b):
++            assert a == pytest.approx(b, rel=1e-9, abs=1e-9), col
