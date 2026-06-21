@@ -1,6 +1,23 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
+{#- inline SVG icons (Lucide-style, currentColor) — replace emoji that render as
+    tofu boxes on some systems and look crisper. One macro, switch on name. -#}
+{% macro ic(name) -%}
+{% set P = {
+  'macro':    '<path d="M3 21h18M5 21V10m4 11V10m6 11V10m4 11V10M12 3 3 8h18z"/>',
+  'market':   '<path d="m3 17 6-6 4 4 8-8"/><path d="M17 7h4v4"/>',
+  'mag7':     '<path d="m12 3 2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 21l-5 2.9 1.2-5.6L4 14.6l5.6-.6z"/>',
+  'sectors':  '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/>',
+  'baskets':  '<path d="m5 11 14 0-1.4 8.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8zM9 11 12 4l3 7"/>',
+  'narrative':'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 0 1 3 3v6.5"/>',
+  'news':     '<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/>',
+  'calendar': '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/>',
+  'brief':    '<path d="M5 3v4M3 5h4M6 17v4m-2-2h4"/><path d="m13 4 2.4 6.2L21 12l-5.6 1.8L13 20l-2.4-6.2L5 12l5.6-1.8z"/>'
+} %}
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ P.get(name, '')|safe }}</svg>
+{%- endmacro %}
 {#- one headline row. Tolerant of macro/china/financial shapes. NEVER puts t()
     inside an attribute (datetime= takes the raw ISO string, which is data). -#}
 {% macro headline(h, labels={}) -%}
@@ -141,6 +158,15 @@
   .empty{ font-size:12.5px; color:var(--muted); padding:9px 0; }
   footer.nf{ margin-top:28px; padding-top:16px; border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);
     font-size:11px; color:var(--muted); line-height:1.6; }
+  /* inline SVG icons — crisp, always render (no emoji tofu) */
+  .ic-svg{ width:15px; height:15px; flex:none; vertical-align:middle; }
+  .band h2 .ic-svg{ width:15px; height:15px; color:var(--accent,var(--info)); }
+  .ncard h3 .ico{ color:var(--accent,var(--info)); }
+  .ncard h3 .ico .ic-svg{ width:15px; height:15px; }
+  .brief .ic-svg{ width:16px; height:16px; color:var(--info); margin-right:2px; }
+  /* align the (full-bleed) nav with the centered content column — match .news-wrap's
+     content-box max-width:1180 + 18px padding so the link row lines up with the cards */
+  body.page-news > .site-nav{ max-width:1180px; margin:14px auto 8px; padding:0 18px; }
   @media (prefers-reduced-motion:reduce){ .ncard,.jump a{ transition:none; } .nh .live::after{ animation:none; } }
 </style>
 </head>
@@ -169,32 +195,31 @@
     <span class="eyebrow"><span class="live"></span>{{ t('Live · curated &amp; source-ranked', '实时 · 精选并按来源排序') }}
       {%- if built %} · <time datetime="{{ built }}">{{ built[:10] }}</time>{% endif %}</span>
     <h1>{{ t('Market News', '市场新闻') }}</h1>
-    <p>{{ t('Macro, the US tape, every sector &amp; thematic basket, and China — each name carries its live radar + alt-data signal. Context only, never a trade trigger.',
-            '宏观、美股大盘、各板块与主题篮子，以及中国 —— 每只标的都附带其实时雷达与替代数据信号。仅供参考，绝非交易触发。') }}</p>
+    <p>{{ t('Curated from the wires &amp; quality press — Reuters, Bloomberg, the FT, WSJ, CNBC, AP &amp; more — across macro, the US tape, the Mag-7, every GICS sector and thematic basket. Each name carries its live radar + alt-data signal. Context only, never a trade trigger.',
+            '精选自通讯社与优质财经媒体 —— 路透、彭博、金融时报、华尔街日报、CNBC、美联社等 —— 覆盖宏观、美股大盘、七巨头、各 GICS 板块与主题篮子。每只标的都附带其实时雷达与替代数据信号。仅供参考，绝非交易触发。') }}</p>
   </header>
 
   <nav class="jump" aria-label="Sections">
     {% if macro %}<a href="#macro">{{ t('Macro', '宏观') }}</a>{% endif %}
     {% if fin %}<a href="#market">{{ t('Market', '大盘') }}</a><a href="#mag7">{{ t('Mag-7', '七巨头') }}</a>
     <a href="#sectors">{{ t('Sectors', '板块') }}</a><a href="#baskets">{{ t('Baskets', '篮子') }}</a>{% endif %}
-    {% if china %}<a href="#china">{{ t('China', '中国') }}</a>{% endif %}
     {% if narrative %}<a href="#narrative">{{ t('Narrative', '叙事') }}</a>{% endif %}
   </nav>
 
   {# ===================== MACRO ===================== #}
   {% if macro %}
   <section id="macro">
-    <div class="band"><h2>🏛️ {{ t('Macro', '宏观') }}</h2><span class="ln"></span>
+    <div class="band"><h2>{{ ic('macro') }} {{ t('Macro', '宏观') }}</h2><span class="ln"></span>
       <span class="cnt">{{ macro.n_kept }} {{ t('headlines', '头条') }}</span></div>
-    {% if macro_brief and macro_brief.text %}<div class="brief glass">🤖 {{ macro_brief.text }}</div>{% endif %}
+    {% if macro_brief and macro_brief.text %}<div class="brief glass">{{ ic('brief') }} {{ macro_brief.text }}</div>{% endif %}
     <div class="grid">
       <div class="glass acc ncard" style="--accent:var(--info)">
-        <h3><span class="ico">📰</span>{{ t('Top macro headlines', '宏观头条') }}</h3>
+        <h3><span class="ico">{{ ic('news') }}</span>{{ t('Top macro headlines', '宏观头条') }}</h3>
         {% if macro.headlines %}<ul class="hl-list">{% for h in macro.headlines %}{{ headline(h, macro_theme_label) }}{% endfor %}</ul>
         {% else %}<div class="empty">{{ t('Quiet macro tape.', '宏观平静。') }}</div>{% endif %}
       </div>
       <div class="glass acc ncard" style="--accent:var(--warn)">
-        <h3><span class="ico">🗓️</span>{{ t('Upcoming catalysts', '即将到来的催化') }}</h3>
+        <h3><span class="ico">{{ ic('calendar') }}</span>{{ t('Upcoming catalysts', '即将到来的催化') }}</h3>
         {% if macro_catalysts %}<ul class="cat-list">{% for c in macro_catalysts[:12] %}<li>
           <span class="d">{{ c.date }}{% if c.time_et %} · {{ c.time_et }}{% endif %}</span><span>{{ c.label or c.type }}</span></li>{% endfor %}</ul>
         {% else %}<div class="empty">{{ t('No scheduled releases in the window.', '窗口内无定期数据发布。') }}</div>{% endif %}
@@ -207,16 +232,16 @@
   {# ===================== MARKET ===================== #}
   {% if fin %}
   <section id="market">
-    <div class="band"><h2>📈 {{ t('Market-wide', '全市场') }}</h2><span class="ln"></span>
+    <div class="band"><h2>{{ ic('market') }} {{ t('Market-wide', '全市场') }}</h2><span class="ln"></span>
       <span class="cnt">{{ t('broad equity tape', '大盘舆情') }}</span></div>
     <div class="glass acc ncard" style="--accent:var(--up)">
       {% if fin.market %}<ul class="hl-list">{% for h in fin.market %}{{ headline(h) }}{% endfor %}</ul>
-      {% else %}<div class="empty">{{ t('No market headlines — Polygon / Finnhub keys needed in the build.', '暂无大盘头条 — 构建需 Polygon / Finnhub 密钥。') }}</div>{% endif %}
+      {% else %}<div class="empty">{{ t('Quiet tape — no fresh market headlines.', '大盘平静 — 暂无最新头条。') }}</div>{% endif %}
     </div>
   </section>
 
   <section id="mag7">
-    <div class="band"><h2>🦣 {{ t('Magnificent Seven', '七巨头') }}</h2><span class="ln"></span>
+    <div class="band"><h2>{{ ic('mag7') }} {{ t('Magnificent Seven', '七巨头') }}</h2><span class="ln"></span>
       <span class="cnt">{{ t('per-name · with live signal', '逐只 · 含实时信号') }}</span></div>
     <div class="grid">
       {% for t_ in mag7_order %}{% set m = fin.mag7.get(t_) %}{% if m %}
@@ -230,7 +255,7 @@
   </section>
 
   <section id="sectors">
-    <div class="band"><h2>🧭 {{ t('Sectors', '板块') }}</h2><span class="ln"></span>
+    <div class="band"><h2>{{ ic('sectors') }} {{ t('Sectors', '板块') }}</h2><span class="ln"></span>
       <span class="cnt">{{ t('11 GICS', '11 GICS') }}</span></div>
     <div class="grid">
       {% for etf, label in sector_etfs.items() %}{% set s = fin.sectors.get(etf) %}{% if s %}
@@ -243,7 +268,7 @@
   </section>
 
   <section id="baskets">
-    <div class="band"><h2>🧺 {{ t('Thematic baskets', '主题篮子') }}</h2><span class="ln"></span>
+    <div class="band"><h2>{{ ic('baskets') }} {{ t('Thematic baskets', '主题篮子') }}</h2><span class="ln"></span>
       <span class="cnt">{{ fin.baskets|length }}</span></div>
     {% set cats = {} %}
     {% for key, b in fin.baskets.items() %}{% set _ = cats.setdefault(b.category or 'Other', []).append((key, b)) %}{% endfor %}
@@ -262,24 +287,13 @@
   </section>
   {% endif %}
 
-  {# ===================== CHINA ===================== #}
-  {% if china %}{% set CN = china %}
-  <section id="china">
-    <div class="band"><h2>🇨🇳 {{ t('China — macro · markets · tech · politics', '中国 — 宏观 · 市场 · 科技 · 政治') }}</h2><span class="ln"></span>
-      {% if CN.tone %}<span class="cnt">{{ t('tone', '基调') }}: {{ t(CN.tone.label_en, CN.tone.label_zh) }}</span>{% endif %}</div>
-    {% if CN.brief and CN.brief.text %}<div class="brief glass">🤖 {{ CN.brief.text }}</div>{% endif %}
-    <div class="glass acc ncard" style="--accent:var(--down)">
-      {% if CN.news and CN.news.headlines %}<ul class="hl-list">{% for h in CN.news.headlines %}{{ headline(h, CN.theme_label) }}{% endfor %}</ul>
-      {% else %}<div class="empty">{{ t('No headlines available.', '暂无头条。') }}</div>{% endif %}
-    </div>
-    {% if CN.disclaimer %}<div class="disc">{{ CN.disclaimer }}<br><span class="l-zh">{{ CN.disclaimer_zh }}</span></div>{% endif %}
-  </section>
-  {% endif %}
+  {# China has its own dedicated News feed across the China dashboards — intentionally
+     not duplicated here. #}
 
   {# ===================== NARRATIVE ===================== #}
   {% if narrative %}{% set NV = narrative %}
   <section id="narrative">
-    <div class="band"><h2>🧵 {{ t('Narrative event bus', '叙事事件总线') }}</h2><span class="ln"></span>
+    <div class="band"><h2>{{ ic('narrative') }} {{ t('Narrative event bus', '叙事事件总线') }}</h2><span class="ln"></span>
       {% if NV.events %}<span class="cnt">{{ NV.events.n_recent }} {{ t('events', '事件') }}</span>{% endif %}</div>
     <div class="glass acc ncard" style="--accent:var(--info)">
       {% if NV.events and NV.events.by_theme %}<div class="cats">
