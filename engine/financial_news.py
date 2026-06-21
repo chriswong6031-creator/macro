@@ -267,6 +267,72 @@ def _quiver_news(cfg: dict, emap: dict, now: datetime) -> list[dict]:
 
 
 # --------------------------------------------------------------------------- #
+# RSS — keyless TOP-TIER wires & quality press (engine.news_rss). The primary
+# source of real journalism (Bloomberg/CNBC/FT/Reuters/AP/WSJ via Google News),
+# replacing reliance on Polygon's licensed-aggregator corpus (Benzinga/Zacks/fool).
+# --------------------------------------------------------------------------- #
+def _rss_news(cfg: dict, emap: dict, now: datetime) -> dict:
+    """Top-tier RSS: broad market tape + per-Mag-7 + per-sector quality headlines.
+    Returns {market, company, sectors:{etf:[...]}}. Keyless, parallel, never raises."""
+    if not cfg.get("rss", True):
+        return {"market": [], "company": [], "sectors": {}}
+    try:
+        from engine import news_rss
+    except Exception as e:  # noqa: BLE001
+        log.warning("news_rss import failed (%s)", e)
+        return {"market": [], "company": [], "sectors": {}}
+
+    def _norm(a: dict, tks: list[str]) -> dict | None:
+        return _normalise(a["title"], a["url"], a["domain"], a["seendate"], a["source"],
+                          tks, a.get("summary", ""), None, "rss", 1.0, now)
+
+    market: list[dict] = []
+    try:
+        for a in news_rss.market_headlines():
+            # topic-query hits are market-relevant by construction; broad section-feed
+            # items (Bloomberg/CNBC general) must look like market news (keyword or ticker),
+            # which drops the lifestyle / world-politics filler those feeds carry.
+            tks = sorted(nc.match_entities(a["title"], emap))
+            if a.get("origin") == "feed" and not (_MARKET_TITLE.search(a.get("title", "")) or tks):
+                continue
+            h = _norm(a, tks)
+            if h:
+                market.append(h)
+    except Exception as e:  # noqa: BLE001
+        log.warning("rss market failed (%s)", e)
+
+    # parallel per-name (Mag-7) Google-News fan-out — tier-2 (quality press & wires)
+    company: list[dict] = []
+    try:
+        name_specs = {t: f"{emap.get('tickers', {}).get(t, {}).get('name', t).split(' (')[0]} stock"
+                      for t in nc.MAG7}
+        for t, arts in news_rss.batch(name_specs, min_tier=2).items():
+            for a in arts:
+                h = _norm(a, [t])
+                if h:
+                    company.append(h)
+    except Exception as e:  # noqa: BLE001
+        log.warning("rss name fan-out failed (%s)", e)
+
+    # parallel per-sector (11 GICS) Google-News fan-out — tier-2 (quality only; generic
+    # sector queries pull foreign/aggregator noise at tier-3). Sectors get their real
+    # depth from member-ticker tagging (Polygon/Finnhub) in the build; this is a clean
+    # supplement.
+    sectors: dict[str, list[dict]] = {etf: [] for etf in nc.SECTOR_ETFS}
+    try:
+        sec_specs = {etf: f"{en} sector stocks" for etf, (en, _z) in nc.SECTOR_ETFS.items()}
+        for etf, arts in news_rss.batch(sec_specs, min_tier=2).items():
+            for a in arts:
+                h = _norm(a, sorted(nc.match_entities(a["title"], emap)))
+                if h:
+                    h["sector_tag"] = etf
+                    sectors[etf].append(h)
+    except Exception as e:  # noqa: BLE001
+        log.warning("rss sector fan-out failed (%s)", e)
+    return {"market": market, "company": company, "sectors": sectors}
+
+
+# --------------------------------------------------------------------------- #
 # GDELT — keyless thematic supplement (market + sectors)
 # --------------------------------------------------------------------------- #
 def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
@@ -310,14 +376,27 @@ def _gdelt_thematic(cfg: dict, emap: dict, now: datetime) -> dict:
 # --------------------------------------------------------------------------- #
 # sectioning helpers
 # --------------------------------------------------------------------------- #
-def _dedup_rank(items: list[dict], top_n: int) -> list[dict]:
-    seen, out = set(), []
+# Low-information clickbait aggregators dropped from DISPLAY — the three worst SEO
+# stock-pick mills. With the tier-1/2 RSS layer supplying real journalism, these add
+# only noise. (They can still inform per-ticker counts; they just don't surface.)
+_DROP_DOMAINS = ("fool.com", "investing.com", "benzinga.com")
+
+
+def _dedup_rank(items: list[dict], top_n: int, drop_junk: bool = True,
+                max_per_domain: int = 0) -> list[dict]:
+    seen, out, per = set(), [], {}
     for h in sorted(items, key=lambda x: (x.get("quality", 0),
                                           x.get("seendate", "")), reverse=True):
+        dom = h.get("domain") or ""
+        if drop_junk and any(j in dom for j in _DROP_DOMAINS):
+            continue
+        if max_per_domain and per.get(dom, 0) >= max_per_domain:
+            continue                       # source diversity — no single outlet dominates
         i = h.get("_id")
         if i in seen:
             continue
         seen.add(i)
+        per[dom] = per.get(dom, 0) + 1
         out.append(h)
     return out[:top_n]
 
@@ -365,22 +444,25 @@ def feed(today: date | None = None, use_cache: bool = True) -> dict | None:
     fh_market, fh_company = _finnhub_news(cfg, now)
     quiver = _quiver_news(cfg, emap, now)            # folded Quiver press-release tail
     gd = _gdelt_thematic(cfg, emap, now)
+    rss = _rss_news(cfg, emap, now)                  # PRIMARY: top-tier wires & press
 
-    tagged = poly + fh_company + quiver              # ticker-tagged corpus
-    all_items = tagged + fh_market + gd["market"] + [h for v in gd["sectors"].values() for h in v]
+    tagged = poly + fh_company + quiver + rss["company"]   # ticker-tagged corpus
+    all_items = (tagged + fh_market + rss["market"] + gd["market"]
+                 + [h for v in gd["sectors"].values() for h in v]
+                 + [h for v in rss["sectors"].values() for h in v])
     sources = sorted({h.get("source", "") for h in all_items if h.get("source")})
 
     # ---- market-wide --------------------------------------------------------
-    market_pool = list(fh_market) + list(gd["market"])
+    market_pool = list(rss["market"]) + list(fh_market) + list(gd["market"])
     for h in tagged:
         if set(h.get("tickers", [])) & _INDEX_TICKERS:
             market_pool.append(h)
-    market = [_public(h) for h in _dedup_rank(market_pool, top_market)]
+    market = [_public(h) for h in _dedup_rank(market_pool, top_market, max_per_domain=4)]
 
     # ---- sectors (11 GICS) --------------------------------------------------
     sectors: dict[str, dict] = {}
     for etf, (en, zh) in nc.SECTOR_ETFS.items():
-        pool = list(gd["sectors"].get(etf, []))
+        pool = list(rss["sectors"].get(etf, [])) + list(gd["sectors"].get(etf, []))
         members = set(emap.get("sectors", {}).get(etf, {}).get("tickers", []))
         for h in tagged:
             if set(h.get("tickers", [])) & members:
