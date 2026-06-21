@@ -131,6 +131,16 @@ def _load_short() -> pd.DataFrame | None:
     return df if not df.empty else None
 
 
+def _load_short_volume() -> dict[str, dict]:
+    """Per-ticker daily short-flow confirmer (keyless FINRA daily volume).
+    Empty dict when the panel is absent — positioning degrades gracefully."""
+    try:
+        from engine import short_volume
+        return short_volume.signal_map()
+    except Exception:  # noqa: BLE001 — never break panels over a context chip
+        return {}
+
+
 def _mcap_map(facts: dict) -> dict[str, float]:
     """ticker -> market cap (USD) from the factor table's mktcap_bn, for sizing the
     insider net flow as a % of cap."""
@@ -932,7 +942,7 @@ def _factors(t, fac, facts, M) -> dict | None:
     }
 
 
-def _positioning(t, f, short, insider) -> dict | None:
+def _positioning(t, f, short, insider, short_flow=None) -> dict | None:
     block: dict = {}
     sh = _num(f.get("shares"))
     if short is not None and t in short.index:
@@ -943,6 +953,16 @@ def _positioning(t, f, short, insider) -> dict | None:
             "days_to_cover": _r(sr.get("days_to_cover"), 2),
             "si_change_pct": _r(sr.get("si_change_pct"), 1),
             "settlement": str(sr.get("settlement_date")) if sr.get("settlement_date") is not None else None,
+        }
+    # Fresher than the bi-monthly settlement: daily off-exchange short flow.
+    # A CONTEXT confirmer (trend_pp = recent vs trailing short-ratio, in pts),
+    # never a scored factor — see engine/short_volume.py.
+    if short_flow:
+        block["short_flow"] = {
+            "short_ratio_pct": _r((short_flow.get("short_ratio") or 0) * 100, 1),
+            "trend_pp": _r(short_flow.get("trend_pp"), 2),
+            "n_days": short_flow.get("n_days"),
+            "asof": short_flow.get("asof"),
         }
     if insider:
         block["insider"] = insider
@@ -979,6 +999,7 @@ def panels() -> dict[str, dict]:
     facts = _load_factors()
     table = facts["table"]
     short = _load_short()
+    short_flow = _load_short_volume()
     insider = _load_insider(facts)
     deep = _load_deep()
     profiles = _load_profiles()
@@ -1004,7 +1025,7 @@ def panels() -> dict[str, dict]:
             "valuation": _valuation(t, f, fac, M, deep.get(t)),
             "financials": fin,
             "factors": _factors(t, fac, facts, M),
-            "positioning": _positioning(t, f, short, insider.get(t)),
+            "positioning": _positioning(t, f, short, insider.get(t), short_flow.get(str(t))),
             "analyst": _analyst(t, deep.get(t)),
             # SUE earnings-momentum z lives in the factors table (the canonical home
             # of every factor leg, written by equity_factors just before this runs);

@@ -72,6 +72,7 @@ def all_adapters() -> dict:
         ("grants_gov", "collectors.grants_gov", "GrantsGovAdapter"),      # Simpler Grants.gov pre-award FOA flow (theme_event radar leg); GATED on free GRANTS_GOV_API_KEY -> 'blocked' without it
         ("clinicaltrials", "collectors.clinicaltrials", "ClinicalTrialsAdapter"),  # keyless ClinicalTrials.gov Phase-3 starts/halts -> clinical_phase3_start channel
         ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
+        ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
         ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
         ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
         ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
