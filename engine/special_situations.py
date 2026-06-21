@@ -73,12 +73,14 @@ SKIP_FORMS = {"SC 13G", "SC 13G/A"}
 
 # --- 8-K Item -> (category, stage); checked in this priority order ----------
 DECISIVE_8K: dict[str, tuple[str, str]] = {
-    "1.02": (TERM, "terminated"),     # termination of a material definitive agreement
     "1.03": (RESTR, "filed"),         # bankruptcy / receivership (Liquidation split needs text)
     "3.01": (DELIST, "notice"),       # delisting / listing-rule failure
 }
-_8K_PRIORITY = ["1.02", "1.03", "3.01"]
-DEFER_8K_ITEMS = {"1.01", "2.01", "8.01"}   # Acq/Divest/Spin/Review/Cap-Return -> text lane
+_8K_PRIORITY = ["1.03", "3.01"]
+# Item 1.02 (termination of a material definitive agreement) fires for ANY contract
+# termination (supply deal, lease, credit facility) — not just M&A — so it is text-
+# classified (the Deal-Terminations keyword rule is deal-specific), not decisive.
+DEFER_8K_ITEMS = {"1.01", "1.02", "2.01", "8.01"}   # Acq/Divest/Spin/Review/Cap-Return/Term -> text lane
 # Item 5.02 (officer/director change) is NOT a situation on its own — the recon
 # shows Management Changes is a tiny category (only when it co-occurs with an
 # active campaign). Returned status="mgmt_maybe" and upgraded in build_situations
@@ -306,6 +308,13 @@ def build_situations() -> pd.DataFrame:
                                         case=False, na=False, regex=True)
     spac = spac_name & (df.status == "ok") & df.category.isin([ACQ, SPIN])
     df.loc[spac, ["category", "stage"]] = [SPAC, "de-SPAC"]
+
+    # collapse multi-security-class delistings: one filer files separate Form 25 for
+    # common + warrants + units + rights (esp. de-SPACs) -> one event per filer/day.
+    dl = df[(df.status == "ok") & (df.category == DELIST)]
+    if not dl.empty:
+        dup_idx = dl[dl.duplicated(subset=["cik", "date_filed"], keep="first")].index
+        df.loc[dup_idx, "status"] = "skip"
 
     # drop high-confidence non-operating-company filers (ABS/ETF/exchange shells)
     noise = df.company.apply(_is_noise_filer)

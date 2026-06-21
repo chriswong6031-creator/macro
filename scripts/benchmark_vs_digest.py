@@ -16,7 +16,8 @@ BOUND on true recall. Run: python -m scripts.benchmark_vs_digest
 """
 from __future__ import annotations
 
-from datetime import date
+import json
+from datetime import date, datetime, timezone
 
 import pandas as pd
 
@@ -71,6 +72,20 @@ def run(widen: bool = True) -> None:
     print("\n[honest] confirmation is a LOWER BOUND — the digest re-reports ongoing situations "
           "whose original filing predates our backfill window. A multi-quarter EDGAR backfill "
           "would raise it. EDGAR-extras are fresh detections OR false positives to tune.")
+
+    # persist the self-sufficiency scorecard (track our recall vs the digest over time)
+    out = {"schema": "ss_benchmark.v1", "is_context_only": True,
+           "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+           "issue": int(digest.issue.max()), "digest_US": int(tot_d), "confirmed": int(tot_c),
+           "confirmation_pct": round(100 * tot_c / tot_d, 1) if tot_d else 0,
+           "by_category": {r["category"]: {"digest_US": int(r["digest_US"]),
+                                           "confirmed": int(r["confirmed"]), "rate_pct": int(r["rate%"])}
+                           for _, r in res.iterrows()},
+           "edgar_extra_not_in_any_issue": int(len(extra)),
+           "note": "Recall vs the digest's curation; LOWER BOUND (short backfill window)."}
+    p = config.data_dir() / "special_situations" / "benchmark_scorecard.json"
+    p.write_text(json.dumps(out, indent=2))
+    print(f"[scorecard] wrote {p}")
 
 
 def main() -> int:

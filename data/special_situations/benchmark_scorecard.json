@@ -1,0 +1,98 @@
+{
+  "schema": "ss_benchmark.v1",
+  "is_context_only": true,
+  "generated_at": "2026-06-21 07:18 UTC",
+  "issue": 19,
+  "digest_US": 137,
+  "confirmed": 63,
+  "confirmation_pct": 46.0,
+  "by_category": {
+    "Acquisitions": {
+      "digest_US": 25,
+      "confirmed": 15,
+      "rate_pct": 60
+    },
+    "Other": {
+      "digest_US": 20,
+      "confirmed": 5,
+      "rate_pct": 25
+    },
+    "SPACs": {
+      "digest_US": 16,
+      "confirmed": 2,
+      "rate_pct": 12
+    },
+    "Activist Campaigns": {
+      "digest_US": 14,
+      "confirmed": 7,
+      "rate_pct": 50
+    },
+    "Strategic Reviews": {
+      "digest_US": 11,
+      "confirmed": 4,
+      "rate_pct": 36
+    },
+    "Restructuring": {
+      "digest_US": 11,
+      "confirmed": 6,
+      "rate_pct": 55
+    },
+    "Divestitures": {
+      "digest_US": 9,
+      "confirmed": 6,
+      "rate_pct": 67
+    },
+    "Going-Private": {
+      "digest_US": 8,
+      "confirmed": 6,
+      "rate_pct": 75
+    },
+    "Capital Returns": {
+      "digest_US": 4,
+      "confirmed": 3,
+      "rate_pct": 75
+    },
+    "Delistings": {
+      "digest_US": 4,
+      "confirmed": 3,
+      "rate_pct": 75
+    },
+    "Insolvency": {
+      "digest_US": 3,
+      "confirmed": 3,
+      "rate_pct": 100
+    },
+    "Spin-Offs": {
+      "digest_US": 3,
+      "confirmed": 1,
+      "rate_pct": 33
+    },
+    "Rights Offerings": {
+      "digest_US": 3,
+      "confirmed": 0,
+      "rate_pct": 0
+    },
+    "Liquidations": {
+      "digest_US": 2,
+      "confirmed": 1,
+      "rate_pct": 50
+    },
+    "Domicile Changes": {
+      "digest_US": 2,
+      "confirmed": 0,
+      "rate_pct": 0
+    },
+    "Litigation Outcomes": {
+      "digest_US": 1,
+      "confirmed": 0,
+      "rate_pct": 0
+    },
+    "Tender Offers": {
+      "digest_US": 1,
+      "confirmed": 1,
+      "rate_pct": 100
+    }
+  },
+  "edgar_extra_not_in_any_issue": 1241,
+  "note": "Recall vs the digest's curation; LOWER BOUND (short backfill window)."
+}

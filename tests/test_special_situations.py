@@ -181,9 +181,10 @@ def test_classify_structured_forms():
 
 
 def test_classify_8k_items():
-    assert sse.classify("8-K", "1.02") == ("Deal Terminations", "terminated", "ok")
     assert sse.classify("8-K", "1.03|9.01") == ("Restructuring", "filed", "ok")
     assert sse.classify("8-K", "3.01") == ("Delistings", "notice", "ok")
+    # 1.02 fires for ANY contract termination -> text lane confirms deal-context
+    assert sse.classify("8-K", "1.02")[2] == "defer"
     # ambiguous M&A / strategic-review / capital-return items -> text lane
     assert sse.classify("8-K", "1.01|9.01")[2] == "defer"
     assert sse.classify("8-K", "8.01")[2] == "defer"
@@ -247,6 +248,21 @@ def test_build_spac_reclassification(tmp_path, monkeypatch):
     df = sse.build_situations().set_index("id")
     assert df.loc["1", "category"] == "SPACs"          # name has "Acquisition Corp"
     assert df.loc["2", "category"] == "Acquisitions"   # ordinary merger
+
+
+def test_build_delisting_dedup_per_filer_day(tmp_path, monkeypatch):
+    """Multi-security-class Form 25s (common + warrants + units) collapse to one event."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    _events([
+        {"id": "a", "form_type": "25-NSE", "company": "Pono Corp", "cik": "5", "items": None, "date_filed": "2026-06-12"},
+        {"id": "b", "form_type": "25-NSE", "company": "Pono Corp", "cik": "5", "items": None, "date_filed": "2026-06-12"},
+        {"id": "c", "form_type": "25-NSE", "company": "Pono Corp", "cik": "5", "items": None, "date_filed": "2026-06-12"},
+    ]).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations()
+    ok = df[(df.category == "Delistings") & (df.status == "ok")]
+    assert len(ok) == 1                                  # collapsed to a single delisting event
 
 
 def test_build_mgmt_502_only_when_filer_active(tmp_path, monkeypatch):
