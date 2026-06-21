@@ -3680,6 +3680,23 @@ canada:
       us_10y: DGS10                # US 10Y
     statcan_latest_n: 240          # months of history per StatsCan vector
 
+  # -- Insider transactions (SEDI via yfinance) — display-only context ---------
+  # SEDI (Canada's insider-filing system) has no free machine-readable feed and is
+  # CAPTCHA-walled; every paid vendor's insider product is US-SEC-only. The one free
+  # programmatic path is yfinance get_insider_transactions() (undocumented Yahoo
+  # quoteSummary endpoint) — SEDI-sourced dated filings for many .TO names, no key.
+  # We keep only PERSONAL OPEN-MARKET trades ("Acquisition/Disposition in the public
+  # market"), dropping issuer buybacks and option exercises, and summarise the net
+  # buy/sell lean over a trailing window. CONTEXT, NOT a validated signal (SEDI lags
+  # the trade by up to ~5 days; TSX insider breadth is thin). engine/canada_insider.py
+  # drips it into data/canada_insider/ (freshness-cached), like fetch_earnings.
+  insider:
+    enabled: true
+    window_days: 180        # trailing window for the net buy/sell lean
+    max_new_per_build: 40   # yfinance drip cap per run (freshness-cached 12d)
+    recent_n: 6             # rows in the recent-filings table
+    min_shares: 0           # drop trades below this share count (0 = keep all)
+
   # -- Breadth / drill-down universe: curated large-cap TSX names by sector -----
   # Doubles as breadth denominator + per-sector drill-down + stock-search seed.
   # Verified .TO symbols (dash convention for class/unit shares: GIB-A, RCI-B,

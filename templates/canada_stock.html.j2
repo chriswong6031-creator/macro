@@ -232,9 +232,15 @@
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">
       <h2>{{ t('Positioning', '持仓与做空') }} <span class="note" style="text-transform:none">· {{ t('short interest &amp; ownership', '空头与持股结构') }}</span>{{ help(
-        'Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. The keyless free read — SEDI Form-4-style insider transactions and IIROC short-interest detail are not machine-readable. Heavy or rising short interest is a caution; high institutional ownership is crowding context. Descriptive, not a signal.',
-        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。') }}</h2>
+        'Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. Heavy or rising short interest is a caution; high institutional ownership is crowding context. This is the ownership SNAPSHOT — actual insider buy/sell filings are in the Insider activity panel below. Descriptive, not a signal.',
+        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。高或上升的空头是警示；高机构持股是拥挤背景。这是持股快照——实际的内部人买卖申报见下方"内部人交易"面板。描述性，非信号。') }}</h2>
       <div id="r_pos"></div>
+    </div>
+    <div class="panel" id="r_insider_panel" style="display:none">
+      <h2>👤 {{ t('Insider activity', '内部人交易') }} <span class="note" style="text-transform:none">· {{ t('SEDI open-market filings (yfinance)', 'SEDI 公开市场申报（yfinance）') }}</span>{{ help(
+        'Personal insider open-market buys / sells from SEDI (Canada\'s insider-filing system), via yfinance — issuer buybacks and option exercises are excluded. CONTEXT, not a validated signal: SEDI filings lag the trade by up to ~5 days and TSX insider breadth is thin, so read net buying / selling as a conviction tell, not a timing trigger. Coverage is best-effort per name.',
+        '来自 SEDI（加拿大内部人申报系统）的个人内部人公开市场买入／卖出，经 yfinance 获取——已剔除公司回购与期权行权。背景，而非已验证信号：SEDI 申报相对交易最多滞后约5天，且 TSX 内部人样本稀疏，故净买入／卖出应作为信念参考，而非择时触发。覆盖为尽力而为，逐名而定。') }}</h2>
+      <div id="r_insider"></div>
     </div>
     <div class="panel" id="r_cbeta_panel" style="display:none">
       <h2>{{ t('Commodity exposure', '商品敞口') }} <span class="note" style="text-transform:none">· {{ t('oil / gold / loonie beta', '原油／黄金／加元贝塔') }}</span>{{ help(
@@ -286,6 +292,10 @@
           e_next: 'Next report', e_in: 'in', e_dd: 'd', e_today: 'today',
           e_soon: '⚠ Reports soon — results risk near-term', e_beats: 'beats', e_of: 'of',
           e_qtr: 'date', e_eps: 'EPS', e_est: 'est', e_surp: 'surprise',
+          ins_buying: 'Net buying', ins_selling: 'Net selling', ins_mixed: 'Mixed',
+          ins_buys: 'buys', ins_sells: 'sells', ins_buyers: 'buyers', ins_sellers: 'sellers',
+          ins_net: 'net value', ins_last: 'last', ins_when: 'date', ins_who: 'insider',
+          ins_act: 'action', ins_shares: 'shares', ins_buy: 'buy', ins_sell: 'sell',
           cb_oil: 'Oil β', cb_gold: 'Gold β', cb_cad: 'CAD β', cb_primary: 'primary driver',
           cb_fit: 'fit R²', cb_none: 'market-driven · no commodity tilt' },
     zh: { asof: '数据截至', notlib: '不在库中',
@@ -301,6 +311,10 @@
           e_next: '下次财报', e_in: '还有', e_dd: '天', e_today: '今天',
           e_soon: '⚠ 临近财报 —— 短期业绩风险', e_beats: '超预期', e_of: '共',
           e_qtr: '日期', e_eps: '每股收益', e_est: '预期', e_surp: '超预期幅度',
+          ins_buying: '净买入', ins_selling: '净卖出', ins_mixed: '买卖参半',
+          ins_buys: '买入', ins_sells: '卖出', ins_buyers: '买入人', ins_sellers: '卖出人',
+          ins_net: '净额', ins_last: '近', ins_when: '日期', ins_who: '内部人',
+          ins_act: '方向', ins_shares: '股数', ins_buy: '买', ins_sell: '卖',
           cb_oil: '原油β', cb_gold: '黄金β', cb_cad: '加元β', cb_primary: '主要驱动',
           cb_fit: '拟合R²', cb_none: '市场驱动 · 无商品偏向' } };
   function L(k) { return (T[lang()] || T.en)[k]; }
@@ -581,6 +595,46 @@
       document.getElementById('r_pos').innerHTML = ph;
       posEl.style.display = 'block';
     } else { posEl.style.display = 'none'; }
+
+    // Insider activity — SEDI open-market personal trades via yfinance (additive)
+    var insEl = document.getElementById('r_insider_panel'), ins = d.insider;
+    if (ins && (ins.n_buys || ins.n_sells)) {
+      var insMoney = function (x) {
+        var a = Math.abs(x);
+        return a >= 1e6 ? '$' + (x / 1e6).toFixed(1) + 'M' : a >= 1e3 ? '$' + (x / 1e3).toFixed(0) + 'k' : '$' + x.toFixed(0);
+      };
+      var insSh = function (x) {
+        if (x == null) return '—';
+        var a = Math.abs(x);
+        return a >= 1e6 ? (x / 1e6).toFixed(2) + 'M' : a >= 1e3 ? (x / 1e3).toFixed(0) + 'k' : String(Math.round(x));
+      };
+      var insEsc = function (s) {
+        return String(s == null ? '' : s).replace(/[&<>"]/g, function (ch) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; });
+      };
+      var leanLab = ins.lean === 'buying' ? L('ins_buying') : ins.lean === 'selling' ? L('ins_selling') : L('ins_mixed');
+      var leanChip = ins.lean === 'buying' ? 'buy' : ins.lean === 'selling' ? 'sell' : 'hold';
+      var ih = '<div style="font-size:15px"><span class="rchip ' + leanChip + '">' + leanLab + '</span> <span class="muted" style="font-size:12px">· ' + L('ins_last') + ' ' + ins.window_days + ' ' + L('e_dd') + '</span></div>';
+      ih += '<div class="fnd-grid" style="margin-top:10px">';
+      ih += '<div class="fnd-chip"><div class="k">' + L('ins_buys') + '</div><div class="v pos">' + ins.n_buys + (ins.distinct_buyers ? '<span class="vs">' + ins.distinct_buyers + ' ' + L('ins_buyers') + '</span>' : '') + '</div></div>';
+      ih += '<div class="fnd-chip"><div class="k">' + L('ins_sells') + '</div><div class="v neg">' + ins.n_sells + (ins.distinct_sellers ? '<span class="vs">' + ins.distinct_sellers + ' ' + L('ins_sellers') + '</span>' : '') + '</div></div>';
+      if (ins.net_value != null) ih += '<div class="fnd-chip"><div class="k">' + L('ins_net') + '</div><div class="v ' + (ins.net_value >= 0 ? 'pos' : 'neg') + '">' + (ins.net_value >= 0 ? '+' : '') + insMoney(ins.net_value) + '</div></div>';
+      ih += '</div>';
+      var ir = ins.recent || [];
+      if (ir.length) {
+        var ihead = '<tr><th>' + L('ins_when') + '</th><th>' + L('ins_who') + '</th><th>' + L('ins_act') + '</th><th>' + L('ins_shares') + '</th></tr>';
+        var ibody = ir.map(function (x) {
+          var acls = x.action === 'buy' ? 'pos' : 'neg';
+          var alab = x.action === 'buy' ? L('ins_buy') : L('ins_sell');
+          var who = insEsc(x.insider || '—');
+          if (x.role) who += ' <span class="muted" style="font-size:11px">' + insEsc(x.role) + '</span>';
+          return '<tr><td>' + x.date + '</td><td>' + who + '</td><td class="' + acls + '">' + alab + '</td><td>' + insSh(x.shares) + '</td></tr>';
+        }).join('');
+        ih += '<table class="fnd-tbl"><thead>' + ihead + '</thead><tbody>' + ibody + '</tbody></table>';
+      }
+      document.getElementById('r_insider').innerHTML = ih;
+      insEl.style.display = 'block';
+    } else { insEl.style.display = 'none'; }
 
     // Calibration "trust the state" (additive; needs calibration.json)
     var calEl = document.getElementById('r_cal_panel');

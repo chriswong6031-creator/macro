@@ -392,6 +392,14 @@ def main(alpha: dict | None = None) -> dict | None:
         canada_fundamentals.fetch_earnings([t for t, *_ in uni], max_new=40)
     except Exception as e:  # noqa: BLE001
         log.warning("canada earnings fetch failed (%s)", e)
+    # insider transactions drip (SEDI via yfinance get_insider_transactions for .TO
+    # names) — same up-front, capped, freshness-cached best-effort pattern. The per-
+    # stock 👤 panel reads what's been collected. CONTEXT, not a signal.
+    from engine import canada_insider
+    try:
+        canada_insider.fetch_insider([t for t, *_ in uni], max_new=40)
+    except Exception as e:  # noqa: BLE001
+        log.warning("canada insider fetch failed (%s)", e)
     names_map = canada_fundamentals.display_names()
     # fold the pretty display-name remap into the universe up front so the parallel
     # analyze() fan-out (and the serial post-loop) carry the final name unchanged.
@@ -464,6 +472,11 @@ def main(alpha: dict | None = None) -> dict | None:
         earn = canada_fundamentals.earnings_map()
     except Exception as e:  # noqa: BLE001
         log.warning("canada earnings unavailable (%s)", e)
+    insiders: dict[str, dict] = {}
+    try:
+        insiders = canada_insider.insider_map()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada insider unavailable (%s)", e)
     # commodity / FX factor betas — the TSX-differentiated exposure read (oil / gold / CAD,
     # market-controlled). Pure function of the close panel + the macro factor levels.
     betas: dict[str, dict] = {}
@@ -476,7 +489,7 @@ def main(alpha: dict | None = None) -> dict | None:
             closes_fb, canada_overlay.factor_series(), market=market_fb)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("canada factor beta unavailable (%s)", e)
-    for ticker in set(fmap) | set(earn) | set(betas):
+    for ticker in set(fmap) | set(earn) | set(betas) | set(insiders):
         patch: dict = {}
         if fmap.get(ticker):
             patch["fundamentals"] = fmap[ticker]
@@ -484,6 +497,8 @@ def main(alpha: dict | None = None) -> dict | None:
             patch["earnings"] = earn[ticker]
         if betas.get(ticker):
             patch["factor_beta"] = betas[ticker]
+        if insiders.get(ticker):
+            patch["insider"] = insiders[ticker]
         if not patch:
             continue
         safe = ticker.replace("=", "_").replace("^", "_")
@@ -501,8 +516,8 @@ def main(alpha: dict | None = None) -> dict | None:
     for idx in index:
         if idx["t"] in fset:
             idx["f"] = 1
-    log.info("canada context attached: fund %d · earnings %d · factor-beta %d",
-             len(fmap), len(earn), len(betas))
+    log.info("canada context attached: fund %d · earnings %d · factor-beta %d · insider %d",
+             len(fmap), len(earn), len(betas), len(insiders))
     (outdir / "index.json").write_text(json.dumps(index))
     # Bespoke chart OHLC (close-only area series) read by canada_stock.html's chart.js —
     # pure serialisation of canada_search closes; never break the library over the garnish.
