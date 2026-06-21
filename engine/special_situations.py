@@ -244,6 +244,20 @@ def apply_floor(mc_musd: float | None, floor: float) -> bool | None:
     return float(mc_musd) >= float(floor)
 
 
+def passes_floor(mc_musd: object, confidence: object = None,
+                 floor: float = 100.0, floor_high: float = 25.0) -> bool:
+    """Desk floor gate WITH a confidence relaxation (decision 2026-06-21): unknown mc kept;
+    >= floor always kept; a HIGH-confidence situation (structured form / LLM-verified /
+    digest) is kept down to floor_high ($25M) to capture the small-cap activist / take-private
+    niche — without admitting low-confidence micro-cap keyword noise."""
+    if mc_musd is None or (isinstance(mc_musd, float) and pd.isna(mc_musd)):
+        return True
+    mc = float(mc_musd)
+    if mc >= float(floor):
+        return True
+    return str(confidence or "").lower() == "high" and mc >= float(floor_high)
+
+
 def _terms_dict(raw: object) -> dict:
     """Parse the LLM `llm_terms` JSON string (deal terms) into a dict; {} on anything else."""
     if not raw or (isinstance(raw, float) and pd.isna(raw)):
@@ -616,6 +630,29 @@ def _news_rows() -> list[dict]:
     return rows
 
 
+def _intl_rows() -> list[dict]:
+    """International-lane situations (Phase 4) from the gated UK/Canada collectors. Separate
+    cross-border lane (data/special_situations/intl.parquet); empty unless a market is on."""
+    p = config.data_dir() / GROUP / "intl.parquet"
+    if not p.exists():
+        return []
+    d = pd.read_parquet(p)
+    if d.empty:
+        return []
+    rows = []
+    for _, r in d.iterrows():
+        rows.append({
+            "id": f"intl-{r.get('id')}", "ticker": r.get("ticker"), "company": r.get("company"),
+            "category": r.get("category"), "stage": r.get("stage") or "announced",
+            "form_type": f"Intl·{str(r.get('market') or '').upper()}", "cross_border": True,
+            "mc_musd": None, "date_filed": r.get("date"), "source_url": r.get("url"),
+            "summary": (r.get("summary") if pd.notna(r.get("summary")) else None),
+            "business_desc": None, "country": (r.get("country") or None),
+            "source_lane": "intl", "live": False, "confidence": r.get("confidence") or "low",
+        })
+    return rows
+
+
 PRIOR_MIN_N = 5          # don't show a prior thinner than this (noise floor)
 
 
@@ -705,6 +742,12 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         if k not in merged:
             merged[k] = r
 
+    # international lane (Phase 4): UK/Canada cross-border situations (gated collectors).
+    for r in _intl_rows():
+        k = (_norm_ticker(r["ticker"]), r["category"])
+        if k not in merged:
+            merged[k] = r
+
     if not (elive is None or elive.empty):
         for _, r in elive.iterrows():
             k = (_norm_ticker(r.get("ticker")), r.get("category"))
@@ -729,8 +772,9 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
                     "deal_terms": _terms_dict(r.get("llm_terms")),
                 }
 
+    floor_high = float(_cfg().get("market_cap_floor_high_conf_musd", 25))
     sits = [s for s in merged.values()
-            if apply_floor(s.get("mc_musd"), floor) is not False]   # keep True + unknown
+            if passes_floor(s.get("mc_musd"), s.get("confidence"), floor, floor_high)]
     sits.sort(key=lambda s: (s.get("date_filed") or "", s.get("category") or ""), reverse=True)
 
     n_arb = _enrich_arb(sits)        # P1.2 merger-arb spread on deal situations w/ a price
@@ -745,6 +789,7 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         "edgar_confirmed": sum(1 for s in sits if s["source_lane"] == "digest" and s.get("live")),
         "edgar_only": sum(1 for s in sits if s["source_lane"] == "edgar"),
         "newswire": sum(1 for s in sits if s["source_lane"] == "newswire"),
+        "intl": sum(1 for s in sits if s["source_lane"] == "intl"),
         "cross_border": sum(1 for s in sits if s.get("cross_border")),
         "with_summary": sum(1 for s in sits if s.get("summary")),
         "with_arb": n_arb,
@@ -794,6 +839,15 @@ def mastermind_emit() -> dict:
             "category": r.get("category"), "stage": r.get("stage") or "announced",
             "date": r.get("date_filed"), "country": "US", "cross_border": False,
             "source": "newswire", "source_url": r.get("source_url"), "confidence": "low",
+            "brief": r.get("summary"), "mc_musd": None,
+        })
+
+    for r in _intl_rows():
+        consider(r.get("ticker"), {
+            "ticker": r.get("ticker"), "company": r.get("company"),
+            "category": r.get("category"), "stage": r.get("stage") or "announced",
+            "date": r.get("date_filed"), "country": r.get("country"), "cross_border": True,
+            "source": "intl", "source_url": r.get("source_url"), "confidence": "low",
             "brief": r.get("summary"), "mc_musd": None,
         })
 

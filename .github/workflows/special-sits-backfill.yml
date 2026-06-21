@@ -1,0 +1,61 @@
+name: special-sits-backfill
+# Roadmap Tier-2.2: burn down the ~23k-deferred Special-Situations backlog faster than the
+# bounded daily build can, and refresh the category x stage backtest priors. Self-contained
+# (does not touch the daily/weekly pipelines). Manual, or a modest weekly cron.
+on:
+  workflow_dispatch:
+    inputs:
+      classify_limit: { description: "LLM category-verify calls this run", default: "1500" }
+      summary_limit:  { description: "LLM summary calls this run",         default: "1000" }
+      text_limit:     { description: "keyword pre-filter doc fetches",      default: "6000" }
+      filer_limit:    { description: "13D cover-page fetches",              default: "3000" }
+  schedule:
+    - cron: "30 6 * * 0"     # Sunday 06:30 UTC — modest weekly burn-down + priors refresh
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pipeline            # share the lane with daily/weekly so commits never race
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # the priors backtest prices situations off the breadth close caches (gitignored,
+      # saved by the daily run) + the committed bt_prices.parquet; restore best-effort.
+      - name: restore breadth close cache
+        uses: actions/cache@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-backfill-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: enrich backlog (bounded by the inputs; LLM lanes no-op without a key)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          SS_CLASSIFY_LIMIT: ${{ github.event.inputs.classify_limit || '1500' }}
+          SS_SUMMARY_LIMIT: ${{ github.event.inputs.summary_limit || '1000' }}
+          SS_TEXT_LIMIT: ${{ github.event.inputs.text_limit || '6000' }}
+          SS_FILER_LIMIT: ${{ github.event.inputs.filer_limit || '3000' }}
+        run: python -m scripts.special_sits_backfill
+      - name: refresh backtest priors (category x stage, filing-date entry)
+        run: python -m scripts.backtest_special_situations || true
+      - name: re-render desk from the enriched store
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python -c "from scripts.build_special_situations import build; build(refresh=False)"
+      - name: commit
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/special_situations site/special_situations.html site/allocationdata/special_situations.json data/regime/special_situations_latest.json
+          git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)" || echo "nothing to commit"
+          git push || echo "nothing to push"

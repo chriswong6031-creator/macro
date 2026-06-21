@@ -107,6 +107,7 @@ def build(refresh: bool = True) -> str:
     if refresh:
         from collectors import special_situations as col
         from collectors import special_news as colnews
+        from collectors import special_intl as colintl
         from lib import config as _config
         ss = _config.load().get("special_situations", {}) or {}
         try:
@@ -117,7 +118,8 @@ def build(refresh: bool = True) -> str:
             col.enrich_filers(limit=int(ss.get("filer_per_build", 250)))     # P3.2 13D cover-page reporting person
             col.enrich_classify(limit=int(ss.get("classify_per_build", 150)))  # P1.1 LLM-verify (gated; no-op w/o key)
             col.enrich_summaries(limit=int(ss.get("summary_per_build", 200)))  # P1.3 LLM summary (gated; no-op w/o key)
-            colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated; off)
+            colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated)
+            colintl.fetch_intl_situations()                      # Phase 4 UK/Canada intl lanes (gated per market)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 
