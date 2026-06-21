@@ -82,6 +82,57 @@ def test_effective_n_floor_one_when_empty(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# declared research budget: a floor that can only RAISE the haircut
+# --------------------------------------------------------------------------- #
+def test_declared_budget_floors_effective_n_above_itemized(tmp_path):
+    led = TrialLedger(tmp_path / "t.jsonl", family="fam")
+    led.log_grid([{"v": v} for v in ("a", "b", "c", "d")])   # 4 itemized variants
+    led.log_declared_budget(40, reason="manual research upper-bound")
+    assert led.literal_n() == 4
+    assert led.declared_budget() == 40
+    assert led.effective_n() == 40                   # floor wins over the 4 itemized
+
+
+def test_declared_budget_never_lowers_effective_n(tmp_path):
+    led = TrialLedger(tmp_path / "t.jsonl", family="fam")
+    led.log_grid([{"v": v} for v in range(100)])     # 100 itemized
+    led.log_declared_budget(10)                       # smaller declaration must NOT reduce N
+    assert led.effective_n() == 100
+
+
+def test_declared_budget_is_idempotent_and_takes_the_max(tmp_path):
+    p = tmp_path / "t.jsonl"
+    led = TrialLedger(p, family="fam")
+    assert led.log_declared_budget(40, reason="r") is True
+    assert led.log_declared_budget(40, reason="r") is False   # same (n, reason) -> no dup row
+    led.log_declared_budget(64, reason="bigger")              # a higher declaration raises the floor
+    assert led.effective_n() == 64
+    # survives a process restart (rebuilt from disk)
+    assert TrialLedger(p, family="fam").effective_n() == 64
+
+
+def test_declared_budget_rejects_below_one(tmp_path):
+    led = TrialLedger(tmp_path / "t.jsonl", family="fam")
+    try:
+        led.log_declared_budget(0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for a declared budget < 1")
+
+
+def test_deflated_sharpe_uses_declared_floor(tmp_path):
+    sr, sk, ku, n = _strong_series()
+    led = TrialLedger(tmp_path / "t.jsonl", family="fam")
+    led.log_grid([{"v": v} for v in ("a", "b", "c", "d")])
+    led.log_declared_budget(40)
+    by_ledger = deflated_sharpe(sr, sk, ku, n, ledger=led, family="fam")
+    by_literal = deflated_sharpe(sr, sk, ku, n, n_trials=40)   # the old hand-declared path
+    assert by_ledger["dsr"] == by_literal["dsr"]   # migration is behavior-preserving
+    assert by_ledger["n_trials"] == 40
+
+
+# --------------------------------------------------------------------------- #
 # integration: deflated_sharpe honours the ledger and forbids ambiguity
 # --------------------------------------------------------------------------- #
 def _strong_series():
