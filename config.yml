@@ -400,7 +400,7 @@ smart_money:
   # www.sec.gov/Archives ENFORCES SEC fair-access: the UA must carry a real
   # contact email or it 403s (data.sec.gov is laxer). Set this to YOUR email.
   user_agent: "Macro Dashboard 13F research longr2512@gmail.com"
-  history_quarters: 2          # snapshots kept per fund for the live quarter diff
+  history_quarters: 6          # snapshots kept per fund — 2 for the live quarter diff + deeper history for the multi-quarter accumulation trend (engine/smart_money.accumulation_trend)
   backfill_quarters: 8         # --full-history depth
   panel_top_n: 12              # holders shown per stock panel
   funds:

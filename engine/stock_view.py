@@ -521,14 +521,22 @@ def _ev_ownership(rec: dict) -> dict | None:
         bits.append(f"{n_funds} active funds"); bits_zh.append(f"{n_funds} 家主动基金")
     if n_hold:
         bits.append(f"{n_hold} 13F holders"); bits_zh.append(f"{n_hold} 家 13F 持有人")
+    # multi-quarter "Historical institutional increase/decrease" trend (lagged context)
+    tr = sm.get("trend") or {}
+    if tr.get("direction") in ("accumulating", "distributing"):
+        h0, h1, nq = tr.get("holders_first"), tr.get("holders_last"), tr.get("n_quarters")
+        d_en = "accumulating" if tr["direction"] == "accumulating" else "distributing"
+        d_zh = "加仓中" if tr["direction"] == "accumulating" else "减仓中"
+        bits.append(f"{d_en} ({h0}→{h1} funds, {nq}Q)")
+        bits_zh.append(f"{d_zh}（{h0}→{h1} 家，{nq}季）")
     hhi = _num(sm.get("ownership_hhi"))
     if hhi is not None:
         conc = ("top-heavy" if hhi >= 0.18 else "broadly held" if hhi <= 0.08 else "moderate")
         conc_zh = ("高度集中" if hhi >= 0.18 else "分散持有" if hhi <= 0.08 else "中等集中")
         bits.append(conc); bits_zh.append(conc_zh)
     return _dim("Ownership & flow", "持股与资金", " · ".join(bits), " · ".join(bits_zh),
-                tone="neutral", gloss="Who owns it and how concentrated.",
-                gloss_zh="谁在持有，集中度如何。", expand="ownership")
+                tone="neutral", gloss="Who owns it and how concentrated; multi-quarter 13F holder trend (lagged ~45d, context).",
+                gloss_zh="谁在持有、集中度如何；以及多季度 13F 持有人趋势（滞后约45天，仅供参考）。", expand="ownership")
 
 
 _DUR_ZH = {"neutral": "中性久期", "long": "长久期", "short": "短久期"}
