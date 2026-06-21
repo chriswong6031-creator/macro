@@ -119,6 +119,33 @@ also try a harder label (first-leg capture / +12% before −4%) and a logistic r
 Until a re-calibration on that universe passes the STRICT gate (calibration lift ≥5pp + dead-cat
 separation ≥5pp + PRIMED beats base by ≥0.03R), the tier stays ordering-only.
 
+## BROAD-UNIVERSE RE-CALIBRATION (593 non-survivor small-caps, 17,694 events) — the real test
+Volume captured for the breadth universe (`collectors/breadth.py` now caches volume/high/low;
+`smallcap_breadth` = 603 names × 777 bars w/ volume). Re-ran on this NON-survivor universe:
+| stage | durable% | E[R] | MAE |
+|---|---|---|---|
+| primed | 59.3 | 0.173 | −6.04% |
+| watch | 55.1 | 0.122 | −6.53% |
+| blocked | 53.3 | 0.259 | −6.39% |
+- **The raw score now RANKS durability** (flat on survivors → here decile durable% rises
+  51%→61%, ~10pp monotone lift, `calib_lift_ok=True`). REAL signal on the universe where
+  dead-cats live — validates the broad-universe hypothesis.
+- **PRIMED is more durable** than watch/blocked (59% vs 55%/53%).
+- STILL NO-GO for size: PRIMED E[R] 0.173 < blocked 0.259 (`primed_beats_base=False`) and
+  dead-cat separation only 3pp (`deadcat_ok=False`, need ≥5pp). TWO fixable causes:
+  1. **Stop too tight** — the swing-low stop is hit on the whipsaw before +8% lands, so PRIMED's
+     higher durability doesn't convert to R. FIX: ATR-based / wider stop, or measure first-leg
+     capture instead of a fixed target/stop.
+  2. **Expansion gate not yet in the loop** — the research's primary dead-cat discriminator
+     (RS leadership + thematic acceleration) isn't applied. FIX: require positive expansion for
+     PRIMED → PRIMED-in-a-leader vs PRIMED-in-a-broken-laggard should separate strongly.
+- Also TODO: logistic refit of the leg weights to the durable label (vs hand-weights); fix the
+  `turning`/`confirmed=0` artifact on the breadth walk (price-confirmation stages need the high
+  series threaded through the cycle swing detection).
+**NEXT ITERATION (concrete, the "tweak + backtest" loop): (a) ATR stop + first-leg-capture label,
+(b) wire engine/expansion_gate.py into the PRIMED gate, (c) logistic refit — then re-run the strict
+gate. The signal is real; these three are the path from NO-GO to a possible GO.**
+
 ## Honest limits
 Close-only ceiling (~1100 names can't do volume/Wyckoff); NO measured return edge (may end
 ordering-only); overfitting risk (DSR + purged folds mandatory); irreducible early-call FP (graded

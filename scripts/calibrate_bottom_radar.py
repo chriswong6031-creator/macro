@@ -54,8 +54,13 @@ def main() -> int:
     ap.add_argument("--x", type=float, default=8.0, help="target up-move %% for a durable bottom")
     ap.add_argument("--n", type=int, default=42, help="horizon in trading days")
     ap.add_argument("--step", type=int, default=10)
+    ap.add_argument("--universe", default="deep",
+                    help="deep (data/stocks, survivor leaders) | breadth | smallcap_breadth | "
+                         "midcap_breadth (the broad, non-survivor caches w/ volume)")
+    ap.add_argument("--win", type=int, default=600, help="trailing PIT window")
     a = ap.parse_args()
-    X, N, STEP = a.x, a.n, a.step
+    X, N, STEP, UNIV = a.x, a.n, a.step, a.universe
+    win = a.win
 
     data = config.data_dir() / "stocks"
     try:
@@ -67,29 +72,43 @@ def main() -> int:
     except Exception:
         vix_s = None
 
+    def _names():
+        """Yield (ticker, close, high, volume) for the chosen universe. 'deep' = the
+        survivor mega-cap leaders (data/stocks). 'breadth'/'smallcap_breadth'/
+        'midcap_breadth' = the broad, NON-survivor caches with volume (where real
+        dead-cats live) — the proper test of the radar's score + vetos."""
+        if UNIV == "deep":
+            for f in sorted(data.glob("*.parquet")):
+                try:
+                    df = pd.read_parquet(f)
+                except Exception:
+                    continue
+                yield f.stem, df["close"].dropna(), df.get("high"), df.get("volume")
+            return
+        base = config.data_dir() / UNIV
+        cc = pd.read_parquet(base / "_closes_cache.parquet")
+        hc = pd.read_parquet(base / "_high_cache.parquet") if (base / "_high_cache.parquet").exists() else None
+        vc = pd.read_parquet(base / "_volume_cache.parquet") if (base / "_volume_cache.parquet").exists() else None
+        for t in cc.columns:
+            yield (t, cc[t].dropna(),
+                   hc[t] if (hc is not None and t in hc.columns) else None,
+                   vc[t] if (vc is not None and t in vc.columns) else None)
+
     rows = []          # (raw, stage, blocked, durable, R, mae)
-    files = sorted(data.glob("*.parquet"))
+    names = list(_names())
     n_inst = 0
-    for fi, f in enumerate(files):
+    for fi, (ticker, close, high, vol) in enumerate(names):
         if (fi + 1) % 25 == 0:
-            log.info("...%d/%d names, %d events", fi + 1, len(files), len(rows))
-        try:
-            df = pd.read_parquet(f)
-        except Exception:
-            continue
-        close = df["close"].dropna()
-        high, vol = df.get("high"), df.get("volume")
-        if len(close) < WIN + N + 50:
+            log.info("...%d/%d names, %d events", fi + 1, len(names), len(rows))
+        if len(close) < win + N + 50:
             continue
         n_inst += 1
         cv = close.to_numpy()
         vx = vix_s.reindex(close.index).ffill().to_numpy() if vix_s is not None else None
-        # cap each name's walk to recent history (the per-eval velocity/divergence cost
-        # makes the full 40y walk on every name prohibitively slow; ~14y is ample and the
-        # modern regime is the relevant one anyway).
-        start_i = max(WIN, len(close) - 3500)
+        # cap each name's walk to recent history (per-eval velocity/divergence cost).
+        start_i = max(win, len(close) - 3500)
         for i in range(start_i, len(close) - N - 1, STEP):
-            sub = close.iloc[i - WIN:i + 1]
+            sub = close.iloc[i - win:i + 1]
             hsub = high.reindex(sub.index) if high is not None else None
             vsub = vol.reindex(sub.index) if vol is not None else None
             try:
