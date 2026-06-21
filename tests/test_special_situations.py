@@ -362,6 +362,100 @@ def test_summary_lane_llm_ready_gate(monkeypatch):
     assert ss._llm_ready({"enabled": True, "llm_brief": True}) is False   # no key
 
 
+# ---- LLM verify lane (P1.1) -------------------------------------------------
+def test_parse_llm_json_robust():
+    assert ss._parse_llm_json('{"category": "Acquisitions"}')["category"] == "Acquisitions"
+    # tolerates a ```json fence
+    assert ss._parse_llm_json('```json\n{"category": "Spin-Offs"}\n```')["category"] == "Spin-Offs"
+    # tolerates leading prose
+    assert ss._parse_llm_json('Here you go: {"category": "Other", "role": "filer"}')["role"] == "filer"
+    assert ss._parse_llm_json("not json at all") == {}
+    assert ss._parse_llm_json(None) == {}
+
+
+class _FakeResp:
+    def __init__(self, text):
+        self.content = [type("B", (), {"type": "text", "text": text})()]
+
+
+class _FakeClient:
+    """Returns a fixed JSON reply for every messages.create call."""
+    def __init__(self, text):
+        self._text = text
+        self.messages = self
+
+    def create(self, **_kw):
+        return _FakeResp(self._text)
+
+
+def _mock_llm(monkeypatch, reply_json: str):
+    monkeypatch.setattr(config, "secret", lambda n: "key")
+    monkeypatch.setattr(ss, "_cfg", lambda: {"enabled": True, "llm_brief": True})
+    monkeypatch.setattr(ss, "_llm_client", lambda cfg: (_FakeClient(reply_json), "deepseek-chat"))
+    monkeypatch.setattr(ss, "_fetch_filing_text", lambda cik, acc, **kw: "filing body text")
+
+
+def _seed_defer_event(tmp_path):
+    (tmp_path / "special_situations").mkdir()
+    pd.DataFrame([{"id": "e1", "form_type": "8-K", "company": "Acme Inc", "cik": "10",
+                   "accession": "acc1", "items": "8.01", "date_filed": "2026-06-12",
+                   "source_url": "u"}]
+                 ).to_parquet(tmp_path / "special_situations" / "events.parquet")
+
+
+def test_enrich_classify_writes_verdict(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _mock_llm(monkeypatch, '{"category": "Acquisitions", "role": "target", "confidence": "high",'
+                           ' "summary": "Acme to be acquired for $25/sh cash.",'
+                           ' "deal_terms": {"price_per_share": 25.0, "consideration": "cash"}}')
+    _seed_defer_event(tmp_path)
+    df = ss.enrich_classify().set_index("id")
+    assert df.loc["e1", "llm_category"] == "Acquisitions"
+    assert df.loc["e1", "llm_role"] == "target"
+    assert df.loc["e1", "llm_confidence"] == "high"
+    assert "price_per_share" in df.loc["e1", "llm_terms"]
+
+
+def test_llm_verdict_promotes_in_engine(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    _mock_llm(monkeypatch, '{"category": "Strategic Reviews", "role": "filer", "confidence": "high",'
+                           ' "summary": "Board to explore alternatives.", "deal_terms": {}}')
+    _seed_defer_event(tmp_path)
+    ss.enrich_classify()
+    df = sse.build_situations().set_index("id")
+    assert df.loc["e1", "status"] == "ok"
+    assert df.loc["e1", "category"] == "Strategic Reviews"
+    assert df.loc["e1", "confidence"] == "high"          # LLM-verified, not the keyword 'low'
+    assert df.loc["e1", "stage"] == "initiated"          # default stage for Strategic Reviews
+
+
+def test_llm_none_kills_false_positive(tmp_path, monkeypatch):
+    """The precision fix: a deferred filing the LLM judges NOT a situation is dropped,
+    even if the keyword text-lane had promoted it."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    _mock_llm(monkeypatch, '{"category": "None", "role": "none", "confidence": "high",'
+                           ' "summary": "", "deal_terms": {}}')
+    _seed_defer_event(tmp_path)
+    # pretend the noisy keyword lane already (wrongly) promoted it
+    df0 = ss._read_events()
+    df0["text_category"] = "Acquisitions"
+    df0["text_stage"] = "announced"
+    df0.to_parquet(tmp_path / "special_situations" / "events.parquet")
+    ss.enrich_classify()
+    df = sse.build_situations().set_index("id")
+    assert df.loc["e1", "status"] == "skip"              # LLM "None" overrides the keyword FP
+
+
+def test_enrich_classify_noop_when_gated(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(ss, "_cfg", lambda: {"enabled": True, "llm_brief": False})  # gate off
+    _seed_defer_event(tmp_path)
+    df = ss.enrich_classify()
+    assert df["llm_category"].isna().all()               # nothing classified, no network
+
+
 def test_summary_lane_noop_when_gated(tmp_path, monkeypatch):
     import pandas as pd
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)

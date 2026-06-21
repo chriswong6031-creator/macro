@@ -79,8 +79,9 @@ def build(refresh: bool = True) -> str:
         from collectors import special_situations as col
         try:
             col.fetch_events()        # sweep new daily-index dates (bounded by watermark)
-            col.enrich_text()         # classify new deferred filings from text (cached)
-            col.enrich_summaries()    # 88-word summary for EDGAR-only situations (gated; no-op without key)
+            col.enrich_text()         # cheap keyword pre-filter on deferred filings (cached)
+            col.enrich_classify()     # P1.1 LLM-verify deferred filings: category/role/terms (gated; no-op without key)
+            col.enrich_summaries()    # 88-word summary for structured EDGAR situations (gated; no-op without key)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 

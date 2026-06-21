@@ -40,6 +40,19 @@ ACQ, DIV, ACT, REV = "Acquisitions", "Divestitures", "Activist Campaigns", "Stra
 TO, GP, CAP, SPIN = "Tender Offers", "Going-Private", "Capital Returns", "Spin-Offs"
 RIGHTS, RESTR, LIQ, DELIST = "Rights Offerings", "Restructuring", "Liquidations", "Delistings"
 ITEND, TERM, SPAC, MGMT = "Issuer Tenders", "Deal Terminations", "SPACs", "Management Changes"
+OTHER = "Other"
+
+# the mature taxonomy an LLM verdict (P1.1) may legitimately promote to (excludes "None")
+MATURE_CATEGORIES = frozenset({
+    ACQ, DIV, ACT, REV, TO, GP, CAP, SPIN, RIGHTS, RESTR, LIQ, DELIST, ITEND, TERM, SPAC, MGMT, OTHER,
+})
+# default stage when the LLM promotes an ambiguous filing and no stage is already set
+LLM_STAGE_DEFAULT: dict[str, str] = {
+    ACQ: "announced", DIV: "announced", ACT: "initiated", REV: "initiated", TO: "live",
+    GP: "live", CAP: "announced", SPIN: "announced", RIGHTS: "live", RESTR: "announced",
+    LIQ: "announced", DELIST: "notice", ITEND: "live", TERM: "terminated", SPAC: "de-SPAC",
+    MGMT: "change", OTHER: "announced",
+}
 
 # --- form_type -> (category, stage) for structured forms --------------------
 STRUCTURED: dict[str, tuple[str, str]] = {
@@ -231,6 +244,20 @@ def apply_floor(mc_musd: float | None, floor: float) -> bool | None:
     return float(mc_musd) >= float(floor)
 
 
+def _terms_dict(raw: object) -> dict:
+    """Parse the LLM `llm_terms` JSON string (deal terms) into a dict; {} on anything else."""
+    if not raw or (isinstance(raw, float) and pd.isna(raw)):
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    try:
+        import json as _json
+        obj = _json.loads(str(raw))
+        return obj if isinstance(obj, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 # ---- enrichment (market cap for the floor) ---------------------------------
 
 def _universe_caps() -> tuple[dict[int, str], dict[str, float]]:
@@ -313,6 +340,29 @@ def build_situations() -> pd.DataFrame:
         df.loc[promote, "stage"] = df.loc[promote, "text_stage"] if "text_stage" in df.columns else "announced"
         df.loc[promote, "status"] = "ok"
         df.loc[promote, "confidence"] = "low"        # keyword heuristic, not verified
+
+    # LLM verify lane (P1.1): the model read the deferred filings and returned a verified
+    # category + role + confidence. This OVERRIDES the noisy keyword text-lane — a real
+    # category becomes high/medium-confidence; category "None" is the model judging it not a
+    # special situation, which DROPS the keyword false positive (the ~67%-FP precision fix).
+    if "llm_category" in df.columns:
+        for col in ("llm_confidence", "llm_role", "role"):
+            if col not in df.columns:
+                df[col] = pd.NA
+        llm = df.llm_category.astype("string").str.strip()
+        valid = llm.isin(MATURE_CATEGORIES).fillna(False)
+        is_none = llm.str.lower().eq("none").fillna(False)
+        if valid.any():
+            df.loc[valid, "category"] = llm[valid]
+            df.loc[valid, "status"] = "ok"
+            df.loc[valid, "role"] = df.loc[valid, "llm_role"]
+            conf = df.loc[valid, "llm_confidence"].astype("string").str.lower()
+            df.loc[valid, "confidence"] = conf.where(conf.isin(["high", "medium", "low"]), "medium")
+            df.loc[valid, "stage"] = df.loc[valid].apply(
+                lambda r: r["stage"] if (r.get("stage") and not (isinstance(r["stage"], float) and pd.isna(r["stage"])))
+                else LLM_STAGE_DEFAULT.get(r["category"], "announced"), axis=1)
+        if is_none.any():
+            df.loc[is_none, ["status", "category", "stage", "confidence"]] = ["skip", None, None, "high"]
 
     # cross-filing Going-Private upgrade: any CIK with an SC 13E-3 -> its merger
     # proxy / third-party tender is an affiliate take-private (§B1).
@@ -459,6 +509,8 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
                     "business_desc": None, "country": "US",
                     "source_lane": "edgar", "live": True,
                     "confidence": r.get("confidence") or "high",
+                    "role": (r.get("role") if pd.notna(r.get("role")) else None),
+                    "deal_terms": _terms_dict(r.get("llm_terms")),
                 }
 
     sits = [s for s in merged.values()
@@ -524,6 +576,8 @@ def mastermind_emit() -> dict:
                 "cross_border": bool(r.get("cross_border")),
                 "source": "edgar", "source_url": r.get("source_url"),
                 "confidence": r.get("confidence") or "high",
+                "role": (r.get("role") if pd.notna(r.get("role")) else None),
+                "deal_terms": _terms_dict(r.get("llm_terms")) or None,
                 "brief": (r.get("summary") if pd.notna(r.get("summary")) else r.get("hk")),
                 "mc_musd": (float(r["mc_musd"]) if pd.notna(r.get("mc_musd")) else None),
             })

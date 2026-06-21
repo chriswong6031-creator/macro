@@ -419,18 +419,52 @@ def enrich_text(limit: int | None = None,
     return df
 
 
-# ---------------------------------------------------------------- LLM summary lane (P1.3)
+# ---------------------------------------------------------------- LLM lanes (P1.3 summary + P1.1 verify)
+
+# The summary half of the JSON contract (the house style; see recon §E). Both lanes
+# share ONE call: the model returns a compact JSON object so we get the summary AND the
+# verified classification / deal terms for the same token spend.
+_SS_SUMMARY_RUBRIC = (
+    "summary: ONE ~88-word analysis paragraph in this order — what was filed / who acted; "
+    "exact terms (stake %, price/share, implied value, premium %, dates); board "
+    "recommendation / advisor if named; mechanics & structural notes (collateral, overhang, "
+    "ownership split, regulatory clock); a closing 'what to watch / risk-arb angle'. "
+    "Neutral-analytical, declarative, no first person, no recommendation. If a non-US filing, "
+    "map it to its US equivalent in-prose."
+)
+_SS_TERMS_RUBRIC = (
+    'deal_terms: object with ONLY the fields explicitly stated in the filing, drawn from '
+    '{price_per_share (number), currency (ISO code, default "USD"), '
+    'consideration ("cash"|"stock"|"cash+stock"|"other"), premium_pct (number), '
+    'expected_close ("YYYY-MM" or "YYYY-MM-DD"), break_fee_musd (number in $M)}; '
+    "{} if the filing states none."
+)
+# Mature taxonomy the verifier may choose from (mirrors engine.special_situations); "None"
+# means NOT a special situation (routine 8-K, plain shelf takedown, supply/lease/credit deal).
+_LLM_CATEGORIES = (
+    "Acquisitions, Divestitures, Activist Campaigns, Strategic Reviews, Tender Offers, "
+    "Going-Private, Capital Returns, Spin-Offs, Rights Offerings, Restructuring, Liquidations, "
+    "Delistings, Issuer Tenders, Deal Terminations, SPACs, Management Changes, Other, None"
+)
 
 SS_SUMMARY_SYSTEM = (
-    "You write terse special-situations notes in the house style of an event-driven "
-    "research desk. Given a corporate-event filing, write: (1) ONE business-descriptor "
-    "sentence (~16 words), then (2) ONE ~88-word analysis paragraph in this order — what "
-    "was filed/who acted; exact terms (stake %, price/share, implied value, premium %, "
-    "dates); board recommendation / advisor if named; mechanics & structural notes "
-    "(collateral, overhang, ownership split, regulatory clock); and a closing 'what to "
-    "watch / risk-arb angle'. Neutral-analytical, declarative, no first person, no "
-    "recommendation. If a non-US filing, map it to its US equivalent in-prose. Output the "
-    "two parts only."
+    "You write terse special-situations notes in the house style of an event-driven research "
+    "desk. Given a corporate-event filing whose category is already known, return ONLY a "
+    "compact JSON object (no markdown fence, no prose) with keys:\n"
+    f"- {_SS_SUMMARY_RUBRIC}\n"
+    f"- {_SS_TERMS_RUBRIC}"
+)
+SS_CLASSIFY_SYSTEM = (
+    "You are an event-driven research analyst classifying an SEC filing into a special-"
+    "situations category. Read the excerpt and return ONLY a compact JSON object (no markdown "
+    "fence, no prose) with keys:\n"
+    f"- category: EXACTLY one of [{_LLM_CATEGORIES}]. Use \"None\" if the filing is NOT a "
+    "special situation (routine current report, ordinary shelf takedown, product/supply/lease/"
+    "credit-facility contract). Be conservative — prefer \"None\" over a wrong category.\n"
+    "- role: the registrant's role — one of [acquirer, target, seller, issuer, filer, none].\n"
+    "- confidence: \"high\" | \"medium\" | \"low\".\n"
+    f"- {_SS_SUMMARY_RUBRIC}\n"
+    f"- {_SS_TERMS_RUBRIC}"
 )
 
 
@@ -443,36 +477,85 @@ def _llm_ready(cfg: dict) -> bool:
     return bool(config.secret(cfg.get("api_key_env", "DEEPSEEK_API_KEY")))
 
 
-def _summary_prompt(row: pd.Series, text: str | None) -> str:
+def _llm_client(cfg: dict):
+    """(client, model) for the DeepSeek Anthropic-compatible endpoint. Isolated so tests
+    can monkeypatch a fake client without a network/key."""
+    import anthropic
+    client = anthropic.Anthropic(base_url=cfg.get("llm_base_url"),
+                                 api_key=config.secret(cfg.get("api_key_env", "DEEPSEEK_API_KEY")))
+    return client, cfg.get("llm_model", "deepseek-chat")
+
+
+def _parse_llm_json(out: str | None) -> dict:
+    """Robustly pull the JSON object out of an LLM reply (tolerates a ```json fence or
+    leading prose). Returns {} on any failure — the caller degrades, never breaks."""
+    if not out:
+        return {}
+    s = str(out).strip()
+    if s.startswith("```"):
+        s = re.sub(r"^```(?:json)?\s*|\s*```$", "", s, flags=re.I).strip()
+    try:
+        obj = json.loads(s)
+        return obj if isinstance(obj, dict) else {}
+    except Exception:  # noqa: BLE001
+        m = re.search(r"\{.*\}", s, re.S)
+        if m:
+            try:
+                obj = json.loads(m.group(0))
+                return obj if isinstance(obj, dict) else {}
+            except Exception:  # noqa: BLE001
+                return {}
+        return {}
+
+
+def _llm_prompt(row: pd.Series, text: str | None, *, known_category: bool) -> str:
+    cat = f"Event category: {row.get('category')} · " if known_category else ""
     head = (f"Company: {row.get('company')} ({row.get('ticker') or '—'})\n"
-            f"Event category: {row.get('category')} · form {row.get('form_type')} "
-            f"(items {row.get('items') or '—'}) · filed {row.get('date_filed')}\n"
-            f"Filing source: {row.get('source_url')}\n\n")
+            f"{cat}form {row.get('form_type')} (items {row.get('items') or '—'}) · "
+            f"filed {row.get('date_filed')}\nFiling source: {row.get('source_url')}\n\n")
     body = (text or "")[:6000]
     return head + "Filing text excerpt:\n" + body if body else head + "(no document text available)"
 
 
+def _llm_call(client, model, system: str, prompt: str) -> dict:
+    """One LLM call -> parsed JSON dict ({} on failure)."""
+    try:
+        resp = client.messages.create(model=model, max_tokens=420, system=system,
+                                       messages=[{"role": "user", "content": prompt}])
+        out = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
+    except Exception as e:  # noqa: BLE001 — degrade, never break the build
+        log.warning("special_situations LLM call failed: %s", e)
+        return {}
+    return _parse_llm_json(out)
+
+
+def _terms_json(obj: dict) -> str | None:
+    t = obj.get("deal_terms")
+    if isinstance(t, dict) and t:
+        return json.dumps(t, default=str)
+    return None
+
+
 def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
-    """Generate the ~88-word house-style summary for live EDGAR situations that lack
-    one (digest situations already carry their curated summary). Gated + cached per
-    situation id, so daily rebuilds only pay for new situations. No-op without a key."""
+    """Generate the ~88-word house-style summary (+ any deal terms) for live EDGAR
+    situations our deterministic classifier already accepts (status=ok) that lack one.
+    Digest situations carry their own curated summary. Gated + cached per situation id,
+    so daily rebuilds only pay for new situations. No-op without a key."""
     from engine import special_situations as sse
     cfg = _cfg()
     df = _read_events()
     if df is None or df.empty:
         return df if df is not None else pd.DataFrame()
-    if "summary" not in df.columns:
-        df["summary"] = pd.NA
+    for col in ("summary", "llm_terms"):
+        if col not in df.columns:
+            df[col] = pd.NA
     if not _llm_ready(cfg):
         log.info("special_situations summary lane: gated off (no key / disabled)")
         return df
 
-    import anthropic
     cache_dir = config.data_dir() / GROUP / "digest_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    client = anthropic.Anthropic(base_url=cfg.get("llm_base_url"),
-                                 api_key=config.secret(cfg.get("api_key_env", "DEEPSEEK_API_KEY")))
-    model = cfg.get("llm_model", "deepseek-chat")
+    client, model = _llm_client(cfg)
 
     # only situations our classifier accepts and that have no summary yet
     need = []
@@ -486,27 +569,111 @@ def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
     if limit:
         need = need[:limit]
 
-    updates: dict[str, str] = {}
+    summ: dict[str, str] = {}
+    terms: dict[str, str] = {}
     for r in need:
         cpath = cache_dir / f"{r.id}.json"
         if cpath.exists():
-            updates[r.id] = json.loads(cpath.read_text()).get("summary", "")
-            continue
-        text = _fetch_filing_text(str(r.cik), str(r.accession))
-        try:
-            resp = client.messages.create(model=model, max_tokens=220, system=SS_SUMMARY_SYSTEM,
-                                          messages=[{"role": "user", "content": _summary_prompt(r, text)}])
-            out = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text").strip()
-        except Exception as e:  # noqa: BLE001 — degrade, never break the build
-            log.warning("special_situations summary failed for %s: %s", r.id, e)
-            continue
-        if out:
-            cpath.write_text(json.dumps({"summary": out}))
-            updates[r.id] = out
-    if updates:
-        df.loc[df.id.isin(updates), "summary"] = df.loc[df.id.isin(updates), "id"].map(updates)
+            cached = json.loads(cpath.read_text())
+        else:
+            text = _fetch_filing_text(str(r.cik), str(r.accession))
+            obj = _llm_call(client, model, SS_SUMMARY_SYSTEM, _llm_prompt(r, text, known_category=True))
+            if not obj:
+                continue
+            cached = {"summary": str(obj.get("summary") or "").strip(), "terms": _terms_json(obj)}
+            if not cached["summary"]:
+                continue
+            cpath.write_text(json.dumps(cached))
+        if cached.get("summary"):
+            summ[r.id] = cached["summary"]
+        if cached.get("terms"):
+            terms[r.id] = cached["terms"]
+    if summ:
+        df.loc[df.id.isin(summ), "summary"] = df.loc[df.id.isin(summ), "id"].map(summ)
+    if terms:
+        df.loc[df.id.isin(terms), "llm_terms"] = df.loc[df.id.isin(terms), "id"].map(terms)
+    if summ or terms:
         df.to_parquet(_events_path(), index=False)
-    log.info("special_situations summary lane: wrote %d summaries", len(updates))
+    log.info("special_situations summary lane: wrote %d summaries, %d term-sets", len(summ), len(terms))
+    return df
+
+
+def enrich_classify(limit: int | None = None) -> pd.DataFrame:
+    """P1.1 — let the LLM VERIFY the category for the ambiguous filings the deterministic
+    classifier deferred (8-K 1.01/1.02/2.01/8.01, 6-K, 424B5). One call returns the verified
+    category + registrant role + confidence + summary + deal terms, converting the noisy
+    keyword text-lane (~67% FP) into high-confidence classifications and killing false
+    positives (category="None"). Gated + cached per id; no-op without a key."""
+    from engine import special_situations as sse
+    cfg = _cfg()
+    df = _read_events()
+    if df is None or df.empty:
+        return df if df is not None else pd.DataFrame()
+    for col in ("llm_category", "llm_role", "llm_confidence", "llm_terms", "summary"):
+        if col not in df.columns:
+            df[col] = pd.NA
+    if not _llm_ready(cfg):
+        log.info("special_situations classify lane: gated off (no key / disabled)")
+        return df
+
+    cache_dir = config.data_dir() / GROUP / "classify_cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    client, model = _llm_client(cfg)
+
+    # candidates: filings the deterministic classifier could not resolve (status=defer)
+    # and which we have not already asked the LLM about.
+    need = []
+    for _, r in df.iterrows():
+        if pd.notna(r.get("llm_category")) and str(r.get("llm_category")).strip():
+            continue
+        if sse.classify(r.get("form_type"), r.get("items"))[2] != "defer":
+            continue
+        need.append(r)
+    need = sorted(need, key=lambda r: r.get("date_filed") or "", reverse=True)
+    if limit:
+        need = need[:limit]
+
+    cat: dict[str, str] = {}
+    role: dict[str, str] = {}
+    conf: dict[str, str] = {}
+    summ: dict[str, str] = {}
+    terms: dict[str, str] = {}
+    for r in need:
+        cpath = cache_dir / f"{r.id}.json"
+        if cpath.exists():
+            obj = json.loads(cpath.read_text())
+        else:
+            text = _fetch_filing_text(str(r.cik), str(r.accession))
+            obj = _llm_call(client, model, SS_CLASSIFY_SYSTEM, _llm_prompt(r, text, known_category=False))
+            if not obj:
+                continue
+            obj = {"category": str(obj.get("category") or "").strip(),
+                   "role": str(obj.get("role") or "").strip().lower(),
+                   "confidence": str(obj.get("confidence") or "").strip().lower(),
+                   "summary": str(obj.get("summary") or "").strip(),
+                   "terms": _terms_json(obj)}
+            cpath.write_text(json.dumps(obj))
+        c = obj.get("category") or ""
+        if not c:
+            continue
+        cat[r.id] = c                                  # "None" is a valid, FP-killing verdict
+        if obj.get("role"):
+            role[r.id] = obj["role"]
+        if obj.get("confidence"):
+            conf[r.id] = obj["confidence"]
+        if obj.get("summary"):
+            summ[r.id] = obj["summary"]
+        if obj.get("terms"):
+            terms[r.id] = obj["terms"]
+    for col, upd in (("llm_category", cat), ("llm_role", role), ("llm_confidence", conf),
+                     ("summary", summ), ("llm_terms", terms)):
+        if upd:
+            df.loc[df.id.isin(upd), col] = df.loc[df.id.isin(upd), "id"].map(upd)
+    if cat:
+        df.to_parquet(_events_path(), index=False)
+    promoted = sum(1 for v in cat.values() if v and v != "None")
+    log.info("special_situations classify lane: %d verified (%d real, %d cleared as None)",
+             len(cat), promoted, len(cat) - promoted)
     return df
 
 
