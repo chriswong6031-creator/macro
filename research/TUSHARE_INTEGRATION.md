@@ -1,8 +1,14 @@
 # Tushare Pro integration — gated premium A-share data
 
 **Status:** shipped (data layer + fund-flow leg + crowding upgrade), display/context-only.
-**Tier:** ¥1000/yr · 10000积分 (premium 特色 lane). Token access verified — every target endpoint
-returns `code 0`, including `report_rc` (8000积分, throttled to 1 call/hour).
+`TUSHARE_TOKEN` is configured as a GitHub Actions secret — the nightly build refreshes
+`data/tushare/`.
+**Tier:** ¥500/yr · 5000积分 (regular data, no daily cap). Every collector's endpoint sits within
+this tier (smoke-tested live: daily_basic, margin_detail, moneyflow_dc, cyq_perf,
+broker_recommend, forecast_vip all return rows). `report_rc` (8000积分) is ABOVE this tier, but
+Tushare still serves a throttled ~1/hour PREVIEW of it (a `频率超限` rate-limit, not a
+permission-denied), so the forecast-revision raw still accrues slowly — best-effort, never
+required.
 
 ## How it's gated
 
@@ -31,7 +37,7 @@ keyless build, and CI with the secret refreshes it nightly.
 | `tushare_margin` | `margin_detail` | 2000 | per-name 融资余额 → cleaner crowding `margin_froth` |
 | `tushare_chips` | `cyq_perf` | 5000 | holder cost-basis + win-rate (筹码胜率) positioning |
 | `tushare_broker` | `broker_recommend` | 2000 | 券商每月金股 monthly pick tally (discrete sell-side conviction) |
-| `tushare_forecast` | `forecast_vip` + `report_rc` | 2000 / 8000 | earnings guidance + sell-side EPS-revision (best-effort, 1/hr) |
+| `tushare_forecast` | `forecast_vip` + `report_rc` | 5000 / 8000 | earnings guidance (in-tier) + sell-side EPS-revision (above-tier, 1/hr preview, best-effort) |
 
 All snapshot collectors pull the whole market in ONE `trade_date=` call (`snapshot_by_date` walks
 back to the latest day with rows). `report_rc` is throttled to 1 call/hour → pulled once per build
