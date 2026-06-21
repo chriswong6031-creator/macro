@@ -1,0 +1,111 @@
+"""collectors/cboe_indices.CboeVvixAdapter + collectors/cboe_vix_futures (the full
+M1..M6 VX curve) — the collect-first data infra for engine/vol_regime's VVIX leg and the
+future curve-slope/carry leg. Pure parse/shape tests; no network (http_get is stubbed)."""
+import datetime as dt
+
+import pandas as pd
+import pytest
+
+from collectors.cboe_indices import CboeVvixAdapter
+from collectors.cboe_vix_futures import CboeVixFuturesAdapter
+
+
+class _Resp:
+    """Minimal stand-in for a requests.Response (the bits the adapters read)."""
+    def __init__(self, text: str, ctype: str = "text/csv"):
+        self.text = text
+        self.headers = {"Content-Type": ctype}
+
+
+# --------------------------------------------------------------------------- VVIX
+VVIX_CSV = "DATE,VVIX\n03/06/2006,71.730000\n06/17/2026,94.530000\n06/18/2026,88.430000\n"
+
+
+def test_vvix_parses_full_history(monkeypatch):
+    a = CboeVvixAdapter()
+    monkeypatch.setattr(a, "http_get", lambda *args, **kw: _Resp(VVIX_CSV))
+    out = a.fetch()
+    assert "vvix" in out
+    df = out["vvix"]
+    assert list(df.columns) == ["vvix"]
+    # full history is returned in ONE fetch (backfill + accrual in one shot)
+    assert str(df.index.min().date()) == "2006-03-06"
+    assert df.loc["2026-06-18", "vvix"] == pytest.approx(88.43)
+
+
+def test_vvix_rejects_unexpected_response(monkeypatch):
+    a = CboeVvixAdapter()
+    monkeypatch.setattr(a, "http_get", lambda *args, **kw: _Resp("oops,not,vvix\n1,2,3\n"))
+    with pytest.raises(ValueError):
+        a.fetch()
+
+
+# ---------------------------------------------------------------------- VX curve
+# The settlement CSV mixes WEEKLY VX (week-number-prefixed symbols, e.g. VX25/M6) with the
+# standard MONTHLY contracts (bare VX/{Mon}{Yr}). VX26/N6 (weekly, 07-01) deliberately
+# precedes the monthly VX/N6 (07-22) to prove the curve picks the MONTHLY as M1, not the
+# nearer weekly. ZB is a non-VX product that must be dropped.
+SETTLE_CSV = (
+    "Product,Symbol,Expiration Date,Price\n"
+    "VX,VX/M6,2026-06-17,16.20\n"       # monthly, already expired vs 06-18
+    "VX,VX25/M6,2026-06-24,19.255\n"    # WEEKLY -> front of the sanitizer, NOT a curve point
+    "VX,VX26/N6,2026-07-01,19.255\n"    # WEEKLY before the July monthly
+    "VX,VX/N6,2026-07-22,19.255\n"      # monthly M1
+    "VX,VX/Q6,2026-08-19,20.31\n"       # monthly M2
+    "VX,VX/U6,2026-09-16,21.05\n"
+    "VX,VX/V6,2026-10-21,21.79\n"
+    "VX,VX/X6,2026-11-18,22.00\n"
+    "VX,VX/Z6,2026-12-16,22.10\n"       # monthly M6
+    "ZB,ZB/M6,2026-06-20,100.0\n"       # non-VX -> dropped
+)
+D = dt.date(2026, 6, 18)
+
+
+def _rows(monkeypatch):
+    a = CboeVixFuturesAdapter()
+    monkeypatch.setattr(a, "http_get", lambda *args, **kw: _Resp(SETTLE_CSV))
+    return a, a._vx_rows(D)
+
+
+def test_vx_rows_keeps_vx_and_flags_monthlies(monkeypatch):
+    _, rows = _rows(monkeypatch)
+    assert rows is not None and len(rows) == 9            # ZB dropped
+    monthly = rows.set_index("Symbol")["monthly"].to_dict()
+    assert monthly["VX/M6"] and monthly["VX/N6"]          # bare VX/ = monthly
+    assert not monthly["VX25/M6"] and not monthly["VX26/N6"]  # week-prefixed = weekly
+
+
+def test_vx_front_is_nearest_contract_unchanged(monkeypatch):
+    """front_settle = nearest non-expired contract (weekly here) — the sanitizer's read,
+    preserved exactly from the single-series collector."""
+    a, rows = _rows(monkeypatch)
+    front = a._front(rows, D)
+    assert front["front_settle"] == pytest.approx(19.255)
+    assert front["days_to_expiry"] == 6                  # 06-18 -> 06-24 weekly
+
+
+def test_vx_curve_is_monthly_ladder(monkeypatch):
+    a, rows = _rows(monkeypatch)
+    curve = a._curve(rows, D)
+    # M1 must be the MONTHLY VX/N6 (07-22, 34d out), NOT the earlier weekly VX26/N6 (07-01)
+    assert curve["m1_settle"] == pytest.approx(19.255)
+    assert curve["m1_dte"] == 34
+    assert curve["m2_settle"] == pytest.approx(20.31)
+    assert curve["m6_settle"] == pytest.approx(22.10)
+    # ascending DTEs = a proper ~monthly ladder (weeklies would collapse the spacing)
+    dtes = [curve[f"m{i}_dte"] for i in range(1, 7)]
+    assert dtes == sorted(dtes) and dtes[1] - dtes[0] > 20
+
+
+def test_vx_curve_none_without_monthlies():
+    a = CboeVixFuturesAdapter()
+    rows = pd.DataFrame({"exp": [pd.Timestamp("2026-07-01")], "px": [19.0], "monthly": [False]})
+    assert a._curve(rows, D) is None
+
+
+def test_vx_fetch_raises_when_nothing_fetched(monkeypatch):
+    a = CboeVixFuturesAdapter()
+    a.cfg = {"vix_request_pace_s": 0}                     # no sleep between the miss probes
+    monkeypatch.setattr(a, "http_get", lambda *args, **kw: _Resp("<html/>", ctype="text/html"))
+    with pytest.raises(ValueError):
+        a.fetch()
