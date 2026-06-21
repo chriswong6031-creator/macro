@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><span class="l-en">China News</span><span class="l-zh">中国财经新闻</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
+<title><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -30,46 +30,37 @@
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
   
-  .cn-hero { max-width:1060px; margin:18px auto 0; }
-  .cn-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
-  .cn-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
-  html[data-lang="zh"] .cn-hero h1 { letter-spacing:0; }
-  .cn-hero .lens { font-size:12px; color:var(--muted); }
-  .cn-wrap { max-width:1060px; margin:0 auto; }
-  h2.sec { font-size:19px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin:12px 0; }
-  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
-  .card .k { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
-  .card .v { font-size:26px; font-weight:700; margin-top:3px; }
-  .card .s { font-size:12px; color:var(--muted); margin-top:4px; }
-  .band { display:inline-block; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; }
-  .band.supportive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
-  .band.cautious { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
-  .band.steady, .band.building, .band.unknown { color:var(--muted); background:var(--panel2); }
-  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
-  .tchip { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
-  .tchip b { color:var(--link); }
-  .th-geopolitics{color:#e0607a}.th-trade{color:#e0973a}.th-industrial_policy{color:#5b8def}
-  .th-monetary{color:#c77dff}.th-credit{color:#3fb6c0}.th-policy{color:#46b87a}
-  .th-markets{color:#3f9fd8}.th-growth{color:#46b87a}.th-inflation{color:#e0973a}.th-fiscal{color:#9aa0a6}
-  .feed { list-style:none; padding:0; margin:10px 0; }
-  .feed li { padding:9px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start; }
-  .feed .meta { display:flex; flex-direction:column; gap:3px; min-width:96px; }
-  .feed .tt { font-size:14px; line-height:1.45; }
-  .feed .tt a { color:var(--text); }
-  .feed .tt a:hover { color:var(--link); }
-  .tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); white-space:nowrap; }
-  .tier1 { color:#1f9a55; border-color:#1f9a5555; }
-  .tier2 { color:#5b8def; border-color:#5b8def55; }
-  .tier3 { color:var(--muted); }
-  .sched { font-size:10px; color:#e0973a; font-weight:700; }
-  .bk { font-size:10px; color:var(--muted); }
+  .rd-hero { max-width:1060px; margin:18px auto 0; }
+  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rd-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .rd-hero h1 { letter-spacing:0; }
+  .rd-hero .lens { font-size:12px; color:var(--muted); }
+  .rd-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
   .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
-  .callout.brief { border-left:4px solid #c77dff; }
-  .disc { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.55; }
-  .schedrow { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
-  .sx { font-size:11.5px; padding:4px 9px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
-  .sx b { color:#e0973a; }
+  .dcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:12px 0; }
+  .dcard { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; border-left:4px solid var(--line); }
+  .dcard.positive { border-left-color:#1f9a55; }
+  .dcard.negative { border-left-color:#d23f3f; }
+  .dcard .hd { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .sgn { font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em; }
+  .sgn.positive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .sgn.negative { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .dcard .pair { font-weight:700; font-size:14px; }
+  .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
+  .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
+  .dcard .hyp { font-size:12.5px; line-height:1.5; border-left:2px solid var(--link); padding-left:9px; margin-top:8px; opacity:.92; }
+  .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:8px; }
+  .strength > i { display:block; height:100%; background:var(--link); }
+  .inline-list { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0; }
+  .ichip { font-size:11.5px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); }
+  .b-hit{color:#1f9a55}.b-miss{color:#d23f3f}.b-open{color:var(--muted)}
+  .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0; font-size:13px; color:var(--muted); }
+  .led-stat b { color:var(--text); font-size:17px; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
 
 </style>
 
@@ -190,276 +181,168 @@
 </nav>
 
 
-<section class="cn-hero">
-  <p class="eyebrow">📰 <span class="l-en">China News</span><span class="l-zh">中国财经新闻</span></p>
-  <h1><span class="l-en">China News & Policy Tape</span><span class="l-zh">中国财经新闻与政策脉搏</span></h1>
-  <p class="lens"><span class="l-en">Multi-source flash wires + state RSS · media-sentiment index · point-in-time event bus · context only · as of</span><span class="l-zh">多源快讯＋官方RSS · 媒体情绪指数 · 时间点事件总线 · 仅供参考 · 截至</span> 2026-06-20</p>
+<section class="rd-hero">
+  <p class="eyebrow">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></p>
+  <h1><span class="l-en">China Divergence Radar</span><span class="l-zh">中国背离雷达</span></h1>
+  <p class="lens"><span class="l-en">Free, management-independent demand/policy/flow signals vs sector price · falsifiable · context only · as of</span><span class="l-zh">免费、独立于管理层的需求/政策/资金信号 vs 板块价格 · 可证伪 · 仅供参考 · 截至</span> 2026-06-20</p>
 </section>
 
-<div class="cn-wrap">
+<div class="rd-wrap">
 
 
-  <!-- ===== media-sentiment + counts ===== -->
-  <div class="grid">
+  <div class="callout"><span class="l-en">How to read: each card pairs a free macro/policy/flow signal with the sector it transmits to. POSITIVE = support improving while price still lags (potential catch-up); NEGATIVE = support fading while price still leads (potential vulnerability). Same-direction pairs stay silent. Every divergence is a dated, falsifiable hypothesis the ledger scores.</span><span class="l-zh">解读：每张卡片将一个免费宏观/政策/资金信号与其传导的板块配对。正向＝支撑改善但价格仍滞后（潜在补涨）；负向＝支撑转弱但价格仍领先（潜在脆弱）。同向配对保持静默。每个背离都是有日期、可证伪的假设，由台账评分。</span></div>
+
+  <!-- ===== active divergences ===== -->
+  <h2 class="sec">📡 <span class="l-en">Active divergences</span><span class="l-zh">活跃背离</span> <span style="font-size:12px;color:var(--muted)">6/10</span></h2>
+  
+  <div class="dcards">
     
-    <div class="card">
-      <div class="k"><span class="l-en">Media sentiment</span><span class="l-zh">媒体情绪</span></div>
-      
-      <div class="v"><span class="band building"><span class="l-en">building</span><span class="l-zh">积累中</span></span></div>
-      <div class="s">z +0.63 · 6<span class="l-en">d window</span><span class="l-zh">天窗口</span> · <span class="l-en">CCTV + wire tone</span><span class="l-zh">央视＋快讯基调</span></div>
-      
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">PPI reflation</span><span class="l-zh">PPI再通胀</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span>
+      </div>
+      <div class="det"><span class="l-en">PPI YoY +3.9% (+4.8 3m, reflation tilt)</span><span class="l-zh">PPI同比 +3.9%（3月+4.8，再通胀倾向）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-8.6%</b> <span class="mut">(z -1.08)</span></div>
+      <div class="strength"><i style="width:54%"></i></div>
+      <div class="hyp">🎯 <span class="l-en">If PPI reflation is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若PPI再通胀领先，有色金属未来约3个月应跑赢沪深300。</span></div>
     </div>
-    <div class="card">
-      <div class="k"><span class="l-en">Headlines (7d)</span><span class="l-zh">头条（7天）</span></div>
-      <div class="v">71</div>
-      <div class="s"><span class="l-en">point-in-time, keep-first accrual</span><span class="l-zh">时间点首次出现累计</span></div>
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span>
+      </div>
+      <div class="det"><span class="l-en">Mfg PMI 50.0 (+1.0 3m)</span><span class="l-zh">制造业PMI 50.0（3月+1.0）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-8.6%</b> <span class="mut">(z -1.08)</span></div>
+      <div class="strength"><i style="width:27%"></i></div>
+      <div class="hyp">🎯 <span class="l-en">If Mfg PMI is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，有色金属未来约3个月应跑赢沪深300。</span></div>
     </div>
-    <div class="card">
-      <div class="k"><span class="l-en">Dominant themes</span><span class="l-zh">主导主题</span></div>
-      <div class="chips" style="margin-top:6px">
-        
-          
-          <span class="tchip"><span class="th-geopolitics">●</span> <span class="l-en">Geopolitics</span><span class="l-zh">地缘</span> <b>52</b></span>
-        
-          
-          <span class="tchip"><span class="th-monetary">●</span> <span class="l-en">PBoC</span><span class="l-zh">央行</span> <b>5</b></span>
-        
-          
-          <span class="tchip"><span class="th-markets">●</span> <span class="l-en">Markets</span><span class="l-zh">市场</span> <b>4</b></span>
-        
-          
-          <span class="tchip"><span class="th-policy">●</span> <span class="l-en">Policy</span><span class="l-zh">政策</span> <b>3</b></span>
-        
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">PPI reflation</span><span class="l-zh">PPI再通胀</span> → <span class="l-en">Coal</span><span class="l-zh">煤炭</span></span>
       </div>
+      <div class="det"><span class="l-en">PPI YoY +3.9% (+4.8 3m, reflation tilt)</span><span class="l-zh">PPI同比 +3.9%（3月+4.8，再通胀倾向）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-14.5%</b> <span class="mut">(z -0.53)</span></div>
+      <div class="strength"><i style="width:27%"></i></div>
+      <div class="hyp">🎯 <span class="l-en">If PPI reflation is leading, Coal should outperform CSI 300 over ~3 months.</span><span class="l-zh">若PPI再通胀领先，煤炭未来约3个月应跑赢沪深300。</span></div>
     </div>
-  </div>
-
-  <!-- ===== scheduled ahead ===== -->
-  
-  <h2 class="sec">📅 <span class="l-en">Scheduled ahead</span><span class="l-zh">即将发布</span></h2>
-  <div class="schedrow">
     
-    <span class="sx"><b>Jun 22</b> · <span class="l-en">LPR fix (loan prime rate)</span><span class="l-zh">LPR 报价（贷款市场报价利率）</span></span>
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span>
+      </div>
+      <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-12.4%</b> <span class="mut">(z -0.94)</span></div>
+      <div class="strength"><i style="width:23%"></i></div>
+      <div class="hyp">🎯 <span class="l-en">If PBoC easing is leading, Brokers should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，券商未来约3个月应跑赢沪深300。</span></div>
+    </div>
     
-    <span class="sx"><b>Jun 30</b> · <span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></span>
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span>
+      </div>
+      <div class="det"><span class="l-en">Mfg PMI 50.0 (+1.0 3m)</span><span class="l-zh">制造业PMI 50.0（3月+1.0）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-4.2%</b> <span class="mut">(z -0.76)</span></div>
+      <div class="strength"><i style="width:19%"></i></div>
+      <div class="hyp">🎯 <span class="l-en">If Mfg PMI is leading, New-energy vehicle should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，新能源车未来约3个月应跑赢沪深300。</span></div>
+    </div>
     
-  </div>
-  
-
-  <!-- ===== optional AI brief ===== -->
-  
-
-  <!-- ===== event feed ===== -->
-  <h2 class="sec">🛰️ <span class="l-en">News event bus</span><span class="l-zh">新闻事件总线</span></h2>
-  
-  <ul class="feed">
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span>
       </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776965597.html" target="_blank" rel="noopener">“边角料都是宝”！出口量“狂飙”！“游”出来的大产业火了</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">ths</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.10jqka.com.cn/20260620/c677593492.shtml" target="_blank" rel="noopener">伊朗外交部：美国未能约束以色列 违反谅解备忘录</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606203776961259.html" target="_blank" rel="noopener">收窄至50个基点！隔夜回购利率走廊大幅压缩 货币市场调控迈入精细化新阶段</a>
-        <div class="bk">🏷️ cn_banks</div>
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
-        <span class="tag tier1">rss</span>
-        
-      </div>
-      <div class="tt">
-        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e154ea310eefe3e9a2793.html" target="_blank" rel="noopener">WTO meeting opens in Buenos Aires with emphasis on multilateral trade</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606203776954360.html" target="_blank" rel="noopener">乌俄互指对方在赫尔松州发动袭击</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776965039.html" target="_blank" rel="noopener">黎真主党称以色列应对违反停火负“全部责任”</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">futu</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.futunn.com/flash/20435361/the-israeli-military-stated-it-carried-out-a-precision-airstrike" target="_blank" rel="noopener">以军称对加沙地带一名哈马斯成员进行精准空袭</a>
-        <div class="bk">🏷️ cn_defense</div>
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776965934.html" target="_blank" rel="noopener">伊朗谈判代表团已抵达瑞士</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-        <span class="tag tier1">rss</span>
-        
-      </div>
-      <div class="tt">
-        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e3223a310eefe3e9a2ce1.html" target="_blank" rel="noopener">High-quality growth will be key word in top economic meeting, say experts</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-        <span class="tag tier1">rss</span>
-        
-      </div>
-      <div class="tt">
-        <a href="http://www.chinadaily.com.cn/a/201712/12/WS5a2f1044a3108bc8c672193b.html" target="_blank" rel="noopener">NY steals HK's IPO crown</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">ths</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.10jqka.com.cn/20260620/c677593542.shtml" target="_blank" rel="noopener">伊朗警告船只勿靠近霍尔木兹海峡 否则有安全风险</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">futu</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.futunn.com/flash/20435359/vance-stated-that-us-iran-talks-focus-on-the-nuclear" target="_blank" rel="noopener">万斯称美伊谈判重点为核问题与黎巴嫩停火</a>
-        <div class="bk">🏷️ cn_defense</div>
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776964247.html" target="_blank" rel="noopener">以军称收到在黎停火指示 但“安全区”内行动将继续</a>
-        <div class="bk">🏷️ cn_defense</div>
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776966290.html" target="_blank" rel="noopener">埃及、沙特、土耳其外长和美国高级官员举行会谈</a>
-        
-      </div>
-    </li>
-    
-  </ul>
-  
-
-  <!-- ===== by-basket tallies ===== -->
-  
-  <h2 class="sec">🧺 <span class="l-en">Themes in the news</span><span class="l-zh">新闻中的主题</span></h2>
-  <div class="chips">
-    
-    <span class="tchip">cn_defense <b>8</b></span>
-    
-    <span class="tchip">cn_banks <b>3</b></span>
-    
-    <span class="tchip">cn_semis <b>2</b></span>
-    
-    <span class="tchip">cn_brokers <b>2</b></span>
-    
-    <span class="tchip">cn_gold <b>1</b></span>
-    
-    <span class="tchip">cn_ai_compute <b>1</b></span>
+      <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-21.8%</b> <span class="mut">(z -0.63)</span></div>
+      <div class="strength"><i style="width:16%"></i></div>
+      <div class="hyp">🎯 <span class="l-en">If PBoC easing is leading, Real estate should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，房地产未来约3个月应跑赢沪深300。</span></div>
+    </div>
     
   </div>
   
 
-  <p class="disc"><span class="l-en">Context only — not a signal. A first-print, point-in-time log of filtered China policy/market headlines (several free wires + state RSS, narrative themes only) plus a media-sentiment index (a z-score of a crude CCTV + wire tone proxy, read RELATIVE). Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号。这是经筛选的中国政策／市场头条的首次出现时间点日志（多个免费快讯源＋官方RSS，仅叙事主题），并附媒体情绪指数（对央视＋快讯粗略基调代理的 z 标准化，按相对值解读）。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>
+  <!-- ===== in line (silent) ===== -->
+  
+  <h2 class="sec">🔇 <span class="l-en">In line (silent)</span><span class="l-zh">一致（静默）</span></h2>
+  <p style="font-size:12px;color:var(--muted)"><span class="l-en">Signal and price agree — confirming, no divergence edge.</span><span class="l-zh">信号与价格一致——确认，无背离信号。</span></p>
+  <div class="inline-list">
+    <span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Banks</span><span class="l-zh">银行</span></span><span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span><span class="ichip"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span><span class="ichip"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Defense</span><span class="l-zh">国防军工</span></span>
+  </div>
+  
+
+  <!-- ===== ledger ===== -->
+  
+  <h2 class="sec">📒 <span class="l-en">Falsification ledger</span><span class="l-zh">证伪台账</span></h2>
+  <div class="led-stat">
+    <span><b>6</b> <span class="l-en">logged</span><span class="l-zh">已记录</span></span>
+    <span><b>0</b> <span class="l-en">resolved</span><span class="l-zh">已结</span></span>
+    
+    <span>6 <span class="l-en">open</span><span class="l-zh">未结</span></span>
+  </div>
+  
+  <table class="data">
+    <thead><tr><th><span class="l-en">Fired</span><span class="l-zh">触发</span></th><th><span class="l-en">Signal → Sector</span><span class="l-zh">信号→板块</span></th><th><span class="l-en">Sign</span><span class="l-zh">方向</span></th><th><span class="l-en">Fwd rel</span><span class="l-zh">后续相对</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th></tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pboc_easing → <span class="l-en">Real estate</span><span class="l-zh">Real estate</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pboc_easing → <span class="l-en">Brokers</span><span class="l-zh">Brokers</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pmi → <span class="l-en">Nonferrous metals</span><span class="l-zh">Nonferrous metals</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pmi → <span class="l-en">New-energy vehicle</span><span class="l-zh">New-energy vehicle</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>ppi → <span class="l-en">Nonferrous metals</span><span class="l-zh">Nonferrous metals</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>ppi → <span class="l-en">Coal</span><span class="l-zh">Coal</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+    </tbody>
+  </table>
+  
+  
+
+  <p class="disc"><span class="l-en">Context only — a divergence is a falsifiable hypothesis, not a trade. No validated edge; the ledger tracks whether these calls hold.</span><span class="l-zh">仅作背景——背离是可证伪的假设，而非交易。无已验证优势；台账追踪这些判断是否成立。</span></p>
 
 </div>
 

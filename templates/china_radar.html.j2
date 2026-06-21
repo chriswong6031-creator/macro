@@ -1,0 +1,122 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro bl(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('Divergence Radar', '背离雷达') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .rd-hero { max-width:1060px; margin:18px auto 0; }
+  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rd-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .rd-hero h1 { letter-spacing:0; }
+  .rd-hero .lens { font-size:12px; color:var(--muted); }
+  .rd-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
+  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
+  .dcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:12px 0; }
+  .dcard { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; border-left:4px solid var(--line); }
+  .dcard.positive { border-left-color:#1f9a55; }
+  .dcard.negative { border-left-color:#d23f3f; }
+  .dcard .hd { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .sgn { font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em; }
+  .sgn.positive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .sgn.negative { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .dcard .pair { font-weight:700; font-size:14px; }
+  .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
+  .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
+  .dcard .hyp { font-size:12.5px; line-height:1.5; border-left:2px solid var(--link); padding-left:9px; margin-top:8px; opacity:.92; }
+  .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:8px; }
+  .strength > i { display:block; height:100%; background:var(--link); }
+  .inline-list { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0; }
+  .ichip { font-size:11.5px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); }
+  .b-hit{color:#1f9a55}.b-miss{color:#d23f3f}.b-open{color:var(--muted)}
+  .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0; font-size:13px; color:var(--muted); }
+  .led-stat b { color:var(--text); font-size:17px; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
+{% endblock %}
+
+{% block content %}
+<section class="rd-hero">
+  <p class="eyebrow">📡 {{ t('Divergence Radar', '背离雷达') }}</p>
+  <h1>{{ t('China Divergence Radar', '中国背离雷达') }}</h1>
+  <p class="lens">{{ t('Free, management-independent demand/policy/flow signals vs sector price · falsifiable · context only · as of', '免费、独立于管理层的需求/政策/资金信号 vs 板块价格 · 可证伪 · 仅供参考 · 截至') }} {{ radar.asof if radar else '—' }}</p>
+</section>
+
+<div class="rd-wrap">
+{% if not radar %}
+  <div class="callout">{{ t('Radar is warming up — populates after the first build with sector price + macro history.', '雷达预热中——将在首次构建（含板块价格与宏观历史）后填充。') }}</div>
+{% else %}
+
+  <div class="callout">{{ t('How to read: each card pairs a free macro/policy/flow signal with the sector it transmits to. POSITIVE = support improving while price still lags (potential catch-up); NEGATIVE = support fading while price still leads (potential vulnerability). Same-direction pairs stay silent. Every divergence is a dated, falsifiable hypothesis the ledger scores.', '解读：每张卡片将一个免费宏观/政策/资金信号与其传导的板块配对。正向＝支撑改善但价格仍滞后（潜在补涨）；负向＝支撑转弱但价格仍领先（潜在脆弱）。同向配对保持静默。每个背离都是有日期、可证伪的假设，由台账评分。') }}</div>
+
+  <!-- ===== active divergences ===== -->
+  <h2 class="sec">📡 {{ t('Active divergences', '活跃背离') }} <span style="font-size:12px;color:var(--muted)">{{ radar.n_active }}/{{ radar.n_pairs }}</span></h2>
+  {% if radar.divergences %}
+  <div class="dcards">
+    {% for d in radar.divergences %}
+    <div class="dcard {{ d.sign }}">
+      <div class="hd">
+        <span class="sgn {{ d.sign }}">{{ t('Positive' if d.sign=='positive' else 'Negative', '正向' if d.sign=='positive' else '负向') }}</span>
+        <span class="pair">{{ bl(d.signal_en, d.signal_zh) }} → {{ bl(d.sector_en, d.sector_zh) }}</span>
+      </div>
+      <div class="det">{{ bl(d.signal_detail_en, d.signal_detail_zh) }}</div>
+      <div class="rs">{{ t('Sector vs CSI 300 (63d)', '板块 vs 沪深300（63日）') }}: <b class="{{ 'r-pos' if d.price_rs>0 else 'r-neg' }}">{{ '%+.1f'|format(d.price_rs) }}%</b> <span class="mut">(z {{ '%+.2f'|format(d.price_rs_z) }})</span></div>
+      <div class="strength"><i style="width:{{ (d.strength*100)|round|int }}%"></i></div>
+      {% if d.hypothesis_en %}<div class="hyp">🎯 {{ bl(d.hypothesis_en, d.hypothesis_zh) }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="callout">{{ t('No active divergences — signals and sector prices are broadly aligned right now.', '当前无活跃背离——信号与板块价格大体一致。') }}</div>
+  {% endif %}
+
+  <!-- ===== in line (silent) ===== -->
+  {% if radar.in_line %}
+  <h2 class="sec">🔇 {{ t('In line (silent)', '一致（静默）') }}</h2>
+  <p style="font-size:12px;color:var(--muted)">{{ t('Signal and price agree — confirming, no divergence edge.', '信号与价格一致——确认，无背离信号。') }}</p>
+  <div class="inline-list">
+    {% for d in radar.in_line %}<span class="ichip">{{ bl(d.signal_en, d.signal_zh) }} → {{ bl(d.sector_en, d.sector_zh) }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== ledger ===== -->
+  {% if ledger and ledger.n_total %}
+  <h2 class="sec">📒 {{ t('Falsification ledger', '证伪台账') }}</h2>
+  <div class="led-stat">
+    <span><b>{{ ledger.n_total }}</b> {{ t('logged', '已记录') }}</span>
+    <span><b>{{ ledger.n_resolved }}</b> {{ t('resolved', '已结') }}</span>
+    {% if ledger.hit_rate is not none %}<span><b>{{ (ledger.hit_rate*100)|round|int }}%</b> {{ t('held', '成立') }}</span>{% endif %}
+    <span>{{ ledger.n_open }} {{ t('open', '未结') }}</span>
+  </div>
+  {% if ledger.rows %}
+  <table class="data">
+    <thead><tr><th>{{ t('Fired', '触发') }}</th><th>{{ t('Signal → Sector', '信号→板块') }}</th><th>{{ t('Sign', '方向') }}</th><th>{{ t('Fwd rel', '后续相对') }}</th><th>{{ t('Status', '状态') }}</th></tr></thead>
+    <tbody>
+    {% for r in ledger.rows[:20] %}
+      <tr>
+        <td>{{ r.fired_date }}</td>
+        <td>{{ r.signal_key }} → {{ bl(r.sector_en, r.sector_en) }}</td>
+        <td>{{ t('Positive' if r.sign=='positive' else 'Negative', '正向' if r.sign=='positive' else '负向') }}</td>
+        <td>{% if r.fwd_rel is not none %}<span class="{{ 'r-pos' if r.fwd_rel>0 else 'r-neg' }}">{{ '%+.1f'|format(r.fwd_rel) }}%</span>{% else %}—{% endif %}</td>
+        <td class="b-{{ r.status }}">{{ t(r.status|capitalize, ({'hit':'命中','miss':'落空','open':'未结'}).get(r.status, r.status)) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+  {% else %}
+  <h2 class="sec">📒 {{ t('Falsification ledger', '证伪台账') }}</h2>
+  <div class="callout">{{ t('The ledger starts logging today’s divergences and scores each one ~3 months later — accountability accrues forward.', '台账从今日起记录背离，并在约3个月后逐一评分——问责随时间累积。') }}</div>
+  {% endif %}
+
+  <p class="disc">{{ bl(radar.disclaimer_en, radar.disclaimer_zh) }}</p>
+{% endif %}
+</div>
+{% endblock %}

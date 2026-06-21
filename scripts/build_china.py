@@ -806,7 +806,7 @@ def main() -> int:
             ("china news powerhouse", "scripts.build_china_news", "build"),
             ("china policy watch", "scripts.build_china_policy_watch", "build"),
             ("china alt-data desk", "scripts.build_china_altdata", "build"),
-            # ("china divergence radar", "scripts.build_china_radar", "build"),     # Phase 4
+            ("china divergence radar", "scripts.build_china_radar", "build"),
         ):
             try:
                 import importlib
