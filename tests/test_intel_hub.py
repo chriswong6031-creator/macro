@@ -309,14 +309,14 @@ def test_empty_bundle_has_v2_sections():
 def test_discovery_off_desk_injected_as_dossier():
     # OFF is not in any feeder facet → it only enters via the discovery feed
     b = _bundle({"INUNI": _news("pos")}, [_sig("INUNI", 70)])
-    disc = {"by_ticker": {"OFF": {"ticker": "OFF", "source": "federal_velocity",
-                                  "disc_score": 0.6, "off_desk": True, "reason": "fed $ accel"}},
-            "off_desk": [{"ticker": "OFF", "source": "federal_velocity", "disc_score": 0.6,
-                          "off_desk": True, "reason": "fed $ accel"}], "n_off_desk": 1}
+    cand = {"ticker": "OFF", "source": "federal_velocity", "disc_score": 0.6,
+            "off_desk": True, "reason": "fed $ accel"}
+    disc = {"by_ticker": {"OFF": cand}, "candidates": [cand], "off_desk": [cand],
+            "n": 1, "n_off_desk": 1}
     hub = H.build(b, None, {}, today=_TODAY, discovery=disc)
     off = next((d for d in hub["command"] if d["ticker"] == "OFF"), None)
     assert off is not None and off["stage"] == "discovery" and "discovery" in off["flags"]
-    assert "OFF" in [d["ticker"] for d in hub["discovery"]]
+    assert "OFF" in [d["ticker"] for d in hub["discovery"]]            # surfaced in the section
     assert hub["n_discovery"] >= 1 and hub["counts"]["discovery_off_desk"] == 1
 
 
@@ -340,10 +340,25 @@ def test_discovery_leg_haircut_on_extended_name():
     assert d["edge_remaining"] < 0.6                 # extended → discovery leg is haircut, no false 'room'
 
 
+def test_off_desk_injection_is_bounded():
+    # a large lagging-confirmer off-desk feed must NOT flood the command list
+    off = [{"ticker": f"OD{i:02d}", "source": "insider_cluster", "disc_score": 0.45,
+            "off_desk": True, "reason": f"{i} insiders bought"} for i in range(40)]
+    disc = {"by_ticker": {c["ticker"]: c for c in off}, "candidates": off, "off_desk": off,
+            "n": 40, "n_off_desk": 40}
+    b = _bundle({"NVDA": _news("pos")}, [_sig("NVDA", 85)],
+                [{"ticker": "NVDA", "state": "CONFIRMED_UP", "edge_score": 80}])
+    hub = H.build(b, None, {}, today=_TODAY, discovery=disc)
+    injected = [d for d in hub["command"] if d["stage"] == "discovery"]
+    assert len(injected) <= H._OFF_DESK_INJECT      # capped, not all 40
+    assert hub["counts"]["discovery_off_desk"] == 40  # the count still reports the true total
+
+
 def test_discovery_boosts_on_desk_name():
     # a name in the bundle with a weak facet gets a discovery boost + flag
-    disc = {"by_ticker": {"BIIB": {"ticker": "BIIB", "source": "radar_quiet", "disc_score": 0.55,
-                                   "off_desk": False, "reason": "phase3 + congress buy"}}}
+    cand = {"ticker": "BIIB", "source": "radar_quiet", "disc_score": 0.55,
+            "off_desk": False, "reason": "phase3 + congress buy"}
+    disc = {"by_ticker": {"BIIB": cand}, "candidates": [cand], "n": 1}
     base = _bundle({"BIIB": _news("neutral", n=0)})
     plain = H.build(base, None, {}, today=_TODAY)["command"][0]
     boosted = H.build(base, None, {}, today=_TODAY, discovery=disc)["command"][0]

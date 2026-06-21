@@ -82,6 +82,7 @@ _CATALYST_LIVE = {"Acquisitions", "Activist Campaigns", "Strategic Reviews", "Sp
                   "Going-Private", "Tender Offers", "Issuer Tenders", "Capital Returns",
                   "Restructuring", "Rights Offerings", "M&A / Divestitures", "Divestitures"}
 _CATALYST_FRESH_D = 45        # a catalyst older than this has been digested
+_OFF_DESK_INJECT = 12         # cap off-desk discovery names injected into the ranked command list
 
 
 def _clamp01(x: float) -> float:
@@ -615,9 +616,12 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     didx = (discovery or {}).get("by_ticker") or {}
 
     dossiers = [_dossier(t, v, pidx, vel, cidx.get(t), didx.get(t)) for t, v in tickers.items()]
-    # DISCOVERY: inject OFF-desk candidates (not in any feeder's universe) as their own dossiers
+    # DISCOVERY: inject OFF-desk candidates (not in any feeder's universe) as their own dossiers.
+    # Bound the injection to the strongest few (off_desk is disc-sorted) so a large lagging-
+    # confirmer feed (e.g. insider clusters) can't flood the ranked command list; the rest still
+    # live in the Discovery section via the candidate feed.
     off = [c for c in ((discovery or {}).get("off_desk") or [])
-           if (c.get("ticker") or "").upper() not in tickers]
+           if (c.get("ticker") or "").upper() not in tickers][:_OFF_DESK_INJECT]
     dossiers += [_discovery_dossier(c, cidx.get((c.get("ticker") or "").upper())) for c in off]
     _peer_confirm(dossiers)                              # 3rd-order: theme-wide vs isolated
     # V2 RANKING: opportunity = signal × edge-remaining × leading-gap. Tie-break on
@@ -630,8 +634,15 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     catalysts = sorted((d for d in dossiers if "catalyst" in d["flags"]),
                        key=lambda d: ((d.get("catalyst") or {}).get("days_since")
                                       if (d.get("catalyst") or {}).get("days_since") is not None else 9999))
-    discovery_list = sorted((d for d in dossiers if "discovery" in d["flags"]),
-                            key=lambda d: ((d.get("discovery") or {}).get("disc_score") or 0.0), reverse=True)
+    # DISCOVERY SECTION — the home for off-desk needles. Built DIRECTLY from the candidate feed
+    # (sorted by disc_score) so it surfaces the strongest discovery signals regardless of the
+    # command-injection cap; only the command LIST is bounded (above), never this section.
+    _dossier_by_t = {d["ticker"]: d for d in dossiers}
+    discovery_cands = (discovery or {}).get("candidates") or []
+    discovery_list = [{"ticker": c.get("ticker"), "discovery": c,
+                       "stage": (_dossier_by_t.get(c.get("ticker"), {}).get("stage") or "discovery")}
+                      for c in discovery_cands if c.get("ticker")]
+    n_discovery_total = (discovery or {}).get("n", len(discovery_list))
     early = [d for d in dossiers if {"early_edge", "stealth_accumulation"} & set(d["flags"])]
     crowded = [d for d in dossiers if "crowded_top" in d["flags"]]
     confirmed = [d for d in dossiers if "confirmed_trend" in d["flags"]]
@@ -660,9 +671,9 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
             "special": {"live": bool(cidx)},
         },
         "n_universe": len(dossiers), "n_actionable": n_actionable, "n_emerging": n_emerging,
-        "n_discovery": len(discovery_list),
+        "n_discovery": n_discovery_total,
         "counts": {"emerging": n_emerging, "early": n_early, "exhausted": len(exhausted),
-                   "catalyst": len(catalysts), "discovery": len(discovery_list),
+                   "catalyst": len(catalysts), "discovery": n_discovery_total,
                    "discovery_off_desk": (discovery or {}).get("n_off_desk", 0),
                    "early_edge": len(early), "crowded_top": len(crowded),
                    "confirmed": len(confirmed), "policy_conflict": len(policy_conflict),
@@ -675,7 +686,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
                         "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"]}
                        for d in dossiers],
-        "discovery": [_compact(d) for d in discovery_list[:14]],
+        "discovery": discovery_list[:14],
         "emerging": [_compact(d) for d in emerging_hero[:14]],
         "exhausted": [_compact(d) for d in exhausted[:12]],
         "catalysts": [_compact(d) for d in catalysts[:12]],

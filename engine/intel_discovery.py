@@ -26,6 +26,7 @@ scores or sizes; it republishes leading signals the hub was throwing away.
 from __future__ import annotations
 
 import logging
+import math
 from datetime import date, datetime, timezone
 
 from lib import config
@@ -190,9 +191,92 @@ def scan_federal_velocity(obligations, recent: int = 3, base: int = 6,
 
 
 # --------------------------------------------------------------------------- #
+# Feed 3 — insider opportunistic-cluster buying (a CONFIRMER, not an alpha)
+# --------------------------------------------------------------------------- #
+import re as _re
+
+_TICKER_OK = _re.compile(r"^[A-Z]{1,5}$")
+_JUNK_TICKERS = {"NONE", "NULL", "NA", "NAN", "TBD", "N"}     # SEC bulk-data sentinels, not tickers
+_ROLE_OFFICER, _ROLE_DIRECTOR, _ROLE_TENPCT = 1.0, 0.6, 0.4
+# insider clusters are a LAGGING confirmer (quarterly bulk panel) — capped well below the
+# leading feeds (radar_quiet up to ~0.9) so they surface in Discovery but never out-rank a lead.
+_INSIDER_CAP = 0.45
+
+
+def scan_insider_clusters(panel, recent_days: int = 90, min_buyers: int = 3,
+                          min_usd: float = 2.5e5) -> list[dict]:
+    """Clusters of DISTINCT insiders making OPEN-MARKET purchases (Form-4 code 'P', the
+    opportunistic/non-routine trade — grants and option-exercises are excluded), role-weighted.
+    The decomposed cluster (NOT naive net-$, which is folklore). HONEST CAVEAT: the bulk SEC
+    panel is quarterly and lags ~1 quarter, so this is a lagging CONFIRMER (capped score), never
+    a lead. panel = a DataFrame with columns ticker/trans_date/code/rptownercik/usd/is_officer/
+    is_director/is_tenpct. Degrades to [] without pandas/data."""
+    out: list[dict] = []
+    try:
+        import pandas as pd
+        if panel is None or getattr(panel, "empty", True):
+            return out
+        df = panel.copy()
+        df["trans_date"] = pd.to_datetime(df["trans_date"], errors="coerce")
+        mx = df["trans_date"].max()
+        if pd.isna(mx):
+            return out
+        buys = df[(df["code"] == "P") & (df["usd"] > 0)
+                  & (df["trans_date"] >= mx - pd.Timedelta(days=recent_days))]
+        if buys.empty:
+            return out
+        lag_days = None
+        try:
+            lag_days = int((pd.Timestamp(date.today()) - mx).days)
+        except Exception:  # noqa: BLE001
+            lag_days = None
+        for tk, g in buys.groupby("ticker"):
+          try:                                            # one bad group must not abort the scan
+            t = str(tk).upper().strip()
+            if not _TICKER_OK.match(t) or t in _JUNK_TICKERS:   # drop NONE / blanks / numeric junk
+                continue
+            opp_buyers = int(g["rptownercik"].nunique())
+            usd = float(g["usd"].sum())
+            if opp_buyers < min_buyers or usd < min_usd:
+                continue
+            officer_led = bool(g.get("is_officer").any()) if "is_officer" in g else False
+            breadth = _clamp01((opp_buyers - 2) / 6.0)
+            usd_score = _clamp01(math.log1p(usd) / math.log1p(5.0e6))
+            score = min(_INSIDER_CAP, 0.50 * breadth + 0.30 * (1.0 if officer_led else 0.6) + 0.20 * usd_score)
+            out.append({
+                "ticker": t, "source": "insider_cluster",
+                "disc_score": round(score, 3), "opp_buyers": opp_buyers,
+                "usd": round(usd, 0), "officer_led": officer_led, "lag_days": lag_days,
+                "reason": (f"{opp_buyers} insiders bought open-market"
+                           + (" (officer-led)" if officer_led else "")
+                           + (f" · {lag_days}d-lagged filing" if lag_days else "")),
+            })
+          except Exception:  # noqa: BLE001 — skip a malformed group, keep the good ones
+            continue
+        out.sort(key=lambda d: (d["disc_score"], d["opp_buyers"]), reverse=True)
+    except Exception as e:  # noqa: BLE001
+        log.debug("insider cluster scan failed (%s)", e)
+    return out
+
+
+def _read_insider_panel():
+    """Load the most-recent SEC insider panel quarters (the rich per-transaction Form-4 grid)."""
+    try:
+        import glob
+        import pandas as pd
+        files = sorted(glob.glob(str(config.ROOT / "data" / "sec_insider" / "panel" / "*.parquet")))
+        if not files:
+            return None
+        return pd.concat([pd.read_parquet(f) for f in files[-2:]], ignore_index=True)
+    except Exception as e:  # noqa: BLE001
+        log.debug("insider panel read failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # build — merge feeds, mark which candidates are OFF-desk (not in the hub universe)
 # --------------------------------------------------------------------------- #
-def build(radar_tickers: list | None, obligations=None,
+def build(radar_tickers: list | None, obligations=None, insider=None,
           bundle_universe: set | None = None, today: date | None = None) -> dict:
     """Scan the leading feeds and return discovery candidates keyed by ticker, each tagged
     off_desk (not already in the hub's bundle universe) or on_desk (a corroborating boost).
@@ -201,9 +285,10 @@ def build(radar_tickers: list | None, obligations=None,
     universe = {(t or "").upper() for t in (bundle_universe or set())}
     quiet = scan_radar_quiet(radar_tickers)
     fed = scan_federal_velocity(obligations)
+    ins = scan_insider_clusters(insider)
 
     by_ticker: dict[str, dict] = {}
-    for c in quiet + fed:
+    for c in quiet + fed + ins:
         t = c["ticker"]
         if not t:
             continue
@@ -212,7 +297,11 @@ def build(radar_tickers: list | None, obligations=None,
             by_ticker[t] = {**c, "off_desk": t not in universe}
         else:                                            # keep the best, note the 2nd source
             cur.setdefault("also", []).append(c["source"])
-    cands = sorted(by_ticker.values(), key=lambda d: d["disc_score"], reverse=True)
+    # secondary magnitude key so ties at a capped disc_score (esp. insider 0.45) keep the
+    # STRONGEST by breadth/$/channels, not an arbitrary alphabetical subset at the cap boundary
+    def _mag(d):
+        return d.get("opp_buyers") or d.get("recent_usd") or d.get("n_channels") or 0
+    cands = sorted(by_ticker.values(), key=lambda d: (d["disc_score"], _mag(d)), reverse=True)
     off_desk = [c for c in cands if c["off_desk"]]
     return {
         "schema": SCHEMA, "is_context_only": True, "as_of": today.isoformat(),
@@ -221,7 +310,8 @@ def build(radar_tickers: list | None, obligations=None,
         "candidates": cands,
         "off_desk": off_desk,
         "n": len(cands), "n_off_desk": len(off_desk),
-        "sources": {"radar_quiet": len(quiet), "federal_velocity": len(fed)},
+        "sources": {"radar_quiet": len(quiet), "federal_velocity": len(fed),
+                    "insider_cluster": len(ins)},
     }
 
 
@@ -245,4 +335,4 @@ def load_and_build(bundle_universe: set | None = None, today: date | None = None
             radar = (json.loads(p.read_text()) or {}).get("tickers")
     except Exception as e:  # noqa: BLE001
         log.warning("intel_discovery: radar read failed (%s)", e)
-    return build(radar, _read_obligations(), bundle_universe, today)
+    return build(radar, _read_obligations(), _read_insider_panel(), bundle_universe, today)
