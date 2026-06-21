@@ -68,7 +68,6 @@ LEGACY_LITERAL_NTRIALS = frozenset({
     "scripts/sue_insider_deep_phase0.py",
     "scripts/thematic_rotation_phase0.py",
     "scripts/top_picks_phase0.py",
-    "scripts/tsmom_phase0.py",
     "scripts/turn_of_month_phase0.py",
     "scripts/value_growth_phase0.py",
 })

@@ -44,6 +44,7 @@ from engine.validation import (  # noqa: E402
     block_bootstrap_ci, purged_folds, _maxdd, _sharpe,
 )
 from lib import store  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 # asset -> (yahoo store key, class). 4 classes = real diversification.
 ASSETS: dict[str, tuple[str, str]] = {
@@ -70,6 +71,7 @@ SPLIT = "2012-01-01"
 # the lookbacks we TRY -> the honest DSR trial count
 GRID = {"3m": (63, 0), "6m": (126, 0), "12m": (252, 0), "12-1m": (252, 21)}
 HEADLINE = "12-1m"
+BLEND_WEIGHTS = (0.10, 0.15, 0.20, 0.30)   # overlay weights tried -> part of the DSR family
 CRISES = [("2008 GFC", "2008-09-01", "2009-03-31"),
           ("2018Q4", "2018-10-01", "2018-12-31"),
           ("2020 COVID", "2020-02-19", "2020-03-31"),
@@ -127,6 +129,19 @@ def fmt(label: str, m: dict, w: int = 24) -> str:
 
 def main() -> None:
     px = load_px()
+
+    # Honest multiple-testing budget: log every config tried AT GENERATION, so each DSR
+    # haircut below reads its N from the Trial Ledger instead of a hand-kept literal that
+    # can silently desync from the grid (P3 keystone; research/SELF_IMPROVING_AI_SUITE.md).
+    # Counts are identical to the old literals (sleeve=len(GRID)=4, overlay=4x4=16) — the
+    # win is that they are now machine-derived, persisted, and auditable.
+    led = TrialLedger()
+    _cutoff = str(px.index.max().date())
+    led.log_grid([{"lookback": nm, "lb": lb, "skip": skip} for nm, (lb, skip) in GRID.items()],
+                 family="tsmom_diversified_sleeve", info_cutoff=_cutoff, source="tsmom_lookback_grid")
+    led.log_grid([{"lookback": nm, "blend_w": w} for nm in GRID for w in BLEND_WEIGHTS],
+                 family="tsmom_diversified_overlay", info_cutoff=_cutoff, source="tsmom_lookback_x_blend")
+
     print("=" * 96)
     print("DIVERSIFIED CROSS-ASSET TSMOM — Phase-0 (READ-ONLY)")
     print(f"  universe: {', '.join(px.columns)}  ({px.index.min().date()}..{px.index.max().date()})")
@@ -153,11 +168,13 @@ def main() -> None:
     pm = metrics(port)
 
     # deflated sharpe (multiple-testing over the lookbacks tried) -----------
-    print("\n### DEFLATED SHARPE — headline %s, n_trials=%d (the lookbacks tried)" % (HEADLINE, len(GRID)))
+    print("\n### DEFLATED SHARPE — headline %s, n_trials=%d (the lookbacks tried, from the ledger)"
+          % (HEADLINE, led.effective_n("tsmom_diversified_sleeve")))
     mom = ret_moments(port)
     if mom:
         sr_d, sk, ku, n = mom
-        d = deflated_sharpe(sr_d, sk, ku, n, n_trials=len(GRID), trading_year=ANN)
+        d = deflated_sharpe(sr_d, sk, ku, n, ledger=led, family="tsmom_diversified_sleeve",
+                            trading_year=ANN)
         if d:
             print(f"  SR(annual)={d['sr_annual']:+.2f}  SR0(annual,haircut)={d['sr0_annual']:+.2f}  "
                   f"skew={d['skew']:+.2f}  kurt={d['kurt']:.1f}  T={d['T']}")
@@ -193,7 +210,7 @@ def main() -> None:
     base = sixty40.loc[START:]
     print(fmt("60/40 alone", metrics(base)))
     best = None
-    for w in (0.10, 0.15, 0.20, 0.30):
+    for w in BLEND_WEIGHTS:
         comb = ((1 - w) * base.reindex(port.index) + w * port).dropna()
         cm = metrics(comb)
         print(fmt(f"60/40 + {int(w * 100)}% TSMOM", cm))
@@ -202,7 +219,8 @@ def main() -> None:
     mom2 = ret_moments(best[2])
     if mom2:
         sr_d, sk, ku, n = mom2
-        d2 = deflated_sharpe(sr_d, sk, ku, n, n_trials=len(GRID) * 4, trading_year=ANN)
+        d2 = deflated_sharpe(sr_d, sk, ku, n, ledger=led, family="tsmom_diversified_overlay",
+                             trading_year=ANN)
         if d2:
             ci2 = block_bootstrap_ci(best[2], block=21, B=5000, ann=ANN)
             print(f"  best blend = 60/40 + {int(best[0] * 100)}% TSMOM:  Sharpe={best[1]['sharpe']:+.2f} "
