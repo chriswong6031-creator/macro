@@ -10,7 +10,9 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pipeline
+  # Serialized batch lane shared with backfill / special-sits-backfill. daily has its own
+  # "pipeline-daily" lane, so weekly never blocks (and is never blocked by) the daily refresh.
+  group: pipeline-batch
   cancel-in-progress: false
 
 jobs:

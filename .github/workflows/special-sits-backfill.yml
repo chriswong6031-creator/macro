@@ -1,7 +1,8 @@
 name: special-sits-backfill
 # Roadmap Tier-2.2: burn down the ~23k-deferred Special-Situations backlog faster than the
-# bounded daily build can, and refresh the category x stage backtest priors. Self-contained
-# (does not touch the daily/weekly pipelines). Manual, or a modest weekly cron.
+# bounded daily build can, and refresh the category x stage backtest priors. Runs in the
+# serialized batch lane (with backfill/weekly) — NOT the daily lane — so this long job can
+# never starve the daily data refresh. Manual, or a modest weekly cron.
 on:
   workflow_dispatch:
     inputs:
@@ -16,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: pipeline            # share the lane with daily/weekly so commits never race
+  group: pipeline-batch      # serialized with backfill/weekly; daily has its own lane now
   cancel-in-progress: false
 
 jobs:
@@ -57,5 +58,16 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/special_situations site/special_situations.html site/allocationdata/special_situations.json data/regime/special_situations_latest.json
-          git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)" || echo "nothing to commit"
-          git push || echo "nothing to push"
+          if git diff --cached --quiet; then echo "no special-sits changes to commit"; exit 0; fi
+          git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)"
+          # best-effort push: daily now runs in its own lane and may push concurrently.
+          # The old `git push || echo` SILENTLY DROPPED this commit on a lost race — retry
+          # rebase+push instead, preferring our freshly-enriched store on conflict.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed special-sits on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "special-sits push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push special-sits after 5 attempts (non-fatal)"
