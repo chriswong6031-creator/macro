@@ -151,8 +151,12 @@ def _dsr_gate(spread_pct_series: list, horizon: int, rebal: int, n_trials: int) 
     sr = _sharpe(ls, int(round(ppy)))                         # annualized
     sr_period = float(np.mean(ls) / np.std(ls)) if np.std(ls) else float("nan")
     s = pd.Series(ls)
+    # honest-N via an ephemeral declared-budget ledger (effective_n == max(2, n_trials),
+    # the computed leg count) instead of a bare literal — same haircut, ratchet-clean.
+    from engine.trial_ledger import TrialLedger
+    _led = TrialLedger.with_declared_budget(max(2, n_trials), "backtest_strategies")
     dsr = deflated_sharpe(sr_period, float(s.skew()), float(s.kurt() + 3.0),
-                          len(ls), max(2, n_trials))
+                          len(ls), ledger=_led, family="backtest_strategies")
     dval = dsr.get("dsr") if isinstance(dsr, dict) else (dsr if dsr is not None else None)
     return {"dsr": round(float(dval), 3) if dval is not None else None,
             "ls_sharpe": round(sr, 2), "ls_maxdd": round(100 * _maxdd(ls), 1),
