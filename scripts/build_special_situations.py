@@ -93,13 +93,17 @@ def build(refresh: bool = True) -> str:
     if refresh:
         from collectors import special_situations as col
         from collectors import special_news as colnews
+        from lib import config as _config
+        ss = _config.load().get("special_situations", {}) or {}
         try:
-            col.fetch_events()        # sweep new daily-index dates (bounded by watermark)
-            col.enrich_text()         # cheap keyword pre-filter on deferred filings (cached)
-            col.enrich_filers()       # P3.2 reporting-person from 13D cover pages (deterministic, no key)
-            col.enrich_classify()     # P1.1 LLM-verify deferred filings: category/role/terms (gated; no-op without key)
-            col.enrich_summaries()    # 88-word summary (+ deal terms, activist filer) for structured situations (gated)
-            colnews.fetch_news_situations()  # P2.1 newswire form-absent categories (gated; no-op when off)
+            col.fetch_events()                                   # sweep new daily-index dates (bounded by watermark)
+            # bounded per-build slices so one run can never stall the whole engine job;
+            # progress persists in events.parquet, so the backlog converges over days.
+            col.enrich_text(limit=int(ss.get("text_per_build", 1500)))       # keyword pre-filter (cached)
+            col.enrich_filers(limit=int(ss.get("filer_per_build", 250)))     # P3.2 13D cover-page reporting person
+            col.enrich_classify(limit=int(ss.get("classify_per_build", 150)))  # P1.1 LLM-verify (gated; no-op w/o key)
+            col.enrich_summaries(limit=int(ss.get("summary_per_build", 200)))  # P1.3 LLM summary (gated; no-op w/o key)
+            colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated; off)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 
