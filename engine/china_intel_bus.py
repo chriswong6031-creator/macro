@@ -22,7 +22,7 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "china_intel.briefing.v2"
+SCHEMA = "china_intel.briefing.v3"
 MAX_STALE_OK = 35
 
 DISCLAIMER = (
@@ -164,6 +164,39 @@ def _radar_block() -> dict | None:
     }
 
 
+def _regime_block() -> dict | None:
+    """RORO / risk-appetite overlay from china_regime/latest.json (the conditions consolidation)."""
+    c = _read_json("data/china_regime/latest.json")
+    if not isinstance(c, dict):
+        return None
+    fe = c.get("fear_euphoria") or {}
+    cond = c.get("conditions") or {}
+    roro = fe.get("roro")
+    if roro is None:
+        roro = (cond.get("roro") or {}).get("roro")
+    if roro is None and not fe:
+        return None
+    rt = 1 if (isinstance(roro, (int, float)) and roro > 0.15) else (-1 if (isinstance(roro, (int, float)) and roro < -0.15) else 0)
+    return {"roro": roro, "roro_state": fe.get("roro_state") or (cond.get("roro") or {}).get("roro_state"),
+            "fe_score": fe.get("fe_score"), "band_en": fe.get("band"), "band_zh": fe.get("band_zh"),
+            "risk_tilt": rt}
+
+
+def _discovery_block() -> dict | None:
+    """Off-desk leading accumulation (china_discovery, in-process). Bounded, context-only."""
+    try:
+        from engine import china_discovery
+        d = china_discovery.build()
+        if not isinstance(d, dict):
+            return None
+        cands = d.get("candidates") or []
+        return {"n": d.get("n"), "n_off_desk": d.get("n_off_desk"),
+                "sources": d.get("sources"), "top": cands[:12]}
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_intel_bus: discovery block failed (%s)", e)
+        return None
+
+
 def _analysis_block() -> dict | None:
     a = _read_json("china_intel_analysis/analysis.json")
     if not isinstance(a, dict):
@@ -263,11 +296,13 @@ def briefing(asof: date | str | None = None) -> dict:
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "asof": str(asof) if asof else str(date.today()),
         "news": None, "policy": None, "altdata": None, "radar": None, "analysis": None,
+        "regime": None, "discovery": None,
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
                     ("altdata", _altdata_block), ("radar", _radar_block),
-                    ("analysis", _analysis_block)):
+                    ("analysis", _analysis_block), ("regime", _regime_block),
+                    ("discovery", _discovery_block)):
         try:
             b[key] = fn()
         except Exception as e:  # noqa: BLE001
@@ -300,7 +335,7 @@ def build() -> dict | None:
              "surfaces_present": b["surfaces_present"],
              "max_staleness_days": b["max_staleness_days"], "text": b["digest"]},
             ensure_ascii=False, separators=(",", ":"), default=str))
-        log.info("china_intel_bus: wrote briefing v2 (%d surfaces, %d conviction)",
+        log.info("china_intel_bus: wrote briefing v3 (%d surfaces, %d conviction)",
                  len(b["surfaces_present"]), len(b["conviction"]))
         return b
     except Exception as e:  # noqa: BLE001
