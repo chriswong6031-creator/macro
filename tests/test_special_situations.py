@@ -218,6 +218,18 @@ def test_apply_floor():
     assert sse.apply_floor(None, 100) is None         # unknown mc kept & flagged
 
 
+def test_passes_floor_confidence_gate():
+    # >= $100M always passes; unknown mc kept
+    assert sse.passes_floor(150.0, "low") is True
+    assert sse.passes_floor(None, "low") is True
+    # $25M-$100M: only HIGH confidence passes (structured/LLM-verified/digest)
+    assert sse.passes_floor(40.0, "high") is True
+    assert sse.passes_floor(40.0, "low") is False
+    assert sse.passes_floor(40.0, "medium") is False
+    # below the relaxed floor: dropped even at high confidence
+    assert sse.passes_floor(10.0, "high") is False
+
+
 def test_cross_border():
     import pandas as pd
     assert sse._is_cross_border(pd.Series({"form_type": "6-K"})) is True

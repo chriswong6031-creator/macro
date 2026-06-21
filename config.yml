@@ -4017,6 +4017,9 @@ special_situations:                # event-driven Special Situations desk (displ
   retries: 3
   backfill_days: 7                 # on first run / large gap, how many days of daily-index to sweep
   market_cap_floor_musd: 100       # keep covered companies >= $100M (decision 2026-06-20)
+  market_cap_floor_high_conf_musd: 25  # relaxed floor for HIGH-confidence situations only
+                                       # (structured/LLM-verified/digest) — captures the
+                                       # small-cap activist/take-private niche (decision 2026-06-21)
   eight_k_items:                   # special-situations 8-K items (others discarded)
     ["1.01", "1.02", "1.03", "2.01", "3.01", "5.02", "8.01"]
   # LLM 88-word summary touchpoint — ON (DeepSeek; key via DEEPSEEK_API_KEY secret).
@@ -4037,6 +4040,11 @@ special_situations:                # event-driven Special Situations desk (displ
   summary_per_build: 200           # P1.3 LLM summary calls per build
   filer_per_build: 250             # P3.2 13D cover-page fetches per build
   # P2.1 newswire lane — catches the form-absent categories (Strategic Reviews, Capital
-  # Returns, Deal Terminations, Divestitures) from quality wires. OFF until CI-verified;
-  # display-only, low-confidence, explicit-ticker items only.
-  newswire: false
+  # Returns, Deal Terminations, Divestitures) from quality wires. display-only,
+  # low-confidence, explicit-ticker items only.
+  newswire: true
+  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX), the cheap English/structured
+  # slice of the non-US moat, via news_rss + the intl classifier. OFF until CI-verified;
+  # display-only, low-confidence, exchange-tagged tickers only. (Japan/HK/Korea = later.)
+  intl_uk: false
+  intl_canada: false
