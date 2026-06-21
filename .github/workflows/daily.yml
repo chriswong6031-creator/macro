@@ -102,7 +102,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 70     # moving the ~22m factor-series walk to its own job (below) helped, but the ~15 remaining sequential builders still stretch to ~40m+ on congested 2-core runners (measured engine=42m on a heavily-loaded runner) — so the cap needs real headroom or the job gets cancelled mid-build. residual-alpha measured ~1s (never the bottleneck the old comment guessed). Follow-up to genuinely speed this up: parallelise the regional dashboard builders.
+    timeout-minutes: 120    # was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 120m gives real headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). Real speedup follow-up: parallelise the regional dashboard builders.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -578,6 +578,7 @@ jobs:
         # only, never read back into a score; the script always exits 0.
         run: python -m scripts.archive_signals || true
       - name: commit engine outputs
+        if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
