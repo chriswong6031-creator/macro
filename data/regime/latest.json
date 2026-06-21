@@ -409,7 +409,7 @@
     "asof": "2026-06-17",
     "tone_score": 0.1,
     "guidance_direction": "on_hold",
-    "risk_delta": 0.2,
+    "risk_delta": 0.0,
     "shock_reversible": "unknown",
     "confidence": "medium",
     "confidence_gated": false,
@@ -417,15 +417,11 @@
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "Inflation remains elevated relative to the Committee's 2 percent goal"
+        "quote_span": "inflation remains elevated"
       },
       {
         "field": "guidance_direction",
-        "quote_span": "maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
-      },
-      {
-        "field": "risk_delta",
-        "quote_span": "elevated uncertainty that owes, in part, to the conflict in the Middle East"
+        "quote_span": "maintain the target range"
       }
     ],
     "degraded_reason": null,
@@ -930,7 +926,7 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-21T01:04:50.530567+00:00",
+    "built": "2026-06-21T03:40:21.981600+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,

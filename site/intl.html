@@ -69,6 +69,18 @@
   .lad { display:inline-block; padding:2px 8px; border-radius:9px; font-weight:700; font-size:11px;
          background:color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel)); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text)); }
   .lad.up { --c:var(--up); } .lad.down { --c:var(--down); } .lad.flat { --c:var(--muted); }
+  /* volatility black hole chip + forward-cone honesty note on each standout card (China-parity) */
+  .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:5px; }
+  .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
+              color:var(--muted); white-space:nowrap; }
+  .vf-coil { color:var(--link); border-color:color-mix(in srgb,var(--link) 38%,var(--line));
+             background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
+  .vf-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .vf-down { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .vf-exp { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .nb-note { font-size:8.5px; line-height:1.3; margin-top:4px; padding:2px 5px; border-radius:6px;
+             color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
   table.sb { border-collapse:collapse; width:100%; font-size:12.5px; }
   table.sb th, table.sb td { padding:5px 9px; border-bottom:1px solid var(--line); text-align:right; }
   table.sb td.l, table.sb th.l { text-align:left; } table.sb th { color:var(--muted); font-weight:600; }
@@ -274,6 +286,7 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
         <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
         <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
@@ -340,7 +353,7 @@
     <div class="kpi"><div class="k"><span class="l-en">Avg correlation</span><span class="l-zh">平均相关性</span></div>
       <div class="v">0.55</div><div class="s"><span class="l-en">cross-market, USD</span><span class="l-zh">跨市场，美元</span></div></div>
   </div>
-  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-19 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-21 01:43 UTC · <span class="l-en">display-only / descriptive — nothing here is a scored buy/sell</span><span class="l-zh">仅供展示 / 描述性 — 此处无评分买卖</span>
+  <p class="caveat" style="margin-top:13px"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-19 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-21 04:20 UTC · <span class="l-en">display-only / descriptive — nothing here is a scored buy/sell</span><span class="l-zh">仅供展示 / 描述性 — 此处无评分买卖</span>
     · <a href="intl_stocks.html" style="color:var(--link);font-weight:700"><span class="l-en">Stock dashboard</span><span class="l-zh">股票看板</span> →</a></p>
 </div>
 

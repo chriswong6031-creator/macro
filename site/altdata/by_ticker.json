@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-06-21",
-  "generated_utc": "2026-06-21T01:49:45.925169+00:00",
+  "generated_utc": "2026-06-21T04:26:15.711439+00:00",
   "n_tickers": 396,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -350,7 +350,7 @@
       "hf_downloads_30d": 29861360.0,
       "opt_vol_oi": 0.225,
       "opt_put_call": 0.42,
-      "github_stars": 186572,
+      "github_stars": 186574,
       "congress_position_usd": 42813000.0,
       "convergence_score": 6,
       "trump_linked": true,
@@ -945,11 +945,10 @@
         "13f_add",
         "affiliation",
         "darkpool_accum",
-        "github_momentum",
         "patent_cluster",
         "retail_buzz"
       ],
-      "weighted_score": 2.3,
+      "weighted_score": 2.0,
       "dpi": 0.292,
       "dpi_lean": "accumulation",
       "patents": 20,
@@ -957,9 +956,9 @@
       "hf_downloads_30d": 27830337.0,
       "opt_vol_oi": 0.228,
       "opt_put_call": 0.47,
-      "github_stars": 17434,
+      "github_stars": 17433,
       "congress_position_usd": 6714000.0,
-      "convergence_score": 6,
+      "convergence_score": 5,
       "trump_linked": false,
       "affiliated": true
     },
@@ -1028,7 +1027,7 @@
       "app_rating": 4.71,
       "app_reviews": 25567090,
       "hf_downloads_30d": 200035542.0,
-      "github_stars": 195783,
+      "github_stars": 195782,
       "congress_position_usd": 10576000.0,
       "convergence_score": 4,
       "trump_linked": false,
@@ -1422,7 +1421,7 @@
       "hf_downloads_30d": 88207080.0,
       "opt_vol_oi": 0.175,
       "opt_put_call": 0.59,
-      "github_stars": 245963,
+      "github_stars": 245966,
       "convergence_score": 3,
       "trump_linked": true,
       "affiliated": true
@@ -1993,14 +1992,15 @@
     "IBM": {
       "ticker": "IBM",
       "channels": [
+        "github_momentum",
         "patent_cluster"
       ],
-      "weighted_score": 0.4,
+      "weighted_score": 0.7,
       "patents": 39,
       "hf_downloads_30d": 10264637.0,
-      "github_stars": 7506,
+      "github_stars": 7507,
       "congress_position_usd": 1936000.0,
-      "convergence_score": 1,
+      "convergence_score": 2,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2532,6 +2532,28 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "NET": {
+      "ticker": "NET",
+      "channels": [
+        "github_momentum"
+      ],
+      "weighted_score": 0.3,
+      "github_stars": 14577,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "U": {
+      "ticker": "U",
+      "channels": [
+        "github_momentum"
+      ],
+      "weighted_score": 0.3,
+      "github_stars": 19496,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "ESTC": {
       "ticker": "ESTC",
       "channels": [],
@@ -2545,7 +2567,7 @@
       "ticker": "GTLB",
       "channels": [],
       "weighted_score": 0,
-      "github_stars": 24454,
+      "github_stars": 24455,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -2555,15 +2577,6 @@
       "channels": [],
       "weighted_score": 0,
       "github_stars": 28377,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "NET": {
-      "ticker": "NET",
-      "channels": [],
-      "weighted_score": 0,
-      "github_stars": 14576,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -2591,15 +2604,6 @@
       "channels": [],
       "weighted_score": 0,
       "github_stars": 2064,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "U": {
-      "ticker": "U",
-      "channels": [],
-      "weighted_score": 0,
-      "github_stars": 19495,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false

@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-21T01:49:40.261292+00:00",
+  "generated_utc": "2026-06-21T04:26:09.543348+00:00",
   "as_of": "2026-06-21",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4460,9 +4460,189 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 57,
-      "last_seen": "2026-06-20",
+      "rows": 77,
+      "last_seen": "2026-06-21",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Daniel+S.+Goldman+Made+an+Estimated+%24481.2K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Daniel S. Goldman Made an Estimated $481.2K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Daniel S. Goldman</strong> made <strong>$481.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Daniel S. Goldman Net Worth<\u2026",
+          "image": "https://www.quiverquant.com/images/G000599_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Robert+Bresnahan+Lost+an+Estimated+%24471.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Robert Bresnahan Lost an Estimated $471.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Robert Bresnahan</strong> lost <strong>$471.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Robert Bresnahan Net Worth</h\u2026",
+          "image": "https://www.quiverquant.com/images/B001327_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Rick+Scott+Lost+an+Estimated+%244.2M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator Rick Scott Lost an Estimated $4.2M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Rick Scott</strong> lost <strong>$4.2M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Rick Scott Net Worth</h2><p>Quiver Quantitative est\u2026",
+          "image": "https://www.quiverquant.com/images/S001217_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Pete+Ricketts+Made+an+Estimated+%243.1M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator Pete Ricketts Made an Estimated $3.1M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Pete Ricketts</strong> made <strong>$3.1M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Pete Ricketts Net Worth</h2><p>Quiver Quantitati\u2026",
+          "image": "https://www.quiverquant.com/images/R000618_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Sara+Jacobs+Made+an+Estimated+%242.4M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Sara Jacobs Made an Estimated $2.4M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Sara Jacobs</strong> made <strong>$2.4M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Sara Jacobs Net Worth</h2><p>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/J000305_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+John+W.+Rose+Made+an+Estimated+%24292.2K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative John W. Rose Made an Estimated $292.2K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative John W. Rose</strong> made <strong>$292.2K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative John W. Rose Net Worth</h2><p>Qui\u2026",
+          "image": "https://www.quiverquant.com/images/R000612_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Jefferson+Shreve+Lost+an+Estimated+%24463.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Jefferson Shreve Lost an Estimated $463.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Jefferson Shreve</strong> lost <strong>$463.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Jefferson Shreve Net Worth</h\u2026",
+          "image": "https://www.quiverquant.com/images/S001229_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Marjorie+Taylor+Greene+Made+an+Estimated+%24204.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Marjorie Taylor Greene Made an Estimated $204.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Marjorie Taylor Greene</strong> made <strong>$204.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Marjorie Taylor Greene \u2026",
+          "image": "https://www.quiverquant.com/images/G000596_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Angus+S.+King+Jr.+Made+an+Estimated+%24213.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator Angus S. King Jr. Made an Estimated $213.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Angus S. King Jr.</strong> made <strong>$213.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Angus S. King Jr. Net Worth</h2><p>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/K000383_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ted+Cruz+Made+an+Estimated+%24540.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator Ted Cruz Made an Estimated $540.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Ted Cruz</strong> made <strong>$540.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Ted Cruz Net Worth</h2><p>Quiver Quantitative estim\u2026",
+          "image": "https://www.quiverquant.com/images/C001098_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+David+McCormick+Lost+an+Estimated+%241.5M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator David McCormick Lost an Estimated $1.5M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator David McCormick</strong> lost <strong>$1.5M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator David McCormick Net Worth</h2><p>Quiver Quanti\u2026",
+          "image": "https://www.quiverquant.com/images/M001243_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Kevin+Hern+Lost+an+Estimated+%24605.7K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Kevin Hern Lost an Estimated $605.7K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Kevin Hern</strong> lost <strong>$605.7K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Kevin Hern Net Worth</h2><p>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/H001082_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Josh+Gottheimer+Lost+an+Estimated+%241.0M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Josh Gottheimer Lost an Estimated $1.0M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Josh Gottheimer</strong> lost <strong>$1.0M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Josh Gottheimer Net Worth</h2><p\u2026",
+          "image": "https://www.quiverquant.com/images/G000583_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Dan+Sullivan+Made+an+Estimated+%24300.9K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator Dan Sullivan Made an Estimated $300.9K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Dan Sullivan</strong> made <strong>$300.9K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Dan Sullivan Net Worth</h2><p>Quiver Quantitati\u2026",
+          "image": "https://www.quiverquant.com/images/S001198_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Craig+Goldman+Lost+an+Estimated+%24483.3K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Craig Goldman Lost an Estimated $483.3K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Craig Goldman</strong> lost <strong>$483.3K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Craig Goldman Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/G000601_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Brad+Knott+Lost+an+Estimated+%241.2M+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Brad Knott Lost an Estimated $1.2M in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Brad Knott</strong> lost <strong>$1.2M</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Brad Knott Net Worth</h2><p>Quiver Qu\u2026",
+          "image": "https://www.quiverquant.com/images/K000405_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+George+Whitesides+Made+an+Estimated+%24533.4K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative George Whitesides Made an Estimated $533.4K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative George Whitesides</strong> made <strong>$533.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative George Whitesides Net Worth<\u2026",
+          "image": "https://www.quiverquant.com/images/W000830_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Peter+Welch+Made+an+Estimated+%24200.0K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator Peter Welch Made an Estimated $200.0K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator Peter Welch</strong> made <strong>$200.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator Peter Welch Net Worth</h2><p>Quiver Quantitative\u2026",
+          "image": "https://www.quiverquant.com/images/W000800_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+Kennedy+Made+an+Estimated+%24209.4K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Senator John Kennedy Made an Estimated $209.4K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Senator John Kennedy</strong> made <strong>$209.4K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Senator John Kennedy Net Worth</h2><p>Quiver Quantitati\u2026",
+          "image": "https://www.quiverquant.com/images/K000393_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Shri+Thanedar+Lost+an+Estimated+%24581.0K+in+the+Stock+Market+Last+Month",
+          "time": "2026-06-21 03:00:48",
+          "headline": "Net Worth Update: Representative Shri Thanedar Lost an Estimated $581.0K in the Stock Market Last Month",
+          "category": "congress_trades_automated",
+          "summary": "<p><strong>Representative Shri Thanedar</strong> lost <strong>$581.0K</strong> in the stock market last month, per Quiver Quantitative's live net worth estimates.</p><h2>Representative Shri Thanedar Net Worth</h2><p>Q\u2026",
+          "image": "https://www.quiverquant.com/images/T000488_congress.png",
+          "_first_seen": "2026-06-21T03:34:27.310303+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Steve+Scalise+Discusses+GOP+Agenda+in+Fox+Business+Interview",
           "time": "2026-06-20 18:19:56",
@@ -4470,87 +4650,6 @@
           "category": "legislation_automated",
           "summary": "<p>Scalise\u2019s statement touts Republican economic, election, and security priorities while criticizing Democrats and praising Trump\u2019s Middle East peace efforts.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><\u2026",
           "image": "https://www.quiverquant.com/images/S001176_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Earl+L.+%22Buddy%22+Carter+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Earl L. \"Buddy\" Carter has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Earl L. \"Buddy\" Carter has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed incl\u2026",
-          "image": "https://www.quiverquant.com/images/C001103_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Debbie+Dingell+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Debbie Dingell has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Debbie Dingell has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p>\u2026",
-          "image": "https://www.quiverquant.com/images/D000624_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Mark+DeSaulnier+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Mark DeSaulnier has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Mark DeSaulnier has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
-          "image": "https://www.quiverquant.com/images/D000623_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+J.+Luis+Correa+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative J. Luis Correa has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative J. Luis Correa has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p>\u2026",
-          "image": "https://www.quiverquant.com/images/C001110_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Mario+Diaz-Balart+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Mario Diaz-Balart has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Mario Diaz-Balart has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:<\u2026",
-          "image": "https://www.quiverquant.com/images/D000600_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Suzan+K.+DelBene+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Suzan K. DelBene has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Suzan K. DelBene has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</\u2026",
-          "image": "https://www.quiverquant.com/images/D000617_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Hakeem+S.+Jeffries+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Hakeem S. Jeffries has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Hakeem S. Jeffries has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:\u2026",
-          "image": "https://www.quiverquant.com/images/J000294_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Monica+De+La+Cruz+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Monica De La Cruz has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Monica De La Cruz has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:<\u2026",
-          "image": "https://www.quiverquant.com/images/D000594_congress.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Representative+Donald+G.+Davis+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
-          "time": "2026-06-20 18:10:11",
-          "headline": "Representative Donald G. Davis has filed a new financial disclosure - here\u2019s what we see",
-          "category": "congress_trades_automated",
-          "summary": "<p>Representative Donald G. Davis has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
-          "image": "https://www.quiverquant.com/images/D000230_congress.png",
           "_first_seen": "2026-06-21T00:57:44.971196+00:00"
         },
         {
@@ -4563,129 +4662,30 @@
           "_first_seen": "2026-06-21T00:57:44.971196+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/C3.ai+Stock+%28AI%29+Opinions+on+Short+Interest+Dynamics",
-          "time": "2026-06-20 17:33:11",
-          "headline": "C3.ai Stock (AI) Opinions on Short Interest Dynamics",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Short Interest Alert:</strong> Social media chatter has intensified around elevated short positions in C3.ai, with reports noting short interest surpassing active longs at a 0\u2026",
-          "image": "https://www.quiverquant.com/images/ai_rect_new.png",
+          "url": "https://www.quiverquant.com/news/Representative+Donald+G.+Davis+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-06-20 18:10:11",
+          "headline": "Representative Donald G. Davis has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Donald G. Davis has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</p\u2026",
+          "image": "https://www.quiverquant.com/images/D000230_congress.png",
           "_first_seen": "2026-06-21T00:57:44.971196+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Eli+Lilly+Stock+%28LLY%29+Opinions+on+Pipeline+Expansions+and+Regulatory+Risks",
-          "time": "2026-06-20 17:33:11",
-          "headline": "Eli Lilly Stock (LLY) Opinions on Pipeline Expansions and Regulatory Risks",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Acquisition Expands Pipeline:</strong> Social media chatter highlights Eli Lilly's recent purchase of 4E Therapeutics as a strategic move to bolster its offerings in chronic p\u2026",
-          "image": "https://www.quiverquant.com/images/lly_rect_new.png",
+          "url": "https://www.quiverquant.com/news/Representative+Monica+De+La+Cruz+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-06-20 18:10:11",
+          "headline": "Representative Monica De La Cruz has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Monica De La Cruz has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:<\u2026",
+          "image": "https://www.quiverquant.com/images/D000594_congress.png",
           "_first_seen": "2026-06-21T00:57:44.971196+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Nexera+Stock+%28NEXR%29+Opinions+on+Technical+Breakout+Potential",
-          "time": "2026-06-20 17:33:11",
-          "headline": "Nexera Stock (NEXR) Opinions on Technical Breakout Potential",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Accumulation Signals:</strong> Market participants have been noting increased buying interest in Nexera shares amid a period of consolidation near recent lows. Observers point\u2026",
-          "image": "https://www.quiverquant.com/images/nexr_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/UnitedHealth+Group+Stock+%28UNH%29+Opinions+on+Analyst+Upgrades+and+AI+Investments",
-          "time": "2026-06-20 17:33:11",
-          "headline": "UnitedHealth Group Stock (UNH) Opinions on Analyst Upgrades and AI Investments",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Analyst Upgrades:</strong> Social media discussions have centered on recent analyst actions, including multiple price target increases following UnitedHealth's solid first-qua\u2026",
-          "image": "https://www.quiverquant.com/images/unh_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Redwire+Stock+%28RDW%29+Opinions+on+Biotech+Research+Returns+and+Lawsuit+Settlement",
-          "time": "2026-06-20 17:33:11",
-          "headline": "Redwire Stock (RDW) Opinions on Biotech Research Returns and Lawsuit Settlement",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Biotech Research Returns:</strong> Discussions highlight Redwire's recent pharmaceutical and biotech investigations that splashed down from the International Space Station, fo\u2026",
-          "image": "https://www.quiverquant.com/images/rdw_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Meta+Platforms+Stock+%28META%29+Opinions+on+Potential+Equity+Raise",
-          "time": "2026-06-20 17:33:11",
-          "headline": "Meta Platforms Stock (META) Opinions on Potential Equity Raise",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Equity Raise Speculation:</strong> Social media chatter intensified around Meta Platforms after reports surfaced of a potential stock offering to fund operations. Investors no\u2026",
-          "image": "https://www.quiverquant.com/images/meta_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Milestones",
-          "time": "2026-06-20 17:33:11",
-          "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Milestones",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Satellite Launches:</strong> Recent deployments of BlueBird satellites aboard Falcon 9 rockets have drawn attention on social media for advancing AST SpaceMobile's direct-to-d\u2026",
-          "image": "https://www.quiverquant.com/images/asts_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Mission+Produce+Stock+%28AVO%29+Opinions+on+Insider+Buying+Activity",
-          "time": "2026-06-20 17:33:11",
-          "headline": "Mission Produce Stock (AVO) Opinions on Insider Buying Activity",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Insider Activity:</strong> Recent market chatter centers on substantial purchases by Mission Produce directors, totaling around $7.5 million following a quarterly miss. Observ\u2026",
-          "image": "https://www.quiverquant.com/images/avo_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Applied+Optoelectronics+Stock+%28AAOI%29+Opinions+on+Photonics+in+AI+Infrastructure",
-          "time": "2026-06-20 17:33:11",
-          "headline": "Applied Optoelectronics Stock (AAOI) Opinions on Photonics in AI Infrastructure",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Optics Momentum Builds:</strong> Social media chatter highlights Applied Optoelectronics' positioning in the photonics sector amid AI infrastructure expansion, with analysts n\u2026",
-          "image": "https://www.quiverquant.com/images/aaoi_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Nebius+Stock+%28NBIS%29+Opinions+on+Nasdaq+100+Inclusion",
-          "time": "2026-06-20 14:03:12",
-          "headline": "Nebius Stock (NBIS) Opinions on Nasdaq 100 Inclusion",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Nasdaq 100 Inclusion:</strong> Market observers are focused on Nebius joining the Nasdaq 100 index on Monday, alongside several other growth-oriented names. This development i\u2026",
-          "image": "https://www.quiverquant.com/images/nbis_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Vistra+Corp+Stock+%28VST%29+Opinions+on+AI+Data+Center+Power+Demand",
-          "time": "2026-06-20 14:03:12",
-          "headline": "Vistra Corp Stock (VST) Opinions on AI Data Center Power Demand",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">AI Energy Demand:</strong> Discussions on social media highlight Vistra's strategic position in supplying electricity to surging data centers driven by artificial intelligence\u2026",
-          "image": "https://www.quiverquant.com/images/vst_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Adobe+Stock+%28ADBE%29+Opinions+on+Q2+Earnings+and+AI+Concerns",
-          "time": "2026-06-20 14:03:12",
-          "headline": "Adobe Stock (ADBE) Opinions on Q2 Earnings and AI Concerns",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Reaction:</strong> Adobe reported stronger-than-expected second-quarter results with revenue rising 13 percent to $6.62 billion and adjusted earnings per share beatin\u2026",
-          "image": "https://www.quiverquant.com/images/adbe_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Reddit+Stock+%28RDDT%29+Opinions+on+Business+Model+Strength+and+AI+Data+Potential",
-          "time": "2026-06-20 14:03:12",
-          "headline": "Reddit Stock (RDDT) Opinions on Business Model Strength and AI Data Potential",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Fundamentals in Focus:</strong> Social media conversations highlight Reddit's exceptional 91.5% gross margins and 69% year-over-year revenue growth, underscoring its capital-e\u2026",
-          "image": "https://www.quiverquant.com/images/rddt_rect_new.png",
-          "_first_seen": "2026-06-21T00:57:44.971196+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Accenture+Stock+%28ACN%29+Opinions+on+Earnings+Guidance+Cut+and+AI+Concerns",
-          "time": "2026-06-20 14:03:12",
-          "headline": "Accenture Stock (ACN) Opinions on Earnings Guidance Cut and AI Concerns",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Earnings Miss Impact:</strong> Accenture delivered an EPS beat in its latest quarter yet saw shares tumble sharply after lowering full-year revenue guidance. Market observers \u2026",
-          "image": "https://www.quiverquant.com/images/acn_rect_new.png",
+          "url": "https://www.quiverquant.com/news/Representative+Suzan+K.+DelBene+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see",
+          "time": "2026-06-20 18:10:11",
+          "headline": "Representative Suzan K. DelBene has filed a new financial disclosure - here\u2019s what we see",
+          "category": "congress_trades_automated",
+          "summary": "<p>Representative Suzan K. DelBene has filed a new annual financial disclosure, which was parsed by Quiver's congressional net worth tracking software.</p><p>Some of the disclosed holdings which were parsed include:</\u2026",
+          "image": "https://www.quiverquant.com/images/D000617_congress.png",
           "_first_seen": "2026-06-21T00:57:44.971196+00:00"
         }
       ]
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 9084,
+      "rows": 11684,
       "last_seen": "2026-06-21",
       "recent": [
         {
-          "ticker": "WMT",
-          "owner_name": "Connor, Clark & Lunn Investment Management Ltd.",
+          "ticker": "CVNA",
+          "owner_name": "CANADA PENSION PLAN INVESTMENT BOARD",
           "owner_title": "Institution",
-          "shares": "1289096",
+          "shares": "163631",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "Steward Partners Investment Advisory, LLC",
+          "ticker": "NVDA",
+          "owner_name": "NATIXIS ADVISORS, LLC",
           "owner_title": "Institution",
-          "shares": "2630",
+          "shares": "19145177",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "KERR FINANCIAL PLANNING Corp",
-          "owner_title": "Institution",
-          "shares": "3304",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Russell Investments Group, Ltd.",
-          "owner_title": "Institution",
-          "shares": "3201",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Sterling Capital Management LLC",
-          "owner_title": "Institution",
-          "shares": "3091",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Archer Investment Corp",
-          "owner_title": "Institution",
-          "shares": "3000",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "BNP Paribas Asset Management Holding S.A.",
-          "owner_title": "Institution",
-          "shares": "2903",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "PNC FINANCIAL SERVICES GROUP, INC.",
-          "owner_title": "Institution",
-          "shares": "2827",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "INTERNATIONAL ASSETS INVESTMENT MANAGEMENT, LLC",
-          "owner_title": "Institution",
-          "shares": "2586",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "AlphaMark Advisors, LLC",
-          "owner_title": "Institution",
-          "shares": "3353",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Moisand Fitzgerald Tamayo, LLC",
-          "owner_title": "Institution",
-          "shares": "2338",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Motiv8 Investments LLC",
-          "owner_title": "Institution",
-          "shares": "2282",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "HARBOUR INVESTMENTS, INC.",
-          "owner_title": "Institution",
-          "shares": "2181",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Essential Partners LLC",
-          "owner_title": "Institution",
-          "shares": "2084",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Main Street Group, LTD",
-          "owner_title": "Institution",
-          "shares": "2026",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "GAMMA Investing LLC",
-          "owner_title": "Institution",
-          "shares": "1884",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "AlphaQuest LLC",
-          "owner_title": "Institution",
-          "shares": "3315",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Global Assets Advisory, LLC",
-          "owner_title": "Institution",
-          "shares": "3710",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
-          "owner_name": "Advisory Services Network, LLC",
-          "owner_title": "Institution",
-          "shares": "7432",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "DJT",
+          "ticker": "NVDA",
           "owner_name": "KBC Group NV",
           "owner_title": "Institution",
-          "shares": "4766",
+          "shares": "19004336",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "TopTier Wealth Management, LLC",
+          "ticker": "NVDA",
+          "owner_name": "HEALTHCARE OF ONTARIO PENSION PLAN TRUST FUND",
           "owner_title": "Institution",
-          "shares": "6700",
+          "shares": "18873847",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "MetLife Investment Management, LLC",
+          "ticker": "NVDA",
+          "owner_name": "Korea Investment CORP",
           "owner_title": "Institution",
-          "shares": "6555",
+          "shares": "18860440",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "IFP Advisors, Inc",
+          "ticker": "NVDA",
+          "owner_name": "ACADIAN ASSET MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "6076",
+          "shares": "18653828",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "Larson Financial Group LLC",
+          "ticker": "NVDA",
+          "owner_name": "NOMURA ASSET MANAGEMENT CO LTD",
           "owner_title": "Institution",
-          "shares": "5923",
+          "shares": "18466669",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "DJT",
-          "owner_name": "Blue Trust, Inc.",
+          "ticker": "NVDA",
+          "owner_name": "STEVENS MARK A",
+          "owner_title": null,
+          "shares": "18343172",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
           "owner_title": "Institution",
-          "shares": "5472",
+          "shares": "17934981",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "STIFEL FINANCIAL CORP",
+          "owner_title": "Institution",
+          "shares": "17403746",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "PRIMECAP MANAGEMENT CO/CA/",
+          "owner_title": "Institution",
+          "shares": "17227520",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "Holocene Advisors, LP",
+          "owner_title": "Institution",
+          "shares": "16815635",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
+          "owner_title": "Institution",
+          "shares": "16740098",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "Winslow Capital Management, LLC",
+          "owner_title": "Institution",
+          "shares": "16654394",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "CAISSE DE DEPOT ET PLACEMENT DU QUEBEC",
+          "owner_title": "Institution",
+          "shares": "15787881",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "CREDIT AGRICOLE S A",
+          "owner_title": "Institution",
+          "shares": "15318021",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "FRED ALGER MANAGEMENT, LLC",
+          "owner_title": "Institution",
+          "shares": "15300674",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "DANSKE BANK A/S",
+          "owner_title": "Institution",
+          "shares": "15181160",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "Mirae Asset Global Investments Co., Ltd.",
+          "owner_title": "Institution",
+          "shares": "14898845",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "Chevy Chase Trust Holdings, LLC",
+          "owner_title": "Institution",
+          "shares": "14889987",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "MARSHALL WACE, LLP",
+          "owner_title": "Institution",
+          "shares": "14457057",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "CANADA LIFE ASSURANCE Co",
+          "owner_title": "Institution",
+          "shares": "19142430",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
+          "owner_title": "Institution",
+          "shares": "19278112",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "LOS ANGELES CAPITAL MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "14362222",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "NVDA",
+          "owner_name": "Quantinno Capital Management LP",
+          "owner_title": "Institution",
+          "shares": "19491358",
           "_collected": "2026-06-21"
         }
       ]
@@ -5655,258 +5655,258 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 381,
-      "last_seen": "2026-06-20",
+      "rows": 570,
+      "last_seen": "2026-06-21",
       "recent": [
         {
-          "ticker": "ABTC",
-          "name": "Steve Gutterman",
-          "role": "Former CEO",
-          "year": "2025",
-          "total_comp": "1037164.0",
-          "salary": "300000.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Andrew M. Watterson",
-          "role": "COO",
+          "ticker": "INTC",
+          "name": "Michelle Johnston Holthaus",
+          "role": "CEO Intel Products, Former Interim Co-CEO",
           "year": "2022",
-          "total_comp": "2589311.0",
-          "salary": "538754.0",
-          "bonus": "110535.0",
-          "_collected": "2026-06-20"
+          "total_comp": "7633900.0",
+          "salary": "856300.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
         },
         {
-          "ticker": "MSFT",
-          "name": "Bradford L. Smith",
-          "role": "Vice Chair and President",
+          "ticker": "BIIB",
+          "name": "Michael R. McDonnell",
+          "role": "Executive Vice President, CFO",
           "year": "2024",
-          "total_comp": "23439793.0",
-          "salary": "1000000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
+          "total_comp": "6826734.0",
+          "salary": "992531.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
         },
         {
-          "ticker": "MSFT",
-          "name": "Amy E. Hood",
+          "ticker": "BIIB",
+          "name": "Michael R. McDonnell",
+          "role": "Executive Vice President, CFO",
+          "year": "2022",
+          "total_comp": "7209834.0",
+          "salary": "901308.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Christopher A. Viehbacher",
+          "role": "President and CEO",
+          "year": "2022",
+          "total_comp": "30488593.0",
+          "salary": "153846.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Christopher A. Viehbacher",
+          "role": "President and CEO",
+          "year": "2023",
+          "total_comp": "4069913.0",
+          "salary": "1600000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Nicole C. Murphy",
+          "role": "Head of Pharmaceutical Operations and Technology",
+          "year": "2023",
+          "total_comp": "5714319.0",
+          "salary": "670642.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Susan H. Alexander",
+          "role": "Executive Vice President, CLO",
+          "year": "2023",
+          "total_comp": "6703852.0",
+          "salary": "924417.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Michael R. McDonnell",
+          "role": "Executive Vice President, CFO",
+          "year": "2023",
+          "total_comp": "7167601.0",
+          "salary": "945268.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Nicole C. Murphy",
+          "role": "Head of Pharmaceutical Operations and Technology",
+          "year": "2024",
+          "total_comp": "5740359.0",
+          "salary": "764567.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Priya A. Singhal",
+          "role": "Head of Development",
+          "year": "2024",
+          "total_comp": "6387663.0",
+          "salary": "816346.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Susan H. Alexander",
+          "role": "Executive Vice President, CLO",
+          "year": "2024",
+          "total_comp": "6505829.0",
+          "salary": "954192.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Christopher A. Viehbacher",
+          "role": "President and CEO",
+          "year": "2024",
+          "total_comp": "24166665.0",
+          "salary": "1600000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Nicole C. Murphy",
+          "role": "Head of Pharmaceutical Operations and Technology",
+          "year": "2022",
+          "total_comp": "4929712.0",
+          "salary": "592218.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "L.E. Seeger",
+          "role": "Chief Legal Officer",
+          "year": "2022",
+          "total_comp": "14680083.0",
+          "salary": "872917.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "D.E. Buckminster",
+          "role": "Vice Chairman",
+          "year": "2022",
+          "total_comp": "16183150.0",
+          "salary": "1100000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "A.D. Williams",
+          "role": "Former Group President, Enterprise Services and Former CEO of AENB",
+          "year": "2022",
+          "total_comp": "18244778.0",
+          "salary": "1000000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "Stephen J. Squeri",
+          "role": "CEO",
+          "year": "2022",
+          "total_comp": "48029631.0",
+          "salary": "1500000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "C.Y. Le Caillec",
           "role": "CFO",
-          "year": "2024",
-          "total_comp": "25799206.0",
+          "year": "2023",
+          "total_comp": "6245154.0",
+          "salary": "719129.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "L.E. Seeger",
+          "role": "Chief Legal Officer",
+          "year": "2023",
+          "total_comp": "10744483.0",
+          "salary": "875000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "A.D. Williams",
+          "role": "Former Group President, Enterprise Services and Former CEO of AENB",
+          "year": "2023",
+          "total_comp": "13381978.0",
           "salary": "1000000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
+          "bonus": null,
+          "_collected": "2026-06-21"
         },
         {
-          "ticker": "MSFT",
-          "name": "Satya Nadella",
+          "ticker": "AXP",
+          "name": "D.E. Buckminster",
+          "role": "Former Vice Chairman",
+          "year": "2023",
+          "total_comp": "15611578.0",
+          "salary": "1100000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "AXP",
+          "name": "Stephen J. Squeri",
           "role": "CEO",
-          "year": "2024",
-          "total_comp": "79106183.0",
-          "salary": "2500000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
+          "year": "2023",
+          "total_comp": "35676905.0",
+          "salary": "1500000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
         },
         {
-          "ticker": "MSFT",
-          "name": "Takeshi Numoto",
-          "role": "CMO",
-          "year": "2025",
-          "total_comp": "11876630.0",
-          "salary": "800000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "MSFT",
-          "name": "Judson B. Althoff",
-          "role": "CEO Microsoft Commercial",
-          "year": "2025",
-          "total_comp": "28198734.0",
-          "salary": "993333.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "MSFT",
-          "name": "Bradford L. Smith",
-          "role": "Vice Chair and President",
-          "year": "2025",
-          "total_comp": "28267295.0",
-          "salary": "1000000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "MSFT",
-          "name": "Amy E. Hood",
-          "role": "CFO",
-          "year": "2025",
-          "total_comp": "29481551.0",
-          "salary": "1000000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "MSFT",
-          "name": "Satya Nadella",
-          "role": "CEO",
-          "year": "2025",
-          "total_comp": "96496790.0",
-          "salary": "2500000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Mark R. Shaw",
-          "role": "Former EVP & Chief Legal & Regulatory Officer and Corporate Secretary",
+          "ticker": "BIIB",
+          "name": "Susan H. Alexander",
+          "role": "Executive Vice President, CLO",
           "year": "2022",
-          "total_comp": "2573576.0",
-          "salary": "492600.0",
-          "bonus": "82941.0",
-          "_collected": "2026-06-20"
+          "total_comp": "6790152.0",
+          "salary": "879407.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
         },
         {
-          "ticker": "LUV",
-          "name": "Tammy Romo",
-          "role": "CFO",
-          "year": "2022",
-          "total_comp": "2781103.0",
-          "salary": "534737.0",
-          "bonus": "101292.0",
-          "_collected": "2026-06-20"
+          "ticker": "BMY",
+          "name": "Christopher S. Boerner, Ph.D.",
+          "role": "Board Chair And CEO",
+          "year": "2025",
+          "total_comp": "21879919.0",
+          "salary": "1586346.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
         },
         {
-          "ticker": "MSFT",
-          "name": "Christopher D. Young",
-          "role": "Executive Vice President, Business Development, Strategy, and Ventures",
+          "ticker": "AXP",
+          "name": "L.E. Seeger",
+          "role": "Chief Legal Officer",
           "year": "2024",
-          "total_comp": "12034703.0",
-          "salary": "850000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Gary C. Kelly",
-          "role": "Former Executive Chairman of the Board",
-          "year": "2022",
-          "total_comp": "5069203.0",
-          "salary": "509375.0",
-          "bonus": "132810.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Robert E. Jordan",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "5333960.0",
-          "salary": "676875.0",
-          "bonus": "195720.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Mark R. Shaw",
-          "role": "Former EVP & Chief Legal & Regulatory Officer and Corporate Secretary",
-          "year": "2023",
-          "total_comp": "4181256.0",
-          "salary": "494400.0",
+          "total_comp": "11270084.0",
+          "salary": "875000.0",
           "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Andrew M. Watterson",
-          "role": "COO",
-          "year": "2023",
-          "total_comp": "5014885.0",
-          "salary": "575000.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Tammy Romo",
-          "role": "Former Executive Vice President & CFO",
-          "year": "2023",
-          "total_comp": "5629568.0",
-          "salary": "536700.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Gary C. Kelly",
-          "role": "Former Executive Chairman of the Board",
-          "year": "2023",
-          "total_comp": "9058978.0",
-          "salary": "475000.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Robert E. Jordan",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "9307298.0",
-          "salary": "700000.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Ryan C. Green",
-          "role": "CTO",
-          "year": "2024",
-          "total_comp": "3409797.0",
-          "salary": "505417.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Linda B. Rutherford",
-          "role": "CAO",
-          "year": "2024",
-          "total_comp": "3519167.0",
-          "salary": "539583.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "MSFT",
-          "name": "Judson B. Althoff",
-          "role": "CEO Microsoft Commercial",
-          "year": "2024",
-          "total_comp": "23050327.0",
-          "salary": "960000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "MSFT",
-          "name": "Satya Nadella",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "48512537.0",
-          "salary": "2500000.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-20"
-        },
-        {
-          "ticker": "LUV",
-          "name": "Tammy Romo",
-          "role": "Former Executive Vice President & CFO",
-          "year": "2024",
-          "total_comp": "4563199.0",
-          "salary": "594729.0",
-          "bonus": null,
-          "_collected": "2026-06-20"
+          "_collected": "2026-06-21"
         }
       ]
     }
@@ -6945,8 +6945,20 @@
     ],
     "github": [
       {
-        "ticker": "NVDA",
-        "stars": 17434,
+        "ticker": "IBM",
+        "stars": 7507,
+        "wow_pct": 0.01,
+        "hot": true
+      },
+      {
+        "ticker": "NET",
+        "stars": 14577,
+        "wow_pct": 0.01,
+        "hot": true
+      },
+      {
+        "ticker": "U",
+        "stars": 19496,
         "wow_pct": 0.01,
         "hot": true
       },
@@ -6976,19 +6988,13 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 195783,
+        "stars": 195782,
         "wow_pct": 0.0,
         "hot": false
       },
       {
         "ticker": "GTLB",
-        "stars": 24454,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "IBM",
-        "stars": 7506,
+        "stars": 24455,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -7000,19 +7006,19 @@
       },
       {
         "ticker": "META",
-        "stars": 245963,
-        "wow_pct": -0.0,
+        "stars": 245966,
+        "wow_pct": 0.0,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "stars": 186572,
-        "wow_pct": -0.0,
+        "stars": 186574,
+        "wow_pct": 0.0,
         "hot": false
       },
       {
-        "ticker": "NET",
-        "stars": 14576,
+        "ticker": "NVDA",
+        "stars": 17433,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -7037,12 +7043,6 @@
       {
         "ticker": "TWLO",
         "stars": 2064,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "U",
-        "stars": 19495,
         "wow_pct": 0.0,
         "hot": false
       }
@@ -8479,144 +8479,144 @@
     ],
     "news": [
       {
-        "headline": "Press Release: Steve Scalise Discusses GOP Agenda in Fox Business Interview",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-20 18:19:56",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Steve+Scalise+Discusses+GOP+Agenda+in+Fox+Business+Interview"
-      },
-      {
-        "headline": "Representative Earl L. \"Buddy\" Carter has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Representative Daniel S. Goldman Made an Estimated $481.2K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Earl+L.+%22Buddy%22+Carter+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Daniel+S.+Goldman+Made+an+Estimated+%24481.2K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Debbie Dingell has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Representative Robert Bresnahan Lost an Estimated $471.7K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Debbie+Dingell+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Robert+Bresnahan+Lost+an+Estimated+%24471.7K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Mark DeSaulnier has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Senator Rick Scott Lost an Estimated $4.2M in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Mark+DeSaulnier+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Rick+Scott+Lost+an+Estimated+%244.2M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative J. Luis Correa has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Senator Pete Ricketts Made an Estimated $3.1M in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+J.+Luis+Correa+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Pete+Ricketts+Made+an+Estimated+%243.1M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Mario Diaz-Balart has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Representative Sara Jacobs Made an Estimated $2.4M in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Mario+Diaz-Balart+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Sara+Jacobs+Made+an+Estimated+%242.4M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Suzan K. DelBene has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Representative John W. Rose Made an Estimated $292.2K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Suzan+K.+DelBene+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+John+W.+Rose+Made+an+Estimated+%24292.2K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Hakeem S. Jeffries has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Representative Jefferson Shreve Lost an Estimated $463.7K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Hakeem+S.+Jeffries+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Jefferson+Shreve+Lost+an+Estimated+%24463.7K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Monica De La Cruz has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Representative Marjorie Taylor Greene Made an Estimated $204.3K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Monica+De+La+Cruz+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Marjorie+Taylor+Greene+Made+an+Estimated+%24204.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Donald G. Davis has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Senator Angus S. King Jr. Made an Estimated $213.3K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Donald+G.+Davis+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Angus+S.+King+Jr.+Made+an+Estimated+%24213.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Representative Elijah Crane has filed a new financial disclosure - here\u2019s what we see",
+        "headline": "Net Worth Update: Senator Ted Cruz Made an Estimated $540.7K in the Stock Market Last Month",
         "ticker": null,
         "category": "congress_trades_automated",
-        "time": "2026-06-20 18:10:11",
-        "url": "https://www.quiverquant.com/news/Representative+Elijah+Crane+has+filed+a+new+financial+disclosure+-+here%E2%80%99s+what+we+see"
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Ted+Cruz+Made+an+Estimated+%24540.7K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "C3.ai Stock (AI) Opinions on Short Interest Dynamics",
+        "headline": "Net Worth Update: Senator David McCormick Lost an Estimated $1.5M in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/C3.ai+Stock+%28AI%29+Opinions+on+Short+Interest+Dynamics"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+David+McCormick+Lost+an+Estimated+%241.5M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Eli Lilly Stock (LLY) Opinions on Pipeline Expansions and Regulatory Risks",
+        "headline": "Net Worth Update: Representative Kevin Hern Lost an Estimated $605.7K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/Eli+Lilly+Stock+%28LLY%29+Opinions+on+Pipeline+Expansions+and+Regulatory+Risks"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Kevin+Hern+Lost+an+Estimated+%24605.7K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Nexera Stock (NEXR) Opinions on Technical Breakout Potential",
+        "headline": "Net Worth Update: Representative Josh Gottheimer Lost an Estimated $1.0M in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/Nexera+Stock+%28NEXR%29+Opinions+on+Technical+Breakout+Potential"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Josh+Gottheimer+Lost+an+Estimated+%241.0M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "UnitedHealth Group Stock (UNH) Opinions on Analyst Upgrades and AI Investments",
+        "headline": "Net Worth Update: Senator Dan Sullivan Made an Estimated $300.9K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/UnitedHealth+Group+Stock+%28UNH%29+Opinions+on+Analyst+Upgrades+and+AI+Investments"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Dan+Sullivan+Made+an+Estimated+%24300.9K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Redwire Stock (RDW) Opinions on Biotech Research Returns and Lawsuit Settlement",
+        "headline": "Net Worth Update: Representative Craig Goldman Lost an Estimated $483.3K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/Redwire+Stock+%28RDW%29+Opinions+on+Biotech+Research+Returns+and+Lawsuit+Settlement"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Craig+Goldman+Lost+an+Estimated+%24483.3K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Meta Platforms Stock (META) Opinions on Potential Equity Raise",
+        "headline": "Net Worth Update: Representative Brad Knott Lost an Estimated $1.2M in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/Meta+Platforms+Stock+%28META%29+Opinions+on+Potential+Equity+Raise"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Brad+Knott+Lost+an+Estimated+%241.2M+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "AST SpaceMobile Stock (ASTS) Opinions on Satellite Deployment Milestones",
+        "headline": "Net Worth Update: Representative George Whitesides Made an Estimated $533.4K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/AST+SpaceMobile+Stock+%28ASTS%29+Opinions+on+Satellite+Deployment+Milestones"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+George+Whitesides+Made+an+Estimated+%24533.4K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Mission Produce Stock (AVO) Opinions on Insider Buying Activity",
+        "headline": "Net Worth Update: Senator Peter Welch Made an Estimated $200.0K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/Mission+Produce+Stock+%28AVO%29+Opinions+on+Insider+Buying+Activity"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+Peter+Welch+Made+an+Estimated+%24200.0K+in+the+Stock+Market+Last+Month"
       },
       {
-        "headline": "Applied Optoelectronics Stock (AAOI) Opinions on Photonics in AI Infrastructure",
+        "headline": "Net Worth Update: Senator John Kennedy Made an Estimated $209.4K in the Stock Market Last Month",
         "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-20 17:33:11",
-        "url": "https://www.quiverquant.com/news/Applied+Optoelectronics+Stock+%28AAOI%29+Opinions+on+Photonics+in+AI+Infrastructure"
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Senator+John+Kennedy+Made+an+Estimated+%24209.4K+in+the+Stock+Market+Last+Month"
+      },
+      {
+        "headline": "Net Worth Update: Representative Shri Thanedar Lost an Estimated $581.0K in the Stock Market Last Month",
+        "ticker": null,
+        "category": "congress_trades_automated",
+        "time": "2026-06-21 03:00:48",
+        "url": "https://www.quiverquant.com/news/Net+Worth+Update%3A+Representative+Shri+Thanedar+Lost+an+Estimated+%24581.0K+in+the+Stock+Market+Last+Month"
       }
     ],
     "wsb": [
@@ -10249,6 +10249,13 @@
         "year": 2022
       },
       {
+        "ticker": "AVGO",
+        "top_exec": "Hock E. Tan",
+        "role": "CEO",
+        "total_comp": 205278006.0,
+        "year": 2025
+      },
+      {
         "ticker": "TSLA",
         "top_exec": "Vaibhav Taneja",
         "role": "CFO",
@@ -10277,6 +10284,13 @@
         "year": 2025
       },
       {
+        "ticker": "INTC",
+        "top_exec": "Lip-Bu Tan",
+        "role": "CEO",
+        "total_comp": 92990900.0,
+        "year": 2025
+      },
+      {
         "ticker": "CARR",
         "top_exec": "David L. Gitlin",
         "role": "CEO",
@@ -10289,6 +10303,13 @@
         "role": "President & CEO",
         "total_comp": 49866251.0,
         "year": 2025
+      },
+      {
+        "ticker": "AXP",
+        "top_exec": "Stephen J. Squeri",
+        "role": "CEO",
+        "total_comp": 48029631.0,
+        "year": 2022
       },
       {
         "ticker": "DJT",
@@ -10333,38 +10354,17 @@
         "year": 2023
       },
       {
+        "ticker": "ABBV",
+        "top_exec": "Robert A. Michael",
+        "role": "COB",
+        "total_comp": 32530984.0,
+        "year": 2025
+      },
+      {
         "ticker": "MU",
         "top_exec": "Sanjay Mehrotra",
         "role": "CEO",
         "total_comp": 30940146.0,
-        "year": 2025
-      },
-      {
-        "ticker": "QCOM",
-        "top_exec": "Cristiano R. Amon",
-        "role": "CEO",
-        "total_comp": 29701097.0,
-        "year": 2025
-      },
-      {
-        "ticker": "PLTR",
-        "top_exec": "David Glazer",
-        "role": "CFO & Treasurer",
-        "total_comp": 27971876.0,
-        "year": 2025
-      },
-      {
-        "ticker": "META",
-        "top_exec": "Mark Zuckerberg",
-        "role": "CEO",
-        "total_comp": 27219874.0,
-        "year": 2024
-      },
-      {
-        "ticker": "LUV",
-        "top_exec": "Robert E. Jordan",
-        "role": "CEO",
-        "total_comp": 16587882.0,
         "year": 2025
       }
     ],
@@ -10476,16 +10476,15 @@
       },
       {
         "ticker": "NVDA",
-        "score": 5,
-        "weighted_score": 1.8,
+        "score": 4,
+        "weighted_score": 1.5,
         "channel_list": [
           "13f_add",
           "darkpool_accum",
-          "github_momentum",
           "patent_cluster",
           "retail_buzz"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 github_momentum: +0.01% stars \u00b7 patent_cluster: 20 grants, 9 IPC classes \u00b7 retail_buzz: 207 WSB mentions"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 patent_cluster: 20 grants, 9 IPC classes \u00b7 retail_buzz: 207 WSB mentions"
       },
       {
         "ticker": "BIIB",
