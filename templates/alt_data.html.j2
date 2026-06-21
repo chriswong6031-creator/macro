@@ -269,7 +269,7 @@
   {# ---------- SIGNAL CARDS (per-feed derived signals) ---------- #}
   <section class="sid-sec">
     <h2>🔬 {{ t('Signal feeds', '信号源') }}
-      <span class="h-note">{{ t('each Quiver feed as its derived signal', '每个Quiver源呈现为其衍生信号') }}</span></h2>
+      <span class="h-note">{{ t('each feed as its derived signal — Quiver + federal grants · SEC 8-K · FDA · clinical · options · AI-adoption', '每个数据源呈现为其衍生信号 —— Quiver + 联邦补助 · SEC 8-K · FDA · 临床 · 期权 · AI采用') }}</span></h2>
     <div class="sid-grid">
 
       <div class="sid-card"><h3>📜 {{ t('Gov-contract leaders','政府合同领先') }} <span class="mut" style="font-size:11px;">30d</span></h3>
@@ -305,6 +305,84 @@
         <table class="sid-t"><thead><tr><th>{{ t('Sector','板块') }}</th><th>{{ t('Bill','法案') }}</th><th>{{ t('Action','进展') }}</th></tr></thead>
         <tbody>{% for r in s.bills[:8] %}<tr><td>{{ r.sector }}</td><td class="mut">{% if r.url %}<a href="{{ r.url }}">{{ r.bill }}</a>{% else %}{{ r.bill }}{% endif %}</td><td class="mut">{{ r.last_action_date }}</td></tr>{% endfor %}</tbody></table></div>
 
+      {# ---- beyond-Quiver feeds (auto-hide when a source has no data / no key) ---- #}
+      {% if s.gov_grants %}
+      <div class="sid-card"><h3>🏗️ {{ t('Federal grants / loans','联邦补助/贷款') }} <span class="mut" style="font-size:11px;">CHIPS·DOE·IRA</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Amount','金额') }}</th><th class="num">{{ t('Accel','加速') }}</th></tr></thead>
+        <tbody>{% for r in s.gov_grants[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ money(r.total_usd) }}</td>
+          <td class="num">{% if r.accel_x %}{{ '%.1f'|format(r.accel_x) }}×{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.fda %}
+      <div class="sid-card"><h3>💊 {{ t('FDA catalysts','FDA催化') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th>{{ t('Event','事件') }}</th><th>{{ t('Drug','药物') }}</th></tr></thead>
+        <tbody>{% for r in s.fda[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="mut">{{ t('New approval','新批准') if r.kind=='approval' else t('Label exp.','适应症扩展') }}</td>
+          <td class="mut">{{ r.drug or '—' }}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.clinical %}
+      <div class="sid-card"><h3>🧬 {{ t('Phase-3 pipeline','三期管线') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('P3 starts','三期启动') }}</th><th class="num">{{ t('Halts','中止') }}</th></tr></thead>
+        <tbody>{% for r in s.clinical[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num r-pos">{{ r.phase3_starts }}</td>
+          <td class="num">{% if r.halts %}<span class="r-neg">{{ r.halts }}</span>{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.material_8k %}
+      <div class="sid-card"><h3>📄 {{ t('Material 8-K clusters','重大8-K集群') }} <span class="mut" style="font-size:11px;">30d</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Count','数量') }}</th><th>{{ t('Items','条目') }}</th></tr></thead>
+        <tbody>{% for r in s.material_8k[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ r.count }}</td><td class="mut">{{ r.items }}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.unusual_options %}
+      <div class="sid-card"><h3>🧲 {{ t('Unusual options flow','异常期权流') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Vol/OI ×','量/持仓×') }}</th><th>{{ t('Lean','倾向') }}</th></tr></thead>
+        <tbody>{% for r in s.unusual_options[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="num">{% if r.hot %}<span class="r-pos">{{ '%.1f'|format(r.mult) }}×</span>{% else %}{{ '%.1f'|format(r.mult) }}×{% endif %}</td>
+          <td class="mut">{{ r.lean }}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.hf %}
+      <div class="sid-card"><h3>🤖 {{ t('AI model adoption','AI模型采用') }} <span class="mut" style="font-size:11px;">HF dl WoW</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Downloads','下载量') }}</th><th class="num">{{ t('WoW','周环比') }}</th></tr></thead>
+        <tbody>{% for r in s.hf[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ '{:,.0f}'.format(r.downloads_30d) }}</td>
+          <td class="num">{% if r.wow_pct and r.wow_pct>0 %}<span class="r-pos">+{{ r.wow_pct }}%</span>{% else %}{{ r.wow_pct }}%{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.github %}
+      <div class="sid-card"><h3>⭐ {{ t('Developer adoption','开发者采用') }} <span class="mut" style="font-size:11px;">GitHub stars WoW</span></h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Stars','星标') }}</th><th class="num">{{ t('WoW','周环比') }}</th></tr></thead>
+        <tbody>{% for r in s.github[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ '{:,.0f}'.format(r.stars) }}</td>
+          <td class="num">{% if r.wow_pct and r.wow_pct>0 %}<span class="r-pos">+{{ r.wow_pct }}%</span>{% else %}{{ r.wow_pct }}%{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.analyst %}
+      <div class="sid-card"><h3>📈 {{ t('Analyst upgrades','分析师上调') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th>{{ t('Rising','上升') }}</th></tr></thead>
+        <tbody>{% for r in s.analyst[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ (r.bull_ratio*100)|round|int }}%</td>
+          <td class="mut">{% if r.rising %}↑{% else %}—{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.insider_mspr %}
+      <div class="sid-card"><h3>🧭 {{ t('Insider sentiment (MSPR)','内部人情绪(MSPR)') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('MSPR','MSPR') }}</th></tr></thead>
+        <tbody>{% for r in s.insider_mspr[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="num">{% if r.mspr>0 %}<span class="r-pos">{{ r.mspr }}</span>{% else %}{{ r.mspr }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.earnings %}
+      <div class="sid-card"><h3>🎯 {{ t('Earnings surprises','财报超预期') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Surprise','超预期') }}</th></tr></thead>
+        <tbody>{% for r in s.earnings[:10] %}<tr><td class="tkc">{{ r.ticker }}</td>
+          <td class="num">{% if r.surprise_pct>0 %}<span class="r-pos">+{{ r.surprise_pct }}%</span>{% else %}{{ r.surprise_pct }}%{% endif %}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
+      {% if s.news_sentiment %}
+      <div class="sid-card"><h3>📰 {{ t('Bullish news flow','看多新闻流') }}</h3>
+        <table class="sid-t"><thead><tr><th>{{ t('Ticker','标的') }}</th><th class="num">{{ t('Bullish','看多占比') }}</th><th class="num">{{ t('Articles','文章') }}</th></tr></thead>
+        <tbody>{% for r in s.news_sentiment[:10] %}<tr><td class="tkc">{{ r.ticker }}</td><td class="num">{{ (r.bull_ratio*100)|round|int }}%</td><td class="num">{{ r.articles }}</td></tr>{% endfor %}</tbody></table></div>
+      {% endif %}
+
     </div>
   </section>
 
@@ -317,8 +395,8 @@
         {% endfor %}
       </div>
       <p class="mut" style="font-size:11px;margin:11px 0 0;">{{ t(
-        'Source: Quiver Quantitative (Trader plan) + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.',
-        '数据来源：Quiver Quantitative（Trader计划）+ 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
+        'Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · Finnhub · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.',
+        '数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · Finnhub · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。') }}</p>
     </div>
   </section>
 
