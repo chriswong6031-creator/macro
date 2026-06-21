@@ -804,7 +804,7 @@ def main() -> int:
         # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
         for _name, _mod, _fn in (
             ("china news powerhouse", "scripts.build_china_news", "build"),
-            # ("china policy watch", "scripts.build_china_policy_watch", "build"),  # Phase 2
+            ("china policy watch", "scripts.build_china_policy_watch", "build"),
             # ("china alt-data desk", "scripts.build_china_altdata", "build"),      # Phase 3
             # ("china divergence radar", "scripts.build_china_radar", "build"),     # Phase 4
         ):

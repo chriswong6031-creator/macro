@@ -1,0 +1,40 @@
+{
+  "schema": "china_policy_intel.v1",
+  "as_of": "2026-06-20",
+  "is_context_only": true,
+  "thesis": {
+    "en": "Beijing is running a calibrated, supply-and-demand 'stabilize-not-stimulate' policy mix: incremental PBoC easing (RRR + targeted rate cuts, ample liquidity) paired with fiscal support skewed to consumption trade-in (以旧换新), property stabilization and strategic industrial self-reliance (信创 / domestic semis, AI, EV, defense). The revealed priority is high-quality, self-sufficient growth and financial-risk control — not a 2009-style credit flood.",
+    "zh": "北京在执行有节制的供需双侧『稳而非刺激』政策组合：央行渐进宽松（降准＋定向降息、流动性充裕）配合偏向消费以旧换新、地产稳定与战略产业自主（信创／国产半导体、AI、新能源车、军工）的财政支持。真实优先事项是高质量、自主可控的增长与金融风险防控，而非2009式信贷洪流。"
+  },
+  "regime_read": {
+    "en": "Policy is easing at the margin but deliberately restrained — read incremental moves (RRR cuts, LPR trims, special-bond issuance) as risk-management of a deflationary, property-drag backdrop, not a cyclical re-acceleration bet.",
+    "zh": "政策边际宽松但刻意克制——应将渐进举措（降准、LPR下调、专项债发行）解读为对通缩与地产拖累背景的风险管理，而非押注周期性再加速。"
+  },
+  "npc_targets_2026": [
+    {"key": "gdp", "label_en": "GDP growth target", "label_zh": "GDP增长目标", "value": "~5.0%"},
+    {"key": "cpi", "label_en": "CPI target", "label_zh": "CPI目标", "value": "~2%"},
+    {"key": "deficit", "label_en": "Fiscal deficit ratio", "label_zh": "财政赤字率", "value": "~4% of GDP"},
+    {"key": "special_bond", "label_en": "Local special-purpose bond quota", "label_zh": "地方专项债额度", "value": "¥4.4T"},
+    {"key": "ultra_long", "label_en": "Ultra-long special treasury bonds", "label_zh": "超长期特别国债", "value": "¥1.3T"}
+  ],
+  "sector_policy": [
+    {"sector_en": "Domestic semis / 信创", "sector_zh": "国产半导体／信创", "stance": "supportive", "baskets": ["cn_semis"], "note_en": "National self-reliance mandate + big-fund capital; foreign-chip substitution in gov/SOE by 2027.", "note_zh": "国家自主可控指令＋大基金资本；2027年前政府/国企国产替代。"},
+    {"sector_en": "AI compute", "sector_zh": "AI算力", "stance": "supportive", "baskets": ["cn_ai_compute"], "note_en": "'East-data-West-compute' national grid; domestic GPU (Ascend/Cambricon) push.", "note_zh": "『东数西算』国家算力网；国产GPU（昇腾/寒武纪）推进。"},
+    {"sector_en": "EV & battery", "sector_zh": "新能源车与电池", "stance": "supportive", "baskets": ["cn_battery"], "note_en": "Purchase-tax exemption extended to 2027 + trade-in subsidies; export expansion.", "note_zh": "购置税减免延至2027＋以旧换新补贴；出口扩张。"},
+    {"sector_en": "Solar / wind / storage", "sector_zh": "光储风", "stance": "neutral", "baskets": ["cn_solar"], "note_en": "Dual-carbon tailwind but acute overcapacity / price-war; policy now curbing irrational expansion.", "note_zh": "双碳顺风但产能过剩与价格战严重；政策转向遏制非理性扩张。"},
+    {"sector_en": "Defense & military", "sector_zh": "国防军工", "stance": "supportive", "baskets": ["cn_defense"], "note_en": "Defense budget +7.2% (above nominal GDP); self-reliance priority.", "note_zh": "国防预算+7.2%（高于名义GDP）；自主可控优先。"},
+    {"sector_en": "SOE reform / 中特估", "sector_zh": "国企改革／中特估", "stance": "supportive", "baskets": ["cn_soe_value"], "note_en": "CSRC market-cap-management directive: raise ROE, dividends, buybacks.", "note_zh": "证监会市值管理指引：提升ROE、分红、回购。"},
+    {"sector_en": "Consumption / 以旧换新", "sector_zh": "消费／以旧换新", "stance": "supportive", "baskets": ["cn_appliances", "cn_autos", "cn_food_bev"], "note_en": "¥300B ultra-long bonds fund appliance/car/electronics trade-in; 'expand domestic demand' priority.", "note_zh": "3000亿超长期国债支持家电/汽车/电子以旧换新；扩内需优先。"},
+    {"sector_en": "Property", "sector_zh": "房地产", "stance": "supportive", "baskets": ["cn_property"], "note_en": "Mortgage-rate + down-payment cuts, purchase-restriction relaxation, urban-village renovation — stabilize, not re-inflate.", "note_zh": "降房贷利率与首付、放松限购、城中村改造——稳定而非再膨胀。"},
+    {"sector_en": "Innovative pharma", "sector_zh": "创新药", "stance": "supportive", "baskets": ["cn_pharma_cxo"], "note_en": "NMPA accelerated review + national biotech fund; oncology/biosimilar focus.", "note_zh": "药监局加速审评＋国家生物科技基金；肿瘤/生物类似药聚焦。"},
+    {"sector_en": "Low-altitude economy", "sector_zh": "低空经济", "stance": "supportive", "baskets": [], "note_en": "CAAC + NDRC action plan 2024-2030; eVTOL / drone-logistics corridors; ¥1T-by-2030 goal.", "note_zh": "民航局＋发改委2024-2030行动计划；eVTOL／无人机物流走廊；2030年万亿目标。"},
+    {"sector_en": "Platform / internet", "sector_zh": "平台经济／互联网", "stance": "neutral", "baskets": [], "note_en": "Crackdown normalized to predictable regulation; supported as an employment + AI engine.", "note_zh": "整顿转为可预期的常态监管；作为就业与AI引擎获支持。"},
+    {"sector_en": "After-school education", "sector_zh": "校外教培", "stance": "restrictive", "baskets": [], "note_en": "双减 regime intact; for-profit K-9 tutoring still curtailed.", "note_zh": "双减政策延续；营利性义务教育阶段培训仍受限。"},
+    {"sector_en": "Property speculation", "sector_zh": "房地产投机", "stance": "restrictive", "baskets": [], "note_en": "'Houses are for living, not speculation' frame persists alongside the stabilization push.", "note_zh": "『房住不炒』基调与稳楼市并存。"}
+  ],
+  "predictions": [
+    {"id": "rrr_2026q3", "text_en": "PBoC cuts RRR by ≥25bp by 2026-09-30.", "text_zh": "央行在2026-09-30前降准≥25个基点。", "check_by": "2026-09-30", "status": "open"},
+    {"id": "lpr_2026q4", "text_en": "1Y LPR cut ≥10bp by 2026-12-31.", "text_zh": "1年期LPR在2026-12-31前下调≥10个基点。", "check_by": "2026-12-31", "status": "open"},
+    {"id": "consumption_h2", "text_en": "Additional consumption trade-in / demand-side fiscal support announced in H2 2026.", "text_zh": "2026下半年出台追加的消费以旧换新／需求侧财政支持。", "check_by": "2026-12-31", "status": "open"}
+  ]
+}
