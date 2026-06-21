@@ -193,13 +193,61 @@ def recent(days: int = 30, as_of: str | None = None, region: str = "us") -> list
     return out
 
 
+_RISK_TYPES = {"theme_topping", "theme_deteriorating"}
+_CONT_TYPES = {"theme_emerging", "leadership_rotation"}
+
+
+def _annotate_confidence(events: list[dict], cal: dict) -> list[dict]:
+    """Tag each fired event with a BACKTESTED-vs-DESCRIPTIVE confidence from the basket-
+    signal calibration (engine.theme_scoring._signal_calibration), and stop a CONTINUATION
+    event — which has NO measured forward-return edge (rank-IC ~ 0) — from ever firing at
+    'high'. Risk events the proxy MEASURED (topping/deteriorating → deeper drawdowns) keep
+    full confidence with a backtested badge. This is the honest 'needle-pinpoint' gate:
+    appearances are not suppressed (audit trail preserved), but unvalidated calls can't
+    shout. Additive — cal {} leaves every event byte-identical."""
+    if not cal:
+        return events
+    for e in events:
+        t = e.get("type")
+        to = (e.get("context") or {}).get("to")
+        if t in _RISK_TYPES or (t == "reco_change" and to in ("avoid", "trim")):
+            lab = "deteriorating" if (t == "theme_deteriorating" or to == "avoid") else "fading"
+            measured = (cal.get(lab) or {}).get("verdict") == "measurable_edge"
+            e["confidence"] = "backtested" if measured else "unconfirmed"
+            e["confidence_en"] = ("Backtested — this risk read precedes deeper forward "
+                                  "drawdowns on 27y of clean sector history." if measured else
+                                  "Risk read — not separately confirmed on the proxy.")
+            e["confidence_zh"] = ("已回测 — 在27年干净行业历史上该风险信号领先于更深前向回撤。"
+                                  if measured else "风险信号 — 代理上未单独验证。")
+        elif t in _CONT_TYPES or (t == "reco_change" and to in ("enter", "accumulate")):
+            e["confidence"] = "descriptive"
+            e["confidence_en"] = ("Descriptive — no measured forward-return edge (rank-IC ~ 0) "
+                                  "on the 27y proxy. A flow / focus read, not a buy signal.")
+            e["confidence_zh"] = ("描述性 — 在27年代理上无可测前向收益优势（rank-IC≈0）。"
+                                  "资金流/聚焦提示，非买入信号。")
+            if e.get("severity") == "high":     # an unvalidated continuation must not shout
+                e["severity"] = "medium"
+    return events
+
+
+def _calibration() -> dict:
+    """Local reader of the backtested signal-precision verdict (avoids importing the heavy
+    theme_scoring module into the alert path). Mirrors theme_scoring._signal_calibration."""
+    try:
+        p = config.data_dir() / "strategies" / "baskets_calibration.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        return d.get("verdict", {}) if isinstance(d, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 def rebuild(theme_intel: dict, region: str = "us") -> list[dict]:
     """Diff vs prior state, append+dedup new events into the jsonl, persist new state.
     Returns the events fired THIS run (empty on the seed run)."""
     if not theme_intel or not theme_intel.get("themes"):
         return []
     prior = load_state(region)
-    new_events = compute_events(theme_intel, prior)
+    new_events = _annotate_confidence(compute_events(theme_intel, prior), _calibration())
 
     # merge into history: keep-first by id, then trim to the KEEP_DAYS window
     by_id = {e["id"]: e for e in load_events(region)}

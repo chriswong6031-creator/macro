@@ -1,0 +1,108 @@
+"""Basket-signal calibration (scripts.calibrate_baskets) + its engine wiring.
+
+Two contracts are guarded here. (1) The HARNESS statistics the adversarial review pinned
+down: delta_5d MUST be the single 5d relative read (matching engine.theme_scoring), the
+event study collapses same-day sectors BEFORE the HAC t (no cross-sectional t-inflation),
+and the firing gate is chosen OUT-OF-SAMPLE and only surfaced when its bootstrap lift CI
+clears 1.0. (2) The WIRING: theme_scoring grades each label backtested-vs-descriptive and
+theme_alerts down-grades an unvalidated continuation alert so it can't fire 'high' — both
+falling back to the prior honest behaviour when the calibration JSON is absent. No network.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+
+from engine import theme_alerts as ta
+from engine import theme_scoring as ts
+from scripts import calibrate_baskets as cb
+
+
+# ----------------------------------------------------------------- harness stats
+def test_delta_5d_is_single_5d_rel_not_second_difference():
+    """The confirmed faithfulness bug: theme_scoring passes perf['5d']['rel'] (a single
+    5d relative return) as delta_5d; the harness must match, not a change-of-the-5d-read."""
+    idx = pd.date_range("2024-01-01", periods=120, freq="B")
+    lvl = pd.Series(np.linspace(1.0, 1.5, 120) + np.sin(np.arange(120) / 7) * 0.02, index=idx)
+    bench = pd.Series(np.linspace(1.0, 1.2, 120), index=idx)
+    f = cb._rs_features(lvl, bench)
+    d, r5 = f["delta_5d"].dropna(), f["r5"].dropna()
+    assert len(d) and (d == r5.reindex(d.index)).all()
+
+
+def test_event_study_collapses_same_day_sectors_before_hac():
+    """3 sectors firing the same label on each of 60 bars -> 180 pooled events but the HAC
+    t must run on 60 DAILY means (else same-day correlation fakes significance)."""
+    rng = np.random.default_rng(0)
+    rows = []
+    for i in range(60):
+        for _ in range(3):
+            rows.append((rng.normal(0, .01), rng.normal(0, .02),
+                         -0.03 + rng.normal(0, .004), -0.05, i * cb.STEP))
+    out = cb._event_study({"deteriorating": rows}, {"deteriorating": "risk"})
+    r = out["deteriorating"]
+    assert r["n"] == 180 and r["n_days"] == 60 and r["t_n"] == 60
+
+
+def test_confidence_gate_oos_calibratable_when_score_separates():
+    rng = np.random.default_rng(1)
+    n = 4000
+    p = rng.uniform(0, 1, n)
+    idx = list(np.repeat(np.arange(n // 4), 4))                 # 4 correlated rows per bar
+    y = (rng.uniform(0, 1, n) < (0.05 + 0.25 * p)).astype(float)  # higher p -> higher odds
+    out = cb._calibrate_confidence(list(p), list(y), idx, "sep")
+    assert out["verdict"] == "calibratable"
+    assert out["gate"] is not None and out["gate"]["lift_ci"][0] > 1.0
+
+
+def test_confidence_gate_rejected_on_noise():
+    rng = np.random.default_rng(2)
+    n = 4000
+    p = rng.uniform(0, 1, n)
+    idx = list(np.repeat(np.arange(n // 4), 4))
+    y = (rng.uniform(0, 1, n) < 0.11).astype(float)            # outcome independent of p
+    out = cb._calibrate_confidence(list(p), list(y), idx, "noise")
+    assert out["verdict"] == "weak_separation" and out["gate"] is None
+    assert out.get("gate_rejected") is not None                 # kept for the audit trail
+
+
+# ----------------------------------------------------------------- engine wiring
+_CAL = {"fading": {"verdict": "measurable_edge", "mean_pct": -3.7, "t_hac": -9.6, "n": 252},
+        "deteriorating": {"verdict": "measurable_edge", "mean_pct": -3.6, "t_hac": -15.5, "n": 3959},
+        "emerging": {"verdict": "not_measurable"}, "dominant": {"verdict": "not_measurable"}}
+
+
+def test_signal_strength_grades_risk_backtested_entry_descriptive():
+    risk = ts._signal_strength("deteriorating", _CAL)
+    assert risk["grade"] == "backtested" and risk["kind"] == "risk" and risk["measured"] is True
+    ent = ts._signal_strength("emerging", _CAL)
+    assert ent["grade"] == "descriptive" and ent["measured"] is False
+    # a risk label the proxy did NOT confirm is still risk-kind but graded 'unconfirmed'
+    assert ts._signal_strength("fading", {"fading": {"verdict": "not_measurable"}})["grade"] == "unconfirmed"
+
+
+def test_signal_strength_fallback_without_calibration():
+    assert ts._signal_strength("deteriorating", {}) is None          # JSON absent -> no grade
+    assert ts._signal_strength("neutral", _CAL) is None              # neutral is ungraded
+
+
+def test_annotate_confidence_tags_and_gates_appearance():
+    evs = [
+        {"type": "theme_deteriorating", "severity": "high", "context": {"to": "deteriorating"}},
+        {"type": "theme_emerging", "severity": "medium", "context": {"to": "emerging"}},
+        {"type": "reco_change", "severity": "high", "context": {"to": "enter"}},
+        {"type": "reco_change", "severity": "high", "context": {"to": "avoid"}},
+        {"type": "leadership_rotation", "severity": "high", "context": {"new_leader": "x"}},
+    ]
+    out = ta._annotate_confidence(evs, _CAL)
+    assert out[0]["confidence"] == "backtested" and out[0]["severity"] == "high"   # measured risk shouts
+    assert out[1]["confidence"] == "descriptive"
+    assert out[2]["confidence"] == "descriptive" and out[2]["severity"] == "medium"  # enter downgraded
+    assert out[3]["confidence"] == "backtested" and out[3]["severity"] == "high"   # avoid = risk
+    assert out[4]["confidence"] == "descriptive" and out[4]["severity"] == "medium"  # rotation downgraded
+
+
+def test_annotate_confidence_noop_without_calibration():
+    evs = [{"type": "reco_change", "severity": "high", "context": {"to": "enter"}}]
+    out = ta._annotate_confidence([dict(e) for e in evs], {})
+    assert out[0]["severity"] == "high" and "confidence" not in out[0]
