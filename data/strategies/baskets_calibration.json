@@ -1,7 +1,7 @@
 {
   "schema": "baskets_calibration.v1",
   "region": "us",
-  "generated_at": "2026-06-21T09:47:51.509367+00:00",
+  "generated_at": "2026-06-21T10:03:03.884612+00:00",
   "fwd_horizons_d": [
     21,
     63
@@ -461,6 +461,44 @@
       "n": 6914
     },
     "verdict": "not_additive_descriptive"
+  },
+  "rollover_fit": {
+    "universe": "proxy_spdr_sectors",
+    "n": 12832,
+    "n_trials": 12,
+    "base_rate": 0.11,
+    "legs": [
+      "rs_pctile>=0.8",
+      "rolling_over",
+      "decel<-0.4",
+      "below_50d",
+      "5d_rel<-1%&rs>0.7"
+    ],
+    "hand_weights": [
+      0.3,
+      0.25,
+      0.2,
+      0.15,
+      0.1
+    ],
+    "fitted_weights": [
+      0.294,
+      0.0,
+      0.0,
+      0.859,
+      0.005
+    ],
+    "wired_weights": [
+      0.254,
+      0.0,
+      0.0,
+      0.742,
+      0.004
+    ],
+    "oos_lift_hand": 1.08,
+    "oos_lift_fitted": 1.32,
+    "reliability_skill": -0.898,
+    "verdict": "ship_fitted_weights"
   },
   "verdict": {
     "emerging": {

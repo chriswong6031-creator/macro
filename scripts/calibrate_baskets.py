@@ -737,6 +737,111 @@ def run_ranking_ab(region: str = "us") -> dict:
             "verdict": "additive_crash_control" if additive else "not_additive_descriptive"}
 
 
+# =========================================================================== #
+# E1-risk — calibrate the LIVE basket_score.rollover_risk breadth-free weights to forward
+# 21d drawdown (logistic, SIGN-constrained, L2-shrunk to the hand weights). Ship the fitted
+# weights ONLY if they beat the hand form OUT-OF-SAMPLE; else keep hand weights. Either way,
+# emit the reliability so the live 'high' band can show its MEASURED drawdown rate. The
+# breadth legs (member %>50d, nl>nh) have no single-ETF analogue, so this calibrates the
+# breadth-free core (rs_pctile / accel / below-50 / 5d-rel) — the dominant part.
+# =========================================================================== #
+def _fit_logistic_signed(X, y, w0, l2: float = 1.0, iters: int = 800, lr: float = 0.3):
+    """Sign-constrained (w>=0) logistic fit, L2-shrunk toward prior w0 — pure numpy (house
+    'no sklearn' rule). Risk penalties are non-negative, so projected GD clips w>=0; the L2
+    toward the hand weights keeps it from overfitting a weak signal."""
+    X = np.asarray(X, float); y = np.asarray(y, float); w = np.asarray(w0, float).copy(); b = 0.0
+    n = len(y)
+    for _ in range(iters):
+        p = 1.0 / (1.0 + np.exp(-(X @ w + b)))
+        g = p - y
+        w -= lr * (X.T @ g / n + l2 * (w - w0) / n)
+        b -= lr * float(g.mean())
+        w = np.clip(w, 0.0, None)
+    return w, float(b)
+
+
+def run_rollover_fit(region: str = "us") -> dict:
+    spec = REGION_SECTORS[region]
+    P = sector_prices(region, monthly=False)
+    spy = _adj(spec["bench"], spec["group"])
+    if P.empty or spy is None or P.shape[1] < 4:
+        return {"error": "insufficient proxy data"}
+    spy = spy.reindex(P.index).ffill()
+    feats = {c: _rs_features(P[c].dropna().reindex(P.index), spy) for c in P.columns}
+    HAND = np.array([0.30, 0.25, 0.20, 0.15, 0.10])   # rs>=.8 · roll-over · decel<-.4 · below50 · 5d<-1%&rs>.7
+    rows = []
+    for c, f in feats.items():
+        px = P[c].to_numpy()
+        rs_p = f["rs_pctile"].to_numpy(); az = f["accel_z"].to_numpy(); r5 = f["r5"].to_numpy()
+        az5 = f["accel_z"].shift(5).to_numpy()
+        ma50 = P[c].rolling(50, min_periods=25).mean().to_numpy()
+        for i in range(max(Z_LB, 200), len(px) - 22, STEP):
+            rp, a = rs_p[i], az[i]
+            if not (np.isfinite(rp) and np.isfinite(a)):
+                continue
+            dd = _fwd_dd(px, i, 21)
+            if not np.isfinite(dd):
+                continue
+            l1 = 1.0 if rp >= 0.8 else 0.0
+            l2_ = 1.0 if (np.isfinite(az5[i]) and a < az5[i] and a < 0) else 0.0
+            l3 = 1.0 if a < -0.4 else 0.0
+            l4 = 1.0 if (np.isfinite(ma50[i]) and px[i] < ma50[i]) else 0.0
+            l5 = 1.0 if (np.isfinite(r5[i]) and r5[i] < -0.01 and rp > 0.7) else 0.0
+            rows.append((l1, l2_, l3, l4, l5, 1.0 if dd < DD_RISK else 0.0, float(i)))
+    if len(rows) < 500:
+        return {"error": "thin", "n": len(rows)}
+    A = np.array(rows, float)
+    A = A[np.argsort(A[:, 6], kind="stable")]      # rows are sector-blocked -> sort by bar so
+    X, y, ev = A[:, :5], A[:, 5], A[:, 6]           # positional folds are time-contiguous (embargo works)
+    hand_score = (X @ HAND) / HAND.sum()
+    base = float(y.mean())
+
+    led = TrialLedger()
+    led.log_grid([{"l2": v} for v in (0.5, 1.0, 2.0)], family="baskets_rollover_fit",
+                 info_cutoff="2026-06-21", source="calibrate_baskets:rollover_fit")
+    led.log_declared_budget(12, family="baskets_rollover_fit",
+                            reason="rollover weight-fit: l2 x band-cut x feature variants")
+
+    # OOS purged 5-fold: fit on train, compare fitted-vs-hand top-third lift on the test fold
+    k, emb = 5, 21
+    bounds = np.linspace(0, len(X), k + 1).astype(int)
+    fit_lifts, hand_lifts = [], []
+    for j in range(k):
+        lo, hi = int(bounds[j]), int(bounds[j + 1])
+        test = np.zeros(len(X), bool); test[lo:hi] = True
+        if not test.any():
+            continue
+        blo, bhi = ev[test].min(), ev[test].max()
+        train = (~test) & ((ev < blo - emb) | (ev > bhi + emb))
+        if train.sum() < 200 or test.sum() < 50:
+            continue
+        w, b = _fit_logistic_signed(X[train], y[train], HAND, l2=1.0)
+        bte = float(y[test].mean()) or 1.0
+        for score, store in ((1.0 / (1.0 + np.exp(-(X[test] @ w + b))), fit_lifts),
+                             (hand_score[test], hand_lifts)):
+            fire = score >= np.quantile(score, 2 / 3)
+            if int(fire.sum()) >= 20:
+                store.append(float(y[test][fire].mean()) / bte)
+    fit_lift = round(float(np.mean(fit_lifts)), 2) if fit_lifts else None
+    hand_lift = round(float(np.mean(hand_lifts)), 2) if hand_lifts else None
+    rel = V.brier_reliability(hand_score, y)
+    wfull, _bfull = _fit_logistic_signed(X, y, HAND, l2=1.0)
+    beats = bool(fit_lift and hand_lift and fit_lift > hand_lift + 0.05)
+    # WIRED weights = fitted, renormalized to the hand total (1.0) so the live additive
+    # rollover score keeps the same 0-1 scale + 0.35/0.6 bands. Only used live if the gate passed.
+    wsum = float(wfull.sum()) or 1.0
+    wired = [round(float(x) / wsum, 3) for x in wfull]
+    return {"universe": "proxy_spdr_sectors", "n": len(rows),
+            "n_trials": led.effective_n("baskets_rollover_fit"), "base_rate": round(base, 3),
+            "legs": ["rs_pctile>=0.8", "rolling_over", "decel<-0.4", "below_50d", "5d_rel<-1%&rs>0.7"],
+            "hand_weights": [round(x, 2) for x in HAND.tolist()],
+            "fitted_weights": [round(float(x), 3) for x in wfull],
+            "wired_weights": wired,
+            "oos_lift_hand": hand_lift, "oos_lift_fitted": fit_lift,
+            "reliability_skill": (rel or {}).get("skill_score"),
+            "verdict": "ship_fitted_weights" if beats else "keep_hand_weights"}
+
+
 # --------------------------------------------------------------------------- #
 # LIVE universe — full-fidelity labels, descriptive context only (never a gate)
 # --------------------------------------------------------------------------- #
@@ -926,6 +1031,17 @@ def main(do_live: bool = False) -> int:
         print(f"  total-mom book:    Sharpe {ab['total']['sharpe']}  MaxDD {ab['total']['maxdd_pct']}%  skew {ab['total']['skew']}")
         print(f"  residual-mom book: Sharpe {ab['residual']['sharpe']}  MaxDD {ab['residual']['maxdd_pct']}%  skew {ab['residual']['skew']}")
         print(f"  DD-reduction (resid vs total) CI: {ab['dd_reduction_vs_total_ci'].get('dd_reduction_pp_ci')}  → {ab['verdict']}")
+
+    log.info("running E1-risk rollover_risk weight-fit…")
+    out["rollover_fit"] = run_rollover_fit("us")
+    rf = out["rollover_fit"]
+    if not rf.get("error"):
+        print(f"\n=== ROLLOVER WEIGHT-FIT (n {rf['n']}, base {rf['base_rate']}, n_trials {rf['n_trials']}) ===")
+        print(f"  legs:           {rf['legs']}")
+        print(f"  hand weights:   {rf['hand_weights']}")
+        print(f"  fitted weights: {rf['fitted_weights']}")
+        print(f"  OOS top-third lift: hand {rf['oos_lift_hand']}  vs fitted {rf['oos_lift_fitted']}  "
+              f"(reliability skill {rf['reliability_skill']})  → {rf['verdict']}")
     if do_live:
         log.info("running LIVE universe (3y baskets, descriptive)…")
         out["live"] = run_live("us")
