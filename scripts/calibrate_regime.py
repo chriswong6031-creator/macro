@@ -50,6 +50,7 @@ from engine.btc_regime_flags import (  # noqa: E402
 from engine.validation import (  # noqa: E402
     backtest_core, block_bootstrap_ci, deflated_sharpe, newey_west_tstat, purged_folds,
 )
+from engine.trial_ledger import TrialLedger  # noqa: E402
 from lib import config  # noqa: E402
 
 # --------------------------------------------------------------------------- #
@@ -553,11 +554,18 @@ def main() -> int:
     # 5. Allocation backtest + Deflated Sharpe with machine-counted n_trials
     choice_ledger = _build_choice_ledger()
     n_trials = len(choice_ledger)
+    # honest-N via the Trial Ledger (P3): itemize the a-priori parameter choices that were
+    # already machine-counted, + declare the count as a floor → effective_n = n_trials.
+    _led = TrialLedger()
+    _led.log_grid([{"knob": c.get("knob"), "value": c.get("value")} for c in choice_ledger],
+                  family="regime", source="choice_ledger")
+    _led.log_declared_budget(n_trials, family="regime",
+                             reason="len(_build_choice_ledger) — a-priori parameter choices")
 
     bt = _backtest_exposure(index_s, close)
     dsr_result = deflated_sharpe(
         bt.get("sharpe_daily"), bt.get("skew"), bt.get("kurt"),
-        bt.get("n_obs"), n_trials,
+        bt.get("n_obs"), ledger=_led, family="regime",
         trading_year=TRADING_YEAR,
     )
     if dsr_result is not None:
