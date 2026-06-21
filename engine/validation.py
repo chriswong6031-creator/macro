@@ -129,13 +129,36 @@ def ret_moments(r: pd.Series):
 _ret_moments = ret_moments
 
 
-def deflated_sharpe(sr_daily, skew, kurt, T, n_trials, sr_variance=None,
-                    trading_year: float = 252) -> dict | None:
-    """DSR for a strategy selected as the best of `n_trials` configs.
+def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
+                    trading_year: float = 252, *, ledger=None,
+                    family: str | None = None) -> dict | None:
+    """DSR for a strategy selected as the best of N tried configs.
     `sr_daily` = its per-period Sharpe; `sr_variance` = cross-trial variance of the
     per-period Sharpes (if None, fall back to the SR-estimator's own variance as a
     conservative proxy). `trading_year` only scales the *_annual report fields — the
-    DSR probability itself is annualization-invariant."""
+    DSR probability itself is annualization-invariant.
+
+    N (the multiple-testing count) comes from ONE of two sources:
+
+    * `n_trials` (int) — the legacy path: the caller asserts the count. This is the
+      p-hacking surface (a caller can lowball it), so new code should NOT use it; the
+      `tests/test_no_literal_ntrials.py` ratchet blocks new literal callers.
+    * `ledger=` + `family=` — the honest path: N is the count of DISTINCT configs the
+      Trial Ledger recorded for `family` AT GENERATION, which the caller cannot
+      understate. Pass a `engine.trial_ledger.TrialLedger` (duck-typed: anything with
+      an `effective_n(family)` method works).
+
+    Exactly one of {`n_trials`, `ledger`} must be given; passing both is a ValueError."""
+    if (ledger is not None) and (n_trials is not None):
+        raise ValueError(
+            "deflated_sharpe: pass EITHER a literal n_trials OR a ledger= handle, "
+            "not both — they are two ways to set the same N")
+    if ledger is not None:
+        n_trials = ledger.effective_n(family)
+    elif n_trials is None:
+        raise ValueError(
+            "deflated_sharpe requires the multiple-testing N: pass ledger= (honest, "
+            "counted at generation) or n_trials= (legacy literal)")
     if sr_daily is None or T is None or T < 3 or skew is None or kurt is None:
         return None
     var_scaler = 1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * sr_daily * sr_daily
