@@ -236,6 +236,13 @@ jobs:
       - name: GEX magnets board (build_gex_board)
         # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
         run: python -m scripts.build_gex_board
+      - name: index vol-regime (build_vol_regime)
+        # after build_gex_board: reads the long vol series (VIX/VIX3M/MOVE/SKEW/VVIX/VX curve,
+        # collected in the collect job) -> site/vol/regime.json (Options Desk "market weather"
+        # + macro pages) + site/vol/mastermind.json (vol_regime.context.v1 lens for the bot).
+        # SCORED only where data/vol_regime/gate.json marks a leg earned; else display/context.
+        # Additive + graceful: returns 0 on any error, never breaks the site.
+        run: python -m scripts.build_vol_regime
       - name: factor seasonality (build_seasonality)
         # after build_site, before build_vector: reads data/french/factors.parquet
         # (Ken French monthly factors, collected in the collect job) and writes
