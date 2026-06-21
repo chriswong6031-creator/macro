@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-18",
-  "generated_at": "2026-06-21T01:54:50.514766+00:00",
+  "generated_at": "2026-06-21T04:31:38.059920+00:00",
   "degraded": null,
   "notes": [
     {
@@ -11,16 +11,16 @@
       "lean": "cautious",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The engine's 'Leader \u00b7 accounting watch' verdict and a still-unconfirmed bottoming setup (swing low printed but price below 10-day average) warrant caution despite favorable revisions; liquidity headwinds and the accounting flag tilt odds unfavorably.",
+      "thesis": "The screen's residual-alpha selection and TURN SIGNALED ladder point to a bottoming setup, but the accounting-watch flag and macro-contraction headwind reshape potential upside into a cautious lean \u2014 confirmation is missing.",
       "evidence": [
-        "Verdict: 'Leader \u00b7 accounting watch \u2014 confirm before adding'",
-        "Entry axis shows pullback/extended, RSI, off-high, but not a clean break above short-term trend",
-        "Macro headwind: US net liquidity contracting; macro-risk elevated for a macro-sensitive name",
-        "Quality flag: accounting watch"
+        "verdict: Leader \u00b7 accounting watch \u2014 confirm before adding",
+        "selection axes: SUE z 1.04 (validated) + revisions z 2.44 (literature)",
+        "entry axis: urgency, off-high, rsi \u2014 swing low rejected but still below 10-day average",
+        "risk reshape: accounting watch flagged in quality; macro sensitivity amid contracting US net liquidity"
       ],
-      "dissent": "The stock has a fresh SUE (z=1.04) and very strong revisions (z=2.44); if the accounting concern proves noise and the price reclaims its 10-day average, the cautious lean would be too conservative.",
+      "dissent": "The accounting-watch label can signal aggressive revenue/lease accounting that unwinds under scrutiny; with a 2.0B market cap and REIT structure, a restatement or internal-control finding would inflict sharp de-rating, overwhelming any earnings-surprise edge.",
       "falsifier": {
-        "text": "If price closes above the 10-day moving average and no adverse accounting restatement emerges within 20 trading days, the cautious lean would be invalidated.",
+        "text": "If GNL fails to reclaim its 10-day moving average and instead closes below the 2026-06-17 swing low (~9.00), the bottoming thesis is broken and the cautious lean was still too early.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "GNL",
@@ -38,18 +38,18 @@
       "ticker": "CWEN",
       "name": "Clearway Energy, Inc. (Class C)",
       "lean": "constructive",
-      "conviction": "low",
+      "conviction": "medium",
       "horizon_d": 30,
-      "thesis": "The 'High-conviction leader with a good entry' verdict overrules the bearish bigger-picture signal, as the bottom-watch phase and strong revisions (z=2.44) support a patient constructive stance, but a left-translated cycle and contracting liquidity keep conviction low.",
+      "thesis": "The deterministic 'High-conviction \u2014 leader with a good entry' verdict rests on revision and momentum legs plus a favorable entry risk-shape, but the daily ladder is still on BOTTOM WATCH with a bearish bigger picture, so the lean is counter-trend and demands a longer horizon for the turn.",
       "evidence": [
-        "Verdict: 'High-conviction \u2014 leader with a good entry'",
-        "Selection axis: revisions (literature tier, z=2.44) present",
-        "Entry axis: off-high, RSI, risk-shape; entry not blocked",
-        "Technical: swing low printed, approaching potential bottom"
+        "verdict: High-conviction \u2014 leader with a good entry",
+        "selection axes: revisions z 2.44 (literature), momentum z 0.34 (context)",
+        "entry axis: urgency, off-high, rsi, risk-shape \u2014 swing low printed, -9.3% off 52w high",
+        "risk reshape: US net liquidity contraction as macro headwind, signal warns 'still below 10-day average' and bearish bigger picture"
       ],
-      "dissent": "The daily cycle is left-translated (bearish structural tell), macro liquidity is a headwind, and the signal itself says 'WAIT' \u2014 the bottom may not hold.",
+      "dissent": "The prior cycle topped early (left-translated), a structural bearish tell that often precedes failed rallies; the counter-trend long may stall as the dominant daily trend reasserts, especially with macro headwinds.",
       "falsifier": {
-        "text": "If the price closes below the recent swing low formed during the bottom-watch period, the constructive lean would be proven wrong.",
+        "text": "If CWEN breaks below the swing low that formed the BOTTOM WATCH (the most recent significant trough) instead of reclaiming the 10-day average, the constructive lean is invalid.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "CWEN",
@@ -69,16 +69,16 @@
       "lean": "constructive",
       "conviction": "medium",
       "horizon_d": 20,
-      "thesis": "A high-conviction verdict with a 'HALF SIZE / now' entry on a confirmed swing low above the 10-day average and building momentum supports a constructive lean; the risk-reward setup is explicit despite macro headwinds.",
+      "thesis": "The TURN SIGNALED bottoming setup is backed by a strong revisions leg (literature) and a clean entry z-score; the stock is already above the 10-day average, but aggressive macro risk and partial weekly confirmation keep conviction medium.",
       "evidence": [
-        "Verdict: 'High-conviction \u2014 leader with a good entry'",
-        "Ladder: TURN SIGNALED, BOTTOMING, action HALF SIZE, urgency now",
-        "Technical: price above 10-day average, RSI 51, daily momentum nearing turn-up",
-        "Selection: revisions (literature, z=1.36) and momentum (context, z=1.45)"
+        "verdict: High-conviction \u2014 leader with a good entry",
+        "selection axes: revisions z 1.36 (literature), momentum z 1.45 (context)",
+        "entry axis: urgency, pullback/extended, off-high (-7.6%), rsi \u2014 swing low of 16.77 printed, price > 10-day",
+        "risk reshape: macro-risk elevated for a macro-sensitive financial name, US net liquidity contracting"
       ],
-      "dissent": "The bigger picture remains mixed, macro liquidity is contracting, and the weekly timeframe hasn't turned \u2014 this could be a false bottom.",
+      "dissent": "As an asset manager heavily tied to market sentiment and inflows, WisdomTree is macro-sensitive; ongoing liquidity contraction and elevated macro risk could stall the earnings-revision tailwind and trap the early cycle bounce.",
       "falsifier": {
-        "text": "If price closes below the cycle low of 16.77 (2026-06-10), the constructive lean is invalidated.",
+        "text": "If WT closes below the 2026-06-10 cycle low of 16.77, the bottoming formation is broken and the lean is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "WT",
@@ -96,18 +96,19 @@
       "ticker": "MCY",
       "name": "Mercury General",
       "lean": "constructive",
-      "conviction": "low",
+      "conviction": "medium",
       "horizon_d": 15,
-      "thesis": "The 'High-conviction leader' verdict and with-trend bullish regime support a constructive lean, but the stock is already at highs, RSI not oversold, and macro headwinds cap conviction.",
+      "thesis": "The engine awards high-conviction in a confirmed RALLY ON with bullish alignment, quality factors, and strong SUE/revision legs, but the stock sits exactly at 52-week highs and the entry z is only modest, so the lean acknowledges trend-following risk from macro headwinds and late-cycle pullback.",
       "evidence": [
-        "Verdict: 'High-conviction \u2014 leader with a good entry'",
-        "Ladder: RALLY ON, UPTREND, with-trend, weekly aligned",
-        "Selection: SUE (validated, z=1.26), revisions (literature, z=1.99), momentum (context, z=1.64)",
-        "Quality axis: clean accounting, factors present"
+        "verdict: High-conviction \u2014 leader with a good entry",
+        "selection axes: SUE z 1.26 (validated), revisions z 1.99 (literature), momentum z 1.64 (context)",
+        "quality axis: z 0.38, accounting clean, supported by fundamentals (ROE, net income growth 15.6%)",
+        "entry axis: off-high (0.0% \u2014 at new high), rsi 59 not extended, risk-shape present",
+        "regime: bullish bigger picture (with-trend)"
       ],
-      "dissent": "Price is at 52-week highs; any mean-reversion or macro shock could trigger a rapid pullback, and the hold tag suggests the immediate entry edge has passed.",
+      "dissent": "At the 52-week high with an entry-tag HOLD, any macro or earnings disappointment could trigger fast profit-taking; the insurance cycle is mature, and liquidity contraction is a persistent headwind for all financials.",
       "falsifier": {
-        "text": "If price closes below its rising 10-day moving average within the next 15 trading days, the constructive lean would be falsified.",
+        "text": "If MCY closes below its 50-day moving average (currently near 98) and the 10-day average turns down, the uptrend is broken and the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "MCY",
@@ -125,28 +126,29 @@
       "ticker": "PGNY",
       "name": "Progyny",
       "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The verdict labels it a high-conviction leader with a good entry; a strong SUE (z=2.04) and clean quality support a positive tilt despite the prior left-translated cycle and the fact that price hasn't yet reclaimed the 10-day average.",
+      "conviction": "medium",
+      "horizon_d": 25,
+      "thesis": "A high-conviction verdict is delivered on earnings surprise (SUE z 2.04, validated) and clean quality, supported by a TURN SIGNALED bottoming setup, but the left-translated prior cycle and failure to reclaim the 10-day average cap conviction and demand proof of follow-through.",
       "evidence": [
-        "Verdict: 'High-conviction \u2014 leader with a good entry'",
-        "Selection: SUE (validated, z=2.04 fresh 19 days)",
-        "Quality axis: accounting clean, high quality factors",
-        "Entry: off-high -8.2%, risk-shape present, no entry block"
+        "verdict: High-conviction \u2014 leader with a good entry",
+        "selection axes: SUE z 2.04 (validated), revisions z 0.84 (literature), momentum z 0.28 (context)",
+        "quality axis: z 1.505 (pct 72), accounting clean",
+        "entry axis: urgency, off-high (-8.2%), rsi 62, risk-shape \u2014 swing low rejected",
+        "risk reshape: prior cycle topped early (bearish structural tell), still below 10-day average"
       ],
-      "dissent": "The cycle was left-translated (topped early) and price is still below the 10-day average; macro liquidity contraction could delay or prevent a recovery.",
+      "dissent": "The left-translated cycle and daily phase 'stretched' warn that the recent bounce may be a headfake within a larger topping process; an earnings beat is already in the rearview mirror and may fade without fresh catalysts.",
       "falsifier": {
-        "text": "If the stock breaks below the 2026-05-14 low, the constructive lean is proven wrong.",
+        "text": "If PGNY fails to reclaim and hold its 10-day moving average and instead breaks below the 2026-05-14 swing low area (~22), the bottoming setup is false and the constructive lean fails.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "PGNY",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 25
         }
       },
-      "check_by": "2026-07-16",
+      "check_by": "2026-07-23",
       "engine_verdict": "High-conviction \u2014 leader with a good entry"
     },
     {
@@ -156,16 +158,17 @@
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The engine's flat 'Neutral \u2014 no clear edge' verdict correctly reflects a weak selection axis (z=0.14) and mixed signals; despite high quality, there is no validated reason to expect relative outperformance versus the S&P 500.",
+      "thesis": "The deterministic verdict is 'Neutral \u2014 no clear edge': selection z is weak (mostly revision/momentum context with negative momentum), while quality is high and the entry axis is favorable; this balance yields no discernible direction versus the S&P 500 over the horizon.",
       "evidence": [
-        "Verdict: 'Neutral \u2014 no clear edge'",
-        "Selection axis: only revisions (literature, z=0.34) and slightly negative momentum",
-        "Drivers limited to entry and quality, lacking the validated event edge",
-        "Signal: TURN SIGNALED but macro headwinds and still below 10-day average"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection axes: revisions z 0.34 (literature), momentum z -0.24 (context) \u2014 no validated SUE leg",
+        "quality axis: z 2.48 (pct 82), accounting clean",
+        "entry axis: urgency, off-high (-18.5%), rsi 50, risk-shape",
+        "regime: mixed tape, macro liquidity contracting"
       ],
-      "dissent": "Quality is extremely high (z=2.48, ROE 58%, strong cash flow); a sudden catalyst like an earnings surprise could force outperformance.",
+      "dissent": "Exceptionally strong quality (high ROE, cash flow, net income growth) combined with a deep 18.5% off-high discount could attract mean-reversion buyers, causing the stock to rally sharply and make a neutral lean look too timid.",
       "falsifier": {
-        "text": "If the stock releases a materially positive earnings surprise and closes above its 50-day and 200-day moving averages within the horizon, the neutral stance would be challenged.",
+        "text": "If PJT breaks above its 200-day moving average (~162.5) and sustains there for more than five sessions, the neutral assumption of no edge would be proven overly conservative.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
