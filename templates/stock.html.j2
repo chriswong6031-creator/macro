@@ -508,18 +508,16 @@
       <div id="r_smartmoney"></div>
     </div>
 
-    <div class="panel" id="panel_mtf">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
-    </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
     </div>
+    <div class="panel" id="panel_mtf">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
+    </div>
     <div class="panel" id="panel_cal">
-      <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}</h2>
-      <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+      <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}{{ help(
         'Stocks drift up over a month from
         every state (the market\'s long upward bias); the spread between states is small, and the
         "scary" states measured slightly better forward returns — markets mean-revert and full
@@ -534,7 +532,8 @@
         <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
         <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
         对于未确认转向这类风险状态，回撤视角比平均收益更重要，因为危险在于过程，而非终点。（基于股票的一个月
-        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</p>
+        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</h2>
+      <table id="r_cal"></table>
     </div>
   </div>
 
