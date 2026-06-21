@@ -72,6 +72,24 @@ def test_arb_metrics_rejects_implausible_offer():
     assert arb.arb_metrics(25.0, 23.0) is not None                          # real ~8.7% spread kept
 
 
+# ---- foreign currency (broadened price panel) -------------------------------
+def test_market_currency():
+    assert arb.market_currency("ARX.TO") == "CAD"
+    assert arb.market_currency("BARC.L") == "GBP"
+    assert arb.market_currency("7203.T") == "JPY"
+    assert arb.market_currency("AAPL") == "USD"
+
+
+def test_arb_metrics_currency_match():
+    # a CAD deal priced against a CAD close (the .TO panel) is allowed
+    m = arb.arb_metrics(9.0, 8.0, currency="CAD", price_currency="CAD")
+    assert m is not None and m["gross_spread_pct"] > 0
+    # CAD deal vs a USD close is rejected (mismatch)
+    assert arb.arb_metrics(9.0, 8.0, currency="CAD", price_currency="USD") is None
+    # unset deal currency is allowed against any close (plausibility gate still applies)
+    assert arb.arb_metrics(9.0, 8.0, price_currency="CAD") is not None
+
+
 # ---- end-to-end enrich ------------------------------------------------------
 def test_enrich_arb_attaches_block(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
@@ -93,3 +111,17 @@ def test_enrich_arb_attaches_block(tmp_path, monkeypatch):
     assert "arb" in sits[0] and sits[0]["arb"]["gross_spread_pct"] > 0
     assert sits[0]["arb"]["downside_on_break_pct"] < 0            # unaffected (~18) below live (23)
     assert "arb" not in sits[1] and "arb" not in sits[2]
+
+
+def test_enrich_arb_prices_foreign_suffixed_ticker(tmp_path, monkeypatch):
+    """A Canadian (.TO) take-private prices against the foreign close panel in CAD — the
+    broadened-panel + suffix-match + currency path (#2)."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    idx = pd.bdate_range("2026-05-01", periods=40)
+    (tmp_path / "canada_search").mkdir(parents=True)
+    pd.DataFrame({"ARX.TO": [7.5] * 40}, index=idx).to_parquet(
+        tmp_path / "canada_search" / "closes.parquet")
+    sits = [{"ticker": "ARX.TO", "category": "Going-Private", "date_filed": "2026-06-25",
+             "deal_terms": {"price_per_share": 9.0, "currency": "CAD", "consideration": "cash"}}]
+    assert sse._enrich_arb(sits) == 1
+    assert sits[0]["arb"]["gross_spread_pct"] == round((9.0 / 7.5 - 1) * 100, 2)   # ~20% in CAD

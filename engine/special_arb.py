@@ -92,10 +92,27 @@ def days_to_close(expected_close: str | None, asof: date | None = None) -> int |
     return delta if delta > 0 else None
 
 
+# exchange suffix -> quote currency, so a foreign deal price is compared to a same-currency
+# close (the close panel now carries .TO/.L/.T/... foreign closes, not just USD).
+_SUFFIX_CCY = {
+    "": "USD", "TO": "CAD", "V": "CAD", "L": "GBP", "T": "JPY", "HK": "HKD", "AX": "AUD",
+    "NS": "INR", "BO": "INR", "DE": "EUR", "PA": "EUR", "MI": "EUR", "AS": "EUR", "MC": "EUR",
+    "BR": "EUR", "LS": "EUR", "IR": "EUR", "HE": "EUR", "VI": "EUR", "KS": "KRW", "TW": "TWD",
+    "ST": "SEK", "OL": "NOK", "SW": "CHF", "CO": "DKK",
+}
+
+
+def market_currency(ticker: object) -> str:
+    """Quote currency for a (possibly exchange-suffixed) ticker; USD for a bare US symbol."""
+    t = str(ticker or "")
+    suf = t.rsplit(".", 1)[-1].upper() if "." in t else ""
+    return _SUFFIX_CCY.get(suf, "USD")
+
+
 def arb_metrics(deal_price: float | None, live_price: float | None, *,
                 expected_close: str | None = None, asof: date | None = None,
                 consideration: str | None = None, currency: str | None = None,
-                unaffected_price: float | None = None) -> dict | None:
+                price_currency: str = "USD", unaffected_price: float | None = None) -> dict | None:
     """Spread economics for one announced deal. Returns None when not computable.
 
     gross_spread = deal/live - 1 (upside to the deal; negative = trading through it).
@@ -107,8 +124,9 @@ def arb_metrics(deal_price: float | None, live_price: float | None, *,
     dp, lp = _num(deal_price), _num(live_price)
     if dp is None or lp is None or dp <= 0 or lp <= 0:
         return None
-    if currency and currency.upper() not in ("USD", "US$"):
-        return None                                   # live close is USD; don't mix currencies
+    pc = (price_currency or "USD").upper().replace("US$", "USD")
+    if currency and currency.upper().replace("US$", "USD") != pc:
+        return None                                   # deal currency must match the close's currency
     if not (_PLAUS_LO <= dp / lp <= _PLAUS_HI):
         return None                                   # implausible offer/price → bad extraction;
         # keep a garbage spread out of the annualized-sorted risk_arb book

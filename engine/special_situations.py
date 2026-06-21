@@ -542,8 +542,10 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
 
 
 def _closes_panel() -> pd.DataFrame:
-    """US daily closes (breadth caches + the backtest backfill), tickers as columns.
-    Reused by the merger-arb spread lane (P1.2) to read live + unaffected prices."""
+    """Daily closes (tickers as columns) for the merger-arb spread lane (P1.2). US breadth +
+    the backtest backfill (bare tickers, USD) PLUS the foreign stock-search closes — Canada
+    (.TO, CAD), intl/UK (.L GBP, .T JPY, …) and HK (.HK) — so cross-border deal targets can be
+    priced in their own currency. Columns keep their exchange suffix for the foreign sets."""
     frames = []
     for g in ("breadth", "midcap_breadth", "smallcap_breadth"):
         p = config.data_dir() / g / "_closes_cache.parquet"
@@ -552,6 +554,14 @@ def _closes_panel() -> pd.DataFrame:
     btp = config.data_dir() / GROUP / "bt_prices.parquet"
     if btp.exists():
         frames.append(pd.read_parquet(btp))
+    for sub, fn in (("canada_search", "closes.parquet"), ("intl_search", "closes.parquet"),
+                    ("hk_search", "closes_deep.parquet")):
+        p = config.data_dir() / sub / fn
+        if p.exists():
+            try:
+                frames.append(pd.read_parquet(p))
+            except Exception:  # noqa: BLE001
+                pass
     if not frames:
         return pd.DataFrame()
     df = pd.concat(frames, axis=1, sort=False)
@@ -596,16 +606,20 @@ def _enrich_arb(sits: list[dict]) -> int:
         terms = arb.parse_terms(s.get("deal_terms"))
         if not terms.get("price_per_share"):
             continue
-        base = _norm_ticker(s.get("ticker"))
-        if not base or base not in panel.columns:
+        # match the FULL suffixed ticker against the foreign closes first (ARX.TO / BARC.L),
+        # then the bare US form — the panel keeps suffixes for the foreign sets.
+        raw = str(s.get("ticker") or "").upper()
+        col = next((c for c in (raw, raw.split(".")[0]) if c and c in panel.columns), None)
+        if not col:
             continue
-        lp = last.get(base)
+        lp = last.get(col)
         when = s.get("date_filed") or s.get("date")
-        unaff = _price_before(panel[base], when, 30)
+        unaff = _price_before(panel[col], when, 30)
         m = arb.arb_metrics(terms["price_per_share"], lp,
                             expected_close=terms.get("expected_close"),
                             consideration=terms.get("consideration"),
                             currency=terms.get("currency"),
+                            price_currency=arb.market_currency(col),
                             unaffected_price=unaff)
         if m:
             s["arb"] = m

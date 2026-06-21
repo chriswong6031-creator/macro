@@ -49,3 +49,15 @@ def test_resolve_real_digest_index():
     # names known to be in the digest universe (US bare ticker; CA suffixed)
     assert nr.resolve("Bally's Corporation explores alternatives", market="us", index=idx) == "BALY"
     assert nr.resolve("ARC Resources Ltd announces a deal", market="canada", index=idx) == "ARX.TO"
+
+
+def test_resolve_foreign_search_libraries():
+    """UK/Canada names from the stock-search libraries resolve to suffixed tickers (#1) —
+    the coverage that lets the intl lanes key on a name. Smoke; skips if libs absent."""
+    nr.clear_cache()
+    idx = nr.build_index()
+    # only assert when the foreign libraries are present in this env
+    if "royal bank of canada" in idx:
+        assert nr.resolve("Royal Bank Of Canada announces", market="canada", index=idx) == "RY.TO"
+    if "barclays" in idx:
+        assert nr.resolve("Barclays plc firm offer", market="uk", index=idx) == "BARC.L"
