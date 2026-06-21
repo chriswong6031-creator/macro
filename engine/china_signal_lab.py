@@ -11,9 +11,73 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-SCHEMA = "china_signal_lab.v1"
+SCHEMA = "china_signal_lab.v2"
 
 TIERS = ("scored", "confirmer", "display", "pending", "killed")
+
+# Per-consumer DEFAULT priors (used until china_validation earns weights). Keys = leg names the
+# consumer's combine() expects.
+_PRIORS = {
+    "altdata": {"value": 0.28, "margin": 0.25, "comment": 0.18, "lhb": 0.12,
+                "block": 0.07, "analyst": 0.10},
+    "conviction": {"radar": 0.40, "altdata": 0.22, "news": 0.20, "policy": 0.10,
+                   "conditions": 0.08},
+}
+# registry/leg key -> china_validation family (only these have a reconstructable-history harness)
+_VAL_FAMILY = {"value": "valuation", "valuation": "valuation", "margin": "margin",
+               "margin_detail": "margin", "news": "news_sentiment"}
+
+
+def load_validation() -> dict:
+    """china_validation scorecard families, or {} (accruing) on miss. Never raises."""
+    try:
+        from engine import china_validation
+        sc = china_validation.load_scorecard()
+        if sc and isinstance(sc.get("families"), dict):
+            return sc["families"]
+        if sc and isinstance(sc.get("results"), dict):
+            return sc["results"]
+        return sc.get("families", {}) if isinstance(sc, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def leg_weights_for(consumer: str) -> dict:
+    """Earned, forward-return-validated leg weights for a consumer (altdata|conviction).
+    Starts from the prior; a leg whose china_validation family is PROVEN wrong-sign (ic<0 with
+    |t|>=2 over >=120 obs) is ZEROED (it actively misleads); a proven right-sign family is scaled
+    up to 1.5x by confidence; unvalidated/accruing legs keep the prior (context floor). Renormalized.
+    Returns {} for an unknown consumer so callers fall back to their own default."""
+    base = dict(_PRIORS.get(consumer) or {})
+    if not base:
+        return {}
+    fams = load_validation()
+    for leg in list(base):
+        fam = fams.get(_VAL_FAMILY.get(leg, "")) if _VAL_FAMILY.get(leg) else None
+        if not fam:
+            continue                      # no harness for this leg → keep prior (floor)
+        ic = fam.get("ic")
+        t = fam.get("t_hac")
+        n = fam.get("n_obs") or 0
+        if ic is None:
+            continue
+        try:
+            ic = float(ic); t = float(t) if t is not None else 0.0
+        except (TypeError, ValueError):
+            continue
+        if ic < 0 and abs(t) >= 2.0 and n >= 120:
+            base[leg] = 0.0               # proven to actively mislead → drop
+        elif ic > 0 and abs(t) >= 2.0 and n >= 120:
+            base[leg] *= min(1.5, 1.0 + abs(ic) * 5.0)   # earned boost
+    tot = sum(base.values())
+    if tot <= 0:
+        return dict(_PRIORS.get(consumer) or {})         # never zero everything
+    return {k: round(v / tot, 4) for k, v in base.items()}
+
+
+def signal_weights() -> dict:
+    """All consumers' earned leg weights, for display + the conviction composite."""
+    return {c: leg_weights_for(c) for c in _PRIORS}
 
 # (key, name_en, name_zh, tier, wired, note_en, note_zh)
 CHINA_REGISTRY: list[tuple] = [
@@ -71,6 +135,35 @@ CHINA_REGISTRY: list[tuple] = [
      "hk_southbound/holdings (accruing)",
      "Per-stock mainland ownership momentum; history accruing for validation.",
      "个股内地持股动量；正在累计历史以待验证。"),
+    # --- NEW US-parity alt-data legs (Stage 3d) — accruing / display ---------- #
+    ("comment", "Crowd attention & inst-participation (千股千评)", "千股千评", "pending",
+     "china_altdata convergence (0.18)",
+     "Eastmoney 关注指数 + 机构参与度 + 主力成本; retail-vs-institutional crowding.",
+     "关注指数+机构参与度+主力成本；散户与机构的拥挤度。"),
+    ("lhb_inst", "Dragon-Tiger institutional seats (龙虎榜)", "龙虎榜机构席位", "pending",
+     "china_altdata convergence (0.12) + discovery",
+     "Institutional-seat net buy on the abnormal-move board — leading smart money.",
+     "龙虎榜机构席位净买入——领先主力资金。"),
+    ("block_premium", "Block-trade premium/discount (大宗交易)", "大宗交易折溢价", "pending",
+     "china_altdata convergence (0.07) + discovery",
+     "Off-market block premium=conviction handoff / discount=institutional unload.",
+     "大宗溢价=承接 / 折价=机构出货。"),
+    ("buyback", "Corporate buybacks (回购)", "回购", "display",
+     "china_discovery confirmer",
+     "In-progress buyback %-of-shares + RMB; insider conviction + valuation floor.",
+     "在实施回购占比与金额；管理层信心+估值底。"),
+    ("attention_velocity", "Attention/LHB velocity", "关注度/龙虎榜动量", "pending",
+     "china_velocity (accruing)",
+     "Momentum of attention + Dragon-Tiger appearances; accruing forward track record.",
+     "关注度与龙虎榜上榜的动量；正在累计前瞻战绩。"),
+    ("multi_leg_crowding", "Multi-leg fragility (k-of-5)", "多腿脆弱性", "display",
+     "china_crowding flag",
+     "Margin+pledge+limit-up+attention+valuation conjunction; contrarian risk, not scored.",
+     "两融+质押+涨停+关注度+估值的合取；逆向风险，不评分。"),
+    ("discovery", "Off-desk leading accumulation", "未上桌的领先吸筹", "pending",
+     "china_discovery",
+     "Names with ≥2 leading legs (LHB-inst/block/buyback/attention) before price confirms.",
+     "在价格确认前出现≥2个领先腿（机构席位/大宗/回购/关注度）的个股。"),
     # --- KILLED: tested, no edge -------------------------------------------- #
     ("xmom", "Cross-sectional momentum", "横截面动量", "killed", "—",
      "A-share IC negative; only short-term reversal survives.",
@@ -87,10 +180,18 @@ def build_china_scorecard() -> dict:
     for key, en, zh, tier, wired, note_en, note_zh in CHINA_REGISTRY:
         rows.append({"key": key, "name_en": en, "name_zh": zh, "tier": tier,
                      "wired": wired, "note_en": note_en, "note_zh": note_zh})
+    # attach COMPUTED forward-return stats (china_validation) onto matching rows
+    fams = load_validation()
+    for r in rows:
+        fam = fams.get(_VAL_FAMILY.get(r["key"], "")) if _VAL_FAMILY.get(r["key"]) else None
+        if fam:
+            r["computed"] = {k: fam.get(k) for k in ("ic", "t_hac", "hit_rate", "n_obs", "status")}
     by_tier = {t: [r for r in rows if r["tier"] == t] for t in TIERS}
     return {
         "schema": SCHEMA, "is_context_only": True,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "tiers": by_tier,
         "summary": {t: len(by_tier[t]) for t in TIERS},
+        "weights": signal_weights(),
+        "validation_families": sorted(fams.keys()) if fams else [],
     }

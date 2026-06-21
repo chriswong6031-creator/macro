@@ -55,7 +55,8 @@ def test_conviction_names_surfaces_and_carries_note(monkeypatch):
              "signal_en": "PBoC easing", "signal_zh": "央行宽松",
              "hypothesis_en": "h", "hypothesis_zh": "假设"}]
     conv_map = {"300059.SZ": {"convergence": 0.9, "side": "accumulate", "name": "东方财富"}}
-    rows = an._conviction(divs, {"by_basket": {"cn_brokers": 3}}, {"band": "supportive"},
+    rows = an._conviction(divs, {"by_basket": {"cn_brokers": 3}},
+                          {"band": "supportive", "z": 0.8},   # aligned sentiment → news confirms
                           conv_map, {"stance": "easing"})
     assert rows
     c = rows[0]

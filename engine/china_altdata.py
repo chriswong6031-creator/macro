@@ -24,11 +24,27 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "china_altdata.v1"
 
-# convergence weights (display only). Value + margin carry it; analyst is a near-useless
-# GATE in China (sell-side is ~universally "buy"), so it gets a low weight and mainly makes
-# a name eligible for the all-three "triple" slice. The point is cross-sectional agreement.
-_W = {"value": 0.45, "margin": 0.45, "analyst": 0.10}
+# convergence weights — DEFAULT prior (used until china_signal_lab.leg_weights_for('altdata')
+# returns earned, forward-return-validated weights). Two-sided signed legs only: value/margin
+# (own-history valuation cheapness + financing trend), comment (千股千评 inst-vs-retail + main-
+# force), lhb (龙虎榜 hot-money net buy), block (大宗交易 premium/discount); analyst is a
+# near-useless GATE (China sell-side ~universally "buy"). The point is cross-sectional agreement.
+_W_DEFAULT = {"value": 0.28, "margin": 0.25, "comment": 0.18, "lhb": 0.12,
+              "block": 0.07, "analyst": 0.10}
+_W = _W_DEFAULT   # back-compat alias
 _CROWD_CHG = 25.0   # financing 20d change % above which we flag leverage crowding
+
+
+def _leg_weights() -> dict:
+    """Earned, forward-return-validated leg weights from china_signal_lab; default prior on miss."""
+    try:
+        from engine import china_signal_lab
+        w = china_signal_lab.leg_weights_for("altdata")
+        if w:
+            return w
+    except Exception:  # noqa: BLE001
+        pass
+    return dict(_W_DEFAULT)
 
 
 def _clip(x: float, lo: float = -1.0, hi: float = 1.0) -> float:
@@ -112,48 +128,63 @@ def _compute_rows(min_signals: int = 2) -> list[dict]:
     margin = ce.margin_positioning() or {}
     if not (analyst or valuation or margin):
         return []
+    # new US-parity per-name legs (all two-sided signed). Degrade to {} when a cache is absent.
+    comment = ce.comment() or {}
+    lhb = ce.lhb() or {}
+    block = ce.block_trades() or {}
+    try:
+        from engine import china_crowding
+        crowd_map = china_crowding.compute_crowding_map() or {}
+    except Exception:  # noqa: BLE001
+        crowd_map = {}
     names = _name_map()
-    universe = set(analyst) | set(valuation) | set(margin)
-    a_raw, v_raw, m_raw, crowd = {}, {}, {}, {}
+    for d in (comment, lhb, block):           # backfill names from the new feeds too
+        for t, v in d.items():
+            names.setdefault(t, v.get("name", t) if isinstance(v, dict) else t)
+    universe = set(analyst) | set(valuation) | set(margin) | set(comment) | set(lhb) | set(block)
+    raw = {"analyst": {}, "value": {}, "margin": {}, "comment": {}, "lhb": {}, "block": {}}
+    crowd_legacy = {}
     for t in universe:
         if t in analyst:
-            a_raw[t] = _analyst_score(analyst[t])
+            raw["analyst"][t] = _analyst_score(analyst[t])
         if t in valuation:
-            v_raw[t] = _value_score(valuation[t])
+            raw["value"][t] = _value_score(valuation[t])
         if t in margin:
             ms, c = _margin_score(margin[t])
-            m_raw[t] = ms
-            crowd[t] = c
-    a_pct, v_pct, m_pct = _rank_pct(a_raw), _rank_pct(v_raw), _rank_pct(m_raw)
+            raw["margin"][t] = ms
+            crowd_legacy[t] = c
+        if t in comment and comment[t].get("comment_score") is not None:
+            raw["comment"][t] = comment[t]["comment_score"]
+        if t in lhb and lhb[t].get("hotmoney_score") is not None:
+            raw["lhb"][t] = lhb[t]["hotmoney_score"]
+        if t in block and block[t].get("block_score") is not None:
+            raw["block"][t] = block[t]["block_score"]
+    pct = {leg: _rank_pct(vals) for leg, vals in raw.items()}
+    W = _leg_weights()
     rows: list[dict] = []
     for t in universe:
-        present = {}
-        if t in a_pct:
-            present["analyst"] = a_pct[t] * 2 - 1
-        if t in v_pct:
-            present["value"] = v_pct[t] * 2 - 1
-        if t in m_pct:
-            present["margin"] = m_pct[t] * 2 - 1
+        present = {leg: pct[leg][t] * 2 - 1 for leg in pct if t in pct[leg]}
         if len(present) < min_signals:
             continue
-        wsum = sum(_W[k] for k in present)
-        conv = sum(_W[k] * s for k, s in present.items()) / wsum if wsum else 0.0
+        wsum = sum(W.get(k, 0.0) for k in present) or 1.0
+        conv = sum(W.get(k, 0.0) * s for k, s in present.items()) / wsum
         side = "accumulate" if conv > 0.05 else ("distribute" if conv < -0.05 else "neutral")
         sign = 1 if conv > 0 else (-1 if conv < 0 else 0)
         c100 = cv.to_100(abs(conv))
         _bk, ben, bzh = cv.signed_band(c100, sign)
         reasons = [k for k, s in present.items() if (s > 0) == (conv > 0) and abs(s) > 0.05]
-        rows.append({
+        flags = list((crowd_map.get(t) or {}).get("flags") or [])
+        if not flags and crowd_legacy.get(t):
+            flags = ["leverage_crowded"]
+        row = {
             "ticker": t, "name": names.get(t, t),
             "convergence": round(conv, 3), "n_signals": len(present),
             "conviction100": c100, "conviction_band_en": ben, "conviction_band_zh": bzh,
-            "side": side,
-            "analyst": None if "analyst" not in present else round(present["analyst"], 2),
-            "value": None if "value" not in present else round(present["value"], 2),
-            "margin": None if "margin" not in present else round(present["margin"], 2),
-            "reasons": reasons,
-            "flags": ["leverage_crowded"] if crowd.get(t) else [],
-        })
+            "side": side, "reasons": reasons, "flags": flags,
+        }
+        for leg in raw:
+            row[leg] = None if leg not in present else round(present[leg], 2)
+        rows.append(row)
     rows.sort(key=lambda r: (r["convergence"], r["n_signals"]), reverse=True)
     conv_pct = _rank_pct({r["ticker"]: r["convergence"] for r in rows})
     for r in rows:
