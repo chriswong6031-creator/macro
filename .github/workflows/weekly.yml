@@ -16,7 +16,7 @@ concurrency:
 jobs:
   weekly-report:
     runs-on: ubuntu-latest
-    timeout-minutes: 45     # weekly does collectors + all calibrations + every dashboard build
+    timeout-minutes: 120    # weekly does collectors + all calibrations + every dashboard build; 45m was too tight on congested 2-core runners
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
