@@ -38,6 +38,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import validation as V  # noqa: E402
+from engine.index_changes import classify_cohort, pit_history  # noqa: E402
 from lib import config  # noqa: E402
 
 log = logging.getLogger("validate_index_recon")
@@ -45,8 +46,11 @@ log = logging.getLogger("validate_index_recon")
 _START = "2019-01-01"          # modern (post-decay) regime; balances sample vs relevance
 _RECENT = "2023-01-01"         # recent subsample for a robustness check
 _POST_H = [5, 10, 21]
+_ANNOUNCE_WINDOW = (-5, 0)     # announcement→effective capture window (S&P announces ~5 td prior)
 _MIN_EVENTS = 40
 _T_BAR = 2.0
+# realistic round-trip transaction cost by index tier (bid-ask + impact over a ~5d small-cap hold)
+_NET_COST = {"sp500": 0.002, "sp400": 0.006, "sp600": 0.012}
 
 
 def _dir() -> Path:
@@ -72,22 +76,33 @@ def load_events() -> pd.DataFrame:
     return ev.dropna(subset=["d", "ticker"])
 
 
+# cohort classification (pure/migration/readd) lives in engine/index_changes — imported above.
+
+
 def fetch_prices(tickers: list[str]) -> pd.DataFrame:
     cache = _dir() / "prices.parquet"
+    att_path = _dir() / "prices_attempted.json"
     have = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
-    need = sorted(set(tickers + ["SPY"]) - set(have.columns))
+    # remember tickers we've already TRIED (incl. delisted ones that never resolve) so each
+    # run doesn't re-hammer yfinance for hundreds of dead symbols. Tied to the price cache:
+    # if prices.parquet is gone, ignore a stale attempted-list (re-fetch from scratch).
+    attempted = (set(json.loads(att_path.read_text()))
+                 if (cache.exists() and att_path.exists()) else set())
+    need = sorted(set(tickers + ["SPY"]) - set(have.columns) - attempted)
     if not need:
         return have
     import yfinance as yf
     got, B = {}, 150
-    for i in range(0, len(need), B):
+    newly_tried = set()                          # mark attempted ONLY for batches that RESPONDED —
+    for i in range(0, len(need), B):             # an errored batch must retry next run, not stick
         chunk = need[i:i + B]
         try:
             raw = yf.download(chunk, start="2018-10-01", interval="1d",
                               progress=False, threads=False, auto_adjust=True)
         except Exception as e:  # noqa: BLE001
-            log.warning("yf batch %d failed: %s", i, e)
-            continue
+            log.warning("yf batch %d failed: %s — will retry next run", i, e)
+            continue                             # NOT marked attempted (network error, not dead)
+        newly_tried |= set(chunk)                # batch responded → these names are now "tried"
         if raw is None or raw.empty:
             continue
         close = (raw["Close"] if isinstance(raw.columns, pd.MultiIndex)
@@ -103,6 +118,8 @@ def fetch_prices(tickers: list[str]) -> pd.DataFrame:
         new = pd.DataFrame(got)
         have = new if have.empty else have.join(new, how="outer")
         have.to_parquet(cache)
+    if newly_tried:                              # persist only names whose batch actually responded
+        att_path.write_text(json.dumps(sorted(attempted | newly_tried)))
     return have
 
 
@@ -129,23 +146,30 @@ def _abn(prices, ticker, d, a, b) -> float | None:
     return float(r - sp) if np.isfinite(r) and np.isfinite(sp) else None
 
 
-def _window(events, prices, a, b) -> dict:
+def _window(events, prices, a, b, cost=0.0) -> dict:
     recs = []
     for ev in events.itertuples(index=False):
         v = _abn(prices, ev.ticker, ev.d, a, b)
         if v is not None:
-            recs.append((ev.d, v))
+            recs.append((ev.d, v - cost))         # subtract round-trip cost for a net read
     if len(recs) < 10:
         return {"n": len(recs)}
     df = pd.DataFrame(recs, columns=["d", "abn"])
     df["mo"] = df["d"].dt.to_period("M").astype(str)
     monthly = df.groupby("mo")["abn"].mean()
     nw = V.newey_west_tstat(monthly.values, lags=min(4, max(1, len(monthly) // 4)))
-    return {"n": int(len(df)), "n_months": int(len(monthly)),
-            "mean_abn": round(float(df["abn"].mean()), 4),
-            "hit_rate": round(float((df["abn"] > 0).mean()), 3),
-            "hac_t": round(float(nw.get("t", float("nan"))), 2),
-            "p": round(float(nw.get("p", float("nan"))), 4)}
+    out = {"n": int(len(df)), "n_months": int(len(monthly)),
+           "mean_abn": round(float(df["abn"].mean()), 4),
+           "median_abn": round(float(df["abn"].median()), 4),
+           "hit_rate": round(float((df["abn"] > 0).mean()), 3)}
+    # newey_west_tstat returns t/p = None when <8 monthly obs — OMIT them (don't float(None));
+    # the _ok/_net_tradeable consumers .get('hac_t', 0) → fail closed (not scored). Fail-safe.
+    t, p = nw.get("t"), nw.get("p")
+    if t is not None:
+        out["hac_t"] = round(float(t), 2)
+    if p is not None:
+        out["p"] = round(float(p), 4)
+    return out
 
 
 def main() -> None:
@@ -172,16 +196,56 @@ def main() -> None:
         sub = ev[(ev["kind"] == "add") & (ev["index"] == ix)]
         by_index[ix] = _window(sub, prices, 0, 21)
 
-    # verdict: a TRADEABLE post-effective drift, right-signed, significant, n≥floor,
-    # AND still present recently (not a pre-decay artifact).
     def _ok(w, sign):
         return (w.get("n", 0) >= _MIN_EVENTS and abs(w.get("hac_t", 0)) >= _T_BAR
                 and np.sign(w.get("mean_abn", 0)) == sign)
+
+    # ANNOUNCEMENT-CAPTURE window [-5,0]: what a trader earns buying an ADD at announcement
+    # (~5 td before effective) and holding through the effective close — the only capturable
+    # slice (post-effective has reversed). HONEST DECOMPOSITION (Vijh-Wang 2022): the edge is
+    # ENTIRELY in PURE/net-new adds (no offsetting forced seller); MIGRATIONS (400→500 etc.) have
+    # a forced seller and ~no edge. And it must survive NET of small-cap transaction cost.
+    a0, a1 = _ANNOUNCE_WINDOW
+    pit_by_t = pit_history()
+    adds = ev[ev["kind"] == "add"].copy()
+    adds["cohort"] = [classify_cohort(r.ticker, r.d, r.index, pit_by_t) for r in adds.itertuples(index=False)]
+    pure = adds[adds["cohort"] == "pure"]
+    pure_rec = pure[pure["d"] >= _RECENT]
+    # gross pure by index + net-of-cost by index (cost per tier)
+    pure_by_index = {ix: _window(pure[pure["index"] == ix], prices, a0, a1) for ix in ("sp500", "sp400", "sp600")}
+    pure_net_by_index = {ix: _window(pure[pure["index"] == ix], prices, a0, a1, cost=_NET_COST[ix])
+                         for ix in ("sp500", "sp400", "sp600")}
+    announce = {
+        "window": list(_ANNOUNCE_WINDOW),
+        "all_cohorts": _window(adds, prices, a0, a1),
+        "pure_gross": _window(pure, prices, a0, a1),
+        "pure_gross_recent": _window(pure_rec, prices, a0, a1),
+        "migration_gross": _window(adds[adds["cohort"] == "migration"], prices, a0, a1),  # the control: ~0
+        "pure_by_index": pure_by_index,
+        "pure_net_by_index": pure_net_by_index,
+        "net_cost_assumed": _NET_COST,
+        "cohort_counts": {k: int(v) for k, v in adds["cohort"].value_counts().items()},
+    }
+
+    # verdict: a TRADEABLE post-effective drift, right-signed, significant, n≥floor,
+    # AND still present recently (not a pre-decay artifact).
     add_post = res["add"]["post"][21]
     del_post = res["delete"]["post"][21]
     add_scored = _ok(add_post, 1) and _ok(res["add"]["post_recent_21"], 1)
     del_scored = _ok(del_post, -1) and _ok(res["delete"]["post_recent_21"], -1)
     scored = bool(add_scored or del_scored)
+    # ANNOUNCE GATES — two honest flags. GROSS: the pure-add [-5,0] run-up is real & recent.
+    # NET: it survives small-cap costs AND the TYPICAL name wins (median>0, hit>0.5) — the bar
+    # for a scored alpha. Our data: gross passes, NET FAILS (median net<0, hit<0.5 for sp600) →
+    # the live leg is DISPLAY-ONLY context, never a scored sizer.
+    def _net_tradeable(w):
+        return (w.get("n", 0) >= _MIN_EVENTS and w.get("mean_abn", 0) > 0
+                and abs(w.get("hac_t", 0)) >= _T_BAR
+                and w.get("median_abn", -1) > 0 and w.get("hit_rate", 0) > 0.5)
+    announce_gross_scored = bool(_ok(announce["pure_gross"], 1) and _ok(announce["pure_gross_recent"], 1))
+    announce_net_scored = bool(any(_net_tradeable(w) for w in pure_net_by_index.values()))
+    # per-index tiers where the PURE gross edge lives (informs which indices the context leg surfaces)
+    announce_tiers = {ix: bool(_ok(w, 1)) for ix, w in pure_by_index.items()}
     # is the classic pre-effective run-up still alive (even if not post-effective tradeable)?
     pr = res["add"]["pre_runup"]
     runup_alive = bool(pr.get("n", 0) >= _MIN_EVENTS and pr.get("mean_abn", 0) > 0
@@ -195,16 +259,24 @@ def main() -> None:
         "weight": 1.0 if scored else 0.0,
         "results": res, "add_by_index_post21": by_index,
         "runup_alive": runup_alive,
+        # the announcement-capture leg: gross-vs-net verdict + per-index tiers. The LIVE leg
+        # surfaces fresh PURE adds as CONTEXT; it scores ONLY if announce_net_scored (it doesn't).
+        "announce": announce,
+        "announce_gross_scored": announce_gross_scored,
+        "announce_net_scored": announce_net_scored,
+        "announce_tiers": announce_tiers,
         "min_events": _MIN_EVENTS, "t_bar": _T_BAR,
-        "note": ("post-effective index drift is right-signed, significant and persists "
-                 "recently → SCORED forced-flow leg"
-                 if scored else
-                 (("the pre-effective ADD run-up is still significant "
-                   f"(+{pr.get('mean_abn')}, t={pr.get('hac_t')}), but it is front-run INTO the "
-                   "effective date and REVERSES after — so a surfaced (already-effective) add "
-                   "has no tradeable post-effective edge. " if runup_alive else
-                   "the classic index effect has decayed. ")
-                  + "→ leg DORMANT (would need an announcement feed to trade the run-up)")),
+        "note": ((f"PURE/net-new ADD announcement→effective [-5,0] run-up is real & recent "
+                  f"(+{announce['pure_gross'].get('mean_abn')}, t={announce['pure_gross'].get('hac_t')}; "
+                  f"recent t={announce['pure_gross_recent'].get('hac_t')}); migrations are ~0 "
+                  f"(t={announce['migration_gross'].get('hac_t')}) — so screen to PURE adds. "
+                  + ("BUT net of small-cap cost the TYPICAL name loses "
+                     f"(sp600 net median={announce['pure_net_by_index']['sp600'].get('median_abn')}, "
+                     f"hit={announce['pure_net_by_index']['sp600'].get('hit_rate')}) → a NET-OF-COST "
+                     "MIRAGE. Leg ships DISPLAY-ONLY context (fresh pure-add catalysts), scoring gate "
+                     "CLOSED; the net edge lives only in the announcement-overnight gap, which needs "
+                     "intraday opens to validate." if not announce_net_scored else
+                     "AND it survives net of cost with the typical name winning → SCORED."))),
     }
     (_dir() / "validation_gate.json").write_text(json.dumps(gate, indent=2))
     log.info("GATE scored=%s (add=%s del=%s)", scored, add_scored, del_scored)
@@ -238,6 +310,21 @@ def main() -> None:
     L += ["", "## ADD post-[0,21] by index", "", "| Index | n | mean | HAC-t |", "|--|--:|--:|--:|"]
     for ix, w in by_index.items():
         L.append(f"| {ix} | {w.get('n','—')} | {w.get('mean_abn','—')} | {w.get('hac_t','—')} |")
+    def _row(label, w):
+        return (f"| {label} | {w.get('n','—')} | {w.get('mean_abn','—')} | {w.get('median_abn','—')} | "
+                f"{w.get('hit_rate','—')} | {w.get('hac_t','—')} |")
+    L += ["", f"## ADD announcement-capture window {list(_ANNOUNCE_WINDOW)} — pure vs migration, gross vs net",
+          "", f"_Buy at announcement (~5 td before effective), hold through the effective close. "
+          f"Cohorts: {announce['cohort_counts']}. **announce_gross_scored={announce_gross_scored} · "
+          f"announce_net_scored={announce_net_scored}** (net cost assumed {_NET_COST})._", "",
+          "| Cohort / index | n | mean | median | hit | HAC-t |", "|--|--:|--:|--:|--:|--:|",
+          _row("PURE gross", announce["pure_gross"]),
+          _row(f"PURE gross recent ({_RECENT}+)", announce["pure_gross_recent"]),
+          _row("MIGRATION gross (control)", announce["migration_gross"])]
+    for ix in ("sp500", "sp400", "sp600"):
+        L.append(_row(f"pure {ix} gross", announce["pure_by_index"][ix]))
+    for ix in ("sp500", "sp400", "sp600"):
+        L.append(_row(f"pure {ix} NET (−{_NET_COST[ix]:.1%})", announce["pure_net_by_index"][ix]))
     L += ["", f"_{gate['note']}._", ""]
     (rp / "index-reconstitution-validation.md").write_text("\n".join(L))
     log.info("report -> %s", rp / "index-reconstitution-validation.md")

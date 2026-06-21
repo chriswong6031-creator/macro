@@ -238,16 +238,20 @@ def _study(events: pd.DataFrame, prices: pd.DataFrame, label: str) -> dict:
         # month-clustered series (each month = one obs) defeats event-time correlation
         monthly = edf.groupby("mo")["abn"].mean()
         nw = V.newey_west_tstat(monthly.values, lags=min(4, max(1, len(monthly) // 4)))
-        out[h] = {
+        rec = {
             "n": int(len(edf)),
             "n_months": int(len(monthly)),
             "mean_abn": round(float(edf["abn"].mean()), 4),
             "median_abn": round(float(edf["abn"].median()), 4),
             "hit_rate": round(float((edf["abn"] > 0).mean()), 3),
-            "monthly_mean": round(float(nw.get("mean", float("nan"))), 4),
-            "hac_t": round(float(nw.get("t", float("nan"))), 2),
-            "p": round(float(nw.get("p", float("nan"))), 4),
         }
+        # newey_west_tstat returns mean/t/p = None when <8 monthly obs — OMIT (don't float(None));
+        # consumers .get('hac_t', 0) → fail closed (not scored).
+        for k_out, k_nw, nd in (("monthly_mean", "mean", 4), ("hac_t", "t", 2), ("p", "p", 4)):
+            v = nw.get(k_nw)
+            if v is not None:
+                rec[k_out] = round(float(v), nd)
+        out[h] = rec
     return out
 
 

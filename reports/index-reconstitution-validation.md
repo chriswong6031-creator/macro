@@ -1,6 +1,6 @@
 # Index-reconstitution forced-flow event study
 
-_Generated 2026-06-21 11:50 UTC. Effective-date events 2019-01-01→ from S&P 500/400/600 PIT membership; SPY-relative; month-clustered HAC-t._
+_Generated 2026-06-21 13:57 UTC. Effective-date events 2019-01-01→ from S&P 500/400/600 PIT membership; SPY-relative; month-clustered HAC-t._
 
 - Adds: **1541** · Deletes: **952** (price-covered subset)
 - **Verdict: display-only context (effect decayed)**
@@ -30,4 +30,20 @@ _Generated 2026-06-21 11:50 UTC. Effective-date events 2019-01-01→ from S&P 50
 | sp400 | 288 | 0.0161 | 1.09 |
 | sp600 | 866 | -0.0151 | -1.27 |
 
-_the pre-effective ADD run-up is still significant (+0.0204, t=4.5), but it is front-run INTO the effective date and REVERSES after — so a surfaced (already-effective) add has no tradeable post-effective edge. → leg DORMANT (would need an announcement feed to trade the run-up)._
+## ADD announcement-capture window [-5, 0] — pure vs migration, gross vs net
+
+_Buy at announcement (~5 td before effective), hold through the effective close. Cohorts: {'pure': 1140, 'migration': 381, 'readd': 20}. **announce_gross_scored=True · announce_net_scored=False** (net cost assumed {'sp500': 0.002, 'sp400': 0.006, 'sp600': 0.012})._
+
+| Cohort / index | n | mean | median | hit | HAC-t |
+|--|--:|--:|--:|--:|--:|
+| PURE gross | 902 | 0.0161 | 0.0108 | 0.582 | 4.59 |
+| PURE gross recent (2023-01-01+) | 270 | 0.0204 | 0.0201 | 0.663 | 5.05 |
+| MIGRATION gross (control) | 348 | 0.0023 | 0.0006 | 0.509 | 1.09 |
+| pure sp500 gross | 77 | 0.0119 | 0.0088 | 0.571 | 1.24 |
+| pure sp400 gross | 164 | 0.0192 | 0.0164 | 0.64 | 2.48 |
+| pure sp600 gross | 661 | 0.0158 | 0.0092 | 0.569 | 5.22 |
+| pure sp500 NET (−0.2%) | 77 | 0.0099 | 0.0068 | 0.545 | 1.05 |
+| pure sp400 NET (−0.6%) | 164 | 0.0132 | 0.0104 | 0.598 | 1.96 |
+| pure sp600 NET (−1.2%) | 661 | 0.0038 | -0.0028 | 0.477 | 4.13 |
+
+_PURE/net-new ADD announcement→effective [-5,0] run-up is real & recent (+0.0161, t=4.59; recent t=5.05); migrations are ~0 (t=1.09) — so screen to PURE adds. BUT net of small-cap cost the TYPICAL name loses (sp600 net median=-0.0028, hit=0.477) → a NET-OF-COST MIRAGE. Leg ships DISPLAY-ONLY context (fresh pure-add catalysts), scoring gate CLOSED; the net edge lives only in the announcement-overnight gap, which needs intraday opens to validate.._
