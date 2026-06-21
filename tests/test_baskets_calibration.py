@@ -173,3 +173,34 @@ def test_rotation_book_honors_momentum_override():
     mom = pd.DataFrame(0.0, index=M.index, columns=["A", "B"]); mom["B"] = 1.0  # prefer B
     w = cb._rotation_book(P, top_n=1, mom_monthly=mom)
     assert (w["B"] > 0).any() and float(w["A"].sum()) == 0.0
+
+
+# ----------------------------------------------------- rollover weight-fit (E1-risk)
+def test_fit_logistic_signed_nonneg_and_learns_signal():
+    """Sign-constrained logistic: weights stay >=0 and the leg that drives the outcome wins."""
+    rng = np.random.default_rng(7)
+    X = rng.integers(0, 2, (900, 3)).astype(float)
+    y = (rng.uniform(0, 1, 900) < (0.1 + 0.4 * X[:, 2])).astype(float)   # feature 2 drives y
+    w, b = cb._fit_logistic_signed(X, y, np.array([0.33, 0.33, 0.34]), l2=1.0)
+    assert (w >= 0).all() and w[2] > w[0] and w[2] > w[1]
+
+
+def test_rollover_risk_consumes_calibrated_weights(monkeypatch):
+    """The live rollover_risk score follows the calibrated below-50d weight; with it zeroed
+    the same basket scores lower (the wiring is live, not cosmetic)."""
+    from engine import basket_score as bs
+    idx = pd.date_range("2024-01-01", periods=260, freq="B")
+    lvl = pd.Series(np.r_[np.linspace(1, 1.4, 200), np.linspace(1.4, 1.25, 60)], index=idx)
+    fp, fp5, perf, bd = {"rs_pctile": 0.85, "accel_z": -0.2}, {"accel_z": 0.1}, {"5d": {"rel": -0.02}}, {"pct50": 0.5, "nh": 0, "nl": 0}
+    monkeypatch.setattr(bs, "_rollover_weights", lambda: (0.25, 0.0, 0.0, 0.75, 0.0))
+    hi = bs.rollover_risk(lvl, fp, fp5, bd, perf)["risk"]
+    monkeypatch.setattr(bs, "_rollover_weights", lambda: (0.25, 0.0, 0.0, 0.0, 0.0))
+    lo = bs.rollover_risk(lvl, fp, fp5, bd, perf)["risk"]
+    assert hi > lo
+
+
+def test_rollover_weights_fallback_is_hand():
+    from engine import basket_score as bs
+    assert bs._ROLLOVER_HAND == (0.30, 0.25, 0.20, 0.15, 0.10)
+    w = bs._rollover_weights()
+    assert isinstance(w, tuple) and len(w) == 5 and all(x >= 0 for x in w)

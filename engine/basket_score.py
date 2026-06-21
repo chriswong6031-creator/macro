@@ -12,10 +12,31 @@ is drawdown-control, not alpha. Mirrors the theme_crowding / group_flow honesty 
 """
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pandas as pd
 
 from lib import config
+
+# Hand weights for the rollover_risk breadth-free legs (rs>=.8 · rolling-over · decel<-.4 ·
+# below-50d · 5d<-1%&rs>.7). scripts.calibrate_baskets can OVERRIDE these with OOS-validated
+# weights (it found below-50d + extension dominate forward drawdown; the accel legs add
+# nothing OOS) — read additively, fall back to the hand weights if the calibration is absent.
+_ROLLOVER_HAND = (0.30, 0.25, 0.20, 0.15, 0.10)
+
+
+def _rollover_weights() -> tuple:
+    try:
+        p = config.data_dir() / "strategies" / "baskets_calibration.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        rf = d.get("rollover_fit") or {}
+        w = rf.get("wired_weights")
+        if rf.get("verdict") == "ship_fitted_weights" and isinstance(w, list) and len(w) == 5:
+            return tuple(float(x) for x in w)
+    except Exception:  # noqa: BLE001 — calibration is enrichment, never fatal
+        pass
+    return _ROLLOVER_HAND
 
 
 def _rsi(s: pd.Series, n: int = 14) -> float | None:
@@ -147,28 +168,32 @@ def rollover_risk(lvl: pd.Series, fp: dict | None, fp5: dict | None,
     breadth deteriorating, below short trend. 'Risky right now, about to roll over.'"""
     s = lvl.dropna()
     reasons, r = [], 0.0
+    # breadth-free leg weights: OOS-calibrated (below-50d + extension dominate fwd drawdown)
+    # when scripts.calibrate_baskets has shipped them, else the hand weights. A 0-weight leg
+    # still appends its descriptive reason but adds nothing to the risk score.
+    W = _rollover_weights()
     rs_p = (fp or {}).get("rs_pctile")
     accel = (fp or {}).get("accel_z")
     accel5 = (fp5 or {}).get("accel_z")
     if rs_p is not None and rs_p >= 0.8:
-        r += 0.30; reasons.append("extended (RS " + str(round(rs_p * 100)) + "%ile)")
+        r += W[0]; reasons.append("extended (RS " + str(round(rs_p * 100)) + "%ile)")
     if accel is not None and accel5 is not None and accel < accel5 and accel < 0:
-        r += 0.25; reasons.append("momentum rolling over")
+        r += W[1]; reasons.append("momentum rolling over")
     elif accel is not None and accel < -0.4:
-        r += 0.20; reasons.append("decelerating")
+        r += W[2]; reasons.append("decelerating")
     pct50 = (breadth_d or {}).get("pct50")
     nh, nl = (breadth_d or {}).get("nh", 0), (breadth_d or {}).get("nl", 0)
     if pct50 is not None and pct50 < 0.45:
-        r += 0.20; reasons.append("breadth weakening")
+        r += 0.20; reasons.append("breadth weakening")     # breadth legs stay hand (no single-ETF proxy)
     if nl > nh:
         r += 0.10; reasons.append("more new lows")
     if len(s) >= 50:
         sma50 = s.rolling(50, min_periods=25).mean().iloc[-1]
         if pd.notna(sma50) and s.iloc[-1] < sma50:
-            r += 0.15; reasons.append("below 50d")
+            r += W[3]; reasons.append("below 50d")
     d5 = (perf or {}).get("5d", {}).get("rel")
     if d5 is not None and d5 < -0.01 and rs_p is not None and rs_p > 0.7:
-        r += 0.10; reasons.append("rolling off the high")
+        r += W[4]; reasons.append("rolling off the high")
     band, band_zh = ("high", "高") if r >= 0.6 else ("elevated", "升高") if r >= 0.35 else ("low", "低")
     return {"risk": round(min(r, 1.0), 3), "band": band, "band_zh": band_zh,
             "reasons": reasons[:4], "directional": False}
