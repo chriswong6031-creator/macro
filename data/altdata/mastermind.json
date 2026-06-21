@@ -1,0 +1,914 @@
+{
+  "schema": "altdata.mastermind.v1",
+  "as_of": "2026-06-21",
+  "generated_utc": "2026-06-21T04:26:16.558708+00:00",
+  "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
+  "regime_read": null,
+  "brain_present": false,
+  "calibration": {
+    "n_scored": 0,
+    "hit_rate": null,
+    "open": 0,
+    "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
+  },
+  "n_signals": 57,
+  "signals": [
+    {
+      "ticker": "NVDA",
+      "signal_score": 97,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 2.0,
+      "convergence_score": 5,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "darkpool_accum",
+        "patent_cluster",
+        "retail_buzz"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 6.1,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Jensen Huang",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Nancy Pelosi",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Michael McCaul",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Jim Cramer",
+          "rel": "TALKS_ABOUT",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 6,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "GOOGL",
+      "signal_score": 92,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.85,
+      "convergence_score": 4,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "app_demand",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 12.5,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Nancy Pelosi",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MSFT",
+      "signal_score": 85,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 2.65,
+      "convergence_score": 6,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "app_demand",
+        "gov_contract",
+        "patent_cluster",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": -12.3,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Sam Altman",
+          "rel": "PARTNERS_WITH",
+          "kind": "exec"
+        },
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AMZN",
+      "signal_score": 68,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.45,
+      "convergence_score": 3,
+      "channels": [
+        "13f_add",
+        "affiliation",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 3.6,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Nancy Pelosi",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Dan Crenshaw",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        },
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 4,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "DELL",
+      "signal_score": 60,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.2,
+      "convergence_score": 3,
+      "channels": [
+        "gov_contract",
+        "material_8k",
+        "news_sentiment"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 117.9,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BIIB",
+      "signal_score": 58,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.5,
+      "convergence_score": 3,
+      "channels": [
+        "clinical_phase3_start",
+        "congress_buy",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -7.5,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BA",
+      "signal_score": 58,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "gov_grant",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -0.9,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Jim Cramer",
+          "rel": "ENDORSES",
+          "kind": "influencer"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "EFX",
+      "signal_score": 57,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 2,
+      "channels": [
+        "gov_contract_accel",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "META",
+      "signal_score": 54,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.25,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "cnbc_pick",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": -17.0,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Mark Zuckerberg",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Mark Zuckerberg",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Dan Crenshaw",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 4,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MU",
+      "signal_score": 53,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 172.5,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Ro Khanna",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "QCOM",
+      "signal_score": 53,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 62.1,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Tommy Tuberville",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "INTC",
+      "signal_score": 51,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "gov_grant",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 189.8,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MSTR",
+      "signal_score": 50,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Michael Saylor",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Michael Saylor",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AAPL",
+      "signal_score": 49,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Dan Crenshaw",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Paul Pelosi",
+          "rel": "AFFILIATES_WITH",
+          "kind": "influencer"
+        },
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        },
+        {
+          "actor": "Warren Buffett",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 4,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AXP",
+      "signal_score": 48,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Warren Buffett",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AVGO",
+      "signal_score": 47,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.95,
+      "convergence_score": 2,
+      "channels": [
+        "13f_add",
+        "material_8k"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": 14.9,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "MRK",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AZN",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "ABBV",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "RHHBY",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "BMY",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "GSK",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "PFE",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "clinical_phase3_start",
+        "fda_label_expansion"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "CIEN",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 2,
+      "channels": [
+        "material_8k",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "GOOG",
+      "signal_score": 46,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.0,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Dan Crenshaw",
+          "rel": "AFFILIATES_WITH",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "ORCL",
+      "signal_score": 45,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "patent_cluster"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Larry Ellison",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Larry Ellison",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "PLTR",
+      "signal_score": 43,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.1,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "gov_contract",
+        "retail_buzz"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -31.3,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Marjorie Taylor Greene",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        },
+        {
+          "actor": "Cathie Wood",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "UBER",
+      "signal_score": 43,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Bill Ackman",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "LUV",
+      "signal_score": 43,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.9,
+      "convergence_score": 2,
+      "channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Paul Singer",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "CARR",
+      "signal_score": 42,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 0.95,
+      "convergence_score": 2,
+      "channels": [
+        "congress_buy",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    }
+  ],
+  "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and falsifiable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
+}

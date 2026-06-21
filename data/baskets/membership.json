@@ -1,5 +1,5 @@
 {
-  "version": "2026-06-18",
+  "version": "2026-06-19",
   "note": "Equal-weight thematic baskets over the FREE price universe. Membership is explicit, dated and auditable. Curated 2026-06 with knowledge of the period, so the full ~3y series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest. Prices come from the breadth caches plus a baskets-only DEEP close store (data/baskets/extras.parquet): it carries on-thesis names outside the S&P-1500 (recent IPOs, crypto & nuclear) AND a deep ~3y tape for large-caps the breadth cache only holds in a ~15-month rolling window — so baskets render full history instead of a short stub. Recent IPOs / late entrants are still flagged partial where their own tape is short.",
   "seed_date": "2023-05-09",
   "curated": "2026-06-18",
@@ -2517,7 +2517,7 @@
           "ticker": "SMCI",
           "added": "2023-05-09",
           "removed": null,
-          "rationale": "Super Micro — GPU server and rack systems; integrates accelerators into AI datacenters"
+          "rationale": "Super Micro — GPU server/rack systems; thesis intact but DOJ probe + governance discount overhang"
         },
         {
           "ticker": "ARM",
@@ -2536,6 +2536,12 @@
           "added": "2023-05-09",
           "removed": null,
           "rationale": "Credo — high-speed SerDes and active electrical cables for AI cluster interconnect"
+        },
+        {
+          "ticker": "CBRS",
+          "added": "2026-05-14",
+          "removed": null,
+          "rationale": "Cerebras — wafer-scale AI inference/training chips; IPO May-2026 (flag partial)"
         }
       ],
       "thesis": "AI Semiconductors tracks the silicon supply chain behind AI compute — merchant GPUs, custom training/inference ASICs, the networking chips that lash accelerators together, and the power and server hardware around them — driven by hyperscaler and enterprise capex on training and inference buildouts. It is a monitoring lens on the AI-compute cycle, not a buy list.",
@@ -2545,6 +2551,11 @@
           "date": "2026-06-19",
           "action": "create",
           "note": "Seeded AI Semiconductors — 11 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). GPUs, AI accelerators, AI networking silicon and custom-ASIC names."
+        },
+        {
+          "date": "2026-06-19",
+          "action": "add",
+          "note": "CBRS: added Cerebras (wafer-scale AI silicon) at its May-2026 IPO date; flagged SMCI governance/DOJ overhang in its rationale."
         }
       ]
     },
@@ -3058,6 +3069,603 @@
           "date": "2026-06-19",
           "action": "create",
           "note": "Seeded Robotics & Automation — 9 equal-weight members (added at seed date for backtest history; recent IPOs flag partial). Factory automation, machine vision, surgical robotics and industrial controls."
+        }
+      ]
+    },
+    "obesity_glp1": {
+      "name": "GLP-1 & Obesity",
+      "name_zh": "GLP-1 与减肥药",
+      "theme": "Incretin/GLP-1 metabolic drugs — incumbents, oral next-gen pure-plays, supply chain and the names the drugs hurt.",
+      "category": "Healthcare",
+      "parent": "Healthcare",
+      "tags": [
+        "glp1",
+        "obesity",
+        "pharma",
+        "metabolic",
+        "biotech"
+      ],
+      "etf_proxy": "XLV",
+      "etf_proxy_note": "loose — XLV is broad healthcare, not an obesity pure-play",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "omitted": [
+        "MTSR Metsera (acquired by Pfizer, closed Nov-2025 — own PFE)",
+        "CTLT Catalent (taken private by Novo Holdings — delisted)",
+        "TERN Terns (obesity program TERN-601 discontinued Oct-2025 — thesis broke)",
+        "ZLDPF Zealand (US line is an OTC ADR — exposure routed via RHHBY)",
+        "VERU Veru (sub-$300M binary; muscle-sparing optionality only)"
+      ],
+      "members": [
+        {
+          "ticker": "LLY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Eli Lilly — Zepbound/Mounjaro leader; oral orforglipron launching 2026"
+        },
+        {
+          "ticker": "NVO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Novo Nordisk ADR — Wegovy/Ozempic pioneer; oral Wegovy now approved"
+        },
+        {
+          "ticker": "PFE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Pfizer — bought Metsera (~$10B) for a next-gen obesity pipeline"
+        },
+        {
+          "ticker": "AMGN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Amgen — MariTide monthly injectable in Phase 3"
+        },
+        {
+          "ticker": "RHHBY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Roche ADR — CT-388 plus petrelintide (Zealand) entering Phase 3"
+        },
+        {
+          "ticker": "AZN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AstraZeneca ADR — oral AZD5004 cleared Phase 2; readying Phase 3"
+        },
+        {
+          "ticker": "VKTX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Viking Therapeutics — lead pure-play; VK2735 oral+injectable in Phase 3"
+        },
+        {
+          "ticker": "GPCR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Structure Therapeutics — oral aleniglipron heading to Phase 3"
+        },
+        {
+          "ticker": "ALT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Altimmune — pemvidutide GLP-1/glucagon for obesity and MASH"
+        },
+        {
+          "ticker": "SRRK",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Scholar Rock — apitegromab preserves lean mass alongside GLP-1"
+        },
+        {
+          "ticker": "WST",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "West Pharmaceutical — pens/components for GLP-1 fill-finish"
+        },
+        {
+          "ticker": "DXCM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "DexCom — CGM co-prescribed with GLP-1; structural tailwind"
+        },
+        {
+          "ticker": "HIMS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Hims & Hers — telehealth GLP-1 distribution; branded Novo deal"
+        },
+        {
+          "ticker": "DVA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "DaVita — the 'hurt' side: dialysis demand pressured by GLP-1 kidney benefit"
+        }
+      ],
+      "thesis": "The incretin/GLP-1 complex that reshaped pharma: the LLY/NVO duopoly that owns the economics, the oral and next-gen pure-plays racing to the second wave (several washed out — Terns, Metsera, Catalent are gone), the fill-finish and CGM supply chain that benefits, and the dialysis names the drugs threaten. A monitoring lens on the most consequential drug narrative of the decade, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded GLP-1 & Obesity — 14 equal-weight members, web-vetted to mid-2026 status (failed programs and acquisitions excluded). Includes the 'hurt' side (DVA) for a true overview."
+        }
+      ]
+    },
+    "quantum_computing": {
+      "name": "Quantum Computing",
+      "name_zh": "量子计算",
+      "theme": "Quantum-compute pure-plays across every qubit modality plus the credible big-tech adjacencies.",
+      "category": "AI & Technology",
+      "parent": "Artificial Intelligence",
+      "tags": [
+        "quantum",
+        "compute",
+        "frontier",
+        "deep-tech",
+        "high-beta"
+      ],
+      "etf_proxy": "QTUM",
+      "etf_proxy_note": "loose — QTUM is a broad quantum/computing fund, not pure-play",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "omitted": [
+        "ARQQ Arqit (post-quantum encryption not computing; 25:1 reverse split — death-spiral flags)",
+        "QMCO Quantum Corp (ticker trap — legacy data storage, no quantum-compute exposure)",
+        "PsiQuantum, Atom Computing, Q-CTRL, Riverlane (still private — no listed common stock)"
+      ],
+      "members": [
+        {
+          "ticker": "IONQ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IonQ — trapped-ion revenue leader; most liquid pure-play"
+        },
+        {
+          "ticker": "RGTI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Rigetti — superconducting; ~$590M cash, Cepheus-1 108-qubit"
+        },
+        {
+          "ticker": "QBTS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "D-Wave — only commercial annealer; adding a gate-model roadmap"
+        },
+        {
+          "ticker": "QUBT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Quantum Computing Inc — photonic TFLN foundry; highest beta"
+        },
+        {
+          "ticker": "QNT",
+          "added": "2026-06-04",
+          "removed": null,
+          "rationale": "Quantinuum — highest-fidelity trapped-ion; June-2026 IPO (Honeywell-backed)"
+        },
+        {
+          "ticker": "INFQ",
+          "added": "2026-02-01",
+          "removed": null,
+          "rationale": "Infleqtion — first public neutral-atom pure-play; federal grant"
+        },
+        {
+          "ticker": "IBM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IBM — Heron/Nighthawk superconducting; targets quantum advantage 2026"
+        },
+        {
+          "ticker": "GOOGL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Alphabet — Willow below-threshold error-correction; deepest research bench"
+        },
+        {
+          "ticker": "MSFT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Microsoft — topological Majorana moonshot toward fault tolerance"
+        },
+        {
+          "ticker": "NVDA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Nvidia — NVQLink GPU–QPU interconnect; the picks-and-shovels bridge"
+        },
+        {
+          "ticker": "HON",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Honeywell — retains ~48% of Quantinuum; cleanest large-cap proxy"
+        }
+      ],
+      "thesis": "The quantum-compute frontier: liquid pure-plays spanning trapped-ion (IONQ, QNT), superconducting (RGTI), annealing (QBTS), photonic (QUBT) and neutral-atom (INFQ), plus the deep-pocketed big-tech programs (IBM, GOOGL, MSFT) and the GPU bridge (NVDA, via Honeywell HON). Still the NISQ era — this is a high-beta option on a narrative, not a fundamentals book. A monitoring lens, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Quantum Computing — 11 equal-weight members covering all five qubit modalities plus big-tech adjacencies. QNT/INFQ added at their 2026 IPO dates (flag partial). Ticker traps (QMCO, ARQQ) excluded."
+        }
+      ]
+    },
+    "uranium_miners": {
+      "name": "Uranium & Nuclear Fuel",
+      "name_zh": "铀矿与核燃料",
+      "theme": "Uranium miners, developers and fuel-cycle/enrichment — the fuel supply side of the nuclear revival (distinct from utilities and SMR reactor developers).",
+      "category": "Materials & Mining",
+      "parent": "Materials",
+      "tags": [
+        "uranium",
+        "nuclear-fuel",
+        "mining",
+        "enrichment",
+        "commodities"
+      ],
+      "etf_proxy": "URNM",
+      "etf_proxy_note": "tight — URNM is the Sprott uranium-miners fund",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "omitted": [
+        "OKLO, SMR (SMR reactor developers — fuel consumers, live in nuclear_power)",
+        "Kazatomprom, Paladin, Boss, Deep Yellow (foreign-listed — no liquid US line)",
+        "LTBR Lightbridge (pre-revenue fuel R&D, heavy ATM dilution)"
+      ],
+      "members": [
+        {
+          "ticker": "CCJ",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Cameco — largest pure-play producer; Westinghouse fuel-cycle leverage"
+        },
+        {
+          "ticker": "UEC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Uranium Energy — US/Canada ISR producer ramping output"
+        },
+        {
+          "ticker": "UUUU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Energy Fuels — White Mesa producer; rare-earth optionality"
+        },
+        {
+          "ticker": "NXE",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NexGen Energy — tier-1 Rook I/Arrow; construction 2026"
+        },
+        {
+          "ticker": "DNN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Denison Mines — Phoenix ISR; final investment decision approved"
+        },
+        {
+          "ticker": "URG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Ur-Energy — Lost Creek Wyoming ISR producer"
+        },
+        {
+          "ticker": "EU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "enCore Energy — South Texas ISR producer; watch warrant dilution"
+        },
+        {
+          "ticker": "UROY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Uranium Royalty — only uranium royalty/streaming pure-play"
+        },
+        {
+          "ticker": "LEU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Centrus Energy — US HALEU/LEU enricher; DOE-backed backlog"
+        },
+        {
+          "ticker": "ASPI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "ASP Isotopes — TerraPower HALEU deal; enrichment-adjacent (pre-revenue)"
+        }
+      ],
+      "thesis": "The fuel side of the nuclear revival: producers (CCJ, UEC, UUUU, URG), tier-1 developers (NXE, DNN), the only royalty pure-play (UROY) and the US enrichment/HALEU layer (LEU, ASPI) that the AI-power and SMR build-out depends on. Driven by uranium spot, utility contracting and US fuel-independence policy — distinct from the reactor/utility names in the Nuclear & SMR basket. A monitoring lens, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Uranium & Nuclear Fuel — 10 equal-weight members; producers/developers/royalty/enrichment. Web-vetted US-listed lines (NXE not NXE.TO; UUUU not EFR). Reactor/utility names kept in nuclear_power."
+        }
+      ]
+    },
+    "critical_minerals": {
+      "name": "Critical Minerals & Rare Earths",
+      "name_zh": "关键矿产与稀土",
+      "theme": "US/allied critical-mineral and rare-earth supply chain ex-China — producers and government-backed developers.",
+      "category": "Materials & Mining",
+      "parent": "Materials",
+      "tags": [
+        "rare-earths",
+        "critical-minerals",
+        "lithium",
+        "antimony",
+        "supply-chain"
+      ],
+      "etf_proxy": "REMX",
+      "etf_proxy_note": "loose — REMX is global rare-earth/strategic-metals, includes China names",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "omitted": [
+        "REEMF Rare Element Resources (OTCQB, illiquid, pre-revenue)",
+        "ARRNF American Rare Earths (OTC; primary listing ASX)",
+        "ABAT American Battery Technology (lossmaking micro-cap recycler)",
+        "TMC the metals company (pre-revenue seabed permit-headline momentum)"
+      ],
+      "members": [
+        {
+          "ticker": "MP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "MP Materials — RE producer/magnets; DoD stake, Apple magnet deal"
+        },
+        {
+          "ticker": "USAR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "USA Rare Earth — NdFeB magnet line ramping at Stillwater"
+        },
+        {
+          "ticker": "UAMY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "US Antimony — only Western integrated antimony smelter; DoD contract"
+        },
+        {
+          "ticker": "ALB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Albemarle — world lithium major; recovering margins"
+        },
+        {
+          "ticker": "SGML",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Sigma Lithium — low-cost Brazil lithium producer"
+        },
+        {
+          "ticker": "UUUU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Energy Fuels — first US heavy rare-earth oxides at White Mesa (dual-theme)"
+        },
+        {
+          "ticker": "LAC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Lithium Americas — Thacker Pass; DOE loan + GM equity (pre-production)"
+        },
+        {
+          "ticker": "PPTA",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Perpetua Resources — only US antimony reserve; EXIM-funded (pre-revenue)"
+        },
+        {
+          "ticker": "NB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "NioCorp — Elk Creek niobium/scandium/RE developer (pre-revenue)"
+        },
+        {
+          "ticker": "ALM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Almonty — tungsten; 15-year US-defense offtake"
+        },
+        {
+          "ticker": "CRML",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Critical Metals — Greenland rare-earth developer; EXIM LOI (speculative)"
+        }
+      ],
+      "thesis": "The ex-China critical-mineral supply chain that 2025–26 policy is trying to onshore: rare-earth and magnet producers (MP, USAR, UUUU), lithium (ALB, SGML, LAC), antimony (UAMY, PPTA) and other defense-critical metals (NB niobium, ALM tungsten, CRML). A high-headline-beta cluster that moves on DoD/EXIM/DOE deals as much as commodity spot — genuine producers and pre-revenue developers are deliberately mixed and flagged. A monitoring lens, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Critical Minerals & Rare Earths — 11 equal-weight members, US-listed only, producers and govt-backed developers separated in rationales. OTC/pre-revenue explorers (REEMF, ARRNF, ABAT) excluded."
+        }
+      ]
+    },
+    "space_economy": {
+      "name": "Space Economy",
+      "name_zh": "太空经济",
+      "theme": "Launch, satcom, direct-to-device, Earth observation, defense-space and components — the commercial space build-out.",
+      "category": "Industrials & Defense",
+      "parent": "Industrials",
+      "tags": [
+        "space",
+        "launch",
+        "satellite",
+        "defense-space",
+        "new-space"
+      ],
+      "etf_proxy": "ARKX",
+      "etf_proxy_note": "loose — ARKX is a broad space-and-innovation fund",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "omitted": [
+        "GSAT Globalstar (under Amazon acquisition — now merger-arb)",
+        "SATS EchoStar (sold spectrum to SpaceX/AT&T — spectrum-monetization story)",
+        "LLAP Terran Orbital (delisted — acquired by Lockheed)",
+        "SIDU/ASTR/MNTS (thin-liquidity micro-caps, heavy reverse-split history)"
+      ],
+      "members": [
+        {
+          "ticker": "RKLB",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Rocket Lab — defining small-launch pure-play; Neutron debut 2026"
+        },
+        {
+          "ticker": "FLY",
+          "added": "2025-08-07",
+          "removed": null,
+          "rationale": "Firefly Aerospace — Alpha launch + Blue Ghost lunar lander (IPO 2025)"
+        },
+        {
+          "ticker": "ASTS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AST SpaceMobile — direct-to-phone satellite cellular; AT&T/Verizon"
+        },
+        {
+          "ticker": "IRDM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Iridium — profitable satcom incumbent; NTN Direct D2D in 2026"
+        },
+        {
+          "ticker": "VSAT",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Viasat — satcom broadband plus defense; deleveraging"
+        },
+        {
+          "ticker": "PL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Planet Labs — pure-play Earth observation; $900M+ backlog"
+        },
+        {
+          "ticker": "BKSY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "BlackSky — high-res tasking Earth observation for government"
+        },
+        {
+          "ticker": "LUNR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Intuitive Machines — CLPS lunar lander prime; $1.1B backlog"
+        },
+        {
+          "ticker": "RDW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Redwire — space infrastructure + Edge Autonomy drones (dilutive)"
+        },
+        {
+          "ticker": "KTOS",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Kratos — Space Force ground systems and hypersonics (adjacency)"
+        },
+        {
+          "ticker": "KRMN",
+          "added": "2025-02-13",
+          "removed": null,
+          "rationale": "Karman — launch/missile-defense propulsion components (IPO 2025)"
+        },
+        {
+          "ticker": "MDA",
+          "added": "2026-03-01",
+          "removed": null,
+          "rationale": "MDA Space — diversified prime; new US listing (deep liquidity Toronto)"
+        },
+        {
+          "ticker": "SPCX",
+          "added": "2026-06-12",
+          "removed": null,
+          "rationale": "SpaceX — launch/Starlink anchor; June-2026 IPO (very new, may flag partial)"
+        }
+      ],
+      "thesis": "The commercial space build-out across every segment: launch (RKLB, FLY, SPCX), direct-to-device cellular (ASTS), satcom incumbents (IRDM, VSAT, MDA), Earth observation (PL, BKSY), defense-space (KTOS, LUNR) and propulsion/components (RDW, KRMN). Heavy on post-SPAC and brand-new IPOs — high beta and dilution risk are the rule. Names that turned into merger-arb (GSAT) or spectrum plays (SATS) are excluded. A monitoring lens, not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded Space Economy — 13 equal-weight members across launch/satcom/EO/D2D/defense-space/components. Recent IPOs (FLY, KRMN, MDA, SPCX) dated to listing (flag partial). Delisted/merger-arb names excluded."
+        }
+      ]
+    },
+    "ai_agents": {
+      "name": "AI Agents & Applications",
+      "name_zh": "AI 智能体与应用",
+      "theme": "The AI application/agent layer — enterprise agentic platforms and AI-native consumer apps that monetize models, distinct from infra and dev-tools software.",
+      "category": "Artificial Intelligence",
+      "parent": "Artificial Intelligence",
+      "tags": [
+        "ai",
+        "agents",
+        "application-layer",
+        "software",
+        "genai"
+      ],
+      "etf_proxy": "IGV",
+      "etf_proxy_note": "loose — IGV is broad application software, not agent pure-play",
+      "created": "2026-06-19",
+      "curated": "2026-06-19",
+      "omitted": [
+        "BBAI BigBear.ai (slow growth ~17%, weakest fundamentals — watchlist)",
+        "Lambda, Crusoe, Together, Databricks, Cohere (still private in mid-2026)"
+      ],
+      "members": [
+        {
+          "ticker": "PLTR",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Palantir — enterprise agentic AI (AIP); profitable at scale"
+        },
+        {
+          "ticker": "NOW",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "ServiceNow — agentic workflow automation embedded in the enterprise"
+        },
+        {
+          "ticker": "CRM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Salesforce — Agentforce agentic layer over the CRM install base"
+        },
+        {
+          "ticker": "APP",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AppLovin — AI ad-engine (Axon); pure execution play"
+        },
+        {
+          "ticker": "DUOL",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Duolingo — AI-native consumer app monetizing GenAI features"
+        },
+        {
+          "ticker": "SOUN",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "SoundHound AI — voice/agentic platform; high-beta small-cap"
+        }
+      ],
+      "thesis": "The AI application and agent layer — where models become revenue. Enterprise agentic platforms (PLTR, NOW, CRM) and AI-native or AI-levered apps (APP, DUOL, SOUN). Deliberately split out from AI Software & Platforms (which mixes in data-infra and dev-tools) to isolate the monetization-of-agents narrative. The app layer inherits roughly the index's forward edge — this is an accountability/structure lens, not an oracle, and not a buy list.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-06-19",
+          "action": "create",
+          "note": "Seeded AI Agents & Applications — 6 equal-weight members isolating the agentic/app monetization layer from infra-heavy ai_software. Still-private AI names (Lambda, Crusoe, Databricks) noted as watchlist."
         }
       ]
     }

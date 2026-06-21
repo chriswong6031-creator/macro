@@ -132,6 +132,25 @@
            background:color-mix(in srgb, var(--g-cold) 14%, var(--panel2));
            border-left:3px solid var(--g-cold); font-size:13px; color:var(--text); }
   #result { display:none; }
+  /* ---- hover tooltips (the ? help icons) — section prose condensed into hover boxes ---- */
+  .help { display:inline-flex; align-items:center; justify-content:center;
+          width:15px; height:15px; border-radius:50%; border:1px solid var(--muted);
+          color:var(--muted); font-size:10px; font-weight:600; cursor:help;
+          position:relative; vertical-align:middle; margin-left:5px; flex:none;
+          text-transform:none; letter-spacing:normal; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%;
+               transform:translateX(-50%); width:300px;
+               background:var(--panel); border:1px solid var(--line);
+               padding:10px 12px; border-radius:9px; z-index:60; font-size:12px;
+               line-height:1.5; color:var(--text); text-align:left; font-weight:400;
+               text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow);
+               pointer-events:none; white-space:normal; }
+  .help:hover .tip { display:block; }
+  th .help .tip, .help.below .tip { bottom:auto; top:150%; }
+  .help.edge-right .tip { left:auto; right:0; transform:none; }
+  .help.edge-left .tip { left:0; right:auto; transform:none; }
+  .tip b { color:var(--text); }
+{% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
@@ -165,20 +184,28 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+        <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <!-- legacy conviction panel — populated only as a FALLBACK if stockview.js fails -->
     <div class="panel" id="r_conviction_panel" style="display:none">
       <h2>{{ t('Conviction profile', '确信度画像') }} <span class="note" style="text-transform:none">· {{ t('unified verdict — cycle caps it', '统一结论 — 周期封顶') }}</span></h2>
       <div id="r_conviction" class="conv"></div>
-    </div>
-    <div class="panel">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
     </div>
     <div class="panel" id="r_alpha_panel" style="display:none">
       <h2>{{ t('Relative strength', '相对强度') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span></h2>
@@ -188,52 +215,58 @@
         '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 TSX 大盘横截面的排名。这是正 IC 的<b>选股腿</b>（加拿大与美国一样动量具持续性）。入场标记为时机背景：<b>pullback</b>＝近期回调的领先股（建设性入场）；<b>extended</b>＝刚急涨（追高风险）。仅作背景，非个性化买入信号。') }}</p>
     </div>
     <div class="panel" id="r_fund_panel" style="display:none">
-      <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span></h2>
-      <div id="r_fund"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+      <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span>{{ help(
         'Descriptive valuation, profitability and dividends (from yfinance) — a backdrop to read ALONGSIDE the cycle / relative-strength signals, NOT a buy ranking. "Cheap vs sector" is not validated as a cross-sectional edge here. Fundamentals refresh on a slower cadence than price.',
-        '描述性的估值、盈利与分红（来自 yfinance）—— 作为与周期／相对强度信号并读的背景，而非买入排序。"相对板块便宜"在此并未被验证为有效的横截面优势。基本面的更新频率慢于价格。') }}</p>
+        '描述性的估值、盈利与分红（来自 yfinance）—— 作为与周期／相对强度信号并读的背景，而非买入排序。"相对板块便宜"在此并未被验证为有效的横截面优势。基本面的更新频率慢于价格。') }}</h2>
+      <div id="r_fund"></div>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
-      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span></h2>
-      <div id="r_analyst"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
         'yfinance sell-side aggregate: the consensus rating, mean price target with its high/low range, the implied upside vs the current price, and coverage breadth. Sell-side opinion shown as coverage context, NOT an endorsement — a target is a forecast, not a validated edge.',
-        'yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅作覆盖背景，并非推荐——目标价是预测，并非有效优势。') }}</p>
+        'yfinance 卖方汇总：一致评级、目标价中位及其高/低区间、相对现价的隐含上行空间，以及覆盖广度。卖方观点仅作覆盖背景，并非推荐——目标价是预测，并非有效优势。') }}</h2>
+      <div id="r_analyst"></div>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
       <h2>📅 {{ t('Earnings', '财报') }}</h2>
       <div id="r_earn"></div>
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">
-      <h2>{{ t('Positioning', '持仓与做空') }} <span class="note" style="text-transform:none">· {{ t('short interest &amp; ownership', '空头与持股结构') }}</span></h2>
-      <div id="r_pos"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+      <h2>{{ t('Positioning', '持仓与做空') }} <span class="note" style="text-transform:none">· {{ t('short interest &amp; ownership', '空头与持股结构') }}</span>{{ help(
         'Short interest (shares short + days-to-cover) and insider / institutional ownership, from yfinance. The keyless free read — SEDI Form-4-style insider transactions and IIROC short-interest detail are not machine-readable. Heavy or rising short interest is a caution; high institutional ownership is crowding context. Descriptive, not a signal.',
-        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。') }}</p>
+        '空头（做空股数＋回补天数）与内部人／机构持股，来自 yfinance。免密钥的免费读法——SEDI 式内部人交易与 IIROC 空头明细不可机读。高或上升的空头是警示；高机构持股是拥挤背景。描述性，非信号。') }}</h2>
+      <div id="r_pos"></div>
     </div>
     <div class="panel" id="r_cbeta_panel" style="display:none">
-      <h2>{{ t('Commodity exposure', '商品敞口') }} <span class="note" style="text-transform:none">· {{ t('oil / gold / loonie beta', '原油／黄金／加元贝塔') }}</span></h2>
-      <div id="r_cbeta" class="mtf"></div>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+      <h2>{{ t('Commodity exposure', '商品敞口') }} <span class="note" style="text-transform:none">· {{ t('oil / gold / loonie beta', '原油／黄金／加元贝塔') }}</span>{{ help(
         'This name\'s sensitivity to oil (WTI), gold and the loonie (CAD), with the broad market removed (orthogonal betas) — the dimension that actually separates TSX names, since the Composite is ~70% Energy / Materials / Financials. An energy producer loads on oil, a miner on gold, a bank reads near-zero (market-driven). The "primary driver" is the largest commodity/FX leg; <b>fit R²</b> is how much of the daily move these factors plus the market explain. Descriptive exposure for sizing and pairing, NOT a forecast or a buy signal.',
-        '本股票对原油（WTI）、黄金与加元（CAD）的敏感度，已剔除大盘（正交贝塔）—— 这是真正区分 TSX 个股的维度，因为综合指数约70%为能源／材料／金融。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。') }}</p>
+        '本股票对原油（WTI）、黄金与加元（CAD）的敏感度，已剔除大盘（正交贝塔）—— 这是真正区分 TSX 个股的维度，因为综合指数约70%为能源／材料／金融。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。') }}</h2>
+      <div id="r_cbeta" class="mtf"></div>
+    </div>
+    </details>
+    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
+    <div class="panel">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
     </div>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
     </div>
     <div class="panel" id="r_cal_panel" style="display:none">
-      <h2>{{ t('How much to trust the state — measured on TSX history', '这个状态有多可信 — 基于TSX历史实测') }}</h2>
-      <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+      <h2>{{ t('How much to trust the state — measured on TSX history', '这个状态有多可信 — 基于TSX历史实测') }}{{ help(
         'TSX names drift up over a month from every state; the spread between states is small. Use the state for <b>structure</b> (cycle position, confirmation checklist, invalidation level) and size positions instead of seeking certainty. <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10 month (10th percentile).',
-        '从任何状态出发，TSX 个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。') }}</p>
+        '从任何状态出发，TSX 个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。') }}</h2>
+      <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
+      'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -395,6 +428,11 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
 
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // Replaces the separate conviction / relative-strength / commodity panels with ONE
+    // decision band + fingerprint + honesty row + evidence lanes + country slot.
+    var svOk = !!(window.SV && d.view && window.SV.mount(d));
+
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
     eb.style.display = 'flex';
@@ -434,12 +472,14 @@
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
-    renderConviction(d);
+    if (!svOk) renderConviction(d);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)
+    // Alpha vs sector — now folded into evidence.rel_strength; render the legacy panel
+    // only as a fallback when the shared view-model didn't mount.
     var ap = document.getElementById('r_alpha_panel'), a = d.alpha;
-    if (a && a.alpha != null) {
+    if (svOk) { ap.style.display = 'none'; }
+    else if (a && a.alpha != null) {
       var AE = {pullback:['pullback','回调买点'], extended:['extended','急涨偏热'],
                 intact:['intact','趋势完好'], laggard:['laggard','落后'], neutral:['neutral','中性']};
       var sgn = function (x, n) { return (x >= 0 ? '+' : '') + (x == null ? '—' : x.toFixed(n)); };
@@ -556,9 +596,11 @@
       calEl.style.display = 'block';
     } else { calEl.style.display = 'none'; }
 
-    // Commodity exposure — oil / gold / CAD betas, market-removed (additive; absent on ETFs)
+    // Commodity exposure — now a country_slot card (commodity_beta) in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var cbEl = document.getElementById('r_cbeta_panel'), fb = d.factor_beta;
-    if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
+    if (svOk) { cbEl.style.display = 'none'; }
+    else if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
       var bstat = function (lab, x) {
         if (x == null) return '';
         return '<span>' + lab + ' <b class="' + (x >= 0 ? 'pos' : 'neg') + '">' + (x >= 0 ? '+' : '') + x.toFixed(2) + '</b></span>';
@@ -577,6 +619,15 @@
       try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'canadaohlc'}); }
       catch (e) { /* chart is garnish */ }
     }
+    hideEmptyGroups();
+  }
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));
@@ -588,6 +639,19 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
+<script>
+  // keep tooltips on-screen: flip below near the top, anchor to the nearest side near edges
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
 <p class="muted" style="font-size:12px">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC · {{ t('charts by TradingView · curated TSX universe, not exhaustive', '图表由 TradingView 提供 · 精选 TSX 范围，非全市场') }}</p>
 <footer class="site-footer">
   <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>

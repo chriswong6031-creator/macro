@@ -261,6 +261,18 @@
   .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
                  color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
+  /* volatility black hole + honesty notes (HK overhaul, China-parity) */
+  .nb-vf { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .nb-vchip { font-size: 8.5px; font-weight: 800; padding: 0 5px; border-radius: 6px; border: 1px solid var(--line);
+              color: var(--muted); white-space: nowrap; }
+  .vf-coil { color: var(--link); border-color: color-mix(in srgb, var(--link) 38%, var(--line));
+             background: color-mix(in srgb, var(--link) 10%, var(--panel)); }
+  .vf-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line)); }
+  .vf-down { color: var(--down); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  .vf-exp { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
+             color: var(--muted); background: color-mix(in srgb, var(--text) 4%, var(--panel)); }
+  .nb-note-anticipation { color: var(--link); background: color-mix(in srgb, var(--link) 8%, var(--panel)); }
 
   /* ---- US/China-parity panels ported to HK (dial / bignum / alerts / risk gauges) ---- */
   .dial { position: relative; height: 9px; border-radius: 5px; margin: 6px 0 3px;
@@ -541,7 +553,14 @@
         </div>
         {% endif %}
         {% if c %}
+        {# volatility black hole (vol_squeeze) chip #}
+        {% set _vs = c.vol_squeeze %}
+        {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
+        <div class="nb-vf">
+          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Vol expansion','波动扩张') }}{% endif %}</span>
+        </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+        {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
         <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>

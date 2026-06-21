@@ -20,6 +20,10 @@ site/intraday/
 # cached cross-job in CI (actions/cache) rather than committed; site/intraday is the
 # force-tracked, shipped artifact.
 data/intraday/
+# Financial-news fetch cache (engine/financial_news) — transient 12h fetch cache,
+# regenerated every build. NOT committed: a keyless local cache must never shadow
+# CI's keyed (Polygon/Finnhub) fetch within the TTL window.
+data/financial_news/
 data/breadth/_closes_cache.parquet
 data/smallcap_breadth/_closes_cache.parquet
 data/midcap_breadth/_closes_cache.parquet
@@ -71,3 +75,4 @@ admin/*-sa.json
 
 # dev-only fast-render view-model cache (scripts/render_macro_fast.py)
 data/_dev_macro_vm.pkl
+data/edgar/company_tickers.json

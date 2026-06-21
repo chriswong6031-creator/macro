@@ -101,6 +101,11 @@ def reversal_watch(closes: pd.DataFrame, tkr_sector: dict, tkr_name: dict, *,
                 "mktcap_yi": round(float(tkr_mktcap.get(t, 0)), 0) if tkr_mktcap else None}
 
     watch = [rec(t) for t in d.sort_values("rev_z", ascending=False).head(top_n).index]
+    # `watch` is the top-N DISPLAY list; `rev_z_all` is the FULL screened map so the conviction
+    # SELECTION axis (CN = 0.55·rev_z) is populated for every name — not just the 16 shown. Before
+    # this, ~800 names fell back to residual momentum (alpha), the signal the engine itself labels
+    # "not a validated A-share edge", silently breaking the reversal-led CN rank.
+    rev_z_all = {t: round(float(d.loc[t, "rev_z"]), 2) for t in d.index if pd.notna(d.loc[t, "rev_z"])}
     return {"as_of": str(closes.index.max().date()), "n": int(len(d)), "note": NOTE,
-            "win_days": win, "watch": watch,
+            "win_days": win, "watch": watch, "rev_z_all": rev_z_all,
             "screened": {"st": int(n_st), "illiquid": int(n_illiq)}}

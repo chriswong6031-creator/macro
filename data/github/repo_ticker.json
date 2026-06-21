@@ -1,0 +1,22 @@
+{
+  "_note": "Curated GitHub owner/repo -> ticker map for the developer-adoption channel (collectors/github_repos.py). Open-source repo star/fork VELOCITY is a non-price read on developer mindshare for software/AI/robotics names. Multiple repos fold into one ticker (max stars/forks delta). BIAS: only names with a flagship public repo are covered; closed-source SaaS (CRWD, PANW) and API-only AI labs are blind here. Gated on a free GITHUB_TOKEN (5k req/hr) — anon is 60/hr.",
+  "repos": {
+    "MSFT": ["microsoft/vscode", "microsoft/TypeScript", "microsoft/playwright"],
+    "GOOGL": ["tensorflow/tensorflow", "google/jax", "golang/go"],
+    "META": ["facebook/react", "pytorch/pytorch", "facebookresearch/llama"],
+    "NVDA": ["NVIDIA/NeMo", "NVIDIA/TensorRT", "NVIDIA/cuda-samples"],
+    "IBM": ["Qiskit/qiskit"],
+    "SNOW": ["snowflakedb/snowpark-python"],
+    "MDB": ["mongodb/mongo"],
+    "DDOG": ["DataDog/datadog-agent"],
+    "NET": ["cloudflare/cloudflared", "cloudflare/workerd"],
+    "ESTC": ["elastic/elasticsearch"],
+    "GTLB": ["gitlabhq/gitlabhq"],
+    "CRM": ["salesforce/LAVIS"],
+    "PLTR": ["palantir/blueprint"],
+    "AMD": ["ROCm/ROCm"],
+    "U": ["Unity-Technologies/ml-agents"],
+    "PATH": ["UiPath/uipathcli"],
+    "TWLO": ["twilio/twilio-python"]
+  }
+}

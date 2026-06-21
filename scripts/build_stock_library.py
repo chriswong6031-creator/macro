@@ -32,8 +32,14 @@ from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import entry_signal  # noqa: E402
+from engine import stock_view  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
+from engine import pullback_zone  # noqa: E402
 from engine import dannytrades_chip as dt_chip  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer OHLCV-aware technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole
+from engine import gex_confirm  # noqa: E402  — dealer-gamma verifier/confirmer
+from engine import demand_chain as dchain  # noqa: E402
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -108,6 +114,64 @@ def _optionable_gex() -> dict:
             log.debug("per-stock gex %s skipped: %s", t, e)
     log.info("per-stock GEX: %d/%d optionable names", len(out), len(OPTIONABLE_GEX))
     return out
+
+
+def _load_gex_board(site: Path) -> dict:
+    """The pre-built per-symbol dealer-gamma payloads (site/gex/<SYM>.json) — RICHER than the
+    live compute_gex path: they carry call/put walls + the vol_hole state + consistent units,
+    for the curated optionable universe. Read once; graceful (absent dir => {}). These feed the
+    GEX verifier/confirmer (engine.gex_confirm) and enrich the per-stock gex chip."""
+    out: dict = {}
+    gdir = site / "gex"
+    if not gdir.exists():
+        return out
+    for fp in gdir.glob("*.json"):
+        sym = fp.stem
+        if sym == "index":
+            continue
+        try:
+            payload = json.loads(fp.read_text())
+            if (payload.get("summary") or {}).get("tier") not in (None, "no_options"):
+                out[sym] = payload
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.debug("gex board %s unreadable: %s", sym, e)
+    log.info("GEX board: %d per-symbol payloads loaded for the confirmer", len(out))
+    return out
+
+
+def _flat_gex_from_board(payload: dict) -> dict:
+    """A stock.html-compatible flat gex dict from the rich board payload. CRUCIAL: stock.html
+    multiplies iv30 by 100 (expects a DECIMAL), but the board stores iv30 as a PERCENT — so we
+    convert it back to decimal here (the iv30 unit-mismatch fix), and ADD the walls + vol_hole
+    that the lighter compute_gex path never produced (never touching the keys stock.html reads)."""
+    s = payload.get("summary") or {}
+    iv = s.get("iv30")
+    return {
+        "gamma_regime": s.get("regime"), "regime": s.get("regime"),
+        "net_gex_bn": s.get("net_gex_bn"),
+        "gamma_flip": s.get("gamma_flip"), "dist_to_flip_pct": s.get("dist_to_flip_pct"),
+        "iv30": (round(iv / 100.0, 4) if iv is not None else None),   # PERCENT -> DECIMAL
+        "call_wall": s.get("call_wall"), "put_wall": s.get("put_wall"),
+        "tier": s.get("tier"), "n_strikes": s.get("n_strikes"),
+        "rr_25d": s.get("rr_25d"),
+        "vol_hole": payload.get("vol_hole"),
+    }
+
+
+def _next_monthly_opex_days() -> int | None:
+    """Calendar days to the next monthly options expiry (3rd Friday) — feeds the GEX confirmer's
+    pre-OPEX suppression (charm/vanna flows dominate the last 2 sessions)."""
+    import datetime as _dt
+
+    def third_friday(y: int, m: int) -> "_dt.date":
+        d = _dt.date(y, m, 1)
+        return d + _dt.timedelta(days=(4 - d.weekday()) % 7 + 14)
+    today = _dt.date.today()
+    tf = third_friday(today.year, today.month)
+    if tf < today:
+        ny, nm = (today.year + 1, 1) if today.month == 12 else (today.year, today.month + 1)
+        tf = third_friday(ny, nm)
+    return (tf - today).days
 
 
 def current_vix_context() -> dict | None:
@@ -528,6 +592,57 @@ def _basket_membership_map() -> dict[str, list[dict]]:
     return out
 
 
+def _spotlight_context() -> dict:
+    """Heavy, once-per-build prep for the per-name SPOTLIGHT tilt: the live thematic-basket
+    intel (engine.theme_scoring — score/label/reco per basket, keyed by slug) + the live
+    sector playbook stage table (engine.playbook — stage/extended/RS-pctile per SPDR ETF).
+    Recomputed in-process here (same pattern as _basket_tailwind_map) because build_baskets /
+    build_allocation run AFTER this in the daily pipeline, so their JSON isn't on disk yet
+    (~3s total — measured). Best-effort: either channel can be empty; the per-name blend
+    simply skips a missing one (the engine never reads a missing leg as neutral)."""
+    theme_by_id: dict[str, dict] = {}
+    try:
+        from engine import theme_scoring
+        ti = theme_scoring.compute_theme_intel("us") or {}
+        for t in (ti.get("themes") or []):
+            if t.get("id"):
+                theme_by_id[t["id"]] = t
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("spotlight theme intel unavailable (%s)", e)
+    sector_by_etf: dict[str, dict] = {}
+    try:
+        from engine import playbook
+        from engine.inputs import yahoo_closes
+        st = playbook.stage_table(yahoo_closes())
+        for etf, row in st.iterrows():
+            pc = row.get("pctile_252d")
+            sector_by_etf[etf] = {
+                "stage": row.get("stage"), "extended": bool(row.get("extended")),
+                "pctile_252d": float(pc) if pc is not None and pd.notna(pc) else None,
+                "name": row.get("name")}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("spotlight sector stage table unavailable (%s)", e)
+    log.info("spotlight context: %d scored themes · %d sector stages",
+             len(theme_by_id), len(sector_by_etf))
+    return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf, "unmapped": set()}
+
+
+def _spotlight_for(sector: str | None, memberships: list[dict] | None,
+                   ctx: dict | None) -> dict | None:
+    """Per-name spotlight tilt: the strongest theme (by |tilt|) the name belongs to, blended
+    with its sector's playbook stage (GICS->ETF bridged). None when neither channel fires."""
+    if not ctx:
+        return None
+    from engine import spotlight as _sp
+    sec = (sector or "").strip()
+    etf = _sp.GICS_TO_ETF.get(sec) if sec else None
+    if sec and etf is None:
+        ctx.setdefault("unmapped", set()).add(sec)
+    sector_row = (ctx.get("sector_by_etf") or {}).get(etf) if etf else None
+    return _sp.compute(memberships, ctx.get("theme_by_id") or {},
+                       sector_etf=etf, sector_row=sector_row)
+
+
 def main() -> int:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "stockdata"
@@ -648,8 +763,14 @@ def main() -> int:
             smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("smartmoney.json unreadable (%s)", e)
-    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex)
-    gex_by_ticker = _optionable_gex()
+    # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex). PRIMARY =
+    # the pre-built site/gex board payloads (rich: walls + vol_hole + consistent units), which
+    # already cover the curated optionable universe. The live compute_gex path is only used as a
+    # cold-start fallback when the board dir is entirely absent (a fresh checkout before the first
+    # gex build) — it is skipped whenever the board has any payload, to avoid the slow Cboe fetch.
+    gex_board = _load_gex_board(site)
+    gex_by_ticker = _optionable_gex() if not gex_board else {}
+    opex_days = _next_monthly_opex_days()
     # contrarian crowding/fragility flags (DISPLAY-ONLY, gated OUT of the score by
     # scripts/fund_crowding_phase0.py — short interest has no PIT history to validate).
     # Computed once over the whole panel; graceful (absent feed => {} => no chip).
@@ -657,6 +778,7 @@ def main() -> int:
     fragility_map = compute_fragility()
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
     bsk_mem = _basket_membership_map()          # all active basket memberships (display-only)
+    spotlight_ctx = _spotlight_context()        # theme intel + sector stage for the spotlight tilt
     # per-stock Macro-sensitivity context (rate-beta tier + duration + live-regime
     # head/tailwind + inflation label) — reads factor_betas.json (written by build_site
     # just before this) + data/transmission/latest.json (the Rate & Inflation Transmission
@@ -667,6 +789,15 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("macro-sensitivity context unavailable (%s)", e)
         macro_sens_ctx = None
+    # Alt-data per-stock chip (engine/altdata.py suite -> engine/altdata_signals.by_ticker).
+    # DISPLAY-ONLY: politician/insider/contract/Trump flow convergence per name. Absent
+    # file => no chip. Built by build_alt_data, which runs before build_site.
+    try:
+        from engine import altdata_signals as _altdata
+        altdata_ctx = _altdata.load().get("tickers", {})
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("alt-data context unavailable (%s)", e)
+        altdata_ctx = {}
     # Phase-0 gate: the board rank stays the VALIDATED leg unless a deep-CI run proved
     # the composite beats it (scripts/stock_conviction_phase0.py). Absent / shallow =>
     # NEUTRAL => gate_go False => Conviction ships as display-only context.
@@ -685,10 +816,23 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("revision drip skipped (%s)", e)
     revision_z: dict[str, float] = {}
+    # raw analyst-revision fields, surfaced per-stock for the Demand Context panel (L1
+    # "consensus"): these are collected but were previously distilled only into the
+    # cross-sectional z below — the panel needs the unblended numbers to LABEL them as
+    # already-priced. See memory demand-desk-divergence (Phase 0).
+    revision_raw: dict[str, dict] = {}
     _rp = config.data_dir() / "revisions" / "latest.parquet"
     if _rp.exists():
         try:
             _rv = pd.read_parquet(_rp)
+
+            def _rf(x):  # NaN/inf-safe float for the JSON payload, else None
+                try:
+                    x = float(x)
+                except (TypeError, ValueError):
+                    return None
+                return x if x == x and x not in (float("inf"), float("-inf")) else None
+
             raw = {}
             for t, r in _rv.iterrows():
                 b = r.get("breadth"); e = r.get("est_chg_30d")
@@ -696,6 +840,10 @@ def main() -> int:
                       if x is not None and x == x]
                 if xs:
                     raw[t] = float(sum(xs) / len(xs))
+                rr = {"breadth": _rf(b), "est_chg_30d": _rf(e), "est_chg_90d": _rf(r.get("est_chg_90d")),
+                      "net_up_30d": _rf(r.get("net_up_30d")), "n_analysts": _rf(r.get("n_analysts"))}
+                if any(v is not None for v in rr.values()):
+                    revision_raw[str(t)] = rr
             if len(raw) >= 5:
                 s = pd.Series(raw); mu, sd = s.mean(), s.std(ddof=0) or 1.0
                 revision_z = ((s - mu) / sd).clip(-3, 3).round(3).to_dict()
@@ -703,6 +851,71 @@ def main() -> int:
             log.warning("revisions latest.parquet unreadable (%s)", e)
     log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
              " · GATE GO → board ranks by EDGE" if gate_go else "")
+    # Customer-demand chains (engine/demand_chain) — the L2 "independent observable"
+    # leg of the Demand Context panel: aggregate spender capex/revenue from OTHER
+    # companies' SEC filings is the forward-demand pool for each beneficiary cohort
+    # (AI capex → semis/infra; homebuilder revenue → building products). Computed
+    # ONCE here; attached per beneficiary name in the loop below. Display-only.
+    demand_signals: dict[str, dict] = {}
+    _sp = config.data_dir() / "edgar" / "statements.parquet"
+    if _sp.exists():
+        try:
+            demand_signals = dchain.compute_signals(pd.read_parquet(_sp))
+            for ck, sg in demand_signals.items():
+                log.info("demand-chain[%s]: %s %+.0f%% YoY to ~$%.0fB (FY%d, n=%d)", ck,
+                         sg["trend"], sg["yoy_pct"] or 0.0, sg["total_latest_bn"],
+                         sg["fy_latest"], sg["n_spenders"])
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("demand-chain signals skipped (%s)", e)
+    # RPO / contracted forward bookings (engine/demand_chain.rpo_read) — the per-name
+    # L2 read for the software complex the capex chains don't reach. Used as a
+    # fallback when a name is not on any customer-capex chain.
+    rpo_by_ticker: dict[str, list[dict]] = {}
+    try:                                        # drip RPO for the software universe (cached 25d; like revisions)
+        from collectors.edgar_rpo import fetch_rpo
+        fetch_rpo()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("rpo drip skipped (%s)", e)
+    _rpop = config.data_dir() / "edgar" / "rpo.parquet"
+    if _rpop.exists():
+        try:
+            _rpo = pd.read_parquet(_rpop)
+            for t, g in _rpo.groupby("ticker"):
+                rpo_by_ticker[str(t)] = [{"fy": int(r.fy), "rpo": float(r.rpo),
+                                          "revenue": (float(r.revenue) if r.revenue == r.revenue else None)}
+                                         for r in g.itertuples()]
+            log.info("demand-chain: RPO bookings for %d names", len(rpo_by_ticker))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("rpo.parquet unreadable (%s)", e)
+    # Headcount / hiring (engine/demand_chain.hiring_read) — the per-name COINCIDENT
+    # hiring-confidence read (10-K employee growth), the honest free stand-in for live
+    # job postings. Last display fallback when a name is not on a chain and has no RPO.
+    headcount_by_ticker: dict[str, list[dict]] = {}
+    try:                                        # drip headcount (cached 90d; gentle SEC doc fetch)
+        from collectors.edgar_headcount import fetch_headcount
+        fetch_headcount(max_new=10)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("headcount drip skipped (%s)", e)
+    _hcp = config.data_dir() / "edgar" / "headcount.parquet"
+    if _hcp.exists():
+        try:
+            _hc = pd.read_parquet(_hcp)
+            for t, g in _hc.groupby("ticker"):
+                headcount_by_ticker[str(t)] = [{"fy": int(r.fy), "employees": int(r.employees)}
+                                               for r in g.itertuples()]
+            log.info("demand-chain: headcount for %d names", len(headcount_by_ticker))
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("headcount.parquet unreadable (%s)", e)
+    # scored-ledger track record (engine/demand_ledger, prior build) for the panel's
+    # accountability line; absent on first run — degrade silently.
+    demand_track = None
+    _dtr = config.data_dir() / "demand_chain" / "track_record.json"
+    if _dtr.exists():
+        try:
+            demand_track = json.loads(_dtr.read_text())
+        except Exception:  # noqa: BLE001
+            demand_track = None
+    demand_chip: dict[str, dict] = {}      # per-ticker actionable demand divergence → standout board chip
     index, cand, built, failed = [], [], 0, 0
     # Conviction profiles (engine/stock_score) per name + the deferred per-stock JSON
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
@@ -777,7 +990,8 @@ def main() -> int:
             t0 = time.time()
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
                                      initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set,
-                                               ant_macro, ant_gate, ant_breadth)) as ex:
+                                               ant_macro, ant_gate, ant_breadth,
+                                               name_dir_inputs)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)
@@ -814,12 +1028,70 @@ def main() -> int:
                 cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
-        if gex_by_ticker.get(ticker):
+        # ---- richer OHLCV technical snapshot + single-stock volatility black hole ------
+        # Supersede the thin close-only snapshot with the research-vetted read (ATR/ADX/
+        # squeeze/volume where full OHLCV exists; momentum / 52w-proximity / realized-vol
+        # percentile everywhere). The OHLCV names also get the price-based vol-squeeze state.
+        # Read store("stocks") ONCE here and reuse it for the DannyTrades chip below.
+        # Graceful: any failure leaves the thin snapshot in place.
+        _ohlcv = None
+        try:
+            _ohlcv = store.read("stocks", ticker)
+            if _ohlcv is not None and {"high", "low", "volume"} <= set(_ohlcv.columns):
+                rich = stock_technicals.snapshot(_ohlcv["close"], _ohlcv["high"],
+                                                 _ohlcv["low"], _ohlcv["volume"], bench=bench)
+                sq = vol_squeeze.assess(_ohlcv["close"], _ohlcv["high"],
+                                        _ohlcv["low"], _ohlcv["volume"])
+            else:
+                rich = stock_technicals.snapshot(close, bench=bench)
+                sq = vol_squeeze.assess(close)
+            rec["tech"] = {**(rec.get("tech") or {}), **rich}
+            if sq:
+                rec["vol_squeeze"] = sq
+        except Exception as e:  # noqa: BLE001 — additive; the thin snapshot is already on rec
+            log.warning("tech/squeeze enrich for %s failed (%s)", ticker, e)
+        # ---- dealer-gamma join (RICH board payload) + the GEX verifier/confirmer -------
+        # Prefer the pre-built site/gex payload (call/put walls + vol_hole + correct units);
+        # fall back to the live compute_gex summary. _flat_gex_from_board keeps stock.html's
+        # gex chip working (and fixes the iv30 decimal/percent mismatch).
+        _gp = gex_board.get(ticker)
+        if _gp:
+            rec["gex"] = _flat_gex_from_board(_gp)
+            _gc = gex_confirm.assess(_gp, opex_days=opex_days)
+            if _gc:
+                rec["gex_confirm"] = _gc
+        elif gex_by_ticker.get(ticker):
             rec["gex"] = gex_by_ticker[ticker]
+            _gc = gex_confirm.assess(gex_by_ticker[ticker], opex_days=opex_days)
+            if _gc:
+                rec["gex_confirm"] = _gc
         if fragility_map.get(ticker):
             rec["fragility"] = fragility_map[ticker]
         if bsk_mem.get(ticker):
             rec["baskets_membership"] = bsk_mem[ticker]
+        if revision_raw.get(ticker):           # raw analyst-revision fields → Demand Context (L1 consensus)
+            rec["revisions"] = revision_raw[ticker]
+        if demand_signals or rpo_by_ticker or headcount_by_ticker:   # demand chains / RPO / hiring → L2
+            dchread = (dchain.chain_read(demand_signals, rec.get("baskets_membership"),
+                                         rec.get("revisions"), ticker=ticker) if demand_signals else None)
+            if dchread is None and rpo_by_ticker.get(ticker):   # software complex: own forward bookings
+                dchread = dchain.rpo_read(rpo_by_ticker[ticker], rec.get("revisions"))
+            if dchread is None and headcount_by_ticker.get(ticker):   # last fallback: hiring/headcount
+                dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
+            if dchread:
+                # attach the scored-ledger summary (leading chains only) for the
+                # panel's accountability line — global, same for every name
+                if dchread.get("leading") and demand_track:
+                    o = demand_track.get("overall") or {}
+                    dchread["ledger"] = {"scored": o.get("n"), "hits": o.get("hits"),
+                                         "hit_rate": o.get("hit_rate"), "open": demand_track.get("open"),
+                                         "since": demand_track.get("as_of")}
+                rec["demand_chain"] = dchread
+                # board chip flags the LEADING variant only (capex / RPO) — coincident
+                # cross-reads (housing, hiring) stay on the panel + Demand Desk page.
+                if dchread.get("leading") and dchread["divergence"] in ("ahead_of_consensus", "consensus_at_risk"):
+                    demand_chip[ticker] = {"div": dchread["divergence"], "chain": dchread["chain_key"],
+                                           "tier": dchread["tier"], "yoy": dchread.get("yoy_pct")}
         # ---- unified Conviction Profile (engine/stock_score) -----------------
         # The single block both the dashboard standout card AND this name's detail page
         # render, so the two can never structurally disagree. v2: the EDGE = the VALIDATED
@@ -829,10 +1101,11 @@ def main() -> int:
         ins_bps = ins.get("bps") if (ins.get("buyers", 0) >= 2 and (ins.get("net_mn") or 0) > 0) else None
         if ext_map.get(ticker):
             rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
+        spot = _spotlight_for(sector, bsk_mem.get(ticker), spotlight_ctx)
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
-            lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
+            spotlight=spot, lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
         prof = stock_score.conviction_profile(
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
@@ -847,6 +1120,19 @@ def main() -> int:
                 rec["entry_signal"] = es
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("entry-signal for %s failed (%s)", ticker, e)
+        # ---- Pullback buy-zone (display-only) ---------------------------------
+        # turn an "Extended — don't chase" verdict into a concrete level: the rising 50d /
+        # the out-of-chase line for a timeable leader, or a "this is a chase, the reset is X%
+        # lower" read for a parabolic blow-off. Pure price math off rec['tech'] + the grade;
+        # self-gates (returns None) for anything not in don't-chase territory.
+        try:
+            pz = pullback_zone.compute(
+                rec.get("tech"), (rec.get("ext") or {}).get("grade"),
+                downtrend=((rec.get("ladder") or {}).get("dir") == "down"))
+            if pz:
+                rec["pullback_zone"] = pz
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("pullback-zone for %s failed (%s)", ticker, e)
         # 4H intraday available? (Polygon hourly store -> site/intraday/<T>.json). stock.html
         # passes this to the chart so the 4H button only appears where data actually exists.
         rec["has_intraday"] = 1 if (config.data_dir() / "intraday" / f"{ticker}.parquet").exists() else 0
@@ -865,11 +1151,18 @@ def main() -> int:
                     rec["macro_sensitivity"] = ms
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.warning("macro-sensitivity for %s failed (%s)", ticker, e)
+        # ---- Alt-data convergence chip (display-only) -------------------------
+        if altdata_ctx:
+            try:
+                ad = _altdata.chip(altdata_ctx.get(ticker))
+                if ad:
+                    rec["altdata"] = ad
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.warning("alt-data chip for %s failed (%s)", ticker, e)
         # ---- DannyTrades CONTRARIAN read (display-only) -----------------------
         # extension flag (decile Spearman −0.88) + whale-fade; needs full OHLCV+volume
         # (data/stocks names only — others silently skip). See research/DANNYTRADES_PHASE0.md.
         try:
-            _ohlcv = store.read("stocks", ticker)
             if _ohlcv is not None and {"low", "volume"} <= set(_ohlcv.columns):
                 dtc = dt_chip.assess(_ohlcv["close"], _ohlcv.get("high"),
                                      _ohlcv.get("low"), _ohlcv.get("volume"))
@@ -890,10 +1183,20 @@ def main() -> int:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
         built += 1
+    # surface any GICS sector strings the spotlight sector-channel couldn't bridge to an SPDR
+    # ETF (the theme channel still fires for these names) so the alias map can be widened.
+    _unmapped = spotlight_ctx.get("unmapped") if spotlight_ctx else None
+    if _unmapped:
+        log.warning("spotlight: %d unmapped sector(s) -> add to engine.spotlight.GICS_TO_ETF: %s",
+                    len(_unmapped), sorted(_unmapped))
     # within-market percentile display score (mutates the conviction blocks in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
     for safe, rec in to_write:
+        # canonical render model (engine/stock_view) — built AFTER attach_panel_scores so
+        # the view's score/band match the final within-market percentile. Additive: the
+        # shared stockview.js renders rec["view"]; legacy panels still read rec.* directly.
+        rec["view"] = stock_view.build_view(rec, "US")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:
@@ -963,6 +1266,8 @@ def main() -> int:
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
+            if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
+                r["demand"] = demand_chip[t]
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
         (site / "factordata" / "us_standouts.json").write_text(

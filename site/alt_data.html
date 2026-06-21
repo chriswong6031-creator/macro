@@ -1,0 +1,1192 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Alternative Data — Signal Intelligence</span><span class="l-zh">替代数据 — 信号情报</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  .sid { --num: "SF Mono", ui-monospace, "DejaVu Sans Mono", monospace; max-width:1180px; margin:0 auto; }
+  .sid-eyebrow { font:600 12px/1 var(--num); letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+  .sid h1 { font-size:clamp(26px,4vw,38px); margin:.28em 0 .15em; letter-spacing:-.01em; }
+  .sid-sub { color:var(--muted); max-width:760px; font-size:14px; line-height:1.55; }
+  .sid-meta { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 6px; }
+  .sid-meta .chip { font-family:var(--num); }
+  .sid-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:20px 0; }
+  .sid-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:13px 15px; }
+  .sid-stat .k { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .sid-stat .v { font:650 25px/1.1 var(--num); margin-top:7px; }
+  .sid-stat .m { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .sid-regime { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info);
+                border-radius:10px; padding:12px 15px; margin:8px 0 4px; font-size:13.5px; line-height:1.55; }
+  .sid-regime .lab { font:600 10px/1 var(--num); letter-spacing:.12em; text-transform:uppercase; color:var(--info); display:block; margin-bottom:6px; }
+  .sid-sec { margin:30px 0 8px; }
+  .sid-sec h2 { font-size:18px; margin:0 0 3px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .sid-sec .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+  .sid-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-top:12px; }
+  .conv-list { display:flex; flex-direction:column; gap:10px; }
+  .conv-row { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:12px 14px;
+              display:grid; grid-template-columns:64px 1fr; gap:14px; align-items:start; }
+  .conv-row.act-ACCUMULATE { border-left:3px solid var(--up); }
+  .conv-row.act-AVOID { border-left:3px solid var(--down); }
+  .conv-row.act-WATCH { border-left:3px solid var(--info); }
+  .conv-score { text-align:center; }
+  .conv-score .sc { font:700 27px/1 var(--num); }
+  .conv-score .scl { font:600 9px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-top:4px; }
+  .conv-main .tkline { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+  .conv-main .tk { font:700 17px/1 var(--num); }
+  .conv-chips { display:flex; flex-wrap:wrap; gap:5px; margin:7px 0; }
+  .pill { font:600 10.5px/1 var(--num); padding:4px 8px; border-radius:999px; border:1px solid var(--line);
+          color:var(--muted); background:var(--panel2); white-space:nowrap; }
+  .pill.act-ACCUMULATE { color:var(--up); border-color:color-mix(in srgb, var(--up) 45%, transparent); }
+  .pill.act-AVOID { color:var(--down); border-color:color-mix(in srgb, var(--down) 45%, transparent); }
+  .pill.act-WATCH { color:var(--info); border-color:color-mix(in srgb, var(--info) 45%, transparent); }
+  .pill.cv-high { color:var(--text); border-color:var(--text); font-weight:700; }
+  .pill.ext { color:var(--warn); border-color:color-mix(in srgb, var(--warn) 45%, transparent); }
+  .pill.trump { color:var(--down); border-color:color-mix(in srgb, var(--down) 40%, transparent); }
+  .pill.ch { color:var(--info); border-color:color-mix(in srgb, var(--info) 30%, transparent); }
+  .pill.src-brain { color:#c77dff; border-color:#c77dff66; }
+  .conv-thesis { font-size:13px; line-height:1.55; margin:6px 0 2px; }
+  .conv-actors { font-size:11.5px; color:var(--muted); margin-top:5px; }
+  .conv-so { font-size:11.5px; color:var(--muted); margin-top:4px; }
+  .conv-so b { color:var(--text); font-weight:600; }
+  table.sid-t { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:4px; }
+  table.sid-t th { text-align:left; font:600 10px/1.2 var(--num); letter-spacing:.06em; text-transform:uppercase;
+                   color:var(--muted); padding:5px 9px 7px; border-bottom:1px solid var(--line); }
+  table.sid-t td { padding:6px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.sid-t tr:last-child td { border-bottom:none; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .tkc { font-weight:700; font-variant-numeric:tabular-nums; font-family:var(--num); }
+  .mut { color:var(--muted); }
+  .sid-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:12px; }
+  .sid-grid h3 { margin:0 0 6px; font-size:14px; }
+  .kind-row { display:flex; flex-wrap:wrap; gap:7px 16px; margin:4px 0 10px; }
+  .kind-grp { font-size:11.5px; }
+  .kind-grp .kl { font:600 9.5px/1 var(--num); letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+  .repoint { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--warn);
+             border-radius:9px; padding:9px 12px; margin-top:9px; font-size:12.5px; line-height:1.5; }
+  .repoint .strike { text-decoration:line-through; color:var(--muted); }
+  details.sid-more { margin-top:10px; }
+  details.sid-more > summary { cursor:pointer; font-size:12px; color:var(--info); list-style:none; }
+  details.sid-more > summary::-webkit-details-marker { display:none; }
+  .feedlink { font-family:var(--num); font-size:11.5px; }
+  .sid-cov { display:flex; flex-wrap:wrap; gap:7px; }
+  .cov { font:600 11px/1 var(--num); padding:5px 9px; border-radius:8px; border:1px solid var(--line); color:var(--muted); }
+  .cov.empty { opacity:.4; }
+  @media (max-width:760px){ .sid-stats{grid-template-columns:repeat(2,1fr);} .sid-grid{grid-template-columns:1fr;}
+    .conv-row{grid-template-columns:52px 1fr;gap:10px;} }
+
+</style>
+
+</head>
+<body>
+<nav class="site-nav">
+    
+
+
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<div class="sid">
+
+  
+  <section class="sid-hero">
+    <p class="sid-eyebrow">📡 <span class="l-en">Signal Intelligence Desk</span><span class="l-zh">信号情报台</span></p>
+    <h1><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></h1>
+    <p class="sid-sub"><span class="l-en">Where independent public-record channels — congressional & insider buying, federal-contract acceleration, lobbying, dark-pool flow, smart-money 13F, app-store demand, patents — and the affiliations of influential actors line up on the same name. We surface the connection, score the conviction, grade every call against the tape, and emit it to the portfolio bot.</span><span class="l-zh">当多条独立的公开记录信号——国会与内部人买入、联邦合同加速、游说、暗池资金流、聪明钱13F、应用商店需求、专利——与有影响力人物的关联在同一标的上对齐时浮现出来。我们呈现关联、评估置信、用市场检验每个判断，并将其传输给组合机器人。</span></p>
+    <div class="sid-meta">
+      <span class="chip">Quiver Quantitative (Trader plan)</span>
+      <span class="chip"><span class="l-en">As of</span><span class="l-zh">截至</span> 2026-06-21</span>
+      <span class="chip">22 <span class="l-en">actors</span><span class="l-zh">人物</span> · 105 <span class="l-en">edges</span><span class="l-zh">关系</span></span>
+      <span class="chip"><a class="feedlink" href="altdata/mastermind.json">mastermind.json ↗</a></span>
+      <span class="chip"><a class="feedlink" href="altdata/feed.json">feed.json ↗</a></span>
+    </div>
+
+    <div class="sid-stats">
+      <div class="sid-stat"><div class="k"><span class="l-en">Actionable signals</span><span class="l-zh">可操作信号</span></div>
+        <div class="v">57</div>
+        <div class="m"><span class="l-en">ranked, ≥2 channels or an affiliation</span><span class="l-zh">已排名，≥2通道或一项关联</span></div></div>
+      <div class="sid-stat"><div class="k"><span class="l-en">Top conviction</span><span class="l-zh">最高置信</span></div>
+        
+        <div class="v">NVDA</div>
+        <div class="m"><span class="l-en">score</span><span class="l-zh">评分</span> 97 · high</div></div>
+      <div class="sid-stat"><div class="k"><span class="l-en">Affiliated tickers</span><span class="l-zh">关联标的</span></div>
+        <div class="v">33</div>
+        <div class="m"><span class="l-en">actor → name connections</span><span class="l-zh">人物→标的连接</span></div></div>
+      <div class="sid-stat"><div class="k"><span class="l-en">Ledger</span><span class="l-zh">战绩</span></div>
+        
+        <div class="v">—</div>
+        <div class="m"><span class="l-en">accruing</span><span class="l-zh">累积中</span> · 37 <span class="l-en">open</span><span class="l-zh">未到期</span></div></div>
+    </div>
+
+    
+    
+  </section>
+
+  
+  <section class="sid-sec">
+    <h2>🎯 <span class="l-en">Conviction board</span><span class="l-zh">置信榜</span>
+      <span class="h-note"><span class="l-en">ranked actionable signals — convergence × affiliation × AI conviction, graded vs SPY</span><span class="l-zh">已排名的可操作信号——汇聚×关联×AI置信，对标普评分</span></span></h2>
+    
+    <div class="conv-list">
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">97</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">NVDA</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-high">high</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+6pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">13F add</span><span class="l-zh">机构加仓</span></span><span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">Dark-pool accum</span><span class="l-zh">暗池吸筹</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span><span class="pill ch"><span class="l-en">Retail buzz</span><span class="l-zh">散户热度</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Jensen Huang <span class="mut">(controls)</span> · Nancy Pelosi <span class="mut">(holds stake)</span> · Marjorie Taylor Greene <span class="mut">(holds stake)</span> · Michael McCaul <span class="mut">(holds stake)</span> · Jim Cramer <span class="mut">(talks about)</span> · Paul Pelosi <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">92</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">GOOGL</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-high">high</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+12pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">13F add</span><span class="l-zh">机构加仓</span></span><span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">App demand</span><span class="l-zh">应用需求</span></span><span class="pill ch"><span class="l-en">material_8k</span><span class="l-zh">material_8k</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Nancy Pelosi <span class="mut">(holds stake)</span> · Paul Pelosi <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">85</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">MSFT</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-high">high</span>
+            
+            
+            
+            <span class="pill trump"><span class="l-en">Trump-linked</span><span class="l-zh">特朗普关联</span></span>
+            <span class="pill r-neg">-12pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">13F add</span><span class="l-zh">机构加仓</span></span><span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">App demand</span><span class="l-zh">应用需求</span></span><span class="pill ch"><span class="l-en">Gov contracts</span><span class="l-zh">政府合同</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span><span class="pill ch"><span class="l-en">Trump trade</span><span class="l-zh">特朗普交易</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Sam Altman <span class="mut">(partners with)</span> · Bill Ackman <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">68</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">AMZN</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+4pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">13F add</span><span class="l-zh">机构加仓</span></span><span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">material_8k</span><span class="l-zh">material_8k</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Nancy Pelosi <span class="mut">(holds stake)</span> · Paul Pelosi <span class="mut">(affiliates with)</span> · Dan Crenshaw <span class="mut">(affiliates with)</span> · Bill Ackman <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">60</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">DELL</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+118pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Gov contracts</span><span class="l-zh">政府合同</span></span><span class="pill ch"><span class="l-en">material_8k</span><span class="l-zh">material_8k</span></span><span class="pill ch"><span class="l-en">news_sentiment</span><span class="l-zh">news_sentiment</span></span>
+          </div>
+          
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">58</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">BIIB</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-neg">-8pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">clinical_phase3_start</span><span class="l-zh">clinical_phase3_start</span></span><span class="pill ch"><span class="l-en">Congress buy</span><span class="l-zh">国会买入</span></span><span class="pill ch"><span class="l-en">fda_label_expansion</span><span class="l-zh">fda_label_expansion</span></span>
+          </div>
+          
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">58</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">BA</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-neg">-1pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">gov_grant</span><span class="l-zh">gov_grant</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Jim Cramer <span class="mut">(endorses)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">57</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">EFX</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            <span class="pill trump"><span class="l-en">Trump-linked</span><span class="l-zh">特朗普关联</span></span>
+            
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Contracts accelerating</span><span class="l-zh">合同加速</span></span><span class="pill ch"><span class="l-en">Trump trade</span><span class="l-zh">特朗普交易</span></span>
+          </div>
+          
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">54</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">META</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            <span class="pill trump"><span class="l-en">Trump-linked</span><span class="l-zh">特朗普关联</span></span>
+            <span class="pill r-neg">-17pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">CNBC pick</span><span class="l-zh">CNBC推荐</span></span><span class="pill ch"><span class="l-en">Trump trade</span><span class="l-zh">特朗普交易</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Mark Zuckerberg <span class="mut">(controls)</span> · Mark Zuckerberg <span class="mut">(controls)</span> · Dan Crenshaw <span class="mut">(holds stake)</span> · Bill Ackman <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">53</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">MU</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+172pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Ro Khanna <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">53</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">QCOM</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+62pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Tommy Tuberville <span class="mut">(holds stake)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">51</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">INTC</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            <span class="pill r-pos">+190pp 60d</span>
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">gov_grant</span><span class="l-zh">gov_grant</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span>
+          </div>
+          
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">50</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">MSTR</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">material_8k</span><span class="l-zh">material_8k</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Michael Saylor <span class="mut">(controls)</span> · Michael Saylor <span class="mut">(controls)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+      <div class="conv-row act-WATCH">
+        <div class="conv-score">
+          <div class="sc">49</div>
+          <div class="scl"><span class="l-en">score</span><span class="l-zh">评分</span></div>
+        </div>
+        <div class="conv-main">
+          <div class="tkline">
+            <span class="tk">AAPL</span>
+            <span class="pill act-WATCH">WATCH</span>
+            <span class="pill cv-medium">medium</span>
+            
+            
+            
+            
+            
+          </div>
+          <div class="conv-chips">
+            <span class="pill ch"><span class="l-en">Influence link</span><span class="l-zh">影响力关联</span></span><span class="pill ch"><span class="l-en">Patent cluster</span><span class="l-zh">专利集群</span></span>
+          </div>
+          
+          
+          <div class="conv-actors">🔗 Dan Crenshaw <span class="mut">(holds stake)</span> · Paul Pelosi <span class="mut">(affiliates with)</span> · Marjorie Taylor Greene <span class="mut">(affiliates with)</span> · Warren Buffett <span class="mut">(affiliates with)</span>
+            </div>
+          
+          
+          
+        </div>
+      </div>
+      
+    </div>
+    <p class="mut" style="font-size:11.5px;margin-top:10px;"><span class="l-en">signal_score = weighted convergence + AI conviction + price confirmation − extension. action/direction from the Opus brain when present; otherwise a deterministic WATCH. Never an order — the bot sizes it through its own risk framework.</span><span class="l-zh">signal_score = 加权汇聚 + AI置信 + 价格确认 − 拉伸。存在时由Opus大脑给出action/direction；否则为确定性WATCH。绝非下单——机器人通过自身风险框架进行仓位管理。</span></p>
+    
+  </section>
+
+  
+  
+  <section class="sid-sec">
+    <h2>🕸️ <span class="l-en">Influence graph</span><span class="l-zh">影响力图谱</span>
+      <span class="h-note"><span class="l-en">important actors → the names they control, hold, talk about, or partner with</span><span class="l-zh">重要人物→他们控制、持有、谈论或合作的标的</span></span></h2>
+
+    <div class="sid-card">
+      <div class="kind-row">
+        
+        <div class="kind-grp"><span class="kl">Trump family</span> ·
+          <span class="l-en">Eric Trump, Donald Trump Jr.</span><span class="l-zh">Eric Trump、Donald Trump Jr.</span></div>
+        
+        <div class="kind-grp"><span class="kl">Influencer</span> ·
+          <span class="l-en">Paul Pelosi, Jim Cramer</span><span class="l-zh">Paul Pelosi、Jim Cramer</span></div>
+        
+        <div class="kind-grp"><span class="kl">Politician</span> ·
+          <span class="l-en">Nancy Pelosi, Tommy Tuberville, Marjorie Taylor Greene, Ro Khanna, Dan Crenshaw, Michael McCaul</span><span class="l-zh">Nancy Pelosi、Tommy Tuberville、Marjorie Taylor Greene、Ro Khanna、Dan Crenshaw、Michael McCaul</span></div>
+        
+        <div class="kind-grp"><span class="kl">Founder / exec</span> ·
+          <span class="l-en">Elon Musk, Jensen Huang, Michael Saylor, Mark Zuckerberg, Sam Altman, Larry Ellison</span><span class="l-zh">Elon Musk、Jensen Huang、Michael Saylor、Mark Zuckerberg、Sam Altman、Larry Ellison</span></div>
+        
+        <div class="kind-grp"><span class="kl">Fund / activist</span> ·
+          <span class="l-en">Warren Buffett, Bill Ackman, Carl Icahn, Cathie Wood, Michael Burry, Paul Singer</span><span class="l-zh">Warren Buffett、Bill Ackman、Carl Icahn、Cathie Wood、Michael Burry、Paul Singer</span></div>
+        
+      </div>
+
+      
+      <div class="repoint">🔁 <b>American Bitcoin (ABTC)</b> —
+        <span class="l-en">branded</span><span class="l-zh">标榜为</span> <span class="strike">Crypto / digital assets</span>,
+        <span class="l-en">but value accrues to</span><span class="l-zh">但价值归属于</span> <b>AI power &amp; data-center infrastructure</b>
+        <span class="l-en">via</span><span class="l-zh">经由</span> Hut 8 Corp → <b>HUT</b>.
+        <span class="mut">Owns ~80% of American Bitcoin + is its exclusive infrastructure/operations partner. PIVOTED to AI power/data-center infra (Anthropic/Fluidstack 245MW $7B Dec-2025; $9.8B Beacon Point lease May-2026; &gt;$16.8B pipeline; 8.6GW in development).</span></div>
+      
+      <div class="repoint">🔁 <b>CVR Energy (CVI)</b> —
+        <span class="l-en">branded</span><span class="l-zh">标榜为</span> <span class="strike">Energy transition &amp; oil majors</span>,
+        <span class="l-en">but value accrues to</span><span class="l-zh">但价值归属于</span> <b>Activist value investing</b>
+        <span class="l-en">via</span><span class="l-zh">经由</span> Icahn Enterprises → <b>IEP</b>.
+        <span class="mut">Carl Icahn&#39;s diversified holding company; operates energy (CVR Energy), automotive, real estate segments</span></div>
+      
+
+      <table class="sid-t" style="margin-top:12px;">
+        <thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th><span class="l-en">Connected actors</span><span class="l-zh">关联人物</span></th>
+          <th class="num"><span class="l-en">Actors</span><span class="l-zh">人数</span></th><th><span class="l-en">Alt-data</span><span class="l-zh">替代数据</span></th><th><span class="l-en">Top holder</span><span class="l-zh">最大股东</span></th></tr></thead>
+        <tbody>
+        
+        <tr>
+          <td class="tkc">NVDA</td>
+          <td>Jensen Huang <span class="mut">controls</span>; Nancy Pelosi <span class="mut">holds stake</span>; Marjorie Taylor Greene <span class="mut">holds stake</span>; Michael McCaul <span class="mut">holds stake</span>; Jim Cramer <span class="mut">talks about</span>; Paul Pelosi <span class="mut">affiliates with</span></td>
+          <td class="num">6</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 5ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">META</td>
+          <td>Mark Zuckerberg <span class="mut">controls</span>; Mark Zuckerberg <span class="mut">controls</span>; Dan Crenshaw <span class="mut">holds stake</span>; Bill Ackman <span class="mut">affiliates with</span></td>
+          <td class="num">4</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 3ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">AMZN</td>
+          <td>Nancy Pelosi <span class="mut">holds stake</span>; Paul Pelosi <span class="mut">affiliates with</span>; Dan Crenshaw <span class="mut">affiliates with</span>; Bill Ackman <span class="mut">affiliates with</span></td>
+          <td class="num">4</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 3ch</span></td>
+          <td class="mut">BEZOS JEFFREY P</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">AAPL</td>
+          <td>Dan Crenshaw <span class="mut">holds stake</span>; Paul Pelosi <span class="mut">affiliates with</span>; Marjorie Taylor Greene <span class="mut">affiliates with</span>; Warren Buffett <span class="mut">affiliates with</span></td>
+          <td class="num">4</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">TSLA</td>
+          <td>Elon Musk <span class="mut">controls</span>; Larry Ellison <span class="mut">holds stake</span>; Cathie Wood <span class="mut">affiliates with</span></td>
+          <td class="num">3</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">Musk Elon</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">MSTR</td>
+          <td>Michael Saylor <span class="mut">controls</span>; Michael Saylor <span class="mut">controls</span></td>
+          <td class="num">2</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">—</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">MSFT</td>
+          <td>Sam Altman <span class="mut">partners with</span>; Bill Ackman <span class="mut">affiliates with</span></td>
+          <td class="num">2</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 6ch</span></td>
+          <td class="mut">BARCLAYS PLC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">ORCL</td>
+          <td>Larry Ellison <span class="mut">controls</span>; Larry Ellison <span class="mut">controls</span></td>
+          <td class="num">2</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">GOOGL</td>
+          <td>Nancy Pelosi <span class="mut">holds stake</span>; Paul Pelosi <span class="mut">affiliates with</span></td>
+          <td class="num">2</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 4ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">PLTR</td>
+          <td>Marjorie Taylor Greene <span class="mut">holds stake</span>; Cathie Wood <span class="mut">affiliates with</span></td>
+          <td class="num">2</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 3ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">BA</td>
+          <td>Jim Cramer <span class="mut">endorses</span></td>
+          <td class="num">1</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 3ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">QCOM</td>
+          <td>Tommy Tuberville <span class="mut">holds stake</span></td>
+          <td class="num">1</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">MU</td>
+          <td>Ro Khanna <span class="mut">affiliates with</span></td>
+          <td class="num">1</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">GOOG</td>
+          <td>Dan Crenshaw <span class="mut">affiliates with</span></td>
+          <td class="num">1</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">VANGUARD GROUP INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">AXP</td>
+          <td>Warren Buffett <span class="mut">affiliates with</span></td>
+          <td class="num">1</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">BERKSHIRE HATHAWAY INC</td>
+        </tr>
+        
+        <tr>
+          <td class="tkc">UBER</td>
+          <td>Bill Ackman <span class="mut">affiliates with</span></td>
+          <td class="num">1</td>
+          <td><span class="pill ch"><span class="l-en">corroborated</span><span class="l-zh">已印证</span> 2ch</span></td>
+          <td class="mut">VOYA INVESTMENT MANAGEMENT LLC</td>
+        </tr>
+        
+        </tbody>
+      </table>
+
+      
+      <details class="sid-more"><summary><span class="l-en">New affiliations (45d)</span><span class="l-zh">新增关联（45天）</span> — 3</summary>
+        <table class="sid-t" style="margin-top:8px;">
+          <thead><tr><th><span class="l-en">Date</span><span class="l-zh">日期</span></th><th><span class="l-en">Actor</span><span class="l-zh">人物</span></th><th><span class="l-en">Link</span><span class="l-zh">关系</span></th><th><span class="l-en">Target</span><span class="l-zh">目标</span></th></tr></thead>
+          <tbody><tr><td class="mut">2026-05-15</td><td>Warren Buffett</td>
+            <td class="mut">controls</td>
+            <td><a href="https://www.gurufocus.com/guru/warren%2Bbuffett/stock-picks?view=table">Berkshire Hathaway (BRK.B)</a></td></tr><tr><td class="mut">2026-05-15</td><td>Bill Ackman</td>
+            <td class="mut">controls</td>
+            <td><a href="https://www.gurufocus.com/guru/bill+ackman/current-portfolio/portfolio?view=table">Pershing Square Capital Management</a></td></tr><tr><td class="mut">2026-05-15</td><td>Carl Icahn</td>
+            <td class="mut">controls</td>
+            <td><a href="https://www.gurufocus.com/guru/carl+icahn/current-portfolio/portfolio?view=table">Icahn Enterprises (IEP)</a></td></tr></tbody>
+        </table></details>
+      
+      
+      <details class="sid-more"><summary><span class="l-en">Actor → theme chains</span><span class="l-zh">人物→主题链条</span> — 20</summary>
+        <table class="sid-t" style="margin-top:8px;">
+          <thead><tr><th><span class="l-en">Actor</span><span class="l-zh">人物</span></th><th><span class="l-en">Theme</span><span class="l-zh">主题</span></th><th><span class="l-en">Proxy</span><span class="l-zh">投资标的</span></th><th class="num"><span class="l-en">Conf</span><span class="l-zh">置信</span></th></tr></thead>
+          <tbody><tr><td>Mark Zuckerberg</td><td>Social media platforms &amp; AI integration</td>
+            <td class="tkc">META</td><td class="num">0.95</td></tr><tr><td>Elon Musk</td><td>Electric vehicles &amp; autonomous driving</td>
+            <td class="tkc">—</td><td class="num">0.95</td></tr><tr><td>Jensen Huang</td><td>AI compute &amp; data centers</td>
+            <td class="tkc">—</td><td class="num">0.95</td></tr><tr><td>Michael Saylor</td><td>Crypto &amp; digital assets</td>
+            <td class="tkc">—</td><td class="num">0.93</td></tr><tr><td>Michael Saylor</td><td>Bitcoin treasury corporate strategy</td>
+            <td class="tkc">MSTR</td><td class="num">0.92</td></tr><tr><td>Eric Trump</td><td>Crypto / digital assets</td>
+            <td class="tkc">ABTC</td><td class="num">0.9</td></tr><tr><td>Donald Trump Jr.</td><td>Crypto / digital assets</td>
+            <td class="tkc">ABTC</td><td class="num">0.9</td></tr><tr><td>Sam Altman</td><td>AI compute &amp; data centers</td>
+            <td class="tkc">—</td><td class="num">0.9</td></tr><tr><td>Larry Ellison</td><td>Cloud infrastructure &amp; enterprise software</td>
+            <td class="tkc">ORCL</td><td class="num">0.9</td></tr><tr><td>Carl Icahn</td><td>Activist value investing</td>
+            <td class="tkc">IEP</td><td class="num">0.88</td></tr><tr><td>Cathie Wood</td><td>Crypto &amp; digital assets</td>
+            <td class="tkc">ARKK</td><td class="num">0.88</td></tr><tr><td>Ro Khanna</td><td>Semiconductors &amp; chip supply chain</td>
+            <td class="tkc">—</td><td class="num">0.88</td></tr><tr><td>Eric Trump</td><td>AI power &amp; data-center infrastructure</td>
+            <td class="tkc">HUT</td><td class="num">0.85</td></tr><tr><td>Donald Trump Jr.</td><td>AI power &amp; data-center infrastructure</td>
+            <td class="tkc">HUT</td><td class="num">0.85</td></tr></tbody>
+        </table></details>
+      
+      
+    </div>
+  </section>
+  
+
+  
+  
+  <section class="sid-sec">
+    <h2>📊 <span class="l-en">Track record</span><span class="l-zh">战绩</span>
+      <span class="h-note"><span class="l-en">every convergence logged as a dated, falsifiable thesis vs SPY</span><span class="l-zh">每次汇聚记为带日期、可证伪的对标普论点</span></span></h2>
+    <div class="sid-card">
+      <div class="sid-meta">
+        <span class="chip">0 <span class="l-en">scored</span><span class="l-zh">已评分</span></span>
+        <span class="chip">37 <span class="l-en">open</span><span class="l-zh">未到期</span></span>
+        
+      </div>
+      <p class="mut" style="font-size:12.5px;"><span class="l-en">No theses scored yet — the track record begins once the first check-by dates pass. Keep conviction modest until it does.</span><span class="l-zh">尚无判断被评分 —— 待首批核查日到期后开始累积战绩；在此之前置信保持克制。</span></p>
+      
+    </div>
+  </section>
+  
+
+  
+  <section class="sid-sec">
+    <h2>🔬 <span class="l-en">Signal feeds</span><span class="l-zh">信号源</span>
+      <span class="h-note"><span class="l-en">each feed as its derived signal — Quiver + federal grants · SEC 8-K · FDA · clinical · options · AI-adoption</span><span class="l-zh">每个数据源呈现为其衍生信号 —— Quiver + 联邦补助 · SEC 8-K · FDA · 临床 · 期权 · AI采用</span></span></h2>
+    <div class="sid-grid">
+
+      <div class="sid-card"><h3>📜 <span class="l-en">Gov-contract leaders</span><span class="l-zh">政府合同领先</span> <span class="mut" style="font-size:11px;">30d</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Awarded</span><span class="l-zh">授予</span></th><th class="num"><span class="l-en">Accel</span><span class="l-zh">加速</span></th><th><span class="l-en">Top agency</span><span class="l-zh">主要机构</span></th></tr></thead>
+        <tbody><tr><td class="tkc">TXT</td><td class="num">$208,739,509</td>
+          <td class="num">1284.1×</td><td class="mut">Department of Transportation</td></tr><tr><td class="tkc">DELL</td><td class="num">$138,080,150</td>
+          <td class="num">—</td><td class="mut">Department of Homeland Security</td></tr><tr><td class="tkc">GD</td><td class="num">$98,959,456</td>
+          <td class="num">1.1×</td><td class="mut">Department of Homeland Security</td></tr><tr><td class="tkc">MDLN</td><td class="num">$83,937,587</td>
+          <td class="num">1.0×</td><td class="mut">Department of Veterans Affairs</td></tr><tr><td class="tkc">TPC</td><td class="num">$81,833,273</td>
+          <td class="num">0.6×</td><td class="mut">Department of Homeland Security</td></tr><tr><td class="tkc">EFX</td><td class="num">$74,700,004</td>
+          <td class="num">291.3×</td><td class="mut">Social Security Administration</td></tr><tr><td class="tkc">KBR</td><td class="num">$40,884,749</td>
+          <td class="num">1.8×</td><td class="mut">Department of Commerce</td></tr><tr><td class="tkc">PLTR</td><td class="num">$38,896,013</td>
+          <td class="num">0.4×</td><td class="mut">Department of Agriculture</td></tr><tr><td class="tkc">CDW</td><td class="num">$19,773,740</td>
+          <td class="num">4.2×</td><td class="mut">Department of Transportation</td></tr><tr><td class="tkc">BAH</td><td class="num">$15,120,896</td>
+          <td class="num">0.3×</td><td class="mut">Department of Defense</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>🏛️ <span class="l-en">Congress net buying</span><span class="l-zh">国会净买入</span> <span class="mut" style="font-size:11px;">90d</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Net</span><span class="l-zh">净</span></th><th class="num"><span class="l-en">Members</span><span class="l-zh">人数</span></th><th class="num"><span class="l-en">Est.$</span><span class="l-zh">估值</span></th></tr></thead>
+        <tbody><tr><td class="tkc">TDG</td><td class="num">+19</td><td class="num">2</td><td class="num">$209,010</td></tr><tr><td class="tkc">DASH</td><td class="num">+17</td><td class="num">1</td><td class="num">$136,008</td></tr><tr><td class="tkc">LPLA</td><td class="num">+13</td><td class="num">1</td><td class="num">$104,006</td></tr><tr><td class="tkc">AMD</td><td class="num">+12</td><td class="num">2</td><td class="num">$145,006</td></tr><tr><td class="tkc">STE</td><td class="num">+10</td><td class="num">2</td><td class="num">$80,005</td></tr><tr><td class="tkc">GIL</td><td class="num">+10</td><td class="num">1</td><td class="num">$80,005</td></tr><tr><td class="tkc">HUBB</td><td class="num">+10</td><td class="num">1</td><td class="num">$129,005</td></tr><tr><td class="tkc">ENTG</td><td class="num">+9</td><td class="num">1</td><td class="num">$72,004</td></tr><tr><td class="tkc">FSV</td><td class="num">+9</td><td class="num">1</td><td class="num">$72,004</td></tr><tr><td class="tkc">BWXT</td><td class="num">+8</td><td class="num">1</td><td class="num">$162,004</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>👔 <span class="l-en">Insider net buying</span><span class="l-zh">内部人净买入</span> <span class="mut" style="font-size:11px;">90d</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Net $</span><span class="l-zh">净额</span></th><th class="num"><span class="l-en">Buyers</span><span class="l-zh">买家</span></th></tr></thead>
+        <tbody><tr><td class="tkc">SVRE</td><td class="num r-pos">$6,841,209,600</td><td class="num">5</td></tr><tr><td class="tkc">PBLS</td><td class="num r-pos">$424,498,529</td><td class="num">6</td></tr><tr><td class="tkc">N/A</td><td class="num r-pos">$143,319,873</td><td class="num">18</td></tr><tr><td class="tkc">SMMT</td><td class="num r-pos">$103,255,900</td><td class="num">5</td></tr><tr><td class="tkc">HOOD</td><td class="num r-pos">$47,955,128</td><td class="num">3</td></tr><tr><td class="tkc">QTTB</td><td class="num r-pos">$30,000,000</td><td class="num">4</td></tr><tr><td class="tkc">LFTO</td><td class="num r-pos">$29,999,981</td><td class="num">1</td></tr><tr><td class="tkc">KNOP</td><td class="num r-pos">$25,000,000</td><td class="num">1</td></tr><tr><td class="tkc">QNT</td><td class="num r-pos">$24,661,920</td><td class="num">11</td></tr><tr><td class="tkc">IFF</td><td class="num r-pos">$20,317,854</td><td class="num">2</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>📱 <span class="l-en">App-store demand</span><span class="l-zh">应用商店需求</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Rating</span><span class="l-zh">评分</span></th><th class="num"><span class="l-en">Reviews</span><span class="l-zh">评论</span></th><th><span class="l-en">App</span><span class="l-zh">应用</span></th></tr></thead>
+        <tbody><tr><td class="tkc">UBER</td><td class="num">4.84★</td><td class="num">29,349,858</td><td class="mut">Uber - Request a ride</td></tr><tr><td class="tkc">GOOGL</td><td class="num">4.71★</td><td class="num">25,567,090</td><td class="mut">Google Drive</td></tr><tr><td class="tkc">MSFT</td><td class="num">4.77★</td><td class="num">19,647,032</td><td class="mut">Microsoft Outlook</td></tr><tr><td class="tkc">WMT</td><td class="num">4.82★</td><td class="num">18,378,641</td><td class="mut">Walmart: Shopping &amp; Savings</td></tr><tr><td class="tkc">LYFT</td><td class="num">4.91★</td><td class="num">17,572,836</td><td class="mut">Lyft</td></tr><tr><td class="tkc">SBUX</td><td class="num">4.89★</td><td class="num">8,055,985</td><td class="mut">Starbucks</td></tr><tr><td class="tkc">Z</td><td class="num">4.8★</td><td class="num">7,627,700</td><td class="mut">Zillow Real Estate &amp; Rentals</td></tr><tr><td class="tkc">ETSY</td><td class="num">4.92★</td><td class="num">7,187,437</td><td class="mut">Etsy: Shop Home, Style &amp; More</td></tr><tr><td class="tkc">LUV</td><td class="num">4.84★</td><td class="num">7,075,488</td><td class="mut">Southwest Airlines: Travel App</td></tr><tr><td class="tkc">DAL</td><td class="num">4.85★</td><td class="num">7,005,976</td><td class="mut">Fly Delta</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>🔬 <span class="l-en">Patent clusters</span><span class="l-zh">专利集群</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Grants</span><span class="l-zh">授权</span></th><th class="num"><span class="l-en">IPC</span><span class="l-zh">分类</span></th></tr></thead>
+        <tbody><tr><td class="tkc">QCOM</td><td class="num">64</td><td class="num">15</td></tr><tr><td class="tkc">TSM</td><td class="num">46</td><td class="num">13</td></tr><tr><td class="tkc">IBM</td><td class="num">39</td><td class="num">14</td></tr><tr><td class="tkc">AAPL</td><td class="num">33</td><td class="num">16</td></tr><tr><td class="tkc">MU</td><td class="num">26</td><td class="num">8</td></tr><tr><td class="tkc">INTC</td><td class="num">22</td><td class="num">11</td></tr><tr><td class="tkc">MSFT</td><td class="num">22</td><td class="num">8</td></tr><tr><td class="tkc">NVDA</td><td class="num">20</td><td class="num">9</td></tr><tr><td class="tkc">BA</td><td class="num">15</td><td class="num">14</td></tr><tr><td class="tkc">LPL</td><td class="num">13</td><td class="num">6</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>💼 <span class="l-en">Lobbying spend</span><span class="l-zh">游说支出</span> <span class="mut" style="font-size:11px;">45d</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Spend</span><span class="l-zh">支出</span></th><th class="num"><span class="l-en">Spike</span><span class="l-zh">激增</span></th></tr></thead>
+        <tbody><tr><td class="tkc">TAL</td><td class="num">$171,000</td><td class="num">—</td></tr><tr><td class="tkc">SABR</td><td class="num">$120,000</td><td class="num">—</td></tr><tr><td class="tkc">KRC</td><td class="num">$60,000</td><td class="num">—</td></tr><tr><td class="tkc">CLOV</td><td class="num">$40,000</td><td class="num">—</td></tr><tr><td class="tkc">ONCY</td><td class="num">$35,000</td><td class="num">—</td></tr><tr><td class="tkc">AMTX</td><td class="num">$30,000</td><td class="num">—</td></tr><tr><td class="tkc">NMIH</td><td class="num">$30,000</td><td class="num">—</td></tr><tr><td class="tkc">ONTO</td><td class="num">$30,000</td><td class="num">—</td></tr><tr><td class="tkc">ATRO</td><td class="num">$20,000</td><td class="num">—</td></tr><tr><td class="tkc">ATSG</td><td class="num">$20,000</td><td class="num">—</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>🏦 <span class="l-en">Institutional 13F adds</span><span class="l-zh">机构13F加仓</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th><span class="l-en">Fund</span><span class="l-zh">基金</span></th><th class="num"><span class="l-en">Δ $</span><span class="l-zh">变化</span></th></tr></thead>
+        <tbody><tr><td class="tkc">AVGO</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$943,253,575</td></tr><tr><td class="tkc">GOOGL</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$885,852,340</td></tr><tr><td class="tkc">AMZN</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$845,388,564</td></tr><tr><td class="tkc">CMG</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$818,167,500</td></tr><tr><td class="tkc">CMG</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$553,616,784</td></tr><tr><td class="tkc">GOOGL</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$502,666,889</td></tr><tr><td class="tkc">NVDA</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$501,958,272</td></tr><tr><td class="tkc">AMZN</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$474,817,517</td></tr><tr><td class="tkc">AMZN</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$292,895,222</td></tr><tr><td class="tkc">MSFT</td><td class="mut">STOREBRAND ASSET MANAGEMENT AS</td><td class="num">$273,836,088</td></tr></tbody></table></div>
+
+      <div class="sid-card"><h3>📑 <span class="l-en">Bill catalysts</span><span class="l-zh">法案催化</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Sector</span><span class="l-zh">板块</span></th><th><span class="l-en">Bill</span><span class="l-zh">法案</span></th><th><span class="l-en">Action</span><span class="l-zh">进展</span></th></tr></thead>
+        <tbody><tr><td>Homeland / Immigration</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/9310?format=json">HR9310</a></td><td class="mut">2026-06-12</td></tr><tr><td>Semiconductors</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/9260?format=json">HR9260</a></td><td class="mut">2026-06-11</td></tr><tr><td>Energy</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/9170?format=json">HR9170</a></td><td class="mut">2026-06-05</td></tr><tr><td>Homeland / Immigration</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/s/2?format=json">S2</a></td><td class="mut">2026-06-05</td></tr><tr><td>Energy</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/9171?format=json">HR9171</a></td><td class="mut">2026-06-05</td></tr><tr><td>Financials</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/8646?format=json">HR8646</a></td><td class="mut">2026-06-04</td></tr><tr><td>Financials</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/8312?format=json">HR8312</a></td><td class="mut">2026-06-03</td></tr><tr><td>Trade</td><td class="mut"><a href="https://api.congress.gov/v3/bill/119/hr/8882?format=json">HR8882</a></td><td class="mut">2026-06-03</td></tr></tbody></table></div>
+
+      
+      
+      <div class="sid-card"><h3>🏗️ <span class="l-en">Federal grants / loans</span><span class="l-zh">联邦补助/贷款</span> <span class="mut" style="font-size:11px;">CHIPS·DOE·IRA</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Amount</span><span class="l-zh">金额</span></th><th class="num"><span class="l-en">Accel</span><span class="l-zh">加速</span></th></tr></thead>
+        <tbody><tr><td class="tkc">ALB</td><td class="num">$6,451,643</td>
+          <td class="num">0.8×</td></tr><tr><td class="tkc">INTC</td><td class="num">$6,316,036</td>
+          <td class="num">0.1×</td></tr><tr><td class="tkc">GEV</td><td class="num">$5,696,134</td>
+          <td class="num">0.6×</td></tr><tr><td class="tkc">IONQ</td><td class="num">$5,613,017</td>
+          <td class="num">0.1×</td></tr><tr><td class="tkc">BA</td><td class="num">$5,380,843</td>
+          <td class="num">0.2×</td></tr><tr><td class="tkc">MU</td><td class="num">$4,901,955</td>
+          <td class="num">1.3×</td></tr><tr><td class="tkc">NOC</td><td class="num">$1,398,803</td>
+          <td class="num">1.2×</td></tr><tr><td class="tkc">TLN</td><td class="num">$359,045</td>
+          <td class="num">0.4×</td></tr><tr><td class="tkc">PPTA</td><td class="num">$101,301</td>
+          <td class="num">1.1×</td></tr><tr><td class="tkc">LDOS</td><td class="num">$10,532</td>
+          <td class="num">—</td></tr></tbody></table></div>
+      
+
+      
+      <div class="sid-card"><h3>💊 <span class="l-en">FDA catalysts</span><span class="l-zh">FDA催化</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th><span class="l-en">Event</span><span class="l-zh">事件</span></th><th><span class="l-en">Drug</span><span class="l-zh">药物</span></th></tr></thead>
+        <tbody><tr><td class="tkc">MRK</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">WELIREG</td></tr><tr><td class="tkc">AZN</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">TRUQAP</td></tr><tr><td class="tkc">ABBV</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">LINZESS</td></tr><tr><td class="tkc">RHHBY</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">PERJETA</td></tr><tr><td class="tkc">BMY</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">ONUREG</td></tr><tr><td class="tkc">BIIB</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">SPINRAZA</td></tr><tr><td class="tkc">GSK</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">WELLCOVORIN</td></tr><tr><td class="tkc">PFE</td>
+          <td class="mut"><span class="l-en">Label exp.</span><span class="l-zh">适应症扩展</span></td>
+          <td class="mut">XELJANZ</td></tr></tbody></table></div>
+      
+
+      
+      <div class="sid-card"><h3>🧬 <span class="l-en">Phase-3 pipeline</span><span class="l-zh">三期管线</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">P3 starts</span><span class="l-zh">三期启动</span></th><th class="num"><span class="l-en">Halts</span><span class="l-zh">中止</span></th></tr></thead>
+        <tbody><tr><td class="tkc">AZN</td><td class="num r-pos">10</td>
+          <td class="num">—</td></tr><tr><td class="tkc">NVO</td><td class="num r-pos">8</td>
+          <td class="num">—</td></tr><tr><td class="tkc">PFE</td><td class="num r-pos">8</td>
+          <td class="num"><span class="r-neg">2</span></td></tr><tr><td class="tkc">GSK</td><td class="num r-pos">7</td>
+          <td class="num">—</td></tr><tr><td class="tkc">MRK</td><td class="num r-pos">6</td>
+          <td class="num"><span class="r-neg">2</span></td></tr><tr><td class="tkc">NVS</td><td class="num r-pos">6</td>
+          <td class="num"><span class="r-neg">6</span></td></tr><tr><td class="tkc">REGN</td><td class="num r-pos">5</td>
+          <td class="num"><span class="r-neg">1</span></td></tr><tr><td class="tkc">BIIB</td><td class="num r-pos">4</td>
+          <td class="num">—</td></tr><tr><td class="tkc">ABBV</td><td class="num r-pos">4</td>
+          <td class="num"><span class="r-neg">2</span></td></tr><tr><td class="tkc">LLY</td><td class="num r-pos">4</td>
+          <td class="num"><span class="r-neg">2</span></td></tr></tbody></table></div>
+      
+
+      
+      <div class="sid-card"><h3>📄 <span class="l-en">Material 8-K clusters</span><span class="l-zh">重大8-K集群</span> <span class="mut" style="font-size:11px;">30d</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Count</span><span class="l-zh">数量</span></th><th><span class="l-en">Items</span><span class="l-zh">条目</span></th></tr></thead>
+        <tbody><tr><td class="tkc">MSTR</td><td class="num">6</td><td class="mut">&lt;built-in method items of dict object at 0x7ff630586e40&gt;</td></tr><tr><td class="tkc">QBTS</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x7ff630586d80&gt;</td></tr><tr><td class="tkc">USAR</td><td class="num">5</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672b03440&gt;</td></tr><tr><td class="tkc">APLD</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672c30740&gt;</td></tr><tr><td class="tkc">GOOGL</td><td class="num">4</td><td class="mut">&lt;built-in method items of dict object at 0x7ff630585740&gt;</td></tr><tr><td class="tkc">AAL</td><td class="num">3</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672c31280&gt;</td></tr><tr><td class="tkc">AVGO</td><td class="num">3</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672dd1a40&gt;</td></tr><tr><td class="tkc">BLD</td><td class="num">3</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672dd3d40&gt;</td></tr><tr><td class="tkc">CIFR</td><td class="num">3</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672d6ccc0&gt;</td></tr><tr><td class="tkc">COF</td><td class="num">3</td><td class="mut">&lt;built-in method items of dict object at 0x7ff672c0e9c0&gt;</td></tr></tbody></table></div>
+      
+
+      
+      <div class="sid-card"><h3>🧲 <span class="l-en">Unusual options flow</span><span class="l-zh">异常期权流</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Vol/OI ×</span><span class="l-zh">量/持仓×</span></th><th><span class="l-en">Lean</span><span class="l-zh">倾向</span></th></tr></thead>
+        <tbody><tr><td class="tkc">TSLA</td>
+          <td class="num">1.2×</td>
+          <td class="mut">call-skew</td></tr><tr><td class="tkc">NVDA</td>
+          <td class="num">1.2×</td>
+          <td class="mut">call-skew</td></tr><tr><td class="tkc">MSFT</td>
+          <td class="num">1.1×</td>
+          <td class="mut">call-skew</td></tr><tr><td class="tkc">META</td>
+          <td class="num">1.0×</td>
+          <td class="mut">call-skew</td></tr><tr><td class="tkc">QQQ</td>
+          <td class="num">1.0×</td>
+          <td class="mut">put-skew</td></tr><tr><td class="tkc">SPY</td>
+          <td class="num">1.0×</td>
+          <td class="mut">balanced</td></tr><tr><td class="tkc">AAPL</td>
+          <td class="num">1.0×</td>
+          <td class="mut">call-skew</td></tr><tr><td class="tkc">AMD</td>
+          <td class="num">0.9×</td>
+          <td class="mut">call-skew</td></tr><tr><td class="tkc">IWM</td>
+          <td class="num">0.9×</td>
+          <td class="mut">put-skew</td></tr><tr><td class="tkc">DIA</td>
+          <td class="num">0.7×</td>
+          <td class="mut">put-skew</td></tr></tbody></table></div>
+      
+
+      
+      <div class="sid-card"><h3>🤖 <span class="l-en">AI model adoption</span><span class="l-zh">AI模型采用</span> <span class="mut" style="font-size:11px;">HF dl WoW</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Downloads</span><span class="l-zh">下载量</span></th><th class="num"><span class="l-en">WoW</span><span class="l-zh">周环比</span></th></tr></thead>
+        <tbody><tr><td class="tkc">AAPL</td><td class="num">7,057,654</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">AMZN</td><td class="num">24,381,653</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">BABA</td><td class="num">210,518,924</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">CRM</td><td class="num">6,997,641</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">GOOGL</td><td class="num">200,035,542</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">IBM</td><td class="num">10,264,637</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">META</td><td class="num">88,207,080</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">MSFT</td><td class="num">29,861,360</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">NVDA</td><td class="num">27,830,337</td>
+          <td class="num">0.0%</td></tr></tbody></table></div>
+      
+
+      
+      <div class="sid-card"><h3>⭐ <span class="l-en">Developer adoption</span><span class="l-zh">开发者采用</span> <span class="mut" style="font-size:11px;">GitHub stars WoW</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Stars</span><span class="l-zh">星标</span></th><th class="num"><span class="l-en">WoW</span><span class="l-zh">周环比</span></th></tr></thead>
+        <tbody><tr><td class="tkc">IBM</td><td class="num">7,507</td>
+          <td class="num"><span class="r-pos">+0.01%</span></td></tr><tr><td class="tkc">NET</td><td class="num">14,577</td>
+          <td class="num"><span class="r-pos">+0.01%</span></td></tr><tr><td class="tkc">U</td><td class="num">19,496</td>
+          <td class="num"><span class="r-pos">+0.01%</span></td></tr><tr><td class="tkc">AMD</td><td class="num">6,637</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">CRM</td><td class="num">11,239</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">DDOG</td><td class="num">3,652</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">ESTC</td><td class="num">77,075</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">GOOGL</td><td class="num">195,782</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">GTLB</td><td class="num">24,455</td>
+          <td class="num">0.0%</td></tr><tr><td class="tkc">MDB</td><td class="num">28,377</td>
+          <td class="num">0.0%</td></tr></tbody></table></div>
+      
+
+      
+
+      
+
+      
+
+      
+      <div class="sid-card"><h3>📰 <span class="l-en">Bullish news flow</span><span class="l-zh">看多新闻流</span></h3>
+        <table class="sid-t"><thead><tr><th><span class="l-en">Ticker</span><span class="l-zh">标的</span></th><th class="num"><span class="l-en">Bullish</span><span class="l-zh">看多占比</span></th><th class="num"><span class="l-en">Articles</span><span class="l-zh">文章</span></th></tr></thead>
+        <tbody><tr><td class="tkc">NBIS</td><td class="num">94%</td><td class="num">50</td></tr><tr><td class="tkc">VST</td><td class="num">92%</td><td class="num">50</td></tr><tr><td class="tkc">PWR</td><td class="num">91%</td><td class="num">33</td></tr><tr><td class="tkc">PH</td><td class="num">90%</td><td class="num">50</td></tr><tr><td class="tkc">WTFC</td><td class="num">88%</td><td class="num">8</td></tr><tr><td class="tkc">GEV</td><td class="num">86%</td><td class="num">50</td></tr><tr><td class="tkc">BWXT</td><td class="num">84%</td><td class="num">43</td></tr><tr><td class="tkc">DELL</td><td class="num">84%</td><td class="num">50</td></tr><tr><td class="tkc">LRCX</td><td class="num">84%</td><td class="num">50</td></tr><tr><td class="tkc">HWM</td><td class="num">83%</td><td class="num">24</td></tr></tbody></table></div>
+      
+
+    </div>
+  </section>
+
+  
+  <section class="sid-sec">
+    <div class="sid-card">
+      <div class="sid-cov">
+        
+        <span class="cov">🟥 <span class="l-en">Donald Trump trades</span><span class="l-zh">特朗普交易</span> · 207</span>
+        
+        <span class="cov">🏛️ <span class="l-en">Congress trading</span><span class="l-zh">国会交易</span> · 955</span>
+        
+        <span class="cov">🏛️ <span class="l-en">Senate trading</span><span class="l-zh">参议院交易</span> · 4,633</span>
+        
+        <span class="cov">🏛️ <span class="l-en">House trading</span><span class="l-zh">众议院交易</span> · 4,813</span>
+        
+        <span class="cov">📜 <span class="l-en">Government contracts</span><span class="l-zh">政府合同</span> · 11,942</span>
+        
+        <span class="cov">💼 <span class="l-en">Corporate lobbying</span><span class="l-zh">企业游说</span> · 19,733</span>
+        
+        <span class="cov">🌑 <span class="l-en">Off-exchange / dark pool</span><span class="l-zh">场外/暗池</span> · 5,423</span>
+        
+        <span class="cov">👔 <span class="l-en">Insider trading</span><span class="l-zh">内部人交易</span> · 19,348</span>
+        
+        <span class="cov">🏦 <span class="l-en">Institutional 13F</span><span class="l-zh">机构13F</span> · 10,000</span>
+        
+        <span class="cov">🏦 <span class="l-en">13F position changes</span><span class="l-zh">13F持仓变化</span> · 10,000</span>
+        
+        <span class="cov">📺 <span class="l-en">CNBC stock picks</span><span class="l-zh">CNBC选股</span> · 99</span>
+        
+        <span class="cov">🦍 <span class="l-en">WallStreetBets</span><span class="l-zh">WSB热度</span> · 614</span>
+        
+        <span class="cov">🐦 <span class="l-en">Twitter following</span><span class="l-zh">推特关注</span> · 1</span>
+        
+        <span class="cov">🛰️ <span class="l-en">SPAC sentiment</span><span class="l-zh">SPAC情绪</span> · 2</span>
+        
+        <span class="cov">🔬 <span class="l-en">US patents</span><span class="l-zh">美国专利</span> · 707</span>
+        
+        <span class="cov">✈️ <span class="l-en">Corporate flights</span><span class="l-zh">企业航班</span> · 53</span>
+        
+        <span class="cov">💸 <span class="l-en">Corporate donors</span><span class="l-zh">企业捐赠</span> · 467</span>
+        
+        <span class="cov">📰 <span class="l-en">Quiver news feed</span><span class="l-zh">Quiver新闻</span> · 77</span>
+        
+        <span class="cov">📁 <span class="l-en">Congress holdings</span><span class="l-zh">国会持仓</span> · 414</span>
+        
+        <span class="cov">📑 <span class="l-en">Bill summaries</span><span class="l-zh">法案摘要</span> · 200</span>
+        
+        <span class="cov">📱 <span class="l-en">App ratings</span><span class="l-zh">应用评分</span> · 14,622</span>
+        
+        <span class="cov">🏛️ <span class="l-en">Top shareholders</span><span class="l-zh">主要股东</span> · 11,684</span>
+        
+        <span class="cov">💰 <span class="l-en">Executive comp</span><span class="l-zh">高管薪酬</span> · 570</span>
+        
+      </div>
+      <p class="mut" style="font-size:11px;margin:11px 0 0;"><span class="l-en">Sources: Quiver Quantitative + federal grants/loans (USAspending) · SEC 8-K material events · openFDA approvals · ClinicalTrials.gov · Polygon options/news · Finnhub · Hugging Face · GitHub + curated influence graph. Public-record alt-data; the actionable axis is calibrated by the falsifiable ledger, not assumed right.</span><span class="l-zh">数据来源：Quiver Quantitative + 联邦补助/贷款（USAspending）· SEC 8-K 重大事件 · openFDA 批准 · ClinicalTrials.gov · Polygon 期权/新闻 · Finnhub · Hugging Face · GitHub + 精选影响力图谱。公开记录替代数据；可操作轴由可证伪战绩校准，而非假定正确。</span></p>
+    </div>
+  </section>
+
+  
+  <section class="sid-sec">
+    <h2>📰 <span class="l-en">News on these names</span><span class="l-zh">这些标的的新闻</span>
+      <span class="h-note"><span class="l-en">the demand-side tape beside the supply-side signal — context only, never blended</span><span class="l-zh">需求侧舆情与供给侧信号并列——仅作背景，绝不混合</span></span></h2>
+    <div id="sid-news" class="sid-card"><p class="mut" style="font-size:12px"><span class="l-en">Loading…</span><span class="l-zh">加载中…</span></p></div>
+  </section>
+
+</div>
+<script>
+(function () {
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function j(u) { return fetch(u, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  function hl(h) {
+    var sent = h.sentiment === "pos" ? " ▲" : h.sentiment === "neg" ? " ▼" : "";
+    return '<a href="' + esc(h.url || "#") + '" target="_blank" rel="noopener noreferrer" style="color:var(--link);text-decoration:none">' +
+      esc(h.title || "") + '</a> <span style="opacity:.5">· ' + esc(h.source || h.domain || "") + sent + "</span>";
+  }
+  Promise.all([j("altdata/mastermind.json"), j("news/by_ticker.json"), j("news/financial.json")]).then(function (res) {
+    var mount = document.getElementById("sid-news"); if (!mount) return;
+    var sigs = ((res[0] || {}).signals || []).slice(0, 12);
+    var bt = (res[1] || {}).tickers || {};
+    var fin = res[2] || {};
+    var rows = [];
+    sigs.forEach(function (sg) {
+      var n = bt[sg.ticker];
+      if (!n || !(n.top && n.top.length)) return;
+      rows.push('<div style="padding:8px 0;border-top:1px solid rgba(128,128,128,.15)">' +
+        '<b style="font-family:ui-monospace,Menlo,monospace">' + esc(sg.ticker) + "</b> " +
+        '<span style="opacity:.55;font-size:11px">' + esc(n.sentiment_lean || "neutral") + " · " + (n.n_recent || 0) +
+        ' hl · alt signal ' + (sg.signal_score == null ? "—" : sg.signal_score) + "</span>" +
+        '<div style="font-size:12px;margin-top:3px;line-height:1.5">' + n.top.slice(0, 2).map(hl).join("<br>") + "</div></div>");
+    });
+    if (rows.length) {
+      mount.innerHTML = '<div style="font-size:11px;opacity:.6;margin-bottom:4px">' +
+        '<span class="l-en">Recent news for the top conviction-board names that the tape is also talking about — the overlap (or its absence) is the early-edge / crowded read.</span>' +
+        '<span class="l-zh">置信榜上同时被舆情讨论的标的的近期新闻——重叠（或其缺失）即"早期边际/拥挤"读数。</span></div>' + rows.join("");
+      return;
+    }
+    // fallback: no per-name overlap yet → show the market tape
+    var mk = (fin.market || []).slice(0, 6);
+    if (mk.length) {
+      mount.innerHTML = '<div style="font-size:11px;opacity:.6;margin-bottom:4px"><span class="l-en">No news yet on today\'s signals — broad market tape:</span><span class="l-zh">今日信号暂无对应新闻——大盘舆情：</span></div>' +
+        mk.map(function (h) { return '<div style="padding:5px 0;font-size:12px;border-top:1px solid rgba(128,128,128,.12)">' + hl(h) + "</div>"; }).join("");
+    } else {
+      mount.innerHTML = '<p class="mut" style="font-size:12px"><span class="l-en">News surface not built yet — runs on the next daily build.</span><span class="l-zh">新闻层尚未生成——将在下次每日构建后出现。</span></p>';
+    }
+  });
+})();
+</script>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。</span>
+</footer>
+
+<script src="theme.js"></script>
+</body>
+</html>

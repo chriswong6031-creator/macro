@@ -14,6 +14,21 @@ storage:
 # -----------------------------------------------------------------------------
 # Collectors
 # -----------------------------------------------------------------------------
+# Quiver Quantitative alternative-data API (Trader plan). Token via QUIVER_API_KEY.
+# Cross-sectional event feeds (congress/insider/contracts/lobbying/off-exchange/
+# flights/patents/13F/CNBC/social/Trump trades) -> data/quiver/*.parquet -> the
+# Alternative Data desk (engine/altdata.py) + the brain feed (site/altdata/feed.json).
+quiver:
+  base_url: https://api.quiverquant.com
+  timeout: 60
+  retries: 3
+
+# TrumpFlow latent-stake entity graph. The graph is deterministic (curated
+# data/trumpflow/intel.json). `extract` gates the OPTIONAL LLM edge-extractor
+# (engine/trumpflow/extract.py) that proposes candidate edges from the Quiver news feed
+# — default OFF so it never incurs LLM cost without opt-in; needs DEEPSEEK_API_KEY.
+trumpflow:
+  extract: false
 fred:
   # group -> {series_id: column_name}. Stored one parquet per series under data/fred/.
   api_url: https://api.stlouisfed.org/fred/series/observations
@@ -883,6 +898,15 @@ okx:
   taker_url: https://www.okx.com/api/v5/rubik/stat/taker-volume
   inst_id: BTC-USDT-SWAP
   retries: 3
+  # OKX BTC-USDT SPOT daily candles — the keyless offshore-USDT reference price the
+  # Coinbase Premium is measured against (Coinbase USD − OKX USDT). OKX works from US
+  # runners where Binance is 451-blocked; gives a SELF-OWNED, fresh-daily premium that
+  # does not depend on the quota-limited bgeo coinbase-premium-index. Spot history ~2019->.
+  spot_candles_url: https://www.okx.com/api/v5/market/candles          # recent (≤300 bars)
+  spot_history_url: https://www.okx.com/api/v5/market/history-candles  # paginate older via `after`
+  spot_inst_id: BTC-USDT
+  spot_bar: "1Dutc"              # UTC-midnight daily candles → aligns with Coinbase btc_daily
+  spot_max_pages_first_run: 40   # 100 rows/page → ~4000 days (caps at OKX's BTC-USDT spot floor)
 
 deribit:
   dvol_url: https://www.deribit.com/api/v2/public/get_volatility_index_data
@@ -891,6 +915,19 @@ deribit:
   retries: 3
   term_tenors_d: [7, 30, 90, 180]   # ATM IV term-structure standardized tenors
   skew_target_d: 30                 # 25-delta skew/RR measured at the ~30d expiry
+
+farside:
+  # Farside Investors — the canonical FREE daily US spot-Bitcoin-ETF flow table,
+  # per fund + total, in US$m, since the 2024-01-11 launch (parens = outflow, "-" =
+  # not trading). Deeper, fresher, and per-fund vs the quota-limited bgeo aggregate
+  # etf-flow-btc. Scraped HTML → fail-safe: a parse/fetch failure leaves the bgeo
+  # series as the fallback (etf_flow signal degrades gracefully).
+  url: https://farside.co.uk/bitcoin-etf-flow-all-data/
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+  retries: 3
+  # canonical fund tickers (lower-cased on store); GBTC is the high-fee incumbent whose
+  # one-way unlock outflows distort the net → the model also tracks an ex-GBTC net.
+  funds: [ibit, fbtc, bitb, arkb, btco, ezbc, brrr, hodl, btcw, msbt, gbtc, btc]
 
 feargreed:
   url: https://api.alternative.me/fng/
@@ -1635,6 +1672,19 @@ transmission:
     sticky_inflation: false          # corepce_gap -> MRS
 
 # =============================================================================
+# YIELD-CURVE analytics (engine/yield_curve.py) — the unified, theory-grounded
+# interest-rate read surfaced on the transmission page + emitted dashboard-wide
+# (latest.json["yield_curve"]). DISPLAY-ONLY: reuses the bond-engine curve primitives
+# (probit / near-term forward spread / move taxonomy / un-inversion) and the
+# transmission IC matrix; the scored-leg gate found NO curve leg robust enough to score.
+yield_curve:
+  enabled: true
+  regime_window_d: 21                # ~1mo window for the bull/bear × steep/flat classification
+  neutral_funds: 2.5                 # ~nominal-neutral funds anchor (r* ~0.5% + 2% target) for the Wright policy-stance read
+  # (the percentile / momentum / PCA windows are engine constants — PCTILE_LOOKBACK 1260,
+  #  MOM_WINDOW 63, PCA_WINDOW 1260 — documented in engine/yield_curve.py.)
+
+# =============================================================================
 # Treasury auction RESULTS (collectors/treasury_auctions.py + engine/treasury_supply.py)
 # — the DEMAND side of the Treasury market from the keyless TreasuryDirect
 # TA_WS/securities/auctioned feed. Display-only "supply absorption" panel on the
@@ -1868,7 +1918,7 @@ macro_news:
   lang: eng
   window_days: 2                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering
-  max_show: 10                    # headlines shown after filtering
+  max_show: 20                    # headlines shown after filtering (raised 10 -> 20)
   min_request_interval_s: 6       # GDELT pacing
   cache_dir: data/macro/news_cache
   cache_ttl_hours: 12
@@ -1922,8 +1972,8 @@ china_news:
   request_pace_s: 0.4             # collector: politeness pause between CCTV day-page fetches
   tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
   tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
-  max_records: 60                 # Eastmoney flashes pulled before the macro-theme gate
-  max_show: 12                    # macro headlines shown after filtering
+  max_records: 80                 # Eastmoney flashes pulled before the macro-theme gate
+  max_show: 16                    # macro headlines shown after filtering (raised 12 -> 16; +tech/politics/markets)
   cache_dir: data/china_news/flash_cache
   cache_ttl_hours: 12
   # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
@@ -1932,6 +1982,51 @@ china_news:
   llm_model: deepseek-chat
   base_url: https://api.deepseek.com/anthropic   # omit / null for native Anthropic
   api_key_env: DEEPSEEK_API_KEY
+
+# =============================================================================
+# Financial / sector / Mag-7 / thematic-basket news (engine/financial_news.py) — the
+# flagship feed for the Research → News page. A LEAF: imports only lib.config +
+# engine.news_common; nothing in scoring imports it. Ticker-TAGGED corpus from
+# Polygon (+ Finnhub market/company) routed into Mag-7 / sector-ETF / basket /
+# per-ticker sections via the entity map, plus keyless GDELT thematic queries per
+# sector. Ranked by the transparent engine.news_common.quality_score; never scored.
+# Keys reused from the daily build: POLYGON_API_KEY / MASSIVE_API_KEY, FINNHUB_KEY.
+# =============================================================================
+financial_news:
+  enabled: true                   # MASTER SWITCH for the financial-news feed
+  window_days: 3                  # how far back to pull ticker-tagged news
+  cache_dir: data/financial_news/cache
+  cache_ttl_hours: 12
+  gdelt: true                     # keyless GDELT thematic supplement (market + 11 sectors)
+  gdelt_window_days: 2
+  gdelt_max_records: 40
+  finnhub_company: true           # per-Mag7 company-news (7 extra Finnhub calls)
+  include_quiver: true            # fold the Quiver /quivernews tail into the one news surface
+  quiver_max: 60                  # most-recent Quiver press-release rows to fold in
+  # per-section display caps (after dedup + quality rank)
+  top_market: 18
+  top_sector: 8
+  top_mag7: 6
+  top_basket: 8
+  top_ticker: 6
+
+# =============================================================================
+# News LLM processor (engine/news_llm.py) — OPTIONAL cheap batch summaries + an
+# "importance" re-rank layered on top of the deterministic quality score. It never
+# gates a headline in/out and feeds NO score. Provider order: Claude Haiku via the
+# subscription OAuth token (CLAUDE_CODE_OAUTH_TOKEN), then Claude Haiku via
+# ANTHROPIC_API_KEY, then DeepSeek V4-Flash via DEEPSEEK_API_KEY. Degrades to a
+# no-op pass-through whenever no credential is present.
+# =============================================================================
+news_llm:
+  enabled: true                   # try to enrich; auto no-op when no key present
+  provider_order: [oauth, anthropic, deepseek]
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  deepseek_key_env: DEEPSEEK_API_KEY
+  anthropic_model: claude-haiku-4-5
+  deepseek_model: deepseek-chat
+  batch_size: 12                  # headlines summarised per model call
+  max_batches: 16                 # hard cap on model calls per build (cost guard)
 
 # =============================================================================
 # Company-profile translation (engine/translate.py + scripts/translate_profiles.py).
@@ -2037,6 +2132,57 @@ ai_desk:
     enabled: true                # Phase B: 4-analyst adversarial panel (opportunity/
                                  # skeptic/base-rate/structural) -> desk-head adjudicator.
                                  # false = single analyst (cheaper: 1 LLM call vs 5).
+
+# Narrative Brain — Claude reasoning desk for the Divergence Radar (engine/narrative_brain.py).
+# Reads site/basketdata/radar.json as an evidence pack; judges theme durability/continuity
+# (Sonnet, per theme) + a cross-theme rotation read (Opus). Falsifiable + ledger-graded;
+# a CODE clamp blocks ENTER on a fading/negative theme. CONTEXT-ONLY — no score/allocation.
+narrative_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  models:
+    durability: claude-sonnet-4-6   # per-theme durability/continuity (medium reasoning)
+    rotation: claude-opus-4-8       # one cross-theme rotation synthesis (deep)
+  interval_days: 1
+  max_themes: 6                  # cap per-theme LLM calls (cost + honesty over breadth)
+  max_tokens: 6000
+  horizon_d: 21                  # trading-day horizon for the falsifiable proxy-vs-SPY check
+  rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
+
+# =============================================================================
+# Alt-Data Brain — Claude-Opus convergence analyst for the Signal Intelligence desk
+# (engine/altdata_brain.py). Reads the deterministic weighted-convergence substrate +
+# the influence graph as an EVIDENCE PACK and emits an ACTIONABLE scored axis (action /
+# conviction / direction + a FALSIFIABLE thesis graded vs SPY) that the Mastermind bot
+# consumes. Runs in its OWN gated daily step (after build_alt_data) with the OAuth token,
+# then re-renders the page. No-op without a token. A hard CODE clamp prevents ACCUMULATE
+# on an extended name. Haiku does the cheap high-volume tagging (influence.extract below).
+# =============================================================================
+altdata_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  models:
+    reasoning: claude-opus-4-8      # the cross-signal convergence reasoning (deep)
+    tagging: claude-haiku-4-5-20251001   # cheap high-volume tagging (influence extractor)
+  interval_days: 1
+  max_clusters: 12               # cap the per-day clusters reasoned over (cost + focus)
+  max_tokens: 8000
+  horizon_d: 63                  # ~3 trading months — alt-data flow is medium-horizon
+  rel_threshold: 0.05            # ±5% name-vs-SPY = the wrong-way threshold
+  min_weighted: 0.9             # weighted-convergence floor to enter the evidence pack
+
+# Influence graph — multi-actor affiliation graph (engine/influence). The curated seed
+# (data/altdata/influence_seed.json) is always on; the LLM extractor that GROWS it from
+# news is gated + default-off (cheap Haiku tagging via the OAuth path).
+influence:
+  extract:
+    extract: false               # MASTER SWITCH for the LLM edge extractor (default off)
+    oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+    api_key_env: ANTHROPIC_API_KEY
+    model: claude-haiku-4-5-20251001
+    news_limit: 50
 
 # =============================================================================
 # Stock desk — accountable AI JUDGMENT layer on the US standout top-picks
@@ -2483,6 +2629,18 @@ vector:
     froth_pct: 0.7                # basis above this % = rich contango (leverage froth)
     stress_pct: -0.2              # below this = backwardation (stress / forced de-risk)
 
+  futures_carry:                  # consolidated derivatives CARRY across the futures complex
+    # One leverage-cycle read fusing the annualized carries we already store: CME
+    # (regulated, 2017->), Deribit dated-future basis (snapshot), and perp funding
+    # (annualized). z-scored vs their own ~1y norm; froth = leveraged longs paying up
+    # (late-cycle), stress = backwardation/negative funding (deleveraging/capitulation).
+    z_window_d: 365
+    froth_z: 0.8                  # blended carry z above → "froth"
+    stress_z: -0.8                # below → "stress"
+    cme_weight: 1.0               # regulated, deepest → highest weight
+    deribit_weight: 0.6           # offshore dated basis (shallow history)
+    funding_weight: 0.8           # perp funding annualized
+
   btc_vs_alts:
     rs_window_d: 30               # relative-strength window across BTC/ETH/alts
     confirm_days: 3
@@ -2535,6 +2693,18 @@ vector:
     rv_window_d: 30               # realized vol window matched to DVOL's 30d horizon
     vrp_smooth_d: 5               # VRP = DVOL - realized vol, smoothed
     rv_cone_lookback_d: 1095      # ~3y percentile window for the realized-vol CONE + vol-of-vol (full-history, both-halves-clean; D-vec-RVCONE)
+    # VRP MODEL (variance-risk-premium = implied DVOL − realized vol): a z-score + a
+    # vol-pricing regime. vol_rich = options expensive vs delivered (rich premium →
+    # vol mean-reverts down / sell-vol bias); vol_cheap = options underpricing risk
+    # (cheap premium → vol-expansion / drawdown risk, the more actionable tail).
+    vrp_z_window_d: 365
+    vrp_rich_z: 0.7               # VRP z above → "vol_rich"
+    vrp_cheap_z: -0.7             # VRP z below → "vol_cheap"
+    # IV term structure (DVOL slope / ATM-IV 30d→90d): contango = calm/normal,
+    # backwardation = front-end stress bid (near-dated fear).
+    term_backwardation_pct: -1.0  # atm_iv_90d − atm_iv_30d below (pts) → "backwardation"
+    # DVOL-implied forward expected-move band for the RISK model (±1σ over horizon).
+    expected_move_horizon_d: 30
 
   leverage:                       # leverage/liquidation layer (Tier-2, ~2yr depth)
     # aggregate OI summed over consistently-present major venues (bgeo gives 15;
@@ -2577,6 +2747,17 @@ vector:
 
   onchain:                        # CryptoQuant-style on-chain regime (reproduced free)
     premium_smooth_d: 7           # Coinbase Premium = US institutional-demand proxy
+    # Coinbase Premium MODEL: prefer the SELF-COMPUTED premium (Coinbase USD close vs
+    # OKX BTC-USDT close, fresh daily) and splice the bgeo coinbase-premium-index onto the
+    # deep tail. z/percentile extremity + a regime state + a smart-money divergence flag
+    # (price trend vs premium trend). ETF-era institutional-demand context, NOT a deep anchor.
+    premium_z_window_d: 180       # extremity z-score trailing window
+    premium_pctile_lookback_d: 365
+    premium_state_hi: 0.35        # EMA% above → "premium" (US institutions paying up)
+    premium_state_overheat: 0.9   # EMA% above → "overheated" (FOMO/late-cycle froth)
+    premium_state_lo: -0.2        # EMA% below → "discount"
+    premium_state_deep: -0.6      # EMA% below → "deep_discount" (offshore-led capitulation)
+    premium_div_window_d: 21      # price-vs-premium trend window for the divergence flag
     ssr_window_d: 365             # SSR oscillator z-score window (stablecoin dry powder)
     mpi_window_d: 365             # Miner Position Index = miner outflow USD / 365d MA
     mpi_min_periods_d: 120
@@ -2588,6 +2769,13 @@ vector:
     z_min_periods_d: 30
     state_enter_z: 0.6            # accumulation/distribution hysteresis on the flow z
     state_exit_z: 0.2
+    # Farside per-fund layer (US$m, since 2024-01-11): the model also reads a USD net
+    # flow, an EX-GBTC net (strips the incumbent's one-way unlock distortion), a
+    # concentration (top-fund share of gross flow), and a price-vs-cumulative-flow
+    # divergence. Farside is primary; bgeo etf-flow-btc is the cross-check / fallback.
+    usd_smooth_d: 5               # rolling-sum window for the USD net-flow regime
+    conc_window_d: 21             # window for the issuer-concentration read
+    div_window_d: 21              # price-trend vs cumulative-flow-trend divergence window
 
   impulse:                        # Glassnode/Swissblock-style IMPULSE: z-scored
     # ACCELERATION of momentum (2nd derivative via MACD-histogram), gated for
@@ -2703,6 +2891,21 @@ vector:
     soleth_ma_d: 100              # ~14-week SOL/ETH moving average (high-beta rotation)
     soleth_slope_d: 56            # 8-week SOL/ETH slope
     soleth_pctile_d: 730          # 2y SOL/ETH percentile (SOL-USD ~2020->)
+
+  # Macro-regime composite deferred CONTEXT legs (engine/btc_netliq, etf_perfund,
+  # btc_dat, btc_leverage_cascade). All DISPLAY-ONLY — they never size or gate.
+  btc_netliq:
+    enabled: true
+    yoy_window_d: 252             # YoY ROC lookback for the Howell net-liquidity stack
+  btc_etf_perfund:
+    scrape_enabled: false         # Farside per-fund scrape OFF by default (read-only otherwise)
+    url: "https://farside.co.uk/bitcoin-etf-flow-all-data/"
+  btc_dat:
+    json_path: "data/dat_holdings.json"   # manual 8-K-sourced MSTR/DAT drop (NOT 13F)
+    margin_haircut: 0.78          # forced-sell trigger ~ avg_cost x this (≈ -22%)
+  btc_leverage_cascade:
+    high_funding_annual_pct: 50   # annualized funding above this = "high"
+    sustain_days: 3               # consecutive days of high funding to flag a cascade
 
   calibration:
     start_date: "2015-01-01"      # price-signal backtests (Yahoo BTC 2014-09->)

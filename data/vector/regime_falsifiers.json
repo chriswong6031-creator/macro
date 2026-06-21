@@ -1,0 +1,53 @@
+{
+  "schema": "btc_regime_ledger.v1",
+  "as_of": "2026-06-21",
+  "horizon_days": 90,
+  "n_matured": 0,
+  "tiers": {
+    "T1": {
+      "status": "INELIGIBLE_PENDING",
+      "agreement": null,
+      "n_quarters": 0.0,
+      "demote_weight_to": null,
+      "falsifies_if": "sign-agreement < 0.45 over \u22658 graded quarters"
+    },
+    "T2": {
+      "status": "INELIGIBLE_PENDING",
+      "agreement": null,
+      "n_quarters": 0.0,
+      "demote_weight_to": null,
+      "falsifies_if": "sign-agreement < 0.45 over \u22658 graded quarters"
+    },
+    "T3": {
+      "status": "INELIGIBLE_PENDING",
+      "agreement": null,
+      "n_quarters": 0.0,
+      "demote_weight_to": null,
+      "falsifies_if": "sign-agreement < 0.45 over \u22658 graded quarters"
+    },
+    "T4": {
+      "status": "INELIGIBLE_PENDING",
+      "agreement": null,
+      "n_quarters": 0.0,
+      "demote_weight_to": null,
+      "falsifies_if": "sign-agreement < 0.45 over \u22658 graded quarters"
+    },
+    "T5": {
+      "status": "INELIGIBLE_PENDING",
+      "agreement": null,
+      "n_quarters": 0.0,
+      "demote_weight_to": null,
+      "falsifies_if": "sign-agreement < 0.45 over \u22658 graded quarters"
+    }
+  },
+  "etf_leg": {
+    "status": "INELIGIBLE_PENDING",
+    "agreement": null,
+    "n_quarters": 0.0,
+    "demote_weight_to": null,
+    "note": "ETF/flow leg is structurally CONTEXT-ONLY (2024+ history). It can be graded once \u22658 quarters accrue, but cannot be promoted to an apriori tier regardless of performance."
+  },
+  "honesty_note": "Regime ledger is empty \u2014 no matured rows to grade yet. Falsifier evaluation begins after the first 90-day windows close.",
+  "honesty_note_zh": "\u8d26\u672c\u4e3a\u7a7a \u2014\u2014 \u6682\u65e0\u5230\u671f\u884c\u8bb0\u5f55\uff0c\u5f85\u9996\u627990\u5929\u7a97\u53e3\u5230\u671f\u540e\u5f00\u59cb\u8bc4\u5206\u3002",
+  "context_only": true
+}

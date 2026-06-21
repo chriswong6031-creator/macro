@@ -23,11 +23,15 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine.cycles import analyze  # noqa: E402
 from engine.intl_stocks import compute_intl_alpha, panel  # noqa: E402
 from engine.setups import rank_setups, setup_score  # noqa: E402
+from engine import stock_score  # noqa: E402
+from engine import stock_view  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
-from lib import config  # noqa: E402
+from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("intl_library")
@@ -102,11 +106,22 @@ def _one(ticker: str, close: pd.Series, name: str, sector: str,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
+    # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
+    # HVP / RSI / MA regime) supersede the thin close-only snapshot — best-effort so a thin/odd
+    # series never breaks the build. The single-stock volatility black hole is added too.
+    try:
+        _tech = stock_technicals.snapshot(c)
+    except Exception:  # noqa: BLE001 — fall back to the thin snapshot
+        _tech = snapshot(c)
+    try:
+        _sq = vol_squeeze.assess(c)
+    except Exception:  # noqa: BLE001
+        _sq = None
     return {
         "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
         "flag": flag, "market": market,
         "asof": str(c.index.max().date()), "history_days": int(len(c)),
-        "tech": snapshot(c),
+        "tech": _tech, "vol_squeeze": _sq,
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
@@ -135,6 +150,34 @@ def _spark_svg(vals: list[float], color: str = "var(--link)", w: int = 240, h: i
             f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="2.6" fill="{color}"/></svg>')
 
 
+def _cone_note(anticipation: dict | None) -> list[dict] | None:
+    """The favourable forward-risk-cone honesty note for a standout card. Mirrors the
+    engine.stock_score 'anticipation' note (constructive risk SHAPE the factor axes don't
+    price), surfaced here because the intl standouts board carries no full Conviction
+    profile. Fires only when the medium-horizon cone is meaningfully favourable
+    (anticipation_index ≥ 65, not thin, median upside ≥ 1.5× average drawdown). The
+    percentile-RANK note is conviction-score-bound, so it never applies on this board.
+    Best-effort — any odd shape yields None."""
+    if not anticipation:
+        return None
+    try:
+        ah = ((anticipation.get("horizons") or {}).get("medium") or {})
+        aidx = anticipation.get("anticipation_index")
+        mfe, dd = ah.get("mfe_med"), ah.get("dd_avg")
+        if (aidx is not None and aidx >= 65 and not ah.get("thin")
+                and mfe and dd and dd != 0 and (mfe / abs(dd)) >= 1.5):
+            return [{
+                "kind": "anticipation",
+                "en": f"Forward risk cone is favourable (≈{mfe:.0f}% median upside vs "
+                      f"≈{abs(dd):.0f}% average drawdown) — a constructive risk SHAPE the "
+                      "factor axes don't price.",
+                "zh": f"前瞻风险锥形态有利（中位上行约 {mfe:.0f}% 对平均回撤约 {abs(dd):.0f}%）——"
+                      "因子维度未计入的有利风险形态。"}]
+    except Exception:  # noqa: BLE001 — additive note, never fatal
+        return None
+    return None
+
+
 def main(alpha: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "intlstockdata"
@@ -148,6 +191,33 @@ def main(alpha: dict | None = None) -> dict | None:
         alpha = compute_intl_alpha(closes, members)
     alpha_pt = (alpha or {}).get("per_ticker", {})
 
+    # hoist the forward-anticipation engine + its gate ONCE (the cone is close-driven; the gate
+    # read would otherwise repeat per name). None-safe: if the engine is unavailable, the cone is
+    # simply skipped. The benchmark is per-COUNTRY (each market's own index, the same series the
+    # within-market residual-alpha leg uses) — loaded once into a close map, picked per name. All
+    # best-effort so a missing index just leaves the cone benchmark-less for that market.
+    try:
+        from engine.anticipation import anticipate as _anticipate, load_gate as _load_gate
+        _ant_gate = _load_gate("US")
+    except Exception:  # noqa: BLE001
+        _anticipate = None
+        _ant_gate = None
+    tkr_country = {t: str(c) for t, c in members["country"].items()} if "country" in members.columns else {}
+    bench_by_cc: dict[str, pd.Series] = {}
+    try:
+        _cc_idx = {cc: v.get("index") for cc, v in config.load()["intl"]["countries"].items()}
+        for cc, idx_sym in _cc_idx.items():
+            if not idx_sym:
+                continue
+            try:
+                _bdf = store.read("intl", idx_sym)
+                if _bdf is not None and "close" in _bdf.columns:
+                    bench_by_cc[cc] = _bdf["close"]
+            except Exception:  # noqa: BLE001 — one missing index can't break the build
+                continue
+    except Exception as e:  # noqa: BLE001 — additive cone, never fatal
+        log.warning("intl anticipation benchmarks unavailable (%s)", e)
+
     index, cand, built, failed = [], [], 0, 0
     uni = []
     for ticker in closes.columns:
@@ -157,6 +227,8 @@ def main(alpha: dict | None = None) -> dict | None:
         uni.append((ticker, closes[ticker], str(m["name"]), str(m["sector"]),
                     str(m["flag"]), str(m["market"])))
     recs = _analyze_universe(uni)           # parallel analyze() fan-out (order-preserving)
+    profiles: dict[str, dict] = {}
+    to_write: list[tuple[str, dict]] = []
     for (ticker, close, name, sector, flag, market), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -166,14 +238,38 @@ def main(alpha: dict | None = None) -> dict | None:
             sc = setup_score(rec, alpha_weight=INTL_ALPHA_WEIGHT)
             if sc:
                 cand.append(sc)
+        # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
+        # note in the shared engine; benchmark = the name's own-market index. Best-effort.
+        if _anticipate is not None:
+            try:
+                _ant = _anticipate(close.dropna(), bench=bench_by_cc.get(tkr_country.get(ticker)),
+                                   asset_class="intl_equity", gate=_ant_gate)
+                if _ant:
+                    rec["anticipation"] = _ant
+            except Exception:  # noqa: BLE001 — additive cone, never fatal
+                pass
+        # unified Conviction Profile (engine/stock_score, INTL market). Intl is
+        # momentum-persistent like the TSX → residual-momentum selection prior, framed as
+        # unvalidated context. The explicit INTL market avoids the HK no-alpha/never-Buy
+        # fall-through that calling conviction_profile(rec, "INTL") used to hit.
+        norm = stock_score.normalize_rec(rec, "INTL")
+        rec["conviction"] = stock_score.conviction_profile(
+            norm, "INTL", ctx={"as_of": (alpha or {}).get("as_of")})
+        profiles[ticker] = rec["conviction"]
         safe = ticker.replace("=", "_").replace("^", "_")
-        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
+        to_write.append((safe, rec))
         idx = {"t": ticker, "n": rec["name"], "s": rec["sector"], "st": rec["ladder"]["state"],
                "fl": rec["flag"], "mk": rec["market"]}
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)
         built += 1
+
+    # within-market percentile display score (mutates each conviction in place), then write
+    stock_score.attach_panel_scores(profiles)
+    for safe, rec in to_write:
+        rec["view"] = stock_view.build_view(rec, "INTL")
+        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     (outdir / "index.json").write_text(json.dumps(index))
     # Bespoke chart OHLC (close-only area series) read by intl_stock.html's chart.js —
@@ -198,9 +294,18 @@ def main(alpha: dict | None = None) -> dict | None:
             f = outdir / f"{t.replace('=', '_').replace('^', '_')}.json"
             if f.exists():
                 try:
-                    tech = json.loads(f.read_text()).get("tech", {})
+                    _rec = json.loads(f.read_text())
+                    tech = _rec.get("tech", {})
                     r["price"] = tech.get("price")
                     r["off_high"] = tech.get("off_52w_high_pct")
+                    # the new card chips (China-parity): the single-stock vol black hole +
+                    # the favourable forward-cone honesty note (the intl board has no full
+                    # Conviction profile, so these ride directly on the buy row).
+                    if _rec.get("vol_squeeze"):
+                        r["vol_squeeze"] = _rec["vol_squeeze"]
+                    _notes = _cone_note(_rec.get("anticipation"))
+                    if _notes:
+                        r["notes"] = _notes
                 except Exception:  # noqa: BLE001
                     pass
             if t in closes.columns:

@@ -188,9 +188,13 @@ def test_momentum_alone_is_weak_edge():
     z, present = ss._axis_selection(rec, "US")
     assert present == ["alpha"]
     assert z is not None and z < 1.0            # 0.10*3.0/0.5 = 0.6 — weak, ranks low
-    # whereas a real SUE of the same magnitude dominates
-    z2, _ = ss._axis_selection({"sue": 3.0}, "US")
-    assert z2 > z + 0.5
+    # whereas a strong literature/validated leg of the same magnitude dominates. v2.1: analyst
+    # REVISIONS now lead the non-insider legs (0.32) — SUE was down-weighted (0.18) because its
+    # cross-sectional edge collapsed on deep history, so it no longer dominates by the old margin.
+    z_rev, _ = ss._axis_selection({"revision_z": 3.0}, "US")   # 0.32*3/0.5 = 1.92
+    assert z_rev > z + 0.5
+    z_sue, _ = ss._axis_selection({"sue": 3.0}, "US")          # 0.18*3/0.5 = 1.08 — still > momentum
+    assert z_sue > z
 
 
 def test_revision_feeds_edge():
@@ -537,3 +541,146 @@ def test_imminent_earnings_sizes_down_and_cautions():
     assert soon["risk"]["total"] >= 0.5
     # earnings is a SIZE/verb concern, NOT a composite-rank tax (transient risk)
     assert soon["composite_z"] == base["composite_z"]
+
+
+# --- overhaul: technical confirmers wired into the ENTRY axis (verifiers, never alpha) -------
+def _entry_base():
+    return {"ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
+            "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
+
+
+def test_vol_squeeze_fired_up_lifts_entry_fired_down_trims():
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    up, pu, _ = ss._axis_entry({**base, "vol_squeeze": {"state": "FIRED_UP", "volume_confirmed": True}})
+    dn, _, _ = ss._axis_entry({**base, "vol_squeeze": {"state": "FIRED_DOWN"}})
+    assert up > z0 > dn
+    assert "vol-squeeze" in pu
+
+
+def test_gex_confirm_lifts_caution_trims_neutral_noop():
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    conf, pc, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "confirm"}})
+    caut, _, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "caution"}})
+    neut, _, _ = ss._axis_entry({**base, "gex_confirm": {"verdict": "neutral"}})
+    assert conf > z0 > caut
+    assert neut == z0                      # a NEUTRAL verifier does not move the entry
+    assert "options" in pc
+
+
+def test_trend_quality_tilt_direction():
+    base = _entry_base()
+    up, _, _ = ss._axis_entry({**base, "tech": {**base["tech"], "adx14": 30, "adx_trend": "up"}})
+    dn, _, _ = ss._axis_entry({**base, "tech": {**base["tech"], "adx14": 30, "adx_trend": "down"}})
+    assert up > dn
+
+
+def test_confirmer_nudge_is_bounded():
+    # even a maximally-bullish confirmer stack lifts the entry by a bounded amount
+    base = _entry_base()
+    z0, _, _ = ss._axis_entry(base)
+    stacked, _, _ = ss._axis_entry({
+        **base, "tech": {**base["tech"], "adx14": 35, "adx_trend": "up"},
+        "vol_squeeze": {"state": "FIRED_UP", "volume_confirmed": True},
+        "gex_confirm": {"verdict": "confirm"}})
+    assert 0 < (stacked - z0) <= ss._ENTRY_CONFIRM_CAP * 1.6 + 1e-9
+
+
+def test_confirmer_cannot_rescue_a_blocked_or_extended_name():
+    # parabolic + over-extended + the strongest possible options/squeeze confirm: still no buy
+    rec = {"sue": 2.6, "insider_bps": 30.0, "alpha": 2.0,
+           "ext": {"grade": "parabolic", "ext_z": 2.6},
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -1.0, "rsi14": 80.0, "pct_vs_200dma": 40.0},
+           "vol_squeeze": {"state": "FIRED_UP", "volume_confirmed": True},
+           "gex_confirm": {"verdict": "confirm"}}
+    p = ss.conviction_profile(rec, "US")
+    assert "buy" not in p["verdict"].lower()
+    assert p["axes"]["entry"]["z"] <= ss._ENTRY_CAP_Z * 1.6 + 1e-9
+    assert "chase" in p["verdict"].lower() or "extended" in p["verdict"].lower()
+
+
+def test_hard_penalty_not_diluted_by_good_urgency():
+    # a parabolic name with the best-possible urgency still has a strongly-penalised entry
+    good = {"ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+            "tech": {"off_52w_high_pct": -3.0, "rsi14": 55.0}}
+    para = {**good, "ext": {"grade": "parabolic", "ext_z": 2.6}}
+    z_good, _, _ = ss._axis_entry(good)
+    z_para, _, _ = ss._axis_entry(para)
+    assert z_para < 0 < z_good            # the -1.0 penalty survives, not averaged away
+
+
+def test_risk_idio_gex_vol_regime_and_backcompat():
+    short = ss._risk_idio({"gex_confirm": {"levels": {"regime": "short", "vol_hole_state": "EXPANSION"}}})[0]
+    coiled = ss._risk_idio({"gex_confirm": {"levels": {"regime": "long", "vol_hole_state": "COILED_UP"}}})[0]
+    pin = ss._risk_idio({"gex_confirm": {"levels": {"regime": "long", "vol_hole_state": "IN_HOLE"}}})[0]
+    assert short > coiled > pin
+    # back-compat: a raw gamma_regime (no confirmer) still reads as risk
+    assert ss._risk_idio({"gex": {"gamma_regime": "short"}})[0] > 0
+
+
+def test_normalize_rec_passes_the_confirmers_through():
+    rec = {"ticker": "T", "gex": {"gamma_regime": "long"},
+           "gex_confirm": {"verdict": "caution"}, "vol_squeeze": {"state": "COILED"}}
+    n = ss.normalize_rec(rec, "US")
+    assert n["gex"]["gamma_regime"] == "long"
+    assert n["gex_confirm"]["verdict"] == "caution"
+    assert n["vol_squeeze"]["state"] == "COILED"
+
+
+def test_profile_surfaces_confirmers_for_display():
+    rec = _rec(gex_confirm={"verdict": "confirm"}, vol_squeeze={"state": "COILED"})
+    p = ss.conviction_profile(rec, "US")
+    assert p["gex_confirm"]["verdict"] == "confirm"
+    assert p["vol_squeeze"]["state"] == "COILED"
+
+
+# --- AVGO/NVDA alignment: quality is durability-only; anticipation risk-shape; honesty notes ---
+def test_quality_axis_is_durability_only_not_value_or_vol():
+    # an expensive (value<0), volatile (low_vol<0) but PROFITABLE name: value/low_vol must NOT
+    # drag the quality (durability) axis — the AVGO/NVDA growth-leader mis-score fix.
+    rec = {"factor": {"profitability": 1.0, "quality": 0.5, "value": -2.5, "low_vol": -2.5}}
+    qz, present, _ = ss._axis_quality(rec, "US")
+    assert "factors" in present
+    assert qz == pytest.approx(0.75)          # mean(profitability, quality) only, not the 4-leg mean
+
+
+def test_anticipation_tilt_risk_shape():
+    fav = {"anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}}   # asym 2.0
+    adv = {"anticipation": {"horizons": {"medium": {"mfe_med": 4.0, "dd_avg": -8.0}}}}    # asym 0.5
+    thin = {"anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0, "thin": True}}}}
+    assert ss._anticipation_tilt(fav) == 0.25
+    assert ss._anticipation_tilt(adv) == -0.25
+    assert ss._anticipation_tilt(thin) is None    # too few analog cells -> don't trust the shape
+    assert ss._anticipation_tilt({}) is None      # no cone -> no tilt (direction is never bet)
+
+
+def test_anticipation_tilt_lifts_entry():
+    base = {"ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
+            "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
+    z0, _, _ = ss._axis_entry(base)
+    fav, present, _ = ss._axis_entry({**base, "anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}})
+    assert fav > z0 and "risk-shape" in present
+
+
+def test_rank_note_fires_on_high_band_mid_selection():
+    # the NVDA case: ranks top-of-board (band high via percentile) but selection hasn't cleared
+    # the absolute high-conviction bar -> a note clarifies 'score is a percentile rank'.
+    rec = {"revision_z": 1.0,        # sel_z ~0.64 = MID tier (not high), but band high via percentile
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "now"}},
+           "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
+    p = ss.conviction_profile(rec, "US", ctx={"score_pct": 97})
+    assert p["band"] == "high" and ss._tier(p["axes"]["selection"]["z"]) != "high"
+    assert p["notes"] and any(n["kind"] == "rank" for n in p["notes"])
+
+
+def test_anticipation_note_fires_on_favorable_cone_muted_score():
+    # the AVGO case: favourable forward cone but a muted conviction score -> surface the asymmetry.
+    rec = {"alpha": 0.3,
+           "anticipation": {"anticipation_index": 74.0,
+                            "horizons": {"medium": {"mfe_med": 11.0, "dd_avg": -7.0}}},
+           "ladder": {"state": "RALLY ON", "entry": {"urgency": "hold"}},
+           "tech": {"off_52w_high_pct": -10.0, "rsi14": 50.0}}
+    p = ss.conviction_profile(rec, "US", ctx={"score_pct": 50})
+    assert p["notes"] and any(n["kind"] == "anticipation" for n in p["notes"])

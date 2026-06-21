@@ -312,6 +312,31 @@ def vol_smile(chain: pd.DataFrame, spot: float, cf: dict) -> dict:
             "strikes": [_f(k) for k in ks], "call_iv": civ, "put_iv": piv}
 
 
+def risk_reversal_25d(chain: pd.DataFrame, spot: float, cf: dict) -> float | None:
+    """25-delta risk reversal = (25Δ call IV − 25Δ put IV) in vol points, for the nearest
+    liquid expiry. Equity skew is STRUCTURALLY negative, so the LEVEL is display context only —
+    the confirmer (engine/gex_confirm) uses its CHANGE, never this number alone. Best-effort:
+    returns None when the chain carries no per-contract delta (the lighter compute_gex path)."""
+    if chain is None or "delta" not in chain.columns or not (spot and spot > 0):
+        return None
+    c = chain[(chain["T"] * 365 >= 2) & (chain["oi"] > 0) & chain["iv"].notna()].copy()
+    if c.empty or not c["delta"].notna().any():
+        return None
+    exp = sorted(c["expiry"].unique())[0] if "expiry" in c.columns else None
+    g = c[c["expiry"] == exp] if exp is not None else c
+    calls = g[g["is_call"]]
+    puts = g[~g["is_call"]]
+    if calls.empty or puts.empty:
+        return None
+    # the contract whose delta is closest to +0.25 (call) and −0.25 (put)
+    ci = (calls["delta"].astype(float) - 0.25).abs().idxmin()
+    pi = (puts["delta"].astype(float) + 0.25).abs().idxmin()
+    civ, piv = float(calls.loc[ci, "iv"]), float(puts.loc[pi, "iv"])
+    if not (civ > 0 and piv > 0):
+        return None
+    return round((civ - piv) * 100.0, 2)
+
+
 def _net_delta_bn(chain: pd.DataFrame, spot: float, cf: dict):
     """Dealer net $delta (long-call / short-put sign) in $bn — positioning context."""
     c = _window(chain, spot, cf["flip_window_pct"], need_iv=False)
@@ -429,6 +454,243 @@ def volatility_hole(summary: dict, em: dict, cf: dict) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# derived decision-support signals (DISPLAY-ONLY, qualitative bands, honest)
+# --------------------------------------------------------------------------- #
+# Coarse strength word-bands shared by every scored level (no decimals reach the
+# user-facing word — only the transparent 0-100 score does). gex.js maps the KEY
+# to bilingual text, mirroring the language-neutral vol_hole convention.
+_STRENGTH_BANDS = ((75, "very_strong"), (55, "strong"), (35, "moderate"),
+                   (18, "weak"), (0, "faint"))
+
+
+def _strength_band(score) -> str | None:
+    if score is None:
+        return None
+    for lo, key in _STRENGTH_BANDS:
+        if score >= lo:
+            return key
+    return "faint"
+
+
+def _level_strength(net_mn, max_abs_mn, level, spot, daily_abs):
+    """Transparent 0-100 strength for a gamma WALL: 70% its share of the heaviest
+    wall's $gamma (how much hedging clusters there) + 30% proximity in daily-σ (closer
+    walls bite sooner). Returns (score, band, dist_sigma). A wall is where hedging
+    concentrates, NOT a guaranteed stop or target — and the dealer sign is fragile for
+    single names."""
+    if level is None or not max_abs_mn or max_abs_mn <= 0 or not (spot and spot > 0):
+        return None, None, None
+    share = min(1.0, abs(net_mn) / max_abs_mn) if net_mn is not None else 0.0
+    dist_sigma = (abs(level - spot) / daily_abs) if (daily_abs and daily_abs > 0) else None
+    prox = max(0.0, min(1.0, 1.0 - dist_sigma / 6.0)) if dist_sigma is not None else 0.5
+    score = int(round(100 * (0.70 * share + 0.30 * prox)))
+    return score, _strength_band(score), (round(dist_sigma, 1) if dist_sigma is not None else None)
+
+
+def _wall_hard(by_strike, level, spot):
+    """A wall is a 'hard line' (vs OI smeared across neighbours) when its |net $gamma|
+    is >= 2x the sum of the two nearest SAME-SIDE strikes."""
+    if level is None or not by_strike or not spot:
+        return None
+    same = [r for r in by_strike if r.get("K") is not None
+            and (r["K"] > spot) == (level > spot) and r["K"] != level]
+    if not same:
+        return None
+    same.sort(key=lambda r: abs(r["K"] - level))
+    neigh = sum(abs(r.get("net_mn") or 0.0) for r in same[:2])
+    wall = next((abs(r.get("net_mn") or 0.0) for r in by_strike if r.get("K") == level), 0.0)
+    if neigh <= 0:
+        return True
+    return bool(wall / neigh >= 2.0)
+
+
+def _magnet_strength(max_pain, spot, top_oi_share, daily_abs):
+    """Pin strength of the max-pain magnet: 70% OI concentration (top_oi_share) + 30%
+    proximity. The magnet only genuinely pulls in a calm (long-gamma) regime — the
+    tilt suppresses the pin leg in short gamma; the displayed strength stays structural."""
+    if max_pain is None or not (spot and spot > 0) or top_oi_share is None:
+        return None, None, None
+    dist_sigma = (abs(max_pain - spot) / daily_abs) if (daily_abs and daily_abs > 0) else None
+    prox = max(0.0, min(1.0, 1.0 - dist_sigma / 6.0)) if dist_sigma is not None else 0.5
+    score = int(round(100 * (0.70 * min(1.0, float(top_oi_share)) + 0.30 * prox)))
+    return score, _strength_band(score), (round(dist_sigma, 1) if dist_sigma is not None else None)
+
+
+def _flip_strength(profile, flip):
+    """How decisively the gamma curve crosses zero at the flip — a steep crossing is a
+    firm regime line, a shallow one is mushy. Normalised against the steepest segment of
+    the profile grid, then banded like the walls."""
+    if not profile or flip is None:
+        return None, None
+    spots = profile.get("spots") or []
+    gam = profile.get("gamma_bn") or []
+    if len(spots) < 3 or len(gam) != len(spots):
+        return None, None
+    slopes, seg = [], None
+    for i in range(len(spots) - 1):
+        ds = spots[i + 1] - spots[i]
+        if not ds:
+            continue
+        sl = abs((gam[i + 1] - gam[i]) / ds)
+        slopes.append(sl)
+        if spots[i] <= flip <= spots[i + 1]:
+            seg = sl
+    if seg is None or not slopes:
+        return None, None
+    mx = max(slopes) or 1.0
+    score = int(round(100 * min(1.0, seg / mx)))
+    return score, _strength_band(score)
+
+
+def risk_reversal(chain: pd.DataFrame, spot: float, iv30, cf: dict) -> dict | None:
+    """Front-expiry 25-delta RISK REVERSAL (25Δ put IV − 25Δ call IV, vol points) — the
+    one genuinely directional skew tell. POSITIVE = puts bid (downside fear / protection
+    demand); NEGATIVE = calls bid (upside chase). Uses the feed delta where present, else
+    a Black-Scholes delta. DISPLAY-ONLY and days-to-weeks: skew is how the market PRICES
+    risk, not a forecast — and equity puts are structurally bid, so the 'balanced' band
+    is deliberately offset from zero (fear ≥ +3, greed ≤ −1)."""
+    c = chain[(chain["T"] > 0) & (chain["oi"] > 0) & (chain["iv"] > 0)].copy()
+    if c.empty or not (spot and spot > 0):
+        return None
+    cand = c[c["T"] * 365 >= 2]
+    if cand.empty:
+        cand = c
+    counts = cand.groupby("expiry")["K"].nunique()
+    rich = counts[counts >= 6]
+    exp = (sorted(rich.index)[0] if not rich.empty
+           else counts.sort_values(ascending=False).index[0])
+    g = cand[cand["expiry"] == exp]
+    if g["K"].nunique() < 4:
+        return None
+    d = g.get("delta")
+    dd = d.to_numpy(float) if d is not None else np.full(len(g), np.nan)
+    miss = ~np.isfinite(dd)
+    if miss.any():
+        bs = np.array([bs_greeks(spot, k, t, s, bool(cc))[0]
+                       for k, t, s, cc in zip(g["K"], g["T"], g["iv"], g["is_call"])])
+        dd = np.where(miss, bs, dd)
+    g = g.assign(_delta=dd)
+    calls, puts = g[g["is_call"]], g[~g["is_call"]]
+
+    def pick(df, target):
+        if df.empty or not np.isfinite(df["_delta"]).any():
+            return None
+        return float(df.loc[(df["_delta"] - target).abs().idxmin(), "iv"])
+
+    civ, piv = pick(calls, 0.25), pick(puts, -0.25)
+    if civ is None or piv is None or civ <= 0 or piv <= 0:
+        return None
+    rr25 = round((piv - civ) * 100.0, 2)                 # vol points
+    atm = (iv30 * 100.0) if iv30 else None
+    tone = "fear" if rr25 >= 3.0 else "greed" if rr25 <= -1.0 else "balanced"
+    today = pd.Timestamp(date.today())
+    return {"rr25": rr25, "skew_norm": (round(rr25 / atm, 3) if atm else None),
+            "tone": tone, "put_iv25": round(piv * 100, 2), "call_iv25": round(civ * 100, 2),
+            "expiry": _expiry_label(exp), "days": int((pd.Timestamp(exp) - today).days),
+            "horizon": "days_weeks"}
+
+
+def iv_rank(iv30_pct, history) -> dict | None:
+    """Where today's IV30 sits in its OWN recent history — a SHORT-window percentile, not
+    a true 52-week IV rank (we only persist ~40 trading days). Honest about the small
+    sample via n_days + low_confidence. history items carry an 'iv30' field in PERCENT."""
+    if iv30_pct is None or not history:
+        return None
+    xs = [h.get("iv30") for h in history if h.get("iv30") is not None]
+    if len(xs) < 5:
+        return None
+    pct = int(round(100 * sum(1 for v in xs if v < iv30_pct) / len(xs)))
+    band = ("rich" if pct >= 80 else "elevated" if pct >= 60 else "normal" if pct >= 40
+            else "cheap" if pct >= 20 else "very_cheap")
+    return {"rank_pct": pct, "band": band, "n_days": len(xs),
+            "low_confidence": len(xs) < 20, "horizon": "days_weeks"}
+
+
+def directional_tilt(summary: dict, em: dict, skew: dict | None, cf: dict) -> dict:
+    """Independent directional LEANS, each carrying its OWN natural horizon — never one
+    blended arrow. A blend goes structurally permabearish (charm is ~one-signed and
+    equity skew is structurally downside), so we keep the legs SEPARATE and only
+    synthesise an honest headline read. DISPLAY-ONLY: leans/tendencies from delayed EOD
+    positioning, never a trade and never a target. Language-neutral; gex.js renders the
+    bilingual prose + the per-leg horizon pills.
+
+    Legs (each {signal, dir, strength, horizon, ...ctx}):
+      charm   → intraday→1-2d hedging drift (dir from charm_net_sign)
+      pin     → into the front expiry (only in calm gamma AND when price is near max-pain)
+      skew    → days→weeks (25Δ risk-reversal tone)
+      regime  → days, while the gamma regime persists (long=mean-revert, short=two-sided)
+    """
+    legs = []
+    spot = summary.get("spot")
+    regime = summary.get("regime")
+    mp = summary.get("max_pain")
+    weekly = (em or {}).get("weekly_pct")
+    front_days = (em or {}).get("front", {}).get("days") if (em and em.get("front")) else None
+
+    cs = summary.get("charm_net_sign")
+    if cs:
+        legs.append({"signal": "charm", "dir": "up" if cs > 0 else "down",
+                     "strength": "weak", "horizon": "intraday_days"})
+
+    if mp and spot and spot > 0 and regime != "short":
+        dpct = abs(mp - spot) / spot * 100.0
+        near = max(2.5, (weekly or 0.0))
+        if 0.3 <= dpct <= near:
+            legs.append({"signal": "pin", "dir": "pin",
+                         "toward": "up" if mp > spot else "down",
+                         "strength": "moderate" if dpct <= near / 2 else "weak",
+                         "horizon": "into_expiry", "days": front_days, "target": mp})
+
+    if skew and skew.get("tone") and skew["tone"] != "balanced":
+        legs.append({"signal": "skew", "dir": "down" if skew["tone"] == "fear" else "up",
+                     "strength": "moderate", "horizon": "days_weeks", "rr25": skew.get("rr25")})
+
+    if regime in ("long", "short"):
+        legs.append({"signal": "regime",
+                     "dir": "mean_revert" if regime == "long" else "two_sided",
+                     "strength": "moderate" if regime == "short" else "weak",
+                     "horizon": "days_regime"})
+
+    # Weighted, honest synthesis. Skew is the real directional tell (weight 2); the pin
+    # is a mild expiry pull (1); charm is weak and ~one-signed (0.5) so it can NEVER
+    # headline a direction alone — that was the old permabear bug. regime is non-directional.
+    W = {"skew": 2.0, "pin": 1.0, "charm": 0.5}
+    dirlegs = [l for l in legs if l["dir"] in ("up", "down")]
+    net = sum(W.get(l["signal"], 0.0) * (1 if l["dir"] == "up" else -1) for l in dirlegs)
+    has_pin = any(l["signal"] == "pin" for l in legs)
+    ups = any(l["dir"] == "up" for l in dirlegs)
+    dns = any(l["dir"] == "down" for l in dirlegs)
+    if regime == "short":
+        read = "volatile"
+    elif net >= 1.5:
+        read = "agree_up"
+    elif net <= -1.5:
+        read = "agree_down"
+    elif net >= 0.75:
+        read = "lean_up"
+    elif net <= -0.75:
+        read = "lean_down"
+    elif ups and dns:
+        read = "mixed"
+    elif has_pin:
+        read = "pinned"
+    else:
+        read = "balanced"
+
+    # headline horizon = the highest-weight directional leg's horizon (so skew → days-weeks)
+    headline = None
+    if read in ("agree_up", "agree_down", "lean_up", "lean_down") and dirlegs:
+        lead = max(dirlegs, key=lambda l: W.get(l["signal"], 0.0))
+        headline = {"dir": lead["dir"], "horizon": lead["horizon"], "signal": lead["signal"]}
+    elif read == "pinned":
+        pin = next(l for l in legs if l["signal"] == "pin")
+        headline = {"dir": "pin", "horizon": "into_expiry", "signal": "pin",
+                    "days": pin.get("days")}
+    conf = "low" if summary.get("tier") == "thin_chain" else "med"
+    return {"legs": legs, "read": read, "headline": headline, "confidence": conf}
+
+
+# --------------------------------------------------------------------------- #
 # orchestrator
 # --------------------------------------------------------------------------- #
 def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
@@ -439,8 +701,11 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
     cf = {**DEFAULTS, **(cfg or {})}
     if chain is None or len(chain) == 0 or not (spot and spot > 0):
         return None
-    base = compute_gex(chain[["K", "T", "iv", "oi", "is_call", "expiry"]]
-                       if "expiry" in chain.columns else chain[["K", "T", "iv", "oi", "is_call"]],
+    # expiry is REQUIRED — the per-expiry views (iv_term / surface / vol_smile / risk_reversal)
+    # all groupby("expiry"); both production collectors always emit it (see the input contract).
+    if "expiry" not in chain.columns:
+        return None
+    base = compute_gex(chain[["K", "T", "iv", "oi", "is_call", "expiry"]],
                        spot, {k: cf[k] for k in ("contract_multiplier", "pct_move", "r", "q",
                                                  "strike_window_pct", "max_expiry_days")
                               if k in cf} | {"strike_window_pct": cf.get("flip_window_pct", 0.25)})
@@ -463,6 +728,7 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
         "top_oi_share": _f(base.get("top_oi_share"), 3),
         "call_wall": walls["call_wall"], "put_wall": walls["put_wall"],
         "largest_oi": walls["largest_oi"],
+        "rr_25d": risk_reversal_25d(chain, spot, cf),   # display level; confirmer uses the CHANGE
     }
     # volume put/call (a flow tilt the OI ratio misses)
     if "volume" in chain.columns:
@@ -471,12 +737,39 @@ def build_model(chain: pd.DataFrame, spot: float, cfg: dict | None = None,
         summary["put_call_vol_ratio"] = round(pv / cv, 2) if cv > 0 else None
 
     em = expected_move(iv30, spot, cf, term)
+    profile = gamma_profile(chain, spot, cf)
+
+    # ---- scored levels (request: words + strength, not bare numbers) ----------
+    by_strike = walls.get("by_strike") or []
+    max_abs = walls.get("max_abs_mn")
+    daily_abs = em.get("daily_abs")
+    net_of = {r["K"]: r["net_mn"] for r in by_strike if r.get("K") is not None}
+    cw, pw, mp = walls["call_wall"], walls["put_wall"], summary["max_pain"]
+    s_cw = _level_strength(net_of.get(cw), max_abs, cw, spot, daily_abs)
+    s_pw = _level_strength(net_of.get(pw), max_abs, pw, spot, daily_abs)
+    s_mag = _magnet_strength(mp, spot, base.get("top_oi_share"), daily_abs)
+    fl_str, fl_band = _flip_strength(profile, summary["gamma_flip"])
+    summary.update(
+        call_wall_strength=s_cw[0], call_wall_band=s_cw[1], call_wall_dist_sigma=s_cw[2],
+        call_wall_hard=_wall_hard(by_strike, cw, spot),
+        put_wall_strength=s_pw[0], put_wall_band=s_pw[1], put_wall_dist_sigma=s_pw[2],
+        put_wall_hard=_wall_hard(by_strike, pw, spot),
+        magnet_strength=s_mag[0], magnet_band=s_mag[1], magnet_dist_sigma=s_mag[2],
+        flip_strength=fl_str, flip_band=fl_band,
+    )
+
+    # ---- skew (25Δ risk-reversal) + short-window IV rank ----------------------
+    skew = risk_reversal(chain, spot, iv30, cf)
+    summary["skew"] = skew
+    summary["iv_rank"] = iv_rank(summary["iv30"], history)
+
     return {
         "meta": meta or {},
         "summary": summary,
         "expected_move": em,
         "vol_hole": volatility_hole(summary, em, cf),
-        "profile": gamma_profile(chain, spot, cf),
+        "tilt": directional_tilt(summary, em, skew, cf),
+        "profile": profile,
         "walls": walls,
         "surface": surface(chain, spot, cf),
         "smile": vol_smile(chain, spot, cf),

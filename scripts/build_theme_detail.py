@@ -51,6 +51,7 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
                              "headline": es.get("headline"), "headline_zh": es.get("headline_zh"),
                              "zone_low": bz.get("low"), "zone_high": bz.get("high"),
                              "zone_pct": bz.get("pct_from_spot")}
+                sp = c.get("spotlight") or {}
                 val = {"score": c.get("score"), "band": c.get("band"), "band_zh": c.get("band_zh"),
                        "verdict": c.get("verdict") if isinstance(c.get("verdict"), str) else None,
                        "verdict_zh": c.get("verdict_zh"),
@@ -59,11 +60,36 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
                        "valuation_band": c.get("valuation_band"),
                        "validation_status": c.get("validation_status"),
                        "entry": entry,
-                       "trust": (c.get("trust_tier") or {}).get("tier")}
+                       "trust": (c.get("trust_tier") or {}).get("tier"),
+                       # the same theme/sector spotlight tilt the standout board ranks by,
+                       # so the theme page and the board can never disagree on a name.
+                       "spotlight": sp.get("dir") if sp else None}
         except Exception:  # noqa: BLE001
             val = None
     cache[ticker] = val
     return val
+
+
+def standout_index(region: str = "us") -> dict[str, dict]:
+    """{ticker -> {score, dir}} from a market's standout BUY board, the cross-reference that
+    lets a theme page flag which of its members are CURRENTLY on the standout board (and which
+    way the spotlight leans). Only US ships a standout board today; other regions -> {}."""
+    if region != "us":
+        return {}
+    out: dict[str, dict] = {}
+    p = config.ROOT / "site" / "factordata" / "us_standouts.json"
+    if not p.exists():
+        return out
+    try:
+        for r in (json.loads(p.read_text()).get("buy") or []):
+            t = r.get("ticker")
+            if not t:
+                continue
+            conv = r.get("conviction") or {}
+            out[t] = {"score": conv.get("score"), "dir": (conv.get("spotlight") or {}).get("dir")}
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        pass
+    return out
 
 
 def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
@@ -77,11 +103,13 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
     tmpl = env.get_template("basket_detail.html.j2")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     cache: dict = {}
+    board = standout_index(region)          # ticker -> {score, dir} from the standout buy board
     n = 0
     for b in data.get("baskets", []):
         bid = b["id"]
-        members = [{**m, "conviction": _conviction(m["symbol"], sd_dir, cache)} for m in b.get("members", [])]
-        th = tmap.get(bid, {})
+        members = [{**m, "conviction": _conviction(m["symbol"], sd_dir, cache),
+                    "on_board": m["symbol"] in board} for m in b.get("members", [])]
+        th = {**tmap.get(bid, {}), "weights": ti.get("weights")}   # weights for the composition bar
         detail = {
             "basket": b, "members": members, "theme": th,
             "act_now": basket_score.act_now_stocks(members, th),

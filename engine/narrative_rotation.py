@@ -456,6 +456,14 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
     byid = {p["id"]: p for p in preps}
     eligible = [bid for bid, v in ranks.items() if v["eligible"] and v["score"] is not None]
     eligible.sort(key=lambda b: ranks[b]["rank"])
+    # REAL-ACTIVITY VALIDATION tie-break (upgrade-only-ahead-of-price): a theme whose
+    # independent real activity is DIVERGING ahead of price (val_upgrade) is promoted EXACTLY
+    # ONE slot earlier among the already-eligible leaders — never relaxing the trend gate, the
+    # validated equal-weight math, POS_CAP, the crowding trim, or the crash overlay. No theme
+    # flagged → this loop is a pure no-op and the book is byte-identical.
+    for i in range(1, len(eligible)):
+        if ranks[eligible[i]].get("val_upgrade") and not ranks[eligible[i - 1]].get("val_upgrade"):
+            eligible[i - 1], eligible[i] = eligible[i], eligible[i - 1]
     # DE-OVERLAP by parent super-theme: greedily fill the top-N by rank but cap at
     # MAX_PER_PARENT per parent, so the suggested book is diversified (not "4 flavours of
     # AI"). The validated math (trend-gated, ranked by score, equal-weight) is unchanged —
@@ -509,7 +517,9 @@ def allocate(preps: list[dict], ranks: dict, crowd: dict, rot: dict,
              "weight": round(weights[b], 3), "rank": ranks[b]["rank"],
              "vol_ann": _r(vols.get(b)),
              "crowding_z": crowd.get(b, {}).get("crowding_z"),
-             "crowded": crowd.get(b, {}).get("crowded", False)}
+             "crowded": crowd.get(b, {}).get("crowded", False),
+             "val_z": ranks[b].get("val_z"), "val_upgrade": bool(ranks[b].get("val_upgrade")),
+             "val_state": ranks[b].get("val_state")}
             for b in sorted(top, key=lambda x: ranks[x]["rank"])]
     cash = round(max(0.0, 1.0 - sum(s["weight"] for s in sugg)), 3)   # exact remainder of the rounded book
     return {"weights": sugg, "cash": cash,
@@ -637,6 +647,15 @@ def compute_narrative_rotation(region: str = "us") -> dict | None:
 
         ranks = rank_themes(preps)
 
+        # REAL-ACTIVITY VALIDATION overlay (display + bounded one-slot tie-break in allocate).
+        # Annotates ranks with val_z/val_state/val_upgrade from the Divergence Radar; NEVER
+        # touches score/rank/eligible (the price-scored core stays byte-identical). Additive.
+        try:
+            from engine import theme_validation
+            theme_validation.apply_validation(ranks, region)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.debug("theme_validation overlay skipped: %s", e)
+
         durab, crowd = {}, {}
         from engine import extension as ext_mod
         from engine import theme_crowding as tc
@@ -679,6 +698,8 @@ def compute_narrative_rotation(region: str = "us") -> dict | None:
                 "z_accel": rk["z_accel"], "gate": rk["gate"],
                 "etf_proxy": p.get("etf_proxy"),       # for the AI desk's scorable theme_rel_return falsifier
                 "durability": durab[bid], "crowding": crowd[bid],
+                "val_z": rk.get("val_z"), "val_upgrade": bool(rk.get("val_upgrade")),
+                "val_state": rk.get("val_state"),     # real-activity validation overlay (display)
             })
 
         vm = _validation_meta(cfg["phase0_file"])

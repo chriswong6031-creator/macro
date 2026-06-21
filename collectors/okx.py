@@ -7,6 +7,10 @@ geo-blocked 451/403, verified 2026-06-12).
   live append + cross-check.
 - open_interest: rubik daily OI (USD) — recent window only; bgeo
   open-interest-futures carries the 4y history.
+- spot_usdt_daily: BTC-USDT SPOT daily candles (UTC) — the offshore-USDT reference
+  the Coinbase Premium is measured against (Coinbase USD − OKX USDT). Self-owned and
+  fresh, vs the quota-limited bgeo coinbase-premium-index. Paginates back to OKX's
+  BTC-USDT spot floor (~2019) via the history-candles `after` cursor.
 """
 from __future__ import annotations
 
@@ -43,6 +47,9 @@ class OkxAdapter(Adapter):
         tk = self._taker_volume()
         if tk is not None:
             out["taker_volume"] = tk
+        sp = self._spot_candles(full_history)
+        if sp is not None:
+            out["spot_usdt_daily"] = sp
         if not out:
             raise ValueError("okx returned nothing")
         return out
@@ -102,6 +109,46 @@ class OkxAdapter(Adapter):
         df["date"] = pd.to_datetime(pd.to_numeric(df["ts"]), unit="ms").dt.normalize()
         df["ls_ratio"] = pd.to_numeric(df["ls_ratio"], errors="coerce")
         return df.set_index("date")[["ls_ratio"]].dropna().sort_index()
+
+    def _spot_candles(self, full_history: bool) -> pd.DataFrame | None:
+        """BTC-USDT spot daily (UTC) OHLCV, paginated back via the history-candles
+        `after` cursor (returns bars OLDER than the cursor ts). Incremental runs stop
+        once they reach stored history; first runs walk back to OKX's spot floor."""
+        last_stored = store.last_date(self.group, "spot_usdt_daily")
+        inst = self.cfg.get("spot_inst_id", "BTC-USDT")
+        bar = self.cfg.get("spot_bar", "1Dutc")
+        max_pages = int(self.cfg.get("spot_max_pages_first_run", 40))
+        pages = max_pages if (full_history or last_stored is None) else 4
+        rows: list[list] = []
+        after = ""  # cursor: history-candles returns records EARLIER than this ts
+        for _ in range(pages):
+            params = {"instId": inst, "bar": bar, "limit": "100"}
+            if after:
+                params["after"] = after
+            r = self.http_get(self.cfg["spot_history_url"], retries=self.cfg["retries"],
+                              params=params, timeout=30)
+            data = r.json().get("data", [])
+            if not data:
+                break
+            rows.extend(data)
+            oldest = min(int(x[0]) for x in data)
+            after = str(oldest)
+            if last_stored and not full_history:
+                if pd.to_datetime(oldest, unit="ms").date() <= last_stored:
+                    break
+            time.sleep(0.2)
+        if not rows:
+            return None
+        # OKX candle row: [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm]
+        df = pd.DataFrame(rows, columns=["ts", "open", "high", "low", "close", "vol",
+                                         "volccy", "volccyq", "confirm"])
+        df = df[df["confirm"] == "1"]                       # closed candles only (no partial day)
+        df.index = pd.to_datetime(pd.to_numeric(df["ts"]), unit="ms").dt.normalize()
+        for c in ("open", "high", "low", "close"):
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+        df["volume"] = pd.to_numeric(df["vol"], errors="coerce")
+        out = df[["open", "high", "low", "close", "volume"]].dropna(subset=["close"])
+        return out[~out.index.duplicated(keep="last")].sort_index()
 
     def _taker_volume(self) -> pd.DataFrame | None:
         """Rubik aggregate taker buy/sell volume → buy share = buy/(buy+sell).

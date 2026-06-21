@@ -31,14 +31,13 @@
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}macro.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('Regime · growth · inflation · nowcast', '周期 · 增长 · 通胀 · 即时预测') }}</span></a>
         <a href="{{ NP }}us_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · sectors · flows', '精选 · 板块 · 资金') }}</span></a>
-        <a href="{{ NP }}anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
+        <a href="{{ NP }}news.html">🗞️ {{ t('News', '新闻') }}<span class="d">{{ t('Macro · markets · sectors · baskets · China', '宏观 · 大盘 · 板块 · 篮子 · 中国') }}</span></a>
+        <a href="{{ NP }}baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
         <a href="{{ NP }}strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}ipo.html">🆕 {{ t('IPO Radar', '新股雷达') }}<span class="d">{{ t('IPO window · aftermarket reality', '新股窗口 · 二级市场现实') }}</span></a>
-        <a href="{{ NP }}baskets.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs S&P', '等权主题篮子 vs 标普') }}</span></a>
         <a href="{{ NP }}allocation.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
         <a href="{{ NP }}alerts.html">🚨 {{ t('Alert Center', '警报中心') }}<span class="d">{{ t('Ranked & triaged alerts', '分级分诊的警报') }}</span></a>
         <a href="{{ NP }}gex.html">🧲 {{ t('Options Desk', '期权台') }}<span class="d">{{ t('GEX · walls · vol surface', 'GEX · 墙 · 波动率曲面') }}</span></a>
-        <a href="{{ NP }}etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -46,9 +45,9 @@
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}china.html">📊 {{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('A-share regime · sectors · flows', 'A股周期 · 板块 · 资金') }}</span></a>
         <a href="{{ NP }}china_stocks.html">📈 {{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Standouts · alpha · setups', '精选 · 阿尔法 · 布局') }}</span></a>
-        <a href="{{ NP }}china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
         <a href="{{ NP }}baskets_china.html">🧺 {{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Equal-weight theme baskets vs CSI 300', '等权主题篮子 vs 沪深300') }}</span></a>
         <a href="{{ NP }}allocation_china.html">🔄 {{ t('Narrative Rotation', '主题轮动') }}<span class="d">{{ t('Which theme to hold & when to rotate', '持有哪个主题 · 何时轮动') }}</span></a>
+        <a href="{{ NP }}china_strategies.html">🎛️ {{ t('Strategies', '策略') }}<span class="d">{{ t('Tactical strategy scorecards', '战术策略记分卡') }}</span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -102,8 +101,14 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 {{ t('Research', '研究') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="{{ NP }}intelligence_hub.html">🛰️ {{ t('Intelligence Hub', '情报中心') }}<span class="d">{{ t('Central command · all desks fused · 2nd/3rd-order reads', '中枢指挥 · 所有信号台融合 · 二三阶推理') }}</span></a>
         <a href="{{ NP }}reports.html">📰 {{ t('Research Reports', '研究报告') }}<span class="d">{{ t('In-depth market & macro reports', '深度市场与宏观报告') }}</span></a>
         <a href="{{ NP }}policy_watch.html">🏛️ {{ t('Fed & Policy Watch', '美联储与政策观察') }}<span class="d">{{ t('Fed + Administration intent & capital rotation', '美联储+政府意图与资本轮动') }}</span></a>
+        <a href="{{ NP }}alt_data.html">📊 {{ t('Alternative Data', '替代数据') }}<span class="d">{{ t('Signal intelligence · convergence · influence graph · actionable', '信号情报 · 汇聚 · 影响力图谱 · 可操作') }}</span></a>
+        <a href="{{ NP }}radar.html">🛰️ {{ t('Divergence Radar', '背离雷达') }}<span class="d">{{ t('Real activity vs price · variant edge', '真实活动 vs 价格 · 变量边际') }}</span></a>
+        <a href="{{ NP }}demand.html">🧭 {{ t('Demand Desk', '需求台') }}<span class="d">{{ t('Forward demand vs the priced consensus', '前瞻需求 vs 已定价共识') }}</span></a>
+        <a href="{{ NP }}etfs.html">🐳 {{ t('ETF Flows', 'ETF资金流') }}<span class="d">{{ t('Fund flow monitor', '资金流监控') }}</span></a>
+        <a href="{{ NP }}anticipation.html">🔮 {{ t('Anticipation', '预判') }}<span class="d">{{ t('Multi-horizon outcome cones', '多周期结果锥') }}</span></a>
         <a href="{{ NP }}transmission.html">🔀 {{ t('Rate & Inflation Transmission', '利率与通胀传导') }}<span class="d">{{ t('How rates & inflation move every asset', '利率与通胀如何驱动各类资产') }}</span></a>
         <a href="{{ NP }}crossasset.html">🧭 {{ t('Cross-Asset', '跨资产') }}<span class="d">{{ t('Correlations · trend · global liquidity', '相关性 · 趋势 · 全球流动性') }}</span></a>
         <a href="{{ NP }}signal_lab.html">🔬 {{ t('Signal Lab', '信号实验室') }}<span class="d">{{ t('Consolidated validation scorecard', '验证记分卡汇总') }}</span></a>

@@ -84,6 +84,16 @@ _THEMES_TIER = {
     "theme_emerging": "watch", "reco_change": "watch",
     "leadership_rotation": "context",
 }
+# Forming-narrative detections (engine.emergence_alerts) are a CONTEXT watchlist — a newly
+# coherent group of names carries no validated forward edge, so it never rises above context.
+_EMERGENCE_TIER = {"narrative_forming": "context"}
+# Alternative-data convergence (engine.altdata_alerts) is an unusual-activity flag — a ticker
+# lit by several independent political/insider/contract channels at once carries no validated
+# forward edge yet, so the loudest it gets is 'watch'.
+_ALTDATA_TIER = {"convergence": "watch"}
+# Demand-variant divergences (engine.demand_alerts) are display-only / not a buy
+# signal until the forward ledger earns a verdict → context tier only.
+_DEMAND_TIER = {"demand_ahead": "context", "demand_at_risk": "context"}
 
 # Source display metadata: label (EN/ZH), icon, and the page each alert deep-links to.
 SOURCES = {
@@ -93,6 +103,9 @@ SOURCES = {
     "vector":    {"label": "Bitcoin Vector",  "label_zh": "比特币向量", "icon": "₿",  "page": "vector.html"},
     "commodity": {"label": "Commodity Vector","label_zh": "大宗商品",   "icon": "🛢", "page": "commodities.html"},
     "themes":    {"label": "Theme Rotation",  "label_zh": "主题轮动",   "icon": "🧺", "page": "baskets.html"},
+    "emergence": {"label": "Forming Narratives","label_zh": "成形叙事", "icon": "🔥", "page": "baskets.html"},
+    "altdata":   {"label": "Alternative Data",  "label_zh": "替代数据",   "icon": "📊", "page": "alt_data.html"},
+    "demand":    {"label": "Demand Desk",      "label_zh": "需求台",     "icon": "🧭", "page": "demand.html"},
 }
 
 # Risk-OFF / stress alert families whose sign is unambiguous — only these get a
@@ -380,7 +393,9 @@ def _jsonl_raw(source: str, today: pd.Timestamp, cutoff: pd.Timestamp,
         mod = {
             "bonds": "bonds_alerts", "forex": "forex_alerts",
             "vector": "btc_alerts", "commodity": "commodity_alerts",
-            "themes": "theme_alerts",
+            "themes": "theme_alerts", "emergence": "emergence_alerts",
+            "altdata": "altdata_alerts",
+            "demand": "demand_alerts",
         }[source]
         m = __import__("engine." + mod, fromlist=[mod])
         for e in m.load_events():
@@ -433,6 +448,9 @@ def build_triage(days: int = 30, today: date | None = None,
     raw += _jsonl_raw("vector", today_ts, cutoff, {})       # tier inline on events
     raw += _jsonl_raw("commodity", today_ts, cutoff, _COMMODITY_TIER)
     raw += _jsonl_raw("themes", today_ts, cutoff, _THEMES_TIER)
+    raw += _jsonl_raw("emergence", today_ts, cutoff, _EMERGENCE_TIER)
+    raw += _jsonl_raw("altdata", today_ts, cutoff, _ALTDATA_TIER)
+    raw += _jsonl_raw("demand", today_ts, cutoff, _DEMAND_TIER)
 
     enriched: list[dict] = []
     for a in raw:

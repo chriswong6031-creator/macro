@@ -1,0 +1,275 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{#- inline SVG icons (Lucide-style, currentColor) -#}
+{% macro ic(name) -%}
+{% set P = {
+  'command':  '<path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/>',
+  'news':     '<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/>',
+  'alt':      '<path d="M3 21h18M5 21V9m5 12V5m5 16v-8m5 8V3"/>',
+  'radar':    '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 7"/>',
+  'board':    '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M8 14l2.5-3 2.5 2 3-4"/>',
+  'policy':   '<path d="M3 21h18M5 21V10m4 11V10m6 11V10m4 11V10M12 3 3 8h18z"/>',
+  'edge':     '<path d="m13 3-9 11h7l-1 7 9-11h-7z"/>',
+  'warn':     '<path d="M12 3 2.5 20h19zM12 10v4m0 3v.5"/>',
+  'sector':   '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/>',
+  'pulse':    '<path d="M3 12h4l2.5-7 4 14 2.5-7H21"/>',
+  'cal':      '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/>'
+} %}
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ P.get(name,'')|safe }}</svg>
+{%- endmacro %}
+{#- 5-desk agreement matrix: one dot per desk coloured by direction -#}
+{% macro matrix(dirs) -%}
+<span class="mtx" title="news · alt · radar · board · policy">
+{%- for k in ['news','alt','radar','standout','policy'] -%}
+{% set d = dirs.get(k) %}
+<span class="cell {{ 'up' if d==1 else 'dn' if d==-1 else 'nz' if d==0 else 'off' }}"></span>
+{%- endfor -%}
+</span>
+{%- endmacro %}
+{% set MC = hub.macro_context or {} %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Intelligence Hub', '情报中心') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  body.page-hub{ font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  #sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
+  @media(max-width:560px){ #sky{--cs:clamp(92px,26vw,124px)} }
+  #sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
+    transform:translate(-50%,calc(-50% + 80vh));opacity:0;
+    transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
+  #sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
+  #sky[data-sky="night"] #sky-moon{transform:translate(-50%,-50%);opacity:1}
+  #sky-sun{background:radial-gradient(circle at 50% 50%,#fffdf7 0%,#fff2cc 20%,#ffd87f 40%,#ffb84d 58%,rgba(255,156,54,.34) 76%,transparent 84%);
+    box-shadow:0 0 46px 6px rgba(255,226,150,.6),0 0 110px 28px rgba(255,192,92,.38),0 0 220px 86px rgba(255,170,68,.18)}
+  #sky-moon{background:radial-gradient(circle at 34% 28%,#ffffff 0%,#eef2fb 26%,#cdd8ee 58%,#9fafcf 100%);
+    box-shadow:inset -24px -20px 50px rgba(16,26,54,.58),inset 12px 9px 24px rgba(255,255,255,.42),0 0 56px 10px rgba(150,182,242,.3)}
+  .hub-wrap{ max-width:1240px; margin:0 auto; padding:10px 18px 72px; position:relative; z-index:1; }
+  body.page-hub > .site-nav{ max-width:1240px; margin:14px auto 8px; padding:0 18px; }
+  .ic-svg{ width:15px;height:15px;flex:none;vertical-align:middle; }
+  /* hero */
+  .hh{ margin:14px 0 8px; }
+  .hh .eyebrow{ display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--muted);
+    padding:4px 12px;border-radius:999px;background:color-mix(in srgb,var(--panel) 70%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 75%,transparent);backdrop-filter:blur(8px); }
+  .hh .live{ width:7px;height:7px;border-radius:50%;background:var(--ok);position:relative; }
+  .hh .live::after{ content:"";position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--ok);opacity:.5;animation:hp 2.4s ease-out infinite; }
+  @keyframes hp{0%{transform:scale(.6);opacity:.6}100%{transform:scale(1.7);opacity:0}}
+  .hh h1{ font-size:clamp(30px,4.6vw,50px);font-weight:800;letter-spacing:-.022em;margin:11px 0 5px;
+    background:linear-gradient(110deg,var(--text),color-mix(in srgb,var(--info) 65%,var(--text)) 60%,color-mix(in srgb,var(--text) 50%,transparent));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    text-shadow:0 1px 36px color-mix(in srgb,var(--info) 24%,transparent); }
+  .hh p{ margin:0;color:var(--muted);max-width:720px;font-size:14.5px;line-height:1.5; }
+  /* macro command bar */
+  .cmdbar{ display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px; }
+  .cmdbar .mc{ font-size:12px;font-weight:600;padding:6px 12px;border-radius:10px;display:inline-flex;gap:7px;align-items:center;
+    background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
+  .cmdbar .mc b{ color:var(--text);font-weight:700; } .cmdbar .mc span{ color:var(--muted); }
+  .cmdbar .mc.hot{ border-color:color-mix(in srgb,var(--up) 50%,var(--line));color:var(--up); }
+  .posture{ margin:8px 0 2px;font-size:13px;color:color-mix(in srgb,var(--text) 78%,transparent);
+    padding:10px 14px;border-left:3px solid var(--info);border-radius:0 12px 12px 0;
+    background:color-mix(in srgb,var(--info) 7%,transparent); }
+  /* desk status board */
+  .desks{ display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:16px 0 6px; }
+  .desk{ padding:13px 14px;border-radius:14px;text-decoration:none;display:block;transition:.16s ease;
+    background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent); }
+  .desk:hover{ transform:translateY(-3px);border-color:color-mix(in srgb,var(--info) 45%,var(--line)); }
+  .desk .dh{ display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text); }
+  .desk .dh .dot{ width:7px;height:7px;border-radius:50%;margin-left:auto;background:var(--down); }
+  .desk .dh .dot.on{ background:var(--ok);box-shadow:0 0 8px color-mix(in srgb,var(--ok) 70%,transparent); }
+  .desk small{ display:block;margin-top:5px;color:var(--muted);font-size:11.5px; }
+  /* band header */
+  .band{ display:flex;align-items:center;gap:12px;margin:30px 0 13px; }
+  .band h2{ font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;
+    white-space:nowrap;display:flex;align-items:center;gap:7px; }
+  .band h2 .ic-svg{ color:var(--accent,var(--info)); }
+  .band .ln{ flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent); }
+  .band .cnt{ font-size:11.5px;color:color-mix(in srgb,var(--text) 52%,transparent);white-space:nowrap; }
+  /* glass */
+  .glass{ background:color-mix(in srgb,var(--panel) 82%,transparent);border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+    border-radius:15px;backdrop-filter:blur(13px) saturate(1.08);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),0 8px 26px -18px rgba(0,0,0,.5); }
+  .acc{ position:relative;overflow:hidden; }
+  .acc::before{ content:"";position:absolute;top:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,var(--accent,var(--info)),transparent 78%);opacity:.85; }
+  /* alert cards */
+  .alerts{ display:grid;gap:13px;grid-template-columns:1fr 1fr; }
+  @media(max-width:760px){ .alerts{ grid-template-columns:1fr; } }
+  .alert{ padding:14px 15px; }
+  .alert h3{ font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:8px; }
+  .alert h3 .ic-svg{ width:16px;height:16px; }
+  .alert .arow{ display:flex;align-items:center;gap:9px;padding:8px 0;border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
+  .alert .arow:first-of-type{ border-top:0; }
+  .alert .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:52px; }
+  .alert .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
+  /* command list */
+  .cmd{ display:flex;flex-direction:column;gap:8px; }
+  .row{ display:grid;grid-template-columns:128px 92px 56px 1fr;gap:12px;align-items:center;padding:11px 14px; }
+  @media(max-width:760px){ .row{ grid-template-columns:96px 70px 1fr;gap:9px; } .row .conv{ display:none; } }
+  .row .id .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:14px; }
+  .row .id .nm{ font-size:10.5px;color:var(--muted);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px; }
+  .convbar{ position:relative;height:7px;border-radius:99px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden; }
+  .convbar i{ position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--info),var(--up)); }
+  .convbar.dn i{ background:linear-gradient(90deg,var(--warn),var(--down)); }
+  .convn{ font-size:11px;color:var(--muted);margin-top:3px;text-align:right; }
+  .conf{ font-size:11px;font-weight:700;text-align:center;color:var(--muted); }
+  .conf b{ font-size:15px;color:var(--text);display:block; }
+  .rd2{ font-size:12.5px;color:color-mix(in srgb,var(--text) 76%,transparent);line-height:1.4; }
+  .flags{ display:flex;gap:5px;flex-wrap:wrap;margin-top:5px; }
+  .fl{ font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:1px 7px;border-radius:6px;text-transform:uppercase;
+    background:color-mix(in srgb,var(--text) 9%,transparent);color:var(--muted); }
+  .fl.edge,.fl.stealth{ background:color-mix(in srgb,var(--info) 22%,transparent);color:var(--info); }
+  .fl.crowd{ background:color-mix(in srgb,var(--warn) 24%,transparent);color:var(--warn); }
+  .fl.conf{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
+  .fl.fade,.fl.conflict{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
+  .fl.pol{ background:color-mix(in srgb,#8b5cf6 22%,transparent);color:#a78bfa; }
+  .fl.iso{ background:color-mix(in srgb,var(--orange,var(--warn)) 18%,transparent);color:var(--orange,var(--warn)); }
+  .peers{ font-size:9.5px;font-weight:600;color:color-mix(in srgb,var(--text) 50%,transparent);
+    font-family:ui-monospace,Menlo,monospace;padding:1px 4px; }
+  /* agreement matrix */
+  .mtx{ display:inline-flex;gap:3px;align-items:center; }
+  .mtx .cell{ width:9px;height:14px;border-radius:3px;background:color-mix(in srgb,var(--line) 70%,transparent); }
+  .mtx .cell.up{ background:var(--up); } .mtx .cell.dn{ background:var(--down); }
+  .mtx .cell.nz{ background:color-mix(in srgb,var(--muted) 60%,transparent); }
+  .mtx .cell.off{ background:color-mix(in srgb,var(--line) 45%,transparent);opacity:.5; }
+  .fal{ font-size:10.5px;color:color-mix(in srgb,var(--text) 50%,transparent);margin-top:4px; }
+  .fal b{ color:color-mix(in srgb,var(--down) 80%,var(--text));font-weight:600; }
+  /* sector heat */
+  .heat{ display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); }
+  .sec{ padding:11px 13px; }
+  .sec .sh{ display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700; }
+  .sec .etf{ font-family:ui-monospace,Menlo,monospace;font-size:10px;padding:1px 6px;border-radius:6px;
+    background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
+  .sec .pol{ margin-left:auto;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:6px; }
+  .sec .pol.up{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
+  .sec .pol.dn{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
+  .sec .meter{ height:6px;border-radius:99px;margin:8px 0 6px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden; }
+  .sec .meter i{ display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--info),var(--up)); }
+  .sec small{ font-size:10.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap; }
+  .sec small b{ color:var(--text); }
+  .disc{ font-size:11px;color:color-mix(in srgb,var(--text) 48%,transparent);margin-top:14px;line-height:1.5; }
+  .empty{ font-size:12.5px;color:var(--muted);padding:9px 0; }
+  footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
+  @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
+</style>
+</head>
+<body class="page-hub">
+<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div></div>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-search"><span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search" placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div></div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+    <div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>
+  </div>
+</nav>
+
+<div class="hub-wrap">
+  <header class="hh">
+    <span class="eyebrow"><span class="live"></span>{{ t('Central command · five desks fused', '中枢指挥 · 五台融合') }}
+      {%- if built %} · <time datetime="{{ built }}">{{ built[:10] }}</time>{% endif %}</span>
+    <h1>{{ t('Intelligence Hub', '情报中心') }}</h1>
+    <p>{{ t('One reasoned read per name across every signal desk — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent. Composite conviction rewards independent agreement and is docked by an unanswered falsifier; the flags name the setup. Context only, never a trade trigger.',
+            '对每只标的，融合所有信号台给出一个推理结论 —— 新闻舆情、替代数据聪明钱、背离雷达、因子买入榜、政策意图。综合信念奖励独立一致性，并因未被回应的证伪点而扣分；标签命名形态。仅供参考，绝非交易触发。') }}</p>
+  </header>
+
+  {# ── macro command frame ── #}
+  <div class="cmdbar">
+    {% if MC.regime %}<span class="mc hot"><b>{{ MC.regime }}</b>{% if MC.quad %} <span>{{ MC.quad }}</span>{% endif %}</span>{% endif %}
+    {% if MC.cycle %}<span class="mc">{{ t('Cycle', '周期') }} <b>{{ MC.cycle }}</b></span>{% endif %}
+    {% if MC.liquidity %}<span class="mc">{{ t('Liquidity', '流动性') }} <b>{{ MC.liquidity }}</b></span>{% endif %}
+    {% if MC.fed_stance %}<span class="mc">{{ t('Fed', '美联储') }} <b>{{ MC.fed_stance }}</b></span>{% endif %}
+    {% if hub.n_actionable %}<span class="mc">{{ t('Actionable', '可操作') }} <b>{{ hub.n_actionable }}</b></span>{% endif %}
+    {% if hub.n_universe %}<span class="mc">{{ t('Universe', '覆盖') }} <b>{{ hub.n_universe }}</b></span>{% endif %}
+  </div>
+  {% if MC.posture %}<div class="posture">{{ ic('command') }} {{ MC.posture }}</div>{% endif %}
+
+  {# ── desk status board ── #}
+  <div class="desks">
+    {% set DK = [('news','News','news.html','News flow · the tape'),
+                 ('alt_data','Alt-Data','alt_data.html','Smart-money signal'),
+                 ('radar','Divergence Radar','radar.html','Activity vs price'),
+                 ('standout','Buy-Board','us_stocks.html','Factor standouts'),
+                 ('policy','Policy Watch','policy_watch.html','Realpolitik intent')] %}
+    {% for key,label,href,desc in DK %}{% set live = (hub.desks.get(key) or {}).get('live') %}
+    <a class="desk" href="{{ href }}">
+      <div class="dh">{{ ic(key if key in ['news','radar','policy'] else ('alt' if key=='alt_data' else 'board')) }} {{ label }}<span class="dot {{ 'on' if live else '' }}"></span></div>
+      <small>{{ desc }}{% if not live %} · {{ t('offline', '离线') }}{% endif %}</small>
+    </a>{% endfor %}
+  </div>
+
+  {# ── divergence alerts (highest value) ── #}
+  {% set EE = hub.divergence_alerts.early_edge %}{% set CT = hub.divergence_alerts.crowded_top %}
+  <div class="band"><h2 style="--accent:var(--info)">{{ ic('edge') }} {{ t('Divergence alerts', '背离警报') }}</h2><span class="ln"></span>
+    <span class="cnt">{{ t('where the desks disagree — the edge', '各台分歧之处 —— 即优势') }}</span></div>
+  <div class="alerts">
+    <div class="glass acc alert" style="--accent:var(--info)">
+      <h3>{{ ic('edge') }} {{ t('Early edge — smart money first', '抢先优势 —— 聪明钱先行') }} <span class="cnt">{{ EE|length }}</span></h3>
+      {% if EE %}{% for d in EE %}<div class="arow">
+        <span class="tk">{{ d.ticker }}</span><span class="rd">{{ d.read }}</span></div>{% endfor %}
+      {% else %}<div class="empty">{{ t('No stealth-accumulation setups today.', '今日无潜伏吸筹形态。') }}</div>{% endif %}
+    </div>
+    <div class="glass acc alert" style="--accent:var(--warn)">
+      <h3>{{ ic('warn') }} {{ t('Crowded top — distribution risk', '拥挤顶部 —— 派发风险') }} <span class="cnt">{{ CT|length }}</span></h3>
+      {% if CT %}{% for d in CT %}<div class="arow">
+        <span class="tk">{{ d.ticker }}</span><span class="rd">{{ d.read }}</span></div>{% endfor %}
+      {% else %}<div class="empty">{{ t('No crowded-top setups today.', '今日无拥挤顶部形态。') }}</div>{% endif %}
+    </div>
+  </div>
+
+  {# ── command list (ranked dossiers) ── #}
+  <div class="band"><h2 style="--accent:var(--up)">{{ ic('command') }} {{ t('Command — ranked by composite conviction', '指挥榜 —— 按综合信念排序') }}</h2><span class="ln"></span>
+    <span class="cnt">{{ t('5-desk agreement', '五台一致性') }}</span></div>
+  <div class="cmd">
+    {% for d in hub.command %}
+    <div class="glass acc row" style="--accent:{{ 'var(--up)' if d.lean>0 else 'var(--down)' if d.lean<0 else 'var(--info)' }}">
+      <div class="id"><span class="tk">{{ d.ticker }}</span><span class="nm">{{ d.name }}</span>{{ matrix(d.directions) }}</div>
+      <div class="conv">
+        <div class="convbar {{ 'dn' if d.lean<0 else '' }}"><i style="width:{{ d.composite_conviction }}%"></i></div>
+        <div class="convn">{{ d.composite_conviction }}</div>
+      </div>
+      <div class="conf"><b>{{ d.n_confirm }}</b>{{ t('desks', '台') }}</div>
+      <div>
+        <div class="rd2">{{ d.read }}</div>
+        <div class="flags">{% for f in d.flags %}<span class="fl {{ 'edge' if f in ['early_edge'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f in ['confirmed_trend','theme_wide'] else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned'] else 'iso' if f=='isolated' else '' }}">{{ f.replace('_',' ') }}</span>{% endfor %}
+          {%- if d.peers %}<span class="peers" title="basket peers also confirming">+{{ d.peer_confirm }} {{ t('peers', '同伴') }}: {{ d.peers|join(' ') }}</span>{% endif %}</div>
+        {% if d.falsifier %}<div class="fal">{{ t('Falsifier', '证伪点') }}: <b>{{ d.falsifier }}</b></div>{% endif %}
+      </div>
+    </div>{% endfor %}
+  </div>
+
+  {# ── sector heat ── #}
+  {% if hub.sector_heat %}
+  <div class="band"><h2 style="--accent:var(--orange)">{{ ic('sector') }} {{ t('Sector heat', '板块热度') }}</h2><span class="ln"></span>
+    <span class="cnt">{{ t('where the desks cluster', '各台聚集之处') }}</span></div>
+  <div class="heat">
+    {% for s in hub.sector_heat %}
+    <div class="glass acc sec" style="--accent:{{ 'var(--up)' if s.net_lean>0 else 'var(--down)' if s.net_lean<0 else 'var(--info)' }}">
+      <div class="sh"><span class="etf">{{ s.etf }}</span> {{ s.name }}
+        {% if s.policy_tilt %}<span class="pol {{ 'up' if s.policy_tilt>0 else 'dn' }}">{{ t('policy', '政策') }} {{ '↑' if s.policy_tilt>0 else '↓' }}</span>{% endif %}</div>
+      <div class="meter"><i style="width:{{ s.mean_conviction }}%"></i></div>
+      <small><span>{{ t('mean', '均') }} <b>{{ s.mean_conviction }}</b></span><span>{{ t('names', '名') }} <b>{{ s.n }}</b></span>
+        {% if s.early_edge %}<span style="color:var(--info)">{{ t('edge', '优势') }} <b>{{ s.early_edge }}</b></span>{% endif %}
+        {% if s.crowded_top %}<span style="color:var(--warn)">{{ t('crowded', '拥挤') }} <b>{{ s.crowded_top }}</b></span>{% endif %}</small>
+    </div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <footer class="hf">
+    {{ t('Built', '生成于') }} <time datetime="{{ built }}">{{ built[:16].replace('T',' ') }}</time> UTC ·
+    {{ hub.disclaimer }}
+  </footer>
+</div>
+<script src="theme.js"></script>
+<script defer src="sky.js"></script>
+</body>
+</html>
