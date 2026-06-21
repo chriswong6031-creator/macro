@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from engine import stock_score  # noqa: E402
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
+from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -446,6 +447,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
     for safe, rec in to_write.values():
+        rec["view"] = stock_view.build_view(rec, "CA")   # canonical render model (rebuilt below once factor_beta lands)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     # descriptive FUNDAMENTALS (yfinance get_info: valuation + forward-val + sell-side
@@ -491,6 +493,7 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             rec = json.loads(fp.read_text())
             rec.update(patch)
+            rec["view"] = stock_view.build_view(rec, "CA")   # rebuild so the commodity_beta card appears
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001
             continue

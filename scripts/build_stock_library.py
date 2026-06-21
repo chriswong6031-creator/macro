@@ -31,6 +31,7 @@ from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import stock_view  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
 from engine import pullback_zone  # noqa: E402
 from engine import dannytrades_chip as dt_chip  # noqa: E402
@@ -1178,6 +1179,10 @@ def main() -> int:
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
     stock_score.attach_panel_scores(profiles)
     for safe, rec in to_write:
+        # canonical render model (engine/stock_view) — built AFTER attach_panel_scores so
+        # the view's score/band match the final within-market percentile. Additive: the
+        # shared stockview.js renders rec["view"]; legacy panels still read rec.* directly.
+        rec["view"] = stock_view.build_view(rec, "US")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
     # flush the accruing ladder-transition log in one idempotent, atomic write
     try:

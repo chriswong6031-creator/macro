@@ -28,6 +28,8 @@ from engine import vol_squeeze  # noqa: E402  — single-stock volatility black 
 from engine.cycles import analyze  # noqa: E402
 from engine.intl_stocks import compute_intl_alpha, panel  # noqa: E402
 from engine.setups import rank_setups, setup_score  # noqa: E402
+from engine import stock_score  # noqa: E402
+from engine import stock_view  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -225,6 +227,8 @@ def main(alpha: dict | None = None) -> dict | None:
         uni.append((ticker, closes[ticker], str(m["name"]), str(m["sector"]),
                     str(m["flag"]), str(m["market"])))
     recs = _analyze_universe(uni)           # parallel analyze() fan-out (order-preserving)
+    profiles: dict[str, dict] = {}
+    to_write: list[tuple[str, dict]] = []
     for (ticker, close, name, sector, flag, market), rec in zip(uni, recs):
         if rec is None:
             failed += 1
@@ -244,14 +248,28 @@ def main(alpha: dict | None = None) -> dict | None:
                     rec["anticipation"] = _ant
             except Exception:  # noqa: BLE001 — additive cone, never fatal
                 pass
+        # unified Conviction Profile (engine/stock_score, INTL market). Intl is
+        # momentum-persistent like the TSX → residual-momentum selection prior, framed as
+        # unvalidated context. The explicit INTL market avoids the HK no-alpha/never-Buy
+        # fall-through that calling conviction_profile(rec, "INTL") used to hit.
+        norm = stock_score.normalize_rec(rec, "INTL")
+        rec["conviction"] = stock_score.conviction_profile(
+            norm, "INTL", ctx={"as_of": (alpha or {}).get("as_of")})
+        profiles[ticker] = rec["conviction"]
         safe = ticker.replace("=", "_").replace("^", "_")
-        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
+        to_write.append((safe, rec))
         idx = {"t": ticker, "n": rec["name"], "s": rec["sector"], "st": rec["ladder"]["state"],
                "fl": rec["flag"], "mk": rec["market"]}
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)
         built += 1
+
+    # within-market percentile display score (mutates each conviction in place), then write
+    stock_score.attach_panel_scores(profiles)
+    for safe, rec in to_write:
+        rec["view"] = stock_view.build_view(rec, "INTL")
+        (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     (outdir / "index.json").write_text(json.dumps(index))
     # Bespoke chart OHLC (close-only area series) read by intl_stock.html's chart.js —

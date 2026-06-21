@@ -384,6 +384,7 @@
   .aq-foot { color:var(--muted); font-size:11px; margin:9px 0 0; font-style:italic; }
   @media (max-width:560px){ .aq-read{ grid-template-columns:14px 1fr; }
     .aq-read .aqk{ font-weight:700; } .aq-read .aqd{ grid-column:1 / -1; padding-left:23px; } }
+{% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
@@ -435,25 +436,35 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- legacy heroes — populated only as a FALLBACK if stockview.js fails to load -->
       <div id="r_glance" class="glance" style="display:none"></div>
-      <!-- unified Conviction Profile hero — the SAME block the standout card shows -->
       <div id="r_conviction" class="conv" style="display:none"></div>
-      <!-- bold VERDICT + at-a-glance SIGNAL STRIP (replace the thin entry bar) -->
-      <div id="r_verdict" class="verdict"></div>
-      <div id="r_sigstrip" class="sigstrip"></div>
-      <!-- bottom-confidence box (multi-TF, bottoming states only) -->
-      <div id="r_bc" class="bcbox" style="display:none"></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <p id="r_early" class="early" style="display:none"></p>
-      <p id="r_macro" class="macro-caution" style="display:none"></p>
+      <div id="r_verdict" class="verdict" style="display:none"></div>
+      <div id="r_sigstrip" class="sigstrip" style="display:none"></div>
       <div id="r_macrosens" class="macro-sens" style="display:none"></div>
       <div id="r_altdata" class="macro-sens" style="display:none"></div>
       <div id="r_dtcontra" class="dt-contra" style="display:none"></div>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+        <div id="r_bc" class="bcbox" style="display:none"></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <p id="r_early" class="early" style="display:none"></p>
+        <p id="r_macro" class="macro-caution" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
+    <details class="sv-group"><summary>{{ t('🔮 Outlook &amp; AI view', '🔮 前瞻与 AI 观点') }}</summary>
     <div class="panel" id="panel_anticipation" style="display:none">
       <h2>🔮 {{ t('Anticipation — multi-horizon outcome cone', '预判 — 多周期结果锥') }}
         <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px">{{ t('all assets →', '全部标的 →') }}</a></h2>
@@ -471,7 +482,8 @@
       <h2>🧠 {{ t('AI brief — research context', 'AI 简报 — 研究背景') }}</h2>
       <div id="stock-brief-body"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals &amp; financials', '📊 基本面与财务') }}</summary>
     <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
     <div class="panel" id="panel_profile" style="display:none">
       <h2>🏢 {{ t('Business profile', '公司概况') }}</h2>
@@ -537,7 +549,8 @@
           "该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。") }}</h2>
       <div id="r_alpha"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary>{{ t('🏦 Options, positioning &amp; ownership', '🏦 期权、持仓与机构') }}</summary>
     <div class="panel" id="panel_gex" style="display:none">
       <h2>🎯 {{ t('Options &amp; dealer gamma (GEX)', '期权与做市商Gamma') }}</h2>
       <div id="r_gex"></div>
@@ -575,7 +588,8 @@
           "哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。") }}</h2>
       <div id="r_smartmoney"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
     <div class="panel">
       <h2>{{ t('Chart', '图表') }}</h2>
       <div id="tvbox"></div>
@@ -603,10 +617,15 @@
         周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</h2>
       <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
+      'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script src="stockbrief.js"></script>
 <script src="aidesk_lean.js"></script>
 <script>
@@ -1014,9 +1033,10 @@
         chips.push(gchip(LF('verdict'), '<span class="cvchip band-' + _cv.band + '">' + _cv.score + '</span>'));
       else chips.push(gchip(LF('verdict'), '<span class="muted">' + LF('na') + '</span>', true));
     }
-    var glance = el('r_glance');
-    if (chips.length) { glance.innerHTML = chips.join(''); glance.style.display = 'flex'; }
-    else glance.style.display = 'none';
+    // The at-a-glance chips (quality grade / valuation / shareholder-yld / next-earnings /
+    // the "Master verdict" dup of conviction.score) are now fully covered by the unified
+    // decision band + evidence lanes — keep r_glance retired so nothing is restated.
+    var glance = el('r_glance'); if (glance) glance.style.display = 'none';
 
     if (prof) {
       el('r_profile_desc').textContent = lz(prof.description, prof.description_zh) || LF('building');
@@ -1137,10 +1157,8 @@
         eh += '<table class="earntbl"><tr><th>' + lz('quarter','季度') + '</th><th>' + lz('actual','实际') +
               '</th><th>' + lz('est','预期') + '</th><th>' + lz('surprise','超预期') + '</th></tr>' + er + '</table>';
       }
-      el('r_earn').innerHTML = eh || ('<div class="stub">' + LF('earnsoon') + '</div>');
-      show('panel_earn', true);
-    } else if (isEquity) {
-      el('r_earn').innerHTML = '<div class="stub">' + LF('earnsoon') + '</div>'; show('panel_earn', true);
+      if (eh) { el('r_earn').innerHTML = eh; show('panel_earn', true); }
+      else show('panel_earn', false);          // no data → hide, don't show a "coming soon" stub
     } else show('panel_earn', false);
 
     if (fac) {
@@ -1194,19 +1212,16 @@
       show('panel_pos', true);
     } else show('panel_pos', false);
 
-    if (isEquity) {
-      var ah;
-      if (an && an.tier === 'deep') {
-        var ar = [];
-        if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
-        if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
-        if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
-        if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
-        if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
-        ah = (ar.length ? '<div class="posbox">' + ar.join('') + '</div>' : '') + '<p class="srcline">' + LF('deeponly') + '</p>';
-      } else { ah = '<div class="stub">' + LF('deeponly') + '</div>'; }
-      el('r_analyst').innerHTML = ah;
-      show('panel_analyst', true);
+    if (isEquity && an && an.tier === 'deep') {
+      var ar = [];
+      if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
+      if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
+      if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
+      if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
+      if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
+      // show the figures we have; no "coming in a later phase" stub. Hide if none.
+      if (ar.length) { el('r_analyst').innerHTML = '<div class="posbox">' + ar.join('') + '</div>'; show('panel_analyst', true); }
+      else show('panel_analyst', false);
     } else show('panel_analyst', false);
   }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
@@ -1665,9 +1680,17 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
 
-    renderConviction(d);
-    renderVerdict(d);
-    renderSignalStrip(d);
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // The shared renderer replaces the four competing top-line verdicts + the macro-sens
+    // and dt-contra heroes with ONE decision band + fingerprint + honesty row + evidence
+    // lanes. Falls back to the legacy heroes only if stockview.js failed to load.
+    if (!(window.SV && d.view && window.SV.mount(d))) {
+      renderConviction(d);
+      renderVerdict(d);
+      renderSignalStrip(d);
+      renderMacroSens(d);
+      renderDtContra(d);
+    }
     renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
@@ -1745,9 +1768,9 @@
     var macro = document.getElementById('r_macro');
     if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
     else { macro.style.display = 'none'; }
-    renderMacroSens(d);
-    renderAltData(d);
-    renderDtContra(d);
+    // (macro-sensitivity + dt-contra now fold into the view-model: evidence.macro +
+    //  falsifiers — rendered by SV.mount above; the legacy renders run only on fallback.)
+    renderAltData(d);   // alt-data is a deep context panel (not a competing verdict)
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -1771,11 +1794,23 @@
     renderFundamentals(d);
     renderDemandContext(d);
     renderFundFlow(d);
-    renderAlpha(d);
-    renderFragility(d);
+    // (relative-strength → evidence.rel_strength; fragility → falsifiers — both in SV.mount.
+    //  The standalone alpha/fragility panels are retired to avoid restating the same read.)
     renderSmartMoney(d);
 
     tvLoad(d);
+    hideEmptyGroups();
+  }
+
+  // A deep-layer disclosure group whose panels all came back empty (no data for this
+  // name) shouldn't show a dangling section header — hide it.
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
 
   // Bespoke chart loader, shared by the full and limited views. Replaces the old

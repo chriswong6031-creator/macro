@@ -57,6 +57,30 @@
               border-radius:8px; background:color-mix(in srgb,var(--link) 14%,var(--panel2));
               color:var(--link); border:1px solid color-mix(in srgb,var(--link) 30%,var(--line)); }
   .fnd-desc { font-size:13px; color:var(--text); margin:9px 0 4px; line-height:1.55; }
+  /* ---- unified Conviction Profile hero (mirrors stock.html) ---- */
+  .conv { margin:8px 0 4px; padding:11px 13px; border-radius:11px; background:var(--panel2);
+          border:1px solid var(--line); }
+  .cv-head { display:flex; align-items:center; gap:11px; }
+  .cv-score { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; min-width:48px;
+              text-align:center; padding:3px 9px; border-radius:10px; border:1px solid var(--line); }
+  .cv-score.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
+                        background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
+  .cv-score.band-constructive { color:var(--g-cold); border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
+  .cv-score.band-neutral { color:var(--muted); }
+  .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
+  .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
+  .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
+  .cax { font-size:10.5px; }
+  .cax .caxl { color:var(--muted); display:block; }
+  .cax .caxbar { display:block; height:5px; border-radius:3px; background:var(--line); margin:2px 0; overflow:hidden; }
+  .cax .caxf { display:block; height:100%; background:var(--g-cold); border-radius:3px; }
+  .cax.cax-na .caxf { background:transparent; }
+  .cax .caxv { font-weight:700; font-variant-numeric:tabular-nums; }
+  .cv-cau { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
+                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
+  .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
   .fnd-grid { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 4px; }
   .fnd-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:5px 10px; font-size:12px; min-width:78px; }
   .fnd-chip .k { color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
@@ -126,6 +150,7 @@
   .help.edge-right .tip { left:auto; right:0; transform:none; }
   .help.edge-left .tip { left:0; right:auto; transform:none; }
   .tip b { color:var(--text); }
+{% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
@@ -159,26 +184,34 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+        <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
-    <div class="panel">
-      <h2>{{ t('Chart', '图表') }}</h2>
-      <div id="tvbox"></div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <!-- legacy conviction panel — populated only as a FALLBACK if stockview.js fails -->
+    <div class="panel" id="r_conviction_panel" style="display:none">
+      <h2>{{ t('Conviction profile', '确信度画像') }} <span class="note" style="text-transform:none">· {{ t('unified verdict — cycle caps it', '统一结论 — 周期封顶') }}</span></h2>
+      <div id="r_conviction" class="conv"></div>
     </div>
-    <div class="panel">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
-      <div id="r_alpha_panel" style="display:none">
-        <h2 style="margin-top:16px">{{ t('Relative strength', '相对强度') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span>{{ help(
-          'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole cross-section of its own market. This is the positive-IC SELECTION leg (Canada is momentum-persistent like the US). The entry tag is the timing context: <b>pullback</b> = a leader on a recent dip (the constructive entry); <b>extended</b> = just spiked (chase risk). Context, not a personalized buy signal.',
-          '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对其所在市场横截面的排名。这是正 IC 的<b>选股腿</b>（加拿大与美国一样动量具持续性）。入场标记为时机背景：<b>pullback</b>＝近期回调的领先股（建设性入场）；<b>extended</b>＝刚急涨（追高风险）。仅作背景，非个性化买入信号。') }}</h2>
-        <div id="r_alpha" class="mtf"></div>
-      </div>
+    <div class="panel" id="r_alpha_panel" style="display:none">
+      <h2>{{ t('Relative strength', '相对强度') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span>{{ help(
+        'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole cross-section of its own market. This is the positive-IC SELECTION leg (international developed/EM markets are momentum-persistent like the US). The entry tag is the timing context: <b>pullback</b> = a leader on a recent dip (the constructive entry); <b>extended</b> = just spiked (chase risk). Context, not a personalized buy signal.',
+        '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对其所在市场横截面的排名。这是正 IC 的<b>选股腿</b>（国际发达／新兴市场与美国一样动量具持续性）。入场标记为时机背景：<b>pullback</b>＝近期回调的领先股（建设性入场）；<b>extended</b>＝刚急涨（追高风险）。仅作背景，非个性化买入信号。') }}</h2>
+      <div id="r_alpha" class="mtf"></div>
     </div>
     <div class="panel" id="r_fund_panel" style="display:none">
       <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span>{{ help(
@@ -203,21 +236,36 @@
       <div id="r_pos"></div>
     </div>
     <div class="panel" id="r_cbeta_panel" style="display:none">
-      <h2>{{ t('Commodity exposure', '商品敞口') }} <span class="note" style="text-transform:none">· {{ t('oil / gold / loonie beta', '原油／黄金／加元贝塔') }}</span>{{ help(
-        'This name\'s sensitivity to oil (WTI), gold and the loonie (CAD), with the broad market removed (orthogonal betas) — the dimension that actually separates TSX names, since the Composite is ~70% Energy / Materials / Financials. An energy producer loads on oil, a miner on gold, a bank reads near-zero (market-driven). The "primary driver" is the largest commodity/FX leg; <b>fit R²</b> is how much of the daily move these factors plus the market explain. Descriptive exposure for sizing and pairing, NOT a forecast or a buy signal.',
-        '本股票对原油（WTI）、黄金与加元（CAD）的敏感度，已剔除大盘（正交贝塔）—— 这是真正区分 TSX 个股的维度，因为综合指数约70%为能源／材料／金融。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。') }}</h2>
+      <h2>{{ t('Factor exposure', '因子敞口') }} <span class="note" style="text-transform:none">· {{ t('commodity / FX beta', '商品／汇率贝塔') }}</span>{{ help(
+        'This name\'s sensitivity to oil (WTI), gold and its local currency, with the broad market removed (orthogonal betas) — the dimension that separates commodity- and FX-exposed names. An energy producer loads on oil, a miner on gold, a bank reads near-zero (market-driven). The "primary driver" is the largest commodity/FX leg; <b>fit R²</b> is how much of the daily move these factors plus the market explain. Descriptive exposure for sizing and pairing, NOT a forecast or a buy signal.',
+        '本股票对原油（WTI）、黄金与本地货币的敏感度，已剔除大盘（正交贝塔）—— 这是区分商品与汇率敞口个股的维度。能源生产商对原油敏感，矿企对黄金敏感，银行接近零（由大盘驱动）。"主要驱动"为最大的商品／汇率腿；<b>拟合R²</b>表示这些因子加大盘能解释日内波动的比例。仅作仓位与配对的描述性敞口，并非预测或买入信号。') }}</h2>
       <div id="r_cbeta" class="mtf"></div>
     </div>
+    </details>
+    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
+    <div class="panel">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
+    </div>
+    <div class="panel">
+      <h2>{{ t('Chart', '图表') }}</h2>
+      <div id="tvbox"></div>
+    </div>
     <div class="panel" id="r_cal_panel" style="display:none">
-      <h2>{{ t('How much to trust the state — measured on TSX history', '这个状态有多可信 — 基于TSX历史实测') }}{{ help(
+      <h2>{{ t('How much to trust the state — measured on its market\'s history', '这个状态有多可信 — 基于该市场历史实测') }}{{ help(
         'These names drift up over a month from every state; the spread between states is small. Use the state for <b>structure</b> (cycle position, confirmation checklist, invalidation level) and size positions instead of seeking certainty. <b>Typical dip</b> = median worst drop over the next month; <b>bad-case dip</b> = the worst 1-in-10 month (10th percentile).',
         '从任何状态出发，这些个股在一个月内都倾向于上涨；各状态之间的差距很小。请把状态用于<b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。<b>典型回撤</b> = 未来一个月最大跌幅中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）。') }}</h2>
       <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
+      'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -225,7 +273,7 @@
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
     en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
-          notlibmsg: 'Not in the nightly library (curated TSX large-caps + sector ETFs + indices). Add it in config.yml → canada.constituents.',
+          notlibmsg: 'Not in the nightly library (curated JP/KR/TW/UK/EU large-caps + sector ETFs + indices). Add it in config.yml → intl.constituents.',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
           next: 'Next:', ph: 'Search any JP / KR / TW / UK / EU stock…',
           th_state: 'state', th_n: 'samples', th_up: 'up next month', th_avg: 'avg next month',
@@ -240,7 +288,7 @@
           cb_oil: 'Oil β', cb_gold: 'Gold β', cb_cad: 'CAD β', cb_primary: 'primary driver',
           cb_fit: 'fit R²', cb_none: 'market-driven · no commodity tilt' },
     zh: { asof: '数据截至', notlib: '不在库中',
-          notlibmsg: '不在每晚更新的标的库中（精选 TSX 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → canada.constituents 添加。',
+          notlibmsg: '不在每晚更新的标的库中（精选 日/韩/台/英/欧 大盘股 ＋ 板块 ETF ＋ 指数）。可在 config.yml → intl.constituents 添加。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
           next: '下一步：', ph: '搜索任意 日/韩/台/英/欧 个股…',
           th_state: '状态', th_n: '样本数', th_up: '下月上涨', th_avg: '下月均值',
@@ -328,8 +376,46 @@
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_entry').style.display = 'none';
       document.getElementById('r_points').innerHTML = '';
+      document.getElementById('r_conviction_panel').style.display = 'none';
       document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
     });
+  }
+
+  // unified Conviction Profile hero — renders the SAME block as the standout card on
+  // intl_stocks.html, so the dashboard and this page can never structurally disagree.
+  // The cycle ladder above is the calibrated short-term timing read; conviction blends
+  // it with the relative-strength / theme read and is shown as context (the cycle caps
+  // the verdict). Intl selection is weak positive-IC context — the trust tier says so.
+  var CAX_LABELS = { selection: ['Selection', '选股'], entry: ['Entry', '入场'],
+                     tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
+  function renderConviction(d) {
+    var panel = document.getElementById('r_conviction_panel');
+    var box = document.getElementById('r_conviction'), c = d.conviction;
+    if (!box || !panel) return;
+    if (!c) { panel.style.display = 'none'; return; }
+    var tt = c.trust_tier || {};
+    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
+      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
+      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
+        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
+        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
+        (pct == null ? '—' : pct) + '</span></div>';
+    }).join('');
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g,
+      function (ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); };
+    var cau = (c.cautions || []).map(function (x, i) {
+      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
+    box.innerHTML =
+      '<div class="cv-head">' +
+        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
+        '<div class="cv-vtext"><div class="cv-verdict">' + lz(c.verdict, c.verdict_zh) + '</div>' +
+        '<div class="cv-tier">' + lz(tt.en, tt.zh) + '</div></div></div>' +
+      '<div class="cv-axes">' + ax + '</div>' +
+      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
+      '<div class="cv-note">' + lz(
+        'Conviction blends a calibrated short-term timing read (the cycle above) with the relative-strength / theme read — context, not a probability. On international names the selection leg is weak positive-IC context and the axis weights are an unvalidated prior; there is no validated quality leg, so that axis is shown absent (never neutral). The cycle state caps the verdict: a downtrend never reads “Buy”.',
+        '确信度融合了已校准的短期择时读数（上方周期）与相对强度／主题读数——作为情境，而非概率。在国际个股上，选股腿为弱正 IC 背景，维度权重为未经验证的先验；并无经验证的质量腿，故该维度显示为缺失（绝非中性）。周期状态会封顶结论：下行趋势永不显示“买入”。') + '</div>';
+    panel.style.display = 'block';
   }
 
   function render(d) {
@@ -340,6 +426,11 @@
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
+
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // Replaces the separate conviction / relative-strength / commodity panels with ONE
+    // decision band + fingerprint + honesty row + evidence lanes + country slot.
+    var svOk = !!(window.SV && d.view && window.SV.mount(d));
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
@@ -380,11 +471,14 @@
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
+    if (!svOk) renderConviction(d);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)
+    // Alpha vs sector — now folded into evidence.rel_strength; render the legacy panel
+    // only as a fallback when the shared view-model didn't mount.
     var ap = document.getElementById('r_alpha_panel'), a = d.alpha;
-    if (a && a.alpha != null) {
+    if (svOk) { ap.style.display = 'none'; }
+    else if (a && a.alpha != null) {
       var AE = {pullback:['pullback','回调买点'], extended:['extended','急涨偏热'],
                 intact:['intact','趋势完好'], laggard:['laggard','落后'], neutral:['neutral','中性']};
       var sgn = function (x, n) { return (x >= 0 ? '+' : '') + (x == null ? '—' : x.toFixed(n)); };
@@ -501,9 +595,11 @@
       calEl.style.display = 'block';
     } else { calEl.style.display = 'none'; }
 
-    // Commodity exposure — oil / gold / CAD betas, market-removed (additive; absent on ETFs)
+    // Commodity / FX exposure — now a country_slot card (commodity_beta) in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var cbEl = document.getElementById('r_cbeta_panel'), fb = d.factor_beta;
-    if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
+    if (svOk) { cbEl.style.display = 'none'; }
+    else if (fb && (fb.oil != null || fb.gold != null || fb.cad != null)) {
       var bstat = function (lab, x) {
         if (x == null) return '';
         return '<span>' + lab + ' <b class="' + (x >= 0 ? 'pos' : 'neg') + '">' + (x >= 0 ? '+' : '') + x.toFixed(2) + '</b></span>';
@@ -522,6 +618,15 @@
       try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'intlohlc'}); }
       catch (e) { /* chart is garnish */ }
     }
+    hideEmptyGroups();
+  }
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1); if (h) load(decodeURIComponent(h));

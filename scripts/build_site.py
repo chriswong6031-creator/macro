@@ -2550,6 +2550,7 @@ def main() -> int:
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
+                  "stockview.js",
                   "lightweight-charts.js",
                   "allocation_scorecard.js"):
         src = config.ROOT / "templates" / asset
