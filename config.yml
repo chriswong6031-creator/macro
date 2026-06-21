@@ -3933,3 +3933,18 @@ intl:
     rates:                          # rates / curve / carry desk (engine.intl_rates)
       carry_anchor: us_10y          # carry = country 10y - US 10y
       liquidity_impulse_w: [13, 52] # ECB balance-sheet 13/52-week % change
+
+special_situations:                # event-driven Special Situations desk (display-only leaf; SCORED=False)
+  enabled: true                    # deterministic collector/engine on; LLM summary is the separate llm_brief flag
+  user_agent: "Macro Dashboard special-situations research longr2512@gmail.com"  # SEC fair-access (email required for www.sec.gov)
+  retries: 3
+  backfill_days: 7                 # on first run / large gap, how many days of daily-index to sweep
+  market_cap_floor_musd: 100       # keep covered companies >= $100M (decision 2026-06-20)
+  eight_k_items:                   # special-situations 8-K items (others discarded)
+    ["1.01", "1.02", "1.03", "2.01", "3.01", "5.02", "8.01"]
+  # LLM 88-word summary touchpoint (wired in P1.3; off until then)
+  llm_brief: false
+  llm_model: "deepseek-chat"
+  api_key_env: "DEEPSEEK_API_KEY"
+  llm_base_url: "https://api.deepseek.com/anthropic"
+  llm_min_confidence: "medium"

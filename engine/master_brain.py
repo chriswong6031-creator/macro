@@ -508,6 +508,13 @@ def gather_state(root: Path | None = None) -> dict:
     pol = _policy_intel_summary(root)
     if pol:
         state["policy_intel"] = pol
+    # event-driven special situations (display-only leaf): macro-level landscape only.
+    # Per-ticker situation context is consumed directly from site/allocationdata/
+    # special_situations.json (schema special_situations.v1, is_context_only).
+    ss = _read_json(root / "data/regime/special_situations_latest.json")
+    if ss:
+        state["special_situations"] = {k: ss.get(k) for k in
+                                       ("total", "n_categories", "cross_border", "top_categories")}
     return state
 
 
