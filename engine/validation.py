@@ -528,3 +528,61 @@ def clark_west(realized, forecast, bench=None, hac_lags: int = 4) -> dict:
                  (1.0 - nw["p"] / 2.0 if t is not None else None))
     return {"cw_t": t, "cw_p": round(one_sided, 4) if one_sided is not None else None,
             "mean_adj": nw.get("mean"), "n": int(len(r))}
+
+
+# --------------------------------------------------------------------------- #
+# INCREMENTAL IC — the institutional honesty test. rank_ic measures a signal's RAW
+# correlation with forward returns, which conflates genuine information with repackaged
+# common-factor exposure (a momentum signal "predicts" partly because it IS momentum). The
+# institutional question is the INCREMENTAL IC: after neutralizing the signal cross-section
+# against the factors you already own (market beta, size, sector, momentum, low-vol), does
+# any independent forecasting power survive? cross_sectional_resid does the one-date
+# neutralization (OLS residual); the per-date residual ICs then feed ic_summary exactly like
+# raw ICs, so the whole HAC-t / BH-FDR gauntlet applies to the HARDER, honest number.
+# --------------------------------------------------------------------------- #
+def cross_sectional_resid(signal, loadings):
+    """Residualize one cross-section of `signal` (ticker->value) against `loadings`
+    (DataFrame ticker x factor) by OLS with an intercept — the part of the signal
+    ORTHOGONAL to the factors you already own. Standardizes the loadings so scale is
+    irrelevant; returns NaN-free residuals on the jointly-present names (>= 5, else empty)."""
+    s = pd.Series(signal).dropna()
+    X = pd.DataFrame(loadings).reindex(s.index)
+    j = pd.concat([s.rename("_y"), X], axis=1).dropna()
+    if len(j) < 5 or j.shape[1] < 2:
+        return pd.Series(dtype=float)
+    y = j["_y"].to_numpy(float)
+    cols = [c for c in j.columns if c != "_y"]
+    Z = j[cols].to_numpy(float)
+    sd = Z.std(axis=0, ddof=0)
+    sd[sd == 0] = 1.0
+    Z = (Z - Z.mean(axis=0)) / sd                       # standardize loadings
+    A = np.column_stack([np.ones(len(y)), Z])           # + intercept
+    beta, *_ = np.linalg.lstsq(A, y, rcond=None)
+    resid = y - A @ beta
+    return pd.Series(resid, index=j.index)
+
+
+def incremental_ic(signal_by_date: dict, fwd_by_date: dict, loadings_by_date: dict,
+                   periods_per_year: int = 12) -> dict:
+    """Raw vs factor-NEUTRALIZED rank-IC across a rebalance grid. `*_by_date` map a date
+    to a cross-section (signal Series / forward-return Series / loadings DataFrame). Returns
+    raw and incremental ic_summary blocks + the mean-IC delta — the share of a signal's edge
+    that is NOT just repackaged factor exposure. A signal whose IC collapses to ~0 after
+    neutralization carries no independent information, however good its raw IC looked."""
+    raw_ics, inc_ics = [], []
+    for d, sig in signal_by_date.items():
+        fwd = fwd_by_date.get(d)
+        if fwd is None or sig is None or len(sig) == 0:
+            continue
+        raw_ics.append(rank_ic(sig, fwd))
+        load = loadings_by_date.get(d)
+        if load is not None and len(load):
+            resid = cross_sectional_resid(sig, load)
+            if len(resid):
+                inc_ics.append(rank_ic(resid, fwd))
+    raw = ic_summary(raw_ics, periods_per_year=periods_per_year)
+    inc = ic_summary(inc_ics, periods_per_year=periods_per_year)
+    rm, im = raw.get("mean_ic"), inc.get("mean_ic")
+    return {"raw": raw, "incremental": inc,
+            "ic_delta": round(im - rm, 4) if (rm is not None and im is not None) else None,
+            "surviving_frac": round(im / rm, 3) if (rm not in (None, 0) and im is not None) else None}
