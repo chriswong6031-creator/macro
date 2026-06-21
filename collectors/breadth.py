@@ -51,14 +51,23 @@ class BreadthAdapter(Adapter):
     def _download_closes(self, tickers: list[str], period: str) -> pd.DataFrame:
         bs = self.ycfg["batch_size"]
         parts: list[pd.DataFrame] = []
+        # ADDITIVE OHLCV capture: yfinance already downloads high/low/volume — keep them
+        # (instead of discarding all but Close) so the stock library can compute
+        # volume-based signals (engine/bottom_radar) for the full universe, not just the
+        # ~114 deep names. Stashed on self for fetch() to cache; never affects closes.
+        extras: dict[str, list] = {"high": [], "low": [], "volume": []}
         for i in range(0, len(tickers), bs):
             batch = tickers[i:i + bs]
             for attempt in range(self.ycfg["retries"]):
                 try:
                     df = yf.download(batch, period=period, auto_adjust=True,
                                      progress=False, group_by="column", threads=True)
-                    closes = df["Close"] if "Close" in df.columns.get_level_values(0) else df
-                    parts.append(closes)
+                    lvl0 = (df.columns.get_level_values(0)
+                            if isinstance(df.columns, pd.MultiIndex) else df.columns)
+                    parts.append(df["Close"] if "Close" in lvl0 else df)
+                    for k, F in (("high", "High"), ("low", "Low"), ("volume", "Volume")):
+                        if F in lvl0:
+                            extras[k].append(df[F])
                     break
                 except Exception as e:  # noqa: BLE001
                     wait = self.ycfg["backoff_base_s"] * (2 ** attempt)
@@ -67,9 +76,13 @@ class BreadthAdapter(Adapter):
             time.sleep(1)
         if not parts:
             raise RuntimeError("no constituent closes downloaded")
-        wide = pd.concat(parts, axis=1)
-        wide = wide.loc[:, ~wide.columns.duplicated()]
-        return wide.sort_index()
+
+        def _wide(plist: list) -> pd.DataFrame:
+            w = pd.concat(plist, axis=1)
+            return w.loc[:, ~w.columns.duplicated()].sort_index()
+
+        self._last_extras = {k: _wide(v) for k, v in extras.items() if v}
+        return _wide(parts)
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         members = self.constituents_checked(self.constituents())
@@ -100,6 +113,18 @@ class BreadthAdapter(Adapter):
         self.cache_path.parent.mkdir(parents=True, exist_ok=True)
         if not full_history:
             closes.to_parquet(self.cache_path)
+            # ADDITIVE: persist the OHLCV extras the download already captured, with the
+            # SAME tail-refresh + window logic as closes. Never fatal — breadth itself
+            # only needs closes; the stock library falls back to close-only when absent.
+            try:
+                cutoff_e = closes.index.max() - pd.Timedelta(days=self.cfg["lookback_days_live"] + 30)
+                for k, w in (getattr(self, "_last_extras", {}) or {}).items():
+                    ep = self.cache_path.parent / f"_{k}_cache.parquet"
+                    if ep.exists():
+                        w = w.combine_first(pd.read_parquet(ep))
+                    w[w.index >= cutoff_e].to_parquet(ep)
+            except Exception as e:  # noqa: BLE001
+                log.warning("breadth OHLCV extras cache failed (%s) — volume signals close-only", e)
         # constituents list is reference data, not a time series — written directly
         members.set_index("symbol").to_parquet(self.cache_path.parent / "constituents.parquet")
 

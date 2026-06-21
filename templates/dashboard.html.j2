@@ -470,6 +470,40 @@
   .nb-cau span { font-size: 8.5px; font-weight: 700; padding: 0 4px; border-radius: 6px;
                  color: var(--warn); background: color-mix(in srgb, var(--warn) 13%, var(--panel)); }
   .nb-tier { font-size: 8px; color: var(--muted); margin-top: 3px; letter-spacing: .02em; }
+  /* ---- Entry-timing gauge (the SECOND gauge: "buy now / wait / extended") ---- */
+  .nb-entry { margin: 5px 0 1px; padding: 5px 7px; border-radius: 8px;
+              background: var(--panel); border: 1px solid var(--line);
+              border-left: 3px solid var(--muted); }
+  .nbe-buy_now, .nbe-partial { border-left-color: var(--up);
+              background: color-mix(in srgb, var(--up) 8%, var(--panel)); }
+  .nbe-buy_soon, .nbe-watch { border-left-color: var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color: var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color: var(--warn);
+              background: color-mix(in srgb, var(--warn) 9%, var(--panel)); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color: var(--down);
+              background: color-mix(in srgb, var(--down) 8%, var(--panel)); }
+  .nbe-head { display: flex; align-items: center; gap: 5px; }
+  .nbe-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+  .nbe-dot.a3 { background: var(--up); box-shadow: 0 0 0 3px color-mix(in srgb, var(--up) 22%, transparent); }
+  .nbe-dot.a2 { background: var(--g-cold); }
+  .nbe-dot.a1 { background: var(--warn); }
+  .nbe-dot.a0 { background: var(--down); }
+  .nbe-status { font-size: 10px; font-weight: 800; color: var(--ink); line-height: 1.2; }
+  .nbe-zone { display: flex; align-items: baseline; gap: 5px; margin-top: 3px; }
+  .nbe-lbl { color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .04em;
+             text-transform: uppercase; }
+  .nbe-px { font-weight: 800; font-size: 11px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .nbe-pct { color: var(--muted); font-size: 9px; font-variant-numeric: tabular-nums; }
+  .nbe-cyc { font-size: 8.5px; color: var(--muted); margin-top: 3px; display: flex;
+             align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+  .nbe-bar { display: inline-block; width: 42px; height: 3px; border-radius: 2px;
+             background: var(--line); overflow: hidden; }
+  .nbe-bf { display: block; height: 100%; background: var(--g-cold); }
+  .nb-val { font-size: 8.5px; font-weight: 700; padding: 0 5px; border-radius: 7px;
+            color: var(--muted); background: var(--panel); border: 1px solid var(--line); }
+  .nb-val.val-extreme, .nb-val.val-stretched { color: var(--warn);
+            border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); }
+  .nb-val.val-cheap { color: var(--up); border-color: color-mix(in srgb, var(--up) 32%, var(--line)); }
   /* honesty notes — percentile-rank caveat + favourable-risk-cone read (AVGO/NVDA alignment) */
   .nb-note { font-size: 8.5px; line-height: 1.3; margin-top: 3px; padding: 2px 5px; border-radius: 6px;
              color: var(--muted); background: color-mix(in srgb, var(--ink) 4%, var(--panel)); }
@@ -2335,8 +2369,8 @@
     <div class="notable">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
         <span style="font-weight:700;font-size:13px">{{ t('Standout individual stocks', '表现突出的个股') }}</span>
-        {% if _su %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t('of', '/') }} {{ _su.eligible }} {{ t('passed the entry-quality gate (not in a downtrend / parabolic, and a constructive entry) · ranked by the multi-factor Conviction composite — event edge + entry timing + quality + tailwind — an honest DISPLAY ordering, not a standalone validated alpha · each card carries the unified profile plus the Options (dealer-gamma) and volatility-squeeze verifiers (cycle state caps the verdict)', '通过入场质量门槛（非下行／抛物线，且入场具建设性）· 按多因子确信度综合分排序 — 事件优势＋入场择时＋质量＋顺风 — 为诚实的展示排序，并非独立已验证超额收益 · 每张卡片附带统一画像，外加期权（做市商 Gamma）与波动压缩验证器（周期状态会封顶结论）') }}
-          {{ help("The bench is ranked by the multi-factor Conviction COMPOSITE (event edge + entry timing + quality + tailwind) across the full S&P 1500 — so it surfaces leaders that aren't in any sector ETF's top-10. This is an honest DISPLAY ordering, NOT a standalone validated alpha: the α (residual-momentum) leg is just one light, regime-scaled input, not the rank key. Each card carries the four transparent axes (selection / entry / tailwind / quality), a single honest verdict, and two new VERIFIERS — an Options (dealer-gamma) check and a single-stock volatility-squeeze read. The verifiers sharpen the ENTRY only (display + a small bounded tilt); they can lower conviction but never manufacture a buy, and never touch the selection rank. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read 'Buy', it reads 'strong name, wrong tape' — which is why this card and the stock's own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability); the composite is context until a deep Phase-0 clears it. Click any card for the full breakdown.", "榜单按多因子确信度综合分（事件优势＋入场择时＋质量＋顺风）在整个标普1500内排序——因此能发掘不在任何行业ETF前十大持仓中的领涨股。这是诚实的展示排序，并非独立已验证的超额收益：α（残差动量）维度只是一个轻量、随行情缩放的输入，并非排序关键。每张卡片附带四条透明维度（选股／入场／顺风／质量）、一个诚实结论，以及两个新验证器——期权（做市商 Gamma）检查与个股波动压缩读数。验证器只优化“入场”（展示＋小幅有界倾斜）；它们可降低确信度，但绝不制造买入信号，也不触及选股排序。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示“买入”，而显示“强势但趋势不利”。0-100 分是市场内百分位展示皮肤（非概率）；在深度 Phase-0 通过前综合分仅作情境。点击任意卡片查看完整拆解。") }}</span>{% endif %}
+        {% if _su %}<span class="muted" style="font-size:11.5px">{{ _su.buy|length }} {{ t('of', '/') }} {{ _su.eligible }} {{ t('passed the entry-quality gate · TWO gauges per card: an OWN-IT conviction score (leadership · quality · valuation) and a separate ENTRY gauge — buy now, or wait for the pullback to $X. A high score is NOT a buy-now; the green dot means the entry is open today.', '通过入场质量门槛 · 每张卡片两个量表：持有信念分（领先·质量·估值）+ 独立的入场量表 — 立即买入，或等待回撤至某价位。高分并不等于立即买入；绿点代表今日入场窗口已开。') }}
+          {{ help("Each name carries TWO independent gauges so a great company is never confused with a great entry. (1) OWN-IT CONVICTION (the 0-100 score): leadership (validated sector-neutral residual momentum α across the S&P 1500) + quality + a forward-aware valuation read — a cheap-on-forward leader like NVDA is NOT penalized for a rich trailing multiple. It surfaces leaders that aren't in any sector ETF's top-10. It is a within-market percentile DISPLAY skin (not a probability) and reads 'high-confluence (context)' until a deep Phase-0 proves forward edge; the α leg is just one light, regime-scaled input, not the rank key. (2) ENTRY TIMING (the coloured strip): the price-cycle read across daily/3-day/weekly — buy now (green dot), wait for the pullback to the shown buy-zone price, or extended/topping (don't chase). Two VERIFIERS — an Options (dealer-gamma) check and a single-stock volatility-squeeze read — sharpen the ENTRY only (display + a small bounded tilt); they can lower conviction but never manufacture a buy, and never touch the selection rank. The price-cycle state is a HARD modifier: a name late in its cycle, in a downtrend or topping, can NEVER read 'buy now' — it reads 'strong name, wrong tape', which is why this card and the stock's own page never disagree. The board is sorted by conviction; the entry gauge tells you which are actionable today. Click any card for the full breakdown.", "每个标的带有两个相互独立的量表，使“好公司”绝不等同于“好入场点”。(1) 持有信念（0-100 分）：领先度（在标普1500内已验证的行业中性残差动量 α）+ 质量 + 前瞻估值读数——像 NVDA 这种前瞻便宜的领涨股不会因偏高的历史倍数而被扣分。它能发掘不在任何行业ETF前十大持仓中的领涨股。它是市场内百分位的展示皮肤（非概率），在深度 Phase-0 证明前瞻优势前显示为“高共振（参考）”；α 维度只是一个轻量、随行情缩放的输入，并非排序关键。(2) 入场择时（彩色条）：跨日线/3日/周线的价格周期读数——立即买入（绿点）、等待回撤至所示买入区价位，或过度拉伸/做顶（勿追高）。两个验证器——期权（做市商 Gamma）检查与个股波动压缩读数——只优化“入场”（展示＋小幅有界倾斜）；它们可降低确信度，但绝不制造买入信号，也不触及选股排序。价格周期状态是硬性修正项：处于周期晚期、下行或做顶的个股永远不会显示“立即买入”，而显示“强势但趋势不利”，因此本卡片与个股自身页面绝不冲突。榜单按信念排序；入场量表告诉你今天哪些可操作。点击任意卡片查看完整拆解。") }}</span>{% endif %}
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t('from each sector’s top-10 holdings · grouped by cycle entry, ranked by sector-neutral momentum (α)', '来自各板块前十大持仓 · 按周期入场分组，以行业中性动量（α）排序') }}
           {{ help("Every sector ETF's top-10 holdings are run through the SAME price-cycle engine as the sectors. A name earns a card only when its cycle signal is decisive — a confirmed buy (BUY ZONE), an imminent turn (BOTTOMING), or a sell (TOPPING). The cycle state GROUPS the cards (it places risk — a defined entry + exit); WITHIN each group they're ordered by the validated sector-neutral residual momentum (α — market + sector beta stripped). We Phase-0 tested blending the cycle timing INTO the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y) and it did NOT improve forward returns — it diluted α — so the order rides α and the cycle/pullback is shown as risk-placement CONTEXT, not a return signal. A soft per-sector cap keeps one hot sector from crowding the board. The α / #rank / pullback line and the 👤 insider chip are context inputs, NOT standalone buy signals. Click any card for the full breakdown.", "每个板块 ETF 的前十大持仓都用与板块相同的价格周期引擎分析。只有当个股的周期信号具决定性时才会获得卡片 — 已确认买入（买入区）、即将转向（筑底）或卖出（做顶）。周期状态对卡片进行分组（它摆放风险 — 明确的入场与出场）；在每组内部，按已验证的行业中性残差动量（α — 已剥离大盘与行业 beta）排序。我们做了 Phase-0 检验，把周期择时混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年），结果并未改善前瞻收益 — 反而稀释了 α — 因此排序以 α 为准，周期/回调作为风险摆位的情境展示，而非收益信号。软性的单一板块上限可避免强势板块挤占整版。卡片上的 α / #排名 / 回调一行以及 👤 内部人买入标记均为情境输入，并非独立买入信号。点击任意卡片查看完整拆解。") }}</span>{% endif %}
       </div>
@@ -2353,8 +2387,14 @@
       {% endif %}
       <div class="nbgrid" data-showmore="12">
       {% if _su %}
-      {% for n in _su.buy %}
+      {# Two-gauge board: one CONVICTION-ranked watch-list (buy + leaders-to-watch
+         merged, top conviction first), each card carrying its own ENTRY-timing gauge
+         so a high-conviction-but-extended leader (HWM) stays visible as "wait for the
+         pullback", never silently dropped and never mislabeled "Buy Now". #}
+      {% set _board = (_su.buy + (_su.watch or []))|sort(attribute='conviction.score', reverse=True) %}
+      {% for n in _board %}
         {% set c = n.conviction %}
+        {% set es = n.entry_signal %}
         <a class="nbcard nb-{{ n.dir or 'caution' }}" href="stock.html#{{ n.ticker }}">
           <div class="nb-top">
             <span class="nb-tk">{{ n.ticker }}</span>
@@ -2379,9 +2419,35 @@
           {{ n.spark_svg }}
           {% if c %}
           <div class="nb-conv">
-            {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
+            {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="OWN-IT conviction (gauge 1) — how much you'd want to own this name: leadership + quality + valuation. Within-market percentile, NOT a buy-now signal — see the Entry gauge for timing. · 持有信念（量表1）— 值不值得拥有：领先度+质量+估值。市场内百分位，并非立即买入信号 — 择时见入场量表。">{{ c.score }}</span>{% endif %}
             <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
+            {% if c.valuation_band %}<span class="nb-val val-{{ c.valuation_band }}" title="{{ c.valuation_note }} · {{ c.valuation_note_zh }}">{{ t(c.valuation_band, {'cheap':'便宜','fair':'合理','stretched':'偏贵','extreme':'昂贵'}[c.valuation_band] if c.valuation_band in ['cheap','fair','stretched','extreme'] else c.valuation_band) }}</span>{% endif %}
           </div>
+          {% if es %}
+          {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended,
+             with the actual buy-zone price + cycle position. This is the WHEN/AT-WHAT-PRICE
+             that the conviction score must never be mistaken for. #}
+          <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — when & at what price to buy. {{ es.action }}">
+            <div class="nbe-head">
+              <span class="nbe-dot a{{ es.act_level }}"></span>
+              <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+            </div>
+            {% if es.buy_zone and es.buy_zone.high is not none %}
+            <div class="nbe-zone">
+              <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+              <span class="nbe-px">${{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–${{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
+              {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+            </div>
+            {% endif %}
+            {% if es.cycle_pos and es.cycle_pos.dc_day is not none %}
+            <div class="nbe-cyc">
+              <span>{{ t('cycle day', '周期第') }} {{ es.cycle_pos.dc_day }}{{ t('', '天') }}/{{ es.cycle_pos.dc_band[0] }}–{{ es.cycle_pos.dc_band[1] }}</span>
+              <span class="nbe-bar"><span class="nbe-bf" style="width:{{ [es.cycle_pos.pct_through or 0, 100]|min }}%"></span></span>
+              {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
           <div class="nb-axes">
             {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
             {% set a = c.axes[ax] %}

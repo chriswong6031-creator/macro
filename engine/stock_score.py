@@ -44,6 +44,7 @@ import numpy as np
 import pandas as pd
 
 from engine import i18n as _i18n  # bilingual glossary for caution labels
+from engine import valuation as _valuation  # forward-aware non-veto valuation haircut
 
 # ----------------------------------------------------------------------------
 # market constants
@@ -859,7 +860,8 @@ def _tier(z: float | None) -> str:
 
 
 def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
-            risk_stress: float = 0.0) -> dict:
+            risk_stress: float = 0.0, valuation: dict | None = None,
+            validated: bool = False) -> dict:
     """Map the axes + cycle state to a single honest headline verb (EN + 中文),
     plus drivers/cautions. First-match-wins; the cycle block and accounting/parabolic
     flags OVERRIDE any 'Buy' wording so a card never says BUY next to EXIT. A stressed
@@ -904,6 +906,12 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
              else "extended over 200dma — chasing",
              f"高于200日均线 +{_pv:.0f}% — 追高" if _pv is not None
              else "高于200日均线 — 追高")
+    # forward-aware valuation caveat — a non-veto chip, never a blocking verb. Only
+    # the 'extreme' tail trips watch (and trailing-only names are light-touch), so a
+    # growth leader cheap on forward earnings (NVDA) never reads 'expensive'.
+    if valuation and valuation.get("watch"):
+        _cau(f"richly valued — {valuation.get('note')}",
+             f"估值偏高 — {valuation.get('note_zh') or valuation.get('note')}")
     _risk_veto = (risk_stress >= _RISK_VETO_STRESS and _aggressiveness(rec) >= 0.5)
     if _risk_veto:
         _cau("stressed tape — size down / confirm", "盘面承压 — 减仓／确认")
@@ -983,8 +991,15 @@ def verdict(axes: dict, rec: dict, market: str, *, cycle_blocked: bool,
         if acct == "watch":                    # an accounting WATCH never reads a clean high-conviction
             return _v("Leader · accounting watch — confirm before adding",
                       "领先 · 财务质量关注 — 加仓前先确认", drivers, cautions)
-        return _v("High-conviction — leader with a good entry",
-                  "高确信 — 领先且入场点良好", drivers, cautions)
+        # Two-gauge wording: the conviction verb describes OWNERSHIP quality only —
+        # the entry-timing claim ("good entry") now lives on the separate Entry gauge,
+        # so this no longer mislabels a leader-with-a-bad-entry. And it is
+        # VALIDATION-GATED: until the time-machine proves forward edge, it reads
+        # 'high-confluence (context)', not the over-confident 'high-conviction'.
+        if validated:
+            return _v("High-conviction leader", "高确信 领先", drivers, cautions)
+        return _v("High-confluence leader (context)",
+                  "高共振 领先（参考）", drivers, cautions)
     if sel_t == "high" and ent is None:        # absent entry data is NOT 'poor entry'
         return _v("Leader · entry unknown — confirm timing",
                   "领先 · 入场时机未知 — 请确认", drivers, cautions)
@@ -1045,6 +1060,16 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         rec = {**rec, "spotlight": eff_sp}
     tw_z, tw_present = _axis_tailwind(rec)
     q_z, q_present, q_flags = _axis_quality(rec, m)
+    # forward-aware valuation: a SUBTRACT-ONLY haircut on the quality axis (never a
+    # bonus, never a veto). Keys on FORWARD P/E where present so a growth leader cheap
+    # on forward earnings (NVDA ~16x fwd) is NOT penalized for a rich trailing multiple.
+    val = _valuation.read(rec)
+    if val:
+        q_z = _valuation.apply_haircut(q_z, val)
+        if q_z is not None:
+            q_present = q_present or ["valuation"]
+            if "valuation" not in q_present:
+                q_present = [*q_present, "valuation"]
 
     axes = {
         "selection": {"z": sel_z, "pct": _logistic_0_100(sel_z), "present": sel_present,
@@ -1102,7 +1127,8 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         score = _logistic_0_100(comp_z)
     score = int(round(score)) if score is not None else None
 
-    vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress)
+    vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress,
+                 valuation=val, validated=bool(ctx.get("gate_go")))
     band = _band(score)
 
     # --- honesty NOTES (AVGO/NVDA alignment): make the two places a user gets confused explicit.
@@ -1157,6 +1183,10 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "drivers": vb["drivers"], "cautions": vb["cautions"],
         "cautions_zh": vb["cautions_zh"],
         "trust_tier": trust_tier(m, bool(ctx.get("gate_go"))),
+        # validation status the card badge + Mastermind gating key on: 'positive_ic'
+        # once the time-machine proves forward edge (gate GO), else 'neutral_ic' — the
+        # honest "ensemble context, not a validated probability" state (P4 sets this).
+        "validation_status": "positive_ic" if ctx.get("gate_go") else "neutral_ic",
         "regime": _regime_tilt(m, calm),
         "spotlight": eff_sp,          # theme+sector narrative tilt (display chip + tailwind leg)
         "axes": axes,
@@ -1167,6 +1197,10 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "notes": notes or None,       # honesty notes: percentile-rank caveat + favourable-cone read
         "n_axes": n_axes,
         "cycle_blocked": blocked,
+        "valuation_band": (val or {}).get("band"),
+        "valuation_watch": bool((val or {}).get("watch")),
+        "valuation_note": (val or {}).get("note"),
+        "valuation_note_zh": (val or {}).get("note_zh"),
         "provenance": {"present": present, "n_axes": n_axes,
                        "as_of": ctx.get("as_of"),
                        "uncalibrated": not bool(ctx.get("gate_go"))},

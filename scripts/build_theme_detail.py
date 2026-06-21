@@ -37,14 +37,29 @@ def _conviction(ticker: str, stockdata_dir: str, cache: dict) -> dict | None:
     p = config.ROOT / "site" / stockdata_dir / (ticker + ".json")
     if p.exists():
         try:
-            c = json.loads(p.read_text()).get("conviction") or {}
+            rec = json.loads(p.read_text())
+            c = rec.get("conviction") or {}
             if c:
+                # the SECOND gauge: a compact entry-timing read (US has it; ex-US
+                # gracefully omits until those builders wire entry_signal) so a member
+                # reads "own-it conviction + buy now / wait for the pullback to $X".
+                es = rec.get("entry_signal") or {}
+                entry = None
+                if es:
+                    bz = es.get("buy_zone") or {}
+                    entry = {"status": es.get("status"), "act_level": es.get("act_level"),
+                             "headline": es.get("headline"), "headline_zh": es.get("headline_zh"),
+                             "zone_low": bz.get("low"), "zone_high": bz.get("high"),
+                             "zone_pct": bz.get("pct_from_spot")}
                 sp = c.get("spotlight") or {}
                 val = {"score": c.get("score"), "band": c.get("band"), "band_zh": c.get("band_zh"),
                        "verdict": c.get("verdict") if isinstance(c.get("verdict"), str) else None,
                        "verdict_zh": c.get("verdict_zh"),
                        "cycle_blocked": bool(c.get("cycle_blocked")),
                        "entry_pct": ((c.get("axes") or {}).get("entry") or {}).get("pct"),
+                       "valuation_band": c.get("valuation_band"),
+                       "validation_status": c.get("validation_status"),
+                       "entry": entry,
                        "trust": (c.get("trust_tier") or {}).get("tier"),
                        # the same theme/sector spotlight tilt the standout board ranks by,
                        # so the theme page and the board can never disagree on a name.

@@ -64,9 +64,12 @@ def _pct_str(v: float | None, dp: int = 0) -> str | None:
 # gloss can never drift into a 5th competing headline. Unknown verdict → ("","").
 # ---------------------------------------------------------------------------
 _VERDICT_GLOSS: dict[str, tuple[str, str]] = {
-    "High-conviction — leader with a good entry":
-        ("A leader you can buy here — entry and trend both line up.",
-         "可在此买入的领先股——入场点与趋势都对齐。"),
+    "High-conviction leader":
+        ("A validated leader you can own here — the edge cleared the forward-IC gate.",
+         "已验证的领先股，可在此持有——优势已通过前瞻 IC 检验。"),
+    "High-confluence leader (context)":
+        ("A leader on every gauge — context until the forward-edge gate clears; see the Entry gauge for timing.",
+         "各项量表均领先——在前瞻优势验证通过前仅作情境；择时请看入场量表。"),
     "Constructive — building a base":
         ("Improving, not yet a leader — building a base.",
          "正在改善但尚未领先——正在筑底。"),

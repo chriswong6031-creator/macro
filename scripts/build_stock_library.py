@@ -31,6 +31,7 @@ from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import entry_signal  # noqa: E402
 from engine import stock_view  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
 from engine import pullback_zone  # noqa: E402
@@ -920,6 +921,7 @@ def main() -> int:
     # writes — deferred so the display score can be the WITHIN-MARKET percentile of the
     # composite z (set once all names are profiled), not a per-name logistic skin.
     profiles: dict[str, dict] = {}
+    entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (board rows)
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     to_write: list[tuple[str, dict]] = []
     uni = universe()
@@ -1108,6 +1110,16 @@ def main() -> int:
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
+        # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------
+        # Conviction answers "own it?"; this answers "buy now / at what price / when?".
+        # A structured plan (status, buy zone $, don't-chase line, stop, horizon read)
+        # so an extended leader reads "wait — accumulate ~$X", never "99 · Buy Now".
+        try:
+            es = entry_signal.assess(close, high, rec)
+            if es:
+                rec["entry_signal"] = es
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("entry-signal for %s failed (%s)", ticker, e)
         # ---- Pullback buy-zone (display-only) ---------------------------------
         # turn an "Extended — don't chase" verdict into a concrete level: the rising 50d /
         # the out-of-chase line for a timeable leader, or a "this is a chase, the reset is X%
@@ -1125,6 +1137,8 @@ def main() -> int:
         # passes this to the chart so the 4H button only appears where data actually exists.
         rec["has_intraday"] = 1 if (config.data_dir() / "intraday" / f"{ticker}.parquet").exists() else 0
         profiles[ticker] = prof
+        if rec.get("entry_signal"):
+            entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
         # ---- Macro sensitivity (display-only, never scored) -------------------
         # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
         # label. Uses the archetype merged from fpanels above + the shared context.
@@ -1249,6 +1263,8 @@ def main() -> int:
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            if entry_sig.get(t):
+                r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
