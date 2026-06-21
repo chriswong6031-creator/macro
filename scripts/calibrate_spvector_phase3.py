@@ -19,6 +19,7 @@ import pandas as pd
 
 from engine import equity_alloc as ea
 from engine.validation import backtest_core, block_bootstrap_ci, deflated_sharpe, ret_moments
+from engine.trial_ledger import TrialLedger
 from lib import config, store
 
 COST_BPS = 3.0
@@ -88,7 +89,14 @@ def main() -> int:
 
     # DSR honest
     mom = ret_moments(net)
-    dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], N_TRIALS, trading_year=TY) if mom else None
+    if mom:
+        _led = TrialLedger()      # honest-N via the ledger (P3): declared honest count
+        _led.log_declared_budget(N_TRIALS, family="spvector_phase3",
+                                 reason="conservative honest count across all phases (calibrate_spvector_phase3)")
+        dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led,
+                              family="spvector_phase3", trading_year=TY)
+    else:
+        dsr = None
 
     full = {"cagr": round(100 * _cagr(net), 2), "sharpe": round(_sharpe(net), 2),
             "maxdd": round(100 * _maxdd(net), 1), "bh_cagr": round(100 * _cagr(hold), 2),

@@ -30,10 +30,6 @@ LEGACY_LITERAL_NTRIALS = frozenset({
     "scripts/btc_onchain_dd_phase0.py",
     "scripts/btc_vector_optimal_phase0.py",
     "scripts/build_strategies.py",
-    "scripts/calibrate_regime.py",
-    "scripts/calibrate_spvector_phase3.py",
-    "scripts/calibrate_spvector_phase4.py",
-    "scripts/calibrate_spvector_pit.py",
     "scripts/capitulation_overlay_phase0.py",
     "scripts/commodity_carry_phase0.py",
     "scripts/commodity_tsmom_phase0.py",
@@ -63,7 +59,6 @@ LEGACY_LITERAL_NTRIALS = frozenset({
     "scripts/thematic_rotation_phase0.py",
     "scripts/top_picks_phase0.py",
     "scripts/turn_of_month_phase0.py",
-    "scripts/validate_vol_regime.py",   # added on main by a parallel session; grandfathered to migrate
     "scripts/value_growth_phase0.py",
 })
 
