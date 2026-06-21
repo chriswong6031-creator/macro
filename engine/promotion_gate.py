@@ -51,8 +51,15 @@ def promotion_gate(returns=None, *, trial_ledger=None, family=None, n_trials=Non
                 dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=trial_ledger,
                                       family=family, trading_year=ann)
             else:
-                dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3],
-                                      n_trials=int(n_trials or 1), trading_year=ann)
+                # No caller ledger → persist the declared N to an ephemeral ledger
+                # (effective_n == the declared budget) rather than a bare literal: same
+                # haircut, but audited + ratchet-clean (test_no_literal_ntrials). The ledger
+                # path needs a non-empty family, so default it when the caller gave none.
+                from engine.trial_ledger import TrialLedger
+                _fam = family or "promotion_gate"
+                _led = TrialLedger.with_declared_budget(int(n_trials or 1), _fam)
+                dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led,
+                                      family=_fam, trading_year=ann)
             ok = bool(dsr and dsr.get("dsr", 0.0) >= dsr_min)
             gates["deflated_sharpe"] = {"pass": ok, "value": (dsr or {}).get("dsr"), "min": dsr_min}
             if not ok:

@@ -39,6 +39,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import tempfile
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -187,6 +188,23 @@ class TrialLedger:
             with self.path.open("a", encoding="utf-8") as fh:
                 fh.write(json.dumps(row, default=str) + "\n")
         return True
+
+    @classmethod
+    def with_declared_budget(cls, n: int, family: str | None = None) -> "TrialLedger":
+        """Ephemeral ledger carrying just a DECLARED budget of ``n`` (so ``effective_n() ==
+        n``), persisted to a deterministic throwaway temp file. The honest, audited,
+        ratchet-clean stand-in for a bare ``deflated_sharpe(n_trials=n)`` where the count
+        is COMPUTED (not a p-hacked lowball) and no caller ledger is threaded through:
+
+            deflated_sharpe(..., ledger=TrialLedger.with_declared_budget(n, fam), family=fam)
+
+        The temp path is keyed by (family, n) so repeated identical calls reuse one tiny
+        file (``log_declared_budget`` is idempotent) — never the production ledger. The
+        family must be non-empty (the ledger keys on it), so the caller passes a real one."""
+        key = hashlib.sha1(f"{family}:{int(n)}".encode()).hexdigest()[:12]
+        led = cls(path=Path(tempfile.gettempdir()) / f"_declbudget_{key}.jsonl", family=family)
+        led.log_declared_budget(int(n), family=family)
+        return led
 
     # -- reading ----------------------------------------------------------- #
     def literal_n(self, family: str | None = None) -> int:
