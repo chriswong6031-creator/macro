@@ -26,8 +26,37 @@ from engine import intel_hub, hub_track_record  # noqa: E402
 log = logging.getLogger(__name__)
 
 
+def _attach_live_prices(hub: dict, root, asof: str) -> None:
+    """Best-effort nightly close on the SURFACED names only (~60, not the whole universe), so
+    the live.js progressive-enhancement layer can patch them to ~15-min-delayed / live prices
+    intraday and flag any name whose live price breaches its nightly band. Degrade-safe."""
+    try:
+        from engine.ai_desk import _level_asof
+    except Exception as e:  # noqa: BLE001
+        log.debug("live-price helper unavailable: %s", e)
+        return
+    cache: dict[str, float | None] = {}
+
+    def px(t: str):
+        if t not in cache:
+            try:
+                cache[t] = _level_asof(t, root, asof)
+            except Exception:  # noqa: BLE001
+                cache[t] = None
+        return cache[t]
+
+    lists = ([hub.get("command") or []]
+             + [hub.get(k) or [] for k in ("emerging", "exhausted", "catalysts", "discovery")])
+    for lst in lists:
+        for d in lst:
+            t = d.get("ticker")
+            if t and "price" not in d:                 # always set the key (None or float) so the
+                d["price"] = px(t)                     # template's `d.price is not none` guard is safe
+
+
 def build(write: bool = True) -> dict:
     hub = intel_hub.load_and_build(top=30)
+    _attach_live_prices(hub, config.ROOT, hub.get("as_of") or date.today().isoformat())
     # FALSIFIABLE TRACK-RECORD: record today's claims, grade matured ones (degrade-safe)
     track = {}
     try:

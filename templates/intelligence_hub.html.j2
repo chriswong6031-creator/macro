@@ -213,6 +213,10 @@
   .catrow .ct{ font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:6px;white-space:nowrap;
     background:color-mix(in srgb,#8b5cf6 20%,transparent);color:#a78bfa; }
   .catrow .age{ font-size:9.5px;color:var(--muted);white-space:nowrap;margin-left:auto; }
+  /* live price chip (patched intraday by live.js) */
+  .nb-px{ font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;
+    color:color-mix(in srgb,var(--text) 72%,transparent);white-space:nowrap; }
+  .ecard .et .nb-px, .dcard .et .nb-px{ margin-left:2px; }
   footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
   @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
 </style>
@@ -277,7 +281,7 @@
   <div class="ecards">
     {% for d in EM %}
     <div class="glass acc ecard" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' }}">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{{ stage(d.stage) }}
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}{{ stage(d.stage) }}
         <span class="oppn">{{ d.opportunity_score|round|int }}</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">{{ d.name }}</div>
       <div class="erd">{{ d.read }}</div>
@@ -295,7 +299,7 @@
   <div class="ecards">
     {% for d in hub.discovery %}{% set dd = d.discovery or {} %}
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
         <span class="src">{{ (dd.source or '')|replace('_',' ') }}</span>
         {% if dd.off_desk %}<span class="off">{{ t('off-desk','非台内') }}</span>{% endif %}
         <span class="dscore">{{ ((dd.disc_score or 0)*100)|round|int }}</span></div>
@@ -333,7 +337,7 @@
   <div class="cmd">
     {% for d in hub.command %}
     <div class="glass acc row" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' if d.lean>0 else 'var(--down)' if d.lean<0 else 'var(--info)' }}">
-      <div class="id"><span class="tk">{{ d.ticker }}</span><span class="nm">{{ d.name }}</span>{{ matrix(d.directions) }}</div>
+      <div class="id"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}<span class="nm">{{ d.name }}</span>{{ matrix(d.directions) }}</div>
       <div class="opp"><b>{{ d.opportunity_score|round|int }}</b><small>{{ t('opp','机会') }}</small></div>
       <div class="conv">
         <div class="convbar {{ 'dn' if d.lean<0 else '' }}"><i style="width:{{ d.composite_conviction }}%"></i></div>
@@ -404,5 +408,9 @@
 </div>
 <script src="theme.js"></script>
 <script defer src="sky.js"></script>
+{# intraday progressive enhancement: live (~15-min) prices + nightly-band divergence chips on
+   the surfaced names. No-ops if not configured/served — the slow-brain scores stay nightly. #}
+<script src="live_config.js"></script>
+<script defer src="live.js"></script>
 </body>
 </html>

@@ -174,6 +174,10 @@
   .catrow .ct{ font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:6px;white-space:nowrap;
     background:color-mix(in srgb,#8b5cf6 20%,transparent);color:#a78bfa; }
   .catrow .age{ font-size:9.5px;color:var(--muted);white-space:nowrap;margin-left:auto; }
+  /* live price chip (patched intraday by live.js) */
+  .nb-px{ font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;
+    color:color-mix(in srgb,var(--text) 72%,transparent);white-space:nowrap; }
+  .ecard .et .nb-px, .dcard .et .nb-px{ margin-left:2px; }
   footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
   @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
 </style>
@@ -288,7 +292,7 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-06-21T10:01:36.072135+00:00">2026-06-21</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-06-21T10:14:53.992384+00:00">2026-06-21</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
     <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
@@ -362,7 +366,7 @@
   <div class="ecards">
     
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">MARA</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">MARA</span><span class="nb-px" data-sym="MARA" data-mkt="us">$14.22</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">92</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">MARA</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
@@ -384,7 +388,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">MSFT</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+      <div class="et"><span class="tk">MSFT</span><span class="nb-px" data-sym="MSFT" data-mkt="us">$379.40</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
         <span class="oppn">80</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">MSFT</div>
       <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~84% of the move still ahead and a policy tailwind — pre-consensus, where the edge is.</div>
@@ -395,7 +399,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">CLSK</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">CLSK</span><span class="nb-px" data-sym="CLSK" data-mkt="us">$17.24</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">77</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">CLSK</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
@@ -406,7 +410,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">SMCI</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+      <div class="et"><span class="tk">SMCI</span><span class="nb-px" data-sym="SMCI" data-mkt="us">$30.66</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
         <span class="oppn">75</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">SMCI</div>
       <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~90% of the move still ahead — pre-consensus, where the edge is.</div>
@@ -417,7 +421,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">NTAP</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">NTAP</span><span class="nb-px" data-sym="NTAP" data-mkt="us">$159.71</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">59</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">NTAP</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~78% edge remaining.</div>
@@ -430,7 +434,7 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Capital Returns · 24<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
     </div>
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">LITE</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">LITE</span><span class="nb-px" data-sym="LITE" data-mkt="us">$850.00</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">58</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">LITE</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
@@ -441,7 +445,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">IREN</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+      <div class="et"><span class="tk">IREN</span><span class="nb-px" data-sym="IREN" data-mkt="us">$59.96</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
         <span class="oppn">56</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">IREN</div>
       <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~76% of the move still ahead plus a fresh catalyst — pre-consensus, where the edge is.</div>
@@ -454,7 +458,7 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Acquisitions · 35<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
     </div>
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">LOW</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">LOW</span><span class="nb-px" data-sym="LOW" data-mkt="us">$222.20</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">56</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">LOW</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
@@ -476,7 +480,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">NXPI</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">NXPI</span><span class="nb-px" data-sym="NXPI" data-mkt="us">$313.27</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">50</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">NXPI</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
@@ -489,7 +493,7 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Acquisitions · 10<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
     </div>
     <div class="glass acc ecard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">CRWV</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+      <div class="et"><span class="tk">CRWV</span><span class="nb-px" data-sym="CRWV" data-mkt="us">$117.95</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
         <span class="oppn">50</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">CRWV</div>
       <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~83% of the move still ahead — pre-consensus, where the edge is.</div>
@@ -500,7 +504,7 @@
       
     </div>
     <div class="glass acc ecard" style="--accent:var(--up)">
-      <div class="et"><span class="tk">LEN</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+      <div class="et"><span class="tk">LEN</span><span class="nb-px" data-sym="LEN" data-mkt="us">$89.73</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
         <span class="oppn">49</span></div>
       <div class="nm" style="font-size:10.5px;color:var(--muted)">LEN</div>
       <div class="erd">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
@@ -535,7 +539,7 @@
   <div class="ecards">
     
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">AMZN</span>
+      <div class="et"><span class="tk">AMZN</span><span class="nb-px" data-sym="AMZN" data-mkt="us">$244.39</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">71</span></div>
@@ -547,7 +551,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BA</span>
+      <div class="et"><span class="tk">BA</span><span class="nb-px" data-sym="BA" data-mkt="us">$222.72</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">60</span></div>
@@ -559,7 +563,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BIIB</span>
+      <div class="et"><span class="tk">BIIB</span><span class="nb-px" data-sym="BIIB" data-mkt="us">$196.58</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">55</span></div>
@@ -571,7 +575,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">AXON</span>
+      <div class="et"><span class="tk">AXON</span><span class="nb-px" data-sym="AXON" data-mkt="us">$423.40</span>
         <span class="src">federal velocity</span>
         
         <span class="dscore">52</span></div>
@@ -601,7 +605,7 @@
         <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">AXP</span>
+      <div class="et"><span class="tk">AXP</span><span class="nb-px" data-sym="AXP" data-mkt="us">$338.00</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">42</span></div>
@@ -613,7 +617,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">RKLB</span>
+      <div class="et"><span class="tk">RKLB</span><span class="nb-px" data-sym="RKLB" data-mkt="us">$107.24</span>
         <span class="src">federal velocity</span>
         
         <span class="dscore">40</span></div>
@@ -623,7 +627,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">AVGO</span>
+      <div class="et"><span class="tk">AVGO</span><span class="nb-px" data-sym="AVGO" data-mkt="us">$411.35</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">39</span></div>
@@ -635,7 +639,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">QCOM</span>
+      <div class="et"><span class="tk">QCOM</span><span class="nb-px" data-sym="QCOM" data-mkt="us">$226.11</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">37</span></div>
@@ -647,7 +651,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">BMY</span>
+      <div class="et"><span class="tk">BMY</span><span class="nb-px" data-sym="BMY" data-mkt="us">$54.00</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">35</span></div>
@@ -659,7 +663,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">PFE</span>
+      <div class="et"><span class="tk">PFE</span><span class="nb-px" data-sym="PFE" data-mkt="us">$25.21</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">35</span></div>
@@ -671,7 +675,7 @@
         <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
     <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">ABBV</span>
+      <div class="et"><span class="tk">ABBV</span><span class="nb-px" data-sym="ABBV" data-mkt="us">$216.49</span>
         <span class="src">radar quiet</span>
         
         <span class="dscore">35</span></div>
@@ -755,7 +759,7 @@
   <div class="cmd">
     
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">MARA</span><span class="nm">MARA</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">MARA</span><span class="nb-px" data-sym="MARA" data-mkt="us">$14.22</span><span class="nm">MARA</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -801,7 +805,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">MSFT</span><span class="nm">MSFT</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">MSFT</span><span class="nb-px" data-sym="MSFT" data-mkt="us">$379.40</span><span class="nm">MSFT</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell up"></span>
@@ -824,7 +828,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CLSK</span><span class="nm">CLSK</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">CLSK</span><span class="nb-px" data-sym="CLSK" data-mkt="us">$17.24</span><span class="nm">CLSK</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -847,7 +851,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">SMCI</span><span class="nm">SMCI</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">SMCI</span><span class="nb-px" data-sym="SMCI" data-mkt="us">$30.66</span><span class="nm">SMCI</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell up"></span>
@@ -870,7 +874,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NTAP</span><span class="nm">NTAP</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">NTAP</span><span class="nb-px" data-sym="NTAP" data-mkt="us">$159.71</span><span class="nm">NTAP</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -893,7 +897,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">LITE</span><span class="nm">LITE</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LITE</span><span class="nb-px" data-sym="LITE" data-mkt="us">$850.00</span><span class="nm">LITE</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell up"></span>
@@ -916,7 +920,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">IREN</span><span class="nm">IREN</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">IREN</span><span class="nb-px" data-sym="IREN" data-mkt="us">$59.96</span><span class="nm">IREN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -939,7 +943,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">LOW</span><span class="nm">LOW</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LOW</span><span class="nb-px" data-sym="LOW" data-mkt="us">$222.20</span><span class="nm">LOW</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -985,7 +989,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NXPI</span><span class="nm">NXPI</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">NXPI</span><span class="nb-px" data-sym="NXPI" data-mkt="us">$313.27</span><span class="nm">NXPI</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1008,7 +1012,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">CRWV</span><span class="nm">CRWV</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">CRWV</span><span class="nb-px" data-sym="CRWV" data-mkt="us">$117.95</span><span class="nm">CRWV</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1031,7 +1035,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">LEN</span><span class="nm">LEN</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LEN</span><span class="nb-px" data-sym="LEN" data-mkt="us">$89.73</span><span class="nm">LEN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1054,7 +1058,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">PLTR</span><span class="nm">PLTR</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">PLTR</span><span class="nb-px" data-sym="PLTR" data-mkt="us">$128.47</span><span class="nm">PLTR</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell dn"></span>
@@ -1100,7 +1104,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">ELV</span><span class="nm">ELV</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">ELV</span><span class="nb-px" data-sym="ELV" data-mkt="us">$388.50</span><span class="nm">ELV</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1123,7 +1127,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">MPWR</span><span class="nm">MPWR</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">MPWR</span><span class="nb-px" data-sym="MPWR" data-mkt="us">$1563.70</span><span class="nm">MPWR</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell up"></span>
@@ -1146,7 +1150,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CSCO</span><span class="nm">CSCO</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">CSCO</span><span class="nb-px" data-sym="CSCO" data-mkt="us">$119.54</span><span class="nm">CSCO</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1169,7 +1173,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CI</span><span class="nm">CI</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">CI</span><span class="nb-px" data-sym="CI" data-mkt="us">$279.27</span><span class="nm">CI</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1238,7 +1242,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">SHW</span><span class="nm">SHW</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">SHW</span><span class="nb-px" data-sym="SHW" data-mkt="us">$320.79</span><span class="nm">SHW</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1261,7 +1265,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NVDA</span><span class="nm">NVDA</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">NVDA</span><span class="nb-px" data-sym="NVDA" data-mkt="us">$210.69</span><span class="nm">NVDA</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell up"></span>
@@ -1284,7 +1288,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">STX</span><span class="nm">STX</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">STX</span><span class="nb-px" data-sym="STX" data-mkt="us">$1070.23</span><span class="nm">STX</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1307,7 +1311,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">GOOGL</span><span class="nm">GOOGL</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">GOOGL</span><span class="nb-px" data-sym="GOOGL" data-mkt="us">$368.03</span><span class="nm">GOOGL</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell up"></span>
@@ -1330,7 +1334,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">TXN</span><span class="nm">TXN</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">TXN</span><span class="nb-px" data-sym="TXN" data-mkt="us">$322.86</span><span class="nm">TXN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell up"></span>
@@ -1353,7 +1357,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">COST</span><span class="nm">COST</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">COST</span><span class="nb-px" data-sym="COST" data-mkt="us">$951.45</span><span class="nm">COST</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1399,7 +1403,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">LII</span><span class="nm">LII</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LII</span><span class="nb-px" data-sym="LII" data-mkt="us">$532.43</span><span class="nm">LII</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1422,7 +1426,7 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">LDOS</span><span class="nm">LDOS</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LDOS</span><span class="nb-px" data-sym="LDOS" data-mkt="us">$107.12</span><span class="nm">LDOS</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
@@ -1563,11 +1567,14 @@
   
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-21T10:01:36.072135+00:00">2026-06-21 10:01</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-21T10:14:53.992384+00:00">2026-06-21 10:14</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>
 <script src="theme.js"></script>
 <script defer src="sky.js"></script>
+
+<script src="live_config.js"></script>
+<script defer src="live.js"></script>
 </body>
 </html>
