@@ -441,8 +441,8 @@
              padding: 1px 6px; border-radius: 7px; margin: 3px 0 0; white-space: nowrap; max-width: 100%;
              overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line);
              color: var(--muted); background: var(--panel); text-decoration: none; }
-  a.nb-spot { cursor: pointer; }
-  a.nb-spot:hover { filter: brightness(1.08); border-color: currentColor; }
+  .nb-spot-link { cursor: pointer; }
+  .nb-spot-link:hover { filter: brightness(1.08); border-color: currentColor; }
   .nb-spot.spot-up { color: var(--up); border-color: color-mix(in srgb, var(--up) 40%, var(--line));
                      background: color-mix(in srgb, var(--up) 11%, var(--panel)); }
   .nb-spot.spot-dn { color: var(--down); border-color: color-mix(in srgb, var(--down) 32%, var(--line));
@@ -2411,7 +2411,11 @@
                with & / < / " can't corrupt the attribute. L()/t() must never appear in an attr. #}
             {% set _sptip = ('Theme/sector spotlight tilt (×' ~ ('%.2f'|format(sp.mult)) ~ ') — a small narrative nudge to rank; never overrides extension or risk vetoes.' ~ ((' Theme: ' ~ _th.name ~ ((' (' ~ _th.reco_en ~ ')') if _th.reco_en else '') ~ '.') if _th.name else '') ~ ((' Sector: ' ~ (_sc.name or _sc.etf) ~ ' — ' ~ _sc.stage ~ (', extended/do not chase' if _sc.extended else '') ~ '.') if _sc.etf else ''))|e %}
             {% if _th.slug %}
-            <a class="nb-spot {{ _spcls }}" href="basket/{{ _th.slug|e }}.html" title="{{ _sptip }} Open the theme →"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></a>
+            {# the whole card is an <a>; a nested <a> is invalid HTML and the parser
+               auto-closes the card anchor, shattering the card across grid cells. Use a
+               non-anchor chip that carries the theme link in data-href; theme.js navigates
+               it on click (stopPropagation so it beats the card's stock link). #}
+            <span class="nb-spot nb-spot-link {{ _spcls }}" data-href="basket/{{ _th.slug|e }}.html" role="link" tabindex="0" title="{{ _sptip }} Open the theme →"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></span>
             {% else %}
             <div class="nb-spot {{ _spcls }}" title="{{ _sptip }}"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></div>
             {% endif %}
