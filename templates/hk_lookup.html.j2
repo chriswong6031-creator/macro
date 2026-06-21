@@ -134,6 +134,13 @@
   .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
                   color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
+  .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
+             border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
+             border:1px solid var(--line); white-space:nowrap; }
+  .eqbadge .eqg { font-weight:500; opacity:.8; }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   #result { display:none; }
   /* ---- hover tooltips (the ? help icons) — section prose condensed into hover boxes ---- */
   .help { display:inline-flex; align-items:center; justify-content:center;
@@ -153,6 +160,7 @@
   .help.edge-right .tip { left:auto; right:0; transform:none; }
   .help.edge-left .tip { left:0; right:auto; transform:none; }
   .tip b { color:var(--text); }
+{% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
@@ -181,32 +189,36 @@
       <div class="topline">
         <h1 id="r_name"></h1>
         <span id="r_state" class="state"></span>
+        <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_conviction" class="conv" style="display:none"></div>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <p id="r_early" class="early" style="display:none"></p>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+        <div id="r_conviction" class="conv" style="display:none"></div>
+        <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <p id="r_early" class="early" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
-    <div class="panel">
-      <h2>{{ t('Chart', '图表') }}</h2>
-      <div id="tvbox"></div>
-    </div>
-    <div class="panel">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
-      <div id="r_gbeta_panel" style="display:none">
-        <h2 style="margin-top:16px">{{ t('Global-risk beta', '全球风险贝塔') }} <span class="note" style="text-transform:none">· {{ t('amplifier vs cushion', '放大器 vs 缓冲') }}</span>{{ help(
-          'This name\'s beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.',
-          '本股票对全球风险的贝塔（标普500，滞后一天以反映隔夜美→港传导）。香港没有特异选股优势，因此诚实的个股解读是风险敞口：高贝塔（<b>放大器</b>——全球周期股）随风险开关波动更大；低贝塔（<b>缓冲</b>——本地防御）波动更小。标签结合实时全球风险状态（占优／受冲击／滞后）。实测优势温和——用于在已验证状态内进行仓位管理的风险背景，而非预测或买入信号。贝塔是描述性敞口，并非阿尔法。') }}</h2>
-        <div id="r_gbeta" class="mtf"></div>
-      </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <div class="panel" id="r_gbeta_panel" style="display:none">
+      <h2>{{ t('Global-risk beta', '全球风险贝塔') }} <span class="note" style="text-transform:none">· {{ t('amplifier vs cushion', '放大器 vs 缓冲') }}</span>{{ help(
+        'This name\'s beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.',
+        '本股票对全球风险的贝塔（标普500，滞后一天以反映隔夜美→港传导）。香港没有特异选股优势，因此诚实的个股解读是风险敞口：高贝塔（<b>放大器</b>——全球周期股）随风险开关波动更大；低贝塔（<b>缓冲</b>——本地防御）波动更小。标签结合实时全球风险状态（占优／受冲击／滞后）。实测优势温和——用于在已验证状态内进行仓位管理的风险背景，而非预测或买入信号。贝塔是描述性敞口，并非阿尔法。') }}</h2>
+      <div id="r_gbeta" class="mtf"></div>
     </div>
     <div class="panel" id="r_fund_panel" style="display:none">
       <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span>{{ help(
@@ -219,6 +231,16 @@
         'For a dual-listed company, how much DEARER its mainland A-share trades vs this HK-listed H twin, in a common currency. A high premium means the H/HK line is the cheaper way to own the same company; the gap is mean-reverting, so a stretched premium that compresses tends to favour the HK line. Computed basket (1:1 share-equivalence), so lean on the TREND and the percentile within its own history, not the absolute level. Cross-market valuation context, NOT a buy signal.',
         '对于A+H两地上市的公司，其内地A股相对这只港股H股在同一币种下贵多少。溢价越高，意味着用H股／港股买入同一家公司更便宜；该价差具有均值回归性，因此被拉伸后的溢价一旦收敛，往往利好港股一边。为计算型口径（按1:1股本等值），请侧重趋势与其自身历史分位，而非绝对水平。跨市场估值背景，并非买入信号。') }}</h2>
       <div id="r_ah"></div>
+    </div>
+    </details>
+    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
+    <div class="panel">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
+    </div>
+    <div class="panel">
+      <h2>{{ t('Chart', '图表') }}</h2>
+      <div id="tvbox"></div>
     </div>
     <div class="panel">
       <h2>{{ t('How much to trust the state — measured on HK history', '这个状态有多可信 — 基于香港历史实测') }}{{ help(
@@ -235,10 +257,15 @@
         对于风险状态，回撤视角比平均收益更重要。') }}</h2>
       <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
+      'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -399,7 +426,13 @@
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
-    renderConviction(d);
+
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // Replaces the separate conviction / global-risk-beta / A-H-premium panels with ONE
+    // decision band + fingerprint + honesty row + evidence lanes + country slot.
+    var svOk = !!(window.SV && d.view && window.SV.mount(d));
+
+    if (!svOk) renderConviction(d);
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
@@ -413,6 +446,15 @@
       ageEl.textContent = lz(d.ladder.age_line, d.ladder.age_line_zh);
       ageEl.style.display = 'block';
     } else { ageEl.style.display = 'none'; }
+
+    var eqEl = document.getElementById('r_eq');
+    if (d.ladder.eq_badge) {
+      var grade = lang() === 'zh' ? (d.ladder.eq_grade_zh || d.ladder.eq_grade) : d.ladder.eq_grade;
+      eqEl.innerHTML = (lang() === 'zh' ? '入场 ' : 'Entry ') + d.ladder.eq_badge + ' <span class="eqg">' + grade + '</span>';
+      eqEl.className = 'eqbadge eq-' + (d.ladder.eq_dir || 'flat');
+      eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
+      eqEl.style.display = 'inline-flex';
+    } else { eqEl.style.display = 'none'; }
 
     var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
       ? d.ladder.points_zh : (d.ladder.points || []);
@@ -441,9 +483,11 @@
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    // Global-risk beta — the honest per-name HK read (additive; absent on indices/ETFs)
+    // Global-risk beta — now the country_slot "global_beta" card in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var gp = document.getElementById('r_gbeta_panel'), g = d.global_beta;
-    if (g && g.beta != null) {
+    if (svOk) { gp.style.display = 'none'; }
+    else if (g && g.beta != null) {
       var ROLE = {amplifier: ['Amplifier — moves more with global risk', '放大器 — 随全球风险波动更大'],
                   cushion: ['Cushion — domestic-defensive', '缓冲 — 本地防御'],
                   neutral: ['Neutral global-risk exposure', '全球风险敞口中性']};
@@ -529,9 +573,11 @@
       fpEl.style.display = 'block';
     } else { fpEl.style.display = 'none'; }
 
-    // A/H premium — per dual-listed name (additive; only the ~12 A+H pairs carry it)
+    // A/H premium — now the country_slot "ah_premium" card in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var ahEl = document.getElementById('r_ah_panel'), ah = d.ah_premium;
-    if (ah && ah.premium_pct != null) {
+    if (svOk) { ahEl.style.display = 'none'; }
+    else if (ah && ah.premium_pct != null) {
       var p = ah.premium_pct;
       var ahh = '<div class="fnd-grid">'
         + '<div class="fnd-chip"><div class="k">' + L('ah_prem') + '</div><div class="v">' + (p >= 0 ? '+' : '') + p.toFixed(1) + '%</div></div>'
@@ -559,6 +605,16 @@
     document.getElementById('r_cal').innerHTML = cs;
 
     drawChart(d);
+    hideEmptyGroups();
+  }
+
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
 
   // HK charts are drawn from OUR stored EOD closes via TradingView Lightweight

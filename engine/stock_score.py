@@ -48,7 +48,7 @@ from engine import i18n as _i18n  # bilingual glossary for caution labels
 # ----------------------------------------------------------------------------
 # market constants
 # ----------------------------------------------------------------------------
-MARKETS = ("US", "CN", "HK", "CA")
+MARKETS = ("US", "CN", "HK", "CA", "INTL")
 
 # fallback on-card label for the EDGE axis per market (see _sel_kind for the dynamic,
 # leg-aware label). v2: the US/CA EDGE leads with the event-evidence core (insider net-buying
@@ -61,6 +61,9 @@ _SEL_KIND = {
     "CA": ("event edge", "事件驱动优势"),
     "CN": ("mean-reversion", "均值回归"),
     "HK": ("flow · value · exposure", "资金 · 价值 · 敞口"),
+    # Intl (ex-US developed/EM ADRs) has no event feeds either — same residual-momentum
+    # prior as the TSX, framed as an unvalidated context leg (see trust_tier / _axis_selection).
+    "INTL": ("residual momentum", "残差动量"),
 }
 
 # EDGE evidence weights (US/CA). The SHALLOW 2023-2025 audit ranked SUE first (IC .039, lone
@@ -160,6 +163,10 @@ def trust_tier(market: str, gate_go: bool = False) -> dict:
         # no event feeds on the TSX -> residual-momentum prior, never claimed as validated.
         return {"tier": "context", "en": "Residual-momentum prior — unvalidated, not a standalone edge",
                 "zh": "残差动量先验 — 未验证，非独立超额收益", "css": "tt-context"}
+    if m == "INTL":
+        # no ex-US event feeds either -> same residual-momentum prior as the TSX.
+        return {"tier": "context", "en": "Residual-momentum prior (ex-US) — unvalidated, not a standalone edge",
+                "zh": "残差动量先验（非美股）— 未验证，非独立超额收益", "css": "tt-context"}
     # US — v2 EDGE = event-evidence signals. Insider net-buying is the lone (borderline)
     # cross-sectional FDR survivor; SUE's cross-sectional edge COLLAPSED on deep history
     # (reports/sue-deep-history-phase0.md) so it is kept as PEAD context, not a validated leg;
@@ -181,6 +188,7 @@ _WEIGHT_PRIOR = {
     "CA": {"selection": 0.45, "entry": 0.18, "tailwind": 0.12, "quality": 0.25},
     "CN": {"selection": 0.42, "entry": 0.25, "tailwind": 0.13, "quality": 0.20},
     "HK": {"selection": 0.35, "entry": 0.25, "tailwind": 0.20, "quality": 0.20},
+    "INTL": {"selection": 0.45, "entry": 0.18, "tailwind": 0.12, "quality": 0.25},
 }
 
 # cycle states that BLOCK a buy verb + cap the entry axis (research §6.3).
@@ -270,7 +278,7 @@ def _edge_basis(rec: dict, market: str) -> list[dict]:
         a = _f(rec.get("alpha")); add("alpha", float(np.clip(a, -3, 3)) if a is not None else None)
     elif m == "CN":
         add("rev_z", _f(rec.get("rev_z"))); add("revision", _f(rec.get("revision_z"))); add("alpha", _f(rec.get("alpha")))
-    elif m == "CA":
+    elif m in ("CA", "INTL"):
         add("alpha", _f(rec.get("alpha")))
     else:
         add("rs", _f(rec.get("rs_z")) if _f(rec.get("rs_z")) is not None else _f(rec.get("alpha")))
@@ -319,9 +327,9 @@ def _axis_selection(rec: dict, market: str, calm: float | None = None) -> tuple[
         num = sum(ew[k] * v for k, v in legs.items())
         den = max(sum(ew[k] for k in legs), 0.5)   # confidence floor (see above)
         return _clipz(num / den), present
-    if m == "CA":
-        # Canada has NO event feeds (no EDGAR / Form-4 / revision data on the TSX), so
-        # residual momentum is its best-available selection leg — kept at full strength and
+    if m in ("CA", "INTL"):
+        # Canada/Intl have NO event feeds (no EDGAR / Form-4 / revision data ex-US), so
+        # residual momentum is the best-available selection leg — kept at full strength and
         # framed as an UNVALIDATED prior (gate stays NEUTRAL; the board keeps the alpha rank).
         z = _f(rec.get("alpha"))
         if z is not None:
@@ -585,8 +593,15 @@ _PCT_BUCKET = {0: "avoid", 25: "quarter", 50: "half", 75: "three-quarter", 100: 
 # itself implies, even when the name's risk budget alone would allow more. This is
 # the contradiction users hit: "Suggested size · Full size 100%" beside a
 # "HALF SIZE" entry tag. Subtract-only, like every other size gate here.
+# Keyed on the entry TAG (not urgency — urgency is many-to-one over cap tiers: 'now' spans both
+# the uncapped BUY NOW and the capped HALF SIZE, 'caution' spans TAKE PROFITS/DON'T CHASE/etc., so
+# an urgency key would either cap full-size buys or miss DON'T CHASE). Every cap SUBTRACTS from full;
+# BUY NOW/HOLD are intentionally uncapped (full conviction), SELL-REDUCE/AVOID size to 0 via the
+# blocked gate. "DON'T CHASE" is the extension-gate override tag (engine/cycles.py:1028) — a
+# missed-entry chase that is NOT cycle-blocked, so without an explicit cap its risk budget could
+# read fuller than the timing warrants. (See test_entry_size_cap_covers_all_tags.)
 _ENTRY_SIZE_CAP = {"HALF SIZE": 50, "BUY SOON": 50, "WATCH": 50, "WAIT": 25,
-                   "TAKE PROFITS": 25, "UNCONFIRMED — HIGH RISK": 25}
+                   "TAKE PROFITS": 25, "UNCONFIRMED — HIGH RISK": 25, "DON'T CHASE": 25}
 
 
 def _suggested_size(risk_total: float, *, blocked: bool, market: str,

@@ -26,6 +26,7 @@ from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
+from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -783,6 +784,20 @@ def main(betas: dict | None = None) -> dict | None:
             log.info("hk A/H premium: attached to %d dual-listed names", len(ah))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk A/H premium attach failed (%s); skipping", e)
+    # canonical render model (engine/stock_view) — ONE final pass over every per-stock JSON,
+    # AFTER all patches (conviction + global_beta + fundamentals + A/H premium) have landed,
+    # so the view's country_slot picks up global_beta + ah_premium. Additive + degrade-never.
+    for fp in outdir.glob("*.json"):
+        if fp.name in ("index.json", "calibration.json"):
+            continue
+        try:
+            rec = json.loads(fp.read_text())
+            if "ladder" not in rec:
+                continue
+            rec["view"] = stock_view.build_view(rec, "HK")
+            fp.write_text(json.dumps(rec, default=str))
+        except Exception:  # noqa: BLE001 — never fatal
+            continue
     (outdir / "index.json").write_text(json.dumps(index))
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():

@@ -183,6 +183,7 @@
   .help.edge-right .tip { left:auto; right:0; transform:none; }
   .help.edge-left .tip { left:0; right:auto; transform:none; }
   .tip b { color:var(--text); }
+{% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
@@ -216,29 +217,34 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <!-- unified Conviction Profile hero — the SAME block the standout card shows -->
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- unified Conviction Profile hero — populated only as a FALLBACK if stockview.js fails -->
       <div id="r_conviction" class="conv" style="display:none"></div>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <p id="r_early" class="early" style="display:none"></p>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
+        <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <p id="r_early" class="early" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
-    <div class="panel">
-      <h2>{{ t('Chart', '图表') }}</h2>
-      <div id="tvbox"></div>
-    </div>
-    <div class="panel">
-      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
-      <div id="r_mtf"></div>
-      <div id="r_alpha_panel" style="display:none">
-        <h2 style="margin-top:16px">{{ t('Relative strength & mean-reversion', '相对强度与均值回归') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span>{{ help(
-          'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole A-share cross-section. <b>Deep-history corrected:</b> A-share momentum is NOT a validated edge (35y test) — A-shares MEAN-REVERT, so do not read high alpha as a buy. The actionable read is the entry tag: <b>extended</b> (just spiked) = reversal RISK / fade; <b>pullback</b> (recent dip) = the constructive MEAN-REVERSION entry — the validated effect. The alpha is relative-strength context, not a buy signal.',
-          '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 A 股横截面的排名。<b>经深度历史校正：</b>A股动量并非有效优势（35年检验）—— A股<b>均值回归</b>，因此切勿把高 alpha 当作买入。可操作的解读是入场标记：<b>extended</b>（刚急涨）＝反转风险/做空；<b>pullback</b>（近期回调）＝有效的<b>均值回归</b>入场。alpha 为相对强度背景，而非买入信号。') }}</h2>
-        <div id="r_alpha" class="mtf"></div>
-      </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
+    <details class="sv-group"><summary>{{ t('📊 Fundamentals, analyst &amp; positioning', '📊 基本面、分析师与持仓') }}</summary>
+    <div class="panel" id="r_alpha_panel" style="display:none">
+      <h2>{{ t('Relative strength & mean-reversion', '相对强度与均值回归') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span></h2>
+      <div id="r_alpha" class="mtf"></div>
+      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+        'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole A-share cross-section. <b>Deep-history corrected:</b> A-share momentum is NOT a validated edge (35y test) — A-shares MEAN-REVERT, so do not read high alpha as a buy. The actionable read is the entry tag: <b>extended</b> (just spiked) = reversal RISK / fade; <b>pullback</b> (recent dip) = the constructive MEAN-REVERSION entry — the validated effect. The alpha is relative-strength context, not a buy signal.',
+        '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 A 股横截面的排名。<b>经深度历史校正：</b>A股动量并非有效优势（35年检验）—— A股<b>均值回归</b>，因此切勿把高 alpha 当作买入。可操作的解读是入场标记：<b>extended</b>（刚急涨）＝反转风险/做空；<b>pullback</b>（近期回调）＝有效的<b>均值回归</b>入场。alpha 为相对强度背景，而非买入信号。') }}</p>
     </div>
     <div class="panel" id="r_fund_panel" style="display:none">
       <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span>{{ help(
@@ -268,6 +274,16 @@
         '个股融资余额及其约20个交易日的变化 —— A股杠杆／拥挤度平面（全市场两融表的个股切片）。A股杠杆由散户驱动，快速攀升是过热／拥挤信号，回落则是去杠杆。仅作背景 —— 杠杆并非有效择时信号，且并非所有个股都可两融。') }}</h2>
       <div id="r_pos"></div>
     </div>
+    </details>
+    <details class="sv-group"><summary>{{ t('📈 Momentum, chart &amp; history', '📈 动量、图表与历史') }}</summary>
+    <div class="panel">
+      <h2>{{ t('Chart', '图表') }}</h2>
+      <div id="tvbox"></div>
+    </div>
+    <div class="panel">
+      <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
+      <div id="r_mtf"></div>
+    </div>
     <div class="panel">
       <h2>{{ t('How much to trust the state — measured 2008→2026', '这个状态有多可信 — 实测 2008→2026') }}{{ help(
         'A-shares drift up over a month from every state (the market\'s long upward bias); the spread between
@@ -283,10 +299,15 @@
         对于风险状态，回撤视角比平均收益更重要。') }}</h2>
       <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
+      'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
+      '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -459,7 +480,12 @@
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
-    renderConviction(d);
+
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // Replaces the inline conviction hero + relative-strength / valuation-band / margin
+    // panels with ONE decision band + fingerprint + honesty row + evidence lanes + country slot.
+    var svOk = !!(window.SV && d.view && window.SV.mount(d));
+    if (!svOk) renderConviction(d);
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
@@ -511,9 +537,11 @@
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    // Alpha vs sector — sector-neutral residual momentum (additive; absent on ETFs/indices)
+    // Alpha vs sector — now folded into evidence.rel_strength; render the legacy panel
+    // only as a fallback when the shared view-model didn't mount.
     var ap = document.getElementById('r_alpha_panel'), a = d.alpha;
-    if (a && a.alpha != null) {
+    if (svOk) { ap.style.display = 'none'; }
+    else if (a && a.alpha != null) {
       var AE = {pullback:['pullback','回调买点'], extended:['extended','急涨偏热'],
                 intact:['intact','趋势完好'], laggard:['laggard','落后'], neutral:['neutral','中性']};
       var sgn = function (x, n) { return (x >= 0 ? '+' : '') + (x == null ? '—' : x.toFixed(n)); };
@@ -592,9 +620,11 @@
       fpEl.style.display = 'block';
     } else { fpEl.style.display = 'none'; }
 
-    // Valuation band — current multiple's percentile within the stock's own 5y range (additive)
+    // Valuation band — now the country_slot "val_band" card in the shared view; render
+    // the legacy panel only as a fallback when the view-model didn't mount.
     var vbEl = document.getElementById('r_vband_panel'), vp = d.val_pctile;
-    if (vp && (vp.pe || vp.pb || vp.ps)) {
+    if (svOk) { vbEl.style.display = 'none'; }
+    else if (vp && (vp.pe || vp.pb || vp.ps)) {
       function ordSuf(n) {
         if (lang() === 'zh') return '';
         var s = ['th', 'st', 'nd', 'rd'], v = n % 100;
@@ -666,9 +696,11 @@
       enEl.style.display = 'block';
     } else { enEl.style.display = 'none'; }
 
-    // Margin positioning — per-name financing balance + 20d trend (additive; neutral colouring)
+    // Margin positioning — now the country_slot "margin_fin" card in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var posEl = document.getElementById('r_pos_panel'), pos = d.positioning;
-    if (pos && pos.fin_balance_yi != null) {
+    if (svOk) { posEl.style.display = 'none'; }
+    else if (pos && pos.fin_balance_yi != null) {
       var ph = '<div class="fnd-grid">'
         + '<div class="fnd-chip"><div class="k">' + L('p_fin') + '</div><div class="v">' + pos.fin_balance_yi + ' <span class="vs">亿</span></div></div>';
       if (pos.chg_pct != null) {
@@ -703,6 +735,15 @@
       try { window.StockChart.mount(document.getElementById('tvbox'), d.ticker, {name: d.name, ohlcDir: 'chinaohlc'}); }
       catch (e) { /* chart is garnish — analysis above stands alone */ }
     }
+    hideEmptyGroups();
+  }
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1);
