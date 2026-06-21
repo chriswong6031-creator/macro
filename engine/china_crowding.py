@@ -78,11 +78,27 @@ def _read(group: str, file: str) -> pd.DataFrame | None:
 
 
 def _valuation_df() -> pd.DataFrame | None:
-    """The whole-A valuation parquet under either group name (None if absent)."""
-    df = _read("china_a_valuation", "valuation")
-    if df is None:
-        df = _read("china_a_val", "valuation")
-    return df
+    """Whole-A valuation: join the latest china_a_val pe + pb series into a 1-row frame with
+    pe_pctile / pb_pctile on a 0..100 scale (the collector stores percentiles as 0..1 fractions).
+    None if absent. (china_a_valuation is whole-MARKET, so this drives the regime fallback leg.)"""
+    pe = _read("china_a_val", "pe")
+    pb = _read("china_a_val", "pb")
+    if pe is None and pb is None:
+        return None
+    row = {}
+    for df, pct_col, out_col in ((pe, "pe_pctile_10y", "pe_pctile"), (pb, "pb_pctile_10y", "pb_pctile")):
+        if df is None or df.empty:
+            continue
+        c = _col(df, pct_col, "pe_pctile" if out_col == "pe_pctile" else "pb_pctile")
+        if not c:
+            continue
+        s = pd.to_numeric(df[c], errors="coerce").dropna()
+        if len(s):
+            v = float(s.iloc[-1])
+            row[out_col] = v * 100.0 if v <= 1.0 else v   # 0..1 fraction → 0..100
+    if not row:
+        return None
+    return pd.DataFrame([row])
 
 
 def _col(df: pd.DataFrame, *needles: str) -> str | None:

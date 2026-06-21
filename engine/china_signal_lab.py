@@ -52,23 +52,31 @@ def leg_weights_for(consumer: str) -> dict:
     if not base:
         return {}
     fams = load_validation()
+    try:
+        from engine.china_validation import _MIN_PROVEN_N_TS as _MIN_N
+    except Exception:  # noqa: BLE001
+        _MIN_N = 25
     for leg in list(base):
         fam = fams.get(_VAL_FAMILY.get(leg, "")) if _VAL_FAMILY.get(leg) else None
         if not fam:
             continue                      # no harness for this leg → keep prior (floor)
-        ic = fam.get("ic")
+        # china_validation writes mean_ic / t_hac / sign_ok / proven (NOT 'ic'); sign is judged
+        # by the harness against the family's sign_expected, so trust sign_ok + proven here.
+        ic = fam.get("mean_ic", fam.get("ic"))
         t = fam.get("t_hac")
         n = fam.get("n_obs") or 0
-        if ic is None:
-            continue
+        sign_ok = fam.get("sign_ok")
+        proven = fam.get("proven")
         try:
-            ic = float(ic); t = float(t) if t is not None else 0.0
+            ic = float(ic) if ic is not None else None
+            t = float(t) if t is not None else 0.0
         except (TypeError, ValueError):
             continue
-        if ic < 0 and abs(t) >= 2.0 and n >= 120:
-            base[leg] = 0.0               # proven to actively mislead → drop
-        elif ic > 0 and abs(t) >= 2.0 and n >= 120:
-            base[leg] *= min(1.5, 1.0 + abs(ic) * 5.0)   # earned boost
+        if proven and sign_ok:
+            base[leg] *= min(1.5, 1.0 + abs(ic or 0.0) * 5.0)        # earned boost
+        elif sign_ok is False and abs(t) >= 2.0 and n >= _MIN_N:
+            base[leg] = 0.0                                          # demonstrably wrong-sign → drop
+        # else: accruing / insufficient evidence → keep the prior (context floor)
     tot = sum(base.values())
     if tot <= 0:
         return dict(_PRIORS.get(consumer) or {})         # never zero everything
@@ -185,7 +193,9 @@ def build_china_scorecard() -> dict:
     for r in rows:
         fam = fams.get(_VAL_FAMILY.get(r["key"], "")) if _VAL_FAMILY.get(r["key"]) else None
         if fam:
-            r["computed"] = {k: fam.get(k) for k in ("ic", "t_hac", "hit_rate", "n_obs", "status")}
+            r["computed"] = {"ic": fam.get("mean_ic", fam.get("ic")), "t_hac": fam.get("t_hac"),
+                             "n_obs": fam.get("n_obs"), "status": fam.get("status"),
+                             "sign_ok": fam.get("sign_ok"), "proven": fam.get("proven")}
     by_tier = {t: [r for r in rows if r["tier"] == t] for t in TIERS}
     return {
         "schema": SCHEMA, "is_context_only": True,

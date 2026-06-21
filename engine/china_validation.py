@@ -329,7 +329,7 @@ def _validate_timer(V, family, sig, panel, bench, horizons) -> dict:
             # standardize signal so the product is a comparable predictive contribution
             s = (j["s"] - j["s"].mean()) / (j["s"].std(ddof=1) or 1.0)
             prod = (s * j["f"]).rename("sf")
-            nw = V.newey_west_tstat(prod, lags=max(1, h // 2))
+            nw = V.newey_west_tstat(prod, lags=max(1, h - 1))
             n = nw.get("n", 0)
             max_n = max(max_n, n)
             mean = nw.get("mean")

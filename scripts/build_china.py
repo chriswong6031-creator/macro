@@ -809,8 +809,6 @@ def main() -> int:
             ("china policy watch", "scripts.build_china_policy_watch", "build"),
             ("china alt-data desk", "scripts.build_china_altdata", "build"),
             ("china divergence radar", "scripts.build_china_radar", "build"),
-            # off-desk leading-accumulation discovery (reads altdata + the new alt-data feeds)
-            ("china discovery", "engine.china_discovery", "build"),
             # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
             ("china central analysis", "scripts.build_china_synthesis", "build"),
         ):

@@ -40,7 +40,13 @@ def build() -> dict | None:
         loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=False)
     from engine import i18n
     env.globals.update(td=i18n.td, tr=i18n.tr, t=i18n.t)
-    html = env.get_template("china_altdata.html.j2").render(ad=bt, lab=scorecard, mm=mm)
+    try:
+        from engine.china_crowding import FLAG_LABELS as _crowd_labels
+        crowd_labels = {k: list(v) for k, v in _crowd_labels.items()}
+    except Exception:  # noqa: BLE001
+        crowd_labels = {}
+    html = env.get_template("china_altdata.html.j2").render(
+        ad=bt, lab=scorecard, mm=mm, crowd_labels=crowd_labels)
     (site / "china_altdata.html").write_text(html)
     for a in ASSETS:
         src = config.ROOT / "templates" / a

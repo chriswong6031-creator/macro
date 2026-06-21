@@ -134,9 +134,9 @@
       <tr>
         <td><b>{{ bl(c.sector_en, c.sector_zh) }}</b> <span class="{{ 'sgn-pos' if c.radar_sign=='positive' else 'sgn-neg' }}">{{ '▲' if c.radar_sign=='positive' else '▼' }}</span></td>
         <td><span class="cc">{{ c.opportunity_score if c.opportunity_score is not none else c.context_conviction }}</span></td>
-        <td><span class="bandpill b-{{ 'high' if st=='emerging' else ('elevated' if st=='early' else ('none' if st=='consensus' else 'low')) }}">{{ bl((_STG.get(st) or [st,st])[0], (_STG.get(st) or [st,st])[1]) }}</span>{% if c.leading_gap is not none and c.leading_gap > 0 %} <span class="sgn-pos">↑{{ c.leading_gap }}</span>{% endif %}</td>
+        <td><span class="bandpill b-{{ 'high' if st=='emerging' else ('elevated' if st=='early' else ('none' if st=='consensus' else 'low')) }}">{{ bl((_STG.get(st) or [st,st])[0], (_STG.get(st) or [st,st])[1]) }}</span>{% if c.leading_gap and c.leading_gap > 0 %} <span class="sgn-pos">↑{{ c.leading_gap }}</span>{% endif %}</td>
         <td><span class="cc">{{ c.composite_conviction if c.composite_conviction is not none else c.context_conviction }}</span> <span class="bandpill b-{{ (c.conviction_band[0]|lower) if c.conviction_band else 'none' }}">{{ bl(c.conviction_band[0], c.conviction_band[1]) }}</span></td>
-        <td>{% if c.edge_remaining is not none %}<div class="strength" style="width:60px"><i style="width:{{ (c.edge_remaining*100)|round|int }}%"></i></div>{{ (c.edge_remaining*100)|round|int }}%{% else %}—{% endif %}</td>
+        <td>{% if c.edge_remaining is not none %}<div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:{{ (c.edge_remaining*100)|round|int }}%"></i></div>{% else %}—{% endif %}</td>
         <td>{% for s in c.surfaces_confirming %}<span class="surf">{{ s }}</span>{% endfor %}</td>
         <td>{{ bl(c.rationale_en, c.rationale_zh) }}{% if c.members %}<br><span class="mut" style="font-size:11px">{% for m in c.members %}{{ m.name }} ({{ m.ticker }}){% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</td>
       </tr>
@@ -229,7 +229,7 @@
 
   <!-- I. MASTERMIND CONTRACT -->
   <div class="xmit">
-    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at', '这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v2</code>) {{ t('and', '与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
+    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at', '这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>{{ b.schema }}</code>) {{ t('and', '与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
     {% if b.surfaces_present %}<br><span class="s" style="color:var(--muted)">{{ t('Surfaces present', '已就绪面板') }}: {{ b.surfaces_present|join(' · ') }}</span>{% endif %}
   </div>
 

@@ -219,7 +219,7 @@ def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
             "triple": triple[:top_n],
             "top": rows[:top_n], "bottom": rows[-top_n:][::-1],
             "crowding_flags": crowding,
-            "weights": _W,
+            "weights": _leg_weights(),
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china_altdata.by_ticker failed (%s)", e)

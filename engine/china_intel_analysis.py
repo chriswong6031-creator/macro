@@ -155,15 +155,24 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
                 s = sum(conv_signed)
                 ad_side = 1 if s > 0 else (-1 if s < 0 else 0)
                 altdata_dir = 1 if (ad_side > 0) == (sign == "positive") and ad_side else (-1 if ad_side else 0)
+            # news is CONTRARIAN in China (validation sign_expected = -1): a fearful tape (z<0)
+            # confirms a positive divergence; a rich/greedy tape (z>0) confirms a negative one.
             z = (news_sent or {}).get("z")
-            news_dir = 1 if (isinstance(z, (int, float)) and ((z > 0 and sign == "positive") or (z < 0 and sign == "negative"))) else (0 if not news_hits else -1 if isinstance(z, (int, float)) and z != 0 else 0)
+            news_dir = 0
+            if news_hits and isinstance(z, (int, float)) and z != 0:
+                news_dir = 1 if ((z < 0 and sign == "positive") or (z > 0 and sign == "negative")) else -1
             news_mag = (min(1.0, news_hits / 3.0) * (1.0 if news_dir > 0 else 0.5)) if news_hits else 0.0
             policy_term = _policy_term(d.get("signal_key"), policy)
             policy_dir = 1 if policy_term >= 0.7 else (-1 if policy_term <= 0.0 and (policy or {}).get("stance") == "tightening" else 0)
             cond_dir, cond_mag = _roro_leg(conditions, sign)
             radar_mag = strength * rel_factor
-            # geometric-leaning magnitude backbone (one near-zero leg keeps it low)
-            base = cv.combine(radar_mag, altdata_mag, news_mag, policy_term, cond_mag, weights=wv)
+            # geometric-leaning magnitude backbone over PRESENT legs only — absent legs are
+            # passed as None (cv.combine skips them); passing 0.0 would crush the composite.
+            altdata_c = altdata_mag if aligned else None
+            news_c = news_mag if news_hits else None
+            policy_c = policy_term if policy else None
+            cond_c = cond_mag if cond_dir != 0 else None
+            base = cv.combine(radar_mag, altdata_c, news_c, policy_c, cond_c, weights=wv)
             # independence tally (legs that vote, aligned vs against the radar sign)
             legs = [("radar", 1, radar_mag), ("altdata", altdata_dir, altdata_mag),
                     ("news", news_dir, news_mag), ("policy", policy_dir, policy_term),
@@ -201,9 +210,9 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
                 r_en += " · policy tailwind"; r_zh += " · 政策顺风"
             if cond_dir > 0:
                 r_en += " · risk-on tape"; r_zh += " · 风险偏好"
-            pct = int(round(edge["score"] * 100))
-            r_en += f" · {stage}, ~{pct}% of move still ahead"
-            r_zh += f" · {_STAGE_ZH.get(stage, stage)}，约{pct}%空间未定价"
+            # qualitative lifecycle clause — NOT a quantified upside prediction (no % claim)
+            r_en += f" · {stage}" + (" (leading the crowd)" if gap["gap"] > 0 else "")
+            r_zh += f" · {_STAGE_ZH.get(stage, stage)}" + ("（领先于人群）" if gap["gap"] > 0 else "")
             out.append({
                 "key": d.get("signal_key"), "sector_en": d.get("sector_en"),
                 "sector_zh": d.get("sector_zh"), "sector_etf": etf,
@@ -265,7 +274,7 @@ def _edge_remaining(d: dict, news_hits: int, news_sent: dict, conditions: dict, 
 def _leading_gap(sign: str, altdata_dir: int, news_dir: int, policy: dict, conditions: dict) -> dict:
     """Leading flow (radar divergence + altdata) minus lagging confirmers (loud news, already-
     eased policy, risk-on tape). gap>0 = leading the crowd."""
-    lead = (1 if sign == "positive" else 0) + (1 if altdata_dir > 0 else 0)
+    lead = 1 + (1 if altdata_dir > 0 else 0)   # a fired radar divergence is LEADING either sign
     stance = (policy or {}).get("stance")
     fe = (conditions or {}).get("fear_euphoria") or {}
     roro = fe.get("roro")
