@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 from datetime import datetime, timezone
 
 from engine import live_overlay, live_quotes, technicals
@@ -176,11 +177,26 @@ def _market_context(quotes, stale_after, max_chg, now) -> dict:
 
 # --------------------------------------------------------------- config.js ----
 
+def resolve_worker_url() -> str:
+    """The live-quotes Worker URL, with an ENV OVERRIDE so the intraday layer can be
+    turned on by setting a GitHub repo VARIABLE (LIVE_QUOTES_WORKER_URL) — no config.yml
+    edit/commit needed — falling back to config.yml live.quotes_worker_url. A non-https
+    value is rejected (logged + ignored) so a malformed variable can't break live.js."""
+    cfg = config.load().get("live") or {}
+    url = (os.environ.get("LIVE_QUOTES_WORKER_URL", "").strip()
+           or str(cfg.get("quotes_worker_url", "") or "").strip())
+    if url and not url.startswith("https://"):
+        log.warning("live quotes worker URL ignored (must be https://): %r", url)
+        return ""
+    return url.rstrip("/")
+
+
 def write_live_config(site_dir) -> None:
     """Tiny browser config the static pages' live.js reads. Written by BOTH this
-    intraday build and the nightly build_site, so it always reflects config.yml."""
+    intraday build and the nightly build_site, so it always reflects config.yml /
+    the LIVE_QUOTES_WORKER_URL env override."""
     cfg = config.load().get("live") or {}
-    js = (f"window.LIVE_QUOTES_URL={json.dumps(cfg.get('quotes_worker_url', ''))};"
+    js = (f"window.LIVE_QUOTES_URL={json.dumps(resolve_worker_url())};"
           f"window.LIVE_POLL_SEC={int(cfg.get('poll_seconds', 60))};"
           f"window.LIVE_STALE_MIN={int(cfg.get('stale_after_min', 20))};"
           f"window.LIVE_ENABLED={json.dumps(bool(cfg.get('enabled', True)))};\n")

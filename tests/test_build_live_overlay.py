@@ -62,6 +62,18 @@ def test_live_config_js_carries_worker_url():
     assert "LIVE_QUOTES_URL" in js and "LIVE_POLL_SEC" in js
 
 
+def test_resolve_worker_url_env_override_and_https_guard(monkeypatch):
+    # env var overrides config + strips a trailing slash (turn-on via a GitHub repo variable)
+    monkeypatch.setenv("LIVE_QUOTES_WORKER_URL", "https://q.example.workers.dev/")
+    assert blo.resolve_worker_url() == "https://q.example.workers.dev"
+    # a non-https value is rejected so a malformed variable can't break live.js
+    monkeypatch.setenv("LIVE_QUOTES_WORKER_URL", "http://insecure.dev")
+    assert blo.resolve_worker_url() == ""
+    # empty env -> falls back to config.yml (default "")
+    monkeypatch.delenv("LIVE_QUOTES_WORKER_URL", raising=False)
+    assert blo.resolve_worker_url() == str((blo.config.load().get("live") or {}).get("quotes_worker_url", "") or "")
+
+
 def test_masterminds_snap_v2_carries_alloc_and_asof():
     cards = [{"key": "mm_moderate", "name_en": "MM Moderate", "cagr": 11.5,
               "sharpe": 1.1, "maxdd": -24.0}]
