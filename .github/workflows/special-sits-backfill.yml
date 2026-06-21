@@ -57,5 +57,17 @@ jobs:
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/special_situations site/special_situations.html site/allocationdata/special_situations.json data/regime/special_situations_latest.json
-          git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)" || echo "nothing to commit"
-          git push || echo "nothing to push"
+          git commit -m "special-sits: backlog burn-down + priors refresh $(date -u +%F)" || { echo "nothing to commit"; exit 0; }
+          # main can advance via direct-merge PRs during the long LLM run -> a naive push is
+          # rejected (non-fast-forward) and the enrichment is LOST. Rebase+retry like the
+          # daily/engine jobs (own files -> rebases clean; -X theirs only bites on a true
+          # conflict, which the shared `pipeline` concurrency group already prevents vs daily).
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep $((i * 10))
+          done
+          echo "::error::special-sits-backfill push failed after retries — enrichment not persisted"
+          exit 1
