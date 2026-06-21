@@ -4027,6 +4027,15 @@ special_situations:                # event-driven Special Situations desk (displ
   api_key_env: "DEEPSEEK_API_KEY"
   llm_base_url: "https://api.deepseek.com/anthropic"
   llm_min_confidence: "medium"
+  # Per-build work caps — the daily build chips the historical backlog (~23k deferred
+  # filings) a bounded slice at a time so one run can never stall the whole engine job.
+  # Progress persists in events.parquet (committed), so the backlog converges over days
+  # and steady-state only touches new filings. Raise these (or call the collector funcs
+  # with a high `limit` in a one-off workflow_dispatch) to burn the backlog down faster.
+  text_per_build: 1500             # keyword pre-filter doc fetches per build (cheap, SEC-paced)
+  classify_per_build: 150          # P1.1 LLM category-verify calls per build
+  summary_per_build: 200           # P1.3 LLM summary calls per build
+  filer_per_build: 250             # P3.2 13D cover-page fetches per build
   # P2.1 newswire lane — catches the form-absent categories (Strategic Reviews, Capital
   # Returns, Deal Terminations, Divestitures) from quality wires. OFF until CI-verified;
   # display-only, low-confidence, explicit-ticker items only.
