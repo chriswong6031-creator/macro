@@ -37,11 +37,11 @@ _INTL_TICKER_RE = re.compile(
 # per-market gate flag + targeted queries (Google-News RSS via engine.news_rss)
 MARKETS: dict[str, dict] = {
     "uk": {"flag": "intl_uk", "queries": [
-        "RNS \"Rule 2.7\" offer", "RNS \"scheme of arrangement\" cancellation listing",
-        "RNS \"strategic review\" OR \"formal sale process\" plc"]},
+        "London listed firm offer takeover", "scheme of arrangement cancellation listing",
+        "plc strategic review formal sale process", "recommended cash offer plc"]},
     "canada": {"flag": "intl_canada", "queries": [
-        "TSX \"plan of arrangement\" acquire", "SEDAR \"early warning report\"",
-        "TSX \"take-over bid\" OR \"normal course issuer bid\""]},
+        "Canadian company plan of arrangement acquired", "TSX take-over bid",
+        "TSX normal course issuer bid", "Canada early warning report"]},
 }
 
 
@@ -55,6 +55,16 @@ def extract_intl_ticker(text: str | None) -> str | None:
         return None
     suf = _EXCH_SUFFIX.get(m.group(1).upper())
     return f"{m.group(2).upper()}.{suf}" if suf else None
+
+
+def _resolve_intl(text: str | None, market: str) -> str | None:
+    """Fallback: resolve a suffixed ticker from the company name, scoped to the market
+    (uk -> .L, canada -> .TO/.V), when no exchange tag is present."""
+    try:
+        from engine import name_resolver as nr
+        return nr.resolve(text, market=market)
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _company_of(title: str, ticker: str | None) -> str:
@@ -96,15 +106,18 @@ def fetch_intl_situations(window_days: int = 4, per_query: int = 30) -> pd.DataF
     for m in markets:
         for q in MARKETS[m]["queries"]:
             try:
-                items = news_rss.query(q, window_days=window_days, min_tier=2)[:per_query]
+                items = news_rss.query(q, window_days=window_days, min_tier=3)[:per_query]
             except Exception as e:  # noqa: BLE001
                 log.warning("special_situations intl query failed (%s): %s", q, e)
                 continue
             for it in items:
-                tkr = extract_intl_ticker(it.get("title"))
+                title = it.get("title") or ""
+                # exchange-tagged ticker if present, else resolve from the company name (scoped
+                # to this market so a UK headline can't resolve to a US listing)
+                tkr = extract_intl_ticker(title) or _resolve_intl(title, m)
                 if not tkr:
                     continue
-                cat, stage = isi.classify_intl(f"{it.get('title','')} {it.get('summary','')}")
+                cat, stage = isi.classify_intl(f"{title} {it.get('summary','')}")
                 if not cat:
                     continue
                 url = it.get("url") or ""

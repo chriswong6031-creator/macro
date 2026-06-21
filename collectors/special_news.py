@@ -29,13 +29,19 @@ GROUP = "special_situations"
 _NEWS_CATEGORIES = {"Strategic Reviews", "Capital Returns", "Deal Terminations",
                     "Divestitures", "Restructuring"}
 
-# the search queries per remit category (Google-News RSS via engine.news_rss)
-NEWS_QUERIES: dict[str, str] = {
-    "Strategic Reviews": "\"strategic alternatives\" OR \"strategic review\" shareholders",
-    "Capital Returns": "\"special dividend\" OR \"share repurchase program\" announces",
-    "Deal Terminations": "\"terminates merger\" OR \"mutually agreed to terminate\"",
-    "Divestitures": "\"agreement to sell\" business OR divest unit",
-}
+# (remit category, search query) pairs (Google-News RSS via engine.news_rss). The query
+# targets a category; classify_news validates, else we fall back to the query's category.
+NEWS_QUERIES: list[tuple[str, str]] = [
+    ("Strategic Reviews", "explores strategic alternatives"),
+    ("Strategic Reviews", "company strategic review shareholders"),
+    ("Strategic Reviews", "formal sale process"),
+    ("Capital Returns", "announces special dividend"),
+    ("Capital Returns", "share repurchase program"),
+    ("Deal Terminations", "terminates merger agreement"),
+    ("Deal Terminations", "merger called off"),
+    ("Divestitures", "agrees to sell business unit"),
+    ("Divestitures", "divests division"),
+]
 
 # explicit exchange-tagged ticker, e.g. "(NASDAQ: ABCD)" / "(NYSE American: XY)".
 _TICKER_RE = re.compile(
@@ -50,6 +56,16 @@ def extract_ticker(text: str | None) -> str | None:
         return None
     m = _TICKER_RE.search(str(text))
     return m.group(1).upper() if m else None
+
+
+def _resolve_us(text: str | None) -> str | None:
+    """Fallback: resolve a US ticker from the company name when no exchange tag is present
+    (Google-News headlines lack tags). Conservative exact-unique match via name_resolver."""
+    try:
+        from engine import name_resolver as nr
+        return nr.resolve(text, market="us")
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _company_of(title: str, ticker: str | None) -> str:
@@ -99,19 +115,22 @@ def fetch_news_situations(window_days: int = 3, per_cat: int = 40) -> pd.DataFra
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rows: list[dict] = []
-    for _cat, q in NEWS_QUERIES.items():
+    for qcat, q in NEWS_QUERIES:
         try:
-            items = news_rss.query(q, window_days=window_days, min_tier=2)[:per_cat]
+            items = news_rss.query(q, window_days=window_days, min_tier=3)[:per_cat]
         except Exception as e:  # noqa: BLE001
-            log.warning("special_situations newswire query failed (%s): %s", _cat, e)
+            log.warning("special_situations newswire query failed (%s): %s", qcat, e)
             continue
         for it in items:
-            tkr = extract_ticker(it.get("title"))
+            title = it.get("title") or ""
+            # exchange-tagged ticker if present (unambiguous), else resolve from the company name
+            tkr = extract_ticker(title) or _resolve_us(title)
             if not tkr:
                 continue
-            cat, stage = classify_news(f"{it.get('title','')} {it.get('summary','')}")
+            # validate the category from the headline; else trust the (category-targeted) query
+            cat, stage = classify_news(f"{title} {it.get('summary','')}")
             if not cat:
-                continue
+                cat, stage = qcat, "announced"
             url = it.get("url") or ""
             rows.append({
                 "id": hashlib.sha1(url.encode("utf-8")).hexdigest()[:16],
