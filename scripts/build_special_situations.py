@@ -62,6 +62,20 @@ def _txt(v, dash: str = "—") -> str:
     return dash if (not s or s.lower() == "nan") else s
 
 
+def _arb_str(a: dict | None) -> str:
+    """Compact merger-arb line: 'spread +8.3% · +24%/yr · ~120d · break -31%'."""
+    if not a:
+        return ""
+    parts = [f"spread {a['gross_spread_pct']:+.1f}%"]
+    if a.get("annualized_pct") is not None:
+        parts.append(f"{a['annualized_pct']:+.0f}%/yr")
+    if a.get("days_to_close"):
+        parts.append(f"~{a['days_to_close']}d")
+    if a.get("downside_on_break_pct") is not None:
+        parts.append(f"break {a['downside_on_break_pct']:+.0f}%")
+    return " · ".join(parts)
+
+
 def _usd_m(mc) -> str:
     if mc is None:
         return "—"
@@ -105,7 +119,7 @@ def build(refresh: bool = True) -> str:
             "cross_border": bool(s.get("cross_border")), "mc": _usd_m(s.get("mc_musd")),
             "url": s.get("edgar_url") or s.get("source_url"),
             "summary": _txt(s.get("summary"), dash=""), "live": bool(s.get("live")),
-            "low_conf": s.get("confidence") == "low",
+            "low_conf": s.get("confidence") == "low", "arb": _arb_str(s.get("arb")),
         } for s in rows_src]
         groups.append({"cat": cat, "cat_zh": CAT_ZH.get(cat, cat),
                        "color": CAT_COLOR.get(cat, C["muted"]), "n": len(rows), "rows": rows})

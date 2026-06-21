@@ -80,6 +80,7 @@ html[data-theme="dark"] .tag{background:#2a2410;color:#e8c15a}
 .summ{margin-top:5px;color:var(--muted);font-size:12.5px;line-height:1.5;max-width:620px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .formtag{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
 .heur{color:var(--amber);font-weight:700;cursor:help;font-size:12px}
+.arb{margin-top:5px;display:inline-block;font-size:11.5px;font-weight:600;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:1px 7px;font-variant-numeric:tabular-nums;cursor:help}
 a.src{color:var(--blue);text-decoration:none;font-size:12px;font-weight:600}
 a.src:hover{text-decoration:underline}
 .foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
@@ -137,6 +138,7 @@ a.src:hover{text-decoration:underline}
           {% if r.cross_border %}<span class="xb" title="cross-border">🌐</span>{% endif %}
           {% if r.live %}<span class="live" title="confirmed live in our EDGAR feed">✓ {{ t('live','实时') }}</span>{% endif %}
           {% if r.summary %}<div class="summ" title="{{ r.summary }}">{{ r.summary }}</div>{% endif %}
+          {% if r.arb %}<div class="arb" title="merger-arb: deal price vs live price (context only)">⚖ {{ r.arb }}</div>{% endif %}
         </td>
         <td><span class="chip" style="border-color:{{ g.color }};color:{{ g.color }}">{{ t(r.stage, r.stage_zh) }}</span></td>
         <td><span class="formtag">{{ r.form }}</span>{% if r.low_conf %} <span class="heur" title="keyword-heuristic detection — unverified; the LLM/digest lane upgrades it">~</span>{% endif %}</td>

@@ -466,6 +466,78 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
     return rows
 
 
+def _closes_panel() -> pd.DataFrame:
+    """US daily closes (breadth caches + the backtest backfill), tickers as columns.
+    Reused by the merger-arb spread lane (P1.2) to read live + unaffected prices."""
+    frames = []
+    for g in ("breadth", "midcap_breadth", "smallcap_breadth"):
+        p = config.data_dir() / g / "_closes_cache.parquet"
+        if p.exists():
+            frames.append(pd.read_parquet(p))
+    btp = config.data_dir() / GROUP / "bt_prices.parquet"
+    if btp.exists():
+        frames.append(pd.read_parquet(btp))
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, axis=1, sort=False)
+    try:
+        df.index = pd.to_datetime(df.index)
+    except Exception:  # noqa: BLE001
+        return pd.DataFrame()
+    return df.loc[:, ~df.columns.duplicated()].sort_index()
+
+
+def _price_before(series: pd.Series, date_str: object, offset_rows: int) -> float | None:
+    """Close ~offset_rows trading days before date_str — the unaffected-price proxy."""
+    s = series.dropna()
+    if s.empty or not date_str or (isinstance(date_str, float) and pd.isna(date_str)):
+        return None
+    try:
+        d = pd.Timestamp(date_str)
+    except Exception:  # noqa: BLE001
+        return None
+    pos = s.index.searchsorted(d)
+    j = int(pos) - int(offset_rows)
+    return float(s.iloc[j]) if 0 <= j < len(s) else None
+
+
+def _enrich_arb(sits: list[dict]) -> int:
+    """Attach an `arb` block (spread / annualized / days-to-close / downside-on-break) to
+    each Acquisition / Tender Offer / Going-Private situation that carries a deal price.
+    Mutates `sits` in place; returns how many were enriched. Best-effort, never raises."""
+    from engine import special_arb as arb
+    try:
+        panel = _closes_panel()
+    except Exception as e:  # noqa: BLE001
+        log.warning("special_situations arb: closes panel failed: %s", e)
+        return 0
+    if panel.empty:
+        return 0
+    last = panel.iloc[-1]
+    n = 0
+    for s in sits:
+        if s.get("category") not in arb.ARB_CATEGORIES:
+            continue
+        terms = arb.parse_terms(s.get("deal_terms"))
+        if not terms.get("price_per_share"):
+            continue
+        base = _norm_ticker(s.get("ticker"))
+        if not base or base not in panel.columns:
+            continue
+        lp = last.get(base)
+        when = s.get("date_filed") or s.get("date")
+        unaff = _price_before(panel[base], when, 30)
+        m = arb.arb_metrics(terms["price_per_share"], lp,
+                            expected_close=terms.get("expected_close"),
+                            consideration=terms.get("consideration"),
+                            currency=terms.get("currency"),
+                            unaffected_price=unaff)
+        if m:
+            s["arb"] = m
+            n += 1
+    return n
+
+
 def desk_payload(latest_issue_only: bool = True) -> dict:
     """Merged desk: latest-issue digest situations (with summaries) + live EDGAR,
     deduped by (ticker, category). EDGAR-confirmed digest rows get live=True and the
@@ -517,6 +589,8 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
             if apply_floor(s.get("mc_musd"), floor) is not False]   # keep True + unknown
     sits.sort(key=lambda s: (s.get("date_filed") or "", s.get("category") or ""), reverse=True)
 
+    n_arb = _enrich_arb(sits)        # P1.2 merger-arb spread on deal situations w/ a price
+
     counts: dict[str, int] = {}
     for s in sits:
         counts[s["category"]] = counts.get(s["category"], 0) + 1
@@ -527,6 +601,7 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         "edgar_only": sum(1 for s in sits if s["source_lane"] == "edgar"),
         "cross_border": sum(1 for s in sits if s.get("cross_border")),
         "with_summary": sum(1 for s in sits if s.get("summary")),
+        "with_arb": n_arb,
         "high_confidence": sum(1 for s in sits if s.get("confidence") == "high"),
         "low_confidence": sum(1 for s in sits if s.get("confidence") == "low"),
         "floor_musd": floor,
@@ -582,10 +657,21 @@ def mastermind_emit() -> dict:
                 "mc_musd": (float(r["mc_musd"]) if pd.notna(r.get("mc_musd")) else None),
             })
 
+    # P1.2 merger-arb book: attach spread economics + surface a risk-arb context list for
+    # the trading brain (announced cash deals with a price). Context only, never a size.
+    _enrich_arb(list(by_ticker.values()))
+    risk_arb = sorted(
+        ({"ticker": r.get("ticker"), "company": r.get("company"), "category": r.get("category"),
+          "source": r.get("source"), **r["arb"]}
+         for r in by_ticker.values() if r.get("arb")),
+        key=lambda a: (a.get("annualized_pct") is not None, a.get("annualized_pct") or -1e9),
+        reverse=True)
+
     return {
         "schema": "special_situations.v1", "generated_at": now,
         "is_context_only": True, "disclaimer": DISCLAIMER,
         "n": len(by_ticker), "by_ticker": by_ticker,
+        "risk_arb": risk_arb,
     }
 
 
