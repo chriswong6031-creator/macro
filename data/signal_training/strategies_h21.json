@@ -1,0 +1,867 @@
+{
+  "kind": "strategy_backtest.v1",
+  "meta": {
+    "horizon": 21,
+    "rebal": 21,
+    "panels": [
+      "deep",
+      "smallcap"
+    ],
+    "elapsed_s": 34.4,
+    "caveats": [
+      "no panel folds in delisted names -> all survivorship-touched",
+      "sp500 cache ~15mo -> long-lookback legs are THIN (flagged n_dates<6)",
+      "weighting evidence only; ship via PIT + DSR-gated harnesses"
+    ]
+  },
+  "panels": [
+    {
+      "panel": "deep",
+      "n_names": 114,
+      "span": [
+        "1962-01-02",
+        "2026-06-18"
+      ],
+      "n_rebalances": 769,
+      "median_universe": 72,
+      "horizon": 21,
+      "rebal": 21,
+      "legs": {
+        "mom_12_1": {
+          "family": "momentum",
+          "note": "12-1 total-return momentum",
+          "mean_ic_sn": 0.0255,
+          "ic_ir": 0.134,
+          "t_hac": 3.811,
+          "hit": 0.559,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0383,
+          "spread_pct": 0.23,
+          "sub_means": [
+            0.0327,
+            0.0359,
+            0.0207,
+            0.0125
+          ],
+          "sub_sign_agree": true,
+          "verdict": "context"
+        },
+        "fip_continuity": {
+          "family": "momentum",
+          "note": "frog-in-the-pan continuous-info momentum",
+          "mean_ic_sn": 0.0054,
+          "ic_ir": 0.033,
+          "t_hac": 0.877,
+          "hit": 0.532,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0118,
+          "spread_pct": 0.01,
+          "sub_means": [
+            -0.0038,
+            0.0025,
+            0.0136,
+            0.0094
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "near_52w_high": {
+          "family": "momentum",
+          "note": "proximity to the 52w high (anchoring)",
+          "mean_ic_sn": -0.0142,
+          "ic_ir": -0.074,
+          "t_hac": -2.065,
+          "hit": 0.472,
+          "n_dates": 769,
+          "mean_ic_raw": -0.0157,
+          "spread_pct": -0.44,
+          "sub_means": [
+            -0.0296,
+            -0.0136,
+            -0.0099,
+            -0.0036
+          ],
+          "sub_sign_agree": true,
+          "verdict": "no-edge"
+        },
+        "rev_1m": {
+          "family": "reversal",
+          "note": "1-month short-term reversal",
+          "mean_ic_sn": 0.0311,
+          "ic_ir": 0.182,
+          "t_hac": 4.744,
+          "hit": 0.573,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0189,
+          "spread_pct": 0.38,
+          "sub_means": [
+            0.0629,
+            0.0486,
+            0.0239,
+            -0.011
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "below_200dma": {
+          "family": "reversal",
+          "note": "distance below the 200dma",
+          "mean_ic_sn": 0.0088,
+          "ic_ir": 0.048,
+          "t_hac": 1.199,
+          "hit": 0.517,
+          "n_dates": 762,
+          "mean_ic_raw": -0.0001,
+          "spread_pct": 0.25,
+          "sub_means": [
+            0.0096,
+            0.0308,
+            -0.0018,
+            -0.0034
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "drawdown_252": {
+          "family": "reversal",
+          "note": "depth below the 252d high",
+          "mean_ic_sn": 0.0142,
+          "ic_ir": 0.074,
+          "t_hac": 2.065,
+          "hit": 0.525,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0157,
+          "spread_pct": 0.44,
+          "sub_means": [
+            0.0296,
+            0.0136,
+            0.0099,
+            0.0036
+          ],
+          "sub_sign_agree": true,
+          "verdict": "no-edge"
+        },
+        "rsi_oversold": {
+          "family": "reversal",
+          "note": "50 - RSI(14)",
+          "mean_ic_sn": 0.0416,
+          "ic_ir": 0.244,
+          "t_hac": 5.967,
+          "hit": 0.581,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0342,
+          "spread_pct": 0.7,
+          "sub_means": [
+            0.0821,
+            0.0699,
+            0.0299,
+            -0.0157
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "ma200_slope": {
+          "family": "trend",
+          "note": "21d slope of the 200dma",
+          "mean_ic_sn": 0.0206,
+          "ic_ir": 0.109,
+          "t_hac": 2.975,
+          "hit": 0.539,
+          "n_dates": 761,
+          "mean_ic_raw": 0.0283,
+          "spread_pct": 0.15,
+          "sub_means": [
+            0.0377,
+            0.0123,
+            0.0194,
+            0.0129
+          ],
+          "sub_sign_agree": true,
+          "verdict": "context"
+        },
+        "above200_persist": {
+          "family": "trend",
+          "note": "share of last 63d above the 200dma",
+          "mean_ic_sn": 0.0091,
+          "ic_ir": 0.045,
+          "t_hac": 1.241,
+          "hit": 0.511,
+          "n_dates": 759,
+          "mean_ic_raw": 0.0098,
+          "spread_pct": -0.19,
+          "sub_means": [
+            0.0446,
+            -0.0036,
+            0.0088,
+            -0.0134
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "kaufman_er": {
+          "family": "trend",
+          "note": "Kaufman efficiency ratio (21d)",
+          "mean_ic_sn": 0.0066,
+          "ic_ir": 0.042,
+          "t_hac": 1.148,
+          "hit": 0.528,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0077,
+          "spread_pct": 0.19,
+          "sub_means": [
+            0.0081,
+            0.002,
+            0.0012,
+            0.0149
+          ],
+          "sub_sign_agree": true,
+          "verdict": "no-edge"
+        },
+        "lowvol_63": {
+          "family": "lowvol",
+          "note": "inverse 63d realized vol",
+          "mean_ic_sn": -0.0107,
+          "ic_ir": -0.054,
+          "t_hac": -1.39,
+          "hit": 0.482,
+          "n_dates": 768,
+          "mean_ic_raw": -0.028,
+          "spread_pct": -0.58,
+          "sub_means": [
+            -0.0129,
+            0.0029,
+            -0.0106,
+            -0.0224
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "max_caution": {
+          "family": "lowvol",
+          "note": "inverse 1m MAX (lottery) return",
+          "mean_ic_sn": -0.001,
+          "ic_ir": -0.006,
+          "t_hac": -0.154,
+          "hit": 0.498,
+          "n_dates": 769,
+          "mean_ic_raw": -0.0144,
+          "spread_pct": -0.29,
+          "sub_means": [
+            0.0003,
+            0.0083,
+            0.0015,
+            -0.0141
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "live_above200": {
+          "family": "model",
+          "note": "confluence tech_above200 leg (close/200dma)",
+          "mean_ic_sn": -0.0088,
+          "ic_ir": -0.048,
+          "t_hac": -1.199,
+          "hit": 0.482,
+          "n_dates": 762,
+          "mean_ic_raw": 0.0001,
+          "spread_pct": -0.25,
+          "sub_means": [
+            -0.0096,
+            -0.0308,
+            0.0018,
+            0.0034
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "live_dist_50dma": {
+          "family": "model",
+          "note": "confluence tech_above50 leg (close/50dma)",
+          "mean_ic_sn": -0.0356,
+          "ic_ir": -0.206,
+          "t_hac": -5.124,
+          "hit": 0.417,
+          "n_dates": 769,
+          "mean_ic_raw": -0.0241,
+          "spread_pct": -0.55,
+          "sub_means": [
+            -0.0697,
+            -0.0543,
+            -0.024,
+            0.0057
+          ],
+          "sub_sign_agree": false,
+          "verdict": "inverse"
+        },
+        "live_macd_pos": {
+          "family": "model",
+          "note": "confluence tech_macd leg (MACD sign)",
+          "mean_ic_sn": -0.027,
+          "ic_ir": -0.171,
+          "t_hac": -4.249,
+          "hit": 0.445,
+          "n_dates": 753,
+          "mean_ic_raw": -0.0246,
+          "spread_pct": -0.36,
+          "sub_means": [
+            -0.0489,
+            -0.0427,
+            -0.0193,
+            0.003
+          ],
+          "sub_sign_agree": false,
+          "verdict": "inverse"
+        },
+        "live_rs_crowded": {
+          "family": "model",
+          "note": "rs percentile the score PENALIZES (crowding)",
+          "mean_ic_sn": 0.0176,
+          "ic_ir": 0.089,
+          "t_hac": 2.521,
+          "hit": 0.542,
+          "n_dates": 769,
+          "mean_ic_raw": 0.0311,
+          "spread_pct": 0.16,
+          "sub_means": [
+            0.0166,
+            0.0204,
+            0.0149,
+            0.0187
+          ],
+          "sub_sign_agree": true,
+          "verdict": "no-edge"
+        }
+      },
+      "elapsed_s": 32.0
+    },
+    {
+      "panel": "smallcap",
+      "n_names": 603,
+      "span": [
+        "2023-05-15",
+        "2026-06-18"
+      ],
+      "n_rebalances": 34,
+      "median_universe": 599,
+      "horizon": 21,
+      "rebal": 21,
+      "legs": {
+        "mom_12_1": {
+          "family": "momentum",
+          "note": "12-1 total-return momentum",
+          "mean_ic_sn": 0.0206,
+          "ic_ir": 0.223,
+          "t_hac": 2.311,
+          "hit": 0.529,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0245,
+          "spread_pct": 0.38,
+          "sub_means": [
+            0.0129,
+            0.0247,
+            0.0368,
+            0.0083
+          ],
+          "sub_sign_agree": true,
+          "verdict": "context"
+        },
+        "fip_continuity": {
+          "family": "momentum",
+          "note": "frog-in-the-pan continuous-info momentum",
+          "mean_ic_sn": 0.0221,
+          "ic_ir": 0.421,
+          "t_hac": 5.604,
+          "hit": 0.676,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0188,
+          "spread_pct": 0.72,
+          "sub_means": [
+            0.0238,
+            0.019,
+            0.0147,
+            0.0309
+          ],
+          "sub_sign_agree": true,
+          "verdict": "scored"
+        },
+        "near_52w_high": {
+          "family": "momentum",
+          "note": "proximity to the 52w high (anchoring)",
+          "mean_ic_sn": 0.0114,
+          "ic_ir": 0.102,
+          "t_hac": 1.044,
+          "hit": 0.618,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0077,
+          "spread_pct": 0.06,
+          "sub_means": [
+            0.013,
+            0.0316,
+            -0.01,
+            0.0084
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "rev_1m": {
+          "family": "reversal",
+          "note": "1-month short-term reversal",
+          "mean_ic_sn": -0.0017,
+          "ic_ir": -0.023,
+          "t_hac": -0.225,
+          "hit": 0.471,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0089,
+          "spread_pct": 0.04,
+          "sub_means": [
+            -0.0024,
+            -0.0089,
+            0.0009,
+            0.0045
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "below_200dma": {
+          "family": "reversal",
+          "note": "distance below the 200dma",
+          "mean_ic_sn": -0.0325,
+          "ic_ir": -0.296,
+          "t_hac": -3.373,
+          "hit": 0.333,
+          "n_dates": 27,
+          "mean_ic_raw": -0.0255,
+          "spread_pct": -0.81,
+          "sub_means": [
+            -0.0573,
+            0.011,
+            -0.0336,
+            -0.0529
+          ],
+          "sub_sign_agree": false,
+          "verdict": "inverse"
+        },
+        "drawdown_252": {
+          "family": "reversal",
+          "note": "depth below the 252d high",
+          "mean_ic_sn": -0.0114,
+          "ic_ir": -0.102,
+          "t_hac": -1.044,
+          "hit": 0.382,
+          "n_dates": 34,
+          "mean_ic_raw": -0.0077,
+          "spread_pct": -0.06,
+          "sub_means": [
+            -0.013,
+            -0.0316,
+            0.01,
+            -0.0084
+          ],
+          "sub_sign_agree": false,
+          "verdict": "inverse"
+        },
+        "rsi_oversold": {
+          "family": "reversal",
+          "note": "50 - RSI(14)",
+          "mean_ic_sn": -0.0049,
+          "ic_ir": -0.062,
+          "t_hac": -0.564,
+          "hit": 0.471,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0081,
+          "spread_pct": -0.03,
+          "sub_means": [
+            0.0098,
+            -0.0263,
+            -0.0082,
+            0.0058
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "ma200_slope": {
+          "family": "trend",
+          "note": "21d slope of the 200dma",
+          "mean_ic_sn": 0.0212,
+          "ic_ir": 0.202,
+          "t_hac": 1.731,
+          "hit": 0.654,
+          "n_dates": 26,
+          "mean_ic_raw": 0.022,
+          "spread_pct": 0.49,
+          "sub_means": [
+            0.0588,
+            0.0042,
+            -0.0213,
+            0.0397
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "above200_persist": {
+          "family": "trend",
+          "note": "share of last 63d above the 200dma",
+          "mean_ic_sn": 0.0255,
+          "ic_ir": 0.286,
+          "t_hac": 3.237,
+          "hit": 0.667,
+          "n_dates": 24,
+          "mean_ic_raw": 0.026,
+          "spread_pct": 0.49,
+          "sub_means": [
+            0.0223,
+            0.0308,
+            -0.0058,
+            0.0549
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "kaufman_er": {
+          "family": "trend",
+          "note": "Kaufman efficiency ratio (21d)",
+          "mean_ic_sn": 0.0152,
+          "ic_ir": 0.301,
+          "t_hac": 3.083,
+          "hit": 0.588,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0143,
+          "spread_pct": 0.24,
+          "sub_means": [
+            0.0258,
+            0.0114,
+            0.0082,
+            0.0148
+          ],
+          "sub_sign_agree": true,
+          "verdict": "scored"
+        },
+        "lowvol_63": {
+          "family": "lowvol",
+          "note": "inverse 63d realized vol",
+          "mean_ic_sn": -0.0186,
+          "ic_ir": -0.168,
+          "t_hac": -1.29,
+          "hit": 0.515,
+          "n_dates": 33,
+          "mean_ic_raw": -0.0135,
+          "spread_pct": -1.08,
+          "sub_means": [
+            0.0126,
+            -0.0036,
+            -0.0515,
+            -0.0359
+          ],
+          "sub_sign_agree": false,
+          "verdict": "inverse"
+        },
+        "max_caution": {
+          "family": "lowvol",
+          "note": "inverse 1m MAX (lottery) return",
+          "mean_ic_sn": -0.0135,
+          "ic_ir": -0.15,
+          "t_hac": -1.286,
+          "hit": 0.471,
+          "n_dates": 34,
+          "mean_ic_raw": -0.0035,
+          "spread_pct": -0.74,
+          "sub_means": [
+            0.0079,
+            -0.0043,
+            -0.0467,
+            -0.0145
+          ],
+          "sub_sign_agree": false,
+          "verdict": "inverse"
+        },
+        "live_above200": {
+          "family": "model",
+          "note": "confluence tech_above200 leg (close/200dma)",
+          "mean_ic_sn": 0.0325,
+          "ic_ir": 0.296,
+          "t_hac": 3.373,
+          "hit": 0.667,
+          "n_dates": 27,
+          "mean_ic_raw": 0.0255,
+          "spread_pct": 0.81,
+          "sub_means": [
+            0.0573,
+            -0.011,
+            0.0336,
+            0.0529
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "live_dist_50dma": {
+          "family": "model",
+          "note": "confluence tech_above50 leg (close/50dma)",
+          "mean_ic_sn": 0.0121,
+          "ic_ir": 0.126,
+          "t_hac": 1.287,
+          "hit": 0.559,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0046,
+          "spread_pct": 0.18,
+          "sub_means": [
+            -0.0016,
+            0.0225,
+            0.0164,
+            0.0115
+          ],
+          "sub_sign_agree": false,
+          "verdict": "fragile"
+        },
+        "live_macd_pos": {
+          "family": "model",
+          "note": "confluence tech_macd leg (MACD sign)",
+          "mean_ic_sn": 0.0039,
+          "ic_ir": 0.062,
+          "t_hac": 0.39,
+          "hit": 0.441,
+          "n_dates": 34,
+          "mean_ic_raw": -0.0223,
+          "spread_pct": -0.11,
+          "sub_means": [
+            0.0035,
+            0.0402,
+            -0.0072,
+            -0.0255
+          ],
+          "sub_sign_agree": false,
+          "verdict": "no-edge"
+        },
+        "live_rs_crowded": {
+          "family": "model",
+          "note": "rs percentile the score PENALIZES (crowding)",
+          "mean_ic_sn": 0.0255,
+          "ic_ir": 0.262,
+          "t_hac": 2.63,
+          "hit": 0.618,
+          "n_dates": 34,
+          "mean_ic_raw": 0.0247,
+          "spread_pct": 0.56,
+          "sub_means": [
+            0.0167,
+            0.0372,
+            0.0387,
+            0.0091
+          ],
+          "sub_sign_agree": true,
+          "verdict": "context"
+        }
+      },
+      "elapsed_s": 2.4
+    }
+  ],
+  "cross_panel": {
+    "mom_12_1": {
+      "panels": 2,
+      "pos": 2,
+      "neg": 0,
+      "sign_agree": true,
+      "direction": "constructive",
+      "ic_ir_range": [
+        0.134,
+        0.223
+      ],
+      "family": "momentum",
+      "consensus": "robust-edge"
+    },
+    "fip_continuity": {
+      "panels": 2,
+      "pos": 2,
+      "neg": 0,
+      "sign_agree": true,
+      "direction": "constructive",
+      "ic_ir_range": [
+        0.033,
+        0.421
+      ],
+      "family": "momentum",
+      "consensus": "weak-consistent"
+    },
+    "near_52w_high": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.074,
+        0.102
+      ],
+      "family": "momentum",
+      "consensus": "panel-artifact"
+    },
+    "rev_1m": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.023,
+        0.182
+      ],
+      "family": "reversal",
+      "consensus": "panel-artifact"
+    },
+    "below_200dma": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.296,
+        0.048
+      ],
+      "family": "reversal",
+      "consensus": "panel-artifact"
+    },
+    "drawdown_252": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.102,
+        0.074
+      ],
+      "family": "reversal",
+      "consensus": "panel-artifact"
+    },
+    "rsi_oversold": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.062,
+        0.244
+      ],
+      "family": "reversal",
+      "consensus": "panel-artifact"
+    },
+    "ma200_slope": {
+      "panels": 2,
+      "pos": 2,
+      "neg": 0,
+      "sign_agree": true,
+      "direction": "constructive",
+      "ic_ir_range": [
+        0.109,
+        0.202
+      ],
+      "family": "trend",
+      "consensus": "robust-edge"
+    },
+    "above200_persist": {
+      "panels": 2,
+      "pos": 2,
+      "neg": 0,
+      "sign_agree": true,
+      "direction": "constructive",
+      "ic_ir_range": [
+        0.045,
+        0.286
+      ],
+      "family": "trend",
+      "consensus": "weak-consistent"
+    },
+    "kaufman_er": {
+      "panels": 2,
+      "pos": 2,
+      "neg": 0,
+      "sign_agree": true,
+      "direction": "constructive",
+      "ic_ir_range": [
+        0.042,
+        0.301
+      ],
+      "family": "trend",
+      "consensus": "weak-consistent"
+    },
+    "lowvol_63": {
+      "panels": 2,
+      "pos": 0,
+      "neg": 2,
+      "sign_agree": true,
+      "direction": "inverse",
+      "ic_ir_range": [
+        -0.168,
+        -0.054
+      ],
+      "family": "lowvol",
+      "consensus": "weak-consistent"
+    },
+    "max_caution": {
+      "panels": 2,
+      "pos": 0,
+      "neg": 2,
+      "sign_agree": true,
+      "direction": "inverse",
+      "ic_ir_range": [
+        -0.15,
+        -0.006
+      ],
+      "family": "lowvol",
+      "consensus": "weak-consistent"
+    },
+    "live_above200": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.048,
+        0.296
+      ],
+      "family": "model",
+      "consensus": "panel-artifact"
+    },
+    "live_dist_50dma": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.206,
+        0.126
+      ],
+      "family": "model",
+      "consensus": "panel-artifact"
+    },
+    "live_macd_pos": {
+      "panels": 2,
+      "pos": 1,
+      "neg": 1,
+      "sign_agree": false,
+      "direction": "mixed",
+      "ic_ir_range": [
+        -0.171,
+        0.062
+      ],
+      "family": "model",
+      "consensus": "panel-artifact"
+    },
+    "live_rs_crowded": {
+      "panels": 2,
+      "pos": 2,
+      "neg": 0,
+      "sign_agree": true,
+      "direction": "constructive",
+      "ic_ir_range": [
+        0.089,
+        0.262
+      ],
+      "family": "model",
+      "consensus": "weak-consistent"
+    }
+  }
+}

@@ -69,7 +69,12 @@ def load_cot_positioning(cot_name: str) -> pd.Series | None:
         log.warning("commodity_inputs: missing/!net_spec_pct_oi %s", cot_name)
         return None
     s = pd.to_numeric(cot["net_spec_pct_oi"], errors="coerce")
-    s.index = pd.to_datetime(s.index)
+    # The COT frame is keyed by the Tuesday AS-OF date, but the CFTC does not publish
+    # until the following Friday (~3 business days later). Index by the public release
+    # date so the daily reindex/ffill in positioning() never exposes a value before it
+    # was knowable — otherwise a ~3-day point-in-time look-ahead leaks into the live
+    # commodity-conviction 'positioning' factor.
+    s.index = pd.to_datetime(s.index) + pd.offsets.BDay(3)
     return s[~s.index.duplicated(keep="last")].sort_index().dropna().rename("net_spec_pct_oi")
 
 
