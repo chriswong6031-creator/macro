@@ -540,10 +540,16 @@ def mastermind_by_ticker(feed_dict: dict | None) -> dict:
             lean = "pos"
         elif neg - pos >= 2:
             lean = "neg"
+        # sentiment MAGNITUDE (beyond the ternary lean): net polarity in [-1,1] and a
+        # volume-based strength so 1 pos headline ≠ 6 pos headlines. Context-only.
+        tot = pos + neg
+        sentiment_score = round((pos - neg) / tot, 2) if tot else 0.0
+        sentiment_strength = round(min(1.0, tot / 6.0), 2)
         info = emap.get("tickers", {}).get(t, {})
         out[t] = {
             "n_recent": len(items),
             "sentiment_lean": lean, "n_pos": pos, "n_neg": neg,
+            "sentiment_score": sentiment_score, "sentiment_strength": sentiment_strength,
             "baskets": info.get("basket_names", []),
             "sectors": info.get("sectors", []),
             "is_mag7": info.get("is_mag7", False),

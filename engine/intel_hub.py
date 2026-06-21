@@ -216,8 +216,11 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict) -> dict:
     composite = round(min(100.0, 100.0 * (base * conf_bonus * fals_pen) * (0.6 + 0.4 * agreement)), 1)
 
     nv = vel.get(t) or {}
+    ns = _f(news.get("sentiment_score")) or 0.0           # net polarity in [-1,1] (magnitude)
     quiet_news = (news.get("n_recent") or 0) <= 1 and not nv.get("spike")
-    loud_bull = (dirs["news"] == 1) and bool(nv.get("spike") or (news.get("n_recent") or 0) >= 4)
+    # loud-bull = bullish sentiment of real MAGNITUDE (not a lone 1-pos headline) + loud
+    # (a velocity spike, or sustained volume) — tightens the crowded-top / distribution read.
+    loud_bull = (dirs["news"] == 1 and ns >= 0.3) and bool(nv.get("spike") or (news.get("n_recent") or 0) >= 4)
 
     flags = []
     stealth = dirs["alt"] == 1 and radar.get("state") == "POSITIVE_DIVERGENCE" and quiet_news
@@ -253,6 +256,7 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict) -> dict:
         "agreement": round(agreement, 2),
         "source_mix": present, "directions": dirs,
         "policy": policy, "velocity": nv if nv else None,
+        "sentiment_score": ns, "second_order": (alt.get("second_order") or None),
         "falsifier": falsifier, "falsifier_penalty": fals_pen,
         "flags": flags, "read": read,
         "facets": {"news": news or None, "alt": alt or None, "radar": radar or None,
@@ -295,6 +299,30 @@ _SECTOR_NAME = {
 }
 
 
+def _peer_confirm(dossiers: list, min_conv: float = 45.0) -> None:
+    """THIRD-ORDER — is a name's signal echoed by its basket/supply-chain peers (a durable
+    theme-wide move) or ISOLATED (idiosyncratic / possibly early)? Annotates each dossier
+    in place with peer_confirm + peers + a theme_wide / isolated flag."""
+    by_basket: dict[str, list] = {}
+    for d in dossiers:
+        for b in (d.get("baskets") or []):
+            by_basket.setdefault(b, []).append(d)
+    for d in dossiers:
+        peers = set()
+        for b in (d.get("baskets") or []):
+            for p in by_basket.get(b, []):
+                if (p["ticker"] != d["ticker"] and d["lean"] != 0 and p["lean"] == d["lean"]
+                        and p["composite_conviction"] >= min_conv):
+                    peers.add(p["ticker"])
+        d["peer_confirm"] = len(peers)
+        d["peers"] = sorted(peers)[:5]
+        if d["lean"] != 0 and d["composite_conviction"] >= min_conv:
+            if len(peers) >= 2:
+                d["flags"].append("theme_wide")     # the whole basket is moving — durable
+            elif not peers and d.get("baskets"):
+                d["flags"].append("isolated")        # a name-specific signal — early or idiosyncratic
+
+
 def _sector_heat(dossiers: list, pidx: dict) -> list:
     by: dict[str, list] = {}
     for d in dossiers:
@@ -334,6 +362,7 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     vel = load_velocity(tickers, today)
 
     dossiers = [_dossier(t, v, pidx, vel) for t, v in tickers.items()]
+    _peer_confirm(dossiers)                              # 3rd-order: theme-wide vs isolated
     # rank by composite conviction, tie-break on confirmation breadth
     dossiers.sort(key=lambda d: (d["composite_conviction"], d["n_confirm"]), reverse=True)
 
@@ -362,7 +391,9 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "n_universe": len(dossiers), "n_actionable": n_actionable,
         "counts": {"early_edge": len(early), "crowded_top": len(crowded),
                    "confirmed": len(confirmed), "policy_conflict": len(policy_conflict),
-                   "velocity_spike": len(spikes)},
+                   "velocity_spike": len(spikes),
+                   "theme_wide": sum(1 for d in dossiers if "theme_wide" in d["flags"]),
+                   "isolated": sum(1 for d in dossiers if "isolated" in d["flags"])},
         "command": dossiers[:top],
         "divergence_alerts": {"early_edge": [_compact(d) for d in early[:12]],
                               "crowded_top": [_compact(d) for d in crowded[:12]]},
