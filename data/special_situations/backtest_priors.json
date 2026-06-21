@@ -1,7 +1,7 @@
 {
   "schema": "ss_backtest_priors.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-21 06:06 UTC",
+  "generated_at": "2026-06-21 17:56 UTC",
   "n_situations": 1789,
   "entry": "first close after digest date",
   "by_category": {
@@ -63,7 +63,7 @@
     },
     "Spin-Offs": {
       "n": 65,
-      "med_ret_20d_pct": 1.8,
+      "med_ret_20d_pct": 2.8,
       "win_20d_pct": 64.0,
       "med_excess_20d_pct": -2.5,
       "med_ret_60d_pct": -2.5
@@ -138,19 +138,19 @@
       "med_excess_20d_pct": 4.2,
       "med_ret_60d_pct": null
     },
-    "Insolvency": {
-      "n": 3,
-      "med_ret_20d_pct": null,
-      "win_20d_pct": null,
-      "med_excess_20d_pct": null,
-      "med_ret_60d_pct": null
-    },
     "Restructuring & Busted M&A": {
       "n": 3,
       "med_ret_20d_pct": -11.9,
       "win_20d_pct": 33.0,
       "med_excess_20d_pct": -19.3,
       "med_ret_60d_pct": 3.1
+    },
+    "Insolvency": {
+      "n": 3,
+      "med_ret_20d_pct": null,
+      "win_20d_pct": null,
+      "med_excess_20d_pct": null,
+      "med_ret_60d_pct": null
     },
     "Insider Buying": {
       "n": 2,
@@ -159,26 +159,12 @@
       "med_excess_20d_pct": 9.9,
       "med_ret_60d_pct": -11.1
     },
-    "New SpinCos": {
-      "n": 2,
-      "med_ret_20d_pct": 3.1,
-      "win_20d_pct": 50.0,
-      "med_excess_20d_pct": -5.8,
-      "med_ret_60d_pct": null
-    },
     "Going-Private & Tender Offers": {
       "n": 2,
       "med_ret_20d_pct": 0.4,
       "win_20d_pct": 50.0,
       "med_excess_20d_pct": -7.1,
       "med_ret_60d_pct": -2.2
-    },
-    "Domicile Changes": {
-      "n": 2,
-      "med_ret_20d_pct": null,
-      "win_20d_pct": null,
-      "med_excess_20d_pct": null,
-      "med_ret_60d_pct": null
     },
     "Demutualizations": {
       "n": 2,
@@ -187,12 +173,26 @@
       "med_excess_20d_pct": 3.3,
       "med_ret_60d_pct": null
     },
+    "Domicile Changes": {
+      "n": 2,
+      "med_ret_20d_pct": null,
+      "win_20d_pct": null,
+      "med_excess_20d_pct": null,
+      "med_ret_60d_pct": null
+    },
     "Delistings & Relistings": {
       "n": 2,
       "med_ret_20d_pct": 6.0,
       "win_20d_pct": 50.0,
       "med_excess_20d_pct": -1.4,
       "med_ret_60d_pct": 4.2
+    },
+    "New SpinCos": {
+      "n": 2,
+      "med_ret_20d_pct": 3.1,
+      "win_20d_pct": 50.0,
+      "med_excess_20d_pct": -5.8,
+      "med_ret_60d_pct": null
     },
     "Litigation Outcomes": {
       "n": 1,
