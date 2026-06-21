@@ -166,10 +166,11 @@ def maxdd_eq(eq: pd.Series) -> float:
 # --------------------------------------------------------------------------- #
 def dd_reduction_ci(strat_net: pd.Series, hodl_net: pd.Series, block: int = 21,
                     B: int = 5000, seed: int = 11) -> dict:
-    """Paired circular-block bootstrap of (HODL_maxdd - strat_maxdd) in pp.
-    >0 means the sleeve has a SHALLOWER drawdown. CI excluding 0 => the DD
-    reduction is real (not a single-path artifact). Resamples the SAME block
-    indices for both legs to preserve the pairing."""
+    """Paired circular-block bootstrap of (strat_maxdd - HODL_maxdd) in pp.
+    Both maxdd are NEGATIVE, so a shallower sleeve is LESS negative => the
+    difference is >0 when the sleeve has a SHALLOWER drawdown. CI excluding 0
+    => the DD reduction is real (not a single-path artifact). Resamples the
+    SAME block indices for both legs to preserve the pairing."""
     a = strat_net.dropna()
     b = hodl_net.reindex(a.index).fillna(0.0)
     ra, rb = a.to_numpy(float), b.to_numpy(float)
@@ -185,7 +186,7 @@ def dd_reduction_ci(strat_net: pd.Series, hodl_net: pd.Series, block: int = 21,
         idx = (starts[:, None] + grid[None, :]).ravel()[:n] % n
         dd_s = _maxdd(ra[idx])
         dd_h = _maxdd(rb[idx])
-        diffs[k] = (dd_h - dd_s) * 100.0          # pp, >0 = strat shallower
+        diffs[k] = (dd_s - dd_h) * 100.0          # pp, strat - HODL; >0 = strat shallower
     lo, med, hi = (float(np.percentile(diffs, p)) for p in (2.5, 50, 97.5))
     return {"dd_reduction_pp_ci": [round(lo, 1), round(med, 1), round(hi, 1)],
             "excludes_0": bool(lo > 0 or hi < 0), "favorable": bool(lo > 0),
@@ -216,7 +217,7 @@ def evaluate(name: str, closes: pd.DataFrame, out_lines: list) -> dict:
     print(f"\n[1] HEADLINE (vol_win={DEF_VOL_WIN} target={DEF_TARGET:.0%} cap={DEF_CAP}x, net {COST_BPS}bps)")
     print(f"  Sharpe   sleeve {s_sh:.3f}  vs HODL {h_sh:.3f}  (edge {s_sh-h_sh:+.3f})")
     print(f"  MaxDD    sleeve {s_dd*100:.1f}%  vs HODL {h_dd*100:.1f}%  "
-          f"(DD better {(h_dd-s_dd)*100:+.1f}pp ; cut {dd_cut:.2f}x)")
+          f"(DD better {(s_dd-h_dd)*100:+.1f}pp ; cut {dd_cut:.2f}x)")
     print(f"  CAGR     sleeve {sleeve['cagr']:.1f}%  vs HODL {hodl['cagr']:.1f}%")
     print(f"  Sortino  sleeve {sleeve['sortino']:.2f}  vs HODL {hodl['sortino']:.2f}")
     print(f"  avg_lev {sleeve['avg_leverage']:.2f}  max_lev {sleeve['max_leverage']:.2f}  "
@@ -260,7 +261,7 @@ def evaluate(name: str, closes: pd.DataFrame, out_lines: list) -> dict:
 
     # ---- drawdown-reduction CI ---------------------------------------------
     ddci = dd_reduction_ci(s_net, h_net)
-    print("\n[4] DRAWDOWN-REDUCTION CI (paired block-bootstrap, pp = HODL_dd - sleeve_dd)")
+    print("\n[4] DRAWDOWN-REDUCTION CI (paired block-bootstrap, pp = sleeve_dd - HODL_dd)")
     print(f"  CI [2.5,50,97.5] = {ddci.get('dd_reduction_pp_ci')}  favorable(lower>0)={ddci.get('favorable')} "
           f"excludes0={ddci.get('excludes_0')}")
 
@@ -277,7 +278,7 @@ def evaluate(name: str, closes: pd.DataFrame, out_lines: list) -> dict:
         ss = run(vt_weights(sub, DEF_VOL_WIN, DEF_TARGET, DEF_CAP), sub, sb)
         hh = run(hodl_weights(sub), sub, sb)
         e_sh = ann_sharpe(ss["net"]) - ann_sharpe(hh["net"])
-        ddb = maxdd_eq(hh["eq"]) - maxdd_eq(ss["eq"])     # >0 = sleeve shallower
+        ddb = maxdd_eq(ss["eq"]) - maxdd_eq(hh["eq"])     # sleeve - HODL; >0 = sleeve shallower
         half_rows[hn] = (ann_sharpe(ss["net"]), ann_sharpe(hh["net"]), e_sh, ddb)
         print(f"  {hn}: Sharpe {ann_sharpe(ss['net']):.2f} vs HODL {ann_sharpe(hh['net']):.2f} "
               f"(edge {e_sh:+.2f}) | DD better {ddb*100:+.1f}pp")
@@ -298,7 +299,7 @@ def evaluate(name: str, closes: pd.DataFrame, out_lines: list) -> dict:
         ss = run(vt_weights(sub, DEF_VOL_WIN, DEF_TARGET, DEF_CAP), sub, sb)
         hh = run(hodl_weights(sub), sub, sb)
         e_sh = ann_sharpe(ss["net"]) - ann_sharpe(hh["net"])
-        ddb = maxdd_eq(hh["eq"]) - maxdd_eq(ss["eq"])
+        ddb = maxdd_eq(ss["eq"]) - maxdd_eq(hh["eq"])     # sleeve - HODL; >0 = sleeve shallower
         loo[cn] = (e_sh, ddb)
         print(f"  drop {cn:11s}: Sharpe edge {e_sh:+.2f} | DD better {ddb*100:+.1f}pp")
     loo_dd_holds = bool(loo) and all(v[1] > 0 for v in loo.values())
@@ -427,7 +428,7 @@ def main() -> int:
         L.append(f"- **Block-bootstrap**: Sharpe CI {r['boot']['sharpe_ci']}, MaxDD CI% "
                  f"{r['boot']['maxdd_ci_pct']}, P(Sharpe>0)={r['boot']['sharpe_gt0_prob']} "
                  f"(lower CI>0: {r['boot']['sharpe_ci'][0] > 0}).")
-        L.append(f"- **Drawdown-reduction CI** (pp, HODL_dd - sleeve_dd): {r['ddci'].get('dd_reduction_pp_ci')} "
+        L.append(f"- **Drawdown-reduction CI** (pp, sleeve_dd - HODL_dd): {r['ddci'].get('dd_reduction_pp_ci')} "
                  f"-> favorable(lower>0)={r['ddci'].get('favorable')}, excludes0={r['ddci'].get('excludes_0')}.")
         L.append(f"- **Split-half (pre/post 2021)**: DD-cut both halves={r['dd_samesign']}, "
                  f"Sharpe>HODL both halves={r['sh_samesign']}.")
