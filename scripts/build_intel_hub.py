@@ -18,20 +18,35 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from datetime import date  # noqa: E402
+
 from lib import config  # noqa: E402
-from engine import intel_hub  # noqa: E402
+from engine import intel_hub, hub_track_record  # noqa: E402
 
 log = logging.getLogger(__name__)
 
 
 def build(write: bool = True) -> dict:
     hub = intel_hub.load_and_build(top=30)
+    # FALSIFIABLE TRACK-RECORD: record today's claims, grade matured ones (degrade-safe)
+    track = {}
+    try:
+        today = date.today()
+        n_new = hub_track_record.snapshot(hub.get("track_rows"), today)
+        track = hub_track_record.compute(today)
+        log.info("hub track-record: +%d snapshots, %d total, %d matured-any",
+                 n_new, track.get("n_snapshots", 0), sum(1 for h in (track.get("horizons") or {}).values() if h.get("n_matured")))
+    except Exception as e:  # noqa: BLE001
+        log.warning("hub track-record step failed: %s", e)
+    hub.pop("track_rows", None)                    # heavy; not part of the published command view
+    hub["track_record"] = track
     if not write:
         return hub
     root = config.ROOT
     site = root / config.load()["storage"]["site_dir"]
     (site / "intel_hub").mkdir(parents=True, exist_ok=True)
     (site / "intel_hub" / "hub.json").write_text(json.dumps(hub, default=str))
+    (site / "intel_hub" / "track_record.json").write_text(json.dumps(track, default=str))
     log.info("built site/intel_hub/hub.json — %d universe, %d actionable, EE=%d CT=%d",
              hub.get("n_universe", 0), hub.get("n_actionable", 0),
              hub.get("counts", {}).get("early_edge", 0), hub.get("counts", {}).get("crowded_top", 0))

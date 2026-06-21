@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -83,8 +84,8 @@
   .alert .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
   /* command list */
   .cmd{ display:flex;flex-direction:column;gap:8px; }
-  .row{ display:grid;grid-template-columns:128px 92px 56px 1fr;gap:12px;align-items:center;padding:11px 14px; }
-  @media(max-width:760px){ .row{ grid-template-columns:96px 70px 1fr;gap:9px; } .row .conv{ display:none; } }
+  .row{ display:grid;grid-template-columns:122px 52px 86px 1fr;gap:12px;align-items:center;padding:11px 14px; }
+  @media(max-width:760px){ .row{ grid-template-columns:92px 46px 1fr;gap:9px; } .row .conv{ display:none; } }
   .row .id .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:14px; }
   .row .id .nm{ font-size:10.5px;color:var(--muted);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px; }
   .convbar{ position:relative;height:7px;border-radius:99px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden; }
@@ -128,6 +129,51 @@
   .sec small b{ color:var(--text); }
   .disc{ font-size:11px;color:color-mix(in srgb,var(--text) 48%,transparent);margin-top:14px;line-height:1.5; }
   .empty{ font-size:12.5px;color:var(--muted);padding:9px 0; }
+  /* ── V2: lifecycle stage chip + edge-remaining + opportunity ── */
+  .stage{ font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:6px;white-space:nowrap; }
+  .stage.emerging{ background:color-mix(in srgb,var(--info) 26%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
+  .stage.early{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
+  .stage.consensus{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
+  .stage.exhausted{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
+  .stage.distribution{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .stage.discovery{ background:color-mix(in srgb,var(--info) 24%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
+  .stage.building{ background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--muted); }
+  /* discovery cards */
+  .dcard .et .src{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
+  .dcard .off{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up);margin-left:4px; }
+  .dcard .dscore{ margin-left:auto;font-size:15px;font-weight:800;color:var(--info); }
+  .dcard .dchan{ font-size:10.5px;color:color-mix(in srgb,var(--text) 64%,transparent);line-height:1.4;margin-top:5px; }
+  .opp{ display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px; }
+  .opp b{ font-size:19px;font-weight:800;line-height:1;letter-spacing:-.02em;
+    background:linear-gradient(120deg,var(--info),var(--up));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
+  .opp small{ font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:2px; }
+  .edge{ display:flex;align-items:center;gap:7px;margin-top:5px; }
+  .edge .lab{ font-size:9.5px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.03em; }
+  .edge .ebar{ position:relative;flex:1;height:5px;border-radius:99px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden;max-width:120px; }
+  .edge .ebar i{ position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--warn),var(--up)); }
+  .edge .ev{ font-size:9.5px;font-weight:700;color:color-mix(in srgb,var(--text) 70%,transparent);min-width:26px; }
+  .drv{ font-size:10px;color:color-mix(in srgb,var(--text) 55%,transparent);margin-top:3px;line-height:1.3; }
+  .drv b{ color:color-mix(in srgb,var(--up) 80%,var(--text));font-weight:600; }
+  /* emerging hero cards */
+  .ecards{ display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
+  .ecard{ padding:13px 14px;position:relative; }
+  .ecard .et{ display:flex;align-items:center;gap:8px;margin-bottom:3px; }
+  .ecard .et .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:15px; }
+  .ecard .et .nm{ font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .ecard .et .oppn{ margin-left:auto;font-size:17px;font-weight:800;
+    background:linear-gradient(120deg,var(--info),var(--up));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
+  .ecard .erd{ font-size:11.5px;color:color-mix(in srgb,var(--text) 74%,transparent);line-height:1.4;margin:6px 0 2px; }
+  /* catalyst rows */
+  .cats{ display:grid;gap:8px;grid-template-columns:1fr 1fr; }
+  @media(max-width:760px){ .cats{ grid-template-columns:1fr; } }
+  .catrow{ display:flex;align-items:flex-start;gap:9px;padding:9px 12px; }
+  .catrow .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:50px; }
+  .catrow .cb{ font-size:11px;color:color-mix(in srgb,var(--text) 68%,transparent);line-height:1.35; }
+  .catrow .ct{ font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:6px;white-space:nowrap;
+    background:color-mix(in srgb,#8b5cf6 20%,transparent);color:#a78bfa; }
+  .catrow .age{ font-size:9.5px;color:var(--muted);white-space:nowrap;margin-left:auto; }
   footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
   @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
 </style>
@@ -149,6 +195,7 @@
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
@@ -241,9 +288,9 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-06-21T07:56:39.789997+00:00">2026-06-21</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-06-21T10:01:36.072135+00:00">2026-06-21</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
-    <p><span class="l-en">One reasoned read per name across every signal desk — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent. Composite conviction rewards independent agreement and is docked by an unanswered falsifier; the flags name the setup. Context only, never a trade trigger.</span><span class="l-zh">对每只标的，融合所有信号台给出一个推理结论 —— 新闻舆情、替代数据聪明钱、背离雷达、因子买入榜、政策意图。综合信念奖励独立一致性，并因未被回应的证伪点而扣分；标签命名形态。仅供参考，绝非交易触发。</span></p>
+    <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
 
   
@@ -252,8 +299,11 @@
     <span class="mc"><span class="l-en">Cycle</span><span class="l-zh">周期</span> <b>mid</b></span>
     <span class="mc"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>contracting</b></span>
     <span class="mc"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>Hawkish</b></span>
-    <span class="mc"><span class="l-en">Actionable</span><span class="l-zh">可操作</span> <b>4</b></span>
-    <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>926</b></span>
+    <span class="mc hot"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span> <b>12</b></span>
+    <span class="mc hot" style="border-color:color-mix(in srgb,var(--info) 50%,var(--line));color:var(--info)"><span class="l-en">Discovery</span><span class="l-zh">发掘</span> <b>19</b></span>
+    <span class="mc"><span class="l-en">Catalysts</span><span class="l-zh">催化</span> <b>180</b></span>
+    <span class="mc"><span class="l-en">Actionable</span><span class="l-zh">可操作</span> <b>21</b></span>
+    <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>927</b></span>
   </div>
   <div class="posture">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
@@ -261,6 +311,7 @@
 
   
   <div class="desks">
+    
     
     
     <a class="desk" href="news.html">
@@ -293,144 +344,416 @@
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V10m4 11V10m6 11V10m4 11V10M12 3 3 8h18z"/></svg> Policy Watch<span class="dot on"></span></div>
       <small>Realpolitik intent</small>
     </a>
+    <a class="desk" href="special_situations.html">
+      <div class="dh">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Special Sits<span class="dot on"></span></div>
+      <small>Dated catalysts</small>
+    </a>
   </div>
 
   
   
   <div class="band"><h2 style="--accent:var(--info)">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 3-9 11h7l-1 7 9-11h-7z"/></svg> <span class="l-en">Divergence alerts</span><span class="l-zh">背离警报</span></h2><span class="ln"></span>
-    <span class="cnt"><span class="l-en">where the desks disagree — the edge</span><span class="l-zh">各台分歧之处 —— 即优势</span></span></div>
-  <div class="alerts">
-    <div class="glass acc alert" style="--accent:var(--info)">
-      <h3>
-<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 3-9 11h7l-1 7 9-11h-7z"/></svg> <span class="l-en">Early edge — smart money first</span><span class="l-zh">抢先优势 —— 聪明钱先行</span> <span class="cnt">0</span></h3>
-      <div class="empty"><span class="l-en">No stealth-accumulation setups today.</span><span class="l-zh">今日无潜伏吸筹形态。</span></div>
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 3-9 11h7l-1 7 9-11h-7z"/></svg> <span class="l-en">Emerging edge — before the crowd</span><span class="l-zh">萌芽优势 —— 抢在人群之前</span></h2><span class="ln"></span>
+    <span class="cnt"><span class="l-en">a leading desk firing into a quiet tape, with room to run</span><span class="l-zh">领先信号台在安静盘面发动，仍有上行空间</span></span></div>
+  
+  <div class="ecards">
+    
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">MARA</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">92</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">MARA</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      
     </div>
-    <div class="glass acc alert" style="--accent:var(--warn)">
+    <div class="glass acc ecard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">CBRS</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span class="oppn">82</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">CBRS</div>
+      <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~91% of the move still ahead — pre-consensus, where the edge is.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:91%"></i></span>
+<span class="ev">91%</span></div>
+      <div class="drv"><b>quiet tape (room)</b> · <b>basket laggard (room)</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">MSFT</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span class="oppn">80</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">MSFT</div>
+      <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~84% of the move still ahead and a policy tailwind — pre-consensus, where the edge is.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:84%"></i></span>
+<span class="ev">84%</span></div>
+      <div class="drv"><b>radar emerging</b> · <b>RS -12% vs SPY</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">CLSK</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">77</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">CLSK</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">SMCI</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span class="oppn">75</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">SMCI</div>
+      <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~90% of the move still ahead — pre-consensus, where the edge is.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:90%"></i></span>
+<span class="ev">90%</span></div>
+      <div class="drv"><b>quiet tape (room)</b> · <b>basket laggard (room)</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">NTAP</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">59</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">NTAP</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~78% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:78%"></i></span>
+<span class="ev">78%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      <div class="drv">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Capital Returns · 24<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">LITE</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">58</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">LITE</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:82%"></i></span>
+<span class="ev">82%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">IREN</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span class="oppn">56</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">IREN</div>
+      <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~76% of the move still ahead plus a fresh catalyst — pre-consensus, where the edge is.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:76%"></i></span>
+<span class="ev">76%</span></div>
+      <div class="drv"><b>quiet tape (room)</b> · <b>basket laggard (room)</b> · <span style="color:var(--warn)">⚠ fresh acquisitions</span></div>
+      <div class="drv">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Acquisitions · 35<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">LOW</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">56</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">LOW</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">NVMI</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">56</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">NVMI</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">NXPI</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">50</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">NXPI</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      <div class="drv">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Acquisitions · 10<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">CRWV</span><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span class="oppn">50</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">CRWV</div>
+      <div class="erd">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~83% of the move still ahead — pre-consensus, where the edge is.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:83%"></i></span>
+<span class="ev">83%</span></div>
+      <div class="drv"><b>quiet tape (room)</b> · <b>radar forming</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">LEN</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">49</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">LEN</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>radar forming</b></div>
+      
+    </div>
+    <div class="glass acc ecard" style="--accent:var(--up)">
+      <div class="et"><span class="tk">AEIS</span><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span class="oppn">46</span></div>
+      <div class="nm" style="font-size:10.5px;color:var(--muted)">AEIS</div>
+      <div class="erd">A leading desk leads, the tape is still catching up — early, ~85% edge remaining.</div>
+      <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:85%"></i></span>
+<span class="ev">85%</span></div>
+      <div class="drv"><b>basket laggard (room)</b> · <b>fresh restructuring</b></div>
+      <div class="drv">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Restructuring · 7<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
+    </div>
+  </div>
+  
+
+  
+  
+  <div class="band"><h2 style="--accent:var(--info)">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 7"/></svg> <span class="l-en">Discovery — what the desks miss</span><span class="l-zh">发掘 —— 各台遗漏之处</span></h2><span class="ln"></span>
+    <span class="cnt"><span class="l-en">a leading signal the five desks dropped or never read</span><span class="l-zh">五台丢弃或从未读取的领先信号</span></span></div>
+  <div class="ecards">
+    
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AMZN</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">71</span></div>
+      <div class="erd">13f add + affiliation + material 8k; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> 13f_add · affiliation · material_8k</div>
+      <div class="drv" style="margin-top:6px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BA</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">60</span></div>
+      <div class="erd">affiliation + gov grant + patent cluster; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> affiliation · gov_grant · patent_cluster</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BIIB</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">55</span></div>
+      <div class="erd">clinical phase3 start + congress buy + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · congress_buy · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AXON</span>
+        <span class="src">federal velocity</span>
+        
+        <span class="dscore">52</span></div>
+      <div class="erd">federal obligated $ accelerating 82% vs prior run-rate</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BWXT</span>
+        <span class="src">federal velocity</span>
+        
+        <span class="dscore">50</span></div>
+      <div class="erd">one large federal award (lumpy — not a sustained ramp)</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">VSAT</span>
+        <span class="src">federal velocity</span>
+        <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
+        <span class="dscore">45</span></div>
+      <div class="erd">federal obligated $ accelerating 50% vs prior run-rate</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AXP</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">42</span></div>
+      <div class="erd">affiliation + material 8k; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> affiliation · material_8k</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">RKLB</span>
+        <span class="src">federal velocity</span>
+        
+        <span class="dscore">40</span></div>
+      <div class="erd">new / sparse federal obligated-$ flow</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AVGO</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">39</span></div>
+      <div class="erd">13f add + material 8k; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> 13f_add · material_8k</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">QCOM</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">37</span></div>
+      <div class="erd">affiliation + patent cluster; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> affiliation · patent_cluster</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BMY</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">PFE</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">ABBV</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">RHHBY</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+  </div>
+  
+
+  
+  <div class="alerts" style="margin-top:18px">
+    <div class="glass acc alert" style="--accent:var(--down)">
       <h3>
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.5 20h19zM12 10v4m0 3v.5"/></svg> <span class="l-en">Crowded top — distribution risk</span><span class="l-zh">拥挤顶部 —— 派发风险</span> <span class="cnt">0</span></h3>
-      <div class="empty"><span class="l-en">No crowded-top setups today.</span><span class="l-zh">今日无拥挤顶部形态。</span></div>
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2.5 20h19zM12 10v4m0 3v.5"/></svg> <span class="l-en">Exhausted — already run, fade-risk</span><span class="l-zh">透支 —— 已跑完，派发风险</span> <span class="cnt">12</span></h3>
+      <div class="arow">
+        <span class="tk">CIFR</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">22%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~22% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">BLDR</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">28%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~28% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">ICHR</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">28%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~28% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">HPQ</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">28%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~28% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">OSCR</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">26%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~26% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">UCTT</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">24%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~24% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">KBH</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">24%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~24% edge left; a late entry to fade.</span></div><div class="arow">
+        <span class="tk">APH</span>
+        <span class="rd"><span class="stage exhausted"><span class="l-en">exhausted</span><span class="l-zh">透支</span></span> <b style="color:var(--down)">25%</b> <span class="l-en">edge left</span><span class="l-zh">剩余</span> · Loud-bullish tape while smart money fades / radar diverges negative — crowded / distribution risk, only ~25% edge left; a late entry to fade.</span></div>
+      
+    </div>
+    <div class="glass acc alert" style="--accent:#a78bfa">
+      <h3>
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> <span class="l-en">Live catalysts — dated events</span><span class="l-zh">在途催化 —— 有确定日期的事件</span> <span class="cnt">12</span></h3>
+      <div class="arow">
+        <span class="tk">LEU</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">3<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">DLX</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">3<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">DNLI</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Divestitures</span> <span style="color:var(--muted)">3<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">GNK</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Tender Offers</span> <span style="color:var(--muted)">3<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">IBCP</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">3<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">ONDS</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Acquisitions</span> <span style="color:var(--muted)">3<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">BTGO</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Capital Returns</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div><div class="arow">
+        <span class="tk">SDEV</span>
+        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">Spin-Offs</span> <span style="color:var(--muted)">4<span class="l-en">d ago</span><span class="l-zh">天前</span></span></span></div>
+      
     </div>
   </div>
 
   
   <div class="band"><h2 style="--accent:var(--up)">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/></svg> <span class="l-en">Command — ranked by composite conviction</span><span class="l-zh">指挥榜 —— 按综合信念排序</span></h2><span class="ln"></span>
-    <span class="cnt"><span class="l-en">5-desk agreement</span><span class="l-zh">五台一致性</span></span></div>
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/></svg> <span class="l-en">Command — ranked by opportunity</span><span class="l-zh">指挥榜 —— 按机会值排序</span></h2><span class="ln"></span>
+    <span class="cnt"><span class="l-en">edge remaining × signal × leading gap</span><span class="l-zh">剩余空间 × 信号 × 领先差</span></span></div>
   <div class="cmd">
     
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NVDA</span><span class="nm">NVDA</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:100.0%"></i></div>
-        <div class="convn">100.0</div>
-      </div>
-      <div class="conf"><b>4</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">4 independent desks agree — a confirmed trend; consensus, less edge left.</div>
-        <div class="flags"><span class="fl conf">confirmed trend</span><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+7 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL GOOGL MSFT</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">DELL</span><span class="nm">DELL</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:94.5%"></i></div>
-        <div class="convn">94.5</div>
-      </div>
-      <div class="conf"><b>2</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Desks lean up with policy intent on the same side — aligned momentum.</div>
-        <div class="flags"><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+5 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS NBIS NVDA SMCI</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">GOOGL</span><span class="nm">GOOGL</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:85.3%"></i></div>
-        <div class="convn">85.3</div>
-      </div>
-      <div class="conf"><b>3</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">3 independent desks agree — a confirmed trend; consensus, less edge left.</div>
-        <div class="flags"><span class="fl conf">confirmed trend</span><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+2 <span class="l-en">peers</span><span class="l-zh">同伴</span>: MSFT NVDA</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">MSFT</span><span class="nm">MSFT</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:83.2%"></i></div>
-        <div class="convn">83.2</div>
-      </div>
-      <div class="conf"><b>3</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">3 independent desks agree — a confirmed trend; consensus, less edge left.</div>
-        <div class="flags"><span class="fl conf">confirmed trend</span><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+2 <span class="l-en">peers</span><span class="l-zh">同伴</span>: GOOGL NVDA</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">SMCI</span><span class="nm">SMCI</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:63.9%"></i></div>
-        <div class="convn">63.9</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+5 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL NBIS NVDA</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CBRS</span><span class="nm">CBRS</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:59.3%"></i></div>
-        <div class="convn">59.3</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+5 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT DELL NBIS NVDA SMCI</span></div>
-        
-      </div>
-    </div>
     <div class="glass acc row" style="--accent:var(--up)">
       <div class="id"><span class="tk">MARA</span><span class="nm">MARA</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
@@ -438,68 +761,65 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>92</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:56.2%"></i></div>
-        <div class="convn">56.2</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 56 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
         <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">AMAT</span><span class="nm">AMAT</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:52.9%"></i></div>
-        <div class="convn">52.9</div>
-      </div>
-      <div class="conf"><b>2</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Desks lean up with policy intent on the same side — aligned momentum.</div>
-        <div class="flags"><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+5 <span class="l-en">peers</span><span class="l-zh">同伴</span>: CBRS DELL NBIS NVDA SMCI</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">PLTR</span><span class="nm">PLTR</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">CBRS</span><span class="nm">CBRS</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell dn"></span>
 <span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:50.9%"></i></div>
-        <div class="convn">50.9</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">No strong cross-desk signal.</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NBIS</span><span class="nm">NBIS</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>82</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:49.0%"></i></div>
-        <div class="convn">49.0</div>
+        <div class="convbar "><i style="width:59.3%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 59 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+6 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL IREN NVDA</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~91% of the move still ahead — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:91%"></i></span>
+<span class="ev">91%</span></div>
+        <div class="flags"><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+5 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT DELL NBIS NVDA SMCI</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">MSFT</span><span class="nm">MSFT</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell up"></span></span></div>
+      <div class="opp"><b>80</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:83.2%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 83 · 3<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~84% of the move still ahead and a policy tailwind — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:84%"></i></span>
+<span class="ev">84%</span></div>
+        <div class="flags"><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+2 <span class="l-en">peers</span><span class="l-zh">同伴</span>: GOOGL NVDA</span></div>
         
       </div>
     </div>
@@ -510,122 +830,42 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>77</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:48.8%"></i></div>
-        <div class="convn">48.8</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 49 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
         <div class="flags"></div>
         
       </div>
     </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">IREN</span><span class="nm">IREN</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:48.8%"></i></div>
-        <div class="convn">48.8</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="peers" title="basket peers also confirming">+1 <span class="l-en">peers</span><span class="l-zh">同伴</span>: NBIS</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">LITE</span><span class="nm">LITE</span><span class="mtx" title="news · alt · radar · board · policy">
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">SMCI</span><span class="nm">SMCI</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>75</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:45.8%"></i></div>
-        <div class="convn">45.8</div>
+        <div class="convbar "><i style="width:63.9%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 64 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">BTDR</span><span class="nm">BTDR</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:43.5%"></i></div>
-        <div class="convn">43.5</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="peers" title="basket peers also confirming">+2 <span class="l-en">peers</span><span class="l-zh">同伴</span>: IREN NBIS</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CIFR</span><span class="nm">CIFR</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:43.5%"></i></div>
-        <div class="convn">43.5</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">ARM</span><span class="nm">ARM</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:42.0%"></i></div>
-        <div class="convn">42.0</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="peers" title="basket peers also confirming">+6 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL NBIS NVDA</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">MRVL</span><span class="nm">MRVL</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:42.0%"></i></div>
-        <div class="convn">42.0</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="peers" title="basket peers also confirming">+6 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL NBIS NVDA</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~90% of the move still ahead — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:90%"></i></span>
+<span class="ev">90%</span></div>
+        <div class="flags"><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+5 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL NBIS NVDA</span></div>
         
       </div>
     </div>
@@ -636,158 +876,65 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>59</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:40.6%"></i></div>
-        <div class="convn">40.6</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 41 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~78% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:78%"></i></span>
+<span class="ev">78%</span></div>
+        <div class="flags"><span class="fl pol">catalyst</span></div>
         
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">CRWV</span><span class="nm">CRWV</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:39.0%"></i></div>
-        <div class="convn">39.0</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"><span class="peers" title="basket peers also confirming">+7 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL IREN NBIS</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">IBM</span><span class="nm">IBM</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:38.9%"></i></div>
-        <div class="convn">38.9</div>
-      </div>
-      <div class="conf"><b>2</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Desks lean up with policy intent on the same side — aligned momentum.</div>
-        <div class="flags"><span class="fl pol">policy aligned</span><span class="peers" title="basket peers also confirming">+3 <span class="l-en">peers</span><span class="l-zh">同伴</span>: DELL GOOGL MSFT</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">WDC</span><span class="nm">WDC</span><span class="mtx" title="news · alt · radar · board · policy">
+      <div class="id"><span class="tk">LITE</span><span class="nm">LITE</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell nz"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>58</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:36.7%"></i></div>
-        <div class="convn">36.7</div>
+        <div class="convbar "><i style="width:45.8%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 46 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:82%"></i></span>
+<span class="ev">82%</span></div>
         <div class="flags"></div>
         
       </div>
     </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">WULF</span><span class="nm">WULF</span><span class="mtx" title="news · alt · radar · board · policy">
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">IREN</span><span class="nm">IREN</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>56</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
-        <div class="convbar "><i style="width:36.2%"></i></div>
-        <div class="convn">36.2</div>
+        <div class="convbar "><i style="width:48.8%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 49 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">MPWR</span><span class="nm">MPWR</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell nz"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:36.0%"></i></div>
-        <div class="convn">36.0</div>
-      </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
-        <div class="flags"></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">NOW</span><span class="nm">NOW</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:34.6%"></i></div>
-        <div class="convn">34.6</div>
-      </div>
-      <div class="conf"><b>2</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Desks lean up with policy intent on the same side — aligned momentum.</div>
-        <div class="flags"><span class="fl pol">policy aligned</span><span class="peers" title="basket peers also confirming">+2 <span class="l-en">peers</span><span class="l-zh">同伴</span>: GOOGL MSFT</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">ROK</span><span class="nm">ROK</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:34.6%"></i></div>
-        <div class="convn">34.6</div>
-      </div>
-      <div class="conf"><b>2</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Desks lean up with policy intent on the same side — aligned momentum.</div>
-        <div class="flags"><span class="fl pol">policy aligned</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--up)">
-      <div class="id"><span class="tk">V</span><span class="nm">V</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell up"></span></span></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:34.6%"></i></div>
-        <div class="convn">34.6</div>
-      </div>
-      <div class="conf"><b>2</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
-      <div>
-        <div class="rd2">Desks lean up with policy intent on the same side — aligned momentum.</div>
-        <div class="flags"><span class="fl pol">policy aligned</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~76% of the move still ahead plus a fresh catalyst — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:76%"></i></span>
+<span class="ev">76%</span></div>
+        <div class="flags"><span class="fl pol">catalyst</span><span class="peers" title="basket peers also confirming">+1 <span class="l-en">peers</span><span class="l-zh">同伴</span>: NBIS</span></div>
         
       </div>
     </div>
@@ -798,13 +945,18 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>56</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:34.4%"></i></div>
-        <div class="convn">34.4</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 34 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
         <div class="flags"></div>
         
       </div>
@@ -816,14 +968,134 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>56</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:34.4%"></i></div>
-        <div class="convn">34.4</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 34 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~88% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:88%"></i></span>
+<span class="ev">88%</span></div>
         <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">NXPI</span><span class="nm">NXPI</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>50</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:31.9%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 32 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
+        <div class="flags"><span class="fl pol">catalyst</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">CRWV</span><span class="nm">CRWV</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>50</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:39.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 39 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~83% of the move still ahead — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:83%"></i></span>
+<span class="ev">83%</span></div>
+        <div class="flags"><span class="peers" title="basket peers also confirming">+7 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL IREN NBIS</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">LEN</span><span class="nm">LEN</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>49</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:30.6%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 31 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~86% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:86%"></i></span>
+<span class="ev">86%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">PLTR</span><span class="nm">PLTR</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell nz"></span>
+<span class="cell dn"></span>
+<span class="cell off"></span>
+<span class="cell up"></span></span></div>
+      <div class="opp"><b>49</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:50.9%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 51 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+          </div>
+        <div class="rd2">No strong cross-desk signal.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:59%"></i></span>
+<span class="ev">59%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">AEIS</span><span class="nm">AEIS</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>46</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:29.4%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 29 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~85% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:85%"></i></span>
+<span class="ev">85%</span></div>
+        <div class="flags"><span class="fl pol">catalyst</span></div>
         
       </div>
     </div>
@@ -834,13 +1106,87 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>45</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:33.8%"></i></div>
-        <div class="convn">33.8</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 34 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~72% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:72%"></i></span>
+<span class="ev">72%</span></div>
+        <div class="flags"><span class="fl pol">catalyst</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">MPWR</span><span class="nm">MPWR</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell nz"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>44</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:36.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 36 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~79% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:79%"></i></span>
+<span class="ev">79%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">CSCO</span><span class="nm">CSCO</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>43</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:27.5%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 28 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~85% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:85%"></i></span>
+<span class="ev">85%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">CI</span><span class="nm">CI</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>42</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:26.9%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 27 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~84% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:84%"></i></span>
+<span class="ev">84%</span></div>
         <div class="flags"></div>
         
       </div>
@@ -852,18 +1198,270 @@
 <span class="cell up"></span>
 <span class="cell off"></span>
 <span class="cell off"></span></span></div>
+      <div class="opp"><b>41</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
       <div class="conv">
         <div class="convbar "><i style="width:32.3%"></i></div>
-        <div class="convn">32.3</div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 32 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
       </div>
-      <div class="conf"><b>1</b><span class="l-en">desks</span><span class="l-zh">台</span></div>
       <div>
-        <div class="rd2">Modestly constructive across the desks that fired.</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~83% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:83%"></i></span>
+<span class="ev">83%</span></div>
+        <div class="flags"><span class="fl pol">catalyst</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">FORM</span><span class="nm">FORM</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>38</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:25.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 25 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:82%"></i></span>
+<span class="ev">82%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">SHW</span><span class="nm">SHW</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>36</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:23.7%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 24 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:82%"></i></span>
+<span class="ev">82%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">NVDA</span><span class="nm">NVDA</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell up"></span>
+<span class="cell up"></span>
+<span class="cell up"></span></span></div>
+      <div class="opp"><b>35</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:100.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 100 · 4<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+          </div>
+        <div class="rd2">4 desks agree and price has confirmed — consensus, ~54% edge remaining; own it, don't chase it.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:54%"></i></span>
+<span class="ev">54%</span></div>
+        <div class="flags"><span class="fl conf">confirmed trend</span><span class="fl pol">policy aligned</span><span class="fl pol">catalyst</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+7 <span class="l-en">peers</span><span class="l-zh">同伴</span>: AMAT CBRS DELL GOOGL MSFT</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">STX</span><span class="nm">STX</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>35</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:23.7%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 24 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~80% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:80%"></i></span>
+<span class="ev">80%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">GOOGL</span><span class="nm">GOOGL</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell up"></span></span></div>
+      <div class="opp"><b>35</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:85.3%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 85 · 3<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+          </div>
+        <div class="rd2">3 desks agree and price has confirmed — consensus, ~48% edge remaining; own it, don't chase it.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:48%"></i></span>
+<span class="ev">48%</span></div>
+        <div class="flags"><span class="fl conf">confirmed trend</span><span class="fl pol">policy aligned</span><span class="fl conf">theme wide</span><span class="peers" title="basket peers also confirming">+2 <span class="l-en">peers</span><span class="l-zh">同伴</span>: MSFT NVDA</span></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">TXN</span><span class="nm">TXN</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell nz"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>34</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:27.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 27 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~82% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:82%"></i></span>
+<span class="ev">82%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--info)">
+      <div class="id"><span class="tk">COST</span><span class="nm">COST</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>30</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:21.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 21 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~92% of the move still ahead — pre-consensus, where the edge is.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:92%"></i></span>
+<span class="ev">92%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">ACLS</span><span class="nm">ACLS</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:20.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 20 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~80% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:80%"></i></span>
+<span class="ev">80%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">LII</span><span class="nm">LII</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:20.0%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 20 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~80% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:80%"></i></span>
+<span class="ev">80%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">LDOS</span><span class="nm">LDOS</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:18.1%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 18 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~87% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:87%"></i></span>
+<span class="ev">87%</span></div>
         <div class="flags"></div>
         
       </div>
     </div>
   </div>
+
+  
+  
+  
+  <div class="band"><h2 style="--accent:var(--ok)">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> <span class="l-en">Signal scorecard — is the edge real?</span><span class="l-zh">信号记分卡 —— 优势是否真实？</span></h2><span class="ln"></span>
+    <span class="cnt"><span class="l-en">the hub graded against realized forward returns</span><span class="l-zh">以实际前瞻收益检验本台</span></span></div>
+  
+  <div class="glass acc" style="padding:13px 16px;font-size:12.5px;color:color-mix(in srgb,var(--text) 80%,transparent);line-height:1.5">
+    
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> <b><span class="l-en">Measuring</span><span class="l-zh">测量中</span></b> — <span class="l-en">the hub records every claim it makes (opportunity rank + lifecycle stage) and grades it against realized SPY-relative forward returns.</span><span class="l-zh">本台记录每一次判断（机会排名 + 生命周期阶段），并以实际相对SPY的前瞻收益评分。</span>
+    <b>927</b> <span class="l-en">claims recorded; grading begins as the 5 / 10 / 21 / 63-day horizons elapse. Until a signal clears a Newey-West significance bar it is shown but not trusted.</span><span class="l-zh">条判断已记录；待 5 / 10 / 21 / 63 天周期走完即开始评分。信号通过 Newey-West 显著性检验前，仅展示、不被采信。</span>
+  </div>
+  
+  
 
   
   
@@ -965,7 +1563,7 @@
   
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-21T07:56:39.789997+00:00">2026-06-21 07:56</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-21T10:01:36.072135+00:00">2026-06-21 10:01</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>
