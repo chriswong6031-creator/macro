@@ -45,6 +45,37 @@ def test_fetch_gated_off_is_noop(tmp_path, monkeypatch):
 
 
 # ---- desk merge -------------------------------------------------------------
+def test_fetch_uses_name_resolver_when_no_tag(tmp_path, monkeypatch):
+    """When a headline has no exchange tag, the lane resolves the ticker from the company
+    name (the fix that takes the lane from 0 -> real items)."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sn, "_cfg", lambda: {"enabled": True, "newswire": True})
+    (tmp_path / "special_situations").mkdir()
+    monkeypatch.setattr("engine.news_rss.query", lambda q, **k: (
+        [{"title": "Acme Corp explores strategic alternatives", "url": "http://x",
+          "seendate": "2026-06-20", "summary": ""}] if "strategic" in q else []))
+    monkeypatch.setattr("engine.name_resolver.resolve",
+                        lambda text, market=None: "ACME" if "Acme" in str(text) else None)
+    df = sn.fetch_news_situations(window_days=3, per_cat=5)
+    assert (df["ticker"] == "ACME").any()
+    assert df[df["ticker"] == "ACME"].iloc[0]["category"] == "Strategic Reviews"
+
+
+def test_fetch_falls_back_to_query_category(tmp_path, monkeypatch):
+    """A resolved item whose headline doesn't hit a classify keyword still keeps the
+    (category-targeted) query's category at low confidence."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sn, "_cfg", lambda: {"enabled": True, "newswire": True})
+    (tmp_path / "special_situations").mkdir()
+    monkeypatch.setattr("engine.news_rss.query", lambda q, **k: (
+        [{"title": "Preferred Bank", "url": "http://y", "seendate": "2026-06-20", "summary": ""}]
+        if "repurchase" in q else []))
+    monkeypatch.setattr("engine.name_resolver.resolve", lambda text, market=None: "PFBC")
+    df = sn.fetch_news_situations(window_days=3, per_cat=5)
+    assert (df["ticker"] == "PFBC").any()
+    assert df[df["ticker"] == "PFBC"].iloc[0]["category"] == "Capital Returns"
+
+
 def test_news_rows_merge_into_desk(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))

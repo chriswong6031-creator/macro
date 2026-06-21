@@ -4068,16 +4068,14 @@ special_situations:                # event-driven Special Situations desk (displ
   summary_per_build: 200           # P1.3 LLM summary calls per build
   filer_per_build: 250             # P3.2 13D cover-page fetches per build
   # P2.1 newswire lane — catches the form-absent categories (Strategic Reviews, Capital
-  # Returns, Deal Terminations, Divestitures). OFF: verification showed it yields ~0 with the
-  # current build — Google-News-aggregated headlines don't carry an exchange-tagged ticker
-  # ("(NASDAQ: XYZ)"), so the strict ticker gate matches nothing, and the quoted-OR queries
-  # are too narrow. Re-enable only after the redesign (name->ticker resolution against our
-  # universe map, or direct GlobeNewswire/BusinessWire/PRNewswire feeds whose headlines DO
-  # carry the ticker). Same reason the intl lanes below stay off (they share the pattern).
-  newswire: false
-  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX), via news_rss + the intl
-  # classifier. OFF — same ticker-extraction limitation as newswire (Google-News headlines
-  # lack "(LSE: BARC)" tags). The intl CLASSIFIER core is solid + tested; the COLLECTOR needs
-  # the same redesign (name-resolution or direct RNS/SEDAR-newswire feeds) before it yields.
+  # Returns, Deal Terminations, Divestitures). ON: the name_resolver now maps the company in
+  # a headline to its ticker (Google-News headlines lack "(NASDAQ: XYZ)" tags), so the lane
+  # yields real items (live sample: ROKU/PayPal strategic reviews, Yum divestiture, buybacks).
+  # display-only, low-confidence; deduped by (ticker, category) on the desk.
+  newswire: true
+  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX). Still OFF: the name_resolver's
+  # foreign coverage is too thin (only digest_db's ~2.5k non-US names; no SEC-equivalent map),
+  # so live sampling yielded ~0. The intl CLASSIFIER core is solid + tested; re-enable once a
+  # real UK/CA name->ticker map (or direct RNS/SEDAR-newswire feeds) is wired.
   intl_uk: false
   intl_canada: false
