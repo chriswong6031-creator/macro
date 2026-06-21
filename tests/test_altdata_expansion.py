@@ -106,6 +106,39 @@ def test_gov_grant_channel_fires_and_tiers():
     assert M.CHANNEL_WEIGHTS["gov_grant_accel"] > M.CHANNEL_WEIGHTS["gov_grant"]
 
 
+# ===================================================================== P3.3 handshake
+def test_special_situations_handshake_lights_channels():
+    """The Special-Situations desk cross-emit lights an activist_13d / special_situation
+    channel so a confirmed event converges with the hard alt-data feeds on the same name."""
+    signals = {"special_situations": [
+        {"ticker": "AAA", "category": "Activist Campaigns", "activist": True, "filer": "Elliott"},
+        {"ticker": "BBB", "category": "Going-Private", "activist": False, "detail": "Going-Private"},
+    ]}
+    recs = M.channel_records(signals)
+    assert recs["AAA"]["channels"] == ["activist_13d"]
+    assert "Elliott" in recs["AAA"]["channel_detail"]["activist_13d"]
+    assert recs["BBB"]["channels"] == ["special_situation"]
+    # the activist 13D handshake outweighs a generic special-situation
+    assert M.CHANNEL_WEIGHTS["activist_13d"] > M.CHANNEL_WEIGHTS["special_situation"]
+
+
+def test_special_situations_reader_drops_low_confidence(tmp_path, monkeypatch):
+    """special_situations_signal() never propagates unverified (low-confidence) keyword guesses."""
+    import json
+    from lib import config
+    from engine import altdata as A
+    monkeypatch.setattr(config, "ROOT", tmp_path)
+    d = tmp_path / "site" / "allocationdata"
+    d.mkdir(parents=True)
+    (d / "special_situations.json").write_text(json.dumps({"by_ticker": {
+        "AAA": {"category": "Activist Campaigns", "confidence": "high", "activist_filer": "Elliott"},
+        "BBB": {"category": "Acquisitions", "confidence": "low"},
+    }}))
+    out = {r["ticker"]: r for r in A.special_situations_signal()}
+    assert "AAA" in out and out["AAA"]["activist"] is True and out["AAA"]["filer"] == "Elliott"
+    assert "BBB" not in out                       # low confidence dropped
+
+
 # ===================================================================== Step 2
 def test_material_8k_channel_needs_a_cluster():
     """material_8k fires only on a cluster (>=2 material 8-Ks); a single one is not a signal."""
