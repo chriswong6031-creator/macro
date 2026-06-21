@@ -160,12 +160,21 @@ def test_dates_to_sweep_skips_weekends_and_honors_watermark(tmp_store, monkeypat
 
 def test_engine_is_display_only_leaf():
     """Load-bearing honesty invariant: the desk is context-only, never scored,
-    and must not pull the scoring path into the import graph."""
+    and must not pull the scoring path into the import graph. Checked in a FRESH
+    subprocess so the result is independent of whatever other tests imported into
+    this process's sys.modules (the invariant is about THIS module's import graph)."""
+    import subprocess
     import sys
     assert sse.SCORED is False
-    # importing the engine must not have imported regime/conditions/run
-    assert not any(m in sys.modules for m in
-                   ("engine.regime", "engine.conditions", "engine.run", "conditions"))
+    code = (
+        "import sys, engine.special_situations\n"
+        "bad=[m for m in ('engine.regime','engine.conditions','engine.run','conditions') "
+        "if m in sys.modules]\n"
+        "raise SystemExit('pulled scoring path: '+repr(bad) if bad else 0)"
+    )
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                       cwd=str(config.ROOT))
+    assert r.returncode == 0, (r.stdout + r.stderr)
 
 
 def test_classify_structured_forms():
