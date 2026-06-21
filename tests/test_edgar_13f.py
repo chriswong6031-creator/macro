@@ -197,3 +197,35 @@ def test_accumulation_trend_needs_two_real_quarters():
         [{"period": "2024-03-31", "n_funds": 0, "value_usd": 0.0},
          {"period": "2024-06-31", "n_funds": 0, "value_usd": 0.0},
          {"period": "2024-09-31", "n_funds": 2, "value_usd": 200.0}]) is None
+
+
+def test_accumulation_trend_emits_lookahead_free_as_of():
+    # filing dates lag quarter-end ~45d — the trend must surface the FILING date
+    # as `available_on`, never the quarter-end, so a scorer can't peek ahead.
+    s = [{"period": "2024-03-31", "n_funds": 2, "value_usd": 100.0, "filing_date": "2024-05-15"},
+         {"period": "2024-06-30", "n_funds": 4, "value_usd": 200.0, "filing_date": "2024-08-14"}]
+    tr = sm.accumulation_trend(s)
+    assert tr["to_period"] == "2024-06-30"                 # quarter-end (display)
+    assert tr["available_on"] == "2024-08-14"              # PUBLIC filing date (scoring)
+    assert tr["available_on_first"] == "2024-05-15"
+    assert tr["available_on"] > tr["to_period"]            # filing strictly after quarter-end
+
+
+def test_as_of_for_scoring_contract():
+    s = [{"period": "2024-03-31", "n_funds": 2, "value_usd": 100.0, "filing_date": "2024-05-15"},
+         {"period": "2024-06-30", "n_funds": 3, "value_usd": 150.0, "filing_date": "2024-08-14"}]
+    assert sm.as_of_for_scoring(sm.accumulation_trend(s)) == "2024-08-14"
+    assert sm.as_of_for_scoring(None) is None
+    # legacy snapshots w/o filing_date -> no as-of -> trend must NOT be scored
+    assert sm.as_of_for_scoring(sm.accumulation_trend(_series(2, 3))) is None
+
+
+def test_smart_money_trend_never_keys_scoring_on_quarter_end():
+    """Guard the look-ahead contract: as_of_for_scoring must return the filing date,
+    which is strictly later than the quarter-end `to_period`. A regression that made
+    scoring key on `to_period` would surface here."""
+    s = [{"period": "2024-09-30", "n_funds": 1, "value_usd": 50.0, "filing_date": "2024-11-14"},
+         {"period": "2024-12-31", "n_funds": 2, "value_usd": 120.0, "filing_date": "2025-02-14"}]
+    tr = sm.accumulation_trend(s)
+    asof = sm.as_of_for_scoring(tr)
+    assert asof == "2025-02-14" and asof != tr["to_period"] and asof > tr["to_period"]

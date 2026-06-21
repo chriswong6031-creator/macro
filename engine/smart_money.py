@@ -134,6 +134,19 @@ def cusip_ticker_seed() -> dict[str, str]:
     return out
 
 
+def full_cusip_map() -> dict[str, str]:
+    """The full CUSIP→ticker resolver for 13F lines: the precise ARK seed FIRST,
+    then the free OpenFIGI master (collectors/openfigi.py) layered underneath to
+    unhide foreign/ADR/renamed/non-index lines the seed + name-match miss. Seed
+    wins on conflict (hand-verified)."""
+    try:
+        from collectors.openfigi import load_cusip_ticker
+        figi = load_cusip_ticker()
+    except Exception:  # noqa: BLE001 — never break resolution over an optional cache
+        figi = {}
+    return {**figi, **cusip_ticker_seed()}      # seed overrides OpenFIGI on conflict
+
+
 def resolve_tickers(df: pd.DataFrame, name_map: dict[str, str],
                     cusip_map: dict[str, str] | None = None) -> pd.DataFrame:
     """Add a `ticker` column (or None). PURE — takes the maps as args. CUSIP 8/9-char
@@ -213,13 +226,19 @@ _TREND_VAL_FRAC = 15.0
 def accumulation_trend(series: list[dict]) -> dict | None:
     """Multi-quarter "Historical institutional increase/decrease" read for ONE name.
     PURE. `series` = per-quarter aggregates ascending by period, each
-    {period, n_funds, value_usd} (n_funds = tracked funds holding it that quarter).
+    {period, n_funds, value_usd, filing_date?} (n_funds = tracked funds holding it
+    that quarter; `filing_date` = when that quarter's data became PUBLIC).
 
     Direction is driven by the holder-count change across the window (broadening
     vs narrowing super-investor ownership), with aggregate $ value as the
     tiebreaker when the holder count is flat. Leading quarters before the name was
     ever held are trimmed, but a trailing exit-to-zero is KEPT (it IS the signal).
-    <2 quarters of history -> None (no trend yet)."""
+    <2 quarters of history -> None (no trend yet).
+
+    LOOK-AHEAD: `to_period`/`from_period` are QUARTER-END dates (NOT observable
+    until the 13F is filed ~45 days later). The trade-correct as-of is `available_on`
+    (= the latest holder's filing_date for the most-recent quarter). Any scorer MUST
+    join on `available_on`, never `to_period` — see `as_of_for_scoring`."""
     start = next((i for i, p in enumerate(series)
                   if p.get("n_funds") or p.get("value_usd")), None)
     if start is None:
@@ -248,8 +267,21 @@ def accumulation_trend(series: list[dict]) -> dict | None:
         "value_change_pct": v_pct,
         "from_period": str(first.get("period") or ""),
         "to_period": str(last.get("period") or ""),
+        # filing dates = the only look-ahead-free timestamps (see docstring)
+        "available_on": str(last.get("filing_date") or ""),
+        "available_on_first": str(first.get("filing_date") or ""),
         "holders_series": [int(p.get("n_funds") or 0) for p in pts],
     }
+
+
+def as_of_for_scoring(trend: dict | None) -> str | None:
+    """The ONLY look-ahead-free as-of date for joining an accumulation trend to
+    forward returns: the most-recent quarter's PUBLIC filing date, never the
+    quarter-end. Returns None if no filing date is known (then the trend must not
+    be scored). This is the contract every scorer must honor (guard-tested)."""
+    if not trend:
+        return None
+    return trend.get("available_on") or None
 
 
 # --------------------------------------------------------------------------- #
@@ -267,19 +299,30 @@ def _read_two(slug: str) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
     return prev, latest
 
 
-def _read_all(slug: str) -> list[tuple[str, pd.DataFrame]]:
-    """Every retained snapshot for a fund, (period_end, frame) ascending by period."""
+def _snapshot_filing_date(df: pd.DataFrame) -> str:
+    """The public filing date stamped on a snapshot (collectors/edgar_13f.py writes
+    it per row). Empty string if absent (legacy snapshots) — callers degrade to a
+    look-ahead-free None as-of rather than guessing."""
+    if "filing_date" in df.columns and len(df):
+        v = df["filing_date"].iloc[0]
+        return str(v) if v is not None and str(v) != "nan" else ""
+    return ""
+
+
+def _read_all(slug: str) -> list[tuple[str, str, pd.DataFrame]]:
+    """Every retained snapshot for a fund, (period_end, filing_date, frame) ascending
+    by period. `filing_date` is when that quarter became PUBLIC (look-ahead-free)."""
     d = config.data_dir() / "smart_money" / slug
     if not d.exists():
         return []
-    out: list[tuple[str, pd.DataFrame]] = []
+    out: list[tuple[str, str, pd.DataFrame]] = []
     for p in sorted(d.glob("*.parquet")):
         try:
             df = pd.read_parquet(p)
         except Exception:  # noqa: BLE001
             continue
         if not df.empty:
-            out.append((p.stem, df))
+            out.append((p.stem, _snapshot_filing_date(df), df))
     return out
 
 
@@ -287,12 +330,16 @@ def _accumulation(funds: dict, name_map: dict[str, str],
                   cusip_map: dict[str, str]) -> dict[str, dict]:
     """{ticker: accumulation_trend(...)} across ALL retained quarters of every
     tracked fund — the multi-quarter "who's been building vs trimming this name"
-    rollup. Reads disk; the per-name math is the pure accumulation_trend above."""
-    # ticker -> period -> [holder_count, total_value]
+    rollup. Reads disk; the per-name math is the pure accumulation_trend above.
+
+    Per (ticker, quarter) we keep the LATEST contributing fund's filing_date as the
+    quarter's `available_on` — the conservative date by which that quarter's holder
+    set was fully public — so the trend carries a look-ahead-free as-of."""
+    # ticker -> period -> [holder_count, total_value, max_filing_date]
     agg: dict[str, dict[str, list]] = {}
     periods: set[str] = set()
     for slug in funds:
-        for period_end, snap in _read_all(slug):
+        for period_end, filing_date, snap in _read_all(slug):
             eq = snap[snap.get("sh_type", "SH") == "SH"]
             if eq.empty:
                 continue
@@ -306,18 +353,33 @@ def _accumulation(funds: dict, name_map: dict[str, str],
             # one fund counted once per ticker (collapse dual-class lots)
             per = res.groupby("ticker", as_index=False).agg(value_usd=("value_usd", "sum"))
             for r in per.itertuples(index=False):
-                slot = agg.setdefault(r.ticker, {}).setdefault(period_end, [0, 0.0])
+                slot = agg.setdefault(r.ticker, {}).setdefault(period_end, [0, 0.0, ""])
                 slot[0] += 1
                 slot[1] += float(r.value_usd)
+                if filing_date > slot[2]:        # latest filer = fully-public date
+                    slot[2] = filing_date
     ordered = sorted(periods)
     out: dict[str, dict] = {}
     for tk, pmap in agg.items():
-        series = [{"period": p, "n_funds": pmap.get(p, [0, 0.0])[0],
-                   "value_usd": pmap.get(p, [0, 0.0])[1]} for p in ordered]
+        series = [{"period": p, "n_funds": pmap.get(p, [0, 0.0, ""])[0],
+                   "value_usd": pmap.get(p, [0, 0.0, ""])[1],
+                   "filing_date": pmap.get(p, [0, 0.0, ""])[2]} for p in ordered]
         tr = accumulation_trend(series)
         if tr is not None:
             out[tk] = tr
     return out
+
+
+def _safe_manager_quality(cfg: dict | None) -> dict:
+    """Backtested per-fund grades, or {} if prices/snapshots are unavailable.
+    Lazy import breaks the smart_money<->manager_quality cycle; quality is optional
+    CONTEXT so any failure must degrade silently, never break the panel."""
+    try:
+        from engine.manager_quality import compute_manager_quality
+        return compute_manager_quality(cfg)
+    except Exception:  # noqa: BLE001
+        log.debug("manager_quality unavailable", exc_info=True)
+        return {}
 
 
 def compute_smart_money(cfg: dict | None = None) -> dict | None:
@@ -326,7 +388,7 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
     if not funds:
         return None
     name_map = name_ticker_map()
-    cusip_map = cusip_ticker_seed()
+    cusip_map = full_cusip_map()                 # ARK seed + free OpenFIGI master
     top_n = int(cfg.get("panel_top_n", 12))
 
     by_ticker: dict[str, dict] = {}
@@ -384,6 +446,9 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
 
     # multi-quarter "Historical institutional increase/decrease" trend per name
     trends = _accumulation(funds, name_map, cusip_map)
+    # backtested per-fund predictiveness — quality-weights the panel (descriptive
+    # CONTEXT, never a scored alpha; see engine/manager_quality.py)
+    mq = _safe_manager_quality(cfg)
 
     _BUY = {"new": 0, "add": 1, "hold": 2, "trim": 3, "exit": 4}
     for t, rec in by_ticker.items():
@@ -397,6 +462,27 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         rec["as_of"] = max((e["period_end"] for e in h), default="")
         if t in trends:
             rec["trend"] = trends[t]
+        # tag each holder with its fund's backtested grade + flag clustering by
+        # GRADED-skilled funds — the "not all managers are equal" lesson.
+        for e in h:
+            g = (mq.get(str(e["fund"]).lower()) or {}).get("grade")
+            if g and g != "n/a":
+                e["fund_grade"] = g
+        graded = [e["fund_grade"] for e in h if e.get("fund_grade")]
+        if graded:
+            rec["quality_cluster"] = {
+                "n_quality_buyers": sum(1 for e in h if e.get("fund_grade") in ("A", "B")
+                                        and e["action"] in ("new", "add")),
+                "best_grade": min(graded),       # 'A' < 'B' < 'C' < 'D'
+                "graded_holders": len(graded),
+            }
+
+    # enrich the per-fund board with each fund's quality grade
+    for fr in fund_rows:
+        q = mq.get(fr["slug"]) or {}
+        if q.get("grade") and q["grade"] != "n/a":
+            fr["quality_grade"] = q["grade"]
+            fr["quality_z"] = q.get("quality_z")
 
     most_held = sorted(overlap.values(), key=lambda r: (-r["n_funds"], -r["total_value"]))[:40]
     for m in most_held:
@@ -410,5 +496,6 @@ def compute_smart_money(cfg: dict | None = None) -> dict | None:
         "n_names": len(by_ticker),
         "funds": sorted(fund_rows, key=lambda r: r["name"]),
         "most_held": most_held,
+        "manager_quality": mq,
         "by_ticker": by_ticker,
     }

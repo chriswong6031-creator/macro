@@ -63,6 +63,7 @@ def all_adapters() -> dict:
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
         ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
         ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
+        ("openfigi", "collectors.openfigi", "OpenFigiAdapter"),    # keyless CUSIP->ticker master -> unhides foreign/ADR 13F lines (engine/smart_money.full_cusip_map)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
         ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
