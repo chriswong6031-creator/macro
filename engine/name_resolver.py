@@ -85,6 +85,19 @@ def build_index() -> dict[str, set]:
                 _add(idx, r["company"], r["ticker"])
     except Exception:  # noqa: BLE001
         pass
+    # foreign name->ticker from the stock-search libraries (ticker = exchange-suffixed index):
+    # canada_search (.TO), intl_search (UK .L + JP/IN/EU/KR/AU/...). This is what gives the
+    # newswire/intl lanes their non-US coverage (the SEC map is US-only).
+    try:
+        import pandas as pd
+        for sub in ("canada_search", "intl_search"):
+            mp = config.data_dir() / sub / "members.parquet"
+            if mp.exists():
+                m = pd.read_parquet(mp)
+                for tk, r in m.iterrows():
+                    _add(idx, r.get("name"), tk)
+    except Exception:  # noqa: BLE001
+        pass
     return idx
 
 
