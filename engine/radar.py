@@ -273,6 +273,8 @@ def append_ledger(result: dict, root=None) -> int:
         base = config.data_dir() if root is None else (root / "data")
         p = base / "radar" / "theses.jsonl"
         p.parent.mkdir(parents=True, exist_ok=True)
+        from engine.regime_label import quad_label      # regime stamp → by_regime track record
+        regime = quad_label(config.ROOT if root is None else root)
         seen = set()
         if p.exists():
             for line in p.read_text().splitlines():
@@ -285,7 +287,7 @@ def append_ledger(result: dict, root=None) -> int:
             for h in result["hypotheses"]:
                 if h.get("id") in seen:
                     continue
-                fh.write(json.dumps(h, separators=(",", ":")) + "\n")
+                fh.write(json.dumps({**h, "regime": regime}, separators=(",", ":")) + "\n")
                 n += 1
         if n:
             log.info("radar: appended %d watch-hypotheses to %s", n, p)
