@@ -80,6 +80,9 @@ class TrialLedger:
         self.default_family = family
         # family -> set(config_hash); rebuilt from disk so counts survive process restarts
         self._seen: dict[str, set[str]] = {}
+        # family -> max declared research budget (a floor on effective_n; see log_declared_budget)
+        self._declared: dict[str, int] = {}
+        self._declared_seen: set[str] = set()
         self._load()
 
     # -- internals --------------------------------------------------------- #
@@ -96,6 +99,14 @@ class TrialLedger:
                         row = json.loads(line)
                     except Exception:
                         continue  # tolerate a torn final line; never crash a calibrator
+                    if row.get("kind") == "declared_budget":
+                        fam, n = row.get("family"), row.get("n")
+                        if fam and isinstance(n, int):
+                            self._declared[fam] = max(self._declared.get(fam, 0), n)
+                            h = row.get("config_hash")
+                            if h:
+                                self._declared_seen.add(h)
+                        continue
                     fam, h = row.get("family"), row.get("config_hash")
                     if fam and h:
                         self._seen.setdefault(fam, set()).add(h)
@@ -144,6 +155,39 @@ class TrialLedger:
         Returns the count of NEWLY-distinct trials added this call."""
         return sum(int(self.log_trial(c, family=family, **kw)) for c in configs)
 
+    def log_declared_budget(self, n: int, *, family: str | None = None,
+                            reason: str | None = None) -> bool:
+        """Record a DECLARED multiple-testing budget for ``family`` — a manual
+        upper-bound on configs explored that are NOT all itemized in code (e.g. the
+        signal/threshold/window variants tried during research). It acts as a FLOOR on
+        ``effective_n``: it can only ever RAISE the haircut, never lower it (anti-gaming,
+        and de Prado's "overestimating is the conservative direction"). Use it to migrate
+        a calibrator that deflated by a hand-declared n_trials larger than its in-code
+        grid — the conservative count is preserved, but now persisted + auditable instead
+        of a bare literal. Returns True if newly recorded for this (family, n, reason)."""
+        fam = self._fam(family)
+        n = int(n)
+        if n < 1:
+            raise ValueError("declared budget must be >= 1")
+        h = _hash(fam, {"__declared_budget__": n, "reason": reason})
+        self._declared[fam] = max(self._declared.get(fam, 0), n)
+        if h in self._declared_seen:
+            return False
+        self._declared_seen.add(h)
+        row = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "family": fam,
+            "kind": "declared_budget",
+            "n": n,
+            "reason": reason,
+            "config_hash": h,
+        }
+        with _WRITE_LOCK:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with self.path.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(row, default=str) + "\n")
+        return True
+
     # -- reading ----------------------------------------------------------- #
     def literal_n(self, family: str | None = None) -> int:
         """Distinct configs logged for ``family`` — the honest multiple-testing N."""
@@ -160,21 +204,32 @@ class TrialLedger:
         down to reflect near-duplicate trials, but is hard-floored at
         ``ceil(sqrt(literal_n))`` so a 400-config search can never be laundered into
         "effectively 2". Counting at generation + this floor are what make the ledger
-        a gate rather than a knob. Returns at least 1."""
-        lit = self.literal_n(family)
+        a gate rather than a knob.
+
+        A declared research budget (see ``log_declared_budget``) is applied last as a
+        hard floor: ``effective_n`` is never below it. Returns at least 1."""
+        fam = self._fam(family)
+        declared = self._declared.get(fam, 0)
+        lit = len(self._seen.get(fam, ()))
         if lit <= 1:
-            return max(lit, 1)
-        if correlation_credit is None:
-            return lit
-        cc = float(correlation_credit)
-        if not (0.0 < cc <= 1.0):
-            raise ValueError("correlation_credit must be in (0, 1]")
-        floor = math.ceil(math.sqrt(lit))
-        return max(floor, int(round(lit * cc)))
+            base = max(lit, 1)
+        elif correlation_credit is None:
+            base = lit
+        else:
+            cc = float(correlation_credit)
+            if not (0.0 < cc <= 1.0):
+                raise ValueError("correlation_credit must be in (0, 1]")
+            floor = math.ceil(math.sqrt(lit))
+            base = max(floor, int(round(lit * cc)))
+        return max(base, declared, 1)
+
+    def declared_budget(self, family: str | None = None) -> int:
+        """The declared research-budget floor for ``family`` (0 if none)."""
+        return self._declared.get(self._fam(family), 0)
 
     def families(self) -> list[str]:
-        """All families seen so far, for audit/registry enumeration."""
-        return sorted(self._seen)
+        """All families seen so far (itemized or declared), for audit/registry enumeration."""
+        return sorted(set(self._seen) | set(self._declared))
 
 
 __all__ = ["TrialLedger", "DEFAULT_PATH"]
