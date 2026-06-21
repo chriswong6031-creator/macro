@@ -95,6 +95,35 @@
   .nb-note { font-size:8.5px; line-height:1.3; margin-top:3px; padding:2px 5px; border-radius:6px;
              color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
   .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* ---- vol-managed size chip + entry-timing gauge (mirrors the US standout card) ---- */
+  .nb-bot { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:4px; font-size:10px; }
+  .nb-size { font-size:9.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;
+             padding:0 5px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .nb-size.sz-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line));
+                   background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .nb-size.sz-dn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
+                   background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
+  .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px; border-left:3px solid var(--muted);
+              background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 7%,var(--panel)); }
+  .nbe-buy_soon, .nbe-watch { border-left-color:var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color:var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 7%,var(--panel)); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 7%,var(--panel)); }
+  .nbe-head { display:flex; align-items:center; gap:5px; }
+  .nbe-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
+  .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent); }
+  .nbe-dot.a2 { background:var(--g-cold); }
+  .nbe-dot.a1 { background:var(--warn); }
+  .nbe-dot.a0 { background:var(--down); }
+  .nbe-status { font-size:10px; font-weight:800; color:var(--text); line-height:1.2; }
+  .nbe-zone { display:flex; align-items:baseline; gap:5px; margin-top:3px; }
+  .nbe-lbl { color:var(--muted); font-size:8px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .nbe-px { font-weight:800; font-size:11px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
@@ -342,6 +371,32 @@
         </div>
         {% endfor %}
       </div>
+      {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
+         actual buy-zone price + cycle position. WHEN/AT-WHAT-PRICE — never the conviction score. #}
+      {% set es = s.entry_signal %}
+      {% if es %}
+      <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — when & at what price to buy. {{ es.action }}">
+        <div class="nbe-head">
+          <span class="nbe-dot a{{ es.act_level }}"></span>
+          <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+        </div>
+        {% if es.buy_zone and es.buy_zone.high is not none %}
+        <div class="nbe-zone">
+          <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+          <span class="nbe-px">${{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–${{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
+          {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      {# vol-managed inverse-vol SIZE chip (engine/risk_sizing) — HOW MUCH to own (risk),
+         separate from the conviction score (WHAT) and the entry gauge (WHEN). #}
+      {% set _rs = s.risk_sizing %}
+      {% if _rs and _rs.size_mult is not none %}
+      <div class="nb-bot">
+        <span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>
+      </div>
+      {% endif %}
       {# volatility black hole (vol_squeeze) chip #}
       {% set _vs = c.vol_squeeze %}
       {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}

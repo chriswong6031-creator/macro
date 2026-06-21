@@ -28,6 +28,9 @@ from engine import stock_score  # noqa: E402
 from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
+from engine import entry_signal  # noqa: E402 — entry-timing gauge (WHEN to buy)
+from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
+from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CA_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -411,6 +414,23 @@ def main(alpha: dict | None = None) -> dict | None:
     # Mirrors build_stock_library (US).
     profiles: dict[str, dict] = {}
     to_write: dict[str, tuple[str, dict]] = {}   # ticker -> (safe, rec)
+    entry_sig: dict[str, dict] = {}              # entry-timing gauge per name (board rows)
+    risk_sig: dict[str, dict] = {}               # vol-managed sizing per name (board rows)
+    # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high
+    # dispersion => take more gross on the cross-sectional book). Computed ONCE over the
+    # whole-universe return panel; feeds per-name vol-managed sizing as `regime_gross`.
+    # Mirrors build_stock_library (US). Best-effort: a thin panel just leaves gross=1.0.
+    disp_regime, regime_gross = None, 1.0
+    try:
+        _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
+        disp_regime = dispersion.assess(_ext_closes.pct_change(fill_method=None).tail(280))
+        if disp_regime:
+            regime_gross = disp_regime["gross_mult"]
+            log.info("canada dispersion regime: %s (pctile %s, avg_corr %s) -> gross x%.2f",
+                     disp_regime["state"], disp_regime.get("dispersion_pctile"),
+                     disp_regime.get("avg_corr"), regime_gross)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("canada dispersion regime failed (%s)", e)
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
@@ -441,6 +461,29 @@ def main(alpha: dict | None = None) -> dict | None:
         norm = stock_score.normalize_rec(rec, "CA", basket=basket_tw.get(ticker))
         prof = stock_score.conviction_profile(norm, "CA", ctx={"as_of": (alpha or {}).get("as_of"), "gate_go": gate_go})
         rec["conviction"] = prof
+        # ---- Risk-based sizing (engine/risk_sizing) — the VALIDATED Sharpe lever ----
+        # Vol-managed inverse-vol size: bet LESS on high-vol names, MORE on calm ones,
+        # scaled by the dispersion regime. HOW MUCH to own (risk), orthogonal to the
+        # conviction score (WHAT) and the entry gauge (WHEN). Pure-vol; high is None on CA.
+        try:
+            rs = risk_sizing.assess(close, regime_gross=regime_gross)
+            if rs:
+                rec["risk_sizing"] = rs
+                risk_sig[ticker] = rs                            # attached to board rows below
+                if isinstance(prof, dict) and isinstance(prof.get("size"), dict):
+                    prof["size"]["vol_mult"] = rs["size_mult"]   # additive, never overrides
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("risk-sizing for %s failed (%s)", ticker, e)
+        # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------------
+        # Conviction answers "own it?"; this answers "buy now / at what price / when?".
+        # Reads the already-calibrated rec['ladder']/cycle; high is None on CA (close-only).
+        try:
+            es = entry_signal.assess(close, high, rec)
+            if es:
+                rec["entry_signal"] = es
+                entry_sig[ticker] = es                           # attached to board rows below
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("entry-signal for %s failed (%s)", ticker, e)
         profiles[ticker] = prof
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
@@ -565,8 +608,14 @@ def main(alpha: dict | None = None) -> dict | None:
             t = r.get("ticker")
             if r.get("conviction") is None and profiles.get(t):
                 r["conviction"] = profiles[t]
+            if entry_sig.get(t):
+                r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            if risk_sig.get(t):
+                r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
         wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
         wide["universe"] = len(cand)
+        if disp_regime:                      # selection-regime gross dial (board + bot)
+            wide["dispersion_regime"] = disp_regime
         (site / "factordata" / "canada_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",

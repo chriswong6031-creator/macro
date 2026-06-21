@@ -115,6 +115,41 @@
   .nb-ent { font-weight:700; padding:0 5px; border-radius:7px; text-transform:capitalize; }
   .nb-ent.ent-good { color:var(--up); background:color-mix(in srgb,var(--up) 14%,var(--panel)); }
   .nb-ent.ent-warn { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,var(--panel)); }
+  /* ---- vol-managed size chip (engine/risk_sizing — ported from the US dashboard) ---- */
+  .nb-size { font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;
+             padding:0 5px; border-radius:7px; background:var(--panel);
+             border:1px solid var(--line); color:var(--muted); cursor:help; margin-left:auto; }
+  .nb-size.sz-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line));
+                   background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .nb-size.sz-dn { color:var(--warn,#c79a2e); border-color:color-mix(in srgb,var(--warn,#c79a2e) 42%,var(--line));
+                   background:color-mix(in srgb,var(--warn,#c79a2e) 8%,var(--panel)); }
+  /* ---- Entry-timing gauge (the SECOND gauge — ported from the US dashboard) ---- */
+  .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px;
+              background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--muted); }
+  .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .nbe-buy_soon, .nbe-watch { border-left-color:var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color:var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
+  .nbe-head { display:flex; align-items:center; gap:5px; }
+  .nbe-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
+  .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent); }
+  .nbe-dot.a2 { background:var(--g-cold); }
+  .nbe-dot.a1 { background:var(--warn); }
+  .nbe-dot.a0 { background:var(--down); }
+  .nbe-status { font-size:10px; font-weight:800; color:var(--text); line-height:1.2; }
+  .nbe-zone { display:flex; align-items:baseline; gap:5px; margin-top:3px; }
+  .nbe-lbl { color:var(--muted); font-size:8px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .nbe-px { font-weight:800; font-size:11px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
+  .nbe-cyc { font-size:8.5px; color:var(--muted); margin-top:3px; display:flex;
+             align-items:center; gap:4px; font-variant-numeric:tabular-nums; }
+  .nbe-bar { display:inline-block; width:42px; height:3px; border-radius:2px;
+             background:var(--line); overflow:hidden; }
+  .nbe-bf { display:block; height:100%; background:var(--g-cold); }
   /* ---- unified Conviction Profile on each standout card (ported from the US dashboard) ---- */
   .nb-conv { display:flex; align-items:center; gap:7px; margin:5px 0 1px; }
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
@@ -1070,10 +1105,37 @@
           </div>
           {% endfor %}
         </div>
+        {% set es = n.entry_signal %}
+        {% if es %}
+        {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
+           actual buy-zone price + cycle position. The WHEN/AT-WHAT-PRICE the conviction score
+           must never be mistaken for. Market-agnostic (reads the cycle/ladder + vol). #}
+        <div class="nb-entry nbe-{{ es.status }}" title="{{ t('ENTRY timing (gauge 2) — when & at what price to buy', '入场择时（量表2）— 何时、以何价买入') }}. {{ es.action }}">
+          <div class="nbe-head">
+            <span class="nbe-dot a{{ es.act_level }}"></span>
+            <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
+          </div>
+          {% if es.buy_zone and es.buy_zone.high is not none %}
+          <div class="nbe-zone">
+            <span class="nbe-lbl">{{ t('Buy zone', '买入区') }}</span>
+            <span class="nbe-px">{{ '%.2f'|format(es.buy_zone.low) }}{% if es.buy_zone.high != es.buy_zone.low %}–{{ '%.2f'|format(es.buy_zone.high) }}{% endif %}</span>
+            {% if es.buy_zone.pct_from_spot is not none %}<span class="nbe-pct">{{ '%+.1f'|format(es.buy_zone.pct_from_spot) }}%</span>{% endif %}
+          </div>
+          {% endif %}
+          {% if es.cycle_pos and es.cycle_pos.dc_day is not none %}
+          <div class="nbe-cyc">
+            <span>{{ t('cycle day', '周期第') }} {{ es.cycle_pos.dc_day }}{{ t('', '天') }}/{{ es.cycle_pos.dc_band[0] }}–{{ es.cycle_pos.dc_band[1] }}</span>
+            <span class="nbe-bar"><span class="nbe-bf" style="width:{{ [es.cycle_pos.pct_through or 0, 100]|min }}%"></span></span>
+            {% if es.timing and es.timing.opens_in_days_lo is not none and es.status not in ['buy_now','partial'] %}<span>· {{ t('window', '窗口') }} ~{{ es.timing.opens_in_days_lo }}{% if es.timing.opens_in_days_hi and es.timing.opens_in_days_hi != es.timing.opens_in_days_lo %}–{{ es.timing.opens_in_days_hi }}{% endif %}d</span>{% endif %}
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
         {% endif %}
         <div class="nb-bot">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
           {% if n.confluence %}<span class="nb-conf" title="In BOTH validated screens — a deep-dip reversal candidate that is ALSO a low-vol defensive name (a structurally safer rebound). · 同时进入两条已验证筛选 —— 既是深跌反转候选又是低波防御股（结构上更稳健的反弹）。">🛡🔄 {{ t('safer rebound', '稳健反弹') }}</span>{% endif %}
+          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="{{ t('Vol-managed size — bet MORE on calm names, LESS on volatile ones', '波动率管理仓位 — 平静标的加注、波动标的减注') }}. ×{{ _rs.size_mult }} {{ t('of the conviction-base size', '相对确信度基准仓位') }} ({{ t('forecast vol', '预测波动') }} {{ _rs.vol_ann_pct }}% · {{ t('inverse-vol', '逆波动') }} ×{{ _rs.inv_vol_mult }} · {{ t('regime', '区制') }} ×{{ _rs.regime_gross }}). {{ t('The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)', '已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么（确信度）与何时买入（入场）') }}.">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
         {% if n.alpha is not none or n.alpha_entry %}
         <div class="nb-alpha">
