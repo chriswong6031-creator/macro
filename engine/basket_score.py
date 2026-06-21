@@ -77,11 +77,14 @@ def overbought(lvl: pd.Series, rs_pctile: float | None, crowd: dict | None) -> d
     rsi = _rsi(lvl)
     ext = None
     if isinstance(crowd, dict):
-        legs = crowd.get("legs") or {}
-        e = legs.get("extension") if isinstance(legs.get("extension"), dict) else {}
-        for k in ("pct_extended", "frac", "value", "share"):
+        # READ THE % of members extended from crowd["extension"] (pct_stretched /
+        # pct_parabolic, emitted 0-100 by theme_crowding) — NOT legs["extension"]["value"],
+        # which is the median ext Z-SCORE (~0-3): feeding that to `min(ext*1.5,1.2)` pins
+        # the band to its 1.2 ceiling for any z>=0.8, collapsing the overbought resolution.
+        e = crowd.get("extension") if isinstance(crowd.get("extension"), dict) else {}
+        for k in ("pct_stretched", "pct_parabolic"):
             if isinstance(e.get(k), (int, float)):
-                ext = float(e[k])
+                ext = float(e[k]) / 100.0          # 0-100 -> fraction extended
                 break
     comps = []
     if rsi is not None:
@@ -259,7 +262,9 @@ def market_concentration(region: str = "us") -> dict:
         except Exception:  # noqa: BLE001
             return None
     adv, dec = f("adv"), f("dec")
-    ad = round(adv / dec, 2) if (adv is not None and dec) else None
+    # guard dec>0 explicitly — a falsy-but-negative dec would pass `and dec` and yield a
+    # nonsensical negative advance/decline ratio.
+    ad = round(adv / dec, 2) if (adv is not None and dec is not None and dec > 0) else None
     out = {"adv": int(adv) if adv is not None else None,
            "dec": int(dec) if dec is not None else None, "ad_ratio": ad,
            "pct_above_50": round(f("pct_above_50"), 1) if f("pct_above_50") is not None else None,

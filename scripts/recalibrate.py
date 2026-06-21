@@ -39,6 +39,15 @@ def main() -> int:
     with open(p, "w") as f:
         json.dump(cal, f, indent=1)
     log.info("wrote %s: %s", p, {k: v["n"] for k, v in cal.items()})
+
+    # thematic-basket SIGNAL calibration (27y SPDR-sector proxy) — the backtested
+    # signal-strength / alert-firing-gate verdict the baskets page + theme_alerts cite.
+    # Cheap (~30s) and additive; a failure here must not sink the ladder calibration.
+    try:
+        from scripts.calibrate_baskets import main as calibrate_baskets
+        calibrate_baskets(do_live=False)
+    except Exception as e:  # noqa: BLE001
+        log.warning("baskets signal calibration skipped: %s", e)
     return 0
 
 

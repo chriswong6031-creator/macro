@@ -449,6 +449,53 @@ _RECO_WHY = {
 }
 
 
+# ----------------------------------------------- backtested signal-strength grading
+def _signal_calibration() -> dict:
+    """The backtested signal-PRECISION verdict from scripts.calibrate_baskets
+    (data/strategies/baskets_calibration.json — the 27y SPDR-sector proxy kill-test).
+    Display/grade only, additive — returns {} if absent so the page falls back to the
+    honest 'descriptive' framing. The signal LOGIC (_label) is shared across regions, so
+    the US-proxy verdict is cited cross-market, exactly as engine.narrative_rotation cites
+    its 27y phase0 (HK already falls back to the US sector run)."""
+    try:
+        p = config.data_dir() / "strategies" / "baskets_calibration.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        return d.get("verdict", {}) if isinstance(d, dict) else {}
+    except Exception:  # noqa: BLE001 — grading is enrichment, never fatal
+        return {}
+
+
+def _signal_strength(label: str, cal: dict) -> dict | None:
+    """Grade a theme's CURRENT label by what the backtest measured about it. The risk
+    labels (fading / deteriorating) carry a MEASURABLE forward-drawdown edge on the proxy →
+    graded 'backtested'; the continuation labels (emerging / dominant) showed NO forward-
+    return edge (rank-IC ~ 0) → graded 'descriptive', so the UI can never read them as a
+    forecast. cal {} → None (the page keeps its existing honest framing)."""
+    if not cal:
+        return None
+    if label in ("fading", "deteriorating"):
+        v = cal.get(label) or {}
+        measured = v.get("verdict") == "measurable_edge"
+        return {"grade": "backtested" if measured else "unconfirmed", "kind": "risk",
+                "measured": bool(measured), "metric": "fwd 21d drawdown",
+                "mean_pct": v.get("mean_pct"), "t_hac": v.get("t_hac"), "n": v.get("n"),
+                "en": ("Backtested risk read — on 27y of clean sector history this label "
+                       "precedes deeper forward drawdowns (it is a risk timer, not a return "
+                       "forecast)." if measured else
+                       "Risk read — not separately confirmed on the proxy."),
+                "zh": ("已回测的风险信号 — 在27年干净行业历史上，该标签领先于更深的前向回撤"
+                       "（风险计时器，非收益预测）。" if measured else
+                       "风险信号 — 代理上未单独验证。")}
+    if label in ("emerging", "dominant"):
+        return {"grade": "descriptive", "kind": "continuation", "measured": False,
+                "metric": "fwd 21d relative return",
+                "en": "Descriptive — no measured forward-return edge on the 27y proxy "
+                      "(rank-IC ~ 0). A focus / structure lens, never a forecast.",
+                "zh": "描述性 — 在27年代理上无可测的前向收益优势（rank-IC≈0）。"
+                      "聚焦/结构透镜，绝非预测。"}
+    return None
+
+
 # ------------------------------------------------------------------- main compute
 def compute_theme_intel(region: str = "us") -> dict | None:
     """Score / label / recommend every basket + 5-day rotation + impulse scorecards.
@@ -472,6 +519,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     cfg = group_flow._cfg()
     nm = _names_sectors() if region == "us" else {}    # US GICS names; regions show tickers
     mc = _macro_context(region)
+    cal = _signal_calibration()                        # backtested signal-strength verdict (or {})
     i = len(idx) - 1
     i5 = max(0, i - 5)
     ytd_anchor = idx[idx < pd.Timestamp(idx.max().year, 1, 1)].max() \
@@ -593,6 +641,8 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "reco": reco, "reco_en": RECOS[reco][0], "reco_zh": RECOS[reco][1],
             "reco_why_en": _RECO_WHY[reco][0], "reco_why_zh": _RECO_WHY[reco][1],
             "reasons": reasons,
+            "signal_strength": _signal_strength(label, cal),
+
             "rs_pctile": _r(fp.get("rs_pctile")),
             "accel_z": _r(fp.get("accel_z")),
             "perf": {k: {"rel": _r((perf.get(k) or {}).get("rel"), 4),
@@ -731,6 +781,7 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         },
         "macro_context": mc["display"],
         "weights": WEIGHTS,
+        "signal_calibration": cal,
         "themes": themes,
         "rotation_5d": {"climbers": climbers, "fallers": fallers},
         "impulse_scorecard": {
