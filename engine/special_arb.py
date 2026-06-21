@@ -17,6 +17,11 @@ from datetime import date, datetime
 # only these categories have a fixed deal price to arb against
 ARB_CATEGORIES = frozenset({"Acquisitions", "Tender Offers", "Going-Private"})
 _DAYS_CAP = 1095          # clamp days-to-close to [1, 3y] so annualization can't explode
+# a real pending cash deal trades within a sane band of its offer; an offer/price ratio far
+# outside this is almost certainly a stale/mis-extracted deal price (e.g. a dividend grabbed
+# instead of the offer) — reject it so a garbage spread can't sort to the TOP of the risk_arb
+# book the Mastermind reads (which sorts by annualized_pct desc).
+_PLAUS_LO, _PLAUS_HI = 0.6, 1.8
 _CONSIDERATION = {"cash", "stock", "cash+stock", "other"}
 
 
@@ -104,6 +109,9 @@ def arb_metrics(deal_price: float | None, live_price: float | None, *,
         return None
     if currency and currency.upper() not in ("USD", "US$"):
         return None                                   # live close is USD; don't mix currencies
+    if not (_PLAUS_LO <= dp / lp <= _PLAUS_HI):
+        return None                                   # implausible offer/price → bad extraction;
+        # keep a garbage spread out of the annualized-sorted risk_arb book
     gross = dp / lp - 1.0
     days = days_to_close(expected_close, asof)
     ann = None

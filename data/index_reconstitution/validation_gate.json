@@ -258,5 +258,25 @@
   },
   "min_events": 40,
   "t_bar": 2.0,
-  "note": "PURE/net-new ADD announcement\u2192effective [-5,0] run-up is real & recent (+0.0161, t=4.59; recent t=5.05); migrations are ~0 (t=1.09) \u2014 so screen to PURE adds. BUT net of small-cap cost the TYPICAL name loses (sp600 net median=-0.0028, hit=0.477) \u2192 a NET-OF-COST MIRAGE. Leg ships DISPLAY-ONLY context (fresh pure-add catalysts), scoring gate CLOSED; the net edge lives only in the announcement-overnight gap, which needs intraday opens to validate."
+  "note": "PURE/net-new ADD announcement\u2192effective [-5,0] run-up is real & recent (+0.0161, t=4.59; recent t=5.05); migrations are ~0 (t=1.09) \u2014 so screen to PURE adds. BUT net of small-cap cost the TYPICAL name loses (sp600 net median=-0.0028, hit=0.477) \u2192 a NET-OF-COST MIRAGE. Leg ships DISPLAY-ONLY context (fresh pure-add catalysts), scoring gate CLOSED; the net edge lives only in the announcement-overnight gap, which needs intraday opens to validate.",
+  "overnight": {
+    "n": 897,
+    "window": [
+      -5,
+      0
+    ],
+    "overnight_logsum": {
+      "mean": 0.0141,
+      "share": 1.04,
+      "hac_t": 5.22
+    },
+    "intraday_logsum": {
+      "mean": -0.0006,
+      "share": -0.04,
+      "hac_t": 0.11
+    },
+    "overnight_dominated": true,
+    "gross_only": true,
+    "note": "the pure-add run-up is OVERNIGHT-dominated (GROSS) \u2014 it accrues in the close\u2192open gaps, not intraday. Capturing it would need a close-buy/open-sell execution on the live announcement feed (forward accrual); the open-auction spread + impact on these small-cap names is UNMODELED, so this overnight figure is a GROSS UPPER BOUND, not a net edge"
+  }
 }
