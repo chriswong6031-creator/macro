@@ -276,10 +276,22 @@ polygon:
   retries: 3
   max_pages: 40                  # snapshot pagination cap per underlying (250/page)
   request_timeout: 60
+  workers: 5                     # per-symbol snapshot concurrency (massive.com-safe ceiling
+                                 # ~5-6; the broad universe is ~2 I/O calls/name, so threads
+                                 # cut a ~16-min serial run to ~3-4 min). 1 => serial.
   gex:
-    # mirror the Cboe GEX universe (collectors/cboe.DEFAULT_GEX_SYMBOLS) so the two
-    # sources are directly comparable. SPX excluded: index spot (I:SPX) is not entitled.
+    # ANCHORS — the index-ETF gamma backbone + mega-caps that must always be snapshot
+    # (mirror collectors/cboe.DEFAULT_GEX_SYMBOLS so the two sources stay comparable).
+    # SPX excluded: index spot (I:SPX) is not entitled.
     symbols: [SPY, QQQ, IWM, DIA, NVDA, AAPL, TSLA, AMD, META, MSFT]
+    # ALSO snapshot every ACTIVE single name in the thematic baskets we trade
+    # (data/baskets/membership.json) so the per-name flow / positioning / GEX reads cover
+    # the whole optionable set, not just the 10 anchors. Resolved by engine.options_universe.
+    # Pure additional massive.com REST calls on the existing entitlement (NO new cost); the
+    # daily raw-chain parquet (committed by build_polygon_gex) grows ~linearly with the
+    # universe, so max_underlyings bounds storage/runtime. Set include_baskets:false to revert.
+    include_baskets: true
+    max_underlyings: 360         # safety cap on total underlyings per build (anchors kept first)
     strike_window_pct: 0.30      # keep contracts within +/-30% of spot (gamma lives here)
     max_expiry_days: 400         # ~13 months; covers the engine's 365d window + buffer
     contract_multiplier: 100
@@ -1379,6 +1391,22 @@ engine:
                              # the MRS leg adds sector differentiation on top — a
                              # small, intentional overlap, not double-counting noise.
       transition: 0.25
+
+  # --- Vol-regime SUBTRACT-ONLY sizing overlay. Lets the validated index vol-regime
+  # (engine/vol_regime.py -> site/vol/regime.json) actually move money as a gross/sizing
+  # caution in the baskets, per-stock ladder and Mastermind lenses. Drawdown / capital-
+  # efficiency, NEVER alpha; never lifts rank/selection. The MECHANICAL vol-target leg is
+  # always-on (a sizing rule, not a forecast); the REGIME-STATE caution fires on the
+  # published kill-switch label; the continuous SCORED composite only deepens the cut when
+  # data/vol_regime/gate.json is open (validate-first firewall). See engine/vol_regime.sizing_overlay.
+  vol_regime_overlay:
+    enabled: true            # global kill-switch (false => overlay is a no-op everywhere)
+    gross_floor: 0.40        # never cut a consumer's gross below this (don't de-risk to ~0)
+    warning_haircut: 0.85    # gross factor when regime == "warning"
+    stress_haircut: 0.70     # gross factor when regime == "backwardation-stress" (kill-switch)
+    scored_extra: 0.20       # extra cut scaled by |scored_score|, ONLY when the gate is open
+    use_vol_target: true     # apply the mechanical vol-target scalar min(.,1.0) (always-on)
+    ladder_headwind: 7       # max per-stock buy-setup ladder penalty (<= LIQ_HEADWIND=12)
 
   # --- Quant-factor expansion: complementary nowcast / conditions / risk layer.
   # ADDITIVE — engine/conditions.py runs alongside the validated quad, never

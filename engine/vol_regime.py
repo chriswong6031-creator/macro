@@ -449,3 +449,142 @@ def _vvix_state(vvix_pctile, ratio_pctile, cfg) -> str | None:
     if ratio_pctile is not None and ratio_pctile <= cfg["vvix_cheap_pctile"]:
         return "complacent (vol-of-vol cheap vs vol — historically precedes rising vol)"
     return "normal"
+
+
+# --------------------------------------------------------------------------- #
+# the SUBTRACT-ONLY sizing overlay — the piece that lets a CONSUMER (baskets,
+# the per-stock ladder, the Mastermind bot) actually act on the regime.
+# --------------------------------------------------------------------------- #
+# Risk-OFF regime STATE labels. The 4-state term-structure label is a published-always
+# kill-switch STATE estimator (engine doctrine: see _regime_label), distinct from the
+# continuous SCORED composite, which only moves money when data/vol_regime/gate.json opens.
+RISK_OFF_STATES = ("warning", "backwardation-stress")
+
+# Subtract-only gross haircuts. Every factor is <= 1.0 — the overlay can only CUT gross,
+# never lever up (it is a drawdown / capital-efficiency lever, never a return forecast and
+# never a rank/selection signal). Config-overridable (engine.vol_regime_overlay).
+OVERLAY_DEFAULTS = dict(
+    enabled=True,
+    gross_floor=0.40,          # never cut a consumer's gross below this (don't de-risk to ~0)
+    warning_haircut=0.85,      # regime == "warning"
+    stress_haircut=0.70,       # regime == "backwardation-stress" (the kill-switch state)
+    scored_extra=0.20,         # additional cut scaled by |scored_score|, ONLY when the gate is open
+    use_vol_target=True,       # apply the mechanical vol-target scalar (min(.,1.0)); always-on
+)
+
+
+def is_risk_off(regime: str | None) -> bool:
+    """True when the published regime STATE label is risk-off (the kill-switch states).
+    Shared by every consumer so baskets / ladder / bot classify the regime identically."""
+    return regime in RISK_OFF_STATES
+
+
+def sizing_overlay(snap: dict | None, cfg: dict | None = None) -> dict:
+    """Translate a published regime snapshot into ONE subtract-only gross-sizing decision a
+    consumer can apply. Returns a ``gross_scalar`` in [gross_floor, 1.0] (NEVER > 1.0) plus an
+    honest breakdown. Two independent, subtract-only levers, both bounded by gross_floor:
+
+      • MECHANICAL vol-target  min(vol_target_scalar, 1.0): the documented vol-targeting
+        capital-efficiency rule. It is a sizing mechanism, not an alpha claim, so it applies
+        ALWAYS (independent of the validation gate) — this is the live lever today.
+      • REGIME-STATE caution: an extra haircut when the published kill-switch STATE label is
+        risk-off (warning / backwardation-stress). Deepened by the continuous SCORED composite
+        ONLY when the gate is OPEN (snap['scored_active']) — gate closed => the scored channel
+        contributes 0 (display-only), exactly the validate-first firewall the engine lives by.
+
+    NEVER touches selection / rank — it scales gross only. ``snap`` absent/empty -> a no-op
+    (gross_scalar 1.0, active False); a consumer then applies no overlay (never imputes a regime).
+    """
+    cf = {**OVERLAY_DEFAULTS, **(cfg or {})}
+    floor = float(cf["gross_floor"])
+    out = {
+        "schema": "vol_regime.sizing.v1",
+        "gross_scalar": 1.0, "mech_scalar": 1.0, "regime_caution": 1.0, "scored_cut": 1.0,
+        "regime": None, "scored_active": False, "active": False, "reasons": [],
+        "note": ("Subtract-only gross-sizing overlay: mechanical vol-target sizing (always-on) "
+                 "+ a regime-state risk caution (kill-switch). Drawdown / capital-efficiency, "
+                 "NOT alpha; never lifts gross or rank. The continuous SCORED regime score "
+                 "deepens the cut only when data/vol_regime/gate.json is open."),
+    }
+    if not cf["enabled"] or not isinstance(snap, dict) or snap.get("available") is False:
+        return out
+    regime = snap.get("regime")
+    out["regime"] = regime
+    scored_active = bool(snap.get("scored_active"))
+    out["scored_active"] = scored_active
+    reasons: list[str] = []
+
+    # 1) MECHANICAL vol-target (subtract-only; always-on — not gated)
+    mech = 1.0
+    vt = snap.get("vol_target_scalar")
+    if cf["use_vol_target"] and vt is not None and np.isfinite(float(vt)):
+        mech = min(float(vt), 1.0)
+        if mech < 1.0:
+            reasons.append(f"vol-target sizing {mech:.0%} of normal gross (realized/implied vol "
+                           "above target — mechanical capital-efficiency cut)")
+    out["mech_scalar"] = _r(mech)
+
+    # 2) REGIME-STATE caution (published kill-switch label; gate-independent risk read)
+    caution = 1.0
+    if regime == "backwardation-stress":
+        caution = float(cf["stress_haircut"])
+        reasons.append(f"backwardation-stress regime — gross capped to {caution:.0%} (risk-off "
+                       "kill-switch state)")
+    elif regime == "warning":
+        caution = float(cf["warning_haircut"])
+        reasons.append(f"warning regime — gross trimmed to {caution:.0%} (fragility building)")
+    out["regime_caution"] = _r(caution)
+
+    # 3) GATED scored deepener — the continuous validated composite only bites when the gate is
+    #    OPEN and reading risk-off. Gate closed => no contribution (display-only).
+    scored_cut = 1.0
+    sc = snap.get("scored_score")
+    if scored_active and is_risk_off(regime) and sc is not None and np.isfinite(float(sc)) and float(sc) < 0:
+        scored_cut = max(1.0 + float(cf["scored_extra"]) * float(sc), floor)  # sc<0 -> <1.0
+        reasons.append(f"validated regime score {float(sc):+.2f} (gate OPEN) deepens the cut "
+                       f"to {scored_cut:.0%}")
+    out["scored_cut"] = _r(scored_cut)
+
+    gross = max(min(mech * caution * scored_cut, 1.0), floor)
+    out["gross_scalar"] = _r(gross)
+    out["active"] = gross < 1.0
+    out["reasons"] = reasons
+    return out
+
+
+def published_snapshot(data_dir: Path | None = None, site_dir: Path | None = None) -> dict:
+    """Load the freshest PUBLISHED regime snapshot for a consumer (baskets / per-stock ladder /
+    run.py). Tries, in order: site/vol/regime.json['snapshot'] (build_vol_regime output),
+    data/regime/latest.json['vol_regime'] (run.py mirror). Returns {} when none is present —
+    a consumer then applies NO overlay (inert), never imputing a regime. Pure read; guarded."""
+    try:
+        from lib import config
+        sdir = site_dir if site_dir is not None else (config.ROOT / config.load()["storage"]["site_dir"])
+        p = Path(sdir) / "vol" / "regime.json"
+        if p.exists():
+            snap = (json.loads(p.read_text()) or {}).get("snapshot")
+            if isinstance(snap, dict) and snap:
+                return snap
+    except Exception as e:  # noqa: BLE001 — a missing/broken file must never break the build
+        log.warning("vol_regime: published site snapshot read failed (%s)", e)
+    try:
+        from lib import config
+        ddir = data_dir if data_dir is not None else config.data_dir()
+        p = Path(ddir) / "regime" / "latest.json"
+        if p.exists():
+            snap = (json.loads(p.read_text()) or {}).get("vol_regime")
+            if isinstance(snap, dict) and snap:
+                return snap
+    except Exception as e:  # noqa: BLE001
+        log.warning("vol_regime: latest.json vol_regime read failed (%s)", e)
+    return {}
+
+
+def overlay_config() -> dict:
+    """Merge engine.vol_regime_overlay from config over OVERLAY_DEFAULTS (graceful)."""
+    try:
+        from lib import config
+        c = (config.load().get("engine", {}) or {}).get("vol_regime_overlay") or {}
+    except Exception:  # noqa: BLE001
+        c = {}
+    return {**OVERLAY_DEFAULTS, **(c if isinstance(c, dict) else {})}

@@ -64,6 +64,14 @@ def test_arb_metrics_guards():
     assert m["annualized_pct"] is None and m["days_to_close"] is None
 
 
+def test_arb_metrics_rejects_implausible_offer():
+    # a mis-extracted offer (dividend grabbed instead of the deal price, or a stale figure)
+    # must NOT yield an absurd spread that sorts to the top of the risk_arb book
+    assert arb.arb_metrics(200.0, 10.0, expected_close="2026-09") is None   # 1900% spread → bad
+    assert arb.arb_metrics(0.50, 70.0) is None                              # dividend vs price → bad
+    assert arb.arb_metrics(25.0, 23.0) is not None                          # real ~8.7% spread kept
+
+
 # ---- end-to-end enrich ------------------------------------------------------
 def test_enrich_arb_attaches_block(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)

@@ -255,6 +255,16 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("macro-risk score failed: %s", e)
         latest["macro_risk"] = None
+    # Mirror the published INDEX vol-regime snapshot into latest.json so the per-stock ladder
+    # + downstream consumers read it without re-deriving it. build_vol_regime publishes
+    # site/vol/regime.json (this reads the freshest available; ~1 day lag on a fresh checkout —
+    # acceptable for a slow-moving, subtract-only risk caution). Additive, never fatal.
+    try:
+        from engine import vol_regime as _vr
+        latest["vol_regime"] = _vr.published_snapshot() or None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("vol-regime mirror failed: %s", e)
+        latest["vol_regime"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

@@ -733,7 +733,8 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
 
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                  liquidity: str | None = None,
-                 macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
+                 macro_drag: float | None = None, macro_beta: float = 0.0,
+                 vol_regime: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
@@ -1097,6 +1098,43 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                              "在此环境下买入形态历史上回撤更深，因此应要求更多确认并降低仓位。"
                              "这是风险/仓位提示，并非预测。")
 
+    # ── Index vol-regime (risk-OFF sizing caution) ───────────────────────────
+    # When the validated INDEX vol-regime (engine.vol_regime -> site/vol/regime.json) is in a
+    # risk-off KILL-SWITCH state (warning / backwardation-stress: VIX/VIX3M backwardation +
+    # bond-vol stress + a thin vol-risk-premium), shave conviction on FRESH BUY / TURN SIGNALED
+    # only. UNIFORM (index-level, like LIQ_HEADWIND — every name shares the same market vol
+    # regime), SUBTRACT-ONLY, buy-setup-only. The continuous SCORED composite deepens the cut
+    # only when its gate is open (vol_regime['scored_active']); otherwise the published STATE
+    # label alone drives a bounded caution. Drawdown/sizing caution, NOT a forecast.
+    vr_effect = None
+    vr_pen = 0
+    vr_line = vr_line_zh = ""
+    _vr = vol_regime if isinstance(vol_regime, dict) else None
+    _vro = (config.load()["engine"].get("vol_regime_overlay") or {})
+    vr_on = bool(_vr and _vro.get("enabled", True))
+    vr_state = (_vr or {}).get("regime")
+    if vr_on and state in LIQ_NUDGE_STATES and vr_state in ("warning", "backwardation-stress"):
+        _rhead = float(_vro.get("ladder_headwind", 7))
+        sev = 1.0 if vr_state == "backwardation-stress" else 0.6     # warning is the milder state
+        # gate-open scored composite (risk-off) deepens the caution, capped so it never exceeds 1.5x
+        sc = (_vr or {}).get("scored_score")
+        if (_vr or {}).get("scored_active") and sc is not None and float(sc) < 0:
+            sev = min(sev * (1.0 + abs(float(sc))), 1.5)
+        vr_pen = int(round(_rhead * sev))
+        if vr_pen > 0:
+            score -= vr_pen
+            vr_effect = "headwind"
+            _sn = "backwardation-stress" if vr_state == "backwardation-stress" else "warning"
+            vr_line = ("Vol-regime headwind: the index vol-regime is risk-off "
+                       f"({_sn} — term-structure backwardation / bond-vol stress), so market-wide "
+                       "drawdown risk is elevated. Buy setups here have historically taken deeper "
+                       "dips — demand extra confirmation and smaller size. A risk/sizing caution, "
+                       "not a forecast.")
+            vr_line_zh = ("波动率状态逆风：指数波动率处于风险偏离状态"
+                          f"（{_sn}——期限结构倒挂/债券波动率承压），全市场回撤风险升高。"
+                          "此环境下买入形态历史上回撤更深——应要求更多确认并降低仓位。"
+                          "这是风险/仓位提示，并非预测。")
+
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
@@ -1212,7 +1250,11 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             "macro_effect": macro_effect, "macro_pen": macro_pen,
             "macro_drag": (round(float(macro_drag), 3) if macro_on else None),
             "macro_beta": (float(macro_beta) if macro_on else 0.0),
-            "macro_line": macro_line, "macro_line_zh": macro_line_zh}
+            "macro_line": macro_line, "macro_line_zh": macro_line_zh,
+            "vol_regime_state": (vr_state if vr_on else None),
+            "vol_regime_effect": vr_effect, "vol_regime_pen": vr_pen,
+            "vol_regime_scored_active": bool((_vr or {}).get("scored_active")),
+            "vol_regime_line": vr_line, "vol_regime_line_zh": vr_line_zh}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -1720,7 +1762,7 @@ def bottom_confidence_fields(bc: dict) -> dict:
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
             macro_drag: float | None = None, macro_beta: float = 0.0,
-            vix_ctx: dict | None = None) -> dict:
+            vix_ctx: dict | None = None, vol_regime: dict | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -1730,13 +1772,17 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     (this name's sector sensitivity, engine.conditions.sector_macro_beta) add a
     risk-OFF, subtract-only, buy-setup-only conviction penalty for macro-sensitive
     names. `vix_ctx` = market panic context (engine.cycles.market_vix_context) used
-    by the Phase-2 washout knife-risk temper on Bottom Confidence. Defaults keep
-    every existing caller unchanged."""
+    by the Phase-2 washout knife-risk temper on Bottom Confidence.
+
+    `vol_regime` = the published INDEX vol-regime snapshot (engine.vol_regime.published_snapshot:
+    {regime, scored_score, scored_active, vol_target_scalar, ...}). In a risk-off kill-switch
+    regime it adds a UNIFORM, subtract-only, buy-setup-only sizing caution (deepened only when its
+    validation gate is open). Defaults keep every existing caller unchanged."""
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
-                       macro_drag=macro_drag, macro_beta=macro_beta)
+                       macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime)
     if lad:
         age = signal_age(close, lad["state"], high, kind)
         if age:

@@ -59,17 +59,21 @@ def _last(s: pd.Series | None) -> float | None:
     return float(s.iloc[-1]) if len(s) else None
 
 
-def _ann_monthly_pct(s: pd.Series, smooth_months: int) -> pd.Series:
-    """Annualize a monthly %-change series after smoothing over N distinct
-    monthly prints. The daily feature frame carries each month's value
-    forward-filled, so we de-duplicate to the actual monthly observations
-    before the rolling mean, then re-broadcast onto the daily index."""
+def _smooth_annual_rate(s: pd.Series, smooth_months: int) -> pd.Series:
+    """Smooth an ALREADY-annualized monthly rate over N distinct monthly prints.
+
+    The Atlanta-Fed sticky/flexible CPI inputs (FRED STICKCPIM157SFRBATL /
+    FLEXCPIM157SFRBATL) are published as 'Percent Change at Annual Rate' — i.e.
+    ALREADY annual-rate (~2-6%). They must NOT be re-annualized (a prior version
+    applied ((1+x/100)**12-1)*100, which turned 3.2% into ~46%). The daily feature
+    frame carries each month's value forward-filled, so we de-duplicate to the actual
+    monthly observations, take the rolling mean, then re-broadcast onto the daily
+    index — units unchanged."""
     monthly = s.dropna()
     # collapse consecutive identical ffilled values to one print per monthly change
     distinct = monthly[monthly.ne(monthly.shift())]
     sm = distinct.rolling(smooth_months, min_periods=1).mean()
-    ann = ((1.0 + sm / 100.0) ** 12 - 1.0) * 100.0
-    return ann.reindex(s.index).ffill()
+    return sm.reindex(s.index).ffill()
 
 
 # --- conditions time series (for charts + alerts) ----------------------------
@@ -495,13 +499,13 @@ def conditions_snapshot(f: pd.DataFrame) -> dict:
     flex = _col(f, "flex_cpi")
     inflation = {}
     if sticky is not None:
-        sa = _ann_monthly_pct(sticky, sm)
+        sa = _smooth_annual_rate(sticky, sm)
         inflation["sticky_ann"] = _last(sa)
         prev = sa.dropna()
         inflation["sticky_trend"] = (
             "accelerating" if len(prev) > 70 and prev.iloc[-1] > prev.iloc[-65] else "cooling")
     if flex is not None:
-        inflation["flexible_ann"] = _last(_ann_monthly_pct(flex, sm))
+        inflation["flexible_ann"] = _last(_smooth_annual_rate(flex, sm))
     inflation["median_cpi"] = _last(_col(f, "median_cpi"))
     inflation["umich_1y_exp"] = _last(_col(f, "umich_infl_exp"))
     if "sticky_ann" in inflation and "flexible_ann" in inflation \

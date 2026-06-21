@@ -1,0 +1,62 @@
+{
+"ABMD": {
+"cik": 815094,
+"method": "seed"
+},
+"AET": {
+"cik": 1122304,
+"method": "seed"
+},
+"ANTM": {
+"cik": 1156039,
+"method": "seed"
+},
+"ATVI": {
+"cik": 718877,
+"method": "seed"
+},
+"CERN": {
+"cik": 804753,
+"method": "seed"
+},
+"CTL": {
+"cik": 18926,
+"method": "seed"
+},
+"ETFC": {
+"cik": 1015780,
+"method": "seed"
+},
+"FLIR": {
+"cik": 354908,
+"method": "seed"
+},
+"MXIM": {
+"cik": 743316,
+"method": "seed"
+},
+"NBL": {
+"cik": 72207,
+"method": "seed"
+},
+"RTN": {
+"cik": 1047122,
+"method": "seed"
+},
+"TIF": {
+"cik": 98246,
+"method": "seed"
+},
+"VAR": {
+"cik": 203527,
+"method": "seed"
+},
+"WLTW": {
+"cik": 1140536,
+"method": "seed"
+},
+"XLNX": {
+"cik": 743988,
+"method": "seed"
+}
+}

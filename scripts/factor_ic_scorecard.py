@@ -207,6 +207,16 @@ def main() -> int:
                   "point-in-time from the EDGAR panel. Compare to the shallow 2023-2025 read: "
                   "factors that survived on ~2.5y (notably SUE) weaken on deep history.")
         note = caveat + " " + note
+    # Phase-1B de-bias telemetry: how much of the dead-name universe the merged
+    # fundamentals panel now recovers (the survivor IC above is an optimistic bound
+    # whose tightness this ratio quantifies). Display-only, never gates.
+    dead_cov = None
+    cov_p = config.data_dir() / "edgar" / "_dead_name_coverage.json"
+    if cov_p.exists():
+        try:
+            dead_cov = json.loads(cov_p.read_text())
+        except Exception:  # noqa: BLE001
+            dead_cov = None
     report = {
         "horizon_d": args.horizon, "rebalances": len(grid),
         "span": f"{grid[0].date()}..{grid[-1].date()}",
@@ -215,6 +225,7 @@ def main() -> int:
         "universe": universe,
         "survivorship_biased": bool(args.deep),
         "neutralized_against": ["market_beta", "size(log mktcap)", "mom_12_1", "low_vol"],
+        "dead_name_coverage": dead_cov,
         "price_span": f"{closes.index.min().date()}..{closes.index.max().date()}",
         "factors": rows, "collinearity": coll,
         "caveat": caveat,

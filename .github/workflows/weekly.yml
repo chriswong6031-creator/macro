@@ -67,6 +67,11 @@ jobs:
             fi
           }
           run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
+          # Phase-1B survivorship de-bias: resolve dead S&P names -> CIK (needs
+          # www.sec.gov/Polygon, reachable from CI; cached) + drip companyfacts into
+          # data/edgar/dead_name_panel.parquet stamped with the true filed date.
+          # Resilient (run_py tolerates SEC hiccups); ~200 filers/run accrue coverage.
+          run_py "dead-name fundamentals (de-bias)" scripts.build_dead_name_fundamentals --max-new 200
           run_py "recalibrate (macro)" scripts.recalibrate
           run_py "regime engine (engine.run)" engine.run
           run_py "S&P allocation vector (build_spvector)" scripts.build_spvector

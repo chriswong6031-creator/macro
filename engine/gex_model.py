@@ -78,18 +78,32 @@ def _window(chain: pd.DataFrame, spot: float, pct: float, *, need_iv=True) -> pd
     return c
 
 
+_MIN_IV = 0.005   # below this, BS gamma's 1/sigma factor explodes -> treat as no gamma
+
+
 def _dollar_gamma(c: pd.DataFrame, spot: float, mult: float, pm: float) -> pd.Series:
     """Unsigned $-gamma per ``pm`` move (gamma·OI·mult·S²·pm) using the feed's
-    per-contract gamma where finite, else a Black-Scholes fallback."""
+    per-contract gamma where finite, else a Black-Scholes fallback.
+
+    A contract the feed left un-priced often has BOTH gamma and IV blank. The BS
+    gamma fallback carries a 1/sigma factor, so a missing/near-zero IV (or a sentinel
+    like 0.0001) yields a ~2500x near-money gamma spike that becomes the heatmap max
+    and corrupts the whole color scale. So an unknown-IV (or non-positive T) contract
+    is treated as ZERO gamma — an illiquid no-quote wing carries no measurable dealer
+    gamma anyway."""
     g = c.get("gamma")
     if g is None:
         g = pd.Series(np.nan, index=c.index)
     miss = ~np.isfinite(g.to_numpy(dtype=float))
     if miss.any():
-        bs = [bs_greeks(spot, k, t, s, True)[1]
-              for k, t, s in zip(c["K"], c["T"], c["iv"])]
+        def _bs_g(k, t, s):
+            s = float(s) if s is not None and np.isfinite(s) else float("nan")
+            if not np.isfinite(s) or s < _MIN_IV or not np.isfinite(t) or t <= 0:
+                return 0.0
+            return bs_greeks(spot, k, t, s, True)[1]
+        bs = np.array([_bs_g(k, t, s) for k, t, s in zip(c["K"], c["T"], c["iv"])], dtype=float)
         g = g.copy()
-        g.loc[miss] = np.array(bs, dtype=float)[miss.to_numpy()] if hasattr(miss, "to_numpy") else np.array(bs)[miss]
+        g.loc[miss] = bs[miss.to_numpy()] if hasattr(miss, "to_numpy") else bs[miss]
     return g.astype(float) * c["oi"].astype(float) * mult * spot ** 2 * pm
 
 
@@ -181,7 +195,9 @@ def surface(chain: pd.DataFrame, spot: float, cf: dict) -> dict:
                 "z_gex": [], "z_oi": [], "z_vol": [], "gex_max": 0, "oi_max": 0, "vol_max": 0}
     c = c[c["iv"].fillna(0) >= 0]  # keep all; gamma fallback handles iv-less wings
     mult, pm = cf["contract_multiplier"], cf["pct_move"]
-    dg = _dollar_gamma(c.assign(iv=c["iv"].fillna(0.0001)), spot, mult, pm)
+    # pass iv as-is (NaN on iv-less wings): _dollar_gamma zeroes any contract whose
+    # gamma AND iv are both unknown, instead of the old 0.0001 sentinel that spiked it.
+    dg = _dollar_gamma(c, spot, mult, pm)
     sign = np.where(c["is_call"], 1.0, -1.0)
     c = c.assign(_net=sign * dg, _absdg=dg.abs())
     # expiry columns: nearest N by date among those with meaningful OI
