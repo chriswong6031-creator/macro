@@ -738,6 +738,8 @@ def main() -> int:
     factor_z: dict[str, float] = {}
     sue_z: dict[str, float] = {}
     insider_map: dict[str, dict] = {}
+    _factor_legs: dict[str, dict] = {}          # per-ticker value/quality/profitability (composite)
+    _sectors: dict[str, str] = {}               # for sector-neutral combination
     fp = site / "factordata" / "factors.json"
     if fp.exists():
         try:
@@ -748,6 +750,10 @@ def main() -> int:
                     factor_z[_r["ticker"]] = _r["composite"]
                 if _r.get("sue") is not None:
                     sue_z[_r["ticker"]] = _r["sue"]
+                _factor_legs[_r["ticker"]] = {k: _r.get(k) for k in
+                                              ("value", "quality", "profitability")}
+                if _r.get("sector"):
+                    _sectors[_r["ticker"]] = _r["sector"]
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("factors.json unreadable (%s)", e)
     isp = site / "factordata" / "insider_signals.json"
@@ -853,6 +859,34 @@ def main() -> int:
             log.warning("revisions latest.parquet unreadable (%s)", e)
     log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
              " · GATE GO → board ranks by EDGE" if gate_go else "")
+    # ---- Decorrelated cross-sectional COMPOSITE (engine/composite_score) ----------
+    # The Fundamental-Law lever: a sector-neutral, equal-weight blend of the DECORRELATED
+    # return-predictive legs (momentum + value + quality + profitability + revisions). Our
+    # probe measured these legs are near-uncorrelated (so they stack, ~1.42x single-leg IC).
+    # A transparent CONTEXT score beside conviction — never a per-name verdict (cross-sectional
+    # edge only). Reversal (net-of-cost mirage) + low-vol (a sizing lever) deliberately excluded.
+    composite_pt: dict[str, dict] = {}
+    try:
+        from engine import composite_score
+        _legrows = {}
+        for _t in set(_factor_legs) | set(alpha_pt) | set(revision_z):
+            _fl = _factor_legs.get(_t) or {}
+            _legrows[_t] = {"momentum": (alpha_pt.get(_t) or {}).get("alpha"),
+                            "value": _fl.get("value"), "quality": _fl.get("quality"),
+                            "profitability": _fl.get("profitability"),
+                            "revisions": revision_z.get(_t)}
+        if _legrows:
+            _comp = composite_score.build(pd.DataFrame(_legrows).T, _sectors)
+            if not _comp.empty:
+                for _t, _row in _comp.iterrows():
+                    composite_pt[_t] = {"z": _row["composite"], "n_legs": int(_row["n_legs"]),
+                                        "legs": {c[:-2]: round(float(_row[c]), 2)
+                                                 for c in _comp.columns
+                                                 if c.endswith("_z") and pd.notna(_row[c])}}
+                log.info("decorrelated composite: %d names (mean %.1f legs)",
+                         len(composite_pt), _comp["n_legs"].mean())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("composite score failed (%s)", e)
     # Customer-demand chains (engine/demand_chain) — the L2 "independent observable"
     # leg of the Demand Context panel: aggregate spender capex/revenue from OTHER
     # companies' SEC filings is the forward-demand pool for each beneficiary cohort
@@ -1139,6 +1173,8 @@ def main() -> int:
                     prof["size"]["vol_mult"] = rs["size_mult"]      # additive, never overrides
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("risk-sizing for %s failed (%s)", ticker, e)
+        if composite_pt.get(ticker):                # decorrelated cross-sectional composite (context)
+            rec["composite"] = composite_pt[ticker]
         # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------
         # Conviction answers "own it?"; this answers "buy now / at what price / when?".
         # A structured plan (status, buy zone $, don't-chase line, stop, horizon read)
@@ -1298,6 +1334,8 @@ def main() -> int:
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+            if composite_pt.get(t):
+                r["composite"] = composite_pt[t]     # the decorrelated cross-sectional composite
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
