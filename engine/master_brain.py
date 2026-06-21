@@ -126,6 +126,9 @@ MASTER_SYSTEM_TMPL = (
     "honoring its FACT/INFERENCE/PRIOR labels — never trade a PRIOR or THEORY as fact.\n"
     "- Evaluate the trader's working rotation thesis against the actual state; say "
     "explicitly where reality tracks it and where it diverges.\n"
+    "- If `desk_track_records` is present, CALIBRATE to it: weight each desk's read by its "
+    "measured hit-rate, and treat a cold desk (few scored, tiny sample) or a sub-50% desk as "
+    "weak evidence — don't amplify a conflict that rests only on a desk that has been wrong.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
     "that. Give the read and what to watch.\n"
     "- Be honest about uncertainty and small samples. Flag conflicts rather than "
@@ -458,6 +461,36 @@ def _policy_intel_summary(root: Path) -> dict | None:
     }
 
 
+_DESK_TRACKS = (
+    ("ai_desk", "data/ai_desk/track_record.json"),
+    ("policy_intent", "data/policy_intent/track_record.json"),
+    ("altdata", "data/altdata/track_record.json"),
+    ("radar", "data/radar/track_record.json"),
+    ("stock_desk", "data/stock_desk/track_record.json"),
+    ("demand_chain", "data/demand_chain/track_record.json"),
+)
+
+
+def _desk_track_records(root) -> dict:
+    """Compact hit-rate summary of the Phase-C falsifiable-thesis desks, injected into the
+    macro state so the Brain calibrates its synthesis to which desks have actually been
+    right — down-weighting a desk that is cold (tiny sample) or has been wrong. This is the
+    read-back that turns the flagship brain from an open loop into a consumer of measured
+    desk accuracy. CONTEXT-ONLY; reads the scorers' track_record.json (never a score/size)."""
+    out = {}
+    for name, rel in _DESK_TRACKS:
+        d = _read_json(Path(root) / rel)
+        if not isinstance(d, dict):
+            continue
+        ov = d.get("overall") or {}
+        rec = {"scored": d.get("scored_total"), "open": d.get("open"),
+               "hit_rate": ov.get("hit_rate"), "dir_accuracy": ov.get("dir_accuracy")}
+        if d.get("calibration_note"):
+            rec["note"] = d["calibration_note"]
+        out[name] = rec
+    return out
+
+
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
     Excludes holdings / watchlist composition by design. (macro lens)"""
@@ -515,6 +548,11 @@ def gather_state(root: Path | None = None) -> dict:
     if ss:
         state["special_situations"] = {k: ss.get(k) for k in
                                        ("total", "n_categories", "cross_border", "top_categories")}
+    # Read-back: the measured hit-rates of the falsifiable-thesis desks, so the Brain
+    # calibrates its synthesis to which desks have actually been right (close the loop).
+    tracks = _desk_track_records(root)
+    if tracks:
+        state["desk_track_records"] = tracks
     return state
 
 
