@@ -229,14 +229,21 @@ def long_flat_dsr(composite: pd.Series, spy: pd.Series, n_trials: int) -> dict:
     """A simple risk-managed long/flat backtest: hold equity when the composite is
     risk-on (>=0), flat otherwise. DSR deflates for the variants tried. CONTEXT — the
     return channel, reported not gated."""
+    import tempfile
     from engine.validation import backtest_core, block_bootstrap_ci
+    from engine.trial_ledger import TrialLedger
     alloc = (composite >= 0).astype(float)
     bt = backtest_core(spy, alloc, cost_bps=1.0)
     net = bt["net"].dropna()
     mom = ret_moments(net)
     if mom is None:
         return {}
-    dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], n_trials, trading_year=252)
+    # honest multiple-testing N via the canonical trial ledger (tests/test_no_literal_ntrials)
+    _led = TrialLedger(path=tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False).name,
+                       family="vol_regime")
+    _led.log_grid([{"trial": i} for i in range(int(n_trials))], family="vol_regime")
+    dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led, family="vol_regime",
+                          trading_year=252)
     boot = block_bootstrap_ci(net, ann=252)
     hold = bt["hold"].dropna()
     hm = ret_moments(hold)
