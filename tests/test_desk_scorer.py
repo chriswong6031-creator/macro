@@ -118,6 +118,35 @@ def test_custom_evaluator_kind_is_dispatched():
     assert track["by_kind"]["theme_rel_return"]["n"] == 1
 
 
+def test_by_regime_breakdown_buckets_by_stamp():
+    """A regime-stamped thesis is bucketed in by_regime (Minimum-Regime-Performance)."""
+    root = _new_root()
+    _mk_parquet(root, "XLE", [(ASOF, 100.0), (CHECK_BY, 110.0)])     # +10%
+    _mk_parquet(root, "SPY", [(ASOF, 100.0), (CHECK_BY, 102.0)])     # +2%  → rel +8% → HIT
+    th = _thesis("g1", "Energy", "overweight", "high",
+                 _rel_check("XLE", "<", -0.05), {"XLE": 100.0, "SPY": 100.0})
+    th["regime"] = "Goldilocks"                                       # stamped at log time
+    _write_ledger(root, LEDGER, [th])
+    track = ds.run(root=root, today=pd.Timestamp(LATER), ledger_path=LEDGER, scored_path=SCORED,
+                   track_path=TRACK, schema=SCHEMA, calibration_note_fn=_note)
+    assert track["by_regime"]["Goldilocks"]["n"] == 1
+    assert track["by_regime"]["Goldilocks"]["hits"] == 1
+    assert ds.load_scored(root, SCORED)["g1"]["regime"] == "Goldilocks"   # carried onto scored row
+
+
+def test_by_regime_is_empty_without_stamps():
+    """Unstamped theses leave by_regime empty — additive, no noise for desks not yet stamping."""
+    root = _new_root()
+    _mk_parquet(root, "XLE", [(ASOF, 100.0), (CHECK_BY, 110.0)])
+    _mk_parquet(root, "SPY", [(ASOF, 100.0), (CHECK_BY, 102.0)])
+    _write_ledger(root, LEDGER, [_thesis("u1", "Energy", "overweight", "high",
+                                         _rel_check("XLE", "<", -0.05), {"XLE": 100.0, "SPY": 100.0})])
+    track = ds.run(root=root, today=pd.Timestamp(LATER), ledger_path=LEDGER, scored_path=SCORED,
+                   track_path=TRACK, schema=SCHEMA, calibration_note_fn=_note)
+    assert track["by_regime"] == {}
+    assert track["overall"]["n"] == 1
+
+
 def test_two_desks_do_not_collide():
     root = _new_root()
     _mk_parquet(root, "XLE", [(ASOF, 100.0), (CHECK_BY, 110.0)])
