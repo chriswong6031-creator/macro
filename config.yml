@@ -4068,11 +4068,16 @@ special_situations:                # event-driven Special Situations desk (displ
   summary_per_build: 200           # P1.3 LLM summary calls per build
   filer_per_build: 250             # P3.2 13D cover-page fetches per build
   # P2.1 newswire lane — catches the form-absent categories (Strategic Reviews, Capital
-  # Returns, Deal Terminations, Divestitures) from quality wires. display-only,
-  # low-confidence, explicit-ticker items only.
-  newswire: true
-  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX), the cheap English/structured
-  # slice of the non-US moat, via news_rss + the intl classifier. OFF until CI-verified;
-  # display-only, low-confidence, exchange-tagged tickers only. (Japan/HK/Korea = later.)
+  # Returns, Deal Terminations, Divestitures). OFF: verification showed it yields ~0 with the
+  # current build — Google-News-aggregated headlines don't carry an exchange-tagged ticker
+  # ("(NASDAQ: XYZ)"), so the strict ticker gate matches nothing, and the quoted-OR queries
+  # are too narrow. Re-enable only after the redesign (name->ticker resolution against our
+  # universe map, or direct GlobeNewswire/BusinessWire/PRNewswire feeds whose headlines DO
+  # carry the ticker). Same reason the intl lanes below stay off (they share the pattern).
+  newswire: false
+  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX), via news_rss + the intl
+  # classifier. OFF — same ticker-extraction limitation as newswire (Google-News headlines
+  # lack "(LSE: BARC)" tags). The intl CLASSIFIER core is solid + tested; the COLLECTOR needs
+  # the same redesign (name-resolution or direct RNS/SEDAR-newswire feeds) before it yields.
   intl_uk: false
   intl_canada: false
