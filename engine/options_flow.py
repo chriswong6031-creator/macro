@@ -213,12 +213,96 @@ def vol_oi_newpos(agg: pd.DataFrame, greeks_oi: pd.DataFrame | None) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# MULTI-DAY positioning from day-over-day OPEN-INTEREST change (the reliable read)
+# --------------------------------------------------------------------------- #
+def oi_positioning(today: pd.DataFrame | None, prior_oi: pd.DataFrame | None,
+                   spot: float | None, asof, prior_asof) -> dict:
+    """Net positioning from day-over-day OPEN-INTEREST change (Garleanu-Pedersen-Poteshman
+    net demand). ΔOI = today's OI − the prior snapshot's OI per contract, matched on the OCC
+    ticker — the cleanest MEASURED positioning signal at an EOD cadence: it needs NO trade-
+    signing (it is the realized change in the count of open contracts), so it is RELIABLE
+    exactly where the minute tick-rule DIRECTION is soft. Rising OI = net OPENING; calls being
+    opened lean bullish, puts being opened lean defensive / hedging.
+
+    today    : per-contract frame [ticker, is_call, strike, expiry, oi, delta] for the snapshot day.
+    prior_oi : [ticker, oi] from the prior snapshot day.
+
+    The headline net uses MATCHED contracts (present both days) so a strike rolling in/out of the
+    near-money window as spot moves can't masquerade as opening/closing; brand-new contracts are
+    reported separately as context. Needs >=2 OI snapshot days -> {available: False} with <2;
+    the read sharpens as the per-strike OI history accrues forward. delta-weighted exposure carries
+    the GPP end-user-net-long assumption explicitly (ΔOI itself is assumption-free)."""
+    if (today is None or today.empty or prior_oi is None or prior_oi.empty
+            or prior_asof is None):
+        return {"available": False, "reason": "needs >=2 OI snapshot days"}
+    t = today.dropna(subset=["oi"]).copy()
+    p = prior_oi.dropna(subset=["oi"])[["ticker", "oi"]].rename(columns={"oi": "oi_prior"})
+    j = t.merge(p, on="ticker", how="left")
+    matched = j[j["oi_prior"].notna()].copy()
+    if matched.empty:
+        return {"available": False, "reason": "no contracts overlap the prior snapshot"}
+    matched["doi"] = matched["oi"] - matched["oi_prior"]
+    calls, puts = matched[matched["is_call"]], matched[~matched["is_call"]]
+    call_doi, put_doi = float(calls["doi"].sum()), float(puts["doi"].sum())
+    net_doi = call_doi + put_doi
+    prior_call_oi, prior_put_oi = float(calls["oi_prior"].sum()), float(puts["oi_prior"].sum())
+    # GPP directional exposure: IF the new OI is end-user-long (the natural convexity buyers),
+    # ΔOI×delta is the net new $-delta. Calls carry +delta, puts −delta — assumption flagged.
+    net_delta_doi = float((matched["doi"] * matched["delta"].fillna(0.0)
+                           * CONTRACT_MULT * (spot or 0.0)).sum()) if spot else None
+    # brand-new contracts (today-only) — genuine fresh listings/positioning, but confounded with
+    # window shifts, so reported as context, not in the matched headline.
+    newc = j[j["oi_prior"].isna() & (j["oi"] > 0)]
+    new_oi = float(newc["oi"].sum())
+
+    def _rows(frame, ascending):
+        top = frame.reindex(frame["doi"].abs().sort_values(ascending=False).index)
+        top = top[(top["doi"] < 0) if ascending else (top["doi"] > 0)].head(6)
+        return [{"k": _r(r.strike), "cp": "C" if r.is_call else "P",
+                 "exp": str(pd.Timestamp(r.expiry).date()), "doi": int(r.doi),
+                 "oi": int(r.oi), "oi_prior": int(r.oi_prior)} for r in top.itertuples()]
+
+    # tone: net new CALL vs PUT open interest. Calls opening = bullish lean; puts opening =
+    # defensive / hedging. Use the dominant side; require a meaningful net to color it.
+    tone = "neutral"; lean_en = lean_zh = None
+    thresh = 0.02 * (prior_call_oi + prior_put_oi)        # 2% of prior OI = a meaningful build
+    if call_doi - put_doi > max(thresh, 1) and call_doi > 0:
+        tone, lean_en, lean_zh = "pos", "net new CALL positioning (bullish lean)", "净新增看涨持仓（偏多）"
+    elif put_doi - call_doi > max(thresh, 1) and put_doi > 0:
+        tone, lean_en, lean_zh = "neg", "net new PUT positioning (defensive / hedging)", "净新增看跌持仓（防御/对冲）"
+    elif net_doi < -max(thresh, 1):
+        tone, lean_en, lean_zh = "neutral", "net UNWIND (open interest closing)", "净平仓（未平仓量下降）"
+    return {
+        "available": True, "reliable": True,         # ΔOI needs no trade-signing
+        "asof": str(pd.Timestamp(asof).date()), "prior_asof": str(pd.Timestamp(prior_asof).date()),
+        "days_back": int((pd.Timestamp(asof).normalize() - pd.Timestamp(prior_asof).normalize()).days),
+        "n_matched": int(len(matched)), "n_new_contracts": int(len(newc)),
+        "new_contract_oi": int(new_oi),
+        "net_doi": int(net_doi), "call_doi": int(call_doi), "put_doi": int(put_doi),
+        "call_oi_chg_pct": _r(call_doi / prior_call_oi, 3) if prior_call_oi else None,
+        "put_oi_chg_pct": _r(put_doi / prior_put_oi, 3) if prior_put_oi else None,
+        "doi_pc": _r(put_doi / call_doi, 2) if call_doi > 0 else None,
+        "net_delta_doi_mn": _r((net_delta_doi or 0) / 1e6) if net_delta_doi is not None else None,
+        "opening": bool(net_doi > 0), "tone": tone, "lean_en": lean_en, "lean_zh": lean_zh,
+        "top_build": _rows(matched, ascending=False),
+        "top_unwind": _rows(matched, ascending=True),
+        "note": ("Measured net positioning = day-over-day open-interest change (no trade-signing "
+                 "needed — RELIABLE). Calls opening lean bullish, puts opening lean defensive. "
+                 "ΔOI is assumption-free; the $-delta exposure assumes the new OI is end-user-long "
+                 "(GPP). Sharpens as the per-strike OI history accrues."),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # orchestrate + verdict
 # --------------------------------------------------------------------------- #
 def build_flow(underlying: str, minute_df: pd.DataFrame, greeks_oi: pd.DataFrame | None,
-               spot: float | None, asof) -> dict:
+               spot: float | None, asof, *, oi_today: pd.DataFrame | None = None,
+               prior_oi: pd.DataFrame | None = None, prior_asof=None) -> dict:
     """Full per-underlying flow payload. minute_df = that name's minute aggregates;
-    greeks_oi = snapshot greeks/OI keyed by ticker (optional). Returns None-ish when empty."""
+    greeks_oi = snapshot greeks/OI keyed by ticker (optional). oi_today/prior_oi/prior_asof =
+    today's + the prior snapshot's per-strike OI for the multi-day ΔOI positioning read (the
+    reliable, signing-free signal). Returns None-ish when empty."""
     agg = sign_volume(minute_df)
     if agg.empty:
         return {"underlying": underlying, "available": False}
@@ -226,25 +310,29 @@ def build_flow(underlying: str, minute_df: pd.DataFrame, greeks_oi: pd.DataFrame
     summ = flow_summary(agg, asof, spot, minute_df=minute_df)
     dealer = measured_dealer(agg, greeks_oi, spot)
     newpos = vol_oi_newpos(agg, greeks_oi)
+    positioning = oi_positioning(oi_today, prior_oi, spot, asof, prior_asof)
     out = {"underlying": underlying, **summ, "dealer": dealer, "new_positions": newpos,
+           "positioning": positioning,
            "signing": {"method": "minute tick-rule (no NBBO/trade-tape)",
                        "direction_reliable": bool(gate.get("direction_reliable")),
                        "magnitude_reliable": bool(gate.get("magnitude_reliable", True)),
                        "per_trade_agreement": gate.get("per_trade_agreement"),
                        "net_sign_recovery": gate.get("net_sign_recovery"),
                        "note": gate.get("note")}}
-    out["verdict"] = _verdict(summ, dealer, newpos, gate)
+    out["verdict"] = _verdict(summ, dealer, newpos, gate, positioning)
     return out
 
 
-def _verdict(summ: dict, dealer: dict, newpos: dict, gate: dict) -> dict:
+def _verdict(summ: dict, dealer: dict, newpos: dict, gate: dict, positioning: dict | None = None) -> dict:
     """Synthesized read that LEADS WITH THE RELIABLE (magnitude / positioning) facts and marks
-    net buy/sell DIRECTION as soft unless the signing calibration says it is trustworthy."""
+    net buy/sell DIRECTION as soft unless the signing calibration says it is trustworthy. The
+    multi-day ΔOI positioning is signing-free, so its bullish/defensive lean is stated plainly."""
     dir_ok = bool(gate.get("direction_reliable"))
     prem = summ.get("premium_mn")
     zdte = summ.get("zerodte_share")
     fresh = (newpos or {}).get("fresh_contracts")
     pc = summ.get("pc_ratio")
+    pos = positioning if isinstance(positioning, dict) and positioning.get("available") else None
     # --- reliable, signing-free facts first ---
     rel_en, rel_zh = [], []
     if prem is not None:
@@ -256,6 +344,11 @@ def _verdict(summ: dict, dealer: dict, newpos: dict, gate: dict) -> dict:
         rel_en.append(f"{fresh} fresh positions"); rel_zh.append(f"{fresh}个新建仓")
     if pc is not None:
         rel_en.append(f"P/C {pc}"); rel_zh.append(f"看跌看涨比 {pc}")
+    # multi-day ΔOI positioning — RELIABLE (no signing) so its lean is stated as a hard fact
+    if pos and pos.get("lean_en"):
+        net = pos.get("net_doi") or 0
+        rel_en.append(f"{pos['lean_en']} (ΔOI {net:+,})")
+        rel_zh.append(f"{pos.get('lean_zh') or pos['lean_en']}（ΔOI {net:+,}）")
     # --- direction: strong only if calibrated, else soft "leans …" ---
     np_mn = summ.get("net_premium_mn"); spc = summ.get("signed_pc")
     gflow = (dealer or {}).get("gamma_flow_bn")
@@ -276,6 +369,11 @@ def _verdict(summ: dict, dealer: dict, newpos: dict, gate: dict) -> dict:
     if gflow is not None and dir_ok:
         gnote_en = "dealers shorter gamma" if gflow < 0 else "dealers longer gamma"
         gnote_zh = "做市商Gamma转空" if gflow < 0 else "做市商Gamma转多"
+    # the RELIABLE ΔOI positioning lean wins the tone over the soft signed-flow direction —
+    # it is a measured open-interest change, not a tick-rule inference.
+    if pos and pos.get("tone") in ("pos", "neg"):
+        tone = pos["tone"]
     head_en = "; ".join(rel_en + [b for b in (dir_en, gnote_en) if b]) or "balanced flow"
     head_zh = "；".join(rel_zh + [b for b in (dir_zh, gnote_zh) if b]) or "流动均衡"
-    return {"tone": tone, "en": head_en, "zh": head_zh, "direction_reliable": dir_ok}
+    return {"tone": tone, "en": head_en, "zh": head_zh, "direction_reliable": dir_ok,
+            "positioning_reliable": bool(pos)}

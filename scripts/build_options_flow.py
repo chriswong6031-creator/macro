@@ -35,29 +35,49 @@ from lib import config, store
 log = logging.getLogger(__name__)
 SUMMARY_KEYS = ("spot", "volume", "premium_mn", "net_premium_mn", "pc_ratio", "signed_pc",
                 "zerodte_share", "gamma_flow_bn", "delta_flow_mn", "assumed_gex_bn",
-                "fresh_contracts")
+                "fresh_contracts", "net_doi", "doi_pc")
 
 
-def _greeks_for(d: date) -> pd.DataFrame | None:
-    """Per-contract greeks/OI/spot from the snapshot chain for date d (or the nearest
-    earlier file). Returns a frame with ticker/underlying/gamma/delta/oi/spot."""
-    files = sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "chains" / "*.parquet")))
-    if not files:
-        return None
-    pick = None
-    for f in files:                                  # nearest file on/before d
+def _chain_files() -> list[tuple[date, str]]:
+    """Sorted (date, path) for every per-day snapshot chain parquet."""
+    out = []
+    for f in sorted(glob.glob(str(config.data_dir() / "polygon_gex" / "chains" / "*.parquet"))):
         stem = f.split("/")[-1].replace(".parquet", "")
         try:
-            fd = datetime.strptime(stem, "%Y-%m-%d").date()
+            out.append((datetime.strptime(stem, "%Y-%m-%d").date(), f))
         except ValueError:
             continue
-        if fd <= d:
-            pick = f
-    pick = pick or files[-1]
-    df = pd.read_parquet(pick)
+    return out
+
+
+def _read_chain(path: str) -> pd.DataFrame:
+    df = pd.read_parquet(path)
     if "strike_ticker" in df.columns:
         df = df.rename(columns={"strike_ticker": "ticker"})
     return df
+
+
+def _chain_pair(d: date):
+    """(today_df, today_date, prior_df, prior_date) for date d: the nearest snapshot file
+    on/before d plus the immediately PRIOR distinct snapshot day (for the ΔOI positioning
+    read). prior_* are None until a second OI snapshot day exists. Returns (None, ...) if
+    no chains are stored yet."""
+    files = _chain_files()
+    if not files:
+        return None, None, None, None
+    pick_i = None
+    for i, (fd, _f) in enumerate(files):             # nearest on/before d
+        if fd <= d:
+            pick_i = i
+    if pick_i is None:
+        pick_i = len(files) - 1                       # all newer than d -> use the latest
+    today_date, today_path = files[pick_i]
+    today = _read_chain(today_path)
+    prior_df = prior_date = None
+    if pick_i > 0:
+        prior_date, prior_path = files[pick_i - 1]
+        prior_df = _read_chain(prior_path)
+    return today, today_date, prior_df, prior_date
 
 
 def build() -> list[dict]:
@@ -77,7 +97,9 @@ def build() -> list[dict]:
     if minute.empty:
         log.warning("options_flow: minute file %s empty after filter", d)
         return []
-    greeks = _greeks_for(d)
+    greeks, _gd, prior_chain, prior_date = _chain_pair(d)
+    if prior_date is not None:
+        log.info("options_flow: ΔOI positioning vs prior snapshot %s", prior_date)
     site = config.ROOT / config.load()["storage"]["site_dir"]
     out_dir = site / "flow"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -87,22 +109,34 @@ def build() -> list[dict]:
         msub = minute[minute["underlying"] == sym]
         if msub.empty:
             continue
-        g = spot = None
+        g = spot = oi_today = prior_oi = None
         if greeks is not None:
             gsub = greeks[greeks["underlying"] == sym]
             if not gsub.empty:
                 g = gsub[["ticker", "gamma", "delta", "oi"]]
                 spot = float(gsub["spot"].iloc[0])
-        payload = of.build_flow(sym, msub, g, spot, d)
+                # richer per-strike frame for the multi-day ΔOI positioning read
+                oi_today = gsub[["ticker", "is_call", "K", "expiry", "oi", "delta"]].rename(
+                    columns={"K": "strike"})
+        if prior_chain is not None:
+            psub = prior_chain[prior_chain["underlying"] == sym]
+            if not psub.empty:
+                prior_oi = psub[["ticker", "oi"]]
+        payload = of.build_flow(sym, msub, g, spot, d,
+                                oi_today=oi_today, prior_oi=prior_oi, prior_asof=prior_date)
         if not payload.get("available"):
             continue
         (out_dir / f"{sym}.json").write_text(json.dumps(payload, separators=(",", ":"), default=float))
         dealer = payload.get("dealer") or {}
+        pos = payload.get("positioning") or {}
         row = {"key": sym, "asof": payload.get("asof"), "spot": payload.get("spot"),
                "net_premium_mn": payload.get("net_premium_mn"), "signed_pc": payload.get("signed_pc"),
                "zerodte_share": payload.get("zerodte_share"),
                "gamma_flow_bn": dealer.get("gamma_flow_bn"), "delta_flow_mn": dealer.get("delta_flow_mn"),
                "fresh_contracts": (payload.get("new_positions") or {}).get("fresh_contracts"),
+               "net_doi": pos.get("net_doi") if pos.get("available") else None,
+               "doi_pc": pos.get("doi_pc") if pos.get("available") else None,
+               "positioning_lean": pos.get("lean_en") if pos.get("available") else None,
                "tone": (payload.get("verdict") or {}).get("tone"),
                "verdict": (payload.get("verdict") or {}).get("en")}
         manifest.append(row)
@@ -110,7 +144,9 @@ def build() -> list[dict]:
         # accrue a 1-row/day summary for the future calibration/validation gate
         try:
             srow = {k: (payload.get(k) if k in payload else dealer.get(k)
-                        if k in dealer else (payload.get("new_positions") or {}).get(k))
+                        if k in dealer else (payload.get("new_positions") or {}).get(k)
+                        if k in (payload.get("new_positions") or {})
+                        else (payload.get("positioning") or {}).get(k))
                     for k in SUMMARY_KEYS}
             sdf = pd.DataFrame({k: [srow.get(k)] for k in SUMMARY_KEYS},
                                index=[pd.Timestamp(d)])

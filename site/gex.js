@@ -1177,15 +1177,20 @@
     var f = flowCache[curKey];
     if (!f || !f.available) { host.innerHTML = ""; return; }
     var d = f.dealer || {}, np = f.net_premium_mn, v = f.verdict || {}, sg = f.signing || {};
+    var p = (f.positioning && f.positioning.available) ? f.positioning : null;
     var dirOK = !!sg.direction_reliable;
     function mn(x) { return x == null ? "—" : (x >= 0 ? "+$" : "-$") + Math.abs(x).toFixed(0) + "M"; }
     function bn(x) { return x == null ? "—" : (x >= 0 ? "$" : "-$") + Math.abs(x >= 1000 ? x / 1000 : x).toFixed(x >= 1000 ? 1 : 0) + (x >= 1000 ? "B" : "M"); }
+    function compact(x) { if (x == null) return "—"; var s = x < 0 ? "-" : "+", a = Math.abs(x); return s + (a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e3 ? (a / 1e3).toFixed(1) + "k" : a); }
+    function sbn(x) { if (x == null) return "—"; var a = Math.abs(x), s = x < 0 ? "-$" : "$"; return a >= 1000 ? s + (a / 1000).toFixed(1) + "B" : s + a.toFixed(0) + "M"; }   // signed $, B/M on |x| (x in $M)
     function chip(k, val, cls, soft) { return '<span class="fl-chip ' + (cls || "") + (soft ? " soft" : "") + '"><span class="k">' + k + '</span><span class="v">' + val + "</span></span>"; }
     var chips =
       chip(lz("Premium", "权利金"), bn(f.premium_mn), "") +
       chip("0DTE", f.zerodte_share == null ? "—" : Math.round(f.zerodte_share * 100) + "%", "") +
       ((f.new_positions && f.new_positions.fresh_contracts != null) ? chip(lz("New positions", "新建仓"), f.new_positions.fresh_contracts, "") : "") +
       chip("P/C", f.pc_ratio == null ? "—" : f.pc_ratio, "") +
+      // ΔOI positioning — RELIABLE (no signing), so it is NOT soft and carries its tone directly
+      (p ? chip(lz("Positioning ΔOI", "净持仓ΔOI"), compact(p.net_doi), (p.tone === "pos" ? "pos" : p.tone === "neg" ? "neg" : "")) : "") +
       chip(lz("Net premium", "净权利金"), (dirOK ? "" : "~") + mn(np), (dirOK ? (np > 0 ? "pos" : np < 0 ? "neg" : "") : ""), !dirOK) +
       chip(lz("Signed P/C", "带向P/C"), (dirOK ? "" : "~") + (f.signed_pc == null ? "—" : f.signed_pc), (dirOK ? ((f.signed_pc > 1.3) ? "neg" : (f.signed_pc < 0.7 ? "pos" : "")) : ""), !dirOK) +
       (d.gamma_flow_bn != null ? chip(lz("Dealer γ-flow", "做市商γ流"), (dirOK ? "" : "~") + (d.gamma_flow_bn >= 0 ? "+" : "") + d.gamma_flow_bn + "bn", (dirOK ? (d.gamma_flow_bn < 0 ? "neg" : "pos") : ""), !dirOK) : "");
@@ -1193,11 +1198,18 @@
       return "<li>" + esc((x.cp === "C" ? lz("Call ", "看涨 ") : lz("Put ", "看跌 ")) + x.k + " — " + lz(x.flow, x.flow) + " (" + mn(x.prem_mn) + ")") + "</li>"; }).join("");
     var np2 = ((f.new_positions && f.new_positions.top) || []).slice(0, 4).map(function (x) {
       return "<li>" + esc((x.cp === "C" ? "C" : "P") + x.k + " " + x.exp + " — " + x.vol.toLocaleString() + " vol @ " + x.x_oi + "× OI, " + x.dir + " (" + mn(x.prem_mn) + ")") + "</li>"; }).join("");
+    // multi-day ΔOI net-demand: where open interest is being BUILT (opening = new positioning)
+    var posBuild = p ? (p.top_build || []).slice(0, 4).map(function (x) {
+      return "<li>" + esc((x.cp === "C" ? "C" : "P") + x.k + " " + x.exp + " — " + (x.doi >= 0 ? "+" : "") + x.doi.toLocaleString() + " OI (" + x.oi_prior.toLocaleString() + "→" + x.oi.toLocaleString() + ")") + "</li>"; }).join("") : "";
     host.innerHTML =
       '<div class="panel"><div class="fl s-' + (v.tone || "neutral") + '">' +
         '<div class="fl-head"><span class="fl-tag">📊 ' + lz("Today’s measured flow", "今日实测流动") + "</span>" +
           '<span class="fl-verdict">' + esc(lz(v.en, v.zh)) + "</span></div>" +
         '<div class="fl-chips">' + chips + "</div>" +
+        (p && p.lean_en ? '<div class="fl-sec"><div class="fl-h">' + lz("Smart-money positioning — ΔOI net demand (RELIABLE, no trade-signing)", "聪明钱持仓 — ΔOI净需求（可靠，无需定向）") + "</div>" +
+          '<div class="sm" style="margin:.2em 0">' + esc(lz(p.lean_en, p.lean_zh || p.lean_en)) + " · " + lz("calls", "看涨") + " " + compact(p.call_doi) + " / " + lz("puts", "看跌") + " " + compact(p.put_doi) + (p.net_delta_doi_mn != null ? " · " + lz("net Δ-exposure", "净Δ敞口") + " " + sbn(p.net_delta_doi_mn) : "") + "</div>" +
+          (posBuild ? "<ul>" + posBuild + "</ul>" : "") +
+          '<div class="sm muted">' + esc(lz("Day-over-day open-interest change vs " + (p.prior_asof || "") + " (" + p.days_back + "d) over " + (p.n_matched || 0).toLocaleString() + " matched contracts. Rising OI = opening; needs ≥2 snapshot days and sharpens as history accrues.", "相对 " + (p.prior_asof || "") + " 的逐日未平仓量变化（" + p.days_back + "天），覆盖 " + (p.n_matched || 0).toLocaleString() + " 个匹配合约。未平仓上升=开仓；需≥2个快照日，随历史累积而更清晰。")) + "</div></div>" : "") +
         (div ? '<div class="fl-sec"><div class="fl-h">' + lz("Flow vs the dealer-sign assumption", "流动 vs 做市商符号假设") + "</div><ul>" + div + "</ul></div>" : "") +
         (np2 ? '<div class="fl-sec"><div class="fl-h">' + lz("Fresh positioning (volume > OI)", "新建仓（成交>未平仓）") + "</div><ul>" + np2 + "</ul></div>" : "") +
         '<div class="fl-foot">' + esc(lz(
