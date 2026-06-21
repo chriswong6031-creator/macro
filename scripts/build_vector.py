@@ -1775,7 +1775,6 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         + '</span><h1>' + _bi("Market Intelligence", "市场情报") + '</h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
-        '<div class="band"><h2>' + _bi("Global macro regime", "全球宏观周期") + '</h2><span class="ln"></span></div>'
         + globe_deck + markets + vectors + alerts_html
         + '<div class="foot">' + _bi("Built " + built + " · mechanical, backtested, free public data · not investment advice",
                                       "生成于 " + built + " · 机械化 · 经回测 · 免费公开数据 · 非投资建议") + '</div>'
