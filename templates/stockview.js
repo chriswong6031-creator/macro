@@ -137,7 +137,7 @@
   }
 
   // ---- Layer 2a: evidence lanes (one read per dimension) ----------------------
-  var EV_ORDER = ['trend', 'momentum', 'extension', 'rel_strength', 'valuation',
+  var EV_ORDER = ['trend', 'momentum', 'extension', 'squeeze', 'rel_strength', 'valuation',
                   'quality', 'positioning', 'volatility', 'ownership', 'macro', 'catalyst'];
   function renderEvidence(view) {
     var ev = view.evidence || {};
