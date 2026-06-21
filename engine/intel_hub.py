@@ -670,6 +670,11 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
                    "theme_wide": sum(1 for d in dossiers if "theme_wide" in d["flags"]),
                    "isolated": sum(1 for d in dossiers if "isolated" in d["flags"])},
         "command": dossiers[:top],
+        # lightweight per-name rows for the falsifiable track-record (ALL names, not just the
+        # top — the cross-sectional IC must see the whole ranking). Stripped before site write.
+        "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
+                        "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"]}
+                       for d in dossiers],
         "discovery": [_compact(d) for d in discovery_list[:14]],
         "emerging": [_compact(d) for d in emerging_hero[:14]],
         "exhausted": [_compact(d) for d in exhausted[:12]],

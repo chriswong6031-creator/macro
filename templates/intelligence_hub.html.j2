@@ -351,6 +351,35 @@
     </div>{% endfor %}
   </div>
 
+  {# ── SIGNAL SCORECARD — the falsifiable track-record (measure, don't assert) ── #}
+  {% set TR = hub.track_record %}
+  {% if TR and TR.n_snapshots %}
+  <div class="band"><h2 style="--accent:var(--ok)">{{ ic('pulse') }} {{ t('Signal scorecard — is the edge real?', '信号记分卡 —— 优势是否真实？') }}</h2><span class="ln"></span>
+    <span class="cnt">{{ t('the hub graded against realized forward returns', '以实际前瞻收益检验本台') }}</span></div>
+  {% if not TR.any_matured %}
+  <div class="glass acc" style="padding:13px 16px;font-size:12.5px;color:color-mix(in srgb,var(--text) 80%,transparent);line-height:1.5">
+    {{ ic('cal') }} <b>{{ t('Measuring', '测量中') }}</b> — {{ t('the hub records every claim it makes (opportunity rank + lifecycle stage) and grades it against realized SPY-relative forward returns.', '本台记录每一次判断（机会排名 + 生命周期阶段），并以实际相对SPY的前瞻收益评分。') }}
+    <b>{{ TR.n_snapshots }}</b> {{ t('claims recorded; grading begins as the 5 / 10 / 21 / 63-day horizons elapse. Until a signal clears a Newey-West significance bar it is shown but not trusted.', '条判断已记录；待 5 / 10 / 21 / 63 天周期走完即开始评分。信号通过 Newey-West 显著性检验前，仅展示、不被采信。') }}
+  </div>
+  {% else %}
+  <div class="heat">
+    {% for h, e in TR.horizons.items() %}{% if e.n_matured %}
+    <div class="glass acc sec">
+      <div class="sh">{{ h }}{{ t('d', '天') }} {{ t('horizon', '周期') }}
+        <span class="etf">{{ t('IC', '信息系数') }}
+          {%- if e.opportunity_ic is not none %} {{ '%+.3f'|format(e.opportunity_ic) }}
+          {%- elif e.opportunity_ic_pooled is not none %} {{ '%+.3f'|format(e.opportunity_ic_pooled) }}~
+          {%- else %} —{% endif %}</span>
+        {% if TR.proven.get(h) %}<span class="pol up">{{ t('proven', '已验证') }}</span>{% else %}<span class="pol" style="background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted)">{{ t('measuring', '测量中') }}</span>{% endif %}</div>
+      <small><span>{{ t('n', '样本') }} <b>{{ e.n_matured }}</b></span>
+        {% if e.by_stage.emerging %}<span style="color:var(--up)">{{ t('emerging', '萌芽') }} <b>{{ '%+.1f'|format(e.by_stage.emerging.mean_fwd_rel*100) }}%</b></span>{% endif %}
+        {% if e.by_stage.exhausted %}<span style="color:var(--down)">{{ t('exhausted', '透支') }} <b>{{ '%+.1f'|format(e.by_stage.exhausted.mean_fwd_rel*100) }}%</b></span>{% endif %}</small>
+    </div>{% endif %}{% endfor %}
+  </div>
+  {% if TR.lead_time_d %}<div class="drv" style="margin-top:8px">{{ ic('edge') }} {{ t('Measured lead-time', '测得领先期') }}: <b>{{ TR.lead_time_d }}{{ t('d', '天') }}</b> · {{ t('where the opportunity-IC peaks', '机会IC峰值所在') }}</div>{% endif %}
+  {% endif %}
+  {% endif %}
+
   {# ── sector heat ── #}
   {% if hub.sector_heat %}
   <div class="band"><h2 style="--accent:var(--orange)">{{ ic('sector') }} {{ t('Sector heat', '板块热度') }}</h2><span class="ln"></span>
