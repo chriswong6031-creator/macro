@@ -1392,6 +1392,22 @@ engine:
                              # small, intentional overlap, not double-counting noise.
       transition: 0.25
 
+  # --- Vol-regime SUBTRACT-ONLY sizing overlay. Lets the validated index vol-regime
+  # (engine/vol_regime.py -> site/vol/regime.json) actually move money as a gross/sizing
+  # caution in the baskets, per-stock ladder and Mastermind lenses. Drawdown / capital-
+  # efficiency, NEVER alpha; never lifts rank/selection. The MECHANICAL vol-target leg is
+  # always-on (a sizing rule, not a forecast); the REGIME-STATE caution fires on the
+  # published kill-switch label; the continuous SCORED composite only deepens the cut when
+  # data/vol_regime/gate.json is open (validate-first firewall). See engine/vol_regime.sizing_overlay.
+  vol_regime_overlay:
+    enabled: true            # global kill-switch (false => overlay is a no-op everywhere)
+    gross_floor: 0.40        # never cut a consumer's gross below this (don't de-risk to ~0)
+    warning_haircut: 0.85    # gross factor when regime == "warning"
+    stress_haircut: 0.70     # gross factor when regime == "backwardation-stress" (kill-switch)
+    scored_extra: 0.20       # extra cut scaled by |scored_score|, ONLY when the gate is open
+    use_vol_target: true     # apply the mechanical vol-target scalar min(.,1.0) (always-on)
+    ladder_headwind: 7       # max per-stock buy-setup ladder penalty (<= LIQ_HEADWIND=12)
+
   # --- Quant-factor expansion: complementary nowcast / conditions / risk layer.
   # ADDITIVE — engine/conditions.py runs alongside the validated quad, never
   # alters it. See research/QUANT_FACTOR_EXPANSION.md.

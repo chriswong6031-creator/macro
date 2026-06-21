@@ -88,6 +88,19 @@ def current_macro() -> float | None:
     return float(v) if isinstance(v, (int, float)) else None
 
 
+def current_vol_regime() -> dict | None:
+    """The live INDEX vol-regime snapshot (engine.vol_regime -> site/vol/regime.json, mirrored
+    to regime/latest.json['vol_regime']). Threaded into analyze() as a UNIFORM, subtract-only
+    sizing caution on buy setups when the regime is a risk-off kill-switch state. None when
+    unavailable so the ladder simply omits the vol-regime context (behaviour unchanged)."""
+    try:
+        from engine import vol_regime
+        snap = vol_regime.published_snapshot()
+        return snap or None
+    except Exception:  # noqa: BLE001 — additive context, never fatal
+        return None
+
+
 OPTIONABLE_GEX = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "AMD",
                   "NFLX", "AVGO", "CRM", "ORCL", "ADBE", "QCOM", "MU", "INTC",
                   "PLTR", "COIN", "SMCI", "MRVL", "JPM", "BAC", "XOM", "WMT", "LLY"]
@@ -310,7 +323,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
          min_days: int = 300, allow_limited: bool = False,
          macro_frame=None, ant_gate: dict | None = None,
          breadth: pd.Series | None = None,
-         name_dir_inputs: dict | None = None) -> dict | None:
+         name_dir_inputs: dict | None = None,
+         vol_regime: dict | None = None) -> dict | None:
     c = close.dropna()
     # The cycle ladder itself needs ~260 sessions (engine/cycles), so 300 is a
     # conservative margin for the broad library. Curated single-stock extras
@@ -330,7 +344,8 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
     # US net-liquidity is a single macro regime that applies to every US-listed
     # name — and to crypto (BTC tracks it) — so the same live label conditions all.
     res = analyze(c, high, kind=kind, liquidity=liquidity,
-                  macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx)
+                  macro_drag=macro_drag, macro_beta=macro_beta, vix_ctx=vix_ctx,
+                  vol_regime=vol_regime)
     if not res.get("ladder"):
         return _limited_rec(ticker, c, name, sector) if allow_limited else None
     month = int(c.index.max().month)
@@ -484,11 +499,12 @@ EXTRAS_MIN_DAYS = 252
 
 
 def _winit(liq, drag, bench, a_days, a_max, vctx, extras=frozenset(),
-           macro_frame=None, ant_gate=None, breadth=None, name_dir_inputs=None) -> None:
+           macro_frame=None, ant_gate=None, breadth=None, name_dir_inputs=None,
+           vol_regime=None) -> None:
     _SHARED.update(liquidity=liq, macro_drag=drag, bench=bench,
                    alert_days=a_days, alert_max=a_max, vix_ctx=vctx, extras=extras,
                    macro_frame=macro_frame, ant_gate=ant_gate, breadth=breadth,
-                   name_dir_inputs=name_dir_inputs)
+                   name_dir_inputs=name_dir_inputs, vol_regime=vol_regime)
 
 
 def _one_task(item):
@@ -507,7 +523,8 @@ def _one_task(item):
                     alert_max=_SHARED.get("alert_max", 50), vix_ctx=_SHARED.get("vix_ctx"),
                     min_days=min_days, allow_limited=is_extra,
                     macro_frame=_SHARED.get("macro_frame"), ant_gate=_SHARED.get("ant_gate"),
-                    breadth=_SHARED.get("breadth"), name_dir_inputs=_SHARED.get("name_dir_inputs"))
+                    breadth=_SHARED.get("breadth"), name_dir_inputs=_SHARED.get("name_dir_inputs"),
+                    vol_regime=_SHARED.get("vol_regime"))
     except Exception as e:  # noqa: BLE001 — one bad ticker must not kill the library
         log.debug("library %s failed: %s", ticker, e)
         return None
@@ -653,8 +670,10 @@ def main() -> int:
     liq = current_liquidity()
     drag = current_macro()
     vctx = current_vix_context()
-    log.info("net-liquidity regime for library: %s · macro-risk: %s · VIX: %s",
-             liq or "unknown", "—" if drag is None else f"{drag:.2f}", vctx or "n/a")
+    vreg = current_vol_regime()
+    log.info("net-liquidity regime for library: %s · macro-risk: %s · VIX: %s · vol-regime: %s",
+             liq or "unknown", "—" if drag is None else f"{drag:.2f}", vctx or "n/a",
+             (vreg or {}).get("regime") or "n/a")
     # benchmark for per-ticker relative-strength alerts + the feed window/caps
     spy = store.read("yahoo", "SPY")
     bench = spy["close"] if spy is not None else None
@@ -1039,7 +1058,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("name-direction inputs unavailable (%s)", e)
     _winit(liq, drag, bench, a_days, a_max, vctx, extra_set,
-           ant_macro, ant_gate, ant_breadth, name_dir_inputs)  # also primes the serial path
+           ant_macro, ant_gate, ant_breadth, name_dir_inputs, vreg)  # also primes the serial path
     workers = _library_workers()
     recs: list[dict | None] | None = None
     if workers > 1 and len(uni) > 50:
@@ -1049,7 +1068,7 @@ def main() -> int:
             with ProcessPoolExecutor(max_workers=workers, initializer=_winit,
                                      initargs=(liq, drag, bench, a_days, a_max, vctx, extra_set,
                                                ant_macro, ant_gate, ant_breadth,
-                                               name_dir_inputs)) as ex:
+                                               name_dir_inputs, vreg)) as ex:
                 recs = list(ex.map(_one_task, uni, chunksize=8))
             log.info("stock library: analysed %d names in %.0fs (%d processes)",
                      len(uni), time.time() - t0, workers)
