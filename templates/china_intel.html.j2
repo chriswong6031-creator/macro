@@ -1,0 +1,97 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('China Intelligence', '中国情报中心') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .ci-hero { max-width:1060px; margin:18px auto 0; }
+  .ci-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .ci-hero h1 { font-size:30px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .ci-hero h1 { letter-spacing:0; }
+  .ci-hero .lens { font-size:12px; color:var(--muted); }
+  .ci-wrap { max-width:1060px; margin:0 auto; }
+  .digest { white-space:pre-wrap; font:12.5px/1.6 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:14px 16px; margin:16px 0; color:var(--text); }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin:16px 0; }
+  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; color:var(--text); transition:border-color .15s, transform .15s; }
+  a.scard:hover { border-color:var(--link); transform:translateY(-2px); }
+  a.scard .ic { font-size:22px; }
+  a.scard .nm { font-weight:700; font-size:15px; margin:6px 0 2px; }
+  a.scard .v { font-size:21px; font-weight:800; margin-top:6px; }
+  a.scard .s { font-size:12px; color:var(--muted); margin-top:3px; }
+  a.scard .go { font-size:11px; color:var(--link); margin-top:8px; }
+  .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
+  .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
+  .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
+  .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
+{% endblock %}
+
+{% block content %}
+<section class="ci-hero">
+  <p class="eyebrow">🧠 {{ t('China Intelligence', '中国情报中心') }}</p>
+  <h1>{{ t('China Intelligence Hub', '中国情报中心') }}</h1>
+  <p class="lens">{{ t('One fan-in of four China intelligence surfaces — the transmission feed for the China Mastermind · context only · as of', '四个中国情报面板的统一汇总——通往中国 Mastermind 的传导信号 · 仅供参考 · 截至') }} {{ b.asof }}</p>
+</section>
+
+<div class="ci-wrap">
+
+  {% if b.digest %}<div class="digest">{{ b.digest }}</div>{% endif %}
+
+  <div class="cards">
+    <!-- News -->
+    <a class="scard" href="china_news.html">
+      <div class="ic">📰</div>
+      <div class="nm">{{ t('China News', '中国财经新闻') }}</div>
+      {% if b.news %}
+      <div class="v"><span class="band {{ b.news.band }}">{{ t(b.news.band|capitalize, '') if b.news.band else '—' }}</span></div>
+      <div class="s">{% if b.news.n_events_7d %}{{ b.news.n_events_7d }} {{ t('events/7d', '事件/7天') }}{% endif %}{% if b.news.sentiment_z is not none %} · z {{ '%+.2f'|format(b.news.sentiment_z) }}{% endif %}</div>
+      {% else %}<div class="v">—</div>{% endif %}
+      <div class="go">{{ t('Open news tape →', '打开新闻脉搏 →') }}</div>
+    </a>
+
+    <!-- Policy -->
+    <a class="scard" href="china_policy_watch.html">
+      <div class="ic">🏛️</div>
+      <div class="nm">{{ t('PBoC & Policy', '央行与政策') }}</div>
+      {% if b.policy %}
+      <div class="v"><span class="band {{ b.policy.pboc_stance }}">{{ t((b.policy.pboc_stance or '—')|capitalize, '') }}</span></div>
+      <div class="s">LPR {{ b.policy.lpr_1y }}/{{ b.policy.lpr_5y }} · RRR {{ b.policy.rrr }}</div>
+      {% else %}<div class="v">—</div>{% endif %}
+      <div class="go">{{ t('Open policy watch →', '打开政策观察 →') }}</div>
+    </a>
+
+    <!-- Alt-data -->
+    <a class="scard" href="china_altdata.html">
+      <div class="ic">🛰️</div>
+      <div class="nm">{{ t('Alternative Data', '另类数据') }}</div>
+      {% if b.altdata %}
+      <div class="v">{{ b.altdata.n_triple if b.altdata.n_triple is not none else (b.altdata.convergence_top|length) }}</div>
+      <div class="s">{{ t('triple-confirmed convergence', '三重共振') }}{% if b.altdata.crowding_flags %} · {{ b.altdata.crowding_flags|length }} {{ t('crowded', '拥挤') }}{% endif %}</div>
+      {% else %}<div class="v">—</div>{% endif %}
+      <div class="go">{{ t('Open alt-data desk →', '打开另类数据台 →') }}</div>
+    </a>
+
+    <!-- Radar -->
+    <a class="scard" href="china_radar.html">
+      <div class="ic">📡</div>
+      <div class="nm">{{ t('Divergence Radar', '背离雷达') }}</div>
+      {% if b.radar %}
+      <div class="v">{{ b.radar.divergences|length }}</div>
+      <div class="s">{{ t('active divergences', '活跃背离') }}</div>
+      {% else %}<div class="v">—</div>{% endif %}
+      <div class="go">{{ t('Open radar →', '打开雷达 →') }}</div>
+    </a>
+  </div>
+
+  <div class="xmit">
+    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these four surfaces are bundled, schema-versioned and machine-readable at', '这四个面板被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> ({{ t('full', '完整') }}) {{ t('and', '与') }} <code>digest.json</code> ({{ t('compact', '精简') }}). {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
+    {% if b.surfaces_present %}<br><span class="s" style="color:var(--muted)">{{ t('Surfaces present', '已就绪面板') }}: {{ b.surfaces_present|join(' · ') }}</span>{% endif %}
+  </div>
+
+  <p class="disc">{{ t(b.disclaimer, b.disclaimer_zh) }}</p>
+</div>
+{% endblock %}

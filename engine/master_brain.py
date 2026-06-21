@@ -572,6 +572,17 @@ def gather_china_state(root: Path | None = None) -> dict:
     bonds = _bonds_backdrop(root)
     if bonds:
         state["bonds"] = bonds
+    # China intelligence surfaces (news media-sentiment · PBoC stance · alt-data convergence ·
+    # divergence radar) — the transmission bus already fans these four into one compact,
+    # context-only block. Display/context for the narrator; never scored.
+    try:
+        from engine import china_intel_bus
+        b = china_intel_bus.briefing()
+        intel = {k: b.get(k) for k in ("news", "policy", "altdata", "radar") if b.get(k)}
+        if intel:
+            state["china_intel"] = intel
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.debug("china_intel state unavailable (%s)", e)
     return state
 
 

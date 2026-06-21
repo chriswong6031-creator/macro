@@ -814,10 +814,10 @@ def main() -> int:
             except Exception as e:  # noqa: BLE001 — additive, never fatal
                 log.error("%s build failed (%s); skipping", _name, e)
         try:
-            from engine import china_intel_bus
-            china_intel_bus.build()   # fan-in the surfaces for the China Mastermind
+            from scripts.build_china_intel import build as _build_china_intel
+            _build_china_intel()      # fan-in the 4 surfaces + hub for the China Mastermind
         except Exception as e:  # noqa: BLE001 — additive, never fatal
-            log.error("china intel bus build failed (%s); skipping", e)
+            log.error("china intel hub/bus build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0

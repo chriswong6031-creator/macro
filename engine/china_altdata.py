@@ -140,6 +140,7 @@ def mastermind(bt: dict | None = None) -> dict:
     return {
         "schema": "china_altdata.mastermind.v1", "is_context_only": True,
         "asof": bt.get("asof", str(date.today())),
+        "n_triple": bt.get("n_triple"), "n_universe": bt.get("n_universe"),
         "convergence_top": top[:10],
         "convergence_bottom": [r["ticker"] for r in bt.get("bottom", [])[:10]],
         "crowding_flags": bt.get("crowding_flags", []),

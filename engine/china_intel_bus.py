@@ -114,6 +114,7 @@ def _altdata_block() -> dict | None:
     if not isinstance(ad, dict):
         return None
     return {
+        "n_triple": ad.get("n_triple"), "n_universe": ad.get("n_universe"),
         "convergence_top": ad.get("convergence_top") or [],
         "convergence_bottom": ad.get("convergence_bottom") or [],
         "crowding_flags": ad.get("crowding_flags") or [],
