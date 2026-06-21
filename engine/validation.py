@@ -427,6 +427,50 @@ def block_bootstrap_ci(returns, block: int = 21, B: int = 5000, seed: int = 7,
             "block": block, "B": B, "n": n}
 
 
+def _calmar(r, ann: int) -> float:
+    """CAGR / |maxDD| from a daily return array. Tail/capital-efficiency metric — the
+    honest yardstick for a subtract-only sizing overlay (Sharpe alone is gamed by the
+    leverage effect of vol-targeting)."""
+    r = np.asarray(r, float)
+    n = len(r)
+    if n < 2:
+        return float("nan")
+    cagr = float(np.prod(1.0 + r) ** (ann / n) - 1.0)
+    dd = abs(_maxdd(r))
+    return cagr / dd if dd > 1e-9 else float("nan")
+
+
+def paired_delta_ci(a, b, block: int = 21, B: int = 5000, seed: int = 13, ann: int = 252) -> dict:
+    """Paired circular-block bootstrap of strategy A's outperformance over B. Resamples the
+    TWO net-return series on the SAME block indices each draw — preserving their (usually
+    high) correlation — then returns the 2.5/50/97.5 CI of Δsharpe and Δcalmar (A − B). "A
+    adds value over B" ONLY when the CI excludes 0; bootstrapping each leg separately and
+    eyeballing whether the intervals overlap is the wrong (far too lenient) test. The right
+    comparison for two strategies on the same book (Ledoit-Wolf / DeMiguel paired test)."""
+    a = (a.dropna() if hasattr(a, "dropna") else pd.Series(a).dropna())
+    b = pd.Series(b).reindex(a.index).fillna(0.0)
+    ra, rb = a.to_numpy(float), b.to_numpy(float)
+    n = len(ra)
+    if n < max(block * 3, 60):
+        return {}
+    rng = np.random.default_rng(seed)
+    nb = int(np.ceil(n / block))
+    grid = np.arange(block)
+    ds = np.empty(B); dc = np.empty(B)
+    for k in range(B):
+        starts = rng.integers(0, n, nb)
+        idx = (starts[:, None] + grid[None, :]).ravel()[:n] % n
+        sa, sb = ra[idx], rb[idx]
+        ds[k] = _sharpe(sa, ann) - _sharpe(sb, ann)
+        dc[k] = _calmar(sa, ann) - _calmar(sb, ann)
+    def q(arr):
+        return [round(float(np.percentile(arr, p)), 3) for p in (2.5, 50, 97.5)]
+    dsq, dcq = q(ds), q(dc)
+    return {"delta_sharpe_ci": dsq, "delta_calmar_ci": dcq,
+            "sharpe_better": bool(dsq[0] > 0), "calmar_better": bool(dcq[0] > 0),
+            "block": block, "B": B, "n": n}
+
+
 def brier_reliability(p, y, n_bins: int = 10) -> dict:
     """Brier score + skill (vs the base-rate climatology) + a reliability curve
     (mean predicted vs observed frequency per probability bin) for forecasts p∈[0,1]

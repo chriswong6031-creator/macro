@@ -1,0 +1,23 @@
+{
+  "asof": "2026-06-21",
+  "family": "vol_overlay_book",
+  "live_overlay_helps": false,
+  "live_dd_reduction_pp": 10.3,
+  "dd_reduction_pp_ci": [
+    10.3,
+    18.9,
+    30.5
+  ],
+  "regime_marginal_over_voltarget": false,
+  "scored_marginal": false,
+  "beats_brake": false,
+  "breakeven_cost_bps": 20,
+  "loo_robust": true,
+  "dsr": 0.9943,
+  "window": "1993-01-29..2026-06-18",
+  "books": [
+    "SPY",
+    "baskets"
+  ],
+  "note": "Subtract-only vol-regime gross-sizing overlay (engine/vol_regime). Judged on drawdown/tail, not CAGR. live=L2 (gate-closed: mech vol-target \u00d7 regime caution). surface the live chip ONLY if live_overlay_helps."
+}
