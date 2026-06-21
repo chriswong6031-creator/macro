@@ -161,6 +161,7 @@ def score_one(row: dict, root, today, *, evaluators=None, grace_bd: int = GRACE_
     asof, check_by = row.get("state_asof"), row.get("check_by")
     base = {"id": row.get("id"), "subject": row.get("subject"), "lean": row.get("lean"),
             "conviction": row.get("conviction"), "kind": kind, "check_by": check_by,
+            "regime": row.get("regime"),     # carried forward for the by_regime breakdown (None if unstamped)
             "scored_at": now_iso()}
     if kind == "soft" or kind not in evaluators or not check_by:
         return {**base, "outcome": "unscored", "realized": None,
@@ -200,6 +201,11 @@ def aggregate(scored: list, ledger: dict, today, *, schema: str,
                for c in by_conviction_keys}
     by_kind = {k: bucket([r for r in decided if r.get("kind") == k])
                for k in by_kind_keys}
+    # by_regime: Minimum-Regime-Performance breakdown. Keys are the macro regimes actually
+    # present among decided rows (empty {} until theses carry a `regime` stamp) — so a
+    # signal that only works in one regime can't hide behind a blended average.
+    regimes = sorted({r.get("regime") for r in decided if r.get("regime")})
+    by_regime = {rg: bucket([r for r in decided if r.get("regime") == rg]) for rg in regimes}
     scored_ids = {r.get("id") for r in scored}
     open_n = sum(1 for tid, row in ledger.items()
                  if tid not in scored_ids
@@ -216,6 +222,7 @@ def aggregate(scored: list, ledger: dict, today, *, schema: str,
         "overall": overall,
         "by_conviction": by_conv,
         "by_kind": by_kind,
+        "by_regime": by_regime,
         "calibration_note": calibration_note_fn(overall, by_conv) if calibration_note_fn else "",
         "recent": [{k: r.get(k) for k in
                     ("id", "subject", "lean", "conviction", "outcome", "realized", "check_by")}
