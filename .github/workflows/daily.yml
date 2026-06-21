@@ -342,6 +342,13 @@ jobs:
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: python -m scripts.build_special_situations
+      - name: S&P index changes (build_index_changes)
+        # polls the keyless S&P DJI press RSS for constituent-change announcements +
+        # accumulates them in git-tracked data/sp_index_changes/changes.parquet, then emits
+        # site/index_changes/latest.json: freshly-announced PURE additions as a dated catalyst.
+        # DISPLAY-ONLY (the pre-effective run-up is a net-of-cost mirage for the typical name —
+        # see engine/index_changes). Additive + graceful; returns 0 on a press-feed outage.
+        run: python -m scripts.build_index_changes || true
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes
