@@ -63,7 +63,14 @@
   .tier2 { color:#5b8def; border-color:#5b8def55; }
   .tier3 { color:var(--muted); }
   .sched { font-size:10px; color:#e0973a; font-weight:700; }
-  .bk { font-size:10px; color:var(--muted); }
+  .bk { font-size:11px; color:var(--muted); margin-top:3px; }
+  .imp { font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .imp-high { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .imp-elevated { color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); }
+  .imp-routine { color:var(--muted); background:var(--panel2); }
+  .surprise { font-size:10px; font-weight:700; color:#c77dff; }
+  .dup { font-size:10px; color:var(--muted); }
+  .tkpill { display:inline-block; font-size:10px; font-family:ui-monospace,Menlo,monospace; padding:1px 6px; margin:0 4px 2px 0; border-radius:5px; background:color-mix(in srgb,#5b8def 12%,transparent); color:#5b8def; }
   .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
   .callout.brief { border-left:4px solid #c77dff; }
   .disc { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.55; }
@@ -212,7 +219,7 @@
     </div>
     <div class="card">
       <div class="k"><span class="l-en">Headlines (7d)</span><span class="l-zh">头条（7天）</span></div>
-      <div class="v">71</div>
+      <div class="v">67</div>
       <div class="s"><span class="l-en">point-in-time, keep-first accrual</span><span class="l-zh">时间点首次出现累计</span></div>
     </div>
     <div class="card">
@@ -220,16 +227,16 @@
       <div class="chips" style="margin-top:6px">
         
           
-          <span class="tchip"><span class="th-geopolitics">●</span> <span class="l-en">Geopolitics</span><span class="l-zh">地缘</span> <b>52</b></span>
+          <span class="tchip"><span class="th-monetary">●</span> <span class="l-en">PBoC</span><span class="l-zh">央行</span> <b>7</b></span>
         
           
-          <span class="tchip"><span class="th-monetary">●</span> <span class="l-en">PBoC</span><span class="l-zh">央行</span> <b>5</b></span>
+          <span class="tchip"><span class="th-policy">●</span> <span class="l-en">Policy</span><span class="l-zh">政策</span> <b>6</b></span>
         
           
-          <span class="tchip"><span class="th-markets">●</span> <span class="l-en">Markets</span><span class="l-zh">市场</span> <b>4</b></span>
+          <span class="tchip"><span class="th-fiscal">●</span> <span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span> <b>4</b></span>
         
           
-          <span class="tchip"><span class="th-policy">●</span> <span class="l-en">Policy</span><span class="l-zh">政策</span> <b>3</b></span>
+          <span class="tchip"><span class="th-trade">●</span> <span class="l-en">Trade</span><span class="l-zh">贸易</span> <b>4</b></span>
         
       </div>
     </div>
@@ -250,7 +257,109 @@
   <!-- ===== optional AI brief ===== -->
   
 
-  <!-- ===== event feed ===== -->
+  <!-- ===== top stories that matter ===== -->
+  
+  
+  <h2 class="sec">📌 <span class="l-en">Top stories that matter</span><span class="l-zh">重磅头条</span></h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px"><span class="l-en">Importance-ranked (source tier × theme × policy keywords × event proximity × ticker hits), not just newest.</span><span class="l-zh">按重要性排序（来源层级 × 主题 × 政策关键词 × 事件临近 × 个股命中），而非仅按最新。</span></p>
+  <ul class="feed">
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-high"><span class="l-en">High</span><span class="l-zh">重磅</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606203776961259.html" target="_blank" rel="noopener">收窄至50个基点！隔夜回购利率走廊大幅压缩 货币市场调控迈入精细化新阶段</a>
+        <div class="bk">📈 <span class="tkpill">600663.SS</span></div>
+        <div class="bk">🏷️ <span class="l-en">Banks</span><span class="l-zh">银行</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-high"><span class="l-en">High</span><span class="l-zh">重磅</span></span>
+        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
+        
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776973866.html" target="_blank" rel="noopener">美铜关税审查报告公布在即 交易员严阵以待“多空抉择”</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Nonferrous Metals</span><span class="l-zh">有色金属</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-high"><span class="l-en">High</span><span class="l-zh">重磅</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606203776946587.html" target="_blank" rel="noopener">央行黄金大调查出炉！购金意愿创历史新高 45%央行计划增持</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Gold</span><span class="l-zh">黄金</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
+        
+      </div>
+      <div class="tt">
+        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e154ea310eefe3e9a2793.html" target="_blank" rel="noopener">WTO meeting opens in Buenos Aires with emphasis on multilateral trade</a>
+        
+        
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
+        
+      </div>
+      <div class="tt">
+        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e172da310eefe3e9a288e.html" target="_blank" rel="noopener">WTO director-general warns of protectionism</a>
+        
+        
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776965378.html" target="_blank" rel="noopener">韩国央行忧心忡忡：芯片厂狂发奖金 通胀怎么办？</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></div>
+      </div>
+    </li>
+    
+  </ul>
+  
+
+  <!-- ===== optional AI brief (moved below top stories) ===== -->
+
+  <!-- ===== full event feed ===== -->
   <h2 class="sec">🛰️ <span class="l-en">News event bus</span><span class="l-zh">新闻事件总线</span></h2>
   
   <ul class="feed">
@@ -258,64 +367,67 @@
     <li>
       <div class="meta">
         
-        <span class="tag th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776965597.html" target="_blank" rel="noopener">“边角料都是宝”！出口量“狂飙”！“游”出来的大产业火了</a>
         
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">ths</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.10jqka.com.cn/20260620/c677593492.shtml" target="_blank" rel="noopener">伊朗外交部：美国未能约束以色列 违反谅解备忘录</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
+        <span class="imp imp-high"><span class="l-en">High</span><span class="l-zh">重磅</span></span>
         <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
         <span class="tag tier2">em</span>
+        
         <span class="sched">📅 LPR@2026-06-22</span>
       </div>
       <div class="tt">
         <a href="https://finance.eastmoney.com/a/202606203776961259.html" target="_blank" rel="noopener">收窄至50个基点！隔夜回购利率走廊大幅压缩 货币市场调控迈入精细化新阶段</a>
-        <div class="bk">🏷️ cn_banks</div>
+        <div class="bk">📈 <span class="tkpill">600663.SS</span></div>
+        <div class="bk">🏷️ <span class="l-en">Banks</span><span class="l-zh">银行</span></div>
       </div>
     </li>
     
     <li>
       <div class="meta">
         
+        
+        <span class="imp imp-high"><span class="l-en">High</span><span class="l-zh">重磅</span></span>
+        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776973866.html" target="_blank" rel="noopener">美铜关税审查报告公布在即 交易员严阵以待“多空抉择”</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Nonferrous Metals</span><span class="l-zh">有色金属</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-high"><span class="l-en">High</span><span class="l-zh">重磅</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606203776946587.html" target="_blank" rel="noopener">央行黄金大调查出炉！购金意愿创历史新高 45%央行计划增持</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Gold</span><span class="l-zh">黄金</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
         <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
         <span class="tag tier1">rss</span>
+        
         
       </div>
       <div class="tt">
         <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e154ea310eefe3e9a2793.html" target="_blank" rel="noopener">WTO meeting opens in Buenos Aires with emphasis on multilateral trade</a>
         
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606203776954360.html" target="_blank" rel="noopener">乌俄互指对方在赫尔松州发动袭击</a>
         
       </div>
     </li>
@@ -323,51 +435,16 @@
     <li>
       <div class="meta">
         
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776965039.html" target="_blank" rel="noopener">黎真主党称以色列应对违反停火负“全部责任”</a>
         
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">futu</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.futunn.com/flash/20435361/the-israeli-military-stated-it-carried-out-a-precision-airstrike" target="_blank" rel="noopener">以军称对加沙地带一名哈马斯成员进行精准空袭</a>
-        <div class="bk">🏷️ cn_defense</div>
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">em</span>
-        <span class="sched">📅 LPR@2026-06-22</span>
-      </div>
-      <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776965934.html" target="_blank" rel="noopener">伊朗谈判代表团已抵达瑞士</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
         <span class="tag tier1">rss</span>
         
+        
       </div>
       <div class="tt">
-        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e3223a310eefe3e9a2ce1.html" target="_blank" rel="noopener">High-quality growth will be key word in top economic meeting, say experts</a>
+        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2e172da310eefe3e9a288e.html" target="_blank" rel="noopener">WTO director-general warns of protectionism</a>
+        
         
       </div>
     </li>
@@ -375,12 +452,50 @@
     <li>
       <div class="meta">
         
-        <span class="tag th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776965378.html" target="_blank" rel="noopener">韩国央行忧心忡忡：芯片厂狂发奖金 通胀怎么办？</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776973418.html" target="_blank" rel="noopener">韩国央行罕见警告：存储芯片景气周期或推高通胀压力</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-trade"><span class="l-en">Trade</span><span class="l-zh">贸易</span></span>
         <span class="tag tier1">rss</span>
         
+        
       </div>
       <div class="tt">
-        <a href="http://www.chinadaily.com.cn/a/201712/12/WS5a2f1044a3108bc8c672193b.html" target="_blank" rel="noopener">NY steals HK's IPO crown</a>
+        <a href="http://www.chinadaily.com.cn/a/201712/11/WS5a2de2b2a310eefe3e9a15de.html" target="_blank" rel="noopener">China asks WTO members to safeguard multilateral trade</a>
+        
         
       </div>
     </li>
@@ -388,51 +503,101 @@
     <li>
       <div class="meta">
         
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">ths</span>
         
-      </div>
-      <div class="tt">
-        <a href="https://news.10jqka.com.cn/20260620/c677593542.shtml" target="_blank" rel="noopener">伊朗警告船只勿靠近霍尔木兹海峡 否则有安全风险</a>
-        
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
-        <span class="tag tier2">futu</span>
-        
-      </div>
-      <div class="tt">
-        <a href="https://news.futunn.com/flash/20435359/vance-stated-that-us-iran-talks-focus-on-the-nuclear" target="_blank" rel="noopener">万斯称美伊谈判重点为核问题与黎巴嫩停火</a>
-        <div class="bk">🏷️ cn_defense</div>
-      </div>
-    </li>
-    
-    <li>
-      <div class="meta">
-        
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-industrial_policy"><span class="l-en">Industrial policy</span><span class="l-zh">产业政策</span></span>
         <span class="tag tier2">em</span>
+        
         <span class="sched">📅 LPR@2026-06-22</span>
       </div>
       <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776964247.html" target="_blank" rel="noopener">以军称收到在黎停火指示 但“安全区”内行动将继续</a>
-        <div class="bk">🏷️ cn_defense</div>
+        <a href="https://finance.eastmoney.com/a/202606213776973962.html" target="_blank" rel="noopener">华泰证券：AI服务器测试电源或迎国产替代机遇</a>
+        <div class="bk">📈 <span class="tkpill">601688.SS</span></div>
+        <div class="bk">🏷️ <span class="l-en">Brokers</span><span class="l-zh">券商</span></div>
       </div>
     </li>
     
     <li>
       <div class="meta">
         
-        <span class="tag th-geopolitics"><span class="l-en">Geopolitics</span><span class="l-zh">地缘</span></span>
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
         <span class="tag tier2">em</span>
+        
         <span class="sched">📅 LPR@2026-06-22</span>
       </div>
       <div class="tt">
-        <a href="https://finance.eastmoney.com/a/202606213776966290.html" target="_blank" rel="noopener">埃及、沙特、土耳其外长和美国高级官员举行会谈</a>
+        <a href="https://finance.eastmoney.com/a/202606203776953597.html" target="_blank" rel="noopener">工行、农行、中行、建行、交行集体宣布 落地离岸人民币外汇试点交易</a>
+        <div class="bk">📈 <span class="tkpill">601998.SS</span><span class="tkpill">600663.SS</span></div>
+        <div class="bk">🏷️ <span class="l-en">Banks</span><span class="l-zh">银行</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606203776940367.html" target="_blank" rel="noopener">金价年内涨幅尽数回吐 高盛下调目标价 4000美元关口面临考验？</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Gold</span><span class="l-zh">黄金</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-industrial_policy"><span class="l-en">Industrial policy</span><span class="l-zh">产业政策</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776966444.html" target="_blank" rel="noopener">今年以来多只科技股呈现“港股溢价”—— 中国优质资产吸引全球投资目光</a>
+        
+        
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606203776953992.html" target="_blank" rel="noopener">暂停新开户！期货罚单这项业务成重灾区</a>
+        
+        <div class="bk">🏷️ <span class="l-en">Brokers</span><span class="l-zh">券商</span></div>
+      </div>
+    </li>
+    
+    <li>
+      <div class="meta">
+        
+        
+        <span class="imp imp-elevated"><span class="l-en">Elevated</span><span class="l-zh">重要</span></span>
+        <span class="tag th-china_geo"><span class="l-en">China geo</span><span class="l-zh">中国地缘</span></span>
+        <span class="tag tier2">em</span>
+        
+        <span class="sched">📅 LPR@2026-06-22</span>
+      </div>
+      <div class="tt">
+        <a href="https://finance.eastmoney.com/a/202606213776969422.html" target="_blank" rel="noopener">今年第7号台风“米克拉”逐渐增强 最新路径公布</a>
+        
         
       </div>
     </li>
@@ -440,27 +605,31 @@
   </ul>
   
 
-  <!-- ===== by-basket tallies ===== -->
+  <!-- ===== by-basket tallies (bilingual names) ===== -->
   
   <h2 class="sec">🧺 <span class="l-en">Themes in the news</span><span class="l-zh">新闻中的主题</span></h2>
   <div class="chips">
     
-    <span class="tchip">cn_defense <b>8</b></span>
+    <span class="tchip"><span class="l-en">Banks</span><span class="l-zh">银行</span> <b>3</b></span>
     
-    <span class="tchip">cn_banks <b>3</b></span>
+    <span class="tchip"><span class="l-en">Gold</span><span class="l-zh">黄金</span> <b>2</b></span>
     
-    <span class="tchip">cn_semis <b>2</b></span>
+    <span class="tchip"><span class="l-en">Semiconductors</span><span class="l-zh">半导体</span> <b>2</b></span>
     
-    <span class="tchip">cn_brokers <b>2</b></span>
+    <span class="tchip"><span class="l-en">Brokers</span><span class="l-zh">券商</span> <b>2</b></span>
     
-    <span class="tchip">cn_gold <b>1</b></span>
+    <span class="tchip"><span class="l-en">Battery & Lithium</span><span class="l-zh">锂电池</span> <b>1</b></span>
     
-    <span class="tchip">cn_ai_compute <b>1</b></span>
+    <span class="tchip"><span class="l-en">Autos</span><span class="l-zh">汽车整车</span> <b>1</b></span>
+    
+    <span class="tchip"><span class="l-en">Nonferrous Metals</span><span class="l-zh">有色金属</span> <b>1</b></span>
+    
+    <span class="tchip"><span class="l-en">Insurers</span><span class="l-zh">保险</span> <b>1</b></span>
     
   </div>
   
 
-  <p class="disc"><span class="l-en">Context only — not a signal. A first-print, point-in-time log of filtered China policy/market headlines (several free wires + state RSS, narrative themes only) plus a media-sentiment index (a z-score of a crude CCTV + wire tone proxy, read RELATIVE). Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号。这是经筛选的中国政策／市场头条的首次出现时间点日志（多个免费快讯源＋官方RSS，仅叙事主题），并附媒体情绪指数（对央视＋快讯粗略基调代理的 z 标准化，按相对值解读）。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>
+  <p class="disc"><span class="l-en">Context only — not a signal. A first-print, point-in-time log of filtered China policy/market headlines (several free wires + state RSS, China-narrative themes only), importance-scored, ticker-tagged, plus a media-sentiment index (a z-score of a crude CCTV + wire tone proxy, read RELATIVE). Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号。这是经筛选的中国政策／市场头条的首次出现时间点日志（多个免费快讯源＋官方RSS，仅中国叙事主题），并附重要性评分、个股标记，以及媒体情绪指数（对央视＋快讯粗略基调代理的 z 标准化，按相对值解读）。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>
 
 </div>
 

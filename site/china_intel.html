@@ -36,19 +36,57 @@
   html[data-lang="zh"] .ci-hero h1 { letter-spacing:0; }
   .ci-hero .lens { font-size:12px; color:var(--muted); }
   .ci-wrap { max-width:1060px; margin:0 auto; }
-  .digest { white-space:pre-wrap; font:12.5px/1.6 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:14px 16px; margin:16px 0; color:var(--text); }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin:16px 0; }
-  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; color:var(--text); transition:border-color .15s, transform .15s; }
+  h2.sec { font-size:18px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:16px; display:flex; align-items:baseline; gap:9px; }
+  /* what matters / changed strip */
+  .matters { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:16px 0; }
+  .matters ol { margin:6px 0 0; padding-left:20px; }
+  .matters li { font-size:13.5px; line-height:1.6; margin:4px 0; }
+  .matters .kind { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--muted); margin-right:6px; }
+  .changed { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .changed .ch { font-size:11.5px; padding:3px 9px; border-radius:999px; background:color-mix(in srgb,#e0973a 12%,var(--panel2)); border:1px solid #e0973a44; color:var(--text); }
+  /* synthesis table */
+  table.syn { border-collapse:collapse; width:100%; font-size:12.5px; margin:8px 0; }
+  table.syn th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.syn td { padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .cc { font-weight:800; font-variant-numeric:tabular-nums; }
+  .bandpill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .b-high{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
+  .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
+  .b-moderate,.b-low,.b-none{color:var(--muted);background:var(--panel2)}
+  .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--link); margin-right:3px; }
+  .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
+  /* flagged tickers */
+  .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .tk { display:inline-flex; flex-direction:column; gap:2px; padding:7px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); }
+  .tk .nm { font-weight:700; font-size:13px; }
+  .tk .cd { font-size:10px; color:var(--muted); font-family:ui-monospace,Menlo,monospace; }
+  .tk.long { border-left:3px solid #1f9a55; } .tk.short { border-left:3px solid #d23f3f; }
+  /* chains */
+  .chain { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin:10px 0; }
+  .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
+  .chband { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .ch-confirmed{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
+  .ch-forming{color:#e0973a;background:color-mix(in srgb,#e0973a 13%,transparent)}
+  .ch-dormant{color:var(--muted);background:var(--panel2)}
+  .legs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .leg { font-size:11px; padding:3px 8px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); }
+  .leg.on { color:#1f9a55; border-color:#1f9a5544; } .leg.off { color:var(--muted); opacity:.6; }
+  .digest { white-space:pre-wrap; font:12px/1.55 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:13px 15px; margin:12px 0; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; margin:14px 0; }
+  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; }
   a.scard:hover { border-color:var(--link); transform:translateY(-2px); }
-  a.scard .ic { font-size:22px; }
-  a.scard .nm { font-weight:700; font-size:15px; margin:6px 0 2px; }
-  a.scard .v { font-size:21px; font-weight:800; margin-top:6px; }
-  a.scard .s { font-size:12px; color:var(--muted); margin-top:3px; }
-  a.scard .go { font-size:11px; color:var(--link); margin-top:8px; }
+  a.scard .ic { font-size:20px; } a.scard .nm { font-weight:700; font-size:14.5px; margin:5px 0 2px; }
+  a.scard .v { font-size:20px; font-weight:800; margin-top:5px; }
+  a.scard .s { font-size:11.5px; color:var(--muted); margin-top:3px; }
+  a.scard .age { font-size:10px; color:var(--muted); margin-top:6px; }
+  a.scard .go { font-size:11px; color:var(--link); margin-top:7px; }
   .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
   .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
+  .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
+  .sx b { color:#e0973a; }
   .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
   .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
@@ -176,70 +214,230 @@
 <section class="ci-hero">
   <p class="eyebrow">🧠 <span class="l-en">China Intelligence</span><span class="l-zh">中国情报中心</span></p>
   <h1><span class="l-en">China Intelligence Hub</span><span class="l-zh">中国情报中心</span></h1>
-  <p class="lens"><span class="l-en">One fan-in of four China intelligence surfaces — the transmission feed for the China Mastermind · context only · as of</span><span class="l-zh">四个中国情报面板的统一汇总——通往中国 Mastermind 的传导信号 · 仅供参考 · 截至</span> 2026-06-20</p>
+  <p class="lens"><span class="l-en">Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of</span><span class="l-zh">五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至</span> 2026-06-20
+   · <span class="l-en">freshest data</span><span class="l-zh">最新数据</span> 2<span class="l-en">d old</span><span class="l-zh">天</span></p>
 </section>
 
 <div class="ci-wrap">
 
-  <div class="digest">News: media sentiment building (z +0.63), 71 events/7d
-  themes: geopolitics, monetary, markets, policy
-PBoC: stance neutral; LPR1Y 3.0 / 5Y 3.5; RRR 9.0
-  recent: 1Y LPR cut 10bp; RRR cut 0.50pp; 1Y LPR cut 25bp
-Alt-data accumulation: 601799.SS, 600150.SS, 600027.SS, 601601.SS, 600066.SS
-Radar divergences: Nonferrous metals positive; Nonferrous metals positive; Coal positive; Brokers positive; New-energy vehicle positive</div>
+  <!-- B. WHAT MATTERS MOST + CHANGED TODAY -->
+  
+  <div class="matters">
+    <b>🎯 <span class="l-en">What matters most today</span><span class="l-zh">今日要点</span></b>
+    <ol>
+      
+      <li><span class="kind">chain</span><span class="l-en">Activity (PMI) + credit → industrial cyclicals (confirmed)</span><span class="l-zh">经济活动(PMI)+信用 → 工业周期股（确认）</span> — <span class="mut"><span class="l-en">2/3 legs of the cyclical-reflation path align.</span><span class="l-zh">周期再通胀路径 2/3 段一致。</span></span></li>
+      
+      <li><span class="kind">news</span><span class="l-en">Media sentiment building</span><span class="l-zh">媒体情绪 积累中</span> — <span class="mut"><span class="l-en">z +0.63 over 6d.</span><span class="l-zh">6日 z +0.63。</span></span></li>
+      
+      <li><span class="kind">chain</span><span class="l-en">PBoC easing → liquidity → brokers/property → breadth (forming)</span><span class="l-zh">央行宽松 → 流动性 → 券商/地产 → 市场宽度（形成中）</span> — <span class="mut"><span class="l-en">2/5 legs of the easing-reflation path align.</span><span class="l-zh">宽松再通胀路径 2/5 段一致。</span></span></li>
+      
+      <li><span class="kind">radar</span><span class="l-en">Brokers divergence (positive)</span><span class="l-zh">券商 背离（正向）</span> — <span class="mut"><span class="l-en">radar PBoC easing → Brokers · 2 China headlines on the theme · 12 alt-data members accumulating · policy tailwind</span><span class="l-zh">雷达 央行宽松 → 券商 · 该主题 2 条中国头条 · 12 只另类数据成员吸筹 · 政策顺风</span></span></li>
+      
+      <li><span class="kind">scheduled</span><span class="l-en">LPR fix (loan prime rate) (Jun 22)</span><span class="l-zh">LPR 报价（贷款市场报价利率）（Jun 22）</span> — <span class="mut"><span class="l-en">Scheduled high-impact China release ahead.</span><span class="l-zh">即将发布的高影响中国数据。</span></span></li>
+      
+    </ol>
+    
+    
+    <div class="changed">
+      
+      
+      
+      <span class="ch"><span class="l-en">New accumulation</span><span class="l-zh">新增吸筹</span>: 5</span>
+    </div>
+    
+  </div>
+  
 
+  <!-- C. CENTRAL SYNTHESIS -->
+  
+  <h2 class="sec">🧩 <span class="l-en">Cross-surface conviction</span><span class="l-zh">跨面板共振</span></h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px"><span class="l-en">Where the radar, news, alt-data and policy line up on the same sector. Conviction = salience (how many independent surfaces agree), never a position size.</span><span class="l-zh">雷达、新闻、另类数据与政策在同一板块上的共振。置信度＝显著性（多少独立面板一致），绝非仓位。</span></p>
+  <table class="syn">
+    <thead><tr><th><span class="l-en">Sector</span><span class="l-zh">板块</span></th><th><span class="l-en">Conviction</span><span class="l-zh">置信</span></th><th><span class="l-en">Surfaces</span><span class="l-zh">面板</span></th><th><span class="l-en">Read</span><span class="l-zh">解读</span></th></tr></thead>
+    <tbody>
+    
+      <tr>
+        <td><b><span class="l-en">Brokers</span><span class="l-zh">券商</span></b> <span class="sgn-pos">▲</span></td>
+        <td><span class="cc">35</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
+        <td><span class="surf">radar</span><span class="surf">news</span><span class="surf">altdata</span><span class="surf">policy</span></td>
+        <td><span class="l-en">radar PBoC easing → Brokers · 2 China headlines on the theme · 12 alt-data members accumulating · policy tailwind</span><span class="l-zh">雷达 央行宽松 → 券商 · 该主题 2 条中国头条 · 12 只另类数据成员吸筹 · 政策顺风</span><br><span class="mut" style="font-size:11px">东方财富 (300059.SZ) · 广发证券 (000776.SZ) · 长江证券 (000783.SZ)</span></td>
+      </tr>
+    
+      <tr>
+        <td><b><span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></b> <span class="sgn-pos">▲</span></td>
+        <td><span class="cc">27</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><span class="surf">radar</span><span class="surf">news</span><span class="surf">altdata</span></td>
+        <td><span class="l-en">radar Mfg PMI → Nonferrous metals · 1 China headlines on the theme · 8 alt-data members accumulating</span><span class="l-zh">雷达 制造业PMI → 有色金属 · 该主题 1 条中国头条 · 8 只另类数据成员吸筹</span><br><span class="mut" style="font-size:11px">宏桥控股 (002379.SZ) · 金钼股份 (601958.SS) · 盛和资源 (600392.SS)</span></td>
+      </tr>
+    
+      <tr>
+        <td><b><span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></b> <span class="sgn-pos">▲</span></td>
+        <td><span class="cc">26</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><span class="surf">radar</span><span class="surf">news</span><span class="surf">altdata</span></td>
+        <td><span class="l-en">radar Mfg PMI → New-energy vehicle · 1 China headlines on the theme · 11 alt-data members accumulating</span><span class="l-zh">雷达 制造业PMI → 新能源车 · 该主题 1 条中国头条 · 11 只另类数据成员吸筹</span><br><span class="mut" style="font-size:11px">格林美 (002340.SZ) · 国轩高科 (002074.SZ) · 比亚迪 (002594.SZ)</span></td>
+      </tr>
+    
+      <tr>
+        <td><b><span class="l-en">Real estate</span><span class="l-zh">房地产</span></b> <span class="sgn-pos">▲</span></td>
+        <td><span class="cc">13</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><span class="surf">radar</span><span class="surf">policy</span></td>
+        <td><span class="l-en">radar PBoC easing → Real estate · policy tailwind</span><span class="l-zh">雷达 央行宽松 → 房地产 · 政策顺风</span></td>
+      </tr>
+    
+    </tbody>
+  </table>
+  
+
+  <!-- D. FLAGGED TICKERS -->
+  
+  <h2 class="sec">🏷️ <span class="l-en">Flagged tickers</span><span class="l-zh">标记个股</span></h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 4px"><span class="l-en">Names lit by ≥2 surfaces (alt-data accumulation inside a radar-lit, news-covered theme). Context watchlist, not a recommendation.</span><span class="l-zh">被≥2个面板点亮的个股（位于雷达点亮、新闻覆盖主题内的另类数据吸筹）。背景自选，非推荐。</span></p>
+  <div class="flags">
+    
+    <span class="tk long">
+      <span class="nm">格林美</span>
+      <span class="cd">002340.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">东方财富</span>
+      <span class="cd">300059.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">国轩高科</span>
+      <span class="cd">002074.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">广发证券</span>
+      <span class="cd">000776.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">宏桥控股</span>
+      <span class="cd">002379.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">长江证券</span>
+      <span class="cd">000783.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">比亚迪</span>
+      <span class="cd">002594.SZ · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">金钼股份</span>
+      <span class="cd">601958.SS · altdata+radar+news</span>
+    </span>
+    
+    <span class="tk long">
+      <span class="nm">盛和资源</span>
+      <span class="cd">600392.SS · altdata+radar+news</span>
+    </span>
+    
+  </div>
+  
+
+  <!-- E. CAUSAL CHAINS -->
+  
+  <h2 class="sec">🔗 <span class="l-en">Transmission chains</span><span class="l-zh">传导链条</span></h2>
+  
+  <div class="chain">
+    <div class="hd"><span class="chband ch-forming"><span class="l-en">Forming</span><span class="l-zh">形成中</span></span> <span class="l-en">PBoC easing → liquidity → brokers/property → breadth</span><span class="l-zh">央行宽松 → 流动性 → 券商/地产 → 市场宽度</span> <span class="mut" style="font-weight:400">2/5</span></div>
+    <div class="legs">
+      <span class="leg off">· <span class="l-en">PBoC stance easing</span><span class="l-zh">央行立场宽松</span></span><span class="leg on">✓ <span class="l-en">PBoC easing score rising</span><span class="l-zh">宽松分上升</span></span><span class="leg off">· <span class="l-en">Credit impulse improving</span><span class="l-zh">信用脉冲改善</span></span><span class="leg off">· <span class="l-en">Southbound inflow</span><span class="l-zh">南向资金流入</span></span><span class="leg on">✓ <span class="l-en">News skews monetary/policy</span><span class="l-zh">新闻偏货币/政策</span></span>
+    </div>
+  </div>
+  
+  <div class="chain">
+    <div class="hd"><span class="chband ch-confirmed"><span class="l-en">Confirmed</span><span class="l-zh">已确认</span></span> <span class="l-en">Activity (PMI) + credit → industrial cyclicals</span><span class="l-zh">经济活动(PMI)+信用 → 工业周期股</span> <span class="mut" style="font-weight:400">2/3</span></div>
+    <div class="legs">
+      <span class="leg on">✓ <span class="l-en">Mfg PMI expanding</span><span class="l-zh">制造业PMI扩张</span></span><span class="leg off">· <span class="l-en">Credit impulse improving</span><span class="l-zh">信用脉冲改善</span></span><span class="leg on">✓ <span class="l-en">News skews industrial/growth</span><span class="l-zh">新闻偏产业/增长</span></span>
+    </div>
+  </div>
+  
+  
+  
+  <div class="xmit" style="border-left:4px solid var(--warn)">⚠ <span class="l-en">Cuts delivered but the corridor classifier still reads neutral — priced-for-easing, not yet confirmed.</span><span class="l-zh">已有降息/降准，但走廊分类仍为中性——宽松已被预期但尚未确认。</span></div>
+  
+  
+  
+
+  <!-- F. DIGEST -->
+  <details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0"><span class="l-en">Machine digest (what the Mastermind reads)</span><span class="l-zh">机器摘要（Mastermind 读取的内容）</span></summary><div class="digest">WHAT MATTERS MOST:
+  • Activity (PMI) + credit → industrial cyclicals (confirmed) — 2/3 legs of the cyclical-reflation path align.
+  • Media sentiment building — z +0.63 over 6d.
+  • PBoC easing → liquidity → brokers/property → breadth (forming) — 2/5 legs of the easing-reflation path align.
+CHANGED TODAY: new accumulation: 600674.SS, 600809.SS, 601021.SS
+STACKED READS:
+  • Brokers (positive) cc=35 [radar+news+altdata+policy]
+  • Nonferrous metals (positive) cc=27 [radar+news+altdata]
+  • New-energy vehicle (positive) cc=26 [radar+news+altdata]
+News: media sentiment building (z +0.63), 71 events/7d
+  baskets: Banks(3), Gold(2), Semiconductors(2), Brokers(2)
+PBoC: stance neutral; LPR1Y 3.0 / 5Y 3.5; RRR 9.0 — Easing in progress — stance not yet flipped
+Alt-data accumulation: 星宇股份(601799.SS), 海天味业(603288.SS), 东鹏饮料(605499.SS), 川投能源(600674.SS)
+Radar divergences: Mfg PMI→Nonferrous metals positive; PBoC easing→Brokers positive; Mfg PMI→New-energy vehicle positive; PBoC easing→Real estate positive (ledger: unproven)</div></details>
+
+  <!-- G. SURFACE CARDS -->
+  <h2 class="sec">🗂️ <span class="l-en">Surfaces</span><span class="l-zh">情报面板</span></h2>
   <div class="cards">
-    <!-- News -->
     <a class="scard" href="china_news.html">
-      <div class="ic">📰</div>
-      <div class="nm"><span class="l-en">China News</span><span class="l-zh">中国财经新闻</span></div>
-      
-      <div class="v"><span class="band building"><span class="l-en">Building</span><span class="l-zh">Building</span></span></div>
-      <div class="s">71 <span class="l-en">events/7d</span><span class="l-zh">事件/7天</span> · z +0.63</div>
-      
+      <div class="ic">📰</div><div class="nm"><span class="l-en">China News</span><span class="l-zh">中国财经新闻</span></div>
+      <div class="v"><span class="band building"><span class="l-en">building</span><span class="l-zh">积累中</span></span></div>
+      <div class="s">71 <span class="l-en">events/7d</span><span class="l-zh">事件/7天</span> · 6 <span class="l-en">themes</span><span class="l-zh">主题</span></div>
+      <div class="age">2026-06-20</div>
       <div class="go"><span class="l-en">Open news tape →</span><span class="l-zh">打开新闻脉搏 →</span></div>
     </a>
-
-    <!-- Policy -->
     <a class="scard" href="china_policy_watch.html">
-      <div class="ic">🏛️</div>
-      <div class="nm"><span class="l-en">PBoC & Policy</span><span class="l-zh">央行与政策</span></div>
-      
-      <div class="v"><span class="band neutral"><span class="l-en">Neutral</span><span class="l-zh">Neutral</span></span></div>
-      <div class="s">LPR 3.0/3.5 · RRR 9.0</div>
-      
+      <div class="ic">🏛️</div><div class="nm"><span class="l-en">PBoC & Policy</span><span class="l-zh">央行与政策</span></div>
+      <div class="v"><span class="band neutral"><span class="l-en">On hold / neutral</span><span class="l-zh">按兵不动 / 中性</span></span></div>
+      <div class="s">LPR 3.0/3.5 · RRR 9.0 · <span class="l-en">easing impulse</span><span class="l-zh">宽松动能</span></div>
+      <div class="age">2026-06-18</div>
       <div class="go"><span class="l-en">Open policy watch →</span><span class="l-zh">打开政策观察 →</span></div>
     </a>
-
-    <!-- Alt-data -->
     <a class="scard" href="china_altdata.html">
-      <div class="ic">🛰️</div>
-      <div class="nm"><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span></div>
-      
-      <div class="v">390</div>
-      <div class="s"><span class="l-en">triple-confirmed convergence</span><span class="l-zh">三重共振</span> · 20 <span class="l-en">crowded</span><span class="l-zh">拥挤</span></div>
-      
+      <div class="ic">🛰️</div><div class="nm"><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span></div>
+      <div class="v">10</div>
+      <div class="s"><span class="l-en">convergence watchlist</span><span class="l-zh">共振自选</span> · 390 <span class="l-en">full-coverage</span><span class="l-zh">三源齐全</span></div>
+      <div class="age">2026-06-20</div>
       <div class="go"><span class="l-en">Open alt-data desk →</span><span class="l-zh">打开另类数据台 →</span></div>
     </a>
-
-    <!-- Radar -->
     <a class="scard" href="china_radar.html">
-      <div class="ic">📡</div>
-      <div class="nm"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></div>
-      
-      <div class="v">6</div>
-      <div class="s"><span class="l-en">active divergences</span><span class="l-zh">活跃背离</span></div>
-      
+      <div class="ic">📡</div><div class="nm"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></div>
+      <div class="v">4</div>
+      <div class="s"><span class="l-en">active divergences</span><span class="l-zh">活跃背离</span> · <span class="l-en">ledger</span><span class="l-zh">台账</span> <span class="l-en">Unproven</span><span class="l-zh">未验证</span></div>
+      <div class="age">2026-06-20</div>
       <div class="go"><span class="l-en">Open radar →</span><span class="l-zh">打开雷达 →</span></div>
     </a>
   </div>
 
+  <!-- H. NEXT CATALYSTS + STANDING CALLS -->
+  
+  <h2 class="sec">📅 <span class="l-en">Next catalysts</span><span class="l-zh">即将催化</span></h2>
+  <div class="strip">
+    <span class="sx"><b>Jun 22</b> · <span class="l-en">LPR fix (loan prime rate)</span><span class="l-zh">LPR 报价（贷款市场报价利率）</span></span><span class="sx"><b>Jun 30</b> · <span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></span>
+  </div>
+  
+  
+  <h2 class="sec">🔮 <span class="l-en">Standing policy calls</span><span class="l-zh">政策预测</span></h2>
+  <div class="strip">
+    <span class="sx">PBoC cuts RRR by ≥25bp by 2026-09-30.</span><span class="sx">1Y LPR cut ≥10bp by 2026-12-31.</span><span class="sx">Additional consumption trade-in / demand-side fiscal support announced in H2 2026.</span>
+  </div>
+  
+
+  <!-- I. MASTERMIND CONTRACT -->
   <div class="xmit">
-    🔌 <b><span class="l-en">Transmission to Mastermind</span><span class="l-zh">通往 Mastermind 的传导</span></b> — <span class="l-en">these four surfaces are bundled, schema-versioned and machine-readable at</span><span class="l-zh">这四个面板被打包为带版本的机读契约：</span> <code>site/china_intel/briefing.json</code> (<span class="l-en">full</span><span class="l-zh">完整</span>) <span class="l-en">and</span><span class="l-zh">与</span> <code>digest.json</code> (<span class="l-en">compact</span><span class="l-zh">精简</span>). <span class="l-en">The future China Mastermind reads them as context — never a size or a trade.</span><span class="l-zh">未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。</span>
-    <br><span class="s" style="color:var(--muted)"><span class="l-en">Surfaces present</span><span class="l-zh">已就绪面板</span>: news · policy · altdata · radar</span>
+    🔌 <b><span class="l-en">Transmission to Mastermind</span><span class="l-zh">通往 Mastermind 的传导</span></b> — <span class="l-en">these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at</span><span class="l-zh">这些面板＋跨面板综合被打包为带版本的机读契约：</span> <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v2</code>) <span class="l-en">and</span><span class="l-zh">与</span> <code>digest.json</code>. <span class="l-en">The future China Mastermind reads them as context — never a size or a trade.</span><span class="l-zh">未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。</span>
+    <br><span class="s" style="color:var(--muted)"><span class="l-en">Surfaces present</span><span class="l-zh">已就绪面板</span>: news · policy · altdata · radar · analysis</span>
   </div>
 
-  <p class="disc"><span class="l-en">Context only — not a signal, score or trade. A fan-in of four display/context-only China intelligence surfaces (news, central-bank & policy, alternative data, divergence radar), bundled for the China Mastermind to read as background. Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号、评分或交易。这是四个仅供展示／背景的中国情报面板（新闻、央行与政策、另类数据、背离雷达）的汇总，供中国 Mastermind 作为背景读取。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>
+  <p class="disc"><span class="l-en">Context only — not a signal, score or trade. A fan-in of five display/context-only China intelligence surfaces (news, central-bank & policy, alternative data, divergence radar, central analysis), bundled for the China Mastermind to read as background. Nothing here is an input to any score, signal, regime or allocation.</span><span class="l-zh">仅作背景，非信号、评分或交易。这是五个仅供展示／背景的中国情报面板（新闻、央行与政策、另类数据、背离雷达、中央分析）的汇总，供中国 Mastermind 作为背景读取。其中没有任何内容会进入任何评分、信号、区制或配置。</span></p>
 </div>
 
 

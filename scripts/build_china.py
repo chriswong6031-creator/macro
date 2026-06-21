@@ -807,6 +807,8 @@ def main() -> int:
             ("china policy watch", "scripts.build_china_policy_watch", "build"),
             ("china alt-data desk", "scripts.build_china_altdata", "build"),
             ("china divergence radar", "scripts.build_china_radar", "build"),
+            # central-intelligence synthesis MUST run after the 4 surfaces, before the hub/bus
+            ("china central analysis", "scripts.build_china_synthesis", "build"),
         ):
             try:
                 import importlib
@@ -815,7 +817,7 @@ def main() -> int:
                 log.error("%s build failed (%s); skipping", _name, e)
         try:
             from scripts.build_china_intel import build as _build_china_intel
-            _build_china_intel()      # fan-in the 4 surfaces + hub for the China Mastermind
+            _build_china_intel()      # fan-in 4 surfaces + analysis + hub for the China Mastermind
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china intel hub/bus build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001

@@ -141,6 +141,14 @@ def _sig_ppi():
         s = pd.to_numeric(df["ppi_yoy"], errors="coerce").dropna()
         if len(s) < 6:
             return None
+        # data-quality guard: China PPI YoY is slow-moving. A >2.5pp single-month jump (parse
+        # explosion) OR a >5pp swing over the trailing 6 months (vintage/base-effect artifact —
+        # the implausible -1.9→+3.9 reflation the audit flagged) is data-suspect → skip, don't fire.
+        if abs(float(s.iloc[-1]) - float(s.iloc[-2])) > 2.5:
+            return None
+        win6 = s.tail(6)
+        if float(win6.max() - win6.min()) > 5.0:
+            return None
         cur = float(s.iloc[-1])
         chg3 = float(s.iloc[-1] - s.iloc[-4])
         strength = min(1.0, abs(chg3) / 2.0)
@@ -195,12 +203,19 @@ _PAIRS = [
 
 
 def _divergence(sig: dict, rs_pct, rs_z):
-    """2×2 verdict from signal direction vs price relative strength. PURE."""
-    if rs_pct is None or sig is None or sig.get("dir", 0) == 0:
+    """2×2 verdict from signal direction vs price relative strength. PURE.
+
+    price direction is taken from rs_z (the sector's OWN-history-normalized relative return)
+    with a deadband, NOT the raw 63d rel return — otherwise in a broad-underperformance regime
+    every sector reads pdir=-1 and the radar is structurally one-sided (the 6/6-positive bug)."""
+    if sig is None or sig.get("dir", 0) == 0 or rs_z is None:
         return "in_line", 0.0
     sdir = sig["dir"]
-    pdir = 1 if rs_pct > 0 else (-1 if rs_pct < 0 else 0)
-    strength = round(sig.get("strength", 0.0) * min(1.0, abs(rs_z or 0) / 2.0), 2)
+    z = rs_z or 0.0
+    pdir = 1 if z > 0.3 else (-1 if z < -0.3 else 0)   # deadband → mild moves stay silent
+    if pdir == 0:
+        return "in_line", 0.0
+    strength = round(sig.get("strength", 0.0) * min(1.0, abs(z) / 2.0), 3)
     if sdir > 0 and pdir < 0:
         return "positive", strength      # support improving, price lagging
     if sdir < 0 and pdir > 0:
@@ -208,9 +223,70 @@ def _divergence(sig: dict, rs_pct, rs_z):
     return "in_line", strength
 
 
-def scan(asof: date | str | None = None) -> dict | None:
-    """Run all radar pairs → divergence verdicts + falsifiable hypotheses. Never raises."""
+def _ledger_reliability():
+    """(by_pair, by_signal) → {key: {n_resolved, hits, hit_rate}} from the falsification
+    ledger. Both {} when nothing has matured (n_resolved 0). Lazy + degrade-to-empty."""
+    by_pair, by_signal = {}, {}
     try:
+        from engine import china_radar_ledger as rl
+        tr = rl.track_record()
+        for r in (tr or {}).get("rows", []):
+            if r.get("status") not in ("hit", "miss"):
+                continue
+            hit = 1 if r["status"] == "hit" else 0
+            for d, k in ((by_pair, r.get("pair")), (by_signal, r.get("signal_key"))):
+                if not k:
+                    continue
+                cur = d.setdefault(k, {"n_resolved": 0, "hits": 0})
+                cur["n_resolved"] += 1
+                cur["hits"] += hit
+        for d in (by_pair, by_signal):
+            for v in d.values():
+                v["hit_rate"] = round(v["hits"] / v["n_resolved"], 2) if v["n_resolved"] else None
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_radar reliability unavailable (%s)", e)
+    return by_pair, by_signal
+
+
+def _candidates(etf, sign, conv_map, n=3):
+    """Per-divergence candidate names — the basket members the divergence implicates, joined to
+    alt-data convergence (top by accumulation for positive, bottom for negative). Bilingual why."""
+    try:
+        from engine import china_basket_spine as sp
+        bids = sp.etf_to_basket().get(etf, [])
+        members = []
+        for b in bids:
+            members += sp.basket_members(b)
+        members = list(dict.fromkeys(members))
+        cand = [(t, conv_map[t]) for t in members if t in conv_map]
+        if not cand:
+            return []
+        cand.sort(key=lambda x: x[1]["convergence"], reverse=(sign == "positive"))
+        out = []
+        for t, info in cand[:n]:
+            acc = info.get("side") == "accumulate"
+            out.append({
+                "ticker": t, "name": info.get("name", t),
+                "convergence": info.get("convergence"),
+                "why_en": f"{'leads' if sign == 'positive' else 'lags'} cohort · alt-data {info.get('side','')}",
+                "why_zh": f"{'领先' if sign == 'positive' else '落后'}同业 · 另类数据{'吸筹' if acc else '派发'}",
+            })
+        return out
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def scan(asof: date | str | None = None) -> dict | None:
+    """Run all radar pairs → divergence verdicts + falsifiable hypotheses, conviction-scored
+    (strength × ledger reliability) with per-name candidates. Never raises."""
+    try:
+        from engine import china_conviction as cv
+        by_pair, by_signal = _ledger_reliability()
+        try:
+            from engine import china_altdata
+            conv_map = china_altdata.convergence_map()
+        except Exception:  # noqa: BLE001
+            conv_map = {}
         rows: list[dict] = []
         for key, fn, sen, szh, targets, thesis in _PAIRS:
             sig = fn()
@@ -219,6 +295,7 @@ def scan(asof: date | str | None = None) -> dict | None:
             for etf, sec_en, sec_zh in targets:
                 rs_pct, rs_z = _price_rs(etf)
                 sign, strength = _divergence(sig, rs_pct, rs_z)
+                pair = f"{key}->{etf}"
                 if sign == "positive":
                     hyp_en = f"If {sen} is leading, {sec_en} should outperform CSI 300 over ~3 months."
                     hyp_zh = f"若{szh}领先，{sec_zh}未来约3个月应跑赢沪深300。"
@@ -227,20 +304,33 @@ def scan(asof: date | str | None = None) -> dict | None:
                     hyp_zh = f"若{szh}转弱，{sec_zh}相对沪深300的领先应在约3个月内消退。"
                 else:
                     hyp_en = hyp_zh = ""
+                # reliability: per-pair, fall back to per-signal, else unproven
+                rel = by_pair.get(pair) or by_signal.get(key) or {}
+                n_res = rel.get("n_resolved", 0)
+                hr = rel.get("hit_rate")
+                basis = ("pair" if pair in by_pair else ("signal_key" if key in by_signal else "unproven"))
+                if n_res >= 3 and hr is not None:
+                    rel_factor = max(0.5, min(1.5, 0.5 + hr))
+                else:
+                    rel_factor = 1.0
+                    basis = "unproven"
+                conviction100 = cv.to_100(strength * rel_factor) if sign != "in_line" else 0
                 rows.append({
-                    "pair": f"{key}->{etf}", "signal_key": key,
+                    "pair": pair, "signal_key": key,
                     "signal_en": sen, "signal_zh": szh,
                     "sector": sec_en, "sector_etf": etf, "sector_en": sec_en, "sector_zh": sec_zh,
-                    "sign": sign, "strength": strength,
+                    "sign": sign, "strength": strength, "conviction100": conviction100,
                     "signal_value": sig.get("value"), "signal_dir": sig.get("dir"),
                     "signal_detail_en": sig.get("detail_en"), "signal_detail_zh": sig.get("detail_zh"),
                     "price_rs": rs_pct, "price_rs_z": rs_z,
+                    "reliability": {"hit_rate": hr, "n_resolved": int(n_res), "basis": basis},
+                    "candidates": _candidates(etf, sign, conv_map) if sign != "in_line" else [],
                     "thesis": thesis, "hypothesis_en": hyp_en, "hypothesis_zh": hyp_zh,
                 })
         if not rows:
             return None
         active = [r for r in rows if r["sign"] != "in_line"]
-        active.sort(key=lambda r: r["strength"], reverse=True)
+        active.sort(key=lambda r: (r["conviction100"], r["strength"]), reverse=True)
         return {
             "schema": SCHEMA, "is_context_only": True,
             "asof": str(asof) if asof else str(date.today()),

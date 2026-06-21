@@ -26,13 +26,24 @@ def _site_dir() -> Path:
     return sd if sd.is_absolute() else (config.ROOT / sd)
 
 
-def _by_ticker(feed: dict | None) -> dict:
-    """Group recent headlines by the cn_* baskets they reference (the future bot join)."""
+def _by_basket(feed: dict | None) -> dict:
+    """Group recent headlines by the cn_* baskets they reference (back-compat)."""
     out: dict[str, list] = {}
     for it in (feed or {}).get("items", []):
         for bid in it.get("baskets", []):
             out.setdefault(bid, []).append(
                 {"title": it["title"], "theme": it["theme"], "url": it.get("url", "")})
+    return out
+
+
+def _by_ticker_index(feed: dict | None) -> dict:
+    """TRUE ticker-keyed index — the named Mastermind hand-off (was basket-keyed before)."""
+    out: dict[str, list] = {}
+    for it in (feed or {}).get("items", []):
+        for tk in it.get("tickers", []):
+            out.setdefault(tk, []).append(
+                {"title": it["title"], "theme": it["theme"], "score": it.get("score"),
+                 "importance_en": it.get("importance_en"), "url": it.get("url", "")})
     return out
 
 
@@ -77,8 +88,8 @@ def build() -> dict | None:
     (cndir / "feed.json").write_text(
         json.dumps(feed or {}, ensure_ascii=False, separators=(",", ":"), default=str))
     (cndir / "by_ticker.json").write_text(json.dumps(
-        {"schema": "china_news_intel.by_ticker.v1", "is_context_only": True,
-         "by_basket": _by_ticker(feed)},
+        {"schema": "china_news_intel.by_ticker.v2", "is_context_only": True,
+         "by_basket": _by_basket(feed), "by_ticker": _by_ticker_index(feed)},
         ensure_ascii=False, separators=(",", ":"), default=str))
     log.info("wrote %s/chinanews/{sentiment,feed,by_ticker}.json", site)
 

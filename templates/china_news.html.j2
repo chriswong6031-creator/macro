@@ -42,7 +42,14 @@
   .tier2 { color:#5b8def; border-color:#5b8def55; }
   .tier3 { color:var(--muted); }
   .sched { font-size:10px; color:#e0973a; font-weight:700; }
-  .bk { font-size:10px; color:var(--muted); }
+  .bk { font-size:11px; color:var(--muted); margin-top:3px; }
+  .imp { font-size:10px; font-weight:800; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .imp-high { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .imp-elevated { color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); }
+  .imp-routine { color:var(--muted); background:var(--panel2); }
+  .surprise { font-size:10px; font-weight:700; color:#c77dff; }
+  .dup { font-size:10px; color:var(--muted); }
+  .tkpill { display:inline-block; font-size:10px; font-family:ui-monospace,Menlo,monospace; padding:1px 6px; margin:0 4px 2px 0; border-radius:5px; background:color-mix(in srgb,#5b8def 12%,transparent); color:#5b8def; }
   .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
   .callout.brief { border-left:4px solid #c77dff; }
   .disc { font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.55; }
@@ -106,7 +113,34 @@
   <div class="callout brief">🤖 {{ news.brief.text }}</div>
   {% endif %}
 
-  <!-- ===== event feed ===== -->
+  <!-- ===== top stories that matter ===== -->
+  {% set bl_map = (news.feed.basket_label if news.feed else {}) or {} %}
+  {% if news.feed and news.feed['items'] %}
+  <h2 class="sec">📌 {{ t('Top stories that matter', '重磅头条') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Importance-ranked (source tier × theme × policy keywords × event proximity × ticker hits), not just newest.', '按重要性排序（来源层级 × 主题 × 政策关键词 × 事件临近 × 个股命中），而非仅按最新。') }}</p>
+  <ul class="feed">
+    {% for it in news.feed['items'][:6] %}
+    <li>
+      <div class="meta">
+        {% set lab = news.feed.theme_label.get(it.theme, [it.theme_en, it.theme_zh]) %}
+        {% set ib = (it.importance_en or 'Routine')|lower %}
+        <span class="imp imp-{{ ib }}">{{ bl(it.importance_en or 'Routine', it.importance_zh or '一般') }}</span>
+        <span class="tag th-{{ it.theme }}">{{ bl(lab[0], lab[1]) }}</span>
+        {% if it.surprise %}<span class="surprise">⚡ {{ t('on event day', '事件当日') }}</span>{% endif %}
+      </div>
+      <div class="tt">
+        {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>{% else %}{{ it.title }}{% endif %}
+        {% if it.tickers %}<div class="bk">📈 {% for tk in it.tickers %}<span class="tkpill">{{ tk }}</span>{% endfor %}</div>{% endif %}
+        {% if it.baskets %}<div class="bk">🏷️ {% for b in it.baskets %}{{ bl((bl_map.get(b) or [b,b])[0], (bl_map.get(b) or [b,b])[1]) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <!-- ===== optional AI brief (moved below top stories) ===== -->
+
+  <!-- ===== full event feed ===== -->
   <h2 class="sec">🛰️ {{ t('News event bus', '新闻事件总线') }}</h2>
   {% if news.feed and news.feed['items'] %}
   <ul class="feed">
@@ -114,13 +148,17 @@
     <li>
       <div class="meta">
         {% set lab = news.feed.theme_label.get(it.theme, [it.theme_en, it.theme_zh]) %}
+        {% set ib = (it.importance_en or 'Routine')|lower %}
+        <span class="imp imp-{{ ib }}">{{ bl(it.importance_en or 'Routine', it.importance_zh or '一般') }}</span>
         <span class="tag th-{{ it.theme }}">{{ bl(lab[0], lab[1]) }}</span>
         <span class="tag tier{{ it.tier }}">{{ it.source or ('T' ~ it.tier) }}</span>
+        {% if it.dup_count and it.dup_count > 1 %}<span class="dup">×{{ it.dup_count }}</span>{% endif %}
         {% if it.scheduled_ref %}<span class="sched">📅 {{ it.scheduled_ref }}</span>{% endif %}
       </div>
       <div class="tt">
         {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>{% else %}{{ it.title }}{% endif %}
-        {% if it.baskets %}<div class="bk">🏷️ {{ it.baskets | join(' · ') }}</div>{% endif %}
+        {% if it.tickers %}<div class="bk">📈 {% for tk in it.tickers %}<span class="tkpill">{{ tk }}</span>{% endfor %}</div>{% endif %}
+        {% if it.baskets %}<div class="bk">🏷️ {% for b in it.baskets %}{{ bl((bl_map.get(b) or [b,b])[0], (bl_map.get(b) or [b,b])[1]) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
       </div>
     </li>
     {% endfor %}
@@ -129,12 +167,12 @@
   <div class="callout">{{ t('No themed headlines accrued in the recent window yet.', '近期窗口内尚无主题化头条累计。') }}</div>
   {% endif %}
 
-  <!-- ===== by-basket tallies ===== -->
+  <!-- ===== by-basket tallies (bilingual names) ===== -->
   {% if news.feed and news.feed.by_basket %}
   <h2 class="sec">🧺 {{ t('Themes in the news', '新闻中的主题') }}</h2>
   <div class="chips">
     {% for bid, ct in news.feed.by_basket.items() %}
-    <span class="tchip">{{ bid }} <b>{{ ct }}</b></span>
+    <span class="tchip">{{ bl((bl_map.get(bid) or [bid,bid])[0], (bl_map.get(bid) or [bid,bid])[1]) }} <b>{{ ct }}</b></span>
     {% endfor %}
   </div>
   {% endif %}

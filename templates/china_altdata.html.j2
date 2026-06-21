@@ -27,6 +27,9 @@
   table.data td.num { text-align:right; font-variant-numeric:tabular-nums; }
   .conv { font-weight:700; font-variant-numeric:tabular-nums; }
   .flag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; color:#e0973a; background:color-mix(in srgb,#e0973a 13%,transparent); }
+  .cvband { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .cvband.cv-pos { color:#1f9a55; background:color-mix(in srgb,#1f9a55 12%,transparent); }
+  .cvband.cv-neg { color:#d23f3f; background:color-mix(in srgb,#d23f3f 12%,transparent); }
   .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
   .nchip { font-size:12px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
   /* signal-lab tiers */
@@ -63,7 +66,7 @@
   <table class="data">
     <thead><tr>
       <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
-      <th class="num">{{ t('Convergence', '共振') }}</th>
+      <th class="num">{{ t('Convergence', '共振') }}</th><th>{{ t('Conviction', '置信') }}</th><th class="num">{{ t('%ile', '分位') }}</th>
       <th class="num">{{ t('Consensus', '一致预期') }}</th><th class="num">{{ t('Value', '估值') }}</th><th class="num">{{ t('Financing', '融资') }}</th>
       <th>{{ t('Flags', '标记') }}</th>
     </tr></thead>
@@ -72,6 +75,8 @@
       <tr>
         <td>{{ r.ticker }}</td><td>{{ r.name }}</td>
         <td class="num conv {{ 'r-pos' if r.convergence>0 else ('r-neg' if r.convergence<0 else '') }}">{{ '%+.2f'|format(r.convergence) }}</td>
+        <td><span class="cvband {{ 'cv-pos' if r.convergence>0 else 'cv-neg' }}">{{ bl(r.conviction_band_en or 'None', r.conviction_band_zh or '无') }}</span></td>
+        <td class="num">{{ r.rank_pctile }}</td>
         <td class="num">{{ sc(r.analyst) }}</td><td class="num">{{ sc(r.value) }}</td><td class="num">{{ sc(r.margin) }}</td>
         <td>{% if 'leverage_crowded' in r.flags %}<span class="flag">{{ t('crowded', '拥挤') }}</span>{% endif %}</td>
       </tr>

@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 SCHEMA = "china_radar_ledger.v1"
 HORIZON_DAYS = 90
 _COLUMNS = ("event_id", "fired_date", "pair", "signal_key", "sector_etf", "sector_en",
-            "sign", "rs_at_fire", "signal_value")
+            "sector_zh", "sign", "rs_at_fire", "signal_value")
 
 
 def _path() -> Path:
@@ -42,6 +42,7 @@ def accrue(scan: dict | None, asof: date | str | None = None) -> dict | None:
                 "event_id": f"{d['pair']}|{month}", "fired_date": asof,
                 "pair": d["pair"], "signal_key": d["signal_key"],
                 "sector_etf": d["sector_etf"], "sector_en": d["sector_en"],
+                "sector_zh": d.get("sector_zh", d["sector_en"]),
                 "sign": d["sign"], "rs_at_fire": d.get("price_rs"),
                 "signal_value": d.get("signal_value"),
             })
@@ -108,6 +109,7 @@ def track_record() -> dict | None:
                 status = "hit" if hit else "miss"
             rows.append({"fired_date": r.fired_date, "pair": r.pair,
                          "signal_key": r.signal_key, "sector_en": r.sector_en,
+                         "sector_zh": (getattr(r, "sector_zh", None) or r.sector_en),
                          "sign": r.sign, "rs_at_fire": r.rs_at_fire,
                          "fwd_rel": fwd, "status": status})
         rows.sort(key=lambda x: x["fired_date"], reverse=True)

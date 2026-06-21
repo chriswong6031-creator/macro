@@ -47,15 +47,29 @@ def test_by_ticker_structure_and_none_safe():
     assert convs == sorted(convs, reverse=True)
 
 
-def test_mastermind_prefers_triple():
+def test_mastermind_prefers_triple_and_emits_rich_rows():
     bt = {"asof": "2026-06-20",
-          "triple": [{"ticker": "AAA"}, {"ticker": "BBB"}],
-          "top": [{"ticker": "CCC"}, {"ticker": "AAA"}],
-          "bottom": [{"ticker": "ZZZ"}], "crowding_flags": ["AAA"]}
+          "triple": [{"ticker": "AAA", "name": "Alpha"}, {"ticker": "BBB", "name": "Beta"}],
+          "top": [{"ticker": "CCC", "name": "Gamma"}, {"ticker": "AAA", "name": "Alpha"}],
+          "bottom": [{"ticker": "ZZZ", "name": "Zed"}], "crowding_flags": ["AAA"]}
     mm = ad.mastermind(bt)
-    assert mm["convergence_top"][:2] == ["AAA", "BBB"]   # triple first, deduped
-    assert "CCC" in mm["convergence_top"]
-    assert mm["convergence_bottom"] == ["ZZZ"]
+    codes = [r["ticker"] for r in mm["convergence_top"]]
+    assert codes[:2] == ["AAA", "BBB"]                  # triple first, deduped
+    assert "CCC" in codes
+    assert mm["convergence_top"][0]["name"] == "Alpha"  # rich rows carry the name
+    assert mm["schema"] == "china_altdata.mastermind.v2"
+    assert mm["convergence_bottom"][0]["ticker"] == "ZZZ"
+
+
+def test_by_ticker_de_degenerated():
+    bt = ad.by_ticker()
+    if bt is None or len(bt["top"]) < 5:
+        return
+    convs = [r["convergence"] for r in bt["top"]]
+    # rank-normalized convergence must NOT all pin to one value (the old 8/8==1.0 bug)
+    assert len(set(round(c, 3) for c in convs)) > 3
+    assert convs == sorted(convs, reverse=True)
+    assert all(0 <= r["conviction100"] <= 100 for r in bt["top"])
 
 
 # ---- signal lab ------------------------------------------------------------ #

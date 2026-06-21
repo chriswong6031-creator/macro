@@ -103,13 +103,29 @@ def _intel() -> dict:
 
 
 def _compact(pboc: dict | None, intel: dict) -> dict:
-    """The machine-readable latest.json the intel bus + China Mastermind read."""
+    """The machine-readable latest.json the intel bus + China Mastermind read.
+
+    PBoC corridor mixes vintages — LPR is monthly while FR007/CNY are daily — so each field
+    carries its own asof, the top-level asof is the NEWEST constituent (not LPR-anchored),
+    and `stale` flags when even the newest is > ~35 days old."""
     corridor = {c["key"]: c["value"] for c in (pboc or {}).get("corridor", [])}
     fx = (pboc or {}).get("fx", {})
+    asof_lpr = (pboc or {}).get("asof")
+    asof_res = fx.get("asof_reserves")
+    asof_cny = fx.get("asof_cny")
+    dates = [d for d in (asof_lpr, asof_res, asof_cny) if d]
+    newest = max(dates) if dates else str(date.today())
+    stale = False
+    try:
+        stale = (date.today() - date.fromisoformat(newest[:10])).days > 35
+    except (ValueError, TypeError):
+        pass
     return {
         "schema": SCHEMA, "is_context_only": True,
-        "asof": (pboc or {}).get("asof", str(date.today())),
+        "asof": newest, "asof_lpr": asof_lpr, "asof_reserves": asof_res, "asof_cny": asof_cny,
+        "stale": stale,
         "stance": (pboc or {}).get("stance"),
+        "stance_en": (pboc or {}).get("stance_en"), "stance_zh": (pboc or {}).get("stance_zh"),
         "lpr_1y": corridor.get("lpr_1y"), "lpr_5y": corridor.get("lpr_5y"),
         "rrr": corridor.get("rrr"), "fr007": corridor.get("fr007"),
         "fx_reserves": fx.get("reserves"), "usd_cny": fx.get("usd_cny"),

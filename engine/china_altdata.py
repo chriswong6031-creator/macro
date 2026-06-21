@@ -24,9 +24,10 @@ log = logging.getLogger(__name__)
 
 SCHEMA = "china_altdata.v1"
 
-# convergence weights (display only — equal-ish, value tilted down given the negative
-# A-share value Sharpe; the point is agreement across independent feeds, not a backtest)
-_W = {"analyst": 0.40, "value": 0.30, "margin": 0.30}
+# convergence weights (display only). Value + margin carry it; analyst is a near-useless
+# GATE in China (sell-side is ~universally "buy"), so it gets a low weight and mainly makes
+# a name eligible for the all-three "triple" slice. The point is cross-sectional agreement.
+_W = {"value": 0.45, "margin": 0.45, "analyst": 0.10}
 _CROWD_CHG = 25.0   # financing 20d change % above which we flag leverage crowding
 
 
@@ -76,47 +77,98 @@ def _margin_score(block: dict) -> tuple[float | None, bool]:
     return _clip(float(chg) / 20.0), float(chg) > _CROWD_CHG
 
 
-def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
-    """Per-ticker convergence over analyst + valuation + margin. None if no data. Never raises."""
+def _rank_pct(vals: dict) -> dict:
+    """Cross-sectional percentile (0..1) of each ticker's raw value among those that HAVE the
+    feed. Centered later to [-1,1]. This is what de-degenerates the all-buy analyst feed."""
+    items = [(t, v) for t, v in vals.items() if v is not None]
+    n = len(items)
+    if n == 0:
+        return {}
+    if n == 1:
+        return {items[0][0]: 0.5}
+    order = sorted(items, key=lambda kv: kv[1])
+    return {t: i / (n - 1) for i, (t, _v) in enumerate(order)}
+
+
+def _compute_rows(min_signals: int = 2) -> list[dict]:
+    """Full per-ticker convergence rows (sorted desc). Rank-normalizes EACH feed cross-
+    sectionally, then combines on a signed [-1,1] scale. Shared by by_ticker + convergence_map."""
+    from engine import china_conviction as cv
+    from engine import china_extras as ce
+    analyst = ce.analyst_consensus() or {}
+    valuation = ce.valuation_percentile() or {}
+    margin = ce.margin_positioning() or {}
+    if not (analyst or valuation or margin):
+        return []
+    names = _name_map()
+    universe = set(analyst) | set(valuation) | set(margin)
+    a_raw, v_raw, m_raw, crowd = {}, {}, {}, {}
+    for t in universe:
+        if t in analyst:
+            a_raw[t] = _analyst_score(analyst[t])
+        if t in valuation:
+            v_raw[t] = _value_score(valuation[t])
+        if t in margin:
+            ms, c = _margin_score(margin[t])
+            m_raw[t] = ms
+            crowd[t] = c
+    a_pct, v_pct, m_pct = _rank_pct(a_raw), _rank_pct(v_raw), _rank_pct(m_raw)
+    rows: list[dict] = []
+    for t in universe:
+        present = {}
+        if t in a_pct:
+            present["analyst"] = a_pct[t] * 2 - 1
+        if t in v_pct:
+            present["value"] = v_pct[t] * 2 - 1
+        if t in m_pct:
+            present["margin"] = m_pct[t] * 2 - 1
+        if len(present) < min_signals:
+            continue
+        wsum = sum(_W[k] for k in present)
+        conv = sum(_W[k] * s for k, s in present.items()) / wsum if wsum else 0.0
+        side = "accumulate" if conv > 0.05 else ("distribute" if conv < -0.05 else "neutral")
+        sign = 1 if conv > 0 else (-1 if conv < 0 else 0)
+        c100 = cv.to_100(abs(conv))
+        _bk, ben, bzh = cv.signed_band(c100, sign)
+        reasons = [k for k, s in present.items() if (s > 0) == (conv > 0) and abs(s) > 0.05]
+        rows.append({
+            "ticker": t, "name": names.get(t, t),
+            "convergence": round(conv, 3), "n_signals": len(present),
+            "conviction100": c100, "conviction_band_en": ben, "conviction_band_zh": bzh,
+            "side": side,
+            "analyst": None if "analyst" not in present else round(present["analyst"], 2),
+            "value": None if "value" not in present else round(present["value"], 2),
+            "margin": None if "margin" not in present else round(present["margin"], 2),
+            "reasons": reasons,
+            "flags": ["leverage_crowded"] if crowd.get(t) else [],
+        })
+    rows.sort(key=lambda r: (r["convergence"], r["n_signals"]), reverse=True)
+    conv_pct = _rank_pct({r["ticker"]: r["convergence"] for r in rows})
+    for r in rows:
+        r["rank_pctile"] = round(conv_pct.get(r["ticker"], 0.5) * 100, 1)
+    return rows
+
+
+def convergence_map() -> dict[str, dict]:
+    """{ticker: {convergence, side, name, conviction100}} over the FULL universe — the join the
+    radar uses to surface per-divergence candidate names. {} on failure. Never raises."""
     try:
-        from engine import china_extras as ce
-        analyst = ce.analyst_consensus() or {}
-        valuation = ce.valuation_percentile() or {}
-        margin = ce.margin_positioning() or {}
-        if not (analyst or valuation or margin):
-            return None
-        names = _name_map()
-        universe = set(analyst) | set(valuation) | set(margin)
-        rows: list[dict] = []
-        for t in universe:
-            a = _analyst_score(analyst.get(t, {})) if t in analyst else None
-            v = _value_score(valuation.get(t, {})) if t in valuation else None
-            m, crowded = _margin_score(margin.get(t, {})) if t in margin else (None, False)
-            present = {"analyst": a, "value": v, "margin": m}
-            avail = {k: s for k, s in present.items() if s is not None}
-            if len(avail) < min_signals:
-                continue
-            wsum = sum(_W[k] for k in avail)
-            conv = sum(_W[k] * s for k, s in avail.items()) / wsum if wsum else 0.0
-            flags = []
-            if crowded:
-                flags.append("leverage_crowded")
-            rows.append({
-                "ticker": t, "name": names.get(t, t),
-                "convergence": round(conv, 3), "n_signals": len(avail),
-                "analyst": None if a is None else round(a, 2),
-                "value": None if v is None else round(v, 2),
-                "margin": None if m is None else round(m, 2),
-                "flags": flags,
-            })
+        return {r["ticker"]: {"convergence": r["convergence"], "side": r["side"],
+                              "name": r["name"], "conviction100": r["conviction100"]}
+                for r in _compute_rows()}
+    except Exception as e:  # noqa: BLE001
+        log.error("china_altdata.convergence_map failed (%s)", e)
+        return {}
+
+
+def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
+    """Per-ticker convergence desk view (top/bottom/triple slices). Never raises."""
+    try:
+        rows = _compute_rows(min_signals)
         if not rows:
             return None
-        # primary: convergence; tie-break: more independent feeds agreeing ranks higher
-        rows.sort(key=lambda r: (r["convergence"], r["n_signals"]), reverse=True)
-        # the meaningful slice — ALL THREE independent feeds present (analyst+value+margin)
         triple = [r for r in rows if r["n_signals"] >= 3]
-        triple.sort(key=lambda r: r["convergence"], reverse=True)
-        crowding = [r["ticker"] for r in rows if "leverage_crowded" in r["flags"]][:20]
+        crowding = [r["ticker"] for r in rows if r["flags"]][:20]
         return {
             "schema": SCHEMA, "is_context_only": True, "asof": str(date.today()),
             "built": datetime.now(timezone.utc).isoformat(),
@@ -131,17 +183,27 @@ def by_ticker(min_signals: int = 2, top_n: int = 30) -> dict | None:
         return None
 
 
+def _slim(r: dict, side: str) -> dict:
+    return {"ticker": r.get("ticker"), "name": r.get("name", r.get("ticker")),
+            "convergence": r.get("convergence"), "conviction100": r.get("conviction100"),
+            "n_signals": r.get("n_signals"), "reasons": r.get("reasons", []),
+            "flags": r.get("flags", []), "side": side}
+
+
 def mastermind(bt: dict | None = None) -> dict:
-    """Compact context emit for the intel bus + future China Mastermind (never a size)."""
+    """Rich context emit for the intel bus + future China Mastermind (never a size). Carries
+    NAMES + conviction + reasons, not bare ticker strings."""
     bt = bt or by_ticker() or {}
-    # prefer the all-three-agree slice; fall back to the broad list to fill 10
-    triple = [r["ticker"] for r in bt.get("triple", [])]
-    top = triple + [r["ticker"] for r in bt.get("top", []) if r["ticker"] not in triple]
+    triple_ids = {r["ticker"] for r in bt.get("triple", [])}
+    top = [_slim(r, "accumulate") for r in bt.get("triple", [])]
+    for r in bt.get("top", []):
+        if r["ticker"] not in triple_ids and len(top) < 10:
+            top.append(_slim(r, r.get("side", "accumulate")))
     return {
-        "schema": "china_altdata.mastermind.v1", "is_context_only": True,
+        "schema": "china_altdata.mastermind.v2", "is_context_only": True,
         "asof": bt.get("asof", str(date.today())),
         "n_triple": bt.get("n_triple"), "n_universe": bt.get("n_universe"),
         "convergence_top": top[:10],
-        "convergence_bottom": [r["ticker"] for r in bt.get("bottom", [])[:10]],
+        "convergence_bottom": [_slim(r, "distribute") for r in bt.get("bottom", [])[:10]],
         "crowding_flags": bt.get("crowding_flags", []),
     }

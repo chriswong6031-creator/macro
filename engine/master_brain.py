@@ -578,8 +578,14 @@ def gather_china_state(root: Path | None = None) -> dict:
     try:
         from engine import china_intel_bus
         b = china_intel_bus.briefing()
-        intel = {k: b.get(k) for k in ("news", "policy", "altdata", "radar") if b.get(k)}
+        # widened whitelist (v2): the central-analysis synthesis + flagged tickers + what-changed
+        # must propagate, not just the four raw surface blocks (the L551 whitelist gates them).
+        keys = ("news", "policy", "altdata", "radar",
+                "analysis", "conviction", "cross_surface", "flagged_tickers",
+                "what_changed", "salience")
+        intel = {k: b.get(k) for k in keys if b.get(k)}
         if intel:
+            intel["digest"] = b.get("digest")     # the synthesis-led plain-text rollup
             state["china_intel"] = intel
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("china_intel state unavailable (%s)", e)

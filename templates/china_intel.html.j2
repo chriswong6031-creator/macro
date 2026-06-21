@@ -2,6 +2,9 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
+{% macro bl(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
 
 {% block title %}{{ t('China Intelligence', '中国情报中心') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
 
@@ -12,19 +15,57 @@
   html[data-lang="zh"] .ci-hero h1 { letter-spacing:0; }
   .ci-hero .lens { font-size:12px; color:var(--muted); }
   .ci-wrap { max-width:1060px; margin:0 auto; }
-  .digest { white-space:pre-wrap; font:12.5px/1.6 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:14px 16px; margin:16px 0; color:var(--text); }
-  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; margin:16px 0; }
-  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; color:var(--text); transition:border-color .15s, transform .15s; }
+  h2.sec { font-size:18px; margin:26px 0 8px; border-top:1px solid var(--line); padding-top:16px; display:flex; align-items:baseline; gap:9px; }
+  /* what matters / changed strip */
+  .matters { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:16px 0; }
+  .matters ol { margin:6px 0 0; padding-left:20px; }
+  .matters li { font-size:13.5px; line-height:1.6; margin:4px 0; }
+  .matters .kind { font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--muted); margin-right:6px; }
+  .changed { display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .changed .ch { font-size:11.5px; padding:3px 9px; border-radius:999px; background:color-mix(in srgb,#e0973a 12%,var(--panel2)); border:1px solid #e0973a44; color:var(--text); }
+  /* synthesis table */
+  table.syn { border-collapse:collapse; width:100%; font-size:12.5px; margin:8px 0; }
+  table.syn th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.syn td { padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .cc { font-weight:800; font-variant-numeric:tabular-nums; }
+  .bandpill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .b-high{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
+  .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
+  .b-moderate,.b-low,.b-none{color:var(--muted);background:var(--panel2)}
+  .surf { font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:5px; background:var(--panel2); color:var(--link); margin-right:3px; }
+  .sgn-pos{color:#1f9a55} .sgn-neg{color:#d23f3f}
+  /* flagged tickers */
+  .flags { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
+  .tk { display:inline-flex; flex-direction:column; gap:2px; padding:7px 12px; border-radius:10px; background:var(--panel); border:1px solid var(--line); }
+  .tk .nm { font-weight:700; font-size:13px; }
+  .tk .cd { font-size:10px; color:var(--muted); font-family:ui-monospace,Menlo,monospace; }
+  .tk.long { border-left:3px solid #1f9a55; } .tk.short { border-left:3px solid #d23f3f; }
+  /* chains */
+  .chain { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin:10px 0; }
+  .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
+  .chband { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
+  .ch-confirmed{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
+  .ch-forming{color:#e0973a;background:color-mix(in srgb,#e0973a 13%,transparent)}
+  .ch-dormant{color:var(--muted);background:var(--panel2)}
+  .legs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .leg { font-size:11px; padding:3px 8px; border-radius:7px; background:var(--panel2); border:1px solid var(--line); }
+  .leg.on { color:#1f9a55; border-color:#1f9a5544; } .leg.off { color:var(--muted); opacity:.6; }
+  .digest { white-space:pre-wrap; font:12px/1.55 ui-monospace,Menlo,monospace; background:var(--panel2); border:1px solid var(--line); border-left:4px solid var(--link); border-radius:12px; padding:13px 15px; margin:12px 0; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(232px,1fr)); gap:14px; margin:14px 0; }
+  a.scard { display:block; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px; color:var(--text); transition:border-color .15s, transform .15s; }
   a.scard:hover { border-color:var(--link); transform:translateY(-2px); }
-  a.scard .ic { font-size:22px; }
-  a.scard .nm { font-weight:700; font-size:15px; margin:6px 0 2px; }
-  a.scard .v { font-size:21px; font-weight:800; margin-top:6px; }
-  a.scard .s { font-size:12px; color:var(--muted); margin-top:3px; }
-  a.scard .go { font-size:11px; color:var(--link); margin-top:8px; }
+  a.scard .ic { font-size:20px; } a.scard .nm { font-weight:700; font-size:14.5px; margin:5px 0 2px; }
+  a.scard .v { font-size:20px; font-weight:800; margin-top:5px; }
+  a.scard .s { font-size:11.5px; color:var(--muted); margin-top:3px; }
+  a.scard .age { font-size:10px; color:var(--muted); margin-top:6px; }
+  a.scard .go { font-size:11px; color:var(--link); margin-top:7px; }
   .band { display:inline-block; font-size:13px; font-weight:700; padding:2px 9px; border-radius:999px; }
   .band.supportive,.band.easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .band.cautious,.band.tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
   .band.steady,.band.building,.band.neutral,.band.unknown { color:var(--muted); background:var(--panel2); }
+  .strip { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .sx { font-size:11.5px; padding:4px 10px; border-radius:8px; background:var(--panel2); border:1px solid var(--line); }
+  .sx b { color:#e0973a; }
   .xmit { border-radius:12px; padding:13px 16px; margin:16px 0; border:1px solid var(--line); background:var(--panel2); font-size:13px; line-height:1.6; }
   .xmit code { font-family:ui-monospace,Menlo,monospace; font-size:11.5px; color:var(--link); }
   .disc { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.55; }
@@ -34,61 +75,137 @@
 <section class="ci-hero">
   <p class="eyebrow">🧠 {{ t('China Intelligence', '中国情报中心') }}</p>
   <h1>{{ t('China Intelligence Hub', '中国情报中心') }}</h1>
-  <p class="lens">{{ t('One fan-in of four China intelligence surfaces — the transmission feed for the China Mastermind · context only · as of', '四个中国情报面板的统一汇总——通往中国 Mastermind 的传导信号 · 仅供参考 · 截至') }} {{ b.asof }}</p>
+  <p class="lens">{{ t('Central synthesis of five China surfaces — what matters most, cross-surface conviction, flagged tickers · context only · as of', '五个中国面板的中央综合——最重要的事、跨面板共振、标记个股 · 仅供参考 · 截至') }} {{ b.asof }}
+  {% if b.max_staleness_days is not none %} · {{ t('freshest data', '最新数据') }} {{ b.max_staleness_days }}{{ t('d old', '天') }}{% endif %}</p>
 </section>
 
 <div class="ci-wrap">
 
-  {% if b.digest %}<div class="digest">{{ b.digest }}</div>{% endif %}
+  <!-- B. WHAT MATTERS MOST + CHANGED TODAY -->
+  {% if b.salience %}
+  <div class="matters">
+    <b>🎯 {{ t('What matters most today', '今日要点') }}</b>
+    <ol>
+      {% for w in b.salience %}
+      <li><span class="kind">{{ w.kind }}</span>{{ bl(w.label_en, w.label_zh) }}{% if w.detail_en %} — <span class="mut">{{ bl(w.detail_en, w.detail_zh) }}</span>{% endif %}</li>
+      {% endfor %}
+    </ol>
+    {% set wc = b.what_changed %}
+    {% if wc and (wc.stance_change or wc.sentiment_band_change or wc.new_radar_fires or wc.new_accumulation) %}
+    <div class="changed">
+      {% if wc.stance_change %}<span class="ch">{{ t('PBoC stance', '央行立场') }}: {{ wc.stance_change.from }} → {{ wc.stance_change.to }}</span>{% endif %}
+      {% if wc.sentiment_band_change %}<span class="ch">{{ t('News mood', '新闻情绪') }}: {{ wc.sentiment_band_change.from }} → {{ wc.sentiment_band_change.to }}</span>{% endif %}
+      {% if wc.new_radar_fires %}<span class="ch">{{ t('New radar', '新增雷达') }}: {{ wc.new_radar_fires|length }}</span>{% endif %}
+      {% if wc.new_accumulation %}<span class="ch">{{ t('New accumulation', '新增吸筹') }}: {{ wc.new_accumulation|length }}</span>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
+  <!-- C. CENTRAL SYNTHESIS -->
+  {% if b.conviction %}
+  <h2 class="sec">🧩 {{ t('Cross-surface conviction', '跨面板共振') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Where the radar, news, alt-data and policy line up on the same sector. Conviction = salience (how many independent surfaces agree), never a position size.', '雷达、新闻、另类数据与政策在同一板块上的共振。置信度＝显著性（多少独立面板一致），绝非仓位。') }}</p>
+  <table class="syn">
+    <thead><tr><th>{{ t('Sector', '板块') }}</th><th>{{ t('Conviction', '置信') }}</th><th>{{ t('Surfaces', '面板') }}</th><th>{{ t('Read', '解读') }}</th></tr></thead>
+    <tbody>
+    {% for c in b.conviction %}
+      <tr>
+        <td><b>{{ bl(c.sector_en, c.sector_zh) }}</b> <span class="{{ 'sgn-pos' if c.radar_sign=='positive' else 'sgn-neg' }}">{{ '▲' if c.radar_sign=='positive' else '▼' }}</span></td>
+        <td><span class="cc">{{ c.context_conviction }}</span> <span class="bandpill b-{{ (c.conviction_band[0]|lower) if c.conviction_band else 'none' }}">{{ bl(c.conviction_band[0], c.conviction_band[1]) }}</span></td>
+        <td>{% for s in c.surfaces_confirming %}<span class="surf">{{ s }}</span>{% endfor %}</td>
+        <td>{{ bl(c.rationale_en, c.rationale_zh) }}{% if c.members %}<br><span class="mut" style="font-size:11px">{% for m in c.members %}{{ m.name }} ({{ m.ticker }}){% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- D. FLAGGED TICKERS -->
+  {% if b.flagged_tickers %}
+  <h2 class="sec">🏷️ {{ t('Flagged tickers', '标记个股') }}</h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 4px">{{ t('Names lit by ≥2 surfaces (alt-data accumulation inside a radar-lit, news-covered theme). Context watchlist, not a recommendation.', '被≥2个面板点亮的个股（位于雷达点亮、新闻覆盖主题内的另类数据吸筹）。背景自选，非推荐。') }}</p>
+  <div class="flags">
+    {% for f in b.flagged_tickers %}
+    <span class="tk {{ 'long' if f.side=='long-context' else 'short' }}">
+      <span class="nm">{{ f.name or f.ticker }}</span>
+      <span class="cd">{{ f.ticker }}{% if f.surfaces %} · {{ f.surfaces|join('+') }}{% endif %}</span>
+    </span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- E. CAUSAL CHAINS -->
+  {% if b.analysis and b.analysis.chains %}
+  <h2 class="sec">🔗 {{ t('Transmission chains', '传导链条') }}</h2>
+  {% for ch in b.analysis.chains %}
+  <div class="chain">
+    <div class="hd"><span class="chband ch-{{ ch.band }}">{{ t(ch.band|capitalize, ({'confirmed':'已确认','forming':'形成中','dormant':'休眠'}).get(ch.band, ch.band)) }}</span> {{ bl(ch.label_en, ch.label_zh) }} <span class="mut" style="font-weight:400">{{ ch.k }}/{{ ch.n }}</span></div>
+    <div class="legs">
+      {% for l in ch.links %}<span class="leg {{ 'on' if l.aligned else 'off' }}">{{ '✓' if l.aligned else '·' }} {{ bl(l.detail_en, l.detail_zh) }}</span>{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  {% if b.analysis.cross_refs %}
+  {% for x in b.analysis.cross_refs %}
+  <div class="xmit" style="border-left:4px solid var(--warn)">⚠ {{ bl(x.tag_en, x.tag_zh) }}</div>
+  {% endfor %}
+  {% endif %}
+  {% endif %}
+
+  <!-- F. DIGEST -->
+  {% if b.digest %}<details><summary style="cursor:pointer;font-size:12px;color:var(--muted);margin:8px 0">{{ t('Machine digest (what the Mastermind reads)', '机器摘要（Mastermind 读取的内容）') }}</summary><div class="digest">{{ b.digest }}</div></details>{% endif %}
+
+  <!-- G. SURFACE CARDS -->
+  <h2 class="sec">🗂️ {{ t('Surfaces', '情报面板') }}</h2>
   <div class="cards">
-    <!-- News -->
     <a class="scard" href="china_news.html">
-      <div class="ic">📰</div>
-      <div class="nm">{{ t('China News', '中国财经新闻') }}</div>
-      {% if b.news %}
-      <div class="v"><span class="band {{ b.news.band }}">{{ t(b.news.band|capitalize, '') if b.news.band else '—' }}</span></div>
-      <div class="s">{% if b.news.n_events_7d %}{{ b.news.n_events_7d }} {{ t('events/7d', '事件/7天') }}{% endif %}{% if b.news.sentiment_z is not none %} · z {{ '%+.2f'|format(b.news.sentiment_z) }}{% endif %}</div>
-      {% else %}<div class="v">—</div>{% endif %}
+      <div class="ic">📰</div><div class="nm">{{ t('China News', '中国财经新闻') }}</div>
+      {% if b.news %}<div class="v"><span class="band {{ b.news.band }}">{{ bl(b.news.band_label_en or (b.news.band|capitalize), b.news.band_label_zh or '') }}</span></div>
+      <div class="s">{% if b.news.n_events_7d %}{{ b.news.n_events_7d }} {{ t('events/7d', '事件/7天') }}{% endif %}{% if b.news.flagged_baskets %} · {{ b.news.flagged_baskets|length }} {{ t('themes', '主题') }}{% endif %}</div>
+      <div class="age">{{ b.surface_asof.news }}</div>{% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open news tape →', '打开新闻脉搏 →') }}</div>
     </a>
-
-    <!-- Policy -->
     <a class="scard" href="china_policy_watch.html">
-      <div class="ic">🏛️</div>
-      <div class="nm">{{ t('PBoC & Policy', '央行与政策') }}</div>
-      {% if b.policy %}
-      <div class="v"><span class="band {{ b.policy.pboc_stance }}">{{ t((b.policy.pboc_stance or '—')|capitalize, '') }}</span></div>
-      <div class="s">LPR {{ b.policy.lpr_1y }}/{{ b.policy.lpr_5y }} · RRR {{ b.policy.rrr }}</div>
-      {% else %}<div class="v">—</div>{% endif %}
+      <div class="ic">🏛️</div><div class="nm">{{ t('PBoC & Policy', '央行与政策') }}</div>
+      {% if b.policy %}<div class="v"><span class="band {{ b.policy.pboc_stance }}">{{ bl(b.policy.stance_label_en or (b.policy.pboc_stance|capitalize), b.policy.stance_label_zh or '') }}</span></div>
+      <div class="s">LPR {{ b.policy.lpr_1y }}/{{ b.policy.lpr_5y }} · RRR {{ b.policy.rrr }}{% if b.policy.impulse %} · {{ t('easing impulse', '宽松动能') }}{% endif %}</div>
+      <div class="age">{{ b.surface_asof.policy }}{% if b.policy.stale %} · {{ t('stale', '偏旧') }}{% endif %}</div>{% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open policy watch →', '打开政策观察 →') }}</div>
     </a>
-
-    <!-- Alt-data -->
     <a class="scard" href="china_altdata.html">
-      <div class="ic">🛰️</div>
-      <div class="nm">{{ t('Alternative Data', '另类数据') }}</div>
-      {% if b.altdata %}
-      <div class="v">{{ b.altdata.n_triple if b.altdata.n_triple is not none else (b.altdata.convergence_top|length) }}</div>
-      <div class="s">{{ t('triple-confirmed convergence', '三重共振') }}{% if b.altdata.crowding_flags %} · {{ b.altdata.crowding_flags|length }} {{ t('crowded', '拥挤') }}{% endif %}</div>
-      {% else %}<div class="v">—</div>{% endif %}
+      <div class="ic">🛰️</div><div class="nm">{{ t('Alternative Data', '另类数据') }}</div>
+      {% if b.altdata %}<div class="v">{{ b.altdata.accumulate|length if b.altdata.accumulate else (b.altdata.convergence_top|length) }}</div>
+      <div class="s">{{ t('convergence watchlist', '共振自选') }}{% if b.altdata.n_triple %} · {{ b.altdata.n_triple }} {{ t('full-coverage', '三源齐全') }}{% endif %}</div>
+      <div class="age">{{ b.surface_asof.altdata }}</div>{% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open alt-data desk →', '打开另类数据台 →') }}</div>
     </a>
-
-    <!-- Radar -->
     <a class="scard" href="china_radar.html">
-      <div class="ic">📡</div>
-      <div class="nm">{{ t('Divergence Radar', '背离雷达') }}</div>
-      {% if b.radar %}
-      <div class="v">{{ b.radar.divergences|length }}</div>
-      <div class="s">{{ t('active divergences', '活跃背离') }}</div>
-      {% else %}<div class="v">—</div>{% endif %}
+      <div class="ic">📡</div><div class="nm">{{ t('Divergence Radar', '背离雷达') }}</div>
+      {% if b.radar %}<div class="v">{{ b.radar.divergences|length }}</div>
+      <div class="s">{{ t('active divergences', '活跃背离') }} · {{ t('ledger', '台账') }} {{ t((b.radar.ledger.grade or 'unproven')|capitalize, ({'unproven':'未验证','reliable':'可靠','weak':'偏弱'}).get(b.radar.ledger.grade, b.radar.ledger.grade)) }}</div>
+      <div class="age">{{ b.surface_asof.radar }}</div>{% else %}<div class="v">—</div>{% endif %}
       <div class="go">{{ t('Open radar →', '打开雷达 →') }}</div>
     </a>
   </div>
 
+  <!-- H. NEXT CATALYSTS + STANDING CALLS -->
+  {% if b.news and b.news.scheduled_ahead %}
+  <h2 class="sec">📅 {{ t('Next catalysts', '即将催化') }}</h2>
+  <div class="strip">
+    {% for ev in b.news.scheduled_ahead %}<span class="sx"><b>{{ ev.md }}</b> · {{ bl(ev.name_en, ev.name_zh) }}</span>{% endfor %}
+  </div>
+  {% endif %}
+  {% if b.policy and b.policy.predictions %}
+  <h2 class="sec">🔮 {{ t('Standing policy calls', '政策预测') }}</h2>
+  <div class="strip">
+    {% for p in b.policy.predictions %}<span class="sx">{{ p }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- I. MASTERMIND CONTRACT -->
   <div class="xmit">
-    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these four surfaces are bundled, schema-versioned and machine-readable at', '这四个面板被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> ({{ t('full', '完整') }}) {{ t('and', '与') }} <code>digest.json</code> ({{ t('compact', '精简') }}). {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
+    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at', '这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v2</code>) {{ t('and', '与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
     {% if b.surfaces_present %}<br><span class="s" style="color:var(--muted)">{{ t('Surfaces present', '已就绪面板') }}: {{ b.surfaces_present|join(' · ') }}</span>{% endif %}
   </div>
 

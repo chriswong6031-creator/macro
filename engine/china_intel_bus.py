@@ -1,22 +1,15 @@
 """China Intelligence transmission bus — the connector to the (future) China Mastermind.
 
-LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. This is the China sibling of the macro
-`engine/master_brain.py` brief: it bundles the four China intelligence surfaces —
-News, Central-Bank/Policy Watch, Alternative Data, Divergence Radar — into ONE
-schema-versioned, machine-readable rollup that the China Mastermind bot will read as
-CONTEXT (exactly as the existing bot reads `site/altdata/*.json` and the master briefs).
+LEAF · CONTEXT-ONLY · NEVER A SCORE/SIZE. The China sibling of the macro master_brain brief:
+it fans the FIVE China intelligence surfaces — News, Central-Bank/Policy, Alternative Data,
+Divergence Radar, and the central-intelligence Analysis — into ONE schema-versioned,
+machine-readable rollup (`china_intel.briefing.v2`) that the China Mastermind reads as
+CONTEXT. It DECOUPLES by reading each surface's already-emitted JSON off disk (build-order is
+the only dependency); every reader degrades to None and NOTHING here raises into a build.
 
-It DECOUPLES from each surface by reading their already-emitted JSON artifacts off disk
-(so build ordering is the only dependency); every reader degrades to None when its
-surface has not been built yet, and NOTHING here ever raises into a build. As each
-phase lands, its reader starts returning real data — the contract below does not change.
-
-Emits:
-  site/china_intel/briefing.json  — full `china_intel.briefing.v1`
-  site/china_intel/digest.json    — compact Opus-optimized plain-text rollup
-
-Nothing in any scoring path imports this; it is a one-way fan-in of display/context
-artifacts. See research/CHINA_INTEL_POWERHOUSE.md §5.
+v2 carries the upgrade: importance-ranked + ticker-flagged news, conviction-scored cross-
+surface reads, flagged tickers, "what changed", staleness per surface, and a synthesis-led
+digest. Additive over v1 (legacy keys preserved). See research/CHINA_INTEL_POWERHOUSE.md §5.
 """
 from __future__ import annotations
 
@@ -29,54 +22,49 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
-SCHEMA = "china_intel.briefing.v1"
+SCHEMA = "china_intel.briefing.v2"
+MAX_STALE_OK = 35
 
 DISCLAIMER = (
-    "Context only — not a signal, score or trade. A fan-in of four display/context-only "
-    "China intelligence surfaces (news, central-bank & policy, alternative data, "
-    "divergence radar), bundled for the China Mastermind to read as background. Nothing "
-    "here is an input to any score, signal, regime or allocation."
+    "Context only — not a signal, score or trade. A fan-in of five display/context-only China "
+    "intelligence surfaces (news, central-bank & policy, alternative data, divergence radar, "
+    "central analysis), bundled for the China Mastermind to read as background. Nothing here "
+    "is an input to any score, signal, regime or allocation."
 )
 DISCLAIMER_ZH = (
-    "仅作背景，非信号、评分或交易。这是四个仅供展示／背景的中国情报面板（新闻、央行与政策、"
-    "另类数据、背离雷达）的汇总，供中国 Mastermind 作为背景读取。其中没有任何内容会进入任何"
-    "评分、信号、区制或配置。"
+    "仅作背景，非信号、评分或交易。这是五个仅供展示／背景的中国情报面板（新闻、央行与政策、"
+    "另类数据、背离雷达、中央分析）的汇总，供中国 Mastermind 作为背景读取。其中没有任何内容"
+    "会进入任何评分、信号、区制或配置。"
 )
 
 
-# --------------------------------------------------------------------------- #
-# disk helpers — resolve site/ + read a JSON artifact, None on any failure
-# --------------------------------------------------------------------------- #
 def _site_dir() -> Path:
     sd = Path(config.load()["storage"]["site_dir"])
     return sd if sd.is_absolute() else (config.ROOT / sd)
 
 
 def _read_json(rel: str) -> dict | list | None:
-    """Read a JSON artifact under site/ (or an absolute path). None if absent/bad."""
     try:
         p = Path(rel)
         if not p.is_absolute():
             p = _site_dir() / rel
         if not p.exists():
-            # also try data_dir for non-site artifacts (e.g. data/china_policy/latest.json)
             alt = config.ROOT / rel
             if alt.exists():
                 p = alt
             else:
                 return None
         return json.loads(p.read_text())
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
+    except Exception as e:  # noqa: BLE001
         log.debug("china_intel_bus: read %s failed (%s)", rel, e)
         return None
 
 
 # --------------------------------------------------------------------------- #
-# per-surface compact readers — each returns a small dict or None.
-# Filled in as each phase lands; the keys are the stable contract.
+# per-surface compact readers — enriched (v2)
 # --------------------------------------------------------------------------- #
 def _news_block() -> dict | None:
-    """Phase 1: media-sentiment + event-bus highlights from site/chinanews/*."""
+    """Media-sentiment + importance-ranked, ticker-flagged headlines + basket tags."""
     sent = _read_json("chinanews/sentiment.json")
     feed = _read_json("chinanews/feed.json")
     if not sent and not feed:
@@ -85,108 +73,216 @@ def _news_block() -> dict | None:
     if isinstance(sent, dict):
         out["sentiment_z"] = sent.get("z")
         out["band"] = sent.get("band")
+        out["band_label_en"] = sent.get("label_en")     # fixes the hub zh leak
+        out["band_label_zh"] = sent.get("label_zh")
         out["n_events_7d"] = sent.get("n_events_7d")
     if isinstance(feed, dict):
-        out["top_themes"] = feed.get("top_themes") or []
+        tl = feed.get("theme_label") or {}
+        out["top_themes"] = [{"key": k, "en": (tl.get(k) or [k, k])[0], "zh": (tl.get(k) or [k, k])[1]}
+                             for k in (feed.get("top_themes") or [])]
+        bb = feed.get("by_basket") or {}
+        out["by_basket"] = bb
+        bl = feed.get("basket_label") or {}
+        out["flagged_baskets"] = [
+            {"id": bid, "hits": int(n), "name_en": (bl.get(bid) or [bid, bid])[0],
+             "name_zh": (bl.get(bid) or [bid, bid])[1]}
+            for bid, n in sorted(bb.items(), key=lambda kv: -kv[1])[:6]]
+        out["top_headlines"] = [
+            {"title": it.get("title"), "theme_en": it.get("theme_en"), "theme_zh": it.get("theme_zh"),
+             "tier": it.get("tier"), "baskets": it.get("baskets") or [], "tickers": it.get("tickers") or [],
+             "importance_en": it.get("importance_en"), "importance_zh": it.get("importance_zh"),
+             "surprise": it.get("surprise"), "scheduled_ref": it.get("scheduled_ref"), "url": it.get("url")}
+            for it in (feed.get("items") or [])[:8]]
         out["scheduled_ahead"] = feed.get("scheduled_ahead") or []
+        out["asof"] = feed.get("asof")
     return out or None
 
 
 def _policy_block() -> dict | None:
-    """Phase 2: PBoC stance + corridor + predictions from data/china_policy/latest.json."""
     pol = _read_json("data/china_policy/latest.json")
     if not isinstance(pol, dict):
         return None
-    return {
+    block = {
         "pboc_stance": pol.get("stance"),
-        "lpr_1y": pol.get("lpr_1y"),
-        "lpr_5y": pol.get("lpr_5y"),
-        "rrr": pol.get("rrr"),
-        "fx_reserves": pol.get("fx_reserves"),
-        "last_moves": pol.get("last_moves") or [],
-        "predictions": pol.get("predictions") or [],
+        "stance_label_en": pol.get("stance_en"), "stance_label_zh": pol.get("stance_zh"),
+        "lpr_1y": pol.get("lpr_1y"), "lpr_5y": pol.get("lpr_5y"),
+        "rrr": pol.get("rrr"), "fr007": pol.get("fr007"),
+        "fx_reserves": pol.get("fx_reserves"), "usd_cny": pol.get("usd_cny"),
+        "last_moves": pol.get("last_moves") or [], "predictions": pol.get("predictions") or [],
+        "asof": pol.get("asof"), "stale": pol.get("stale"),
     }
+    # priced-for-easing reconciliation
+    last_moves = pol.get("last_moves") or []
+    has_cuts = any(("cut" in str(m).lower()) or ("降" in str(m)) for m in last_moves)
+    if pol.get("stance") == "neutral" and has_cuts:
+        block["impulse"] = {
+            "label_en": "Easing in progress — stance not yet flipped",
+            "label_zh": "宽松进行中——立场尚未转向",
+            "note_en": "Cumulative RRR/LPR cuts read as easing momentum; the corridor classifier "
+                       "stays neutral until a second leg clears its threshold (leading vs coincident).",
+            "note_zh": "累计降准/降息体现宽松动能；在第二条腿越过阈值前，走廊分类仍为中性（领先 vs 同步）。",
+        }
+    return block
 
 
 def _altdata_block() -> dict | None:
-    """Phase 3: per-ticker convergence extremes from site/chinaaltdata/mastermind.json."""
+    """Rich convergence rows (name + conviction + reasons), not bare codes. Legacy arrays kept."""
     ad = _read_json("chinaaltdata/mastermind.json")
     if not isinstance(ad, dict):
         return None
+    acc = ad.get("convergence_top") or []
+    dist = ad.get("convergence_bottom") or []
+    # tolerate both rich-dict (v2) and bare-string (v1) shapes
+    def codes(rows):
+        return [r.get("ticker") if isinstance(r, dict) else r for r in rows]
+    crowded = [r for r in acc + dist if isinstance(r, dict) and r.get("flags")]
     return {
         "n_triple": ad.get("n_triple"), "n_universe": ad.get("n_universe"),
-        "convergence_top": ad.get("convergence_top") or [],
-        "convergence_bottom": ad.get("convergence_bottom") or [],
+        "accumulate": [r for r in acc if isinstance(r, dict)],
+        "distribute": [r for r in dist if isinstance(r, dict)],
+        "crowded": crowded,
+        "convergence_top": codes(acc), "convergence_bottom": codes(dist),   # legacy
         "crowding_flags": ad.get("crowding_flags") or [],
+        "asof": ad.get("asof"),
     }
 
 
 def _radar_block() -> dict | None:
-    """Phase 4: live divergences from site/chinaradar/radar.json."""
     rad = _read_json("chinaradar/radar.json")
     if not isinstance(rad, dict):
         return None
-    return {"divergences": rad.get("divergences") or []}
+    ledger = _read_json("chinaradar/ledger.json") or {}
+    n_res = ledger.get("n_resolved", 0) if isinstance(ledger, dict) else 0
+    grade = "unproven" if (n_res or 0) < 3 else (
+        "reliable" if (ledger.get("hit_rate") or 0) >= 0.55 else "weak")
+    return {
+        "divergences": rad.get("divergences") or [],
+        "n_active": rad.get("n_active"),
+        "ledger": {"hit_rate": ledger.get("hit_rate"), "n_resolved": int(n_res or 0),
+                   "n_total": ledger.get("n_total"), "grade": grade},
+        "asof": rad.get("asof"),
+    }
+
+
+def _analysis_block() -> dict | None:
+    a = _read_json("china_intel_analysis/analysis.json")
+    if not isinstance(a, dict):
+        return None
+    return {k: a.get(k) for k in
+            ("conviction", "chains", "cross_refs", "what_matters", "what_changed",
+             "flagged_tickers") if a.get(k) is not None}
 
 
 # --------------------------------------------------------------------------- #
-# digest — a compact plain-text rollup (Opus-optimized) over whatever is present
+# digest — synthesis-led, de-duped, names not codes
 # --------------------------------------------------------------------------- #
 def _digest_text(b: dict) -> str:
     parts: list[str] = []
+    a = b.get("analysis") or {}
+    wm = a.get("what_matters") or []
+    if wm:
+        parts.append("WHAT MATTERS MOST:")
+        for w in wm[:3]:
+            parts.append(f"  • {w.get('label_en')} — {w.get('detail_en')}")
+    wc = a.get("what_changed") or {}
+    changed = []
+    if wc.get("stance_change"):
+        changed.append(f"PBoC stance {wc['stance_change']['from']}→{wc['stance_change']['to']}")
+    if wc.get("sentiment_band_change"):
+        changed.append(f"news mood {wc['sentiment_band_change']['from']}→{wc['sentiment_band_change']['to']}")
+    if wc.get("new_radar_fires"):
+        changed.append(f"new radar: {', '.join(wc['new_radar_fires'][:3])}")
+    if wc.get("new_accumulation"):
+        changed.append(f"new accumulation: {', '.join(wc['new_accumulation'][:3])}")
+    if changed:
+        parts.append("CHANGED TODAY: " + " · ".join(changed))
+    conv = a.get("conviction") or []
+    if conv:
+        parts.append("STACKED READS:")
+        for c in conv[:3]:
+            parts.append(f"  • {c.get('sector_en')} ({c.get('radar_sign')}) cc={c.get('context_conviction')} "
+                         f"[{'+'.join(c.get('surfaces_confirming', []))}]")
+    # per-surface lines
     n = b.get("news")
     if n:
         z = n.get("sentiment_z")
         parts.append(f"News: media sentiment {n.get('band','?')}"
                      + (f" (z {z:+.2f})" if isinstance(z, (int, float)) else "")
                      + (f", {n['n_events_7d']} events/7d" if n.get("n_events_7d") else ""))
-        if n.get("top_themes"):
-            parts.append("  themes: " + ", ".join(str(t) for t in n["top_themes"][:4]))
+        if n.get("flagged_baskets"):
+            parts.append("  baskets: " + ", ".join(f"{fb['name_en']}({fb['hits']})"
+                                                   for fb in n["flagged_baskets"][:4]))
     p = b.get("policy")
     if p:
-        parts.append(f"PBoC: stance {p.get('pboc_stance','?')}; "
-                     f"LPR1Y {p.get('lpr_1y','?')} / 5Y {p.get('lpr_5y','?')}; "
-                     f"RRR {p.get('rrr','?')}")
-        if p.get("last_moves"):
-            parts.append("  recent: " + "; ".join(str(m) for m in p["last_moves"][:3]))
-    a = b.get("altdata")
-    if a and a.get("convergence_top"):
+        line = (f"PBoC: stance {p.get('pboc_stance','?')}; LPR1Y {p.get('lpr_1y','?')} / "
+                f"5Y {p.get('lpr_5y','?')}; RRR {p.get('rrr','?')}")
+        if p.get("impulse"):
+            line += f" — {p['impulse']['label_en']}"
+        parts.append(line)
+    ad = b.get("altdata")
+    if ad and ad.get("accumulate"):
         parts.append("Alt-data accumulation: "
-                     + ", ".join(str(x) for x in a["convergence_top"][:5]))
+                     + ", ".join(f"{r.get('name')}({r.get('ticker')})" for r in ad["accumulate"][:4]))
     r = b.get("radar")
     if r and r.get("divergences"):
-        ds = r["divergences"][:5]
-        parts.append("Radar divergences: "
-                     + "; ".join(f"{d.get('sector') or d.get('theme','?')} "
-                                 f"{d.get('sign','?')}" for d in ds))
+        seen, lines = set(), []
+        for d in r["divergences"]:
+            key = f"{d.get('signal_en')}→{d.get('sector')}"
+            if key in seen:
+                continue
+            seen.add(key)
+            lines.append(f"{key} {d.get('sign')}")
+        parts.append("Radar divergences: " + "; ".join(lines[:5])
+                     + f" (ledger: {r.get('ledger',{}).get('grade','?')})")
     if not parts:
         return "China intelligence bus: no surfaces built yet."
     return "\n".join(parts)
 
 
 # --------------------------------------------------------------------------- #
-# public: assemble + build
+# public
 # --------------------------------------------------------------------------- #
+def _staleness(b: dict) -> tuple[dict, int]:
+    sa, worst = {}, 0
+    for k in ("news", "policy", "altdata", "radar"):
+        d = (b.get(k) or {}).get("asof") if isinstance(b.get(k), dict) else None
+        sa[k] = d
+        if d:
+            try:
+                age = (date.today() - date.fromisoformat(str(d)[:10])).days
+                worst = max(worst, age)
+            except (ValueError, TypeError):
+                pass
+    return sa, worst
+
+
 def briefing(asof: date | str | None = None) -> dict:
-    """Assemble the context-only `china_intel.briefing.v1` from on-disk surface emits.
-    Always returns a valid dict (empty sections degrade to None). Never raises."""
+    """Assemble the context-only `china_intel.briefing.v2`. Always valid; never raises."""
     b = {
-        "schema": SCHEMA,
-        "is_context_only": True,
+        "schema": SCHEMA, "is_context_only": True,
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "asof": str(asof) if asof else str(date.today()),
-        "news": None, "policy": None, "altdata": None, "radar": None,
+        "news": None, "policy": None, "altdata": None, "radar": None, "analysis": None,
         "disclaimer": DISCLAIMER, "disclaimer_zh": DISCLAIMER_ZH,
     }
     for key, fn in (("news", _news_block), ("policy", _policy_block),
-                    ("altdata", _altdata_block), ("radar", _radar_block)):
+                    ("altdata", _altdata_block), ("radar", _radar_block),
+                    ("analysis", _analysis_block)):
         try:
             b[key] = fn()
-        except Exception as e:  # noqa: BLE001 — degrade per-surface, never fatal
+        except Exception as e:  # noqa: BLE001
             log.debug("china_intel_bus: %s block failed (%s)", key, e)
             b[key] = None
+    # hoist synthesis to the top level for the hub + bot
+    a = b.get("analysis") or {}
+    b["conviction"] = a.get("conviction") or []
+    b["cross_surface"] = [c for c in (a.get("conviction") or []) if c.get("n_surfaces", 0) >= 2]
+    b["flagged_tickers"] = a.get("flagged_tickers") or []
+    b["what_changed"] = a.get("what_changed") or {}
+    b["salience"] = a.get("what_matters") or []
+    b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar", "analysis") if b.get(k)]
+    b["surface_asof"], b["max_staleness_days"] = _staleness(b)
     b["digest"] = _digest_text(b)
-    b["surfaces_present"] = [k for k in ("news", "policy", "altdata", "radar") if b.get(k)]
     return b
 
 
@@ -199,12 +295,14 @@ def build() -> dict | None:
         (outdir / "briefing.json").write_text(
             json.dumps(b, ensure_ascii=False, separators=(",", ":"), default=str))
         (outdir / "digest.json").write_text(json.dumps(
-            {"schema": "china_intel.digest.v1", "is_context_only": True,
+            {"schema": "china_intel.digest.v2", "is_context_only": True,
              "generated_utc": b["generated_utc"], "asof": b["asof"],
-             "surfaces_present": b["surfaces_present"], "text": b["digest"]},
+             "surfaces_present": b["surfaces_present"],
+             "max_staleness_days": b["max_staleness_days"], "text": b["digest"]},
             ensure_ascii=False, separators=(",", ":"), default=str))
-        log.info("china_intel_bus: wrote briefing (%d surfaces)", len(b["surfaces_present"]))
+        log.info("china_intel_bus: wrote briefing v2 (%d surfaces, %d conviction)",
+                 len(b["surfaces_present"]), len(b["conviction"]))
         return b
-    except Exception as e:  # noqa: BLE001 — additive, never fatal
+    except Exception as e:  # noqa: BLE001
         log.error("china_intel_bus build failed (%s)", e)
         return None

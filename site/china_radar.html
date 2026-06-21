@@ -50,6 +50,9 @@
   .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
   .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
   .dcard .hyp { font-size:12.5px; line-height:1.5; border-left:2px solid var(--link); padding-left:9px; margin-top:8px; opacity:.92; }
+  .dcard .cvx { margin-left:auto; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--link); }
+  .dcard .cand { font-size:11.5px; color:var(--muted); margin-top:7px; }
+  .dcard .hd { justify-content:flex-start; }
   .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:8px; }
   .strength > i { display:block; height:100%; background:var(--link); }
   .inline-list { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0; }
@@ -194,74 +197,64 @@
   <div class="callout"><span class="l-en">How to read: each card pairs a free macro/policy/flow signal with the sector it transmits to. POSITIVE = support improving while price still lags (potential catch-up); NEGATIVE = support fading while price still leads (potential vulnerability). Same-direction pairs stay silent. Every divergence is a dated, falsifiable hypothesis the ledger scores.</span><span class="l-zh">解读：每张卡片将一个免费宏观/政策/资金信号与其传导的板块配对。正向＝支撑改善但价格仍滞后（潜在补涨）；负向＝支撑转弱但价格仍领先（潜在脆弱）。同向配对保持静默。每个背离都是有日期、可证伪的假设，由台账评分。</span></div>
 
   <!-- ===== active divergences ===== -->
-  <h2 class="sec">📡 <span class="l-en">Active divergences</span><span class="l-zh">活跃背离</span> <span style="font-size:12px;color:var(--muted)">6/10</span></h2>
+  <h2 class="sec">📡 <span class="l-en">Active divergences</span><span class="l-zh">活跃背离</span> <span style="font-size:12px;color:var(--muted)">4/8</span></h2>
   
   <div class="dcards">
     
     <div class="dcard positive">
       <div class="hd">
         <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
-        <span class="pair"><span class="l-en">PPI reflation</span><span class="l-zh">PPI再通胀</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span>
-      </div>
-      <div class="det"><span class="l-en">PPI YoY +3.9% (+4.8 3m, reflation tilt)</span><span class="l-zh">PPI同比 +3.9%（3月+4.8，再通胀倾向）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-8.6%</b> <span class="mut">(z -1.08)</span></div>
-      <div class="strength"><i style="width:54%"></i></div>
-      <div class="hyp">🎯 <span class="l-en">If PPI reflation is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若PPI再通胀领先，有色金属未来约3个月应跑赢沪深300。</span></div>
-    </div>
-    
-    <div class="dcard positive">
-      <div class="hd">
-        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
         <span class="pair"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span>
+        <span class="cvx">27</span>
       </div>
       <div class="det"><span class="l-en">Mfg PMI 50.0 (+1.0 3m)</span><span class="l-zh">制造业PMI 50.0（3月+1.0）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-8.6%</b> <span class="mut">(z -1.08)</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-8.6%</b> <span class="mut">(z -1.08)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
       <div class="strength"><i style="width:27%"></i></div>
-      <div class="hyp">🎯 <span class="l-en">If Mfg PMI is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，有色金属未来约3个月应跑赢沪深300。</span></div>
-    </div>
-    
-    <div class="dcard positive">
-      <div class="hd">
-        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
-        <span class="pair"><span class="l-en">PPI reflation</span><span class="l-zh">PPI再通胀</span> → <span class="l-en">Coal</span><span class="l-zh">煤炭</span></span>
-      </div>
-      <div class="det"><span class="l-en">PPI YoY +3.9% (+4.8 3m, reflation tilt)</span><span class="l-zh">PPI同比 +3.9%（3月+4.8，再通胀倾向）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-14.5%</b> <span class="mut">(z -0.53)</span></div>
-      <div class="strength"><i style="width:27%"></i></div>
-      <div class="hyp">🎯 <span class="l-en">If PPI reflation is leading, Coal should outperform CSI 300 over ~3 months.</span><span class="l-zh">若PPI再通胀领先，煤炭未来约3个月应跑赢沪深300。</span></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>中国铝业</b> (601600.SS) · <b>宏桥控股</b> (002379.SZ) · <b>盛和资源</b> (600392.SS)</div>
+      <div class="hyp"><span class="l-en">If Mfg PMI is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，有色金属未来约3个月应跑赢沪深300。</span></div>
     </div>
     
     <div class="dcard positive">
       <div class="hd">
         <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
         <span class="pair"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span>
+        <span class="cvx">24</span>
       </div>
       <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-12.4%</b> <span class="mut">(z -0.94)</span></div>
-      <div class="strength"><i style="width:23%"></i></div>
-      <div class="hyp">🎯 <span class="l-en">If PBoC easing is leading, Brokers should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，券商未来约3个月应跑赢沪深300。</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-12.4%</b> <span class="mut">(z -0.94)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:24%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>国信证券</b> (002736.SZ) · <b>东方财富</b> (300059.SZ) · <b>中信建投</b> (601066.SS)</div>
+      <div class="hyp"><span class="l-en">If PBoC easing is leading, Brokers should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，券商未来约3个月应跑赢沪深300。</span></div>
     </div>
     
     <div class="dcard positive">
       <div class="hd">
         <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
         <span class="pair"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span>
+        <span class="cvx">19</span>
       </div>
       <div class="det"><span class="l-en">Mfg PMI 50.0 (+1.0 3m)</span><span class="l-zh">制造业PMI 50.0（3月+1.0）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-4.2%</b> <span class="mut">(z -0.76)</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-4.2%</b> <span class="mut">(z -0.76)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
       <div class="strength"><i style="width:19%"></i></div>
-      <div class="hyp">🎯 <span class="l-en">If Mfg PMI is leading, New-energy vehicle should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，新能源车未来约3个月应跑赢沪深300。</span></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>格林美</b> (002340.SZ) · <b>比亚迪</b> (002594.SZ) · <b>国轩高科</b> (002074.SZ)</div>
+      <div class="hyp"><span class="l-en">If Mfg PMI is leading, New-energy vehicle should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，新能源车未来约3个月应跑赢沪深300。</span></div>
     </div>
     
     <div class="dcard positive">
       <div class="hd">
         <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
         <span class="pair"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span>
+        <span class="cvx">16</span>
       </div>
       <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
-      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-21.8%</b> <span class="mut">(z -0.63)</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-21.8%</b> <span class="mut">(z -0.63)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
       <div class="strength"><i style="width:16%"></i></div>
-      <div class="hyp">🎯 <span class="l-en">If PBoC easing is leading, Real estate should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，房地产未来约3个月应跑赢沪深300。</span></div>
+      
+      <div class="hyp"><span class="l-en">If PBoC easing is leading, Real estate should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，房地产未来约3个月应跑赢沪深300。</span></div>
     </div>
     
   </div>
@@ -280,10 +273,10 @@
   
   <h2 class="sec">📒 <span class="l-en">Falsification ledger</span><span class="l-zh">证伪台账</span></h2>
   <div class="led-stat">
-    <span><b>6</b> <span class="l-en">logged</span><span class="l-zh">已记录</span></span>
+    <span><b>4</b> <span class="l-en">logged</span><span class="l-zh">已记录</span></span>
     <span><b>0</b> <span class="l-en">resolved</span><span class="l-zh">已结</span></span>
     
-    <span>6 <span class="l-en">open</span><span class="l-zh">未结</span></span>
+    <span>4 <span class="l-en">open</span><span class="l-zh">未结</span></span>
   </div>
   
   <table class="data">
@@ -292,7 +285,7 @@
     
       <tr>
         <td>2026-06-20</td>
-        <td>pboc_easing → <span class="l-en">Real estate</span><span class="l-zh">Real estate</span></td>
+        <td>pboc_easing → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></td>
         <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
         <td>—</td>
         <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
@@ -300,7 +293,7 @@
     
       <tr>
         <td>2026-06-20</td>
-        <td>pboc_easing → <span class="l-en">Brokers</span><span class="l-zh">Brokers</span></td>
+        <td>pboc_easing → <span class="l-en">Brokers</span><span class="l-zh">券商</span></td>
         <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
         <td>—</td>
         <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
@@ -308,7 +301,7 @@
     
       <tr>
         <td>2026-06-20</td>
-        <td>pmi → <span class="l-en">Nonferrous metals</span><span class="l-zh">Nonferrous metals</span></td>
+        <td>pmi → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></td>
         <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
         <td>—</td>
         <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
@@ -316,23 +309,7 @@
     
       <tr>
         <td>2026-06-20</td>
-        <td>pmi → <span class="l-en">New-energy vehicle</span><span class="l-zh">New-energy vehicle</span></td>
-        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
-        <td>—</td>
-        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
-      </tr>
-    
-      <tr>
-        <td>2026-06-20</td>
-        <td>ppi → <span class="l-en">Nonferrous metals</span><span class="l-zh">Nonferrous metals</span></td>
-        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
-        <td>—</td>
-        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
-      </tr>
-    
-      <tr>
-        <td>2026-06-20</td>
-        <td>ppi → <span class="l-en">Coal</span><span class="l-zh">Coal</span></td>
+        <td>pmi → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></td>
         <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
         <td>—</td>
         <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>

@@ -12,13 +12,75 @@ from collectors import china_news_wire as wire
 from engine import china_news_intel as ni
 
 
-# ---- theme classification -------------------------------------------------- #
+# ---- theme classification (geopolitics now split china_geo / global_geo) ---- #
 def test_classify_theme_buckets():
     assert ni.classify_theme("央行降准释放流动性 LPR下调") == "monetary"
     assert ni.classify_theme("美国加征关税 贸易战升级") == "trade"
-    assert ni.classify_theme("台海局势紧张 军事演习") == "geopolitics"
+    assert ni.classify_theme("台海局势紧张") == "china_geo"
+    assert ni.classify_theme("以色列与伊朗冲突升级") == "global_geo"   # demoted, not china_geo
     assert ni.classify_theme("国产替代加速 信创落地") == "industrial_policy"
     assert ni.classify_theme("今天天气不错适合散步") is None
+
+
+# ---- ticker flagging (the 2,373-name map) ---------------------------------- #
+def test_tag_tickers_longest_match():
+    assert ni.tag_tickers("贵州茅台一季度业绩预增") == ["600519.SS"]
+    multi = ni.tag_tickers("中信证券与北方稀土午后大涨")
+    assert "600030.SS" in multi and "600111.SS" in multi
+    assert ni.tag_tickers("美联储加息预期升温") == []
+
+
+# ---- cn_defense anchor gate (kills the 8/8 Mid-East false positives) -------- #
+def test_cn_defense_requires_china_anchor():
+    assert "cn_defense" not in ni.tag_baskets("以色列军方发射导弹击中加沙")   # foreign war
+    assert "cn_defense" in ni.tag_baskets("中国军工航天领域取得重大突破")      # China-anchored
+
+
+def test_basket_ids_subset_of_membership():
+    from engine import china_basket_spine as sp
+    ours = {b[0] for b in ni.CN_BASKETS}
+    assert ours <= set(sp.basket_ids())          # no dead baskets (cn_property dropped)
+    assert "cn_property" not in ours
+
+
+# ---- importance scoring ----------------------------------------------------- #
+def test_importance_policy_surprise_outranks_fluff():
+    hi = ni.importance_score(1, "LPR@2026-06-20", "2026-06-20", "monetary", 1, "央行降准降息", 0)
+    lo = ni.importance_score(3, "", "2026-06-20", "markets", 0, "某公司日常公告", 0)
+    assert hi > lo
+    assert ni.importance_band(hi)[0] == "High"
+    assert ni.importance_band(lo)[0] == "Routine"
+
+
+def test_is_surprise_and_time_decay():
+    assert ni.is_surprise("LPR@2026-06-20", "2026-06-20") is True
+    assert ni.is_surprise("LPR@2026-06-20", "2026-06-19") is False
+    assert ni.is_surprise("", "2026-06-20") is False
+    fresh = ni.importance_score(1, "", "2026-06-20", "monetary", 0, "x", 0)
+    stale = ni.importance_score(1, "", "2026-06-20", "monetary", 0, "x", 96)
+    assert fresh > stale          # time decay
+
+
+def test_item_sentiment_sign():
+    assert ni._item_sentiment("增长 改革 利好") > 0
+    assert ni._item_sentiment("风险 危机 衰退") < 0
+    assert ni._item_sentiment("某中性公告") == 0.0
+
+
+# ---- near-dup clustering ---------------------------------------------------- #
+def test_cluster_events_merges_near_dups():
+    recs = [
+        {"title": "央行降准0.5个百分点", "theme": "monetary", "source_tier": 2,
+         "first_seen_utc": "2026-06-20T01:00:00Z", "seendate": "2026-06-20"},
+        {"title": "央行宣布降准0.5个百分点", "theme": "monetary", "source_tier": 1,
+         "first_seen_utc": "2026-06-20T02:00:00Z", "seendate": "2026-06-20"},
+        {"title": "A股午后拉升", "theme": "markets", "source_tier": 3,
+         "first_seen_utc": "2026-06-20T03:00:00Z", "seendate": "2026-06-20"},
+    ]
+    cl = ni.cluster_events(recs)
+    assert len(cl) == 2                                   # the two 降准 stories merge
+    merged = [c for c in cl if c["dup_count"] > 1][0]
+    assert merged["source_tier"] == 1                     # representative = best source tier
 
 
 def test_narrative_buckets_precede_generic():
