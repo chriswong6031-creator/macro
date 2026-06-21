@@ -602,6 +602,27 @@ def _discovery_dossier(cand: dict, catalyst: dict | None) -> dict:
 # --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
+def _diversify_by_source(items: list, n: int, per_source: int, src) -> list:
+    """Top `n` from a score-ordered list while capping any single source to `per_source`,
+    so one prolific feed (e.g. 100+ insider clusters pinned at the score cap) can't
+    monopolize a surface. Under-fill tops up from the leftovers in score order. PURE."""
+    picked, counts, seen = [], {}, set()
+    for i, it in enumerate(items):
+        s = src(it)
+        if counts.get(s, 0) < per_source:
+            picked.append(it)
+            counts[s] = counts.get(s, 0) + 1
+            seen.add(i)
+            if len(picked) >= n:
+                return picked
+    for i, it in enumerate(items):                       # under-filled → ignore the cap
+        if i not in seen:
+            picked.append(it)
+            if len(picked) >= n:
+                break
+    return picked
+
+
 def build(bundle: dict | None, policy: dict | None, macro_context: dict | None = None,
           today: date | None = None, top: int = 30, special: dict | None = None,
           discovery: dict | None = None) -> dict:
@@ -686,7 +707,8 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
         "track_rows": [{"t": d["ticker"], "opp": d["opportunity_score"],
                         "edge": d["edge_remaining"], "stage": d["stage"], "lean": d["lean"]}
                        for d in dossiers],
-        "discovery": discovery_list[:14],
+        "discovery": _diversify_by_source(
+            discovery_list, 14, 5, src=lambda d: (d.get("discovery") or {}).get("source")),
         "emerging": [_compact(d) for d in emerging_hero[:14]],
         "exhausted": [_compact(d) for d in exhausted[:12]],
         "catalysts": [_compact(d) for d in catalysts[:12]],

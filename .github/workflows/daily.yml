@@ -254,6 +254,13 @@ jobs:
           MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
           MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
         run: python -m scripts.build_options_flow || true
+      - name: single-name IV skew (build_options_skew)
+        # after build_gex_board: reads the per-strike polygon_gex chain snapshot ->
+        # accrues 25Δ-put-over-50Δ-call skew per name into data/options_skew/snapshots.parquet
+        # (the apparatus a return-predictor validation needs) + site/options_skew/latest.json.
+        # DISPLAY-ONLY: the gate (data/options_skew/validation_gate.json) stays closed until the
+        # panel is wide/long enough. Additive + graceful; returns 0 on error.
+        run: python -m scripts.build_options_skew || true
       - name: factor seasonality (build_seasonality)
         # after build_site, before build_vector: reads data/french/factors.parquet
         # (Ken French monthly factors, collected in the collect job) and writes

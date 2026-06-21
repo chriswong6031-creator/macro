@@ -274,10 +274,208 @@ def _read_insider_panel():
 
 
 # --------------------------------------------------------------------------- #
+# Feed 4 — activist beneficial-ownership (Schedule 13D initiation / 13G→13D flip)
+# --------------------------------------------------------------------------- #
+# An activist 13D is a hard, dated smart-money event — the filer has crossed 5% with
+# CONTROL intent (board seats / breakup / sale), which the literature (Brav-Jiang-
+# Partnoy-Thomas 2008) shows underreacts initially. It IS leading (the stake is fresh),
+# but slightly lagged by the ≤5-biz-day filing window, and event-sparse — so it's a
+# CONFIRMER. The cap is raised to the LEADING tier only if the post-2024 event study
+# (scripts/validate_activist_ownership.py) certified the drift; else it's a measuring
+# confirmer capped like insiders. The custodian/index-aggregation guard already lives
+# in engine.beneficial_ownership (only state ∈ {activist, flip} reach here).
+_ACTIVIST_CAP_SCORED = 0.62      # validated leading event (still below radar_quiet ~0.9)
+_ACTIVIST_CAP_MEASURING = 0.45   # not-yet-validated confirmer (insider tier)
+_ACTIVIST_FRESH_DAYS = 63        # coherent with the ≤63d drift window — a stale 13D isn't a discovery
+
+
+_ACTIVIST_MAX_EMIT = 20          # a curated discovery surface, not the full 13D firehose
+
+
+def scan_activist_ownership(regime: dict | None, gate: dict | None = None,
+                            today: date | None = None,
+                            fresh_days: int = _ACTIVIST_FRESH_DAYS,
+                            max_emit: int = _ACTIVIST_MAX_EMIT) -> list[dict]:
+    """Per-ticker activist-ownership candidates from the beneficial-ownership regime map
+    ({ticker: {state, signal, n_13d, is_flip, latest_date, latest_filer, ...}}). Only the
+    HIGH-signal escalations — activist 13D and 13G→13D flips by a NON-custodian filer —
+    surface (passive/custodial dropped upstream + here). `gate` is the event-study verdict
+    (data/beneficial_ownership/validation_gate.json); a SCORED gate lifts the cap to the
+    leading tier. US 13D base-rate is high, so only the freshest/strongest `max_emit` are
+    emitted (the count available is logged, not silently hidden). PURE."""
+    import pandas as pd
+    out: list[dict] = []
+    if not regime:
+        return out
+    today = today or date.today()
+    scored = bool((gate or {}).get("scored"))
+    lead_h = (gate or {}).get("lead_horizon")
+    cap = _ACTIVIST_CAP_SCORED if scored else _ACTIVIST_CAP_MEASURING
+    for tk, reg in regime.items():
+        if not isinstance(reg, dict) or reg.get("signal") != "high":
+            continue                                    # only activist / flip escalations
+        if reg.get("latest_filer_type") == "passive_giant":
+            continue                                    # custodian/index 13D = aggregation, not activism
+        t = (tk or "").upper().strip()
+        if not _TICKER_OK.match(t) or t in _JUNK_TICKERS:
+            continue
+        # recency — a fresh stake; drop stale filings (drift is captured in ≤63d)
+        age_days = None
+        try:
+            ld = pd.to_datetime(reg.get("latest_date"), errors="coerce")
+            if pd.notna(ld):
+                age_days = int((pd.Timestamp(today) - ld).days)
+        except Exception:  # noqa: BLE001
+            age_days = None
+        if age_days is not None and age_days > fresh_days:
+            continue
+        is_flip = bool(reg.get("is_flip"))
+        n_13d = int(reg.get("n_13d") or 0)
+        # within the cap: a 13G→13D flip (the highest-signal escalation, Brav-Jiang) earns
+        # near the cap; a single plain activist 13D sits a tier below; fresher = stronger;
+        # multiple 13D filers = a real campaign, not a single dabble.
+        base = 1.0 if is_flip else 0.78
+        recency = 1.0 if age_days is None else _clamp01(1.0 - age_days / float(max(fresh_days, 1)))
+        campaign = _clamp01((n_13d - 1) / 3.0)
+        score = round(cap * _clamp01(0.62 * base + 0.28 * recency + 0.10 * campaign), 3)
+
+        filer = reg.get("latest_filer")
+        filer_txt = f" ({filer})" if filer and str(filer).lower() != "none" else ""
+        kind = "13G→13D flip — escalation to active" if is_flip else "activist 13D"
+        age_txt = f" {age_days}d ago" if age_days is not None else ""
+        tag = (f"validated leading event (peak {lead_h}d drift)" if scored
+               else "measuring — not yet event-study-validated")
+        out.append({
+            "ticker": t, "source": "activist_ownership",
+            "disc_score": score, "state": reg.get("state"), "is_flip": is_flip,
+            "n_13d": n_13d, "age_days": age_days, "latest_filer": filer,
+            "validated": scored, "lead_horizon": lead_h if scored else None,
+            "reason": (f"{kind}{filer_txt} filed{age_txt} · {tag}"
+                       " · ≤5-biz-day filing lag"),
+        })
+    out.sort(key=lambda d: (d["disc_score"], d.get("n_13d") or 0), reverse=True)
+    if len(out) > max_emit:
+        log.info("activist_ownership: %d fresh activist names, emitting top %d", len(out), max_emit)
+        out = out[:max_emit]
+    return out
+
+
+def _load_activist_gate() -> dict | None:
+    """The post-2024 13D event-study verdict (degrade to None → 'measuring')."""
+    try:
+        import json
+        p = config.ROOT / "data" / "beneficial_ownership" / "validation_gate.json"
+        return json.loads(p.read_text()) if p.exists() else None
+    except Exception as e:  # noqa: BLE001
+        log.debug("activist gate read failed (%s)", e)
+        return None
+
+
+def _read_ownership_regime() -> dict | None:
+    try:
+        from engine.beneficial_ownership import load_regime
+        return load_regime() or None
+    except Exception as e:  # noqa: BLE001
+        log.debug("ownership regime read failed (%s)", e)
+        return None
+
+
+# --------------------------------------------------------------------------- #
+# Feed 5 — index-reconstitution forced flow (gate-controlled; dormant until validated)
+# --------------------------------------------------------------------------- #
+# A name ADDED to the S&P 500/400/600 is force-bought by index funds — a mechanical,
+# leading flow. BUT the classic index effect (Shleifer 1986) is widely documented to
+# have DECAYED post-2010 (crowded + patient execution), so this leg ships OFF and only
+# activates if scripts/validate_index_reconstitution.py certifies a tradeable
+# post-effective ADD drift on the modern regime. Deletes are forced SELLING (a name to
+# avoid) — never surfaced as a long discovery.
+_RECON_CAP = 0.55
+_RECON_FRESH_DAYS = 15           # only names added within the last ~3 trading weeks
+_INDEX_TIER = {"sp500": 1.0, "sp400": 0.72, "sp600": 0.55}
+
+
+def scan_index_reconstitution(changes: list | None, gate: dict | None = None,
+                              today: date | None = None,
+                              fresh_days: int = _RECON_FRESH_DAYS) -> list[dict]:
+    """Fresh S&P index ADDITIONS as forced-flow discovery candidates. GATE-CONTROLLED:
+    returns [] (dormant) unless the event study certified a tradeable post-effective add
+    drift (gate['add_scored']) — the honest default, since the effect has largely decayed.
+    `changes` = [{ticker, d (effective ISO date), kind, index}]. PURE."""
+    import pandas as pd
+    out: list[dict] = []
+    if not changes or not (gate or {}).get("add_scored"):
+        return out                                  # decayed/unvalidated → no scoring injection
+    today = today or date.today()
+    for ch in changes:
+        if not isinstance(ch, dict) or ch.get("kind") != "add":
+            continue
+        t = (ch.get("ticker") or "").upper().strip()
+        if not _TICKER_OK.match(t) or t in _JUNK_TICKERS:
+            continue
+        age = None
+        try:
+            d = pd.to_datetime(ch.get("d"), errors="coerce")
+            if pd.notna(d):
+                age = int((pd.Timestamp(today) - d).days)
+        except Exception:  # noqa: BLE001
+            age = None
+        if age is None or age < 0 or age > fresh_days:
+            continue
+        ix = ch.get("index")
+        tier = _INDEX_TIER.get(ix, 0.5)
+        recency = _clamp01(1.0 - age / float(max(fresh_days, 1)))
+        score = round(_RECON_CAP * (0.6 * tier + 0.4 * recency), 3)
+        out.append({
+            "ticker": t, "source": "index_reconstitution",
+            "disc_score": score, "index": ix, "age_days": age,
+            "reason": (f"added to {str(ix).upper().replace('SP', 'S&P ')} {age}d ago"
+                       " · forced index-fund buying (validated post-effective drift)"),
+        })
+    out.sort(key=lambda d: (d["disc_score"], -(d.get("age_days") or 0)), reverse=True)
+    return out
+
+
+def _read_recent_index_changes(today: date | None = None,
+                               lookback_days: int = 21) -> list[dict]:
+    """Recent S&P 500/400/600 add & delete events from the PIT membership history."""
+    try:
+        import pandas as pd
+        p = config.ROOT / "data" / "breadth" / "sp1500_pit_membership.parquet"
+        if not p.exists():
+            return []
+        pit = pd.read_parquet(p)
+        today = today or date.today()
+        cut = pd.Timestamp(today) - pd.Timedelta(days=lookback_days)
+        out = []
+        for col, kind in (("start_date", "add"), ("end_date", "delete")):
+            sub = pit.dropna(subset=[col]).copy()
+            sub["_d"] = pd.to_datetime(sub[col], errors="coerce")
+            sub = sub[sub["_d"] >= cut]
+            for r in sub.itertuples(index=False):
+                out.append({"ticker": str(r.ticker).upper(), "d": str(r._d.date()),
+                            "kind": kind, "index": str(r.src)})
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.debug("index-change read failed (%s)", e)
+        return []
+
+
+def _load_recon_gate() -> dict | None:
+    try:
+        import json
+        p = config.ROOT / "data" / "index_reconstitution" / "validation_gate.json"
+        return json.loads(p.read_text()) if p.exists() else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+# --------------------------------------------------------------------------- #
 # build — merge feeds, mark which candidates are OFF-desk (not in the hub universe)
 # --------------------------------------------------------------------------- #
 def build(radar_tickers: list | None, obligations=None, insider=None,
-          bundle_universe: set | None = None, today: date | None = None) -> dict:
+          bundle_universe: set | None = None, today: date | None = None,
+          ownership=None, ownership_gate=None,
+          index_changes=None, recon_gate=None) -> dict:
     """Scan the leading feeds and return discovery candidates keyed by ticker, each tagged
     off_desk (not already in the hub's bundle universe) or on_desk (a corroborating boost).
     Never raises."""
@@ -286,9 +484,11 @@ def build(radar_tickers: list | None, obligations=None, insider=None,
     quiet = scan_radar_quiet(radar_tickers)
     fed = scan_federal_velocity(obligations)
     ins = scan_insider_clusters(insider)
+    act = scan_activist_ownership(ownership, ownership_gate, today)
+    recon = scan_index_reconstitution(index_changes, recon_gate, today)
 
     by_ticker: dict[str, dict] = {}
-    for c in quiet + fed + ins:
+    for c in quiet + fed + ins + act + recon:
         t = c["ticker"]
         if not t:
             continue
@@ -300,7 +500,8 @@ def build(radar_tickers: list | None, obligations=None, insider=None,
     # secondary magnitude key so ties at a capped disc_score (esp. insider 0.45) keep the
     # STRONGEST by breadth/$/channels, not an arbitrary alphabetical subset at the cap boundary
     def _mag(d):
-        return d.get("opp_buyers") or d.get("recent_usd") or d.get("n_channels") or 0
+        return (d.get("opp_buyers") or d.get("recent_usd") or d.get("n_channels")
+                or d.get("n_13d") or 0)
     cands = sorted(by_ticker.values(), key=lambda d: (d["disc_score"], _mag(d)), reverse=True)
     off_desk = [c for c in cands if c["off_desk"]]
     return {
@@ -311,7 +512,8 @@ def build(radar_tickers: list | None, obligations=None, insider=None,
         "off_desk": off_desk,
         "n": len(cands), "n_off_desk": len(off_desk),
         "sources": {"radar_quiet": len(quiet), "federal_velocity": len(fed),
-                    "insider_cluster": len(ins)},
+                    "insider_cluster": len(ins), "activist_ownership": len(act),
+                    "index_reconstitution": len(recon)},
     }
 
 
@@ -335,4 +537,6 @@ def load_and_build(bundle_universe: set | None = None, today: date | None = None
             radar = (json.loads(p.read_text()) or {}).get("tickers")
     except Exception as e:  # noqa: BLE001
         log.warning("intel_discovery: radar read failed (%s)", e)
-    return build(radar, _read_obligations(), _read_insider_panel(), bundle_universe, today)
+    return build(radar, _read_obligations(), _read_insider_panel(), bundle_universe, today,
+                 ownership=_read_ownership_regime(), ownership_gate=_load_activist_gate(),
+                 index_changes=_read_recent_index_changes(today), recon_gate=_load_recon_gate())

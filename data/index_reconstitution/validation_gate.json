@@ -1,0 +1,132 @@
+{
+  "schema": "index_reconstitution.gate.v1",
+  "generated_at": "2026-06-21 11:50 UTC",
+  "window_start": "2019-01-01",
+  "recent_start": "2023-01-01",
+  "scored": false,
+  "add_scored": false,
+  "del_scored": false,
+  "weight": 0.0,
+  "results": {
+    "add": {
+      "n": 1541,
+      "pre_runup": {
+        "n": 1254,
+        "n_months": 88,
+        "mean_abn": 0.0204,
+        "hit_rate": 0.559,
+        "hac_t": 4.5,
+        "p": 0.0
+      },
+      "post": {
+        "5": {
+          "n": 1309,
+          "n_months": 88,
+          "mean_abn": -0.0001,
+          "hit_rate": 0.477,
+          "hac_t": 0.81,
+          "p": 0.4202
+        },
+        "10": {
+          "n": 1309,
+          "n_months": 88,
+          "mean_abn": -0.0053,
+          "hit_rate": 0.413,
+          "hac_t": 0.63,
+          "p": 0.5303
+        },
+        "21": {
+          "n": 1305,
+          "n_months": 87,
+          "mean_abn": -0.0073,
+          "hit_rate": 0.438,
+          "hac_t": -0.53,
+          "p": 0.5988
+        }
+      },
+      "post_recent_21": {
+        "n": 466,
+        "n_months": 39,
+        "mean_abn": -0.0014,
+        "hit_rate": 0.479,
+        "hac_t": -0.78,
+        "p": 0.434
+      }
+    },
+    "delete": {
+      "n": 952,
+      "pre_runup": {
+        "n": 536,
+        "n_months": 80,
+        "mean_abn": -0.019,
+        "hit_rate": 0.394,
+        "hac_t": -2.0,
+        "p": 0.0453
+      },
+      "post": {
+        "5": {
+          "n": 563,
+          "n_months": 83,
+          "mean_abn": 0.0081,
+          "hit_rate": 0.508,
+          "hac_t": 2.14,
+          "p": 0.0325
+        },
+        "10": {
+          "n": 563,
+          "n_months": 83,
+          "mean_abn": 0.0069,
+          "hit_rate": 0.501,
+          "hac_t": 2.11,
+          "p": 0.0349
+        },
+        "21": {
+          "n": 560,
+          "n_months": 82,
+          "mean_abn": 0.0139,
+          "hit_rate": 0.511,
+          "hac_t": 1.75,
+          "p": 0.0802
+        }
+      },
+      "post_recent_21": {
+        "n": 323,
+        "n_months": 37,
+        "mean_abn": 0.0025,
+        "hit_rate": 0.52,
+        "hac_t": 1.02,
+        "p": 0.3066
+      }
+    }
+  },
+  "add_by_index_post21": {
+    "sp500": {
+      "n": 151,
+      "n_months": 69,
+      "mean_abn": -0.0079,
+      "hit_rate": 0.457,
+      "hac_t": -0.41,
+      "p": 0.6823
+    },
+    "sp400": {
+      "n": 288,
+      "n_months": 83,
+      "mean_abn": 0.0161,
+      "hit_rate": 0.517,
+      "hac_t": 1.09,
+      "p": 0.2743
+    },
+    "sp600": {
+      "n": 866,
+      "n_months": 73,
+      "mean_abn": -0.0151,
+      "hit_rate": 0.408,
+      "hac_t": -1.27,
+      "p": 0.2021
+    }
+  },
+  "runup_alive": true,
+  "min_events": 40,
+  "t_bar": 2.0,
+  "note": "the pre-effective ADD run-up is still significant (+0.0204, t=4.5), but it is front-run INTO the effective date and REVERSES after \u2014 so a surfaced (already-effective) add has no tradeable post-effective edge. \u2192 leg DORMANT (would need an announcement feed to trade the run-up)"
+}
