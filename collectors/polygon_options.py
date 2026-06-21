@@ -160,22 +160,36 @@ class PolygonOptions(Adapter):
         return parse_chain(results, symbol, spot, asof,
                           window_pct=w, max_expiry_days=int(gx["max_expiry_days"]))
 
+    def _one_chain(self, sym: str, asof: date) -> pd.DataFrame | None:
+        """Spot + chain for ONE underlying (the unit of work parallelised by snapshot()).
+        Returns None on no-spot / empty-chain / error so a failed symbol just drops out."""
+        try:
+            s = self.spot(sym)
+            if not s:
+                log.warning("polygon: no spot for %s — skipping", sym)
+                return None
+            ch = self.chain(sym, s, asof)
+            if ch.empty:
+                log.warning("polygon: empty chain for %s", sym)
+                return None
+            log.info("polygon: %s spot=%.2f rows=%d", sym, s, len(ch))
+            return ch
+        except Exception as e:  # noqa: BLE001 — partial coverage still useful
+            log.warning("polygon: %s chain failed: %s", sym, e)
+            return None
+
     def snapshot(self, symbols: list[str], asof: date) -> pd.DataFrame:
-        """Spot + chain for each underlying -> one stacked per-strike frame for the
-        day. Partial coverage is fine — a failed symbol is logged and skipped."""
-        frames = []
-        for sym in symbols:
-            try:
-                s = self.spot(sym)
-                if not s:
-                    log.warning("polygon: no spot for %s — skipping", sym)
-                    continue
-                ch = self.chain(sym, s, asof)
-                if ch.empty:
-                    log.warning("polygon: empty chain for %s", sym)
-                    continue
-                frames.append(ch)
-                log.info("polygon: %s spot=%.2f rows=%d", sym, s, len(ch))
-            except Exception as e:  # noqa: BLE001 — partial coverage still useful
-                log.warning("polygon: %s chain failed: %s", sym, e)
+        """Spot + chain for each underlying -> one stacked per-strike frame for the day.
+        Partial coverage is fine — a failed symbol is logged and skipped. The per-symbol
+        REST work (2 I/O-bound calls each) is fanned across a small thread pool so the now-
+        broad universe (hundreds of names) finishes in minutes; `polygon.workers` caps
+        concurrency at the massive.com-safe ceiling (~5-6). workers<=1 -> serial (unchanged)."""
+        workers = max(1, int(self.cfg.get("workers", 5)))
+        if workers <= 1 or len(symbols) <= 1:
+            frames = [c for c in (self._one_chain(sym, asof) for sym in symbols) if c is not None]
+        else:
+            from concurrent.futures import ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=min(workers, len(symbols))) as ex:
+                frames = [c for c in ex.map(lambda s: self._one_chain(s, asof), symbols)
+                          if c is not None]
         return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()

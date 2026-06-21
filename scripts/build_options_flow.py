@@ -65,10 +65,12 @@ def build() -> list[dict]:
     if not mf.enabled():
         log.info("options_flow: no MASSIVE_S3 creds — skip")
         return []
-    syms = list((config.load().get("polygon", {}).get("gex", {}) or {}).get("symbols") or [])
+    from engine.options_universe import gex_symbols
+    syms = gex_symbols((config.load().get("polygon", {}) or {}).get("gex"))
     if not syms:
         log.info("options_flow: no universe configured")
         return []
+    log.info("options_flow: universe = %d underlyings", len(syms))
     d = mf.latest_available("minute")
     if d is None:
         log.info("options_flow: no entitled minute file in the recent window — skip")
