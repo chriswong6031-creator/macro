@@ -214,6 +214,30 @@
   {% endif %}
 </div>
 
+{% if d.allocation.vol_overlay %}
+{% set vo = d.allocation.vol_overlay %}
+<!-- ============ 01a DE-RISK OVERLAY (calibrated vol-target) ============ -->
+<h2><span class="idx">⚖</span>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
+  <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') }}</span></h2>
+<div class="panel">
+  <div class="gauge" style="margin-bottom:8px">
+    <div class="gz"><div class="k">{{ t('Book vol now', '当前组合波动') }}</div><div class="v">{{ (vo.book_vol_ann*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('Suggested scale', '建议缩放') }}</div><div class="v">{{ (vo.scalar*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('Gross after', '叠加后净敞口') }}</div><div class="v">{{ (vo.gross_after*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('→ cash', '→ 现金') }}</div><div class="v">{{ (vo.cash_after*100)|round|int }}%</div></div>
+  </div>
+  <p class="tagline"><span class="l-en">{{ vo.note_en }}</span><span class="l-zh">{{ vo.note_zh }}</span></p>
+  <p class="tagline" style="margin-top:6px;opacity:.8">🔬 {{ t('Measured (27y clean sector proxy)', '实测（27年干净行业代理）') }}:
+    {{ t('max-drawdown reduction', '最大回撤降低') }} {{ vo.measured.dd_reduction_pp_ci[1] }}pp
+    {{ t('CI', '区间') }} [{{ vo.measured.dd_reduction_pp_ci[0] }}, {{ vo.measured.dd_reduction_pp_ci[2] }}],
+    {{ t('beats a trend-only brake', '优于纯趋势刹车') }}: {{ '✓' if vo.measured.beats_trend_brake else '—' }},
+    DSR {{ vo.measured.dsr }} ({{ vo.measured.n_trials }} {{ t('configs', '配置') }}).
+    {{ t('Grade', '评级') }}: <b>{{ vo.measured.verdict }}</b> —
+    {{ t('it cuts drawdown but does not raise Sharpe enough to clear the multiple-testing bar, so it stays a suggestion.',
+         '降低回撤但夏普提升不足以通过多重检验门槛，故仅作为建议。') }}</p>
+</div>
+{% endif %}
+
 <!-- ============ 01b PLAYBOOK: BUY & SELL ENTRIES ============ -->
 <h2><span class="idx">★</span>🎯 {{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
   <span class="chip">{{ t('discipline, not advice', '纪律，非建议') }}</span></h2>

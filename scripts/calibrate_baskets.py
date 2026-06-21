@@ -418,6 +418,247 @@ def _calibrate_confidence(p: list, y: list, idx: list, outcome: str) -> dict:
             "verdict": verdict}
 
 
+# =========================================================================== #
+# SIZING / REGIME backtest (E1 vol-target + E2 regime throttle). HONEST objective:
+# does book-level realized-vol-targeting (Moreira-Muir) + a regime gross-throttle CUT
+# THE DRAWDOWN of the validated dual-momentum rotation book, net of cost, AND beat a
+# trend-only brake at matched exposure? This is a SIZING/Sharpe/drawdown lever — never a
+# cross-sectional return forecast. The verdict drives a `sizing` contract block that
+# narrative_rotation.allocate() consumes (calibratable -> wire; display_only -> annotate).
+# =========================================================================== #
+SZ_VOL_WINS = [20, 40, 60]
+SZ_TARGETS = [0.7, 0.85, 1.0, 1.2]   # MULTIPLES of the book's OWN trailing-median vol (transfers
+                                     # across universes: sectors ~15% vol, themes ~40% — both "run
+                                     # toward typical vol; de-risk when hotter, lever when calmer")
+SZ_CAPS = [1.0, 1.3, 1.5]
+SZ_N_TRIALS = len(SZ_VOL_WINS) * len(SZ_TARGETS) * len(SZ_CAPS)   # 36 — honest DSR haircut
+# default = DE-RISK-ONLY (cap 1.0): the overlay can only cut exposure, never lever above the
+# base book. Levering up (cap>1) chases a Sharpe lift the data doesn't support and deepens
+# some resampled drawdowns — the honest drawdown-control default never exceeds the base.
+SZ_DEF = (40, 0.85, 1.0)         # default (vol_win, target_mult, cap) — declared, not cherry-picked
+SZ_FLOOR = 0.0
+SZ_COST_BPS = 10.0
+SZ_SPLIT = pd.Timestamp("2013-01-01")
+SZ_CRISES = {"gfc_2008": ("2007-10-01", "2009-06-30"),
+             "covid_2020": ("2020-02-15", "2020-04-30"),
+             "bear_2022": ("2022-01-01", "2022-10-31")}
+
+
+def _daily_bill(idx) -> pd.Series:
+    from lib import store
+    for k in ("DTB3", "DGS3MO", "TB3MS"):
+        df = store.read("fred", k)
+        if df is not None and not df.empty:
+            return df[df.columns[0]].astype(float).reindex(idx).ffill().fillna(0.0)
+    return pd.Series(0.0, index=idx)
+
+
+def _rotation_book(P: pd.DataFrame, top_n: int = 4, lookback: int = 12,
+                   trend_ma: int = 200) -> pd.DataFrame:
+    """Daily EW weights of the validated dual-momentum book: monthly select the top_n by
+    (lookback-1)m relative momentum among names ABOVE their own trend_ma, equal-weight,
+    daily hold; idle slots (fewer than top_n trend) sit in cash. Causal (month-end decision
+    uses data through that month-end; backtest_portfolio applies the next-bar lag)."""
+    M = P.resample("ME").last()
+    mom = M.pct_change(lookback) - M.pct_change(1)
+    above = (P > P.rolling(trend_ma, min_periods=trend_ma // 2).mean())
+    w = pd.DataFrame(0.0, index=M.index, columns=P.columns)
+    for dt in M.index[max(lookback, 10):]:
+        m = mom.loc[dt].dropna()
+        ab = above.loc[:dt]
+        if ab.empty or m.empty:
+            continue
+        m = m[ab.iloc[-1].reindex(m.index).fillna(False)]
+        top = m.sort_values(ascending=False).head(top_n).index
+        if len(top):
+            w.loc[dt, top] = 1.0 / top_n
+    return w.reindex(P.index, method="ffill").fillna(0.0)
+
+
+def _book_voltarget(ew: pd.DataFrame, P: pd.DataFrame, vol_win: int, target_mult: float,
+                    cap: float, floor: float = SZ_FLOOR) -> pd.DataFrame:
+    """Scale the WHOLE equal-weight book by clip(target / trailing book-vol, floor, cap) —
+    book-level vol-timing (Moreira-Muir), NOT per-asset risk parity. The target is RELATIVE:
+    target_mult x the book's own causal trailing-median vol, so the overlay transfers across
+    universes (de-risk when hotter than typical, lever when calmer). Residual gross < 1 falls
+    to cash (credited the bill by backtest_portfolio). All causal."""
+    rets = P.pct_change().fillna(0.0)
+    book_ret = (ew.shift(1) * rets).sum(axis=1)
+    book_vol = book_ret.rolling(vol_win).std() * np.sqrt(252)
+    target = target_mult * book_vol.rolling(756, min_periods=252).median()    # causal typical vol
+    s = (target / book_vol.replace(0, np.nan)).clip(lower=floor, upper=cap)
+    return ew.mul(s, axis=0).fillna(0.0)
+
+
+def _book_brake(ew: pd.DataFrame, P: pd.DataFrame, match_gross: float,
+                trend_ma: int = 200) -> pd.DataFrame:
+    """The decisive comparator: the SAME book braked by a binary book-level 200d trend gate
+    instead of the continuous vol scalar, rescaled to the SAME average gross as the vol-target
+    book. If vol-targeting can't beat this, the vol brake is just a noisier trend gate."""
+    eq = (1 + P.pct_change().mean(axis=1)).cumprod()
+    gate = (eq > eq.rolling(trend_ma, min_periods=trend_ma // 2).mean()).astype(float)
+    gated = ew.mul(gate, axis=0)
+    cur = float(gated.abs().sum(axis=1).mean())
+    return (gated * (match_gross / cur) if cur > 0 else gated).fillna(0.0)
+
+
+def _book_regime_throttle(ew: pd.DataFrame, P: pd.DataFrame, feats: dict,
+                          floor: float = 0.4, hyst: int = 10) -> pd.DataFrame:
+    """E2: graded gross-exposure throttle from the FADING-label leg (the one PIT-faithful,
+    breadth-free risk signal MEASURED to precede drawdowns). Per name, when its fading
+    condition (extended rs_pctile>=0.80 AND accel_z<-0.3 AND 5d-rel<0) holds, trim that
+    sleeve's weight by half; floor the book gross at `floor`; hysteresis kills whipsaw.
+    Down-only, never up-size, defaults LONG. (Macro drawdown_risk leg is already MEASURED
+    elsewhere; here we isolate the basket-risk leg on the clean panel.)"""
+    fade = pd.DataFrame(False, index=P.index, columns=P.columns)
+    for c in P.columns:
+        f = feats[c]
+        cond = (f["rs_pctile"] >= 0.80) & (f["accel_z"] < -0.3) & (f["r5"] < 0)
+        fade[c] = cond.reindex(P.index).fillna(False)
+    # hysteresis: a fade flag persists `hyst` bars
+    fade = fade.where(fade).ffill(limit=hyst).fillna(False).astype(bool)
+    w = ew.where(~fade, ew * 0.5)
+    gross = w.abs().sum(axis=1)
+    scale = (floor / gross.replace(0, np.nan)).clip(lower=1.0)     # only ever floor-UP toward base
+    return w.mul(scale.where(gross < floor, 1.0), axis=0).fillna(0.0)
+
+
+def _ann_sharpe(r: pd.Series) -> float:
+    r = r.dropna(); sd = r.std()
+    return float(r.mean() / sd * np.sqrt(252)) if sd else float("nan")
+
+
+def _maxdd_np(r: np.ndarray) -> float:
+    eq = np.cumprod(1.0 + r); peak = np.maximum.accumulate(eq)
+    return float(np.min(eq / peak - 1.0))
+
+
+def _maxdd_ret(r: pd.Series) -> float:
+    return _maxdd_np(r.fillna(0).to_numpy(float))
+
+
+def _dd_reduction_ci(strat_net: pd.Series, base_net: pd.Series, block: int = 21,
+                     B: int = 4000, seed: int = 11) -> dict:
+    """Paired circular-block bootstrap of the drawdown REDUCTION in pp. MaxDD is negative,
+    so a shallower strat has the LESS-negative dd; the reduction = (strat_dd - base_dd) is
+    then POSITIVE when the strat is shallower. CI lower bound > 0 => the drawdown reduction
+    is real, not a single-path artifact."""
+    a = strat_net.dropna(); b = base_net.reindex(a.index).fillna(0.0)
+    ra, rb = a.to_numpy(float), b.to_numpy(float); n = len(ra)
+    if n < max(block * 3, 60):
+        return {}
+    rng = np.random.default_rng(seed); nb = int(np.ceil(n / block)); grid = np.arange(block)
+    diffs = np.empty(B)
+    for k in range(B):
+        starts = rng.integers(0, n, nb)
+        idx = (starts[:, None] + grid[None, :]).ravel()[:n] % n
+        diffs[k] = (_maxdd_np(ra[idx]) - _maxdd_np(rb[idx])) * 100.0   # strat - base; >0 = shallower
+    lo, med, hi = (float(np.percentile(diffs, p)) for p in (2.5, 50, 97.5))
+    return {"dd_reduction_pp_ci": [round(lo, 1), round(med, 1), round(hi, 1)],
+            "favorable": bool(lo > 0), "excludes_0": bool(lo > 0 or hi < 0), "n": n}
+
+
+def run_sizing(region: str = "us") -> dict:
+    """E1 (vol-target) + E2 (regime throttle) backtest on the clean proxy rotation book."""
+    from engine import active_alloc as aa
+    P = sector_prices(region, monthly=False)
+    if P.empty or P.shape[1] < 4:
+        return {"error": "insufficient proxy data"}
+    bill = _daily_bill(P.index)
+    ew = _rotation_book(P)
+    vw, tg, cp = SZ_DEF
+
+    def bt(w, prices=P, b=bill):
+        return aa.backtest_portfolio(w, prices, b, cost_bps=SZ_COST_BPS)
+
+    base = bt(ew)
+    vt_w = _book_voltarget(ew, P, vw, tg, cp)
+    vt = bt(vt_w)
+    brake = bt(_book_brake(ew, P, float(vt_w.abs().sum(axis=1).mean())))
+
+    # DSR over the honest 36-config grid (vol_win x target x cap)
+    srs, best = [], None
+    for a in SZ_VOL_WINS:
+        for t in SZ_TARGETS:
+            for c in SZ_CAPS:
+                m = V.ret_moments(bt(_book_voltarget(ew, P, a, t, c))["net"])
+                if m is None:
+                    continue
+                srs.append(m[0])
+                if best is None or m[0] > best[0]:
+                    best = (m[0], m[1], m[2], m[3], (a, t, c))
+    sr_var = float(np.var(srs, ddof=1)) if len(srs) > 1 else None
+    dsr = V.deflated_sharpe(best[0], best[1], best[2], best[3], SZ_N_TRIALS,
+                            sr_variance=sr_var, trading_year=252) if best else None
+
+    ddci = _dd_reduction_ci(vt["net"], base["net"])
+    boot = V.block_bootstrap_ci(vt["net"], block=21, B=4000, seed=7, ann=252)
+
+    # split-half (DD reduction same-sign in both halves)
+    halves = {}
+    for hn, mask in {"pre2013": P.index < SZ_SPLIT, "post2013": P.index >= SZ_SPLIT}.items():
+        sub = P[mask]
+        if len(sub) < 400:
+            continue
+        sb = _daily_bill(sub.index); e = _rotation_book(sub)
+        vv = aa.backtest_portfolio(_book_voltarget(e, sub, vw, tg, cp), sub, sb, cost_bps=SZ_COST_BPS)
+        bb = aa.backtest_portfolio(e, sub, sb, cost_bps=SZ_COST_BPS)
+        halves[hn] = {"dd_better_pp": round((_maxdd_ret(vv["net"]) - _maxdd_ret(bb["net"])) * 100, 1),
+                      "sharpe_edge": round(_ann_sharpe(vv["net"]) - _ann_sharpe(bb["net"]), 2)}
+    dd_both = len(halves) == 2 and all(h["dd_better_pp"] > 0 for h in halves.values())
+
+    # leave-one-crisis-out (the DD cut must not vanish when any single crisis is removed)
+    loo = {}
+    for cn, (s0, s1) in SZ_CRISES.items():
+        keep = ~((P.index >= pd.Timestamp(s0)) & (P.index <= pd.Timestamp(s1)))
+        sub = P[keep]; sb = _daily_bill(sub.index); e = _rotation_book(sub)
+        vv = aa.backtest_portfolio(_book_voltarget(e, sub, vw, tg, cp), sub, sb, cost_bps=SZ_COST_BPS)
+        bb = aa.backtest_portfolio(e, sub, sb, cost_bps=SZ_COST_BPS)
+        loo[cn] = round((_maxdd_ret(vv["net"]) - _maxdd_ret(bb["net"])) * 100, 1)
+
+    # E2 regime throttle (fading leg) on top of the vol-target book
+    feats = {c: _rs_features(P[c].dropna().reindex(P.index), P.mean(axis=1)) for c in P.columns}
+    thr = bt(_book_regime_throttle(vt_w, P, feats))
+    thr_ddci = _dd_reduction_ci(thr["net"], vt["net"])
+
+    vt_sh, base_sh, brake_sh = _ann_sharpe(vt["net"]), _ann_sharpe(base["net"]), _ann_sharpe(brake["net"])
+    vt_dd, base_dd = _maxdd_ret(vt["net"]), _maxdd_ret(base["net"])
+    beats_brake = bool(vt_sh > brake_sh)
+    dsr_ok = bool((dsr or {}).get("dsr", 0) >= 0.90)
+    dd_real = bool(ddci.get("favorable"))                 # DD-reduction CI lower bound > 0
+    robust_dd = bool(dd_real and dd_both and beats_brake)  # real, both halves, beats trend brake
+    sharpe_lift = bool(vt_sh > base_sh + 0.02)            # does it ALSO improve risk-adjusted return?
+    # Honest verdict ladder (Moreira-Muir on a thematic book is a DRAWDOWN lever first):
+    #  calibratable  — robust DD-cut AND a Sharpe lift that survives the DSR haircut -> WIRE to size.
+    #  display_only  — robust DD-cut but it costs CAGR / doesn't lift Sharpe -> OPTIONAL de-risk overlay,
+    #                  shown + offered, never forced onto live weights.
+    #  no_edge       — the DD reduction isn't robust.
+    if robust_dd and sharpe_lift and dsr_ok:
+        verdict = "calibratable"
+    elif robust_dd:
+        verdict = "display_only"
+    else:
+        verdict = "no_edge"
+    e2_verdict = ("calibratable" if (thr_ddci.get("favorable") and verdict in ("calibratable", "display_only"))
+                  else "display_only")
+
+    return {"universe": "proxy_spdr_sectors", "span": [str(P.index.min().date()), str(P.index.max().date())],
+            "verdict": verdict, "default": {"vol_win": vw, "target_mult": tg, "cap": cp, "floor": SZ_FLOOR},
+            "best_cfg": best[4] if best else None, "n_trials": SZ_N_TRIALS, "cost_bps": SZ_COST_BPS,
+            "dsr": (dsr or {}).get("dsr"), "dsr_verdict": V.dsr_verdict((dsr or {}).get("dsr", 0)) if dsr else None,
+            "vt": {"sharpe": round(vt_sh, 3), "maxdd_pct": round(vt_dd * 100, 1),
+                   "cagr": vt.get("cagr"), "avg_gross": round(float(vt.get("avg_leverage", 0) or 0), 2),
+                   "turnover_yr": vt.get("turnover_annual")},
+            "base": {"sharpe": round(base_sh, 3), "maxdd_pct": round(base_dd * 100, 1), "cagr": base.get("cagr")},
+            "brake": {"sharpe": round(brake_sh, 3)}, "beats_brake": beats_brake,
+            "dd_reduction_ci": ddci, "block_bootstrap": boot,
+            "split_half": halves, "dd_cut_both_halves": bool(dd_both), "loo_crisis": loo,
+            "regime_throttle": {"verdict": e2_verdict, "floor": 0.4,
+                                "dd_reduction_vs_vt_ci": thr_ddci,
+                                "sharpe": round(_ann_sharpe(thr["net"]), 3),
+                                "maxdd_pct": round(_maxdd_ret(thr["net"]) * 100, 1)}}
+
+
 # --------------------------------------------------------------------------- #
 # LIVE universe — full-fidelity labels, descriptive context only (never a gate)
 # --------------------------------------------------------------------------- #
@@ -566,6 +807,27 @@ def _print_proxy(proxy: dict) -> None:
             print(f"  {k} gate: {a.get('verdict')} (skill_recal {a.get('skill_recal')})")
 
 
+def _print_sizing(s: dict) -> None:
+    if s.get("error"):
+        print(f"\n=== SIZING: {s['error']} ==="); return
+    print(f"\n=== SIZING / REGIME ({s.get('span', ['?', '?'])[0]}→{s.get('span', ['?', '?'])[1]}, "
+          f"net {s.get('cost_bps')}bps) ===")
+    vt, base, br = s.get("vt", {}), s.get("base", {}), s.get("brake", {})
+    print(f"  base book (EW dual-mom):   Sharpe {base.get('sharpe')}  MaxDD {base.get('maxdd_pct')}%  CAGR {base.get('cagr')}")
+    print(f"  vol-target book (E1):      Sharpe {vt.get('sharpe')}  MaxDD {vt.get('maxdd_pct')}%  CAGR {vt.get('cagr')}  "
+          f"avg_gross {vt.get('avg_gross')}  turn/yr {vt.get('turnover_yr')}")
+    print(f"  trend-brake (matched):     Sharpe {br.get('sharpe')}   → vol-target beats brake: {s.get('beats_brake')}")
+    print(f"  DSR (best-of-{s.get('n_trials')}-grid): {s.get('dsr')}  [{s.get('dsr_verdict')}]")
+    print(f"  DD-reduction vs base CI:   {s.get('dd_reduction_ci', {}).get('dd_reduction_pp_ci')}pp  "
+          f"favorable {s.get('dd_reduction_ci', {}).get('favorable')}")
+    print(f"  split-half DD-cut both:    {s.get('dd_cut_both_halves')}  ({s.get('split_half')})")
+    print(f"  leave-one-crisis-out DDpp: {s.get('loo_crisis')}")
+    rt = s.get("regime_throttle", {})
+    print(f"  E2 regime throttle:        verdict {rt.get('verdict')}  Sharpe {rt.get('sharpe')}  MaxDD {rt.get('maxdd_pct')}%  "
+          f"(DD vs vt CI {rt.get('dd_reduction_vs_vt_ci', {}).get('dd_reduction_pp_ci')})")
+    print(f"  >>> SIZING VERDICT: {s.get('verdict')}  (default {s.get('default')})")
+
+
 def main(do_live: bool = False) -> int:
     out = {"schema": "baskets_calibration.v1", "region": "us",
            "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -573,6 +835,10 @@ def main(do_live: bool = False) -> int:
     log.info("running PROXY universe (27y SPDR sectors)…")
     out["proxy"] = run_proxy("us")
     _print_proxy(out["proxy"])
+
+    log.info("running SIZING / REGIME backtest (vol-target + throttle)…")
+    out["sizing"] = run_sizing("us")
+    _print_sizing(out["sizing"])
     if do_live:
         log.info("running LIVE universe (3y baskets, descriptive)…")
         out["live"] = run_live("us")

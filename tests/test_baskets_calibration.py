@@ -106,3 +106,46 @@ def test_annotate_confidence_noop_without_calibration():
     evs = [{"type": "reco_change", "severity": "high", "context": {"to": "enter"}}]
     out = ta._annotate_confidence([dict(e) for e in evs], {})
     assert out[0]["severity"] == "high" and "confidence" not in out[0]
+
+
+# ----------------------------------------------------------------- sizing (E1)
+def test_dd_reduction_ci_sign_shallower_is_favorable():
+    """Locks the sign fix: a shallower-drawdown strat must report a POSITIVE, favorable
+    reduction (MaxDD is negative, so reduction = strat_dd - base_dd > 0 when shallower)."""
+    idx = pd.date_range("2010-01-01", periods=900, freq="B")
+    base = pd.Series(np.random.default_rng(0).normal(0.0003, 0.02, 900), index=idx)
+    strat = base * 0.5                          # half the swings -> shallower drawdown
+    ci = cb._dd_reduction_ci(strat, base, B=600)
+    assert ci["dd_reduction_pp_ci"][0] > 0 and ci["favorable"] is True
+
+
+def test_book_voltarget_derisk_only_at_cap1():
+    """De-risk-only default (cap 1.0): the vol-target book gross must never exceed the
+    equal-weight base book's gross."""
+    idx = pd.date_range("2015-01-01", periods=900, freq="B")
+    rng = np.random.default_rng(1)
+    P = pd.DataFrame({"A": 100 * np.cumprod(1 + rng.normal(0, 0.02, 900)),
+                      "B": 100 * np.cumprod(1 + rng.normal(0, 0.02, 900))}, index=idx)
+    ew = pd.DataFrame(0.5, index=idx, columns=["A", "B"])
+    vt = cb._book_voltarget(ew, P, vol_win=40, target_mult=0.85, cap=1.0)
+    assert float(vt.abs().sum(axis=1).max()) <= 1.0 + 1e-9
+
+
+def test_vol_overlay_display_only_offered_not_applied(monkeypatch):
+    """The narrative_rotation overlay: display_only -> offered (applied False, de-risk only,
+    full measured provenance); calibration absent -> None (honest fallback)."""
+    from engine import narrative_rotation as nr
+    idx = pd.date_range("2015-01-01", periods=900, freq="B")
+    lvl = pd.Series(100 * np.cumprod(1 + np.random.default_rng(3).normal(0, 0.02, 900)), index=idx)
+    cal = {"verdict": "display_only",
+           "default": {"vol_win": 40, "target_mult": 0.85, "cap": 1.0, "floor": 0.0},
+           "beats_brake": True, "dsr": 0.855, "n_trials": 36,
+           "dd_reduction_ci": {"dd_reduction_pp_ci": [1.0, 7.5, 17.2]}}
+    byid = {"t1": {"lvl": lvl, "name": "T1", "name_zh": "T1"}}
+    monkeypatch.setattr(nr, "_sizing_calibration", lambda: cal)
+    vo = nr._vol_overlay(["t1"], {"t1": 0.25}, byid)
+    assert vo is not None and vo["applied"] is False
+    assert vo["measured"]["verdict"] == "display_only"
+    assert vo["gross_after"] <= vo["gross_before"]              # de-risk only, never levers up
+    monkeypatch.setattr(nr, "_sizing_calibration", lambda: {})
+    assert nr._vol_overlay(["t1"], {"t1": 0.25}, byid) is None  # absent -> None

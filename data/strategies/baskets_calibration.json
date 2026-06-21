@@ -1,7 +1,7 @@
 {
   "schema": "baskets_calibration.v1",
   "region": "us",
-  "generated_at": "2026-06-21T07:22:40.730050+00:00",
+  "generated_at": "2026-06-21T08:14:28.777012+00:00",
   "fwd_horizons_d": [
     21,
     63
@@ -336,6 +336,103 @@
         },
         "verdict": "weak_separation"
       }
+    }
+  },
+  "sizing": {
+    "universe": "proxy_spdr_sectors",
+    "span": [
+      "1998-12-22",
+      "2026-06-18"
+    ],
+    "verdict": "display_only",
+    "default": {
+      "vol_win": 40,
+      "target_mult": 0.85,
+      "cap": 1.0,
+      "floor": 0.0
+    },
+    "best_cfg": [
+      60,
+      0.7,
+      1.0
+    ],
+    "n_trials": 36,
+    "cost_bps": 10.0,
+    "dsr": 0.855,
+    "dsr_verdict": "FAILS multiple-testing haircut (DSR<0.90)",
+    "vt": {
+      "sharpe": 0.593,
+      "maxdd_pct": -21.7,
+      "cagr": 5.83,
+      "avg_gross": 0.67,
+      "turnover_yr": 5.66
+    },
+    "base": {
+      "sharpe": 0.556,
+      "maxdd_pct": -33.9,
+      "cagr": 7.05
+    },
+    "brake": {
+      "sharpe": 0.502
+    },
+    "beats_brake": true,
+    "dd_reduction_ci": {
+      "dd_reduction_pp_ci": [
+        1.0,
+        7.5,
+        17.2
+      ],
+      "favorable": true,
+      "excludes_0": true,
+      "n": 6914
+    },
+    "block_bootstrap": {
+      "sharpe_ci": [
+        0.26,
+        0.59,
+        0.93
+      ],
+      "maxdd_ci_pct": [
+        -39.6,
+        -23.7,
+        -15.5
+      ],
+      "sharpe_gt0_prob": 1.0,
+      "block": 21,
+      "B": 4000,
+      "n": 6914
+    },
+    "split_half": {
+      "pre2013": {
+        "dd_better_pp": 12.2,
+        "sharpe_edge": 0.14
+      },
+      "post2013": {
+        "dd_better_pp": 2.8,
+        "sharpe_edge": -0.14
+      }
+    },
+    "dd_cut_both_halves": true,
+    "loo_crisis": {
+      "gfc_2008": 19.1,
+      "covid_2020": 12.2,
+      "bear_2022": 12.2
+    },
+    "regime_throttle": {
+      "verdict": "display_only",
+      "floor": 0.4,
+      "dd_reduction_vs_vt_ci": {
+        "dd_reduction_pp_ci": [
+          -5.1,
+          1.6,
+          7.1
+        ],
+        "favorable": false,
+        "excludes_0": false,
+        "n": 6914
+      },
+      "sharpe": 0.566,
+      "maxdd_pct": -21.9
     }
   },
   "verdict": {
