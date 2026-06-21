@@ -309,6 +309,85 @@ def fold_robust(full_sign: int, fold_signs: list, want: int) -> bool:
     return full_sign == want and flip == 0 and agree >= max(1, len(nz) - 1)
 
 
+# --------------------------------------------------------------------------- #
+# Combinatorial Purged CV + Probability of Backtest Overfitting (López de Prado,
+# AFML ch.11-12; Bailey-Borwein-LdP-Zhu 2014). The P3/P4 anti-overfit core: judge a
+# strategy on a DISTRIBUTION of backtest paths (not one number) and on how likely the
+# in-sample-best config is overfit. Pure numpy; the symmetric purge mirrors the geometry
+# already proven in engine.meta_label._train_events (purge BOTH sides of each test block).
+# --------------------------------------------------------------------------- #
+def cpcv_paths(n_obs: int, n_groups: int = 6, k_test: int = 2, embargo: int = 0) -> list:
+    """Combinatorial Purged Cross-Validation splits. Partition `n_obs` ordered observations
+    into `n_groups` contiguous groups; for EVERY C(n_groups, k_test) choice of test groups,
+    train = all other observations with a SYMMETRIC purge — drop training rows within
+    `embargo` of each test block on BOTH sides (a forward label of length `embargo` near a
+    boundary would otherwise leak across it). Returns a list of (train_idx, test_idx) int
+    arrays — C(n_groups, k_test) backtest PATHS, so a strategy yields a performance
+    distribution, not a single (cherry-pickable) number. Empty list on degenerate inputs."""
+    from itertools import combinations
+    n_obs = int(n_obs)
+    if n_groups < 2 or k_test < 1 or k_test >= n_groups or n_obs < n_groups:
+        return []
+    bounds = np.linspace(0, n_obs, n_groups + 1).astype(int)
+    out = []
+    for combo in combinations(range(n_groups), k_test):
+        test_idx = np.concatenate([np.arange(bounds[g], bounds[g + 1]) for g in combo])
+        test_set = set(int(i) for i in test_idx)
+        purged = set()
+        for g in combo:                                       # symmetric purge + embargo
+            lo, hi = int(bounds[g]), int(bounds[g + 1])
+            purged.update(range(max(0, lo - embargo), lo))
+            purged.update(range(hi, min(n_obs, hi + embargo)))
+        train_idx = np.array([i for i in range(n_obs)
+                              if i not in test_set and i not in purged], dtype=int)
+        out.append((train_idx, test_idx))
+    return out
+
+
+def prob_backtest_overfitting(perf, n_splits: int = 16) -> dict | None:
+    """Probability of Backtest Overfitting via Combinatorial Symmetric Cross-Validation.
+    `perf` is a (T_obs x N_configs) matrix of per-observation performance (e.g. daily returns)
+    for the N candidate configs you searched. Split T into `n_splits` (even) contiguous
+    sub-periods; for every way to pick n_splits/2 as in-sample (IS) and the complement as
+    out-of-sample (OOS): take the IS-best config and find its OOS RANK among all configs;
+    PBO = the fraction of combinations where the IS-best lands BELOW the OOS median (logit<0).
+    High PBO (→1) means picking the in-sample winner is selection over noise — the strategy
+    family is overfit. Returns {pbo, n_combos, median_logit} or None on degenerate input."""
+    from itertools import combinations
+    M = np.asarray(perf, dtype=float)
+    if M.ndim != 2 or M.shape[1] < 2:
+        return None
+    T, N = M.shape
+    S = int(n_splits) - (int(n_splits) % 2)                   # force even
+    if S < 2 or T < S:
+        return None
+    bounds = np.linspace(0, T, S + 1).astype(int)
+    blocks = [np.arange(bounds[i], bounds[i + 1]) for i in range(S)]
+
+    def _ir(rows):                                            # information ratio per config
+        sub = M[rows]
+        mu = sub.mean(axis=0)
+        sd = sub.std(axis=0, ddof=1)
+        return np.where(sd > 0, mu / sd, 0.0)
+
+    logits = []
+    half = S // 2
+    for combo in combinations(range(S), half):
+        comp = [i for i in range(S) if i not in combo]
+        is_perf = _ir(np.concatenate([blocks[i] for i in combo]))
+        oos_perf = _ir(np.concatenate([blocks[i] for i in comp]))
+        n_star = int(np.argmax(is_perf))                      # IS-best config
+        rank = int(oos_perf.argsort().argsort()[n_star])      # 0=worst .. N-1=best OOS
+        omega = (rank + 1) / (N + 1)
+        omega = min(max(omega, 1e-6), 1 - 1e-6)
+        logits.append(math.log(omega / (1 - omega)))
+    if not logits:
+        return None
+    arr = np.array(logits)
+    return {"pbo": round(float((arr < 0).mean()), 4), "n_combos": int(arr.size),
+            "median_logit": round(float(np.median(arr)), 4)}
+
+
 def _sharpe(r, ann: int) -> float:
     sd = float(np.std(r))
     return float(np.mean(r) / sd * math.sqrt(ann)) if sd else float("nan")
