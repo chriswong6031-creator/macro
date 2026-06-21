@@ -14,7 +14,7 @@ from engine import china_intel_bus as bus
 def test_briefing_shape(monkeypatch):
     monkeypatch.setattr(bus, "_read_json", lambda rel: None)   # no surfaces built
     b = bus.briefing(asof="2026-06-20")
-    assert b["schema"] == "china_intel.briefing.v2"
+    assert b["schema"] == "china_intel.briefing.v3"
     assert b["is_context_only"] is True
     assert b["asof"] == "2026-06-20"
     for k in ("news", "policy", "altdata", "radar", "analysis"):

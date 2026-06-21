@@ -77,9 +77,50 @@ def _policy_term(signal_key: str, policy: dict) -> float:
     return 0.5
 
 
-def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, policy: dict) -> list:
+_STAGE_ZH = {"emerging": "萌芽", "early": "早期", "consensus": "共识",
+             "exhausted": "见顶/拥挤", "distribution": "派发", "building": "酝酿"}
+_LIFECYCLE_EDGE = {"emerging": 1.0, "forming": 0.82, "mature": 0.34, "fading": 0.12}
+
+
+def _roro_leg(conditions: dict, sign: str) -> tuple[int, float]:
+    """RORO/conditions leg: dir aligned to the radar sign, mag = |roro|. Gated to 0 on a
+    divergent (split) tape. Reads data/china_regime/latest.json (the corrected path)."""
+    try:
+        fe = (conditions or {}).get("fear_euphoria") or {}
+        cond = (conditions or {}).get("conditions") or {}
+        roro = fe.get("roro")
+        if roro is None:
+            roro = (cond.get("roro") or {}).get("roro")
+        if roro is None:
+            return 0, 0.0
+        roro = float(roro)
+        verdict = str((cond.get("confirmation") or {}).get("verdict") or "")
+        mag = 0.0 if verdict.startswith("divergent") else min(1.0, abs(roro))
+        rdir = 1 if roro > 0.15 else (-1 if roro < -0.15 else 0)
+        # confirms a positive divergence when risk-on; conflicts when opposite
+        leg_dir = 0
+        if rdir:
+            leg_dir = 1 if (rdir > 0) == (sign == "positive") else -1
+        return leg_dir, mag
+    except Exception:  # noqa: BLE001
+        return 0, 0.0
+
+
+def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, policy: dict,
+                conditions: dict | None = None) -> list:
+    """Independence-WEIGHTED composite per fired divergence (mirrors intel_hub._dossier):
+    5 signed legs (radar/altdata/news/policy/conditions) combined geometrically with earned
+    weights, rewarded for INDEPENDENT agreement, docked by a falsifier; plus edge-remaining,
+    lifecycle stage, leading-gap and an opportunity_score the list is ranked by."""
     from engine import china_basket_spine as sp
     from engine import china_conviction as cv
+    try:
+        from engine import china_signal_lab
+        W = china_signal_lab.leg_weights_for("conviction") or {}
+    except Exception:  # noqa: BLE001
+        W = {}
+    wv = [W.get(k, d) for k, d in (("radar", .40), ("altdata", .22), ("news", .20),
+                                   ("policy", .10), ("conditions", .08))]
     band = (news_sent or {}).get("band")
     by_basket = (news_feed or {}).get("by_basket") or {}
     out = []
@@ -88,71 +129,174 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
             etf = d.get("sector_etf")
             sign = d.get("sign")
             strength = float(d.get("strength") or 0.0)
+            rel = d.get("reliability") or {"basis": "unproven", "n_resolved": 0}
+            rel_factor = 1.0
+            hr, nres = rel.get("hit_rate"), rel.get("n_resolved") or 0
+            if nres >= 3 and hr is not None:
+                rel_factor = max(0.15, min(1.5, 1.5 * float(hr)))
             baskets = sp.etf_to_basket().get(etf, [])
             news_hits = sum(int(by_basket.get(b, 0)) for b in baskets)
             members = []
             for b in baskets:
                 members += sp.basket_members(b)
             members = list(dict.fromkeys(members))
-            aligned = []
+            aligned, conv_signed = [], []
             for t in members:
                 info = conv_map.get(t)
                 if not info:
                     continue
                 c = info.get("convergence", 0.0)
+                conv_signed.append(c)
                 if (sign == "positive" and c > 0.1) or (sign == "negative" and c < -0.1):
                     aligned.append((t, info))
-            altdata_term = (sum(abs(i["convergence"]) for _t, i in aligned) / len(aligned)) if aligned else 0.0
-            # direction from the signed sentiment z (the band string is too coarse — #12)
+            altdata_mag = (sum(abs(i["convergence"]) for _t, i in aligned) / len(aligned)) if aligned else 0.0
+            altdata_dir = 0
+            if conv_signed:
+                s = sum(conv_signed)
+                ad_side = 1 if s > 0 else (-1 if s < 0 else 0)
+                altdata_dir = 1 if (ad_side > 0) == (sign == "positive") and ad_side else (-1 if ad_side else 0)
+            # news is CONTRARIAN in China (validation sign_expected = -1): a fearful tape (z<0)
+            # confirms a positive divergence; a rich/greedy tape (z>0) confirms a negative one.
             z = (news_sent or {}).get("z")
-            news_ok = isinstance(z, (int, float)) and ((z > 0 and sign == "positive") or (z < 0 and sign == "negative"))
-            news_term = (min(1.0, news_hits / 3.0) * (1.0 if news_ok else 0.5)) if news_hits else 0.0
+            news_dir = 0
+            if news_hits and isinstance(z, (int, float)) and z != 0:
+                news_dir = 1 if ((z < 0 and sign == "positive") or (z > 0 and sign == "negative")) else -1
+            news_mag = (min(1.0, news_hits / 3.0) * (1.0 if news_dir > 0 else 0.5)) if news_hits else 0.0
             policy_term = _policy_term(d.get("signal_key"), policy)
-            raw = 0.40 * strength + 0.25 * news_term + 0.25 * altdata_term + 0.10 * policy_term
-            cc = cv.to_100(raw)
-            _bk, ben, bzh = cv.band(cc)
-            surfaces = ["radar"]
-            if news_hits:
-                surfaces.append("news")
-            if aligned:
-                surfaces.append("altdata")
-            if policy_term >= 0.7:
-                surfaces.append("policy")
+            policy_dir = 1 if policy_term >= 0.7 else (-1 if policy_term <= 0.0 and (policy or {}).get("stance") == "tightening" else 0)
+            cond_dir, cond_mag = _roro_leg(conditions, sign)
+            radar_mag = strength * rel_factor
+            # geometric-leaning magnitude backbone over PRESENT legs only — absent legs are
+            # passed as None (cv.combine skips them); passing 0.0 would crush the composite.
+            altdata_c = altdata_mag if aligned else None
+            news_c = news_mag if news_hits else None
+            policy_c = policy_term if policy else None
+            cond_c = cond_mag if cond_dir != 0 else None
+            base = cv.combine(radar_mag, altdata_c, news_c, policy_c, cond_c, weights=wv)
+            # independence tally (legs that vote, aligned vs against the radar sign)
+            legs = [("radar", 1, radar_mag), ("altdata", altdata_dir, altdata_mag),
+                    ("news", news_dir, news_mag), ("policy", policy_dir, policy_term),
+                    ("conditions", cond_dir, cond_mag)]
+            up = sum(1 for _n, dr, mg in legs if dr > 0 and mg > 0.05)
+            dn = sum(1 for _n, dr, mg in legs if dr < 0 and mg > 0.05)
+            n_present = sum(1 for _n, dr, mg in legs if dr != 0 and mg > 0.05)
+            net_confirm = up - dn
+            agreement = (abs(up - dn) / n_present) if n_present else 0.0
+            conf_bonus = min(1.25, 1.0 + 0.08 * max(net_confirm - 1, 0))
+            # falsifier: a proven-weak prior call, OR a cross-ref conflict on this signal
+            fals = 1.0
+            if (rel.get("basis") != "unproven" and hr is not None and float(hr) < 0.45 and nres >= 3):
+                fals = 0.85
+            composite = round(min(100.0, 100.0 * base * conf_bonus * fals * (0.6 + 0.4 * agreement)), 1)
+            _bk, ben, bzh = cv.band(composite)
+            lean = 1 if up > dn else (-1 if dn > up else 0)
+            surfaces = ["radar"] + [n for n, dr, mg in legs[1:] if dr > 0 and mg > 0.05]
+            # edge-remaining + lifecycle + leading-gap + opportunity
+            lifecycle = d.get("lifecycle") or ("emerging" if (d.get("price_rs_z") or 0) < -0.3 else "forming")
+            edge = _edge_remaining(d, news_hits, news_sent, conditions, aligned)
+            gap = _leading_gap(sign, altdata_dir, news_dir, policy, conditions)
+            stage = _stage(edge["score"], gap["gap"], lean, edge["n_base"], gap["lag_present"], conditions, sign)
+            opp = round(min(100.0, 100.0 * radar_mag * fals * edge["score"] * (1 + 0.15 * max(-2, min(2, gap["gap"])))), 1)
             top_members = sorted(aligned, key=lambda x: abs(x[1]["convergence"]), reverse=True)[:3]
             verb_en = "accumulating" if sign == "positive" else "distributing"
             verb_zh = "吸筹" if sign == "positive" else "派发"
             r_en = f"radar {d.get('signal_en')} → {d.get('sector_en')}"
             r_zh = f"雷达 {d.get('signal_zh')} → {d.get('sector_zh')}"
             if news_hits:
-                r_en += f" · {news_hits} China headlines on the theme"
-                r_zh += f" · 该主题 {news_hits} 条中国头条"
+                r_en += f" · {news_hits} China headlines"; r_zh += f" · 该主题 {news_hits} 条头条"
             if aligned:
-                r_en += f" · {len(aligned)} alt-data members {verb_en}"
-                r_zh += f" · {len(aligned)} 只另类数据成员{verb_zh}"
+                r_en += f" · {len(aligned)} alt-data members {verb_en}"; r_zh += f" · {len(aligned)} 只成员{verb_zh}"
             if policy_term >= 0.7:
-                r_en += " · policy tailwind"
-                r_zh += " · 政策顺风"
+                r_en += " · policy tailwind"; r_zh += " · 政策顺风"
+            if cond_dir > 0:
+                r_en += " · risk-on tape"; r_zh += " · 风险偏好"
+            # qualitative lifecycle clause — NOT a quantified upside prediction (no % claim)
+            r_en += f" · {stage}" + (" (leading the crowd)" if gap["gap"] > 0 else "")
+            r_zh += f" · {_STAGE_ZH.get(stage, stage)}" + ("（领先于人群）" if gap["gap"] > 0 else "")
             out.append({
                 "key": d.get("signal_key"), "sector_en": d.get("sector_en"),
                 "sector_zh": d.get("sector_zh"), "sector_etf": etf,
                 "radar_sign": sign, "radar_strength": round(strength, 3),
                 "surfaces_confirming": surfaces, "n_surfaces": len(surfaces),
                 "news_hits": news_hits, "news_band": band,
+                "directions": {"radar": 1, "altdata": altdata_dir, "news": news_dir,
+                               "policy": policy_dir, "conditions": cond_dir},
+                "net_confirm": net_confirm, "agreement": round(agreement, 2), "lean": lean,
+                "conf_bonus": round(conf_bonus, 3), "falsifier_penalty": fals,
                 "members": [{"ticker": t, "name": i.get("name"),
                              "convergence": i.get("convergence"), "side": i.get("side")}
                             for t, i in top_members],
                 "policy_term": policy_term,
-                "context_conviction": cc, "conviction_band": [ben, bzh],
+                "context_conviction": composite, "composite_conviction": composite,
+                "conviction_band": [ben, bzh],
+                "edge_remaining": round(edge["score"], 3), "edge_drivers": edge["drivers"],
+                "lifecycle": lifecycle, "leading_gap": gap["gap"], "stage": stage,
+                "stage_zh": _STAGE_ZH.get(stage, stage), "opportunity_score": opp,
                 "rationale_en": r_en, "rationale_zh": r_zh,
                 "hypothesis_en": d.get("hypothesis_en"), "hypothesis_zh": d.get("hypothesis_zh"),
-                "reliability": d.get("reliability") or {"basis": "unproven", "n_resolved": 0},
+                "reliability": rel,
                 "note": "CONTEXT salience, never a size or trade",
             })
         except Exception as e:  # noqa: BLE001
             log.debug("conviction row failed (%s)", e)
             continue
-    out.sort(key=lambda r: r["context_conviction"], reverse=True)
+    out.sort(key=lambda r: (r["opportunity_score"], r["composite_conviction"]), reverse=True)
     return out
+
+
+def _edge_remaining(d: dict, news_hits: int, news_sent: dict, conditions: dict, aligned: list) -> dict:
+    """How much of the move is still ahead (weighted mean of 0..1 components). Mirrors
+    intel_hub._edge_remaining with China-native fields."""
+    comps = []   # (weight, score, driver)
+    rel = d.get("reliability") or {}
+    if rel.get("basis") == "unproven":
+        comps.append((1.0, 0.7, "early, untested"))
+    elif rel.get("hit_rate") is not None and float(rel.get("hit_rate") or 0) > 0.5:
+        comps.append((1.0, 0.45, "pattern already plays out"))
+    rs = d.get("price_rs")
+    if rs is not None:
+        comps.append((0.9, max(0.0, min(1.0, 1.0 - max(float(rs), 0.0) / 15.0)),
+                      "sector not yet outperformed" if float(rs) <= 0 else "sector already +RS"))
+    if aligned:
+        mean_pct = sum((i.get("rank_pctile") or 50) for _t, i in aligned) / len(aligned) if any("rank_pctile" in i for _t, i in aligned) else 50
+        comps.append((0.8, max(0.0, min(1.0, 1.0 - mean_pct / 100.0)), "laggard members accumulating"))
+    fe = (conditions or {}).get("fear_euphoria") or {}
+    if news_hits >= 4 and str(fe.get("band", "")).lower() in ("greed", "euphoria", "贪婪", "亢奋"):
+        comps.append((0.7, 0.2, "loud + euphoric (priced)"))
+    if not comps:
+        return {"score": 0.4, "drivers": ["no components (conservative)"], "n_base": 0}
+    wsum = sum(w for w, _s, _drv in comps)
+    score = sum(w * s for w, s, _drv in comps) / wsum
+    return {"score": round(score, 3), "drivers": [drv for _w, _s, drv in comps],
+            "n_base": sum(1 for w, _s, _drv in comps if w >= 0.8)}
+
+
+def _leading_gap(sign: str, altdata_dir: int, news_dir: int, policy: dict, conditions: dict) -> dict:
+    """Leading flow (radar divergence + altdata) minus lagging confirmers (loud news, already-
+    eased policy, risk-on tape). gap>0 = leading the crowd."""
+    lead = 1 + (1 if altdata_dir > 0 else 0)   # a fired radar divergence is LEADING either sign
+    stance = (policy or {}).get("stance")
+    fe = (conditions or {}).get("fear_euphoria") or {}
+    roro = fe.get("roro")
+    risk_on = isinstance(roro, (int, float)) and float(roro) > 0.15
+    lag = (1 if news_dir > 0 else 0) + (1 if stance == "easing" else 0) + (1 if risk_on else 0)
+    lag_present = (1 if news_dir != 0 else 0) + (1 if stance else 0) + (1 if roro is not None else 0)
+    return {"gap": lead - lag, "lead": lead, "lag": lag, "lag_present": lag_present}
+
+
+def _stage(edge: float, gap: int, lean: int, n_base: int, lag_present: int,
+           conditions: dict, sign: str) -> str:
+    fe = (conditions or {}).get("fear_euphoria") or {}
+    euphoric = str(fe.get("band", "")).lower() in ("greed", "euphoria", "贪婪", "亢奋")
+    if euphoric and gap < 0:
+        return "exhausted"
+    if lean < 0:
+        return "distribution" if sign == "positive" else "exhausted"
+    if edge >= 0.66 and gap >= 1 and n_base >= 2 and lag_present >= 1:
+        return "emerging"
+    if edge >= 0.50 and gap >= 0:
+        return "early"
+    return "consensus"
 
 
 # --------------------------------------------------------------------------- #
@@ -352,6 +496,7 @@ def analyze(prev: dict | None = None, asof: date | str | None = None) -> dict:
     policy = _read("data/china_policy/latest.json") or {}
     radar = _read("chinaradar/radar.json") or {}
     altdata_mm = _read("chinaaltdata/mastermind.json") or {}
+    conditions = _read("data/china_regime/latest.json") or {}   # RORO / fear-euphoria leg (corrected path)
     try:
         from engine import china_altdata
         conv_map = china_altdata.convergence_map()
@@ -359,7 +504,7 @@ def analyze(prev: dict | None = None, asof: date | str | None = None) -> dict:
         conv_map = {}
 
     divs = radar.get("divergences", []) if isinstance(radar, dict) else []
-    conviction = _conviction(divs, news_feed, news_sent, conv_map, policy)
+    conviction = _conviction(divs, news_feed, news_sent, conv_map, policy, conditions)
     chains = _chains(policy, news_feed)
     cross_refs = _cross_refs(policy)
     what_matters = _what_matters(conviction, chains, news_feed, news_sent)

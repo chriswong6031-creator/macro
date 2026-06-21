@@ -55,7 +55,8 @@ def test_conviction_names_surfaces_and_carries_note(monkeypatch):
              "signal_en": "PBoC easing", "signal_zh": "央行宽松",
              "hypothesis_en": "h", "hypothesis_zh": "假设"}]
     conv_map = {"300059.SZ": {"convergence": 0.9, "side": "accumulate", "name": "东方财富"}}
-    rows = an._conviction(divs, {"by_basket": {"cn_brokers": 3}}, {"band": "supportive"},
+    rows = an._conviction(divs, {"by_basket": {"cn_brokers": 3}},
+                          {"band": "cautious", "z": -0.8},   # fearful tape → CONTRARIAN-confirms a positive divergence
                           conv_map, {"stance": "easing"})
     assert rows
     c = rows[0]
@@ -78,3 +79,30 @@ def test_what_matters_dedup_and_ranked():
     assert len(metals) == 1                      # de-duped on (sector, sign)
     sal = [w["salience"] for w in wm]
     assert sal == sorted(sal, reverse=True)      # ranked
+
+
+def test_conviction_not_crushed_by_absent_legs():
+    """Review fix: absent legs are passed as None (not 0.0) into the geometric combine, so a
+    radar-only divergence yields a sane composite, not ~2/100."""
+    divs = [{"sector_etf": "512880.SS", "sector_en": "Brokers", "sector_zh": "券商",
+             "sign": "positive", "strength": 0.8, "signal_key": "pboc_easing",
+             "signal_en": "PBoC easing", "signal_zh": "央行宽松",
+             "hypothesis_en": "h", "hypothesis_zh": "假设",
+             "reliability": {"basis": "unproven", "n_resolved": 0}}]
+    # only radar present (no aligned altdata, no news, no policy, no conditions)
+    rows = an._conviction(divs, {}, {}, {}, {}, {})
+    assert rows
+    assert rows[0]["composite_conviction"] > 30   # NOT crushed to ~2
+
+
+def test_news_leg_is_contrarian():
+    """Review fix: news is contrarian (sign_expected -1) — fearful tape confirms a positive
+    divergence; greedy tape dissents."""
+    base = {"sector_etf": "512880.SS", "sector_en": "Brokers", "sector_zh": "券商",
+            "sign": "positive", "strength": 0.6, "signal_key": "pboc_easing",
+            "signal_en": "E", "signal_zh": "E", "reliability": {"basis": "unproven", "n_resolved": 0}}
+    feed = {"by_basket": {"cn_brokers": 5}}
+    fearful = an._conviction([dict(base)], feed, {"z": -0.9}, {}, {})
+    greedy = an._conviction([dict(base)], feed, {"z": 0.9}, {}, {})
+    assert fearful[0]["directions"]["news"] == 1     # fearful confirms positive
+    assert greedy[0]["directions"]["news"] == -1     # greedy dissents

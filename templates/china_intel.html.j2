@@ -28,6 +28,11 @@
   table.syn th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
   table.syn td { padding:8px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
   .cc { font-weight:800; font-variant-numeric:tabular-nums; }
+  .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; display:inline-block; vertical-align:middle; margin-right:4px; }
+  .strength > i { display:block; height:100%; background:var(--link); }
+  .regime { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:11px 15px; margin:14px 0; font-size:13px; }
+  .regime .rk { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .regime .on { color:#1f9a55; font-weight:700; } .regime .off { color:#d23f3f; font-weight:700; } .regime .neu { color:var(--muted); font-weight:700; }
   .bandpill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
   .b-high{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
   .b-elevated{color:#5b8def;background:color-mix(in srgb,#5b8def 13%,transparent)}
@@ -84,6 +89,17 @@
 {% set STANCE_ZH = {'easing':'宽松','neutral':'中性','tightening':'收紧'} %}
 {% set BAND_ZH = {'supportive':'偏积极','cautious':'偏谨慎','steady':'平稳','building':'积累中','unknown':'未知'} %}
 
+  <!-- A2. RISK-APPETITE / REGIME OVERLAY -->
+  {% if b.regime %}
+  <div class="regime">
+    <span><span class="rk">{{ t('Risk appetite', '风险偏好') }}</span>
+      <span class="{{ 'on' if b.regime.risk_tilt>0 else ('off' if b.regime.risk_tilt<0 else 'neu') }}">{{ t('Risk-on', '偏好风险') if b.regime.risk_tilt>0 else (t('Risk-off', '避险') if b.regime.risk_tilt<0 else t('Neutral', '中性')) }}</span></span>
+    {% if b.regime.band_en %}<span><span class="rk">{{ t('Fear↔Euphoria', '恐惧↔亢奋') }}</span> {{ bl(b.regime.band_en, b.regime.band_zh or b.regime.band_en) }}</span>{% endif %}
+    {% if b.regime.roro is not none %}<span><span class="rk">RORO</span> {{ '%+.2f'|format(b.regime.roro) }}</span>{% endif %}
+    <span class="mut" style="font-size:11px">{{ t('soft overlay — context, not a score leg', '软性叠加——背景，非评分腿') }}</span>
+  </div>
+  {% endif %}
+
   <!-- B. WHAT MATTERS MOST + CHANGED TODAY -->
   {% if b.salience %}
   <div class="matters">
@@ -108,14 +124,19 @@
   <!-- C. CENTRAL SYNTHESIS -->
   {% if b.conviction %}
   <h2 class="sec">🧩 {{ t('Cross-surface conviction', '跨面板共振') }}</h2>
-  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Where the radar, news, alt-data and policy line up on the same sector. Conviction = salience (how many independent surfaces agree), never a position size.', '雷达、新闻、另类数据与政策在同一板块上的共振。置信度＝显著性（多少独立面板一致），绝非仓位。') }}</p>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Independence-weighted confluence across radar · alt-data · news · policy · risk-appetite, ranked by OPPORTUNITY (edge-remaining × leading-gap) — leading ideas promoted, priced/confirmed ones demoted. Context salience, never a position size.', '跨雷达·另类数据·新闻·政策·风险偏好的独立性加权共振，按机会度（剩余空间×领先差）排序——领先的提升、已定价的降级。仅为显著性，绝非仓位。') }}</p>
+  {% set _STG = {'emerging':['Emerging','萌芽'],'early':['Early','早期'],'consensus':['Consensus','共识'],'exhausted':['Exhausted','见顶'],'distribution':['Distribution','派发'],'building':['Building','酝酿']} %}
   <table class="syn">
-    <thead><tr><th>{{ t('Sector', '板块') }}</th><th>{{ t('Conviction', '置信') }}</th><th>{{ t('Surfaces', '面板') }}</th><th>{{ t('Read', '解读') }}</th></tr></thead>
+    <thead><tr><th>{{ t('Sector', '板块') }}</th><th>{{ t('Opportunity', '机会度') }}</th><th>{{ t('Stage', '阶段') }}</th><th>{{ t('Conviction', '置信') }}</th><th>{{ t('Edge left', '剩余空间') }}</th><th>{{ t('Surfaces', '面板') }}</th><th>{{ t('Read', '解读') }}</th></tr></thead>
     <tbody>
     {% for c in b.conviction %}
+      {% set st = c.stage or 'consensus' %}
       <tr>
         <td><b>{{ bl(c.sector_en, c.sector_zh) }}</b> <span class="{{ 'sgn-pos' if c.radar_sign=='positive' else 'sgn-neg' }}">{{ '▲' if c.radar_sign=='positive' else '▼' }}</span></td>
-        <td><span class="cc">{{ c.context_conviction }}</span> <span class="bandpill b-{{ (c.conviction_band[0]|lower) if c.conviction_band else 'none' }}">{{ bl(c.conviction_band[0], c.conviction_band[1]) }}</span></td>
+        <td><span class="cc">{{ c.opportunity_score if c.opportunity_score is not none else c.context_conviction }}</span></td>
+        <td><span class="bandpill b-{{ 'high' if st=='emerging' else ('elevated' if st=='early' else ('none' if st=='consensus' else 'low')) }}">{{ bl((_STG.get(st) or [st,st])[0], (_STG.get(st) or [st,st])[1]) }}</span>{% if c.leading_gap and c.leading_gap > 0 %} <span class="sgn-pos">↑{{ c.leading_gap }}</span>{% endif %}</td>
+        <td><span class="cc">{{ c.composite_conviction if c.composite_conviction is not none else c.context_conviction }}</span> <span class="bandpill b-{{ (c.conviction_band[0]|lower) if c.conviction_band else 'none' }}">{{ bl(c.conviction_band[0], c.conviction_band[1]) }}</span></td>
+        <td>{% if c.edge_remaining is not none %}<div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:{{ (c.edge_remaining*100)|round|int }}%"></i></div>{% else %}—{% endif %}</td>
         <td>{% for s in c.surfaces_confirming %}<span class="surf">{{ s }}</span>{% endfor %}</td>
         <td>{{ bl(c.rationale_en, c.rationale_zh) }}{% if c.members %}<br><span class="mut" style="font-size:11px">{% for m in c.members %}{{ m.name }} ({{ m.ticker }}){% if not loop.last %} · {% endif %}{% endfor %}</span>{% endif %}</td>
       </tr>
@@ -208,7 +229,7 @@
 
   <!-- I. MASTERMIND CONTRACT -->
   <div class="xmit">
-    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at', '这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>china_intel.briefing.v2</code>) {{ t('and', '与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
+    🔌 <b>{{ t('Transmission to Mastermind', '通往 Mastermind 的传导') }}</b> — {{ t('these surfaces + the cross-surface synthesis are bundled, schema-versioned and machine-readable at', '这些面板＋跨面板综合被打包为带版本的机读契约：') }} <code>site/china_intel/briefing.json</code> (<code>{{ b.schema }}</code>) {{ t('and', '与') }} <code>digest.json</code>. {{ t('The future China Mastermind reads them as context — never a size or a trade.', '未来的中国 Mastermind 将其作为背景读取——绝非仓位或交易。') }}
     {% if b.surfaces_present %}<br><span class="s" style="color:var(--muted)">{{ t('Surfaces present', '已就绪面板') }}: {{ b.surfaces_present|join(' · ') }}</span>{% endif %}
   </div>
 

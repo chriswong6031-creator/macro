@@ -803,11 +803,13 @@ def main() -> int:
         # China Mastermind. Each is additive + None-safe; standalone pages built here so
         # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
         for _name, _mod, _fn in (
+            # predictive validation FIRST — earns the signal weights altdata + analysis read
+            ("china validation", "engine.china_validation", "validate_all"),
             ("china news powerhouse", "scripts.build_china_news", "build"),
             ("china policy watch", "scripts.build_china_policy_watch", "build"),
             ("china alt-data desk", "scripts.build_china_altdata", "build"),
             ("china divergence radar", "scripts.build_china_radar", "build"),
-            # central-intelligence synthesis MUST run after the 4 surfaces, before the hub/bus
+            # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
             ("china central analysis", "scripts.build_china_synthesis", "build"),
         ):
             try:

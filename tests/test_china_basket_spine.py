@@ -66,3 +66,15 @@ def test_combine_geometric_penalizes_zero_leg():
     assert weak < 0.2 and strong > 0.7
     assert cv.combine(None, None) == 0.0
     assert 0.0 <= cv.combine(0.5, 0.5) <= 1.0
+
+
+def test_leg_weights_earned_from_validation(monkeypatch):
+    """Review fix: leg_weights_for reads china_validation's mean_ic/sign_ok/proven (not 'ic'),
+    so a proven wrong-sign family is zeroed and the bridge is live (not a no-op)."""
+    from engine import china_signal_lab as sl
+    # proven wrong-sign valuation family → the 'value' leg must drop to 0
+    monkeypatch.setattr(sl, "load_validation", lambda: {
+        "valuation": {"mean_ic": -0.05, "t_hac": -3.0, "n_obs": 500, "sign_ok": False, "proven": False}})
+    w = sl.leg_weights_for("altdata")
+    assert w.get("value", 0) == 0.0
+    assert sum(w.values()) > 0.99   # renormalized, never all-zero

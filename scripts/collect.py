@@ -93,6 +93,9 @@ def all_adapters() -> dict:
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
         ("china_pboc", "collectors.china_pboc", "ChinaPbocAdapter"),           # PBoC corridor legs: FX reserves+gold / repo fixings FR007 / USD-CNY ref (engine/china_policy_watch.py)
+        ("china_yield_spread", "collectors.china_yield_spread", "ChinaYieldSpreadAdapter"),  # CN vs US sovereign curve + slope + CN-US spread — ACCRUING (no engine consumer yet)
+        ("china_cgb_curve", "collectors.china_cgb_curve", "ChinaCgbCurveAdapter"),  # full CGB term structure — ACCRUING (no engine consumer yet)
+        ("china_a_valuation", "collectors.china_a_valuation", "ChinaAValuationAdapter"),  # whole-A median PE/PB + 10y/all percentiles (hub valuation anchor / anti-chase)
         ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
         ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md

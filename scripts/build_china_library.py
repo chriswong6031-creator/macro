@@ -526,7 +526,14 @@ def main(alpha: dict | None = None) -> dict | None:
     for _mod, _kw in (("collectors.china_analyst", {}),
                       ("collectors.china_earnings", {}),
                       ("collectors.china_margin_detail", {}),
-                      ("collectors.china_valuation", {"max_new": _val_cap})):
+                      ("collectors.china_valuation", {"max_new": _val_cap}),
+                      # US-parity alt-data feeds (snapshot refreshers, idempotent within a UTC day)
+                      ("collectors.china_comment", {}),       # 千股千评 attention / inst-participation / main-force cost
+                      ("collectors.china_lhb", {}),           # 龙虎榜 Dragon-Tiger smart/hot-money + institutional seats
+                      ("collectors.china_block_trades", {}),  # 大宗交易 block premium/discount
+                      ("collectors.china_zt_pool", {}),       # 涨停板 limit-up momentum / sector breadth
+                      ("collectors.china_buyback", {}),       # 回购 corporate buybacks
+                      ("collectors.china_pledge", {})):       # 股权质押 forced-sell tail risk
         try:
             importlib.import_module(_mod).refresh(**_kw)
         except Exception as e:  # noqa: BLE001 — additive context, never fatal
