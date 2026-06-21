@@ -7,12 +7,13 @@ fuses FIVE independent froth legs into one k-of-N conjunction (fires at >=3 of 5
 mirroring the US ``engine/crowding.fragility`` conjunction but tuned looser because the
 A-share legs are noisier and the pledge tail is China-specific.
 
-  margin_froth     china_margin_detail   per-name financing balance pctile >= 80
+  margin_froth     tushare margin →      per-name financing balance pctile >= 80
+                   china_margin_detail   (Tushare daily_basic preferred; free cache is the fallback)
   pledge_tail      china_pledge          share-pledge ratio >= 50  (China-specific)
   limitup_froth    china_zt_pool         consec boards >= 2 OR turnover > 25
   attention_spike  china_comment         Eastmoney 关注指数 attention pctile >= 85
-  rich_valuation   china_a_valuation     mean(PE,PB) pctile >= 80
-                                         (fallback: whole-A market level when no per-name)
+  rich_valuation   tushare valuation →   per-name mean(PE,PB) pctile >= 80 (Tushare daily_basic
+                   china_a_valuation     preferred); fallback: whole-A market level when no per-name
 
 DISPLAY-ONLY. ``china_crowding.v1`` carries a NOTE: this is a latest-snapshot contrarian
 fragility read with NO forward edge proven — it is ORDERING context (which crowded names
@@ -78,9 +79,22 @@ def _read(group: str, file: str) -> pd.DataFrame | None:
 
 
 def _valuation_df() -> pd.DataFrame | None:
-    """Whole-A valuation: join the latest china_a_val pe + pb series into a 1-row frame with
-    pe_pctile / pb_pctile on a 0..100 scale (the collector stores percentiles as 0..1 fractions).
-    None if absent. (china_a_valuation is whole-MARKET, so this drives the regime fallback leg.)"""
+    """Per-name (preferred) or whole-A (fallback) valuation frame with pe_pctile / pb_pctile (0..100).
+
+    PREFERS the GATED Tushare daily_basic snapshot (data/tushare/valuation.parquet) — a per-NAME
+    cross-section that lets ``rich_valuation`` fire stock-by-stock; its pe_pctile/pb_pctile are
+    already 0..100. Falls back to the free whole-MARKET china_a_val anchor (one row/day) when the
+    Tushare token is absent — that path drives only the market-regime fallback leg. None if neither."""
+    tv = _read("tushare", "valuation")
+    if tv is not None and "ticker" in tv.columns and ("pe_pctile" in tv.columns or "pb_pctile" in tv.columns):
+        return tv
+    return _market_valuation_df()
+
+
+def _market_valuation_df() -> pd.DataFrame | None:
+    """Whole-A valuation anchor (one row): china_a_val pe + pb latest 10y percentiles on a 0..100
+    scale (the collector stores them as 0..1 fractions). None if absent. Drives the market-regime
+    fallback leg only — never per-name."""
     pe = _read("china_a_val", "pe")
     pb = _read("china_a_val", "pb")
     if pe is None and pb is None:
@@ -128,11 +142,12 @@ def _pctile_flags(series: pd.Series, thr: float) -> set[str]:
 def _margin_froth() -> set[str]:
     """Per-name financing crowding: top-pctile financing-balance names.
 
-    Prefers a per-name ``fin_pct_float`` column if a future parquet provides one
-    (substring match); else ranks the raw per-name financing balance cross-sectionally
-    from china_margin_detail. (china_margin/balance.parquet is whole-market only, so it
-    cannot drive a per-name leg.)"""
-    df = _read("china_margin_detail", "detail")
+    PREFERS the GATED Tushare margin_detail snapshot (data/tushare/margin.parquet, cleaner per-name
+    融资余额) and falls back to the free china_margin_detail cache when the token is absent. Ranks the
+    raw financing balance cross-sectionally (or a fin_pct_float column if present)."""
+    df = _read("tushare", "margin")
+    if df is None or _ticker_col(df) is None:
+        df = _read("china_margin_detail", "detail")
     if df is None:
         return set()
     tcol = _ticker_col(df)
@@ -224,8 +239,9 @@ def _rich_valuation() -> set[str]:
 
 
 def _market_anchor() -> float | None:
-    """Whole-A valuation anchor = mean(PE pctile, PB pctile), 0..100. None if absent."""
-    df = _valuation_df()
+    """Whole-A valuation anchor = mean(PE pctile, PB pctile), 0..100. None if absent. Always the
+    whole-MARKET frame (decoupled from the now-per-name _valuation_df)."""
+    df = _market_valuation_df()
     if df is None:
         return None
     acol = _col(df, "market_valuation_anchor", "valuation_anchor", "anchor")
