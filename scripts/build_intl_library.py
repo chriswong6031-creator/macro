@@ -178,6 +178,38 @@ def _cone_note(anticipation: dict | None) -> list[dict] | None:
     return None
 
 
+def compute_intl_global_betas(closes, members) -> dict:
+    """Per-stock GLOBAL-RISK beta for the Intl board — the country-slot card for ex-US
+    names. Intl (like HK) has no idiosyncratic stock-selection edge, so the meaningful
+    cross-market read is how much each name AMPLIFIES vs CUSHIONS global risk; oil/gold/
+    CAD betas (the TSX card) don't apply off the Composite. Reuses engine/hk_global_beta
+    with the S&P 500 (overnight) as the global-risk factor. Best-effort → {} on any
+    failure, so the card simply stays absent (graceful). Returns {ticker: {beta, beta_pct,
+    role, tilt}} consumed by stock_view._card_global_beta."""
+    try:
+        from engine import hk_global_beta
+        spy = store.read("yahoo", "SPY")
+        if spy is None or "close" not in spy.columns:
+            log.warning("intl global-beta: no SPY factor series — skipped")
+            return {}
+        factor = spy["close"].pct_change(fill_method=None).shift(1)   # US -> intl overnight
+        cols = [t for t in members.index if t in closes.columns]
+        tkr_name = {t: str(members.loc[t, "name"]) for t in cols}
+        tkr_sector = {t: str(members.loc[t, "sector"]) for t in cols}
+        try:
+            from engine import hk_global
+            risk_state = hk_global.snapshot().get("state", "unknown")
+        except Exception:  # noqa: BLE001 — risk state only colours the tilt; safe to omit
+            risk_state = "unknown"
+        out = hk_global_beta.compute_global_betas(closes, factor, risk_state, tkr_name, tkr_sector)
+        pt = (out or {}).get("per_ticker", {})
+        log.info("intl global-beta: %d names", len(pt))
+        return pt
+    except Exception as e:  # noqa: BLE001 — additive country card, never fatal
+        log.warning("intl global-beta unavailable (%s)", e)
+        return {}
+
+
 def main(alpha: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "intlstockdata"
@@ -190,6 +222,7 @@ def main(alpha: dict | None = None) -> dict | None:
     if alpha is None:
         alpha = compute_intl_alpha(closes, members)
     alpha_pt = (alpha or {}).get("per_ticker", {})
+    gbeta = compute_intl_global_betas(closes, members)   # global-risk-beta country-slot card
 
     # hoist the forward-anticipation engine + its gate ONCE (the cone is close-driven; the gate
     # read would otherwise repeat per name). None-safe: if the engine is unavailable, the cone is
@@ -238,6 +271,8 @@ def main(alpha: dict | None = None) -> dict | None:
             sc = setup_score(rec, alpha_weight=INTL_ALPHA_WEIGHT)
             if sc:
                 cand.append(sc)
+        if gbeta.get(ticker):                  # global-risk-beta country-slot card (additive)
+            rec["global_beta"] = gbeta[ticker]
         # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
         # note in the shared engine; benchmark = the name's own-market index. Best-effort.
         if _anticipate is not None:
