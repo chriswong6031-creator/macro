@@ -137,7 +137,13 @@ def _regime_fit_z(role: str | None, tilt: str | None) -> float | None:
         return -0.8
     if tilt == "lag":
         return -0.3
-    return 0.0 if role else None
+    # neutral tilt carries NO information: return None so the leg DROPS OUT of the
+    # edge-z renormalization. Returning 0.0 (the old behavior) kept the leg's weight
+    # in the denominator while adding 0 to the numerator, silently haircutting any
+    # name that merely has a beta role by ~17-29% — a role-presence artifact that
+    # distorted the cross-sectional conviction rank (the module renormalizes over
+    # legs PRESENT, so an uninformative leg must be absent, not zero).
+    return None
 
 
 # ── the unified per-name edge ────────────────────────────────────────────────
