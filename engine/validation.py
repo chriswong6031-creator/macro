@@ -473,6 +473,71 @@ def platt_fit(p, y, iters: int = 400, lr: float = 0.2, l2: float = 1.0) -> dict:
     return {"a": round(a, 3), "b": round(b, 3), "brier_recal": round(float(np.mean((f - y) ** 2)), 4)}
 
 
+def expected_calibration_error(p, y, n_bins: int = 10) -> dict:
+    """Expected Calibration Error — the binned gap between stated confidence and observed
+    frequency for forecasts p∈[0,1] vs binary y. ECE = Σ_b (n_b/N)·|conf_b − acc_b|; MCE =
+    max_b |conf_b − acc_b|. ECE→0 means '70% really means ~70%'. Rising ECE is the earliest
+    decay alarm for a probabilistic signal (recession probit, bottom_radar ladder). {} on thin N."""
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    m = np.isfinite(p) & np.isfinite(y)
+    p, y = p[m], y[m]
+    if len(p) < 30:
+        return {}
+    edges = np.linspace(0, 1, n_bins + 1)
+    N = len(p)
+    ece, mce = 0.0, 0.0
+    for i in range(n_bins):
+        lo, hi = edges[i], edges[i + 1]
+        sel = (p >= lo) & (p <= hi) if i == n_bins - 1 else (p >= lo) & (p < hi)
+        nb = int(sel.sum())
+        if nb == 0:
+            continue
+        gap = abs(float(p[sel].mean()) - float(y[sel].mean()))
+        ece += (nb / N) * gap
+        mce = max(mce, gap)
+    return {"ece": round(ece, 4), "mce": round(mce, 4), "n": int(N)}
+
+
+def isotonic_calibration(p, y) -> dict:
+    """Isotonic (monotone) recalibration via Pool-Adjacent-Violators — fits a non-decreasing
+    score→probability map with NO functional form (unlike Platt's sigmoid), so it corrects an
+    arbitrarily-shaped miscalibration when N is ample. Returns {x, y_cal, n, ece_before,
+    ece_after}; feed `model` + new scores to `apply_calibration`. {} on thin N (use platt_fit)."""
+    p = np.asarray(p, float)
+    y = np.asarray(y, float)
+    m = np.isfinite(p) & np.isfinite(y)
+    p, y = p[m], y[m]
+    if len(p) < 30:
+        return {}
+    order = np.argsort(p, kind="mergesort")
+    xs, ys = p[order], y[order].astype(float)
+    blocks: list = []                                # [mean, weight, count]
+    for v in ys:
+        blocks.append([float(v), 1.0, 1])
+        while len(blocks) >= 2 and blocks[-2][0] > blocks[-1][0]:
+            m2, w2, c2 = blocks.pop()
+            m1, w1, c1 = blocks.pop()
+            nw = w1 + w2
+            blocks.append([(m1 * w1 + m2 * w2) / nw, nw, c1 + c2])
+    fitted = np.array([blk[0] for blk in blocks for _ in range(blk[2])], dtype=float)
+    model = {"x": xs.tolist(), "y_cal": fitted.tolist(), "n": int(len(p))}
+    model["ece_before"] = expected_calibration_error(p, y).get("ece")
+    model["ece_after"] = expected_calibration_error(apply_calibration(model, p), y).get("ece")
+    return model
+
+
+def apply_calibration(model: dict, p_new) -> "np.ndarray":
+    """Map new scores through a fitted isotonic `model` (step function = last x ≤ p_new)."""
+    x = np.asarray(model.get("x", []), float)
+    yc = np.asarray(model.get("y_cal", []), float)
+    pn = np.asarray(p_new, float)
+    if x.size == 0:
+        return pn
+    idx = np.clip(np.searchsorted(x, pn, side="right") - 1, 0, len(yc) - 1)
+    return yc[idx]
+
+
 def vif(df) -> dict:
     """Variance inflation factor per column from the correlation matrix inverse
     (VIF≈1 independent, >5 redundant, >10 severe collinearity). Surfaces the
