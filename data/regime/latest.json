@@ -407,7 +407,7 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
-    "tone_score": 0.1,
+    "tone_score": 0.3,
     "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
@@ -417,11 +417,11 @@
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "inflation remains elevated"
+        "quote_span": "Inflation remains elevated relative to the Committee's 2 percent goal"
       },
       {
         "field": "guidance_direction",
-        "quote_span": "maintain the target range"
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
       }
     ],
     "degraded_reason": null,
@@ -926,7 +926,7 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-21T03:40:21.981600+00:00",
+    "built": "2026-06-21T06:58:00.723862+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,

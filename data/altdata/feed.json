@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-21T04:26:09.543348+00:00",
+  "generated_utc": "2026-06-21T07:56:28.487050+00:00",
   "as_of": "2026-06-21",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -3658,258 +3658,258 @@
       "emoji": "\ud83d\udd2c",
       "label_en": "US patents",
       "label_zh": "\u7f8e\u56fd\u4e13\u5229",
-      "rows": 707,
-      "last_seen": "2026-06-09",
+      "rows": 1865,
+      "last_seen": "2026-06-16",
       "recent": [
         {
-          "Date": "2026-06-09",
-          "IPC": "g06f015/16",
-          "Title": "egress and private router detection in internet protocol version 6 (ipv6)",
+          "Date": "2026-06-16",
+          "IPC": "h04l027/26",
+          "Title": "spectrum mode determination for convergent digital radio",
           "Claims": "20.0",
-          "Abstract": "systems and methods for determining the egress of networks and identifying routers associated with networks and isps include determining an egress of a network; determining a prefix associated with the egress of the n\u2026",
-          "Ticker": "ZS",
-          "PatentNumber": "12652249",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
+          "Abstract": "aspects of this disclosure relate to determining a spectrum mode of a convergent digital radio signal. the convergent digital radio signal can be filtered by a plurality of filters. correlation coefficients can be gen\u2026",
+          "Ticker": "SWKS",
+          "PatentNumber": "12659214",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
         },
         {
-          "Date": "2026-06-09",
-          "IPC": "g06f016/9038",
-          "Title": "alert generation and augmentation using a large language model (\u2018llm\u2019)",
-          "Claims": "18.0",
-          "Abstract": "methods, systems, and products for alert generation and augmentation using a large language model (\u2018llm\u2019), including: providing, to the llm, information describing a monitored deployment; providing, to the llm, inform\u2026",
-          "Ticker": "FTNT",
-          "PatentNumber": "12652302",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06n020/00",
-          "Title": "self-improving bayesian network learning",
-          "Claims": "18.0",
-          "Abstract": "a method, a computer system, and a computer program product for creating multiple models asynchronously is provided. embodiments of the present invention may include receiving input data, wherein input data includes a\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651195",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06n020/00",
-          "Title": "selection of a machine learning model",
-          "Claims": "9.0",
-          "Abstract": "a system may be configured to perform operations to select a machine learning model. the operations may include training machine learning models with training data of a training data set and obtaining a first value re\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651197",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06n020/00",
-          "Title": "providing online expert-in-the-loop training of machine learning models",
+          "Date": "2026-06-16",
+          "IPC": "g06f011/34",
+          "Title": "simulating task scheduling",
           "Claims": "20.0",
-          "Abstract": "embodiments for providing expert-in-the-loop training of machine learning models in a computing environment by a processor. a performance of a machine learning model may be learned. feedback for the machine learning m\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651198",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
+          "Abstract": "apparatuses, systems, and techniques to schedule one or more workloads to one or more computers by comparing one or more performance metrics of the one or more workloads to be performed using one or more computers wit\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657106",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
         },
         {
-          "Date": "2026-06-09",
-          "IPC": "g06q030/00",
-          "Title": "phygital integration in commerce-based checkout experiences",
-          "Claims": "17.0",
-          "Abstract": "a computer-implemented method, a computer program product, and a computer system for phygital integration in commerce-based checkout experiences. a computer aggregates data from one or more personal devices of a user \u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651288",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06v020/70",
-          "Title": "document annotation processing",
-          "Claims": "19.0",
-          "Abstract": "a method, computer program product, and computer system are provided for document annotation processing. the method includes: providing a target document in a digital format; receiving an image of an annotated hard co\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651471",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g10l021/055",
-          "Title": "speech practice with media content synchronization",
-          "Claims": "17.0",
-          "Abstract": "an embodiment includes detecting by a speech detection component of a system a speech metric of a speaker in response to a reference speech. the embodiment includes responsive to the detected speech metric, computing \u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651605",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h04n021/84",
-          "Title": "dynamic playback speed adjustment",
+          "Date": "2026-06-16",
+          "IPC": "g06f001/26",
+          "Title": "cold data storage energy consumption evaluation and response",
           "Claims": "20.0",
-          "Abstract": "in an approach to playback speed adjustment, one or more computer processors extract metadata from a media file previously consumed by a user. one or more computer processors determine the metadata includes an eigenve\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651613",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
+          "Abstract": "various mechanisms and workflows are described that can utilize power and/or carbon footprint-based metrics to manage storage unit usage and/or configuration, which can provide a more efficient and environmentally fri\u2026",
+          "Ticker": "NTAP",
+          "PatentNumber": "12656844",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
         },
         {
-          "Date": "2026-06-09",
-          "IPC": "h01r009/28",
-          "Title": "connector with integrated pin protection mechanism",
-          "Claims": "20.0",
-          "Abstract": "a connector structure that includes a housing, at least one pin located within the housing, and a moveable protection plate located within the housing, and moveably connected to the housing. the moveable protection pl\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651855",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h04l009/32",
-          "Title": "reducing latency during cryptographic signature verification",
-          "Claims": "20.0",
-          "Abstract": "a computer-implemented method, according to one approach, includes: generating lookup tables for signatures during compile time, the lookup tables having cryptographic information. a secret key is used to encrypt the \u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652175",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06f015/16",
-          "Title": "chat operations notification management",
-          "Claims": "20.0",
-          "Abstract": "one or more computer processors training a model with historical incidents, wherein each historical incident is associated with group information and system event properties. the one or more computer processors respon\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652263",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h04l009/40",
-          "Title": "adjustment of access permissions of user devices based on created access policies",
-          "Claims": "20.0",
-          "Abstract": "a computer-implemented method, according to one embodiment, includes analyzing a deployment plan for an instance of infrastructure as code (iac) code to identify a plurality of milestones of the deployment plan, and c\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652316",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h05k007/20",
-          "Title": "rack heat exchanger to reduce room-level datacenter heat load",
-          "Claims": "20.0",
-          "Abstract": "an in-rack cooling system is disclosed. the cooling system includes one or more computer drawers, one or more open areas in the rack, a heat exchanger, and one or more fans in the open areas of the rack. the open area\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652783",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h10d030/67",
-          "Title": "nanosheet transistors with buried power rails",
-          "Claims": "12.0",
-          "Abstract": "a semiconductor structure includes a substrate and a first field effect transistor (fet) formed on the substrate; the first fet includes a first fet first source-drain region, a first fet second source-drain region, a\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652827",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h10d062/10",
-          "Title": "reduced n-well and p-well spacing",
-          "Claims": "9.0",
-          "Abstract": "embodiments disclosed herein describe semiconductor devices that include a semiconductor device includes a shallow trench isolation (sti) oxide and an n-well region with a n-well implant dopant. the n-well region may \u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652832",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h10d030/62",
-          "Title": "multilayer work function metal in nanosheet stacks using a sacrificial oxide material",
+          "Date": "2026-06-16",
+          "IPC": "g06f003/06",
+          "Title": "coalescing multiple small writes to large files or multiple writes to a number of small files to generate larger compressible chunks for inline compression",
           "Claims": "14.0",
-          "Abstract": "a semiconductor structure is formed using a nanosheet stack that is over a semiconductor substrate. the semiconductor structure includes multiple layers of work function that surround each channel of a plurality of ch\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652835",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
+          "Abstract": "systems and methods for coalescing writes to facilitate generation of larger compression groups for use during inline compression are provided. according to one embodiment, inline compression performed by a storage sy\u2026",
+          "Ticker": "NTAP",
+          "PatentNumber": "12656949",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
         },
         {
-          "Date": "2026-06-09",
-          "IPC": "h10d064/23",
-          "Title": "backside contacts for stacked transistor structures with shifted channels",
-          "Claims": "25.0",
-          "Abstract": "a semiconductor structure includes a first transistor including a first set of one or more channels, a second transistor vertically stacked over the first transistor, the second transistor including a second set of on\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652849",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h10d084/85",
-          "Title": "hybrid orientation channels and mixed orientation bottom epitaxy",
+          "Date": "2026-06-16",
+          "IPC": "g06f009/48",
+          "Title": "management and orchestration of microservices",
           "Claims": "20.0",
-          "Abstract": "aspects of the invention are directed to fabrication methods and resulting structures for providing transistors having hybrid crystal orientation channels and mixed crystal orientation bottom epitaxies. in a non-limit\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652855",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
+          "Abstract": "techniques are provided for microservices management and orchestration. a chart package is selectively retrieved from a chart repository based upon the chart package corresponding to a set of services to host within a\u2026",
+          "Ticker": "NTAP",
+          "PatentNumber": "12657051",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
         },
         {
-          "Date": "2026-06-09",
-          "IPC": "h10n070/00",
-          "Title": "confined phase-change memory cell with self-aligned electrode and reduced thermal loss",
-          "Claims": "19.0",
-          "Abstract": "a confined phase-change memory cell with self-aligned electrode includes a first conductive structure within a first dielectric layer. a phase-change memory pillar including a first portion of a phase-change material \u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12652969",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "h10w020/00",
-          "Title": "negative-tone organic dielectric with fine metal pillar resolution",
-          "Claims": "13.0",
-          "Abstract": "embodiments of present invention provide a method. the method includes forming a set of metal pillars on a substrate; forming a negative-tone organic dielectric layer covering the set of metal pillars; planarizing the\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12653009",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06n020/00",
-          "Title": "machine learning with segment-aligned multisensor trace data",
-          "Claims": "11.0",
-          "Abstract": "a machine-learning system receives from multiple sensors a set of trace-data time series. each time series contains a chronological sequence of sensor measurements of one attribute of one instance of a manufacturing p\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651193",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06n007/00",
-          "Title": "identifying traits of partitioned group from imbalanced dataset",
-          "Claims": "20.0",
-          "Abstract": "a computer-implemented method, system and computer program product for detecting feature traits from an imbalanced dataset. a first regression model is built based on a simulated dataset to compute contribution scores\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651182",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
-          "IPC": "g06n003/08",
-          "Title": "adversial deep neural network fuzzing",
-          "Claims": "13.0",
-          "Abstract": "a method for detecting security vulnerabilities, comprising: generating a corpus of input samples each labeled to indicate a threat level when executed by an input processing code; training a neural network (nn) using\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12651153",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
-        },
-        {
-          "Date": "2026-06-09",
+          "Date": "2026-06-16",
           "IPC": "g06f011/00",
-          "Title": "persistent and self-learning debug process for server failure analysis",
+          "Title": "persistent memory file system reconciliation",
           "Claims": "20.0",
-          "Abstract": "a method, computer system, and a computer program product are provided for debugging and determining root cause analysis of a server error. resource data is obtained as relating to a server with error or debugging nee\u2026",
-          "Ticker": "IBM",
-          "PatentNumber": "12650893",
-          "_first_seen": "2026-06-20T01:00:31.871255+00:00"
+          "Abstract": "techniques are provided for persistent memory file system reconciliation. as part of the persistent memory file system reconciliation, high level file system metadata associated with a persistent memory file system of\u2026",
+          "Ticker": "NTAP",
+          "PatentNumber": "12657088",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06f021/56",
+          "Title": "ransomware detection training using variable levels of encryption",
+          "Claims": "20.0",
+          "Abstract": "described herein are systems, methods, and software to provide ransomware detection using variable levels of encryption. in one implementation, a computing device identifies a set of files, wherein the set of files ea\u2026",
+          "Ticker": "NTAP",
+          "PatentNumber": "12657299",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06f021/53",
+          "Title": "file system access during runtime of a portable executable program",
+          "Claims": "21.0",
+          "Abstract": "the technology disclosed herein enables access to a file system by a portable executable program. in a particular example, a method includes, in a host executing the portable executable program, recognizing the portab\u2026",
+          "Ticker": "NTAP",
+          "PatentNumber": "12657285",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "h04b001/40",
+          "Title": "promoting coexistence of multiple radio systems through the mitigation of desensitization and intermodulation effects",
+          "Claims": "12.0",
+          "Abstract": "introduced here are approaches to mitigating the desensitization and intermodulation effects that can affect telecommunication performance of multiband electronic devices. specifically, the present disclosure outlines\u2026",
+          "Ticker": "NTGR",
+          "PatentNumber": "12658955",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "c12q001/68",
+          "Title": "methods for simultaneous amplification of target loci",
+          "Claims": "19.0",
+          "Abstract": "the invention provides methods for simultaneously amplifying multiple nucleic acid regions of interest in one reaction volume as well as methods for selecting a library of primers for use in such amplification methods\u2026",
+          "Ticker": "NTRA",
+          "PatentNumber": "12655483",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "a61n001/36",
+          "Title": "systems and methods for determining transducer locations for delivering tumor treating fields using an initial estimate",
+          "Claims": "20.0",
+          "Abstract": "a computer-implemented method for selecting at least one transducer location for delivering ttfields to a subject, the method including: obtaining a three-dimensional model of the subject, the model including voxels; \u2026",
+          "Ticker": "NVCR",
+          "PatentNumber": "12654007",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t001/20",
+          "Title": "storage of transformed tensor in a cache",
+          "Claims": "20.0",
+          "Abstract": "apparatuses, systems, and techniques to perform a tensor prefetch instruction to cause one or more tensors to be transformed and stored into one or more caches. in at least one embodiment, one or more circuits of a gp\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657024",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "h04w076/28",
+          "Title": "discontinuous communication pattern adjustment",
+          "Claims": "19.0",
+          "Abstract": "apparatuses, systems, and techniques to adjust one or more discontinuous wireless communication patterns. in at least one embodiment, a processor includes one or more circuits to use one or more neural networks to adj\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12660036",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t005/00",
+          "Title": "temporal image blending using one or more neural networks",
+          "Claims": "20.0",
+          "Abstract": "apparatuses, systems, and techniques are presented to reconstruct one or more images. in at least one embodiment, one or more objects in an image are caused to be generated based, at least in part, on applying one or \u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657655",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06f013/14",
+          "Title": "low-power frame transmission over a communication interconnect",
+          "Claims": "21.0",
+          "Abstract": "a device includes receiver logic to receive frames over a link, datalink logic to the receiver logic, to process the frames, and control logic coupled to the receiver logic and the datalink logic. the control logic is\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657150",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "h10w090/00",
+          "Title": "semiconductor devices, assemblies, and associated methods",
+          "Claims": "16.0",
+          "Abstract": "a semiconductor device assembly can include an assembly substrate having a top surface with a die stack thereat. the die stack can include a first and a second die, and each dies can include a die substrate with a top\u2026",
+          "Ticker": "MU",
+          "PatentNumber": "12660689",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06f009/30",
+          "Title": "method and apparatus for supporting distributed graphics and compute engines and synchronization in multi-dielet parallel processor architectures\u2014memory barriers",
+          "Claims": "18.0",
+          "Abstract": "this disclosure describes supporting distributed graphics and compute engines in a multi-dielet processor, such as, for example, a multi-dielet graphics processing unit (gpu), architectures and synchronization in such\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657023",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06n003/08",
+          "Title": "training and deployment of machine learning models",
+          "Claims": "23.0",
+          "Abstract": "apparatuses, systems, and techniques to provisioning of pipelines for efficient training, retraining, configuring, deploying, and using machine learning models for inference in user-specific platforms.",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657452",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t003/4084",
+          "Title": "fourier transform-based image synthesis using neural networks",
+          "Claims": "36.0",
+          "Abstract": "apparatuses, systems, and techniques to scale textured images using a fourier transform in conjunction with one or more neural networks. in at least one embodiment, a neural network generates an expanded image from an\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657660",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t007/50",
+          "Title": "techniques for generating depth maps from videos",
+          "Claims": "20.0",
+          "Abstract": "the disclosed method for generating a first depth map for a first frame of a video includes performing one or more operations to generate a first intermediate depth map based on the first frame and a second frame prec\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657748",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t017/05",
+          "Title": "distortion correction for environment visualizations with wide angle views",
+          "Claims": "20.0",
+          "Abstract": "in various examples, a visualization of an environment may be generated using a panini projection that is optimized based on detected scene content. for example, image data of an environment may be perspective project\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657818",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t017/05",
+          "Title": "surface estimation",
+          "Claims": "20.0",
+          "Abstract": "in various examples, to support training a deep neural network (dnn) to predict a dense representation of a 3d surface structure of interest, a training dataset is generated using a parametric mathematical modeling. a\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657819",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06t017/20",
+          "Title": "generative modeling for 3d objects using neural implicit representations",
+          "Claims": "20.0",
+          "Abstract": "approaches presented herein provide systems and methods for generating three-dimensional (3d) objects using compressed data as an input. one or more models may learn from a hash table of latent features to map differe\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657822",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "h04w024/10",
+          "Title": "wireless signal information transmission",
+          "Claims": "20.0",
+          "Abstract": "apparatuses, systems, and techniques to use a schedule to cause wireless signal information to be transmitted. in at least one embodiment, a processor includes one or more circuits to use a schedule to cause wireless \u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12659777",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
+        },
+        {
+          "Date": "2026-06-16",
+          "IPC": "g06f018/214",
+          "Title": "training a neural network for object detection",
+          "Claims": "34.0",
+          "Abstract": "apparatuses, systems, and techniques to train a neural network using varying levels of supervision. in at least one embodiment, a neural network is trained using a unified task head to facilitate supervision by both w\u2026",
+          "Ticker": "NVDA",
+          "PatentNumber": "12657258",
+          "_first_seen": "2026-06-21T06:50:33.198750+00:00"
         }
       ]
     },
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 11684,
+      "rows": 11908,
       "last_seen": "2026-06-21",
       "recent": [
         {
-          "ticker": "CVNA",
-          "owner_name": "CANADA PENSION PLAN INVESTMENT BOARD",
+          "ticker": "DJT",
+          "owner_name": "RAYMOND JAMES FINANCIAL INC",
           "owner_title": "Institution",
-          "shares": "163631",
+          "shares": "41434",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "NATIXIS ADVISORS, LLC",
+          "ticker": "ORCL",
+          "owner_name": "Swedbank AB",
           "owner_title": "Institution",
-          "shares": "19145177",
+          "shares": "3319605",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "KBC Group NV",
+          "ticker": "ORCL",
+          "owner_name": "RAYMOND JAMES & ASSOCIATES",
           "owner_title": "Institution",
-          "shares": "19004336",
+          "shares": "3989379",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "HEALTHCARE OF ONTARIO PENSION PLAN TRUST FUND",
+          "ticker": "ORCL",
+          "owner_name": "FIRST MANHATTAN CO. LLC.",
           "owner_title": "Institution",
-          "shares": "18873847",
+          "shares": "3940029",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "Korea Investment CORP",
+          "ticker": "ORCL",
+          "owner_name": "Ensign Peak Advisors, Inc",
           "owner_title": "Institution",
-          "shares": "18860440",
+          "shares": "3920584",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "ACADIAN ASSET MANAGEMENT LLC",
+          "ticker": "ORCL",
+          "owner_name": "National Pension Service",
           "owner_title": "Institution",
-          "shares": "18653828",
+          "shares": "3672921",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "NOMURA ASSET MANAGEMENT CO LTD",
+          "ticker": "ORCL",
+          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
           "owner_title": "Institution",
-          "shares": "18466669",
+          "shares": "3666848",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "STEVENS MARK A",
-          "owner_title": null,
-          "shares": "18343172",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
+          "ticker": "ORCL",
+          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
           "owner_title": "Institution",
-          "shares": "17934981",
+          "shares": "3653404",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
+          "ticker": "ORCL",
+          "owner_name": "FIRST TRUST ADVISORS LP",
+          "owner_title": "Institution",
+          "shares": "3633070",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "CITIGROUP INC",
+          "owner_title": "Institution",
+          "shares": "3484615",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "Defiance ETFs, LLC",
+          "owner_title": "Institution",
+          "shares": "3322877",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "RHUMBLINE ADVISERS",
+          "owner_title": "Institution",
+          "shares": "3107080",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "Fiera Capital Corp",
+          "owner_title": "Institution",
+          "shares": "2566745",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "NATIONAL BANK OF CANADA /FI/",
+          "owner_title": "Institution",
+          "shares": "2950290",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "ENVESTNET ASSET MANAGEMENT INC",
+          "owner_title": "Institution",
+          "shares": "2885329",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "WELLINGTON MANAGEMENT GROUP LLP",
+          "owner_title": "Institution",
+          "shares": "2882367",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "DnB Asset Management AS",
+          "owner_title": "Institution",
+          "shares": "2818172",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "CALIFORNIA PUBLIC EMPLOYEES RETIREMENT SYSTEM",
+          "owner_title": "Institution",
+          "shares": "2776440",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
+          "owner_name": "JANE STREET GROUP, LLC",
+          "owner_title": "Institution",
+          "shares": "2667293",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "ORCL",
           "owner_name": "STIFEL FINANCIAL CORP",
           "owner_title": "Institution",
-          "shares": "17403746",
+          "shares": "2665050",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "PRIMECAP MANAGEMENT CO/CA/",
+          "ticker": "ORCL",
+          "owner_name": "CALIFORNIA STATE TEACHERS RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "17227520",
+          "shares": "2643338",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "Holocene Advisors, LP",
+          "ticker": "ORCL",
+          "owner_name": "KING LUTHER CAPITAL MANAGEMENT CORP",
           "owner_title": "Institution",
-          "shares": "16815635",
+          "shares": "2630287",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "Zurcher Kantonalbank (Zurich Cantonalbank)",
+          "ticker": "ORCL",
+          "owner_name": "BNP PARIBAS FINANCIAL MARKETS",
           "owner_title": "Institution",
-          "shares": "16740098",
+          "shares": "4000917",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "Winslow Capital Management, LLC",
+          "ticker": "ORCL",
+          "owner_name": "HSBC HOLDINGS PLC",
           "owner_title": "Institution",
-          "shares": "16654394",
+          "shares": "4177379",
           "_collected": "2026-06-21"
         },
         {
-          "ticker": "NVDA",
-          "owner_name": "CAISSE DE DEPOT ET PLACEMENT DU QUEBEC",
+          "ticker": "ORCL",
+          "owner_name": "Clearbridge Investments, LLC",
           "owner_title": "Institution",
-          "shares": "15787881",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "CREDIT AGRICOLE S A",
-          "owner_title": "Institution",
-          "shares": "15318021",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "FRED ALGER MANAGEMENT, LLC",
-          "owner_title": "Institution",
-          "shares": "15300674",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "DANSKE BANK A/S",
-          "owner_title": "Institution",
-          "shares": "15181160",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "Mirae Asset Global Investments Co., Ltd.",
-          "owner_title": "Institution",
-          "shares": "14898845",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "Chevy Chase Trust Holdings, LLC",
-          "owner_title": "Institution",
-          "shares": "14889987",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "MARSHALL WACE, LLP",
-          "owner_title": "Institution",
-          "shares": "14457057",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "CANADA LIFE ASSURANCE Co",
-          "owner_title": "Institution",
-          "shares": "19142430",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "MANUFACTURERS LIFE INSURANCE COMPANY, THE",
-          "owner_title": "Institution",
-          "shares": "19278112",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "LOS ANGELES CAPITAL MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "14362222",
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "NVDA",
-          "owner_name": "Quantinno Capital Management LP",
-          "owner_title": "Institution",
-          "shares": "19491358",
+          "shares": "4218489",
           "_collected": "2026-06-21"
         }
       ]
@@ -5655,26 +5655,126 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 570,
+      "rows": 596,
       "last_seen": "2026-06-21",
       "recent": [
         {
-          "ticker": "INTC",
-          "name": "Michelle Johnston Holthaus",
-          "role": "CEO Intel Products, Former Interim Co-CEO",
+          "ticker": "IBM",
+          "name": "G. Cohn",
+          "role": "Vice Chairman",
           "year": "2022",
-          "total_comp": "7633900.0",
-          "salary": "856300.0",
+          "total_comp": "8951925.0",
+          "salary": "1170000.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Christopher A. Viehbacher",
+          "role": "President and CEO",
+          "year": "2022",
+          "total_comp": "30488593.0",
+          "salary": "153846.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "David V. Elkins",
+          "role": "EVP And CFO",
+          "year": "2024",
+          "total_comp": "8707571.0",
+          "salary": "1115000.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "Christopher S. Boerner, Ph.D.",
+          "role": "Board Chair And CEO",
+          "year": "2024",
+          "total_comp": "18787618.0",
+          "salary": "1536538.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "Greg Meyers",
+          "role": "EVP, Chief Digital And Technology Officer",
+          "year": "2025",
+          "total_comp": "7181173.0",
+          "salary": "1072692.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "David V. Elkins",
+          "role": "EVP And CFO",
+          "year": "2025",
+          "total_comp": "9177590.0",
+          "salary": "1140442.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "Adam Lenkowsky",
+          "role": "EVP, Chief Commercialization Officer",
+          "year": "2025",
+          "total_comp": "9340352.0",
+          "salary": "1131731.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "Cristian Massacesi, M.D.",
+          "role": "EVP, Chief Medical Officer, Head Of Development",
+          "year": "2025",
+          "total_comp": "10072950.0",
+          "salary": "388462.0",
+          "bonus": "1125000.0",
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "Samit Hirawat, M.D.",
+          "role": "Former EVP, Chief Medical Officer, Head Of Development",
+          "year": "2025",
+          "total_comp": "10334233.0",
+          "salary": "964904.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BMY",
+          "name": "Christopher S. Boerner, Ph.D.",
+          "role": "Board Chair And CEO",
+          "year": "2025",
+          "total_comp": "21879919.0",
+          "salary": "1586346.0",
           "bonus": null,
           "_collected": "2026-06-21"
         },
         {
           "ticker": "BIIB",
-          "name": "Michael R. McDonnell",
-          "role": "Executive Vice President, CFO",
-          "year": "2024",
-          "total_comp": "6826734.0",
-          "salary": "992531.0",
+          "name": "Nicole C. Murphy",
+          "role": "Head of Pharmaceutical Operations and Technology",
+          "year": "2022",
+          "total_comp": "4929712.0",
+          "salary": "592218.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BIIB",
+          "name": "Susan H. Alexander",
+          "role": "Executive Vice President, CLO",
+          "year": "2022",
+          "total_comp": "6790152.0",
+          "salary": "879407.0",
           "bonus": null,
           "_collected": "2026-06-21"
         },
@@ -5690,31 +5790,21 @@
         },
         {
           "ticker": "BIIB",
-          "name": "Christopher A. Viehbacher",
-          "role": "President and CEO",
-          "year": "2022",
-          "total_comp": "30488593.0",
-          "salary": "153846.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "BIIB",
-          "name": "Christopher A. Viehbacher",
-          "role": "President and CEO",
-          "year": "2023",
-          "total_comp": "4069913.0",
-          "salary": "1600000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "BIIB",
           "name": "Nicole C. Murphy",
           "role": "Head of Pharmaceutical Operations and Technology",
           "year": "2023",
           "total_comp": "5714319.0",
           "salary": "670642.0",
+          "bonus": null,
+          "_collected": "2026-06-21"
+        },
+        {
+          "ticker": "BWXT",
+          "name": "Robb A. LeMasters",
+          "role": "Senior Vice President and CFO",
+          "year": "2022",
+          "total_comp": "1637524.0",
+          "salary": "500000.0",
           "bonus": null,
           "_collected": "2026-06-21"
         },
@@ -5770,21 +5860,21 @@
         },
         {
           "ticker": "BIIB",
-          "name": "Christopher A. Viehbacher",
-          "role": "President and CEO",
+          "name": "Michael R. McDonnell",
+          "role": "Executive Vice President, CFO",
           "year": "2024",
-          "total_comp": "24166665.0",
-          "salary": "1600000.0",
+          "total_comp": "6826734.0",
+          "salary": "992531.0",
           "bonus": null,
           "_collected": "2026-06-21"
         },
         {
           "ticker": "BIIB",
-          "name": "Nicole C. Murphy",
-          "role": "Head of Pharmaceutical Operations and Technology",
-          "year": "2022",
-          "total_comp": "4929712.0",
-          "salary": "592218.0",
+          "name": "Christopher A. Viehbacher",
+          "role": "President and CEO",
+          "year": "2024",
+          "total_comp": "24166665.0",
+          "salary": "1600000.0",
           "bonus": null,
           "_collected": "2026-06-21"
         },
@@ -5815,96 +5905,6 @@
           "year": "2022",
           "total_comp": "18244778.0",
           "salary": "1000000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "Stephen J. Squeri",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "48029631.0",
-          "salary": "1500000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "C.Y. Le Caillec",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "6245154.0",
-          "salary": "719129.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "L.E. Seeger",
-          "role": "Chief Legal Officer",
-          "year": "2023",
-          "total_comp": "10744483.0",
-          "salary": "875000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "A.D. Williams",
-          "role": "Former Group President, Enterprise Services and Former CEO of AENB",
-          "year": "2023",
-          "total_comp": "13381978.0",
-          "salary": "1000000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "D.E. Buckminster",
-          "role": "Former Vice Chairman",
-          "year": "2023",
-          "total_comp": "15611578.0",
-          "salary": "1100000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "Stephen J. Squeri",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "35676905.0",
-          "salary": "1500000.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "BIIB",
-          "name": "Susan H. Alexander",
-          "role": "Executive Vice President, CLO",
-          "year": "2022",
-          "total_comp": "6790152.0",
-          "salary": "879407.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "BMY",
-          "name": "Christopher S. Boerner, Ph.D.",
-          "role": "Board Chair And CEO",
-          "year": "2025",
-          "total_comp": "21879919.0",
-          "salary": "1586346.0",
-          "bonus": null,
-          "_collected": "2026-06-21"
-        },
-        {
-          "ticker": "AXP",
-          "name": "L.E. Seeger",
-          "role": "Chief Legal Officer",
-          "year": "2024",
-          "total_comp": "11270084.0",
-          "salary": "875000.0",
           "bonus": null,
           "_collected": "2026-06-21"
         }
@@ -6946,21 +6946,21 @@
     "github": [
       {
         "ticker": "IBM",
-        "stars": 7507,
-        "wow_pct": 0.01,
+        "stars": 7508,
+        "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14577,
-        "wow_pct": 0.01,
+        "stars": 14579,
+        "wow_pct": 0.02,
         "hot": true
       },
       {
-        "ticker": "U",
-        "stars": 19496,
+        "ticker": "NVDA",
+        "stars": 17434,
         "wow_pct": 0.01,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "AMD",
@@ -6982,7 +6982,7 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77075,
+        "stars": 77077,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -7006,19 +7006,13 @@
       },
       {
         "ticker": "META",
-        "stars": 245966,
-        "wow_pct": 0.0,
+        "stars": 245965,
+        "wow_pct": -0.0,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "stars": 186574,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "NVDA",
-        "stars": 17433,
+        "stars": 186573,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -7043,6 +7037,12 @@
       {
         "ticker": "TWLO",
         "stars": 2064,
+        "wow_pct": 0.0,
+        "hot": false
+      },
+      {
+        "ticker": "U",
+        "stars": 19495,
         "wow_pct": 0.0,
         "hot": false
       }
@@ -9088,92 +9088,92 @@
     "patents": [
       {
         "ticker": "QCOM",
-        "patents": 64,
-        "ipc_classes": 15,
+        "patents": 176,
+        "ipc_classes": 25,
         "sample_title": "modulation and coding scheme table change based on constellation and code rate"
       },
       {
         "ticker": "TSM",
-        "patents": 46,
-        "ipc_classes": 13,
+        "patents": 164,
+        "ipc_classes": 28,
         "sample_title": "backside contact"
       },
       {
         "ticker": "IBM",
-        "patents": 39,
-        "ipc_classes": 14,
+        "patents": 91,
+        "ipc_classes": 26,
         "sample_title": "double-sided integrated circuit with electrostatic guard ring"
       },
       {
         "ticker": "AAPL",
-        "patents": 33,
-        "ipc_classes": 16,
+        "patents": 86,
+        "ipc_classes": 35,
         "sample_title": "method and system for generating at least one image of a real environment"
       },
       {
-        "ticker": "MU",
-        "patents": 26,
-        "ipc_classes": 8,
-        "sample_title": "advanced interconnection for wafer on wafer packaging"
-      },
-      {
         "ticker": "INTC",
-        "patents": 22,
-        "ipc_classes": 11,
+        "patents": 71,
+        "ipc_classes": 20,
         "sample_title": "viewport switch latency reduction in live streaming"
       },
       {
         "ticker": "MSFT",
-        "patents": 22,
-        "ipc_classes": 8,
+        "patents": 70,
+        "ipc_classes": 18,
         "sample_title": "cryogenic removal of carbon dioxide from the atmosphere"
       },
       {
+        "ticker": "MU",
+        "patents": 66,
+        "ipc_classes": 14,
+        "sample_title": "advanced interconnection for wafer on wafer packaging"
+      },
+      {
+        "ticker": "SONY",
+        "patents": 38,
+        "ipc_classes": 21,
+        "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
+      },
+      {
+        "ticker": "LPL",
+        "patents": 38,
+        "ipc_classes": 7,
+        "sample_title": "display apparatus having a light-emitting device"
+      },
+      {
         "ticker": "NVDA",
-        "patents": 20,
-        "ipc_classes": 9,
+        "patents": 36,
+        "ipc_classes": 10,
         "sample_title": "highlight determination using one or more neural networks"
       },
       {
         "ticker": "BA",
-        "patents": 15,
-        "ipc_classes": 14,
+        "patents": 33,
+        "ipc_classes": 26,
         "sample_title": "wind tunnel turbulent airflow laser sensor system"
       },
       {
-        "ticker": "LPL",
-        "patents": 13,
-        "ipc_classes": 6,
-        "sample_title": "display apparatus having a light-emitting device"
+        "ticker": "TXN",
+        "patents": 32,
+        "ipc_classes": 19,
+        "sample_title": "high band-gap devices with a doped high band-gap gate electrode extension"
       },
       {
-        "ticker": "SLB",
-        "patents": 13,
-        "ipc_classes": 6,
-        "sample_title": "monitoring an industrial facilty employing industrial internet of things (iiot) sensors using a tactical compute application"
+        "ticker": "PHG",
+        "patents": 28,
+        "ipc_classes": 13,
+        "sample_title": "method of and system for representing shape of an optical fiber sensor"
       },
       {
         "ticker": "HON",
-        "patents": 12,
-        "ipc_classes": 10,
+        "patents": 26,
+        "ipc_classes": 18,
         "sample_title": "event notification device"
       },
       {
-        "ticker": "SONY",
-        "patents": 12,
-        "ipc_classes": 9,
-        "sample_title": "information processing apparatus and information processing method for users at remote locations to communicate naturally"
-      },
-      {
-        "ticker": "ORCL",
-        "patents": 12,
-        "ipc_classes": 3,
-        "sample_title": "application driven data change conflict handling system"
-      },
-      {
         "ticker": "HMC",
-        "patents": 11,
-        "ipc_classes": 8,
+        "patents": 25,
+        "ipc_classes": 17,
         "sample_title": "courteous mode for adjusting vehicle functions"
       }
     ],
@@ -10333,6 +10333,13 @@
         "year": 2024
       },
       {
+        "ticker": "IBM",
+        "top_exec": "Arvind Krishna",
+        "role": "Chairman, President and CEO",
+        "total_comp": 37989685.0,
+        "year": 2025
+      },
+      {
         "ticker": "EFX",
         "top_exec": "Mark W. Begor",
         "role": "CEO",
@@ -10358,13 +10365,6 @@
         "top_exec": "Robert A. Michael",
         "role": "COB",
         "total_comp": 32530984.0,
-        "year": 2025
-      },
-      {
-        "ticker": "MU",
-        "top_exec": "Sanjay Mehrotra",
-        "role": "CEO",
-        "total_comp": 30940146.0,
         "year": 2025
       }
     ],
@@ -10472,7 +10472,7 @@
           "patent_cluster",
           "trump"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,647,032 reviews \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 22 grants, 8 IPC classes \u00b7 trump: MICROSOFT CORP"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,647,032 reviews \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes \u00b7 trump: MICROSOFT CORP"
       },
       {
         "ticker": "NVDA",
@@ -10484,7 +10484,7 @@
           "patent_cluster",
           "retail_buzz"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 patent_cluster: 20 grants, 9 IPC classes \u00b7 retail_buzz: 207 WSB mentions"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions"
       },
       {
         "ticker": "BIIB",
@@ -10647,7 +10647,7 @@
           "material_8k",
           "patent_cluster"
         ],
-        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01, 8.01) \u00b7 patent_cluster: 12 grants, 10 IPC classes"
+        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01, 8.01) \u00b7 patent_cluster: 26 grants, 18 IPC classes"
       },
       {
         "ticker": "INTC",
@@ -10657,7 +10657,7 @@
           "gov_grant",
           "patent_cluster"
         ],
-        "why": "gov_grant: $6,316,036 federal grant/loan \u00b7 patent_cluster: 22 grants, 11 IPC classes"
+        "why": "gov_grant: $6,316,036 federal grant/loan \u00b7 patent_cluster: 71 grants, 20 IPC classes"
       },
       {
         "ticker": "BA",
@@ -10667,7 +10667,7 @@
           "gov_grant",
           "patent_cluster"
         ],
-        "why": "gov_grant: $5,380,843 federal grant/loan \u00b7 patent_cluster: 15 grants, 14 IPC classes"
+        "why": "gov_grant: $5,380,843 federal grant/loan \u00b7 patent_cluster: 33 grants, 26 IPC classes"
       },
       {
         "ticker": "WMT",

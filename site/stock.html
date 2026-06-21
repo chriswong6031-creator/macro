@@ -380,6 +380,137 @@
   .aq-foot { color:var(--muted); font-size:11px; margin:9px 0 0; font-style:italic; }
   @media (max-width:560px){ .aq-read{ grid-template-columns:14px 1fr; }
     .aq-read .aqk{ font-weight:700; } .aq-read .aqd{ grid-column:1 / -1; padding-left:23px; } }
+/* _stock_decision.css.j2 — styling for the shared stockview.js decision-first layout.
+   Included inside each analyzer's <style> block. Theme-var routed; directional tones use
+   --up/--down (which intentionally swap under html[data-lang="zh"] red=up), while caution /
+   conflict / falsifier colors are pinned to --warn so their meaning never inverts. */
+
+/* ---- Layer 1: the one verdict band ---- */
+.sv-decision { margin: 10px 0 6px; }
+.sv-verdict-band {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-state-conflict .sv-verdict-band { border-color: var(--warn); }
+.sv-gauge {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 96px; padding: 6px 12px; border-radius: 10px; color: #fff;
+  background: var(--muted);
+}
+.sv-band-high { background: var(--up); }
+.sv-band-constructive { background: color-mix(in srgb, var(--up) 62%, var(--panel)); }
+.sv-band-neutral { background: var(--muted); }
+.sv-band-low { background: var(--down); }
+.sv-band-word { font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; }
+.sv-score { font-size: 20px; font-weight: 800; margin-top: 2px; }
+.sv-score small { font-size: 11px; font-weight: 600; opacity: .8; }
+.sv-verdict-text { flex: 1; min-width: 200px; }
+.sv-headline { font-size: 18px; font-weight: 750; line-height: 1.25; color: var(--text); }
+.sv-gloss { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.sv-trust {
+  font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+  align-self: flex-start; white-space: nowrap;
+}
+
+.sv-timing { font-size: 13px; color: var(--text); margin: 8px 2px 0; }
+.sv-timing-lbl { color: var(--muted); font-weight: 600; }
+.sv-dot { color: var(--muted); }
+.sv-tag {
+  font-weight: 700; padding: 1px 7px; border-radius: 6px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-urg-now, .sv-urg-imminent { color: var(--up); border-color: var(--up); }
+.sv-urg-caution { color: var(--warn); border-color: var(--warn); }
+.sv-urg-exit, .sv-urg-avoid { color: var(--down); border-color: var(--down); }
+.sv-cap { color: var(--warn); font-size: 12px; }
+
+.sv-size { display: flex; align-items: center; gap: 8px; margin: 8px 2px 0; font-size: 13px; }
+.sv-size-lbl { color: var(--muted); font-weight: 600; }
+.sv-size-pct { font-weight: 800; font-size: 15px; color: var(--text); }
+.sv-size-avoid { color: var(--down); }
+.sv-size-full, .sv-size-three-quarter { color: var(--up); }
+.sv-size-bk { color: var(--muted); font-size: 12px; }
+.sv-regime { margin: 8px 2px 0; font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* ---- Layer 1b: fingerprint ---- */
+.sv-fingerprint {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0;
+}
+.sv-axis { min-width: 0; }
+.sv-axis-top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
+.sv-axis-lbl { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-axis-pct { font-size: 13px; font-weight: 700; color: var(--text); }
+.sv-axis-na { font-size: 11px; color: var(--muted); }
+.sv-axis-bar { height: 6px; border-radius: 3px; background: var(--panel2); margin-top: 3px; overflow: hidden; }
+.sv-axis-fill { display: block; height: 100%; background: var(--link); border-radius: 3px; }
+.sv-axis-warn .sv-axis-fill { background: var(--warn); }
+
+/* ---- Layer 1c: honesty row ---- */
+.sv-conflict {
+  margin: 8px 0 6px; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  border: 1px solid var(--warn);
+}
+.sv-conflict-p { font-weight: 700; }
+.sv-honesty { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
+.sv-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.sv-col-h { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
+.sv-why .sv-col-h { color: var(--up); }
+.sv-flip .sv-col-h { color: var(--warn); }
+.sv-list { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.sv-list li { margin: 1px 0; }
+.sv-fl-high { color: var(--down); font-weight: 600; }
+.sv-empty { font-size: 12.5px; color: var(--muted); margin: 2px 0; }
+
+/* ---- Layer 2: evidence lanes ---- */
+.sv-sec-h { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
+.sv-evidence { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sv-dim {
+  background: var(--panel2); border: 1px solid var(--line); border-left-width: 3px;
+  border-radius: 8px; padding: 7px 10px; min-width: 0;
+}
+.sv-dim-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.sv-dim-val { font-size: 13.5px; font-weight: 650; color: var(--text); margin-top: 1px; }
+.sv-dim-gloss { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.sv-t-good { border-left-color: var(--up); }
+.sv-t-bad { border-left-color: var(--down); }
+.sv-t-warn { border-left-color: var(--warn); }
+.sv-t-neutral { border-left-color: var(--muted); }
+
+/* ---- Layer 2b: country slot cards ---- */
+.sv-country { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 10px 0; }
+.sv-card { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.sv-card-h { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.sv-crow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 1px 0; }
+.sv-ck { color: var(--muted); }
+.sv-cv { font-weight: 650; color: var(--text); }
+.sv-c-up { color: var(--up); }
+.sv-c-down { color: var(--down); }
+.sv-cfoot { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+
+/* ---- Deep-layer collapsed disclosure groups ---- */
+.sv-group { margin: 0; border-top: 1px solid var(--line); }
+.sv-group > summary {
+  cursor: pointer; list-style: none; padding: 12px 2px; font-size: 12.5px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  display: flex; align-items: center; gap: 8px;
+}
+.sv-group > summary::-webkit-details-marker { display: none; }
+.sv-group > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.sv-group[open] > summary::before { transform: rotate(90deg); }
+.sv-group > summary:hover { color: var(--text); }
+.sv-group .panel { margin-top: 8px; }
+/* the deep-detail disclosure on the header card (cycle & timing) */
+.sv-deep > summary { cursor: pointer; font-size: 12.5px; color: var(--muted); padding: 6px 0; }
+.sv-deep > summary:hover { color: var(--text); }
+
+@media (max-width: 560px) {
+  .sv-fingerprint { grid-template-columns: repeat(2, 1fr); }
+  .sv-honesty { grid-template-columns: 1fr; }
+  .sv-headline { font-size: 16px; }
+}
 </style>
 </head>
 <body>
@@ -524,25 +655,35 @@
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- legacy heroes — populated only as a FALLBACK if stockview.js fails to load -->
       <div id="r_glance" class="glance" style="display:none"></div>
-      <!-- unified Conviction Profile hero — the SAME block the standout card shows -->
       <div id="r_conviction" class="conv" style="display:none"></div>
-      <!-- bold VERDICT + at-a-glance SIGNAL STRIP (replace the thin entry bar) -->
-      <div id="r_verdict" class="verdict"></div>
-      <div id="r_sigstrip" class="sigstrip"></div>
-      <!-- bottom-confidence box (multi-TF, bottoming states only) -->
-      <div id="r_bc" class="bcbox" style="display:none"></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <p id="r_early" class="early" style="display:none"></p>
-      <p id="r_macro" class="macro-caution" style="display:none"></p>
+      <div id="r_verdict" class="verdict" style="display:none"></div>
+      <div id="r_sigstrip" class="sigstrip" style="display:none"></div>
       <div id="r_macrosens" class="macro-sens" style="display:none"></div>
       <div id="r_altdata" class="macro-sens" style="display:none"></div>
       <div id="r_dtcontra" class="dt-contra" style="display:none"></div>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary><span class="l-en">Cycle &amp; timing detail</span><span class="l-zh">周期与时机详情</span></summary>
+        <div id="r_bc" class="bcbox" style="display:none"></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <p id="r_early" class="early" style="display:none"></p>
+        <p id="r_macro" class="macro-caution" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <!-- ===== Deep layer — collapsed disclosure groups (off the glance path) ===== -->
+    <details class="sv-group"><summary><span class="l-en">🔮 Outlook &amp; AI view</span><span class="l-zh">🔮 前瞻与 AI 观点</span></summary>
     <div class="panel" id="panel_anticipation" style="display:none">
       <h2>🔮 <span class="l-en">Anticipation — multi-horizon outcome cone</span><span class="l-zh">预判 — 多周期结果锥</span>
         <a href="anticipation.html" class="muted" style="font-size:12px;font-weight:400;margin-left:6px"><span class="l-en">all assets →</span><span class="l-zh">全部标的 →</span></a></h2>
@@ -560,7 +701,8 @@
       <h2>🧠 <span class="l-en">AI brief — research context</span><span class="l-zh">AI 简报 — 研究背景</span></h2>
       <div id="stock-brief-body"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary><span class="l-en">📊 Fundamentals &amp; financials</span><span class="l-zh">📊 基本面与财务</span></summary>
     <!-- ===== Fundamentals suite (Phase 1: surface what we already compute) ===== -->
     <div class="panel" id="panel_profile" style="display:none">
       <h2>🏢 <span class="l-en">Business profile</span><span class="l-zh">公司概况</span></h2>
@@ -619,7 +761,8 @@
         <span class="help">?<span class="tip"><span class="l-en">This stock's return with its MARKET and SECTOR beta removed — sector-neutral residual momentum over a 12-1-month window (research/RESIDUAL_ALPHA_MOMENTUM.md). 'alpha z' is its rank vs the whole S&P 1500 cross-section (0 = average, +2 = top of the pack); 'sector rank' is its place among its GICS peers; 'idiosyncratic' is the annualized beta-stripped return. The entry tag flags whether a leader just spiked ('extended' = short-term reversal risk) or is on a recent dip ('pullback' = constructive). Phase-0 validated as a MODEST, regime-decayed edge — context for stock selection, not a standalone buy signal.</span><span class="l-zh">该股票剔除其市场与板块贝塔后的收益 —— 12-1 个月的板块中性残差动量。“阿尔法 z”是其在整个标普1500横截面中的排名（0＝平均，+2＝领先）；“板块排名”是其在 GICS 同业中的位次；“特异收益”为年化的剔除贝塔后收益。入场标签标记领跑股是刚急涨（“extended”＝短期反转风险）还是处于近期回调（“pullback”＝较佳入场）。第 0 阶段验证为温和、随周期衰减的优势 —— 仅为选股参考，并非独立买入信号。</span></span></span></h2>
       <div id="r_alpha"></div>
     </div>
-
+    </details>
+    <details class="sv-group"><summary><span class="l-en">🏦 Options, positioning &amp; ownership</span><span class="l-zh">🏦 期权、持仓与机构</span></summary>
     <div class="panel" id="panel_gex" style="display:none">
       <h2>🎯 <span class="l-en">Options &amp; dealer gamma (GEX)</span><span class="l-zh">期权与做市商Gamma</span></h2>
       <div id="r_gex"></div>
@@ -653,19 +796,18 @@
         <span class="help">?<span class="tip"><span class="l-en">Which curated super-investor funds (Berkshire, Pershing Square, Scion, Baupost, Viking, Tiger Global, etc.) reported holding this stock in their latest SEC Form 13F, and whether they initiated / added / trimmed / exited vs the prior quarter. Conviction = the position's share of that fund's reported US-equity book. 13F is QUARTERLY with a ~45-day lag — long-only US equity >= $100M only (no shorts, options detail, or non-US positions); CUSIPs are name-matched to tickers so some lines are hidden. CONTEXT on who holds it, NOT a buy list or a real-time signal.</span><span class="l-zh">哪些精选的超级投资者基金（伯克希尔、潘兴广场、Scion、Baupost、Viking、老虎环球等）在最新的 SEC 13F 表中报告持有该股，以及相对上一季度是新建仓／加仓／减持／清仓。信念 = 该持仓在该基金所报美股组合中的占比。13F 为季度申报，约有 45 天滞后 —— 仅含美股多头持仓（≥1亿美元），不含空头、期权细节或非美持仓；CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。</span></span></span></h2>
       <div id="r_smartmoney"></div>
     </div>
-
-    <div class="panel" id="panel_mtf">
-      <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
-      <div id="r_mtf"></div>
-    </div>
+    </details>
+    <details class="sv-group"><summary><span class="l-en">📈 Momentum, chart &amp; history</span><span class="l-zh">📈 动量、图表与历史</span></summary>
     <div class="panel">
       <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
       <div id="tvbox"></div>
     </div>
+    <div class="panel" id="panel_mtf">
+      <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
+      <div id="r_mtf"></div>
+    </div>
     <div class="panel" id="panel_cal">
-      <h2><span class="l-en">How much to trust the state — measured 2000→2026</span><span class="l-zh">这个状态有多可信 — 实测 2000→2026</span></h2>
-      <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">Stocks drift up over a month from
+      <h2><span class="l-en">How much to trust the state — measured 2000→2026</span><span class="l-zh">这个状态有多可信 — 实测 2000→2026</span><span class="help">?<span class="tip"><span class="l-en">Stocks drift up over a month from
         every state (the market's long upward bias); the spread between states is small, and the
         "scary" states measured slightly better forward returns — markets mean-revert and full
         confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
@@ -678,12 +820,16 @@
         <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
         <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
         对于未确认转向这类风险状态，回撤视角比平均收益更重要，因为危险在于过程，而非终点。（基于股票的一个月
-        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）</span></p>
+        周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）</span></span></span></h2>
+      <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0"><span class="l-en">How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.</span><span class="l-zh">如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。</span></p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script src="stockbrief.js"></script>
 <script src="aidesk_lean.js"></script>
 <script>
@@ -1091,9 +1237,10 @@
         chips.push(gchip(LF('verdict'), '<span class="cvchip band-' + _cv.band + '">' + _cv.score + '</span>'));
       else chips.push(gchip(LF('verdict'), '<span class="muted">' + LF('na') + '</span>', true));
     }
-    var glance = el('r_glance');
-    if (chips.length) { glance.innerHTML = chips.join(''); glance.style.display = 'flex'; }
-    else glance.style.display = 'none';
+    // The at-a-glance chips (quality grade / valuation / shareholder-yld / next-earnings /
+    // the "Master verdict" dup of conviction.score) are now fully covered by the unified
+    // decision band + evidence lanes — keep r_glance retired so nothing is restated.
+    var glance = el('r_glance'); if (glance) glance.style.display = 'none';
 
     if (prof) {
       el('r_profile_desc').textContent = lz(prof.description, prof.description_zh) || LF('building');
@@ -1214,10 +1361,8 @@
         eh += '<table class="earntbl"><tr><th>' + lz('quarter','季度') + '</th><th>' + lz('actual','实际') +
               '</th><th>' + lz('est','预期') + '</th><th>' + lz('surprise','超预期') + '</th></tr>' + er + '</table>';
       }
-      el('r_earn').innerHTML = eh || ('<div class="stub">' + LF('earnsoon') + '</div>');
-      show('panel_earn', true);
-    } else if (isEquity) {
-      el('r_earn').innerHTML = '<div class="stub">' + LF('earnsoon') + '</div>'; show('panel_earn', true);
+      if (eh) { el('r_earn').innerHTML = eh; show('panel_earn', true); }
+      else show('panel_earn', false);          // no data → hide, don't show a "coming soon" stub
     } else show('panel_earn', false);
 
     if (fac) {
@@ -1271,19 +1416,16 @@
       show('panel_pos', true);
     } else show('panel_pos', false);
 
-    if (isEquity) {
-      var ah;
-      if (an && an.tier === 'deep') {
-        var ar = [];
-        if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
-        if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
-        if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
-        if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
-        if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
-        ah = (ar.length ? '<div class="posbox">' + ar.join('') + '</div>' : '') + '<p class="srcline">' + LF('deeponly') + '</p>';
-      } else { ah = '<div class="stub">' + LF('deeponly') + '</div>'; }
-      el('r_analyst').innerHTML = ah;
-      show('panel_analyst', true);
+    if (isEquity && an && an.tier === 'deep') {
+      var ar = [];
+      if (an.forward_pe != null) ar.push(kvRow(LF('fwdpe'), an.forward_pe.toFixed(1) + '×', false));
+      if (an.pe_yf != null) ar.push(kvRow(LF('peyf'), an.pe_yf.toFixed(1) + '×', false));
+      if (an.profit_margin != null) ar.push(kvRow(LF('pmargin'), an.profit_margin.toFixed(1) + '%', false));
+      if (an.roe != null) ar.push(kvRow(LF('roe'), an.roe.toFixed(1) + '%', false));
+      if (an.div_yield != null) ar.push(kvRow(LF('dyield'), an.div_yield.toFixed(2) + '%', false));
+      // show the figures we have; no "coming in a later phase" stub. Hide if none.
+      if (ar.length) { el('r_analyst').innerHTML = '<div class="posbox">' + ar.join('') + '</div>'; show('panel_analyst', true); }
+      else show('panel_analyst', false);
     } else show('panel_analyst', false);
   }
   // internal state -> friendly "LABEL · ACTION" (mirrors engine/cycles.STATE_DISPLAY)
@@ -1742,9 +1884,17 @@
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
 
-    renderConviction(d);
-    renderVerdict(d);
-    renderSignalStrip(d);
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // The shared renderer replaces the four competing top-line verdicts + the macro-sens
+    // and dt-contra heroes with ONE decision band + fingerprint + honesty row + evidence
+    // lanes. Falls back to the legacy heroes only if stockview.js failed to load.
+    if (!(window.SV && d.view && window.SV.mount(d))) {
+      renderConviction(d);
+      renderVerdict(d);
+      renderSignalStrip(d);
+      renderMacroSens(d);
+      renderDtContra(d);
+    }
     renderAlertFeed(d);
 
     var ageEl = document.getElementById('r_age');
@@ -1822,9 +1972,9 @@
     var macro = document.getElementById('r_macro');
     if (d.ladder.macro_line) { macro.textContent = '⚠ ' + lz(d.ladder.macro_line, d.ladder.macro_line_zh); macro.style.display = 'block'; }
     else { macro.style.display = 'none'; }
-    renderMacroSens(d);
-    renderAltData(d);
-    renderDtContra(d);
+    // (macro-sensitivity + dt-contra now fold into the view-model: evidence.macro +
+    //  falsifiers — rendered by SV.mount above; the legacy renders run only on fallback.)
+    renderAltData(d);   // alt-data is a deep context panel (not a competing verdict)
 
     document.getElementById('r_flags').textContent = d.cycle.failed_cycle ? L('failed') : '';
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
@@ -1848,11 +1998,23 @@
     renderFundamentals(d);
     renderDemandContext(d);
     renderFundFlow(d);
-    renderAlpha(d);
-    renderFragility(d);
+    // (relative-strength → evidence.rel_strength; fragility → falsifiers — both in SV.mount.
+    //  The standalone alpha/fragility panels are retired to avoid restating the same read.)
     renderSmartMoney(d);
 
     tvLoad(d);
+    hideEmptyGroups();
+  }
+
+  // A deep-layer disclosure group whose panels all came back empty (no data for this
+  // name) shouldn't show a dangling section header — hide it.
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
 
   // Bespoke chart loader, shared by the full and limited views. Replaces the old
@@ -2031,7 +2193,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-06-21 03:40 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-06-21 06:58 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

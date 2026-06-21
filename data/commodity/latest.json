@@ -14,7 +14,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -19.3
+      "conviction": -19.4
     },
     "silver": {
       "label": "Silver",
@@ -24,7 +24,7 @@
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -21.9
+      "conviction": -22.0
     },
     "copper": {
       "label": "Copper",

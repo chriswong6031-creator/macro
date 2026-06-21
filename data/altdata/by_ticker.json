@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-06-21",
-  "generated_utc": "2026-06-21T04:26:15.711439+00:00",
-  "n_tickers": 396,
+  "generated_utc": "2026-06-21T07:56:35.965676+00:00",
+  "n_tickers": 397,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "TDG": {
@@ -346,11 +346,11 @@
       "trump_side": "buy",
       "app_rating": 4.77,
       "app_reviews": 19647032,
-      "patents": 22,
+      "patents": 70,
       "hf_downloads_30d": 29861360.0,
       "opt_vol_oi": 0.225,
       "opt_put_call": 0.42,
-      "github_stars": 186574,
+      "github_stars": 186573,
       "congress_position_usd": 42813000.0,
       "convergence_score": 6,
       "trump_linked": true,
@@ -426,7 +426,7 @@
       "gov_grant_usd": 6316036.0,
       "gov_grant_accel": 0.09,
       "dpi": 0.441,
-      "patents": 22,
+      "patents": 71,
       "wsb_mentions": 40,
       "congress_position_usd": 2327000.0,
       "convergence_score": 2,
@@ -469,7 +469,7 @@
       "weighted_score": 1.4,
       "gov_grant_usd": 5380843.0,
       "gov_grant_accel": 0.21,
-      "patents": 15,
+      "patents": 33,
       "congress_position_usd": 1406000.0,
       "donor_usd": 72500.0,
       "convergence_score": 3,
@@ -485,7 +485,7 @@
       "weighted_score": 0.9,
       "gov_grant_usd": 4901955.0,
       "gov_grant_accel": 1.31,
-      "patents": 26,
+      "patents": 66,
       "convergence_score": 2,
       "trump_linked": false,
       "affiliated": true
@@ -951,12 +951,12 @@
       "weighted_score": 2.0,
       "dpi": 0.292,
       "dpi_lean": "accumulation",
-      "patents": 20,
+      "patents": 36,
       "wsb_mentions": 207,
       "hf_downloads_30d": 27830337.0,
       "opt_vol_oi": 0.228,
       "opt_put_call": 0.47,
-      "github_stars": 17433,
+      "github_stars": 17434,
       "congress_position_usd": 6714000.0,
       "convergence_score": 5,
       "trump_linked": false,
@@ -1261,7 +1261,7 @@
       ],
       "weighted_score": 0.95,
       "material_8k_30d": 3,
-      "patents": 12,
+      "patents": 26,
       "congress_position_usd": 2749000.0,
       "convergence_score": 2,
       "trump_linked": false,
@@ -1421,7 +1421,7 @@
       "hf_downloads_30d": 88207080.0,
       "opt_vol_oi": 0.175,
       "opt_put_call": 0.59,
-      "github_stars": 245966,
+      "github_stars": 245965,
       "convergence_score": 3,
       "trump_linked": true,
       "affiliated": true
@@ -1971,7 +1971,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.9,
-      "patents": 64,
+      "patents": 176,
       "congress_position_usd": 2158000.0,
       "convergence_score": 2,
       "trump_linked": false,
@@ -1983,7 +1983,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 46,
+      "patents": 164,
       "congress_position_usd": 1531000.0,
       "convergence_score": 1,
       "trump_linked": false,
@@ -1996,9 +1996,9 @@
         "patent_cluster"
       ],
       "weighted_score": 0.7,
-      "patents": 39,
+      "patents": 91,
       "hf_downloads_30d": 10264637.0,
-      "github_stars": 7507,
+      "github_stars": 7508,
       "congress_position_usd": 1936000.0,
       "convergence_score": 2,
       "trump_linked": false,
@@ -2011,7 +2011,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.9,
-      "patents": 33,
+      "patents": 86,
       "wsb_mentions": 36,
       "hf_downloads_30d": 7057654.0,
       "opt_vol_oi": 0.136,
@@ -2021,52 +2021,50 @@
       "trump_linked": false,
       "affiliated": true
     },
-    "LPL": {
-      "ticker": "LPL",
-      "channels": [
-        "patent_cluster"
-      ],
-      "weighted_score": 0.4,
-      "patents": 13,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "SLB": {
-      "ticker": "SLB",
-      "channels": [
-        "patent_cluster"
-      ],
-      "weighted_score": 0.4,
-      "patents": 13,
-      "congress_position_usd": 1027000.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "SONY": {
       "ticker": "SONY",
       "channels": [
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 12,
+      "patents": 38,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
-    "ORCL": {
-      "ticker": "ORCL",
+    "LPL": {
+      "ticker": "LPL",
       "channels": [
-        "affiliation",
         "patent_cluster"
       ],
-      "weighted_score": 0.9,
-      "patents": 12,
-      "congress_position_usd": 1340000.0,
-      "convergence_score": 2,
+      "weighted_score": 0.4,
+      "patents": 38,
+      "convergence_score": 1,
       "trump_linked": false,
-      "affiliated": true
+      "affiliated": false
+    },
+    "TXN": {
+      "ticker": "TXN",
+      "channels": [
+        "patent_cluster"
+      ],
+      "weighted_score": 0.4,
+      "patents": 32,
+      "congress_position_usd": 3149000.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "PHG": {
+      "ticker": "PHG",
+      "channels": [
+        "patent_cluster"
+      ],
+      "weighted_score": 0.4,
+      "patents": 28,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
     },
     "HMC": {
       "ticker": "HMC",
@@ -2074,7 +2072,7 @@
         "patent_cluster"
       ],
       "weighted_score": 0.4,
-      "patents": 11,
+      "patents": 25,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2538,18 +2536,7 @@
         "github_momentum"
       ],
       "weighted_score": 0.3,
-      "github_stars": 14577,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "U": {
-      "ticker": "U",
-      "channels": [
-        "github_momentum"
-      ],
-      "weighted_score": 0.3,
-      "github_stars": 19496,
+      "github_stars": 14579,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2558,7 +2545,7 @@
       "ticker": "ESTC",
       "channels": [],
       "weighted_score": 0,
-      "github_stars": 77075,
+      "github_stars": 77077,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -2604,6 +2591,15 @@
       "channels": [],
       "weighted_score": 0,
       "github_stars": 2064,
+      "convergence_score": 0,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "U": {
+      "ticker": "U",
+      "channels": [],
+      "weighted_score": 0,
+      "github_stars": 19495,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -2866,15 +2862,6 @@
       "channels": [],
       "weighted_score": 0,
       "congress_position_usd": 3171000.0,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "TXN": {
-      "ticker": "TXN",
-      "channels": [],
-      "weighted_score": 0,
-      "congress_position_usd": 3149000.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -3564,6 +3551,17 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "ORCL": {
+      "ticker": "ORCL",
+      "channels": [
+        "affiliation"
+      ],
+      "weighted_score": 0.5,
+      "congress_position_usd": 1340000.0,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": true
+    },
     "TJX": {
       "ticker": "TJX",
       "channels": [],
@@ -3858,6 +3856,15 @@
       "channels": [],
       "weighted_score": 0,
       "congress_position_usd": 1030000.0,
+      "convergence_score": 0,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "SLB": {
+      "ticker": "SLB",
+      "channels": [],
+      "weighted_score": 0,
+      "congress_position_usd": 1027000.0,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
