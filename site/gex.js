@@ -343,6 +343,7 @@
     if (!key) return;
     curKey = key;
     renderBoard();
+    loadFlow(key);
     var box = document.getElementById("gx-detail");
     if (cache[key]) { cur = cache[key]; renderDetail(); return; }
     box.innerHTML = '<div class="gx-loading">' + lz("Loading " + key + "…", "加载 " + key + "…") + "</div>";
@@ -394,11 +395,12 @@
     var termTbl = termTableHTML();
     var cards = cardsHTML();
 
-    box.innerHTML = heroHTML() + gamePlanHTML() + tiltPanelHTML() + volHoleHTML() +
+    box.innerHTML = heroHTML() + '<div id="gx-flow"></div>' + gamePlanHTML() + tiltPanelHTML() + volHoleHTML() +
       charts + heat + vol + termTbl + cards + caveatHTML();
     // draw the SVG/HTML views
     drawBars(); drawProfile(); drawHeat(); drawSmile(); drawTerm(); drawSpark();
     wireBarTabs(); wireHeatTabs();
+    renderFlow();
   }
 
   // ---- command-center hero (3-zone grid) -----------------------------------
@@ -1162,12 +1164,89 @@
   // ========================================================================
   // INIT + re-render on theme/lang change
   // ========================================================================
+  // ====== Options-flow desk + vol-regime hero (decoupled client-side fetches) ======
+  var flowCache = {}, weatherData;
+  function loadFlow(key) {
+    if (flowCache[key] !== undefined) { renderFlow(); return; }
+    fetch("flow/" + encodeURIComponent(key) + ".json").then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { flowCache[key] = j; if (curKey === key) renderFlow(); })
+      .catch(function () { flowCache[key] = null; });
+  }
+  function renderFlow() {
+    var host = document.getElementById("gx-flow"); if (!host) return;
+    var f = flowCache[curKey];
+    if (!f || !f.available) { host.innerHTML = ""; return; }
+    var d = f.dealer || {}, np = f.net_premium_mn, v = f.verdict || {}, sg = f.signing || {};
+    var dirOK = !!sg.direction_reliable;
+    function mn(x) { return x == null ? "—" : (x >= 0 ? "+$" : "-$") + Math.abs(x).toFixed(0) + "M"; }
+    function bn(x) { return x == null ? "—" : (x >= 0 ? "$" : "-$") + Math.abs(x >= 1000 ? x / 1000 : x).toFixed(x >= 1000 ? 1 : 0) + (x >= 1000 ? "B" : "M"); }
+    function chip(k, val, cls, soft) { return '<span class="fl-chip ' + (cls || "") + (soft ? " soft" : "") + '"><span class="k">' + k + '</span><span class="v">' + val + "</span></span>"; }
+    var chips =
+      chip(lz("Premium", "权利金"), bn(f.premium_mn), "") +
+      chip("0DTE", f.zerodte_share == null ? "—" : Math.round(f.zerodte_share * 100) + "%", "") +
+      ((f.new_positions && f.new_positions.fresh_contracts != null) ? chip(lz("New positions", "新建仓"), f.new_positions.fresh_contracts, "") : "") +
+      chip("P/C", f.pc_ratio == null ? "—" : f.pc_ratio, "") +
+      chip(lz("Net premium", "净权利金"), (dirOK ? "" : "~") + mn(np), (dirOK ? (np > 0 ? "pos" : np < 0 ? "neg" : "") : ""), !dirOK) +
+      chip(lz("Signed P/C", "带向P/C"), (dirOK ? "" : "~") + (f.signed_pc == null ? "—" : f.signed_pc), (dirOK ? ((f.signed_pc > 1.3) ? "neg" : (f.signed_pc < 0.7 ? "pos" : "")) : ""), !dirOK) +
+      (d.gamma_flow_bn != null ? chip(lz("Dealer γ-flow", "做市商γ流"), (dirOK ? "" : "~") + (d.gamma_flow_bn >= 0 ? "+" : "") + d.gamma_flow_bn + "bn", (dirOK ? (d.gamma_flow_bn < 0 ? "neg" : "pos") : ""), !dirOK) : "");
+    var div = (d.divergence || []).slice(0, 4).map(function (x) {
+      return "<li>" + esc((x.cp === "C" ? lz("Call ", "看涨 ") : lz("Put ", "看跌 ")) + x.k + " — " + lz(x.flow, x.flow) + " (" + mn(x.prem_mn) + ")") + "</li>"; }).join("");
+    var np2 = ((f.new_positions && f.new_positions.top) || []).slice(0, 4).map(function (x) {
+      return "<li>" + esc((x.cp === "C" ? "C" : "P") + x.k + " " + x.exp + " — " + x.vol.toLocaleString() + " vol @ " + x.x_oi + "× OI, " + x.dir + " (" + mn(x.prem_mn) + ")") + "</li>"; }).join("");
+    host.innerHTML =
+      '<div class="panel"><div class="fl s-' + (v.tone || "neutral") + '">' +
+        '<div class="fl-head"><span class="fl-tag">📊 ' + lz("Today’s measured flow", "今日实测流动") + "</span>" +
+          '<span class="fl-verdict">' + esc(lz(v.en, v.zh)) + "</span></div>" +
+        '<div class="fl-chips">' + chips + "</div>" +
+        (div ? '<div class="fl-sec"><div class="fl-h">' + lz("Flow vs the dealer-sign assumption", "流动 vs 做市商符号假设") + "</div><ul>" + div + "</ul></div>" : "") +
+        (np2 ? '<div class="fl-sec"><div class="fl-h">' + lz("Fresh positioning (volume > OI)", "新建仓（成交>未平仓）") + "</div><ul>" + np2 + "</ul></div>" : "") +
+        '<div class="fl-foot">' + esc(lz(
+          "Reliable (no signing): premium, 0DTE, new positions, P/C. Direction (~) is SOFT — tick-rule recovers net buy/sell only " + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) + "%" : "~") + " of the time on minute bars (option ticks are delta-dominated; per-trade " + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) + "%" : "~80%") + " vs NBBO, Databento-calibrated). EOD, as of " + (f.asof || "") + ". Never a buy/sell.",
+          "可靠（无需定向）：权利金、0DTE、新建仓、P/C。方向(~)为软信号 — tick规则在分钟数据上仅约" + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) : "") + "%能还原净买卖（期权由delta主导；逐笔约" + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) : 80) + "% 对NBBO，经Databento校准）。收盘数据，截至 " + (f.asof || "") + "。绝非买卖信号。")) + "</div>" +
+      "</div></div>";
+  }
+  function renderWeather() {
+    var box = document.getElementById("gx-weather"), body = document.getElementById("gx-weather-body");
+    var R = weatherData;
+    if (!box || !body || !R || !R.snapshot || !R.game_plan || !R.game_plan.available) { if (box) box.hidden = true; return; }
+    var snap = R.snapshot, gp = R.game_plan; box.hidden = false;
+    var sb = document.getElementById("wx-scored"); if (sb) sb.hidden = !snap.scored_active;
+    var clsMap = { "gp-calm": "wx-calm", "gp-up": "wx-up", "gp-jumpy": "wx-jumpy", "gp-warn": "wx-warn", "gp-neutral": "wx-neutral" };
+    var rs = (snap.risk_score == null) ? 0 : snap.risk_score, pos = Math.max(2, Math.min(98, (rs + 1) / 2 * 100));
+    var bullets = (gp.bullets || []).map(function (b) { return "<li>" + esc(lz(b.en, b.zh)) + "</li>"; });
+    if (R.opex && R.opex.available) bullets.push("<li>" + esc(lz("Calendar", "日历") + ": " + (R.opex.phase || "").replace(/_/g, " ") + (R.opex.is_quad_cycle ? lz(" · quad-witching", " · 四巫日") : "") + " — " + (R.opex.read || "")) + "</li>");
+    function stat(k, v2) { return v2 == null ? "" : '<span class="wx-stat"><span class="k">' + k + '</span><span class="v">' + v2 + "</span></span>"; }
+    var stats = stat("VIX", snap.vix) +
+      stat(lz("Term VIX/VIX3M", "期限 VIX/VIX3M"), snap.ts_slope != null ? (snap.ts_slope.toFixed(3) + " · " + esc(snap.ts_slope_state || "")) : null) +
+      stat(lz("MOVE %ile", "MOVE分位"), snap.move_pctile != null ? Math.round(snap.move_pctile * 100) + "%" : null) +
+      stat(lz("VRP %ile", "VRP分位"), snap.vrp_pctile != null ? Math.round(snap.vrp_pctile * 100) + "%" : null) +
+      stat(lz("Insurance", "保险成本"), snap.insurance_cost ? esc(snap.insurance_cost) : null) +
+      stat(lz("Gross scalar", "总仓系数"), snap.vol_target_scalar != null ? snap.vol_target_scalar.toFixed(2) + "×" : null);
+    body.innerHTML =
+      '<div class="wx-head ' + (clsMap[gp.css] || "wx-neutral") + '">' +
+        '<span class="wx-icon">' + esc(gp.icon || "") + "</span>" +
+        '<span class="wx-verdict">' + esc(lz(gp.verdict.en, gp.verdict.zh)) + "</span>" +
+        '<span class="wx-gauge"><div class="track"><div class="mk" style="left:' + pos.toFixed(1) + '%"></div></div>' +
+          '<div class="lbls"><span>' + lz("risk-off", "避险") + "</span><span>" + lz("risk-on", "偏多") + "</span></div></span></div>" +
+      '<div class="wx-sub">' + esc(lz(gp.sub.en, gp.sub.zh)) + "</div>" +
+      (bullets.length ? '<ul class="wx-bullets">' + bullets.join("") + "</ul>" : "") +
+      '<div class="wx-stats">' + stats + "</div>" +
+      '<div class="wx-foot">' + esc(lz("Validated on 1990+ history (term-structure + bond-vol forward-vol gate). A subtract-only risk/sizing read — not a stock picker, not an intraday timer. As of " + (snap.asof || "") + ".",
+        "基于1990年以来历史验证（期限结构+债券波动率前瞻门槛）。仅做减法的风险/仓位读数 — 非选股、非盘中择时。截至 " + (snap.asof || "") + "。")) + "</div>";
+  }
+  function loadWeather() {
+    if (weatherData !== undefined) { renderWeather(); return; }
+    fetch("vol/regime.json").then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { weatherData = j; renderWeather(); }).catch(function () { weatherData = null; });
+  }
+
   function init() {
     renderBoard(); setupSearch(); setupBoardControls(); setupBoardHelp();
+    loadWeather();
     selectSymbol(window.GEX_DEFAULT || (M[0] && M[0].key));
   }
   ["langchange", "themechange"].forEach(function (e) {
-    document.addEventListener(e, function () { renderBoard(); if (cur) renderDetail(); });
+    document.addEventListener(e, function () { renderBoard(); renderWeather(); if (cur) renderDetail(); });
   });
   window.addEventListener("resize", function () { hideTip(); hideHelp(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();

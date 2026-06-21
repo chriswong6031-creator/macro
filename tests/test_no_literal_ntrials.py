@@ -63,7 +63,6 @@ LEGACY_LITERAL_NTRIALS = frozenset({
     "scripts/thematic_rotation_phase0.py",
     "scripts/top_picks_phase0.py",
     "scripts/turn_of_month_phase0.py",
-    "scripts/validate_vol_regime.py",   # added on main by a parallel session; grandfathered to migrate
     "scripts/value_growth_phase0.py",
 })
 

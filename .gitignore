@@ -85,3 +85,7 @@ research/_recon_raw/
 
 # live intraday overlay output (regenerated each intraday run; not a committed artifact)
 site/live/
+
+# options-flow transient caches (re-downloadable; keep out of git)
+data/massive_flat/
+data/options_flow/_*.parquet
