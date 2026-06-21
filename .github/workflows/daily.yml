@@ -304,6 +304,15 @@ jobs:
         # MEASURED coefficient matrix (data/transmission/calibration.json, refreshed
         # weekly by calibrate_rate_inflation). Self-sufficient; returns 0 on any error.
         run: python -m scripts.build_transmission
+      - name: special situations desk (build_special_situations)
+        # event-driven Special Situations desk (DISPLAY-ONLY, SCORED=False). Sweeps
+        # the EDGAR daily-index for new corporate-event filings, classifies them
+        # deterministically (+ a cached text lane for 8-K M&A/strategic-review),
+        # applies the $100M floor, and renders site/special_situations.html +
+        # data/regime/special_situations_latest.json (hub card). Runs before
+        # build_vector (which writes the landing hub last). Self-sufficient; the
+        # build degrades to last-known on any SEC fetch outage and returns 0.
+        run: python -m scripts.build_special_situations
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

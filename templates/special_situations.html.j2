@@ -1,0 +1,172 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>Special Situations — event-driven filings desk</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}};
+  --text:{{C.text}}; --muted:{{C.muted}}; --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}};
+  --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}}; --green:#1FA971;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+html[data-theme="dark"] .lang-toggle{background:#222732}
+html[data-theme="dark"] .theme-switch{background:#222732}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+.section-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:30px 4px 12px;display:flex;align-items:center;gap:8px}
+.section-title .cnt{font-size:11px;font-weight:700;color:var(--faint);background:var(--card);border:1px solid var(--grid);border-radius:999px;padding:1px 8px}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 2px}
+.sub{color:var(--muted);font-size:13px} .faint{color:var(--faint)}
+.tag{display:inline-block;background:#FFF4E0;color:#8a5a00;border-radius:8px;padding:3px 10px;font-size:12.5px;font-weight:700}
+html[data-theme="dark"] .tag{background:#2a2410;color:#e8c15a}
+.note{border-left:3px solid var(--amber);padding:8px 0 8px 14px;margin:14px 0;color:var(--text);font-size:13.5px}
+.note.b{border-color:var(--blue)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:16px}
+@media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:16px;text-align:center}
+.stat .v{font-size:28px;font-weight:800;color:var(--ink);line-height:1}
+.stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:600;letter-spacing:.03em;margin-top:6px}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:6px 18px;margin-bottom:6px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl td,.tbl th{padding:9px 8px;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tkr{font-weight:700;color:var(--ink)}
+.co{color:var(--text)}
+.chip{display:inline-block;padding:3px 9px;border-radius:8px;font-weight:700;font-size:11.5px;border:1px solid var(--grid);color:var(--muted);white-space:nowrap}
+.xb{display:inline-block;margin-left:6px;font-size:11px;color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:0 5px;font-weight:700}
+.live{display:inline-block;margin-left:6px;font-size:10.5px;color:var(--green);border:1px solid var(--green);border-radius:6px;padding:0 5px;font-weight:700}
+.summ{margin-top:5px;color:var(--muted);font-size:12.5px;line-height:1.5;max-width:620px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.formtag{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+.heur{color:var(--amber);font-weight:700;cursor:help;font-size:12px}
+a.src{color:var(--blue);text-decoration:none;font-size:12px;font-weight:600}
+a.src:hover{text-decoration:underline}
+.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    {% include "_navlinks.html.j2" %}
+    <div class="nav-ctrls">
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">{{ t('Special Situations · event-driven filings','特殊事件 · 事件驱动申报') }}</div>
+  <div class="h1">{{ t('What corporate events are in play right now','当前正在发生的公司事件') }}</div>
+  <div class="sub" style="margin-bottom:6px">{{ t('Activist campaigns, M&A, spin-offs, going-private, tenders, divestitures & restructurings from SEC filings','来自 SEC 申报的维权、并购、分拆、私有化、要约、剥离与重组') }} · {{ t('built','生成于') }} {{ built }}</div>
+  <div class="tag">{{ t('Display-only · public-filing event tracker, never a buy signal or sizing input','仅供展示 · 公开申报事件追踪，绝非买入信号或仓位输入') }}</div>
+
+  <div class="note b">{{ t(
+    'This week\'s curated situations (with summaries) merged with our own live EDGAR detections. A ✓ live badge means our pipeline independently confirmed the situation from a primary filing; entries without it are ahead of — or beyond the US scope of — our detector. Event-discovery context for research & the trading brain, not advice.',
+    '本周精选事件（含摘要）与我方实时 EDGAR 检测合并。✓ 实时 表示我方流程已从原始申报独立确认该事件；无此标记者领先于我方检测器、或超出其美国范围。供研究与交易大脑使用的事件发现背景，而非建议。') }}</div>
+
+  <div class="stats">
+    <div class="stat"><div class="v">{{ total }}</div><div class="k">{{ t('situations','事件') }}</div></div>
+    <div class="stat"><div class="v">{{ n_cats }}</div><div class="k">{{ t('categories','类别') }}</div></div>
+    <div class="stat"><div class="v">{{ coverage.cross_border }}</div><div class="k">{{ t('cross-border','跨境') }}</div></div>
+    <div class="stat"><div class="v">${{ coverage.floor_musd|int }}M+</div><div class="k">{{ t('market-cap floor','市值下限') }}</div></div>
+  </div>
+
+  {% for g in groups %}
+  <div class="section-title">
+    <span style="color:{{ g.color }}">{{ t(g.cat, g.cat_zh) }}</span>
+    <span class="cnt">{{ g.n }}</span>
+  </div>
+  <div class="card">
+    <table class="tbl">
+      <tr>
+        <th>{{ t('Company','公司') }}</th>
+        <th>{{ t('Stage','阶段') }}</th>
+        <th>{{ t('Filing','申报') }}</th>
+        <th class="n">{{ t('Mkt cap','市值') }}</th>
+        <th class="n">{{ t('Filed','申报日') }}</th>
+        <th class="n">{{ t('Source','来源') }}</th>
+      </tr>
+      {% for r in g.rows %}
+      <tr>
+        <td>
+          <span class="tkr">{{ r.ticker }}</span> <span class="co">{{ r.company }}</span>
+          {% if r.cross_border %}<span class="xb" title="cross-border">🌐</span>{% endif %}
+          {% if r.live %}<span class="live" title="confirmed live in our EDGAR feed">✓ {{ t('live','实时') }}</span>{% endif %}
+          {% if r.summary %}<div class="summ" title="{{ r.summary }}">{{ r.summary }}</div>{% endif %}
+        </td>
+        <td><span class="chip" style="border-color:{{ g.color }};color:{{ g.color }}">{{ t(r.stage, r.stage_zh) }}</span></td>
+        <td><span class="formtag">{{ r.form }}</span>{% if r.low_conf %} <span class="heur" title="keyword-heuristic detection — unverified; the LLM/digest lane upgrades it">~</span>{% endif %}</td>
+        <td class="n">{{ r.mc }}</td>
+        <td class="n faint">{{ r.date }}</td>
+        <td class="n">{% if r.url %}<a class="src" href="{{ r.url }}" target="_blank" rel="noopener">{{ t('filing →','文件 →') }}</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endfor %}
+
+  <div class="section-title">{{ t('Coverage & honesty','覆盖与诚实') }}</div>
+  <div class="card" style="padding:18px">
+    <div class="sub" style="color:var(--text)">{{ t(
+      'Structured forms (SC 13D activist, SC TO tenders, SC 13E-3 / merger proxies, Form 25 delistings) classify with high precision. Acquisitions, divestitures, spin-offs, strategic reviews and capital returns are read from 8-K filing text and are higher-recall but noisier. Schedule 13G (passive) and routine officer-change 8-Ks are excluded; non-operating filers (ABS / ETF / exchange shells) are filtered out.',
+      '结构化申报（SC 13D 维权、SC TO 要约、SC 13E-3／并购代理、Form 25 退市）以高精度归类。并购、剥离、分拆、战略评估与资本回报读自 8-K 正文，召回更高但更嘈杂。被动的 13G 与例行高管变动 8-K 已排除；非经营性申报人（ABS／ETF／交易所壳）已过滤。') }}</div>
+    <div class="sub faint" style="margin-top:8px;font-size:12px">
+      {{ t('Digest situations','摘要事件') }}: {{ coverage.digest_situations }} ·
+      {{ t('confirmed by our EDGAR pipeline','我方EDGAR确认') }}: {{ coverage.edgar_confirmed }} ·
+      {{ t('ahead of next digest (EDGAR-only)','领先下期（仅EDGAR）') }}: {{ coverage.edgar_only }} ·
+      {{ t('with summary','含摘要') }}: {{ coverage.with_summary }}
+    </div>
+  </div>
+
+  <div class="foot">
+    {{ t(
+      'Display-only, never scored. Source: SEC EDGAR daily dissemination index + full-text search (form type, 8-K items, business location) — public filings only. US-registered filers, which includes cross-listed ADRs / foreign private issuers (the 🌐 cross-border tag). Categories are deterministic; nothing here is investment advice or a sizing input. Built',
+      '仅供展示，从不计分。来源：SEC EDGAR 每日披露索引 + 全文检索（申报表类型、8-K 条目、营业地）—— 仅公开申报。美国注册申报人，含跨境上市 ADR／外国私人发行人（🌐 跨境标记）。类别为确定性归类；此处任何内容均非投资建议或仓位输入。生成于') }} {{ built }}.
+  </div>
+</div>
+<script src="theme.js"></script>
+</body></html>

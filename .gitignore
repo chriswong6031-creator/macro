@@ -76,3 +76,9 @@ admin/*-sa.json
 # dev-only fast-render view-model cache (scripts/render_macro_fast.py)
 data/_dev_macro_vm.pkl
 data/edgar/company_tickers.json
+
+# Special Situations: fetched filing-text cache + LLM summary cache (regenerable)
+data/special_situations/doc_cache/
+data/special_situations/digest_cache/
+# raw digest capture / reverse-engineering evidence (private; digest_db.parquet is the committed artifact)
+research/_recon_raw/
