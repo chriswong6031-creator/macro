@@ -287,6 +287,29 @@ polygon:
   # per-underlying dividend yields for the compute_gex summary (single names -> 0)
   div_yield: {SPY: 0.013, QQQ: 0.006, IWM: 0.013, DIA: 0.018}
 
+live:
+  # Live intraday overlay (display + Mastermind feed). It recomputes ONLY the cheap
+  # price-sensitive "fast leaves" (technicals + a divergence check vs the nightly
+  # anticipation cone) from a live last-price. The slow-brain scores
+  # (regime / conviction / GTAA allocation) stay NIGHTLY by design — intraday noise
+  # must not whipsaw a hysteresis-gated regime. Runs on a SEPARATE intraday cron,
+  # never inside the ~45-min daily build. Graceful no-op when no quote source is
+  # reachable: the overlay still emits, every leg marked stale, consumers fall back
+  # to the nightly baseline. See scripts/build_live_overlay.py + engine/live_overlay.py.
+  enabled: true
+  poll_seconds: 60             # advisory cadence for the intraday cron / browser poll
+  stale_after_min: 20          # a quote older than this is flagged stale (fall back to baseline)
+  max_chg_pct: 35              # single-session |move| beyond this = bad print -> stale (limit-move guard)
+  max_universe: 150            # cap the fast loop (rate limits + wall-clock)
+  us_source: polygon           # polygon (entitled snapshot) -> yahoo spark fallback
+  intl_source: yahoo           # yahoo spark (keyless) for CN/HK/CA/commodities/crypto
+  top_conviction_n: 60         # also include the top-N US names by |conviction| from the search index
+  universe_extra: []           # optional extra tickers beyond Mastermind assets + top US conviction
+  market_context: [SPY, QQQ, "^VIX"]   # cheap live macro read emitted in overlay.market (VIX gets a band)
+  # The deployed Cloudflare Worker the browser live.js calls (Phase 3, worker/quotes.worker.js).
+  # Empty string = live.js cleanly no-ops (site stays exactly as the static build rendered it).
+  quotes_worker_url: ""
+
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
   # spreads NOT explained by default risk = a clean credit-risk-appetite / early-

@@ -1051,7 +1051,7 @@
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ nm(n.name) }}</span>
-          {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
@@ -1597,6 +1597,8 @@ window.__CHART_SWAP__ = {
 <script src="mtf.js"></script>
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
+<script src="live_config.js"></script>
+<script src="live.js"></script>
 <script>
   // keep tooltips on-screen: flip below near the top of the viewport, and anchor to
   // the nearest side when the help icon is close to the left/right edge

@@ -2399,7 +2399,7 @@
           <div class="nb-top">
             <span class="nb-tk">{{ n.ticker }}</span>
             <span class="nb-nm">{{ n.name }}</span>
-            {% if n.get('price') is not none %}<span class="nb-px">${{ '%.2f'|format(n.price) }}</span>{% endif %}
+            {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
           {% set sp = c.spotlight if c else none %}
@@ -2491,7 +2491,7 @@
           <div class="nb-top">
             <span class="nb-tk">{{ n.ticker }}</span>
             <span class="nb-nm">{{ n.name }}</span>
-            {% if n.get('price') is not none %}<span class="nb-px">${{ '%.2f'|format(n.price) }}</span>{% endif %}
+            {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
           <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
           {{ n.spark_svg }}
@@ -3387,6 +3387,8 @@ window.__CHART_SWAP__ = {
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
 <script src="charts.js"></script>
+<script src="live_config.js"></script>
+<script src="live.js"></script>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>
