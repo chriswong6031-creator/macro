@@ -39,12 +39,39 @@ warnings.filterwarnings("ignore")   # truncated-history beta calc emits benign n
 
 from engine.equity_factors import FACTOR_LABELS, _closes, compute_factors  # noqa: E402
 from engine.factor_orthogonal import orthogonal_composite, overlap_diagnostics  # noqa: E402
-from engine.validation import benjamini_hochberg, ic_summary, rank_ic  # noqa: E402
+from engine.validation import (benjamini_hochberg, cross_sectional_resid,  # noqa: E402
+                               ic_summary, rank_ic)
 from lib import config  # noqa: E402
 
 LEG_COLS = list(FACTOR_LABELS)                       # individual factor legs
 # composite_orth = Löwdin-decorrelated composite (does removing factor overlap help?)
 FACTOR_COLS = LEG_COLS + ["composite", "composite_orth"]
+
+# Incremental IC neutralizes each factor against the style factors we already own
+# (the roadmap basis: market beta, size, 12-1 momentum, low-vol). A factor whose IC
+# survives this is INDEPENDENT information; one that collapses was repackaged style.
+# Drop a factor's own style analog from its basis so the test isn't trivially zero.
+def _style_basis(t: pd.DataFrame, closes: pd.DataFrame, d) -> pd.DataFrame:
+    """Per-date style loadings (beta, size, 12-1 momentum, low-vol) on the factor
+    table's universe — the basis incremental IC residualizes against. low_beta /
+    low_vol are read straight off the table; size = log market cap; momentum is
+    computed causally from prices truncated to `d`."""
+    basis = pd.DataFrame(index=t.index)
+    if "low_beta" in t:
+        basis["beta"] = pd.to_numeric(t["low_beta"], errors="coerce")
+    if "low_vol" in t:
+        basis["low_vol"] = pd.to_numeric(t["low_vol"], errors="coerce")
+    if "mktcap_bn" in t:
+        basis["size"] = np.log(pd.to_numeric(t["mktcap_bn"], errors="coerce").where(lambda s: s > 0))
+    px = closes.loc[:d]
+    if len(px) >= 253:                               # 12-1 momentum (skip last month)
+        mom = px.iloc[-22] / px.iloc[-253] - 1.0
+        basis["mom"] = mom.reindex(t.index)
+    return basis.dropna(axis=1, how="all")
+
+
+# which basis column a factor IS (so we exclude it when neutralizing that factor)
+_FACTOR_BASIS_SELF = {"low_vol": "low_vol", "low_beta": "beta"}
 
 
 def quarter_grid(closes: pd.DataFrame, start_year: int, horizon: int) -> list:
@@ -91,6 +118,7 @@ def main() -> int:
         return 1
 
     per_date_ic: dict[str, list] = {c: [] for c in FACTOR_COLS}
+    per_date_ic_incr: dict[str, list] = {c: [] for c in FACTOR_COLS}   # style-neutralized
     n_names: list[int] = []
     last_table = None
     for d in grid:
@@ -103,17 +131,30 @@ def main() -> int:
         if fr is None:
             continue
         n_names.append(int(t.index.isin(fr.dropna().index).sum()))
+        basis = _style_basis(t, closes, d)
         for c in FACTOR_COLS:
+            sig = None
             if c in t.columns:
-                per_date_ic[c].append(rank_ic(pd.to_numeric(t[c], errors="coerce"), fr))
-        # decorrelated composite: orthogonalize the factor legs present this date
-        legs = t[[c for c in LEG_COLS if c in t.columns]].apply(pd.to_numeric, errors="coerce")
-        if legs.shape[1] >= 3:
-            per_date_ic["composite_orth"].append(rank_ic(orthogonal_composite(legs), fr))
+                sig = pd.to_numeric(t[c], errors="coerce")
+            elif c == "composite_orth":
+                legs = t[[lc for lc in LEG_COLS if lc in t.columns]].apply(pd.to_numeric, errors="coerce")
+                if legs.shape[1] >= 3:
+                    sig = orthogonal_composite(legs)
+            if sig is None:
+                continue
+            per_date_ic[c].append(rank_ic(sig, fr))
+            # incremental: residualize vs the style basis (excluding the factor's own
+            # style analog), then re-correlate with the forward return
+            b = basis.drop(columns=[_FACTOR_BASIS_SELF[c]], errors="ignore") \
+                if c in _FACTOR_BASIS_SELF else basis
+            if b.shape[1] >= 2:
+                resid = cross_sectional_resid(sig, b)
+                if len(resid):
+                    per_date_ic_incr[c].append(rank_ic(resid, fr))
 
     # aggregate per factor + FDR across the panel
     ppy = 4  # quarterly
-    rows, pvals = {}, {}
+    rows, pvals, pvals_incr = {}, {}, {}
     for c in FACTOR_COLS:
         ics = pd.Series(per_date_ic[c]).dropna()
         s = ic_summary(ics, periods_per_year=ppy)
@@ -121,10 +162,29 @@ def main() -> int:
             rows[c] = s
             if s.get("p_hac") is not None:
                 pvals[c] = s["p_hac"]
+            # incremental (style-neutralized) IC alongside the raw block
+            si = ic_summary(pd.Series(per_date_ic_incr[c]).dropna(), periods_per_year=ppy)
+            if si.get("n", 0) >= 6:
+                rm, im = s.get("mean_ic"), si.get("mean_ic")
+                rows[c].update({
+                    "mean_ic_incr": im, "ic_ir_ann_incr": si.get("ic_ir_ann"),
+                    "t_hac_incr": si.get("t_hac"), "p_hac_incr": si.get("p_hac"),
+                    "n_incr": si.get("n"),
+                    "ic_delta": round(im - rm, 4) if (rm is not None and im is not None) else None,
+                    "surviving_frac": round(im / rm, 3) if rm not in (None, 0) and im is not None else None,
+                })
+                if si.get("p_hac") is not None:
+                    pvals_incr[c] = si["p_hac"]
     fdr = benjamini_hochberg(pvals, alpha=0.10)
     for c, q in fdr.items():
         rows[c]["q_fdr"] = q["q"]
         rows[c]["survives_fdr"] = q["reject"]
+    # BH-FDR on the INCREMENTAL p-values — the strictly harder bar; a factor only
+    # "survives" here if its independent (style-neutralized) IC clears the family test.
+    fdr_incr = benjamini_hochberg(pvals_incr, alpha=0.10)
+    for c, q in fdr_incr.items():
+        rows[c]["q_fdr_incr"] = q["q"]
+        rows[c]["survives_fdr_incr"] = q["reject"]
 
     coll = {}
     if last_table is not None:
@@ -134,7 +194,10 @@ def main() -> int:
 
     note = ("Point-in-time (EDGAR panel + prices truncated to asof); IC = quarterly "
             "cross-sectional rank corr of factor z vs forward return; t_hac = Newey-West; "
-            "q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0.")
+            "q_fdr = Benjamini-Hochberg across the factor panel. Survivors judged vs ~0. "
+            "mean_ic_incr = IC after neutralizing vs style (beta/size/12-1 mom/low-vol); "
+            "q_fdr_incr BH-FDRs the INCREMENTAL p-values (the harder bar) — a factor that "
+            "survives there carries information independent of repackaged style.")
     caveat = None
     if args.deep:
         caveat = ("Deep ~2011-2026 re-test on a SURVIVORSHIP-BIASED price panel: delisted "
@@ -161,6 +224,7 @@ def main() -> int:
         "leak_free": True,
         "universe": universe,
         "survivorship_biased": bool(args.deep),
+        "neutralized_against": ["market_beta", "size(log mktcap)", "mom_12_1", "low_vol"],
         "dead_name_coverage": dead_cov,
         "price_span": f"{closes.index.min().date()}..{closes.index.max().date()}",
         "factors": rows, "collinearity": coll,
@@ -176,15 +240,22 @@ def main() -> int:
     tag = "DEEP/survivorship-biased" if args.deep else "shallow breadth cache"
     print(f"\n=== Factor IC scorecard (leak-free, {tag}) — {report['span']}, {len(grid)} quarterly "
           f"rebalances, fwd {args.horizon}d, ~{report['median_universe']} names ===")
-    print(f"{'factor':14s} {'meanIC':>7} {'IC-IR':>6} {'ICIRann':>8} {'t_HAC':>6} {'p':>6} "
-          f"{'qFDR':>6} {'hit':>5} {'n':>3}")
+    print(f"{'factor':14s} {'meanIC':>7} {'IC_incr':>8} {'Δ':>7} {'surv%':>6} {'t_HAC':>6} "
+          f"{'tHACi':>6} {'qFDR':>6} {'qFDRi':>6} {'n':>3}")
     for c in order:
         r = rows[c]
-        print(f"{c:14s} {r['mean_ic']:>7.4f} {r['ic_ir']:>6.2f} {r['ic_ir_ann']:>8.2f} "
-              f"{str(r['t_hac']):>6} {str(r['p_hac']):>6} {str(r.get('q_fdr','-')):>6} "
-              f"{r['hit']:>5.2f} {r['n']:>3}")
+        print(f"{c:14s} {r['mean_ic']:>7.4f} {str(r.get('mean_ic_incr','-')):>8} "
+              f"{str(r.get('ic_delta','-')):>7} {str(r.get('surviving_frac','-')):>6} "
+              f"{str(r['t_hac']):>6} {str(r.get('t_hac_incr','-')):>6} "
+              f"{str(r.get('q_fdr','-')):>6} {str(r.get('q_fdr_incr','-')):>6} {r['n']:>3}")
     surv = [c for c in rows if rows[c].get("survives_fdr")]
-    print(f"\nSurvive BH-FDR(10%): {surv or 'NONE'}")
+    # split the incremental survivors by sign: a two-sided FDR reject with a POSITIVE
+    # incremental IC is an independent edge; a negative one is reliably anti-predictive.
+    edge = [c for c in rows if rows[c].get("survives_fdr_incr") and (rows[c].get("mean_ic_incr") or 0) > 0]
+    anti = [c for c in rows if rows[c].get("survives_fdr_incr") and (rows[c].get("mean_ic_incr") or 0) < 0]
+    print(f"\nSurvive BH-FDR(10%) raw: {surv or 'NONE'}")
+    print(f"Independent POSITIVE edge (incr IC>0, FDR✓): {edge or 'NONE'}")
+    print(f"Reliably ANTI-predictive after neutralization (incr IC<0, FDR✓): {anti or 'NONE'}")
     return 0
 
 
@@ -197,17 +268,27 @@ def _write_md(report: dict) -> None:
          f"price panel {depth} · point-in-time (no look-ahead).", "",
          "IC = cross-sectional rank correlation of each factor's z-score vs the forward "
          "return, per rebalance. `t_HAC` is Newey-West (overlapping windows autocorrelate "
-         "the IC series); `q_FDR` is Benjamini-Hochberg across the factor panel. Judge "
-         "survivors against ~0 — post point-in-time fix the spreads are honestly weaker.", "",
-         "| factor | mean IC | IC-IR | IC-IR ann | t_HAC | p | q_FDR | hit | n |",
-         "|---|--:|--:|--:|--:|--:|--:|--:|--:|"]
+         "the IC series); `q_FDR` is Benjamini-Hochberg across the factor panel. "
+         "**IC incr** is the IC after neutralizing the factor against the style we already "
+         "own (beta / size / 12-1 momentum / low-vol); **q_FDR incr** BH-FDRs those "
+         "incremental p-values — the harder bar. Judge survivors against ~0.", "",
+         "| factor | mean IC | IC incr | Δ | survives | t_HAC | t_HAC incr | q_FDR | q_FDR incr | n |",
+         "|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|"]
     rows = report["factors"]
     for c in sorted(rows, key=lambda c: -(rows[c].get("ic_ir_ann") or -9)):
         r = rows[c]
-        L.append(f"| {c} | {r['mean_ic']} | {r['ic_ir']} | {r['ic_ir_ann']} | {r['t_hac']} "
-                 f"| {r['p_hac']} | {r.get('q_fdr','—')} | {r['hit']} | {r['n']} |")
+        L.append(f"| {c} | {r['mean_ic']} | {r.get('mean_ic_incr','—')} | "
+                 f"{r.get('ic_delta','—')} | {r.get('surviving_frac','—')} | {r['t_hac']} | "
+                 f"{r.get('t_hac_incr','—')} | {r.get('q_fdr','—')} | "
+                 f"{r.get('q_fdr_incr','—')} | {r['n']} |")
     surv = [c for c in rows if rows[c].get("survives_fdr")]
-    L += ["", f"**Survive BH-FDR(10%):** {', '.join(surv) if surv else 'NONE'}", ""]
+    edge = [c for c in rows if rows[c].get("survives_fdr_incr") and (rows[c].get("mean_ic_incr") or 0) > 0]
+    anti = [c for c in rows if rows[c].get("survives_fdr_incr") and (rows[c].get("mean_ic_incr") or 0) < 0]
+    L += ["", f"**Survive BH-FDR(10%) raw:** {', '.join(surv) if surv else 'NONE'}",
+          f"**Independent POSITIVE edge** (incremental IC>0, FDR✓): "
+          f"{', '.join(edge) if edge else 'NONE'} — *this is what to rank on, not raw IC.*",
+          f"**Reliably anti-predictive after neutralization** (incremental IC<0, FDR✓): "
+          f"{', '.join(anti) if anti else 'NONE'}", ""]
     coll = report.get("collinearity", {})
     if coll.get("top_pairs"):
         L.append("## Factor overlap (latest cross-section)\n")
