@@ -1,0 +1,12 @@
+{
+ "schema": "dead_name_coverage.v1",
+ "generated_utc": "2026-06-21T11:23:22.386582+00:00",
+ "n_dead_universe": 1083,
+ "n_cik_resolved": 15,
+ "n_with_fundamentals": 15,
+ "coverage_frac": 0.0139,
+ "resolved_by_method": {
+  "seed": 15
+ },
+ "note": "OPTIMISTIC de-bias bound \u2014 dead-name PRICES are still ~absent (yfinance survivor-only), so factor ICs over the merged panel are fundamentals-de-biased but price-join-limited. Stamp on every output."
+}
