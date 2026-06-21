@@ -10,3 +10,8 @@
 {"ts": "2026-06-21T10:36:18.222812+00:00", "family": "incremental_ic:near_52w_high", "config_hash": "2ebeb4abff035565", "config": {"signal": "near_52w_high", "h": 63, "fwd": 63}, "source": "grid", "info_cutoff": null, "note": null}
 {"ts": "2026-06-21T10:36:19.811932+00:00", "family": "incremental_ic:fip_continuity", "config_hash": "fa01209bfcef1422", "config": {"signal": "fip_continuity", "h": 63, "fwd": 21}, "source": "grid", "info_cutoff": null, "note": null}
 {"ts": "2026-06-21T10:36:19.812217+00:00", "family": "incremental_ic:fip_continuity", "config_hash": "c324cf9cc38b0abe", "config": {"signal": "fip_continuity", "h": 63, "fwd": 63}, "source": "grid", "info_cutoff": null, "note": null}
+{"ts": "2026-06-21T15:04:20.143955+00:00", "family": "signal_factory", "config_hash": "bbe09e5e3d1c9fe2", "config": {"leg": "gross_margin_trend", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
+{"ts": "2026-06-21T15:04:20.144178+00:00", "family": "signal_factory", "config_hash": "8318c8d07272abea", "config": {"leg": "asset_turnover_trend", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
+{"ts": "2026-06-21T15:04:20.144270+00:00", "family": "signal_factory", "config_hash": "be50b5b360ced03d", "config": {"leg": "cash_conversion", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
+{"ts": "2026-06-21T15:04:20.144352+00:00", "family": "signal_factory", "config_hash": "9d58257f601e4437", "config": {"leg": "net_issuance", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
+{"ts": "2026-06-21T15:04:20.144408+00:00", "family": "signal_factory", "config_hash": "59fe8753f2a3fa59", "config": {"leg": "deleveraging", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
