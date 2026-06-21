@@ -17,7 +17,7 @@ BOUND on true recall. Run: python -m scripts.benchmark_vs_digest
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -31,13 +31,24 @@ def _norm(t) -> str | None:
     return str(t).upper().split(".")[0].strip() or None
 
 
+def _issue_window(issue_date: str | None) -> tuple[date, date]:
+    """The filing week an issue covers: the digest publishes on a Sunday spanning that
+    week's Mon–Thu filings (Fri is left for processing). So window = [date−6d, date−3d].
+    Reproduces issue #19 (2026-06-14 -> 06-08..06-11) and auto-tracks future issues."""
+    d = date.fromisoformat(issue_date) if issue_date else date(2026, 6, 21)
+    return d - timedelta(days=6), d - timedelta(days=3)
+
+
 def run(widen: bool = True) -> None:
+    digest = pd.read_parquet(config.data_dir() / "special_situations" / "digest_db.parquet")
+
     if widen:
         from collectors import special_situations as col
         # widen our EDGAR window to cover the latest digest issue's filing week
-        col.backfill_range(date(2026, 6, 8), date(2026, 6, 11))
-
-    digest = pd.read_parquet(config.data_dir() / "special_situations" / "digest_db.parquet")
+        latest_idate = digest[digest.issue == digest.issue.max()].issue_date.dropna().max()
+        start, end = _issue_window(latest_idate)
+        print(f"[window] issue #{int(digest.issue.max())} filing week: {start} .. {end}")
+        col.backfill_range(start, end)
     edf = sse.build_situations()
     edf = edf[edf.status == "ok"] if not edf.empty else edf
 
