@@ -31,7 +31,6 @@ LEGACY_LITERAL_NTRIALS = frozenset({
     "scripts/btc_vector_optimal_phase0.py",
     "scripts/build_strategies.py",
     "scripts/calibrate_baskets.py",
-    "scripts/calibrate_forex.py",
     "scripts/calibrate_regime.py",
     "scripts/calibrate_spvector.py",
     "scripts/calibrate_spvector_phase3.py",
