@@ -27,6 +27,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import glob
+import os
 import sys
 import warnings
 from pathlib import Path
@@ -42,7 +44,34 @@ from engine.validation import (  # noqa: E402
     deflated_sharpe, ic_summary, newey_west_tstat, rank_ic, ret_moments,
 )
 from lib import config  # noqa: E402
-from scripts.validate_composite import _deep_panel, _sector_map  # noqa: E402  reuse the loaders
+
+
+# --- panel loaders (self-contained; see reports/reversal-salvage-phase0.md) ----------
+def _deep_panel() -> pd.DataFrame:
+    """Wide [date x ticker] close panel from the locally-cached per-name parquets."""
+    cols = {}
+    for f in glob.glob(str(config.data_dir() / "stocks" / "*.parquet")):
+        t = os.path.basename(f)[:-8]
+        try:
+            df = pd.read_parquet(f)
+            if "close" in df.columns:
+                cols[t] = df["close"]
+        except Exception:  # noqa: BLE001
+            continue
+    return pd.DataFrame(cols).sort_index()
+
+
+def _sector_map(tickers) -> pd.Series:
+    """Current GICS sector per ticker (from the live factor table) — sector rarely changes,
+    so using the latest label to neutralize over history is the standard approximation."""
+    from engine.equity_factors import _closes, compute_factors
+    try:
+        bc = _closes("broad")
+        tab = pd.DataFrame(compute_factors(asof=bc.index[-1], universe="broad")["table"])
+        sec = tab.set_index("ticker")["sector"]
+    except Exception:  # noqa: BLE001
+        sec = pd.Series(dtype=object)
+    return sec.reindex(tickers).fillna("—")
 
 LOOKBACK = 21          # reversal formation window (trailing ~1 month)
 FWD = 21               # forward holding window (~1 month)
