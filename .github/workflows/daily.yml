@@ -457,6 +457,14 @@ jobs:
         # pulls once per cycle: priority queue (confidence × strength), the demand-vs-supply
         # divergence subset, and a regime/catalyst macro frame. Pure; resilient; never aborts.
         run: python -m scripts.build_briefing || echo "briefing skipped (additive)"
+      - name: Intelligence Hub (build_intel_hub)
+        # AFTER build_intelligence + build_briefing + build_policy_watch + build_radar_plus:
+        # fuses ALL FIVE desks (news · alt-data · radar · buy-board · policy) into one central
+        # command — site/intel_hub/hub.json + site/intelligence_hub.html — with cross-source
+        # confirmation, composite conviction (docked by an unanswered falsifier), 2nd/3rd-order
+        # flags (stealth_accumulation / early_edge / crowded_top / …), and the sector heat.
+        # The US analogue of the China intel hub; pure, resilient, never aborts.
+        run: python -m scripts.build_intel_hub || echo "intel hub skipped (additive)"
       - name: AI Daily Brief page (build_aibrief)
         # consolidated page (site/aibrief.html) surfacing the three client-fetched AI
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
