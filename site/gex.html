@@ -243,6 +243,43 @@
   .floaty-tip { position:fixed; pointer-events:none; z-index:90; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px; font-size:11.5px; box-shadow:var(--popover-shadow); display:none; white-space:nowrap; }
   .gx-loading { color:var(--muted); padding:30px 6px; text-align:center; }
   [data-lang="en"] .l-zh, [data-lang="zh"] .l-en { display:none; }
+
+  /* ---- Market Weather hero (validated index vol regime) ---- */
+  .weather { border-left:3px solid var(--info); }
+  .wx-scored { font-size:11px; font-weight:700; color:var(--up); border:1px solid var(--up); border-radius:6px; padding:2px 8px; white-space:nowrap; }
+  .wx-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:6px; }
+  .wx-icon { font-size:30px; line-height:1; }
+  .wx-verdict { font-size:20px; font-weight:800; letter-spacing:.2px; }
+  .wx-calm .wx-verdict, .wx-up .wx-verdict { color:var(--up); }
+  .wx-jumpy .wx-verdict { color:var(--down); } .wx-warn .wx-verdict { color:var(--orange); }
+  .wx-gauge { flex:1 1 180px; min-width:150px; max-width:320px; }
+  .wx-gauge .track { position:relative; height:8px; border-radius:5px; background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up)); border:1px solid var(--line); }
+  .wx-gauge .mk { position:absolute; top:-4px; width:3px; height:14px; background:var(--text); transform:translateX(-50%); border-radius:2px; }
+  .wx-gauge .lbls { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:5px; }
+  .wx-sub { font-size:14px; line-height:1.55; margin-top:11px; }
+  .wx-bullets { margin:10px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
+  .wx-bullets li { font-size:12.5px; line-height:1.5; padding-left:18px; position:relative; }
+  .wx-bullets li::before { content:"▸"; position:absolute; left:2px; color:var(--muted); }
+  .wx-stats { display:flex; flex-wrap:wrap; gap:7px 9px; margin-top:12px; }
+  .wx-stat { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; }
+  .wx-stat .k { color:var(--muted); font-size:10.5px; display:block; } .wx-stat .v { font-weight:700; font-size:13px; }
+  .wx-foot { font-size:11px; color:var(--muted); margin-top:11px; font-style:italic; line-height:1.5; }
+
+  /* ---- measured options-flow card ---- */
+  .fl { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 15px; border-left:3px solid var(--info); }
+  .fl.s-pos { border-left-color:var(--up); } .fl.s-neg { border-left-color:var(--down); } .fl.s-neutral { border-left-color:var(--info); }
+  .fl-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; }
+  .fl-tag { font-size:13px; font-weight:700; } .fl-verdict { font-size:13.5px; color:var(--text); }
+  .fl.s-pos .fl-verdict { color:var(--up); } .fl.s-neg .fl-verdict { color:var(--down); }
+  .fl-chips { display:flex; flex-wrap:wrap; gap:7px 8px; margin-top:11px; }
+  .fl-chip { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; }
+  .fl-chip .k { color:var(--muted); font-size:10.5px; display:block; } .fl-chip .v { font-weight:700; font-size:14px; }
+  .fl-chip.pos .v { color:var(--up); } .fl-chip.neg .v { color:var(--down); }
+  .fl-chip.soft { border-style:dashed; opacity:.78; } .fl-chip.soft .v { color:var(--muted); font-weight:600; }
+  .fl-sec { margin-top:12px; border-top:1px solid var(--line); padding-top:9px; }
+  .fl-h { font-size:12px; color:var(--muted); font-weight:600; }
+  .fl-sec ul { margin:6px 0 0; padding-left:18px; } .fl-sec li { font-size:12px; line-height:1.55; margin:3px 0; font-variant-numeric:tabular-nums; }
+  .fl-foot { font-size:11px; color:var(--muted); font-style:italic; margin-top:11px; line-height:1.5; }
 </style>
 </head>
 <body class="page-gex">
@@ -262,6 +299,7 @@
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
@@ -275,6 +313,11 @@
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -370,6 +413,16 @@
   <p class="muted sm note"><span class="l-en">Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional certainty: long gamma → dealers fade moves (price pins / mean-reverts, lower realized vol); short gamma → dealers chase (moves trend / amplify, higher vol). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, FRAGILE for single names. Walls / flip / max-pain are levels to watch, never targets; every trigger is a daily CLOSE beyond a level.</span><span class="l-zh">每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也非方向定论：多头Gamma → 做市商抑制走势（价格磁吸/均值回归、已实现波动更低）；空头Gamma → 做市商追逐（走势趋势化/放大、波动更高）。做市商“多头看涨/空头看跌”符号是不可观测的假设 — 对指数稳健，对个股脆弱。墙/翻转/最大痛点仅供观察、绝非目标价；每个触发均为日线收盘越过某价位。</span></p>
 </div>
 
+<!-- Market Weather: the VALIDATED index vol-regime read (engine/vol_regime; fetched client-side from vol/regime.json) -->
+<div class="panel weather" id="gx-weather" hidden>
+  <div class="topline" style="justify-content:space-between;align-items:flex-start">
+    <h2 style="margin:0">🌦️ <span class="l-en">Market Weather — index vol regime</span><span class="l-zh">市场天气 — 指数波动率体制</span>
+      <span class="help">?<span class="tip"><span class="l-en">The one read on this page that is VALIDATED, not just displayed: a composite of the VIX/VIX3M term-structure slope + bond-vol (MOVE) + the vol-risk-premium, built from 1990+ history. On 33 years it predicts forward realized vol (HAC t ≈ −10) and, as a long/flat overlay, lifts Sharpe 0.65→0.84 and cuts drawdown (DSR 0.9998). No dealer-sign assumption. It drives a SUBTRACT-ONLY risk/sizing nudge — a regime read, never an intraday timer.</span><span class="l-zh">本页唯一经过验证（而非仅展示）的读数：VIX/VIX3M期限结构斜率 + 债券波动率(MOVE) + 波动风险溢价的综合，基于1990年以来历史。33年中可预测前瞻已实现波动率(HAC t≈−10)，作为多/空仓叠加层将夏普从0.65提升至0.84并降低回撤(DSR 0.9998)。无做市商符号假设。它驱动仅做减法的风险/仓位微调 — 体制读数，绝非盘中择时。</span></span></span></h2>
+    <span class="wx-scored" id="wx-scored" hidden>✓ <span class="l-en">validated</span><span class="l-zh">已验证</span></span>
+  </div>
+  <div id="gx-weather-body"></div>
+</div>
+
 <details class="primer">
   <summary><span class="l-en">New to options? Read this first.</span><span class="l-zh">不熟悉期权？先读这里。</span></summary>
   <p class="primer-intro"><span class="l-en">This page maps where big options dealers are likely to push or cushion the price. It&#39;s a map of levels, not a buy/sell signal and not a price target.</span><span class="l-zh">本页标示大型期权做市商可能推动或缓冲价格之处。这是价位地图，并非买卖信号、也非目标价。</span></p>
@@ -435,7 +488,7 @@
 
 <div class="panel">
   <p class="muted xs" style="margin:0"><span class="l-en">Source: Cboe delayed option chains (free, keyless) → engine/gex_model.py + engine/gex_engine.py. Greeks dividend-adjusted; the gamma-flip &amp; profile curve are grid-reevaluated across spot. Level strength, 25Δ skew, IV-rank &amp; the timeframed tilt are transparent display-only derivations — never scored signals. Daily EOD levels, delayed — OI updates once per day, this is NOT live intraday flow and misses 0DTE. See LIMITATIONS.md.</span><span class="l-zh">来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_model.py + engine/gex_engine.py。希腊字母经股息调整；Gamma翻转与曲线在现价网格上重估。墙强度、25Δ偏斜、IV分位与带时间窗的倾向均为透明的仅供展示推导 — 绝非评分信号。每日延迟价位 — OI每日更新一次，并非实时盘中流动、且不含0DTE。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-21 07:34 UTC</p>
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-21 16:03 UTC</p>
 </div>
 
 <div class="floaty-tip" id="gx-tip"></div>

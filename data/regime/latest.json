@@ -338,9 +338,9 @@
       "read": "labor firm"
     },
     "inflation_nowcast": {
-      "sticky_ann": 3.3161359677362334,
+      "sticky_ann": 0.27223140233333337,
       "sticky_trend": "accelerating",
-      "flexible_ann": 22.44469523310475,
+      "flexible_ann": 1.7017278110000007,
       "median_cpi": 3.66429024270862,
       "umich_1y_exp": 4.7,
       "read": "transitory (flexible-led)"
@@ -356,7 +356,7 @@
       "skew_pctile": 0.503968253968254,
       "stock_bond_corr": 0.6377548768998222,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 0.41186074801741795,
+      "roro": 0.41176949510843197,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.7513815265477115,
       "news_sentiment": -0.05408370867371559,
@@ -407,7 +407,7 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
-    "tone_score": 0.3,
+    "tone_score": 0.0,
     "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
@@ -417,11 +417,11 @@
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "Inflation remains elevated relative to the Committee's 2 percent goal"
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
       },
       {
         "field": "guidance_direction",
-        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+        "quote_span": "maintain the target range"
       }
     ],
     "degraded_reason": null,
@@ -926,7 +926,7 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-21T06:58:00.723862+00:00",
+    "built": "2026-06-21T15:33:54.800910+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -3086,6 +3086,7 @@
       "transition": 0.0
     }
   },
+  "vol_regime": null,
   "playbook": {
     "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: NEUTRAL \u2014 no edge either way; core holdings only, no new conviction bets.",
     "dial": {

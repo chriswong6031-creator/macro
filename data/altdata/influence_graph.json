@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-21T07:56:36.958483+00:00",
+  "generated_utc": "2026-06-21T16:50:01.019996+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,14 +749,17 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.0,
+      "alt_score": 8,
+      "alt_weighted": 3.05,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
+        "github_momentum",
+        "hf_model_momentum",
         "patent_cluster",
-        "retail_buzz"
+        "retail_buzz",
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -799,11 +802,11 @@
       "n_actors": 4,
       "alt_corroborated": true,
       "alt_score": 3,
-      "alt_weighted": 1.25,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
         "cnbc_pick",
-        "trump"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -845,12 +848,14 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.45,
+      "alt_score": 5,
+      "alt_weighted": 2.2,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "material_8k"
+        "hf_model_momentum",
+        "material_8k",
+        "special_situation"
       ],
       "top_holder": {
         "owner": "BEZOS JEFFREY P",
@@ -931,11 +936,12 @@
       ],
       "n_actors": 3,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.65,
+      "alt_score": 3,
+      "alt_weighted": 1.05,
       "alt_channels": [
         "affiliation",
-        "retail_buzz"
+        "retail_buzz",
+        "special_situation"
       ],
       "top_holder": {
         "owner": "Musk Elon",
@@ -963,11 +969,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.05,
+      "alt_score": 3,
+      "alt_weighted": 1.45,
       "alt_channels": [
         "affiliation",
-        "material_8k"
+        "material_8k",
+        "special_situation"
       ],
       "top_holder": null
     },
@@ -991,21 +998,79 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.65,
+      "alt_score": 4,
+      "alt_weighted": 1.75,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "app_demand",
         "gov_contract",
-        "patent_cluster",
-        "trump"
+        "patent_cluster"
       ],
       "top_holder": {
         "owner": "BARCLAYS PLC",
         "title": "Institution",
         "shares": 794117000
       }
+    },
+    {
+      "ticker": "ORCL",
+      "actors": [
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Larry Ellison",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 174802084
+      }
+    },
+    {
+      "ticker": "IEP",
+      "actors": [
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Carl Icahn",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 2,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "GOOGL",
@@ -1027,13 +1092,14 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.85,
+      "alt_score": 5,
+      "alt_weighted": 2.25,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "material_8k"
+        "material_8k",
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1072,6 +1138,31 @@
         "owner": "VANGUARD GROUP INC",
         "title": "Institution",
         "shares": 215444098
+      }
+    },
+    {
+      "ticker": "DJT",
+      "actors": [
+        {
+          "actor": "Eric Trump",
+          "kind": "trump_family",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "top_holder": {
+        "owner": "Trump Donald J. JR",
+        "title": "",
+        "shares": 114787498
       }
     },
     {
@@ -1164,10 +1255,10 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 1.0,
+      "alt_weighted": 0.9,
       "alt_channels": [
         "affiliation",
-        "trump"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1188,10 +1279,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.05,
+      "alt_score": 3,
+      "alt_weighted": 1.45,
       "alt_channels": [
         "affiliation",
+        "app_demand",
         "material_8k"
       ],
       "top_holder": {
@@ -1199,6 +1291,48 @@
         "title": "Institution",
         "shares": 151610700
       }
+    },
+    {
+      "ticker": "KO",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "UBER",
@@ -1214,16 +1348,37 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_weighted": 1.0,
       "alt_channels": [
         "affiliation",
-        "app_demand"
+        "trump"
       ],
       "top_holder": {
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
         "title": "Institution",
         "shares": 198470000
       }
+    },
+    {
+      "ticker": "LULU",
+      "actors": [
+        {
+          "actor": "Michael Burry",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
+      "alt_channels": [
+        "activist_13d",
+        "affiliation"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "LUV",
@@ -1239,16 +1394,37 @@
       "n_actors": 1,
       "alt_corroborated": true,
       "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_weighted": 1.05,
       "alt_channels": [
-        "affiliation",
-        "app_demand"
+        "activist_13d",
+        "affiliation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
         "title": "Institution",
         "shares": 60577139
       }
+    },
+    {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "ABTC",
@@ -1282,64 +1458,6 @@
       }
     },
     {
-      "ticker": "ORCL",
-      "actors": [
-        {
-          "actor": "Larry Ellison",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Larry Ellison",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        }
-      ],
-      "n_actors": 2,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 174802084
-      }
-    },
-    {
-      "ticker": "IEP",
-      "actors": [
-        {
-          "actor": "Carl Icahn",
-          "kind": "fund",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Carl Icahn",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 2,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "ASML",
       "actors": [
         {
@@ -1365,30 +1483,6 @@
         "affiliation"
       ],
       "top_holder": null
-    },
-    {
-      "ticker": "DJT",
-      "actors": [
-        {
-          "actor": "Eric Trump",
-          "kind": "trump_family",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "Trump Donald J. JR",
-        "title": "",
-        "shares": 114787498
-      }
     },
     {
       "ticker": "BRK.B",
@@ -1471,46 +1565,6 @@
       "top_holder": null
     },
     {
-      "ticker": "KO",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
-      "ticker": "BAC",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "CVI",
       "actors": [
         {
@@ -1571,51 +1625,11 @@
       "top_holder": null
     },
     {
-      "ticker": "LULU",
-      "actors": [
-        {
-          "actor": "Michael Burry",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "BP",
       "actors": [
         {
           "actor": "Paul Singer",
           "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
-      "ticker": "DHR",
-      "actors": [
-        {
-          "actor": "Jim Cramer",
-          "kind": "influencer",
           "rel": "AFFILIATES_WITH",
           "provenance": "DISCLOSED",
           "qualitative": true

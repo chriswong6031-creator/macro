@@ -228,6 +228,31 @@
   .cv-score.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 38%,var(--line)); }
   .cv-verdict { font-size:15px; font-weight:800; line-height:1.25; }
   .cv-tier { font-size:11px; color:var(--muted); margin-top:1px; }
+  /* ENTRY-timing gauge (the second gauge) on the detail conviction hero */
+  .cv-entry { margin:10px 0 2px; padding:8px 10px; border-radius:10px; background:var(--panel);
+              border:1px solid var(--line); border-left:4px solid var(--muted); }
+  .cv-entry.nbe-buy_now, .cv-entry.nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 8%,var(--panel)); }
+  .cv-entry.nbe-buy_soon, .cv-entry.nbe-watch { border-left-color:var(--g-cold); }
+  .cv-entry.nbe-wait_pullback, .cv-entry.nbe-hold { border-left-color:var(--warn); }
+  .cv-entry.nbe-extended, .cv-entry.nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .cv-entry.nbe-exit, .cv-entry.nbe-avoid, .cv-entry.nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 8%,var(--panel)); }
+  .cv-ehead { display:flex; align-items:center; gap:7px; font-size:13px; font-weight:800; }
+  .cv-entry .nbe-dot { width:9px; height:9px; border-radius:50%; background:var(--muted); flex:none; }
+  .cv-entry .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 22%,transparent); }
+  .cv-entry .nbe-dot.a2 { background:var(--g-cold); }
+  .cv-entry .nbe-dot.a1 { background:var(--warn); }
+  .cv-entry .nbe-dot.a0 { background:var(--down); }
+  .cv-ezone { font-size:12px; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .cv-ezone span { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+  .cv-ecyc { font-size:10.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums; }
+  .cv-etext { font-size:11px; margin-top:5px; line-height:1.35; }
+  .cv-val { font-size:10px; font-weight:700; padding:1px 6px; border-radius:7px; margin-left:6px;
+            color:var(--muted); background:var(--panel); border:1px solid var(--line); }
+  .cv-val.val-extreme, .cv-val.val-stretched { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .cv-val.val-cheap { color:var(--up); border-color:color-mix(in srgb,var(--up) 32%,var(--line)); }
   .cv-axes { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:9px; }
   .cax { font-size:10.5px; }
   .cax .caxl { color:var(--muted); display:block; }
@@ -529,6 +554,7 @@
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
@@ -542,6 +568,11 @@
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -1538,6 +1569,32 @@
           (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
         '</div>';
     }
+    // ENTRY-timing gauge (gauge 2) — the WHEN/AT-WHAT-PRICE, kept distinct from the
+    // OWN-IT conviction score so a high score is never mistaken for a buy-now.
+    var es = d.entry_signal, esbar = '';
+    if (es) {
+      var bz = es.buy_zone, zoneTxt = '';
+      if (bz && bz.high != null) {
+        zoneTxt = '$' + bz.low.toFixed(2) + (bz.high !== bz.low ? '–$' + bz.high.toFixed(2) : '') +
+          (bz.pct_from_spot != null ? ' (' + (bz.pct_from_spot >= 0 ? '+' : '') + bz.pct_from_spot + '%)' : '');
+      }
+      var ec = es.cycle_pos || {}, etim = es.timing || {};
+      var win = (etim.opens_in_days_lo != null && es.status !== 'buy_now' && es.status !== 'partial')
+        ? (' · ' + lz('window', '窗口') + ' ~' + etim.opens_in_days_lo +
+           (etim.opens_in_days_hi && etim.opens_in_days_hi !== etim.opens_in_days_lo ? '–' + etim.opens_in_days_hi : '') + 'd') : '';
+      esbar = '<div class="cv-entry nbe-' + es.status + '">' +
+        '<div class="cv-ehead"><span class="nbe-dot a' + es.act_level + '"></span>' +
+        esc(lz(es.headline, es.headline_zh)) + '</div>' +
+        (zoneTxt ? '<div class="cv-ezone"><span>' + lz('Buy zone', '买入区') + '</span> <b>' + zoneTxt + '</b>' +
+          (es.chase_above != null ? ' · ' + lz("don't chase >", '勿追高 >') + ' $' + es.chase_above.toFixed(2) : '') +
+          (es.stop != null ? ' · ' + lz('stop', '止损') + ' $' + es.stop.toFixed(2) : '') + '</div>' : '') +
+        (ec.dc_day != null ? '<div class="cv-ecyc">' + lz('cycle day', '周期第') + ' ' + ec.dc_day + '/' +
+          ec.dc_band[0] + '–' + ec.dc_band[1] + ' · ' + (ec.pct_through || 0) + '%' + win + '</div>' : '') +
+        (es.action ? '<div class="cv-etext muted">' + esc(lz(es.action, es.action_zh)) + '</div>' : '') +
+        '</div>';
+    }
+    var valchip = c.valuation_band ? ('<span class="cv-val val-' + c.valuation_band + '" title="' +
+      esc(c.valuation_note || '') + '">' + esc(c.valuation_band) + '</span>') : '';
     // PULLBACK BUY-ZONE (display-only) — turns "Extended — don't chase" into a concrete level:
     // the rising 50d / out-of-chase line for a timeable leader, or a "reset is X% lower, not a
     // pullback" read for a blow-off. Self-gated server-side (present only in don't-chase territory).
@@ -1560,8 +1617,9 @@
     box.innerHTML =
       '<div class="cv-head">' +
         (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
-        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + '</div>' +
+        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + valchip + '</div>' +
         '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
+        esbar +
       (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
         '</span>' + basis + '</div>' : '') +
       rgbar + szbar + pzbar +
@@ -2193,7 +2251,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-06-21 06:58 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-06-21 15:34 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>

@@ -15,3 +15,4 @@
 {"ts": "2026-06-21T15:04:20.144270+00:00", "family": "signal_factory", "config_hash": "be50b5b360ced03d", "config": {"leg": "cash_conversion", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
 {"ts": "2026-06-21T15:04:20.144352+00:00", "family": "signal_factory", "config_hash": "9d58257f601e4437", "config": {"leg": "net_issuance", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
 {"ts": "2026-06-21T15:04:20.144408+00:00", "family": "signal_factory", "config_hash": "59fe8753f2a3fa59", "config": {"leg": "deleveraging", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
+{"ts": "2026-06-21T15:50:22.228773+00:00", "family": "china_validation", "kind": "declared_budget", "n": 12, "reason": "china signal \u00d7 horizon predictive grid", "config_hash": "9007d9acefe3b235"}

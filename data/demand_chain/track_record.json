@@ -51,7 +51,8 @@
       "dir_accuracy": null
     }
   },
+  "by_regime": {},
   "calibration_note": "No theses scored yet — the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
-  "calibration_note_zh": "尚无判断被评分 —— 待首批核查日到期后开始累积战绩；在此之前置信保持克制。",
-  "recent": []
+  "recent": [],
+  "calibration_note_zh": "尚无判断被评分 —— 待首批核查日到期后开始累积战绩；在此之前置信保持克制。"
 }

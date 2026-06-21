@@ -95,8 +95,8 @@
         "unemployment": 2.8,
         "unemployment_chg6m": -0.5,
         "m2_yoy": 5.73,
-        "fx": 1529.89,
-        "fx_strength_3m": -3.0,
+        "fx": 1537.5601,
+        "fx_strength_3m": -3.51,
         "realvol": 64.9,
         "drawdown": -0.1
       },
@@ -203,8 +203,8 @@
         "unemployment": null,
         "unemployment_chg6m": null,
         "m2_yoy": null,
-        "fx": 94.31,
-        "fx_strength_3m": -1.14,
+        "fx": 94.3399,
+        "fx_strength_3m": -1.18,
         "realvol": 12.5,
         "drawdown": -8.8
       },
@@ -574,7 +574,7 @@
           "cc": "KR",
           "flag": "\ud83c\uddf0\ud83c\uddf7",
           "name": "South Korea",
-          "value": -3.0
+          "value": -3.51
         },
         {
           "cc": "JP",
@@ -598,7 +598,7 @@
           "cc": "IN",
           "flag": "\ud83c\uddee\ud83c\uddf3",
           "name": "India",
-          "value": -1.14
+          "value": -1.18
         },
         {
           "cc": "AU",

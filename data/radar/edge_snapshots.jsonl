@@ -189,3 +189,9 @@
 {"date":"2026-06-21","kind":"ticker","subject":"NET","ticker":"NET","edge_score":0,"state":"CONFIRMED_UP"}
 {"date":"2026-06-21","kind":"ticker","subject":"IBM","ticker":"IBM","edge_score":0,"state":"CONFIRMED_UP"}
 {"date":"2026-06-21","kind":"ticker","subject":"PANW","ticker":"PANW","edge_score":0,"state":"CONFIRMED_UP"}
+{"date":"2026-06-21","kind":"ticker","subject":"AMD","ticker":"AMD","edge_score":100,"state":"CONFIRMED_UP"}
+{"date":"2026-06-21","kind":"ticker","subject":"INTC","ticker":"INTC","edge_score":100,"state":"CONFIRMED_UP"}
+{"date":"2026-06-21","kind":"ticker","subject":"CIEN","ticker":"CIEN","edge_score":86,"state":"POSITIVE_DIVERGENCE"}
+{"date":"2026-06-21","kind":"ticker","subject":"MU","ticker":"MU","edge_score":56,"state":"CONFIRMED_UP"}
+{"date":"2026-06-21","kind":"ticker","subject":"BIIB","ticker":"BIIB","edge_score":48,"state":"POSITIVE_DIVERGENCE"}
+{"date":"2026-06-21","kind":"ticker","subject":"AVGO","ticker":"AVGO","edge_score":41,"state":"CONFIRMED_UP"}
