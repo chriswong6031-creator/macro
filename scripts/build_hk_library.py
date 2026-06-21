@@ -24,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine.cycles import analyze  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
@@ -232,10 +234,21 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
+    # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
+    # HVP / RSI / MA regime), superseding the thin snapshot. The single-stock volatility black hole
+    # is added too — all best-effort so a thin/odd series never breaks the build.
+    try:
+        _tech = stock_technicals.snapshot(c)
+    except Exception:  # noqa: BLE001 — fall back to the thin snapshot
+        _tech = snapshot(c)
+    try:
+        _sq = vol_squeeze.assess(c)
+    except Exception:  # noqa: BLE001
+        _sq = None
     return {
         "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
         "asof": str(c.index.max().date()), "history_days": int(len(c)),
-        "tech": snapshot(c),
+        "tech": _tech, "vol_squeeze": _sq,
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
@@ -678,6 +691,22 @@ def main(betas: dict | None = None) -> dict | None:
 
     liq = current_liquidity()
     log.info("hk dual-liquidity regime for library: %s", liq or "unknown")
+
+    # HSI benchmark close for the anticipation cone's relative leg (the HK market proxy).
+    try:
+        _hsi = store.read("hk", "^HSI")
+        _hsi_close = _hsi["close"] if _hsi is not None and "close" in _hsi.columns else None
+    except Exception:  # noqa: BLE001
+        _hsi_close = None
+    # hoist the anticipation engine + its gate ONCE (the cone is close-driven; the gate read would
+    # otherwise repeat per name). None-safe: if the engine is unavailable, the cone is simply skipped.
+    try:
+        from engine.anticipation import anticipate as _anticipate, load_gate as _load_gate
+        _ant_gate = _load_gate("US")
+    except Exception:  # noqa: BLE001
+        _anticipate = None
+        _ant_gate = None
+
     index, built, failed = [], 0, 0
     price_by: dict[str, float] = {}
     uni = universe()
@@ -688,6 +717,16 @@ def main(betas: dict | None = None) -> dict | None:
             continue
         if beta_pt.get(ticker):             # additive: absent => no global-beta panel
             rec["global_beta"] = beta_pt[ticker]
+        # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
+        # note in the shared engine; best-effort (skips quietly on thin history).
+        if _anticipate is not None:
+            try:
+                _ant = _anticipate(close.dropna(), bench=_hsi_close, asset_class="hk_equity",
+                                   gate=_ant_gate)
+                if _ant:
+                    rec["anticipation"] = _ant
+            except Exception:  # noqa: BLE001 — additive cone, never fatal
+                pass
         safe = ticker.replace("=", "_").replace("^", "_")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
