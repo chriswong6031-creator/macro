@@ -1,0 +1,99 @@
+{
+  "verdict": "NO-GO",
+  "decision": "Composite stays CONTEXT-ONLY \u2014 never drives selection or sizing.",
+  "reasons": [
+    "composite does NOT reliably beat momentum-alone (incremental IC mean -0.00907, HAC-t -0.795)",
+    "composite IC-IR not significant net of FDR (HAC-t 0.227, q_fdr 0.8867)",
+    "net-of-cost long-short spread not significant"
+  ],
+  "horizon_d": 63,
+  "rebalances": 60,
+  "span": "2011-03-31..2025-12-31",
+  "effective_breadth": 110,
+  "effective_n_rebalances": 60,
+  "ic": {
+    "momentum": {
+      "mean_ic": 0.0128,
+      "ic_vol": 0.1447,
+      "ic_ir": 0.088,
+      "ic_ir_ann": 0.177,
+      "t_hac": 0.708,
+      "p_hac": 0.4787,
+      "hit": 0.517,
+      "n": 60,
+      "q_fdr": 0.8867,
+      "survives_fdr": false
+    },
+    "fundamentals": {
+      "mean_ic": 0.0022,
+      "ic_vol": 0.1122,
+      "ic_ir": 0.02,
+      "ic_ir_ann": 0.039,
+      "t_hac": 0.143,
+      "p_hac": 0.8867,
+      "hit": 0.483,
+      "n": 60,
+      "q_fdr": 0.8867,
+      "survives_fdr": false
+    },
+    "composite": {
+      "mean_ic": 0.0037,
+      "ic_vol": 0.1276,
+      "ic_ir": 0.029,
+      "ic_ir_ann": 0.058,
+      "t_hac": 0.227,
+      "p_hac": 0.8202,
+      "hit": 0.483,
+      "n": 60,
+      "q_fdr": 0.8867,
+      "survives_fdr": false
+    }
+  },
+  "incremental_composite_minus_momentum": {
+    "mean": -0.00907,
+    "se": 0.01142,
+    "t": -0.795,
+    "p": 0.4268,
+    "n": 60
+  },
+  "net_of_cost_spread": {
+    "momentum": {
+      "mean_per_reb": 0.0036,
+      "ann_pct": 1.44,
+      "sharpe_per_reb": 0.059,
+      "sharpe_ann": 0.119,
+      "t_hac": 0.45,
+      "p_hac": 0.6526,
+      "n": 60,
+      "avg_turnover": 0.413,
+      "dsr": 0.3468
+    },
+    "fundamentals": {
+      "mean_per_reb": -0.0066,
+      "ann_pct": -2.63,
+      "sharpe_per_reb": -0.12,
+      "sharpe_ann": -0.24,
+      "t_hac": -0.812,
+      "p_hac": 0.4168,
+      "n": 60,
+      "avg_turnover": 0.118,
+      "dsr": 0.0375
+    },
+    "composite": {
+      "mean_per_reb": -0.0075,
+      "ann_pct": -2.98,
+      "sharpe_per_reb": -0.142,
+      "sharpe_ann": -0.284,
+      "t_hac": -1.082,
+      "p_hac": 0.2792,
+      "n": 60,
+      "avg_turnover": 0.295,
+      "dsr": 0.0234
+    }
+  },
+  "leak_free": true,
+  "survivorship_biased": true,
+  "price_span": "1962-01-02..2026-06-18",
+  "cost_bps_one_way": 20.0,
+  "caveat": "Breadth limited to the ~114 locally-cached large-caps (the wide deep panel is an offline CI artifact) \u2014 a CONSERVATIVE read (mega-caps are hardest to rank). Yahoo prices are survivorship-biased (delisted absent \u2192 optimistic). The committed 14y factor scorecard (~1154 names) is the wider companion: it already shows the fundamental composite IC \u2248 0."
+}
