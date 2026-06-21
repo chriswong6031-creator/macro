@@ -28,7 +28,9 @@ All of Phases 1, 2, 3, and 5.1 below were **built, offline-tested, and merged** 
 | **3.3** | Feed handshake — `activist_13d`/`special_situation` Alt-Data channels fed by the desk emit | 2 tests |
 | **5.1** | Backtest by category×**stage**, **filing-date** entry (point-in-time) | 2 tests; real data: 238 situations, stage differentiates |
 
-**Deferred (honest):** **Phase 4 (international — SEDAR+/RNS/Japan)** is *not* built — live multi-regulator scraping (and Japanese ingest) can't be verified in an offline autonomous run; it remains the top follow-up. The newswire lane (2.1) and the LLM filer/classify lanes need a one-time **CI flip** (`newswire: true`, `DEEPSEEK_API_KEY`) + a smoke-check before they produce data.
+**Follow-up rounds (also merged):** per-build caps so the backlog can't stall the daily deploy (#395); P5.1 priors surfaced as desk/brain **context** (#397); **Phase 4 UK/Canada** intl classifier (§D3, pure) + gated UK/CA RSS collectors + cross-border desk merge; market-cap floor **confidence gate** ($25M for high-confidence only); **newswire lane flipped ON**; a Tier-2.2 **backlog-backfill workflow** (manual + weekly) that also refreshes priors.
+
+**Still deferred (honest):** **Phase 4 Japan / HK / Korea** (CJK-language ingest — the classifier core is ready, the collectors are not). **SEDAR+ direct ingest** stays RSS-only (direct scraping is ToS/CAPTCHA-barred). The UK/CA intl lanes ship **gated off** (`intl_uk` / `intl_canada`) until a CI smoke-check confirms real-world feed quality.
 
 ---
 
