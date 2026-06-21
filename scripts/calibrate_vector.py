@@ -301,15 +301,43 @@ def _zc(s: pd.Series, n: int = 365) -> pd.Series:
     return (s - m.mean()) / m.std().replace(0, np.nan)
 
 
-def _expret_signal(signal: pd.Series, fwd: pd.DataFrame, bands, labels, h: int):
+def _expret_signal(signal: pd.Series, fwd: pd.DataFrame, bands, labels, h: int,
+                   halves: dict | None = None):
     """Orient a (U-shaped) signal by its CALIBRATED expected fwd-h return: map each
-    value to its band's mean_h. The non-linear orientation a linear z×want can't do."""
+    value to its band's mean_h. The non-linear orientation a linear z×want can't do.
+
+    When `halves` is given (the pre/post evaluation split), orient CROSS-FITTED: each
+    evaluation half is mapped using the band->mean fitted on the COMPLEMENTARY data, so
+    the pre/post Sharpe comparison that drives the promotion gate is out-of-sample. The
+    old full-sample map leaked each half's own future outcomes into its orientation — a
+    split-half look-ahead that biased the gate toward PROMOTE. Without `halves` (display)
+    it keeps the full-sample map."""
     if isinstance(bands[0], (list, tuple)):
         return None
-    t = band_table(signal, fwd, bands, labels, [h])
-    m = {r["band"]: r.get(f"mean_{h}d") for _, r in t.iterrows()}
-    cats = pd.cut(signal, bins=bands, labels=labels, include_lowest=True)
-    return cats.astype(object).map(m).astype(float)
+
+    def _map(fit_idx, apply_idx):
+        t = band_table(signal.loc[fit_idx], fwd.loc[fit_idx], bands, labels, [h])
+        m = {r["band"]: r.get(f"mean_{h}d") for _, r in t.iterrows()}
+        cats = pd.cut(signal.loc[apply_idx], bins=bands, labels=labels, include_lowest=True)
+        return cats.astype(object).map(m).astype(float)
+
+    legs = [hf for hf in (halves or {}) if hf != "full"]
+    if len(legs) < 2:
+        return _map(signal.index, signal.index)
+    out = pd.Series(np.nan, index=signal.index, dtype=float)
+    covered = signal.index[:0]
+    for ev in legs:
+        comp = signal.index.difference(halves[ev])     # fit on everything NOT in this half
+        out.loc[halves[ev]] = _map(comp, halves[ev])
+        covered = covered.union(halves[ev])
+    # ONLY fill rows OUTSIDE every eval half (embargo / full-only) with the full-sample
+    # map. An eval-half row whose band is absent from its complement stays NaN (dropped
+    # from scoring) rather than being full-map-filled — that fill would re-leak its own
+    # outcomes, the very look-ahead this cross-fit removes.
+    rest = signal.index.difference(covered)
+    if len(rest):
+        out.loc[rest] = _map(signal.index, signal.index).loc[rest]
+    return out
 
 
 def ensemble_promotion(df, fwd, halves, folds, SIGNALS, cost_bps, n_trials):
@@ -324,7 +352,8 @@ def ensemble_promotion(df, fwd, halves, folds, SIGNALS, cost_bps, n_trials):
     for sig in _ENS_ORDER:
         if sig not in df.columns or sig not in SIGNALS:
             continue
-        er = _expret_signal(df[sig], fwd, SIGNALS[sig]["bands"], SIGNALS[sig]["labels"], h)
+        er = _expret_signal(df[sig], fwd, SIGNALS[sig]["bands"], SIGNALS[sig]["labels"], h,
+                            halves=halves)   # cross-fit so pre/post scoring is out-of-sample
         if er is None:
             continue
         z = _zc(er, zw)
