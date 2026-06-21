@@ -130,6 +130,9 @@
   .fl.conf{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
   .fl.fade,.fl.conflict{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
   .fl.pol{ background:color-mix(in srgb,#8b5cf6 22%,transparent);color:#a78bfa; }
+  .fl.iso{ background:color-mix(in srgb,var(--orange,var(--warn)) 18%,transparent);color:var(--orange,var(--warn)); }
+  .peers{ font-size:9.5px;font-weight:600;color:color-mix(in srgb,var(--text) 50%,transparent);
+    font-family:ui-monospace,Menlo,monospace;padding:1px 4px; }
   /* agreement matrix */
   .mtx{ display:inline-flex;gap:3px;align-items:center; }
   .mtx .cell{ width:9px;height:14px;border-radius:3px;background:color-mix(in srgb,var(--line) 70%,transparent); }
@@ -237,7 +240,8 @@
       <div class="conf"><b>{{ d.n_confirm }}</b>{{ t('desks', '台') }}</div>
       <div>
         <div class="rd2">{{ d.read }}</div>
-        <div class="flags">{% for f in d.flags %}<span class="fl {{ 'edge' if f in ['early_edge'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f=='confirmed_trend' else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned'] else '' }}">{{ f.replace('_',' ') }}</span>{% endfor %}</div>
+        <div class="flags">{% for f in d.flags %}<span class="fl {{ 'edge' if f in ['early_edge'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f in ['confirmed_trend','theme_wide'] else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned'] else 'iso' if f=='isolated' else '' }}">{{ f.replace('_',' ') }}</span>{% endfor %}
+          {%- if d.peers %}<span class="peers" title="basket peers also confirming">+{{ d.peer_confirm }} {{ t('peers', '同伴') }}: {{ d.peers|join(' ') }}</span>{% endif %}</div>
         {% if d.falsifier %}<div class="fal">{{ t('Falsifier', '证伪点') }}: <b>{{ d.falsifier }}</b></div>{% endif %}
       </div>
     </div>{% endfor %}

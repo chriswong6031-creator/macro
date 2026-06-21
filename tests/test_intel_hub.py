@@ -23,8 +23,10 @@ def _no_velocity(monkeypatch):
     monkeypatch.setattr(H, "load_velocity", lambda tickers, today, persist=True: {})
 
 
-def _news(lean="pos", n=3, sectors=None):
-    return {"n_recent": n, "sentiment_lean": lean, "baskets": [], "sectors": sectors or ["XLK"]}
+def _news(lean="pos", n=3, sectors=None, score=None):
+    sc = score if score is not None else {"pos": 0.6, "neg": -0.6}.get(lean, 0.0)
+    return {"n_recent": n, "sentiment_lean": lean, "sentiment_score": sc,
+            "sentiment_strength": min(1.0, n / 6.0), "baskets": [], "sectors": sectors or ["XLK"]}
 
 
 def _sig(t, score, action="WATCH", **kw):
@@ -154,6 +156,30 @@ def test_policy_conflict_flag():
 # --------------------------------------------------------------------------- #
 # 4. sector heat + command structure + degrade
 # --------------------------------------------------------------------------- #
+def test_peer_confirmation_theme_wide_vs_isolated():
+    # three bullish high-conviction names in the same basket → theme_wide; a lone one → isolated
+    def n_bask(b):
+        d = _news("pos"); d["baskets"] = [b]; return d
+    b = _bundle({"AAA": n_bask("semis"), "BBB": n_bask("semis"), "CCC": n_bask("semis"),
+                 "LONE": n_bask("solo_theme")},
+                [_sig(t, 85) for t in ["AAA", "BBB", "CCC", "LONE"]],
+                [{"ticker": t, "state": "CONFIRMED_UP", "edge_score": 80} for t in ["AAA", "BBB", "CCC", "LONE"]])
+    hub = H.build(b, None, {}, today=_TODAY)
+    aaa = next(d for d in hub["command"] if d["ticker"] == "AAA")
+    lone = next(d for d in hub["command"] if d["ticker"] == "LONE")
+    assert aaa["peer_confirm"] >= 2 and "theme_wide" in aaa["flags"]
+    assert lone["peer_confirm"] == 0 and "isolated" in lone["flags"]
+    assert hub["counts"]["theme_wide"] >= 3
+
+
+def test_sentiment_magnitude_gates_loud_bull():
+    # a lone 1-pos headline (lean pos but weak score) must NOT trigger crowded_top even at volume
+    weak = _bundle({"X": _news("pos", n=6, score=0.1)}, [_sig("X", 20, action="AVOID")],
+                   [{"ticker": "X", "state": "NEGATIVE_DIVERGENCE", "edge_score": 60}])
+    d = next(x for x in H.build(weak, None, {}, today=_TODAY)["command"] if x["ticker"] == "X")
+    assert "crowded_top" not in d["flags"]          # weak sentiment magnitude → not loud-bull
+
+
 def test_sector_heat_and_command():
     b = _bundle({"NVDA": _news("pos", sectors=["XLK"]), "AMD": _news("pos", sectors=["XLK"])},
                 [_sig("NVDA", 80), _sig("AMD", 75)],
