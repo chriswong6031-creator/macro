@@ -32,6 +32,7 @@ from lib import config
 from engine.catalyst_tone import _extract_json
 from engine import ai_desk as _desk
 from engine import ai_desk_scorer as _scorer
+from engine.regime_label import quad_label          # regime stamp → by_regime track record
 from engine import altdata_picks
 
 log = logging.getLogger(__name__)
@@ -383,6 +384,7 @@ def _append_ledger(brief: dict, root) -> list:
     existing = _scorer._load_jsonl(path)
     active = _active_subjects(existing, asof)
     existing_ids = {r.get("id") for r in existing}
+    regime = quad_label(root)
     new = []
     for t in theses:
         tk = t["ticker"]
@@ -400,7 +402,8 @@ def _append_ledger(brief: dict, root) -> list:
             "subject": f"{tk} alt-data brain {t['action']}",
             "lean": t["lean"], "conviction": t["conviction"], "action": t["action"],
             "horizon_d": t["horizon_d"], "falsifier": t["falsifier"], "check_by": t["check_by"],
-            "entry_levels": entry, "status": "open", "scored_at": None, "outcome": None, "realized": None,
+            "entry_levels": entry, "regime": regime,
+            "status": "open", "scored_at": None, "outcome": None, "realized": None,
         })
     if new:
         path.parent.mkdir(parents=True, exist_ok=True)
