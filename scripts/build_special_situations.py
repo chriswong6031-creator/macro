@@ -104,6 +104,7 @@ def build(refresh: bool = True) -> str:
             "cross_border": bool(s.get("cross_border")), "mc": _usd_m(s.get("mc_musd")),
             "url": s.get("edgar_url") or s.get("source_url"),
             "summary": _txt(s.get("summary"), dash=""), "live": bool(s.get("live")),
+            "low_conf": s.get("confidence") == "low",
         } for s in rows_src]
         groups.append({"cat": cat, "cat_zh": CAT_ZH.get(cat, cat),
                        "color": CAT_COLOR.get(cat, C["muted"]), "n": len(rows), "rows": rows})

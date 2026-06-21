@@ -190,7 +190,8 @@ def test_classify_8k_items():
     assert sse.classify("8-K", "8.01")[2] == "defer"
     assert sse.classify("8-K", "2.01")[2] == "defer"
     # routine officer change -> provisional, resolved in build_situations
-    assert sse.classify("8-K", "5.02") == ("Management Changes", "change", "mgmt_maybe")
+    # routine officer change (5.02) is not a situation (0% precision vs digest)
+    assert sse.classify("8-K", "5.02") == (None, None, "skip")
     # plain Reg-FD only -> not a situation
     assert sse.classify("8-K", "7.01") == (None, None, "skip")
 
@@ -265,7 +266,8 @@ def test_build_delisting_dedup_per_filer_day(tmp_path, monkeypatch):
     assert len(ok) == 1                                  # collapsed to a single delisting event
 
 
-def test_build_mgmt_502_only_when_filer_active(tmp_path, monkeypatch):
+def test_build_502_dropped(tmp_path, monkeypatch):
+    """Routine officer-change 8-Ks (Item 5.02) are never situations (0% precision vs digest)."""
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
     (tmp_path / "special_situations").mkdir()
@@ -275,9 +277,9 @@ def test_build_mgmt_502_only_when_filer_active(tmp_path, monkeypatch):
         {"id": "c", "form_type": "SC 13D", "company": "ACTIVIST TGT", "cik": "222", "items": None, "date_filed": "2026-06-11"},
     ]).to_parquet(tmp_path / "special_situations" / "events.parquet")
     df = sse.build_situations().set_index("id")
-    assert df.loc["a", "status"] == "skip"                 # routine officer change dropped
-    assert df.loc["b", "status"] == "ok"                   # filer is an activist target -> kept
-    assert df.loc["b", "category"] == "Management Changes"
+    assert df.loc["a", "status"] == "skip"
+    assert df.loc["b", "status"] == "skip"                 # 5.02 dropped even for an activist target
+    assert df.loc["c", "category"] == "Activist Campaigns"  # the 13D is the situation
 
 
 def test_classify_text_keyword_lane():

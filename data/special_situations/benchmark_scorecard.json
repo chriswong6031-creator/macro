@@ -1,16 +1,16 @@
 {
   "schema": "ss_benchmark.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-21 07:18 UTC",
+  "generated_at": "2026-06-21 07:47 UTC",
   "issue": 19,
   "digest_US": 137,
-  "confirmed": 63,
-  "confirmation_pct": 46.0,
+  "confirmed": 56,
+  "confirmation_pct": 40.9,
   "by_category": {
     "Acquisitions": {
       "digest_US": 25,
-      "confirmed": 15,
-      "rate_pct": 60
+      "confirmed": 12,
+      "rate_pct": 48
     },
     "Other": {
       "digest_US": 20,
@@ -29,23 +29,23 @@
     },
     "Strategic Reviews": {
       "digest_US": 11,
-      "confirmed": 4,
-      "rate_pct": 36
+      "confirmed": 3,
+      "rate_pct": 27
     },
     "Restructuring": {
       "digest_US": 11,
-      "confirmed": 6,
-      "rate_pct": 55
+      "confirmed": 5,
+      "rate_pct": 45
     },
     "Divestitures": {
       "digest_US": 9,
-      "confirmed": 6,
-      "rate_pct": 67
+      "confirmed": 5,
+      "rate_pct": 56
     },
     "Going-Private": {
       "digest_US": 8,
-      "confirmed": 6,
-      "rate_pct": 75
+      "confirmed": 5,
+      "rate_pct": 62
     },
     "Capital Returns": {
       "digest_US": 4,
@@ -93,6 +93,6 @@
       "rate_pct": 100
     }
   },
-  "edgar_extra_not_in_any_issue": 1241,
+  "edgar_extra_not_in_any_issue": 1046,
   "note": "Recall vs the digest's curation; LOWER BOUND (short backfill window)."
 }

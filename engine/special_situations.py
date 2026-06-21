@@ -139,8 +139,8 @@ def classify(form_type: str, items: object = None) -> tuple[str | None, str | No
                 return cat, stage, "ok"
         if s & DEFER_8K_ITEMS:
             return None, None, "defer"          # Acq/Divest/Spin/Review/Cap-Return need text
-        if "5.02" in s:
-            return MGMT, "change", "mgmt_maybe"  # only a situation if filer is already active
+        # 8-K 5.02 (officer change) dropped: 0% precision vs digest — routine changes are
+        # not situations, and activist-context CEO exits already surface via the 13D/proxy.
         return None, None, "skip"
     return None, None, "skip"
 
@@ -153,24 +153,39 @@ _TEXT_RULES: list[tuple[str, str, tuple[str, ...]]] = [
     (TERM, "terminated", (
         "mutually agreed to terminate", "agreed to terminate the", "terminated the previously announced",
         "termination of the merger agreement", "termination of the agreement and plan",
-        "merger agreement was terminated", "terminated the merger")),
+        "merger agreement was terminated", "terminated the merger", "termination of the business combination")),
+    # SPAC before Acquisitions — STRICT (tuned vs digest: "business combination"/"trust
+    # account" were too broad and stole real mergers). SPAC-only terminology:
+    (SPAC, "de-SPAC", (
+        "blank check company", "special purpose acquisition", "initial business combination")),
     (REV, "initiated", (
         "strategic alternatives", "strategic review", "review of strategic",
-        "explore strategic", "evaluating strategic", "range of strategic")),
+        "explore strategic", "evaluating strategic", "range of strategic", "exploring a sale")),
     (SPIN, "announced", (
         "spin-off", "spinoff", "spin off of", "plan to separate", "separation into two",
-        "intends to separate", "tax-free distribution", "as an independent public company")),
+        "intends to separate", "tax-free distribution", "as an independent public company",
+        "complete the separation")),
+    # Rights before Divest/Acq — STRICT (tuned vs digest: most 424B5 are ordinary shelf
+    # takedowns, not rights offerings; require true rights-offering mechanics):
+    (RIGHTS, "live", (
+        "non-transferable subscription rights", "oversubscription privilege",
+        "basic subscription right", "rights offering of")),
+    # Divestiture: selling a business unit (not products). Moderate breadth restored.
     (DIV, "announced", (
-        "agreement to sell its", "definitive agreement to sell", "to divest", "divestiture of",
-        "sale of its", "agreed to sell its", "sale of the business", "disposition of")),
+        "to divest", "divestiture", "agreed to divest", "definitive agreement to sell",
+        "agreement to sell its", "agreed to sell its", "sale of its subsidiary",
+        "sale of its business", "sale of the business", "sale of its division",
+        "sale of its segment", "sale of its stake", "carve-out")),
+    # Acquisition: require a real merger/acquisition agreement — tightened (dropped bare
+    # "will acquire" / "agreement to acquire" which fire on product/license deals)
     (ACQ, "announced", (
-        "agreement and plan of merger", "definitive merger agreement", "merger agreement",
-        "to be acquired by", "agreed to acquire", "definitive agreement to acquire",
-        "will acquire", "agreement to acquire", "enter into a merger")),
+        "agreement and plan of merger", "definitive merger agreement", "plan of merger",
+        "to be acquired by", "agreed to be acquired", "definitive agreement to acquire",
+        "agreed to acquire all", "entered into a merger agreement", "merger consideration of")),
     (CAP, "announced", (
         "share repurchase program", "stock repurchase program", "accelerated share repurchase",
         "special dividend", "special cash dividend", "increased its quarterly dividend",
-        "new repurchase", "authorized the repurchase", "return of capital")),
+        "authorized the repurchase", "return of capital", "increase to its repurchase")),
     (RESTR, "announced", (
         "chapter 11", "restructuring support agreement", "out-of-court restructuring",
         "liability management", "forbearance agreement", "exchange offer for its")),
@@ -278,29 +293,32 @@ def build_situations() -> pd.DataFrame:
         cats.append(c); stages.append(s); status.append(st)
     df = df.assign(category=cats, stage=stages, status=status)
 
-    # text lane (P1.1b): deferred filings that the enrichment step has classified
-    # from their document text get promoted to a real situation.
+    # confidence: structured-form / decisive-item classifications are HIGH; the keyword
+    # text lane is a HEURISTIC (audit found ~67% FP on unvalidated extras) -> LOW, so the
+    # desk + trading brain never treat keyword guesses as facts. The LLM lane (P1.3) or a
+    # digest match upgrades a situation's standing downstream.
+    df["confidence"] = "high"
+
+    # text lane (P1.1b): deferred filings the enrichment step classified from document text.
     if "text_category" in df.columns:
+        items_s = df["items"].astype(str) if "items" in df.columns else pd.Series("", index=df.index)
         promote = (df.status == "defer") & df.text_category.notna() & (df.text_category != "")
+        # a 424B5 is a securities OFFERING (shelf raise) — its boilerplate trips M&A
+        # keywords; only a genuine Rights Offering qualifies, never Acq/Divest/Spin/etc.
+        promote &= ~((df.form_type == "424B5") & (df.text_category != RIGHTS))
+        # Deal Terminations needs the 8-K termination item (1.02); without it, the keyword
+        # is usually deal-ENTRY/progress boilerplate (audit: 5/6 Deal-Term extras were FPs).
+        promote &= ~((df.text_category == TERM) & ~items_s.str.contains("1.02", na=False))
         df.loc[promote, "category"] = df.loc[promote, "text_category"]
         df.loc[promote, "stage"] = df.loc[promote, "text_stage"] if "text_stage" in df.columns else "announced"
         df.loc[promote, "status"] = "ok"
+        df.loc[promote, "confidence"] = "low"        # keyword heuristic, not verified
 
     # cross-filing Going-Private upgrade: any CIK with an SC 13E-3 -> its merger
     # proxy / third-party tender is an affiliate take-private (§B1).
     gp_ciks = set(df.loc[df.form_type.str.startswith("SC 13E3"), "cik"].astype(str))
     upg = df.cik.astype(str).isin(gp_ciks) & df.category.isin([ACQ, TO])
     df.loc[upg, ["category", "stage"]] = [GP, "live"]
-
-    # 5.02 (mgmt_maybe) becomes a real Management Changes situation ONLY if the
-    # same filer already has an active activist/review/restructuring/deal situation;
-    # otherwise a routine officer change is not a special situation -> skip.
-    active_ciks = set(df.loc[(df.status == "ok") &
-                             df.category.isin([ACT, REV, RESTR, GP, TO]), "cik"].astype(str))
-    mm = df.status == "mgmt_maybe"
-    df.loc[mm & df.cik.astype(str).isin(active_ciks), "status"] = "ok"
-    drop_mm = mm & ~df.cik.astype(str).isin(active_ciks)
-    df.loc[drop_mm, ["status", "category", "stage"]] = ["skip", None, None]
 
     # SPAC reclassification: a de-SPAC S-4 / merger proxy / 8-K from a blank-check
     # shell is a SPAC combination, not a plain acquisition (benchmark gap §P1.5).
@@ -393,7 +411,7 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
             "mc_musd": r.get("market_cap_musd"), "date_filed": r.get("issue_date"),
             "source_url": r.get("source_url"), "summary": r.get("summary"),
             "business_desc": r.get("business_desc"), "country": r.get("country"),
-            "source_lane": "digest", "live": False,
+            "source_lane": "digest", "live": False, "confidence": "high",  # editor-curated
         })
     return rows
 
@@ -440,6 +458,7 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
                     "summary": (r.get("summary") if pd.notna(r.get("summary")) else None),
                     "business_desc": None, "country": "US",
                     "source_lane": "edgar", "live": True,
+                    "confidence": r.get("confidence") or "high",
                 }
 
     sits = [s for s in merged.values()
@@ -456,6 +475,8 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         "edgar_only": sum(1 for s in sits if s["source_lane"] == "edgar"),
         "cross_border": sum(1 for s in sits if s.get("cross_border")),
         "with_summary": sum(1 for s in sits if s.get("summary")),
+        "high_confidence": sum(1 for s in sits if s.get("confidence") == "high"),
+        "low_confidence": sum(1 for s in sits if s.get("confidence") == "low"),
         "floor_musd": floor,
     }
     return {"scored": SCORED, "is_context_only": True, "disclaimer": DISCLAIMER,
@@ -488,7 +509,7 @@ def mastermind_emit() -> dict:
                 "category": r.get("category"), "stage": "",
                 "date": r.get("issue_date"), "country": r.get("country"),
                 "cross_border": bool(r.get("country") != "US"),
-                "source": "digest", "source_url": r.get("source_url"),
+                "source": "digest", "source_url": r.get("source_url"), "confidence": "high",
                 "brief": (str(summ)[:300] if summ and pd.notna(summ) else r.get("headline")),
                 "mc_musd": (float(r["market_cap_musd"]) if pd.notna(r.get("market_cap_musd")) else None),
             })
@@ -502,6 +523,7 @@ def mastermind_emit() -> dict:
                 "date": r.get("date_filed"), "country": "US",
                 "cross_border": bool(r.get("cross_border")),
                 "source": "edgar", "source_url": r.get("source_url"),
+                "confidence": r.get("confidence") or "high",
                 "brief": (r.get("summary") if pd.notna(r.get("summary")) else r.get("hk")),
                 "mc_musd": (float(r["mc_musd"]) if pd.notna(r.get("mc_musd")) else None),
             })
