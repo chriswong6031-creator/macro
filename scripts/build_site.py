@@ -1022,7 +1022,7 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     WEI/GDPNow, the annualized-smoothed monthly print for sticky/flexible CPI) so
     the last charted point matches the displayed value. Returns SVG + key stats
     keyed by metric; metrics absent from the feature frame are simply omitted."""
-    from engine.conditions import _ann_monthly_pct
+    from engine.conditions import _smooth_annual_rate
     sm = config.load()["engine"]["conditions"]["inflation_nowcast"]["smooth_months"]
     out: dict[str, dict] = {}
 
@@ -1071,10 +1071,10 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     sticky = col("sticky_cpi")
     flex = col("flex_cpi")
     if sticky is not None:
-        pack("sticky", _ann_monthly_pct(sticky, sm), "var(--orange)", 2.0, 84, 12,
+        pack("sticky", _smooth_annual_rate(sticky, sm), "var(--orange)", 2.0, 10, 12,
              "inflation", 3, 0.10, monthly=True)
     if flex is not None:
-        pack("flexible", _ann_monthly_pct(flex, sm), "var(--orange)", 2.0, 84, 12,
+        pack("flexible", _smooth_annual_rate(flex, sm), "var(--orange)", 2.0, 10, 12,
              "inflation", 3, 0.30, monthly=True)
     return out
 
