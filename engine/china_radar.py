@@ -310,7 +310,9 @@ def scan(asof: date | str | None = None) -> dict | None:
                 hr = rel.get("hit_rate")
                 basis = ("pair" if pair in by_pair else ("signal_key" if key in by_signal else "unproven"))
                 if n_res >= 3 and hr is not None:
-                    rel_factor = max(0.5, min(1.5, 0.5 + hr))
+                    # proven-good rewarded up to 1.5×; proven-BAD (hr→0) collapses toward 0,
+                    # so a demonstrably-falsified signal drops out of Moderate+ (not floored at 0.5×)
+                    rel_factor = max(0.15, min(1.5, 1.5 * hr))
                 else:
                     rel_factor = 1.0
                     basis = "unproven"

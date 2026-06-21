@@ -80,6 +80,8 @@ def test_master_brain_china_lens_includes_synthesis():
         ci = st["china_intel"]
         # the widened whitelist must propagate the synthesis, not just raw surfaces
         assert "digest" in ci
+        assert ci.get("is_context_only") is True       # contract marker travels with the synthesis
         assert set(ci).issubset({"news", "policy", "altdata", "radar", "analysis",
                                  "conviction", "cross_surface", "flagged_tickers",
-                                 "what_changed", "salience", "digest"})
+                                 "what_changed", "salience", "digest",
+                                 "is_context_only", "disclaimer", "disclaimer_zh"})

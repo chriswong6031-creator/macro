@@ -170,7 +170,7 @@ def _analysis_block() -> dict | None:
         return None
     return {k: a.get(k) for k in
             ("conviction", "chains", "cross_refs", "what_matters", "what_changed",
-             "flagged_tickers") if a.get(k) is not None}
+             "flagged_tickers", "asof") if a.get(k) is not None}
 
 
 # --------------------------------------------------------------------------- #
@@ -244,7 +244,7 @@ def _digest_text(b: dict) -> str:
 # --------------------------------------------------------------------------- #
 def _staleness(b: dict) -> tuple[dict, int]:
     sa, worst = {}, 0
-    for k in ("news", "policy", "altdata", "radar"):
+    for k in ("news", "policy", "altdata", "radar", "analysis"):
         d = (b.get(k) or {}).get("asof") if isinstance(b.get(k), dict) else None
         sa[k] = d
         if d:

@@ -62,6 +62,8 @@ def _analysis_path() -> Path:
 # 1. cross-surface conviction (per fired radar divergence)
 # --------------------------------------------------------------------------- #
 def _policy_term(signal_key: str, policy: dict) -> float:
+    if not policy:
+        return 0.0                       # missing policy must add no floor (#11)
     stance = (policy or {}).get("stance")
     if signal_key in ("pboc_easing", "credit_impulse"):
         if stance == "easing":
@@ -101,7 +103,9 @@ def _conviction(divs: list, news_feed: dict, news_sent: dict, conv_map: dict, po
                 if (sign == "positive" and c > 0.1) or (sign == "negative" and c < -0.1):
                     aligned.append((t, info))
             altdata_term = (sum(abs(i["convergence"]) for _t, i in aligned) / len(aligned)) if aligned else 0.0
-            news_ok = (band == "supportive" and sign == "positive") or (band == "cautious" and sign == "negative")
+            # direction from the signed sentiment z (the band string is too coarse — #12)
+            z = (news_sent or {}).get("z")
+            news_ok = isinstance(z, (int, float)) and ((z > 0 and sign == "positive") or (z < 0 and sign == "negative"))
             news_term = (min(1.0, news_hits / 3.0) * (1.0 if news_ok else 0.5)) if news_hits else 0.0
             policy_term = _policy_term(d.get("signal_key"), policy)
             raw = 0.40 * strength + 0.25 * news_term + 0.25 * altdata_term + 0.10 * policy_term
@@ -172,8 +176,9 @@ def _chains(policy: dict, news_feed: dict) -> list:
     themes = set((news_feed or {}).get("top_themes") or [])
 
     def band(k, n):
+        # "aligned" not "confirmed" — these legs agree NOW; nothing has been falsification-tested
         f = k / n if n else 0.0
-        return "confirmed" if f >= 0.6 else ("forming" if f >= 0.3 else "dormant")
+        return "aligned" if f >= 0.6 else ("forming" if f >= 0.3 else "dormant")
 
     chains = []
     # EASING_REFLATION
@@ -259,7 +264,7 @@ def _what_matters(conviction: list, chains: list, news_feed: dict, news_sent: di
             days = 9
         items.append({"kind": "scheduled", "salience": round(1.0 / (1 + days), 3),
                       "label_en": f"{ev.get('name_en')} ({ev.get('md')})",
-                      "label_zh": f"{ev.get('name_zh')}（{ev.get('md')}）",
+                      "label_zh": f"{ev.get('name_zh')}（{ev.get('md_zh') or ev.get('md')}）",
                       "detail_en": "Scheduled high-impact China release ahead.",
                       "detail_zh": "即将发布的高影响中国数据。"})
     # news sentiment
@@ -282,10 +287,10 @@ def _what_matters(conviction: list, chains: list, news_feed: dict, news_sent: di
     items += list(seen.values())
     # confirmed chains
     for ch in chains:
-        if ch["band"] in ("confirmed", "forming"):
+        if ch["band"] in ("aligned", "forming"):
             items.append({"kind": "chain", "salience": round(ch["k"] / ch["n"], 3),
                           "label_en": f"{ch['label_en']} ({ch['band']})",
-                          "label_zh": f"{ch['label_zh']}（{('确认' if ch['band']=='confirmed' else '形成中')}）",
+                          "label_zh": f"{ch['label_zh']}（{('一致' if ch['band']=='aligned' else '形成中')}）",
                           "detail_en": ch["explain_en"], "detail_zh": ch["explain_zh"]})
     items.sort(key=lambda x: x["salience"], reverse=True)
     for i, it in enumerate(items[:top_n], 1):
@@ -382,6 +387,7 @@ def analyze(prev: dict | None = None, asof: date | str | None = None) -> dict:
 
 def _flagged_tickers(conviction: list, altdata_mm: dict) -> list:
     """Names lit by >=2 surfaces: alt-data accumulation that also sits in a radar-lit basket."""
+    from engine import china_conviction as cv
     out, seen = [], set()
     for c in conviction:
         for m in c.get("members", []):
@@ -389,15 +395,21 @@ def _flagged_tickers(conviction: list, altdata_mm: dict) -> list:
             if not t or t in seen:
                 continue
             seen.add(t)
+            conv = m.get("convergence")
             out.append({
                 "ticker": t, "name": m.get("name"),
-                "context_conviction": m.get("convergence"),
+                # keep ONE meaning per field: raw signed [-1,1] under its true name, and a
+                # 0-100 context_conviction on the SAME scale as conviction[] (was colliding).
+                "convergence": conv,
+                "context_conviction": cv.to_100(abs(conv or 0)),
                 "side": "long-context" if c.get("radar_sign") == "positive" else "short-context",
                 "surfaces": ["altdata", "radar"] + (["news"] if c.get("news_hits") else []),
                 "reasons": [f"alt-data {m.get('side')} in {c.get('sector_en')}",
                             f"radar {c.get('key')} divergence ({c.get('radar_sign')})"],
+                "note_en": "Context watchlist, not a recommendation",
+                "note_zh": "背景自选，非推荐",
             })
-    out.sort(key=lambda r: abs(r.get("context_conviction") or 0), reverse=True)
+    out.sort(key=lambda r: abs(r.get("convergence") or 0), reverse=True)
     return out[:12]
 
 

@@ -686,9 +686,15 @@ def feed(today: date | None = None, days: int = 7, top_n: int | None = None) -> 
         try:
             from engine import china_event_calendar as cec
             for ev in cec.high_impact_strip(horizon_days=14)[:5]:
+                md_zh = ev.get("md")
+                try:
+                    dd = date.fromisoformat(ev.get("date"))
+                    md_zh = f"{dd.month}月{dd.day}日"
+                except (ValueError, TypeError):
+                    pass
                 scheduled_ahead.append({"type": ev.get("type"), "date": ev.get("date"),
                                         "name_en": ev.get("name_en"), "name_zh": ev.get("name_zh"),
-                                        "md": ev.get("md")})
+                                        "md": ev.get("md"), "md_zh": md_zh})
         except Exception:  # noqa: BLE001
             pass
         return {"schema": SCHEMA, "is_context_only": True, "asof": today.isoformat(),

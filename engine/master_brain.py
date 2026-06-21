@@ -586,6 +586,10 @@ def gather_china_state(root: Path | None = None) -> dict:
         intel = {k: b.get(k) for k in keys if b.get(k)}
         if intel:
             intel["digest"] = b.get("digest")     # the synthesis-led plain-text rollup
+            # the context-only contract MUST travel with the hoisted conviction/flagged tickers
+            intel["is_context_only"] = True
+            intel["disclaimer"] = b.get("disclaimer")
+            intel["disclaimer_zh"] = b.get("disclaimer_zh")
             state["china_intel"] = intel
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.debug("china_intel state unavailable (%s)", e)

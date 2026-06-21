@@ -44,7 +44,7 @@
   .chain { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 15px; margin:10px 0; }
   .chain .hd { display:flex; align-items:center; gap:9px; font-weight:700; font-size:13.5px; }
   .chband { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; }
-  .ch-confirmed{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
+  .ch-aligned{color:#1f9a55;background:color-mix(in srgb,#1f9a55 13%,transparent)}
   .ch-forming{color:#e0973a;background:color-mix(in srgb,#e0973a 13%,transparent)}
   .ch-dormant{color:var(--muted);background:var(--panel2)}
   .legs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
@@ -80,6 +80,9 @@
 </section>
 
 <div class="ci-wrap">
+{% set KIND_ZH = {'chain':'链条','news':'新闻','radar':'雷达','scheduled':'日程','policy':'政策','altdata':'另类数据'} %}
+{% set STANCE_ZH = {'easing':'宽松','neutral':'中性','tightening':'收紧'} %}
+{% set BAND_ZH = {'supportive':'偏积极','cautious':'偏谨慎','steady':'平稳','building':'积累中','unknown':'未知'} %}
 
   <!-- B. WHAT MATTERS MOST + CHANGED TODAY -->
   {% if b.salience %}
@@ -87,14 +90,14 @@
     <b>🎯 {{ t('What matters most today', '今日要点') }}</b>
     <ol>
       {% for w in b.salience %}
-      <li><span class="kind">{{ w.kind }}</span>{{ bl(w.label_en, w.label_zh) }}{% if w.detail_en %} — <span class="mut">{{ bl(w.detail_en, w.detail_zh) }}</span>{% endif %}</li>
+      <li><span class="kind">{{ bl(w.kind, KIND_ZH.get(w.kind, w.kind)) }}</span>{{ bl(w.label_en, w.label_zh) }}{% if w.detail_en %} — <span class="mut">{{ bl(w.detail_en, w.detail_zh) }}</span>{% endif %}</li>
       {% endfor %}
     </ol>
     {% set wc = b.what_changed %}
     {% if wc and (wc.stance_change or wc.sentiment_band_change or wc.new_radar_fires or wc.new_accumulation) %}
     <div class="changed">
-      {% if wc.stance_change %}<span class="ch">{{ t('PBoC stance', '央行立场') }}: {{ wc.stance_change.from }} → {{ wc.stance_change.to }}</span>{% endif %}
-      {% if wc.sentiment_band_change %}<span class="ch">{{ t('News mood', '新闻情绪') }}: {{ wc.sentiment_band_change.from }} → {{ wc.sentiment_band_change.to }}</span>{% endif %}
+      {% if wc.stance_change %}<span class="ch">{{ t('PBoC stance', '央行立场') }}: {{ bl(wc.stance_change.from, STANCE_ZH.get(wc.stance_change.from, wc.stance_change.from)) }} → {{ bl(wc.stance_change.to, STANCE_ZH.get(wc.stance_change.to, wc.stance_change.to)) }}</span>{% endif %}
+      {% if wc.sentiment_band_change %}<span class="ch">{{ t('News mood', '新闻情绪') }}: {{ bl(wc.sentiment_band_change.from, BAND_ZH.get(wc.sentiment_band_change.from, wc.sentiment_band_change.from)) }} → {{ bl(wc.sentiment_band_change.to, BAND_ZH.get(wc.sentiment_band_change.to, wc.sentiment_band_change.to)) }}</span>{% endif %}
       {% if wc.new_radar_fires %}<span class="ch">{{ t('New radar', '新增雷达') }}: {{ wc.new_radar_fires|length }}</span>{% endif %}
       {% if wc.new_accumulation %}<span class="ch">{{ t('New accumulation', '新增吸筹') }}: {{ wc.new_accumulation|length }}</span>{% endif %}
     </div>
@@ -140,7 +143,7 @@
   <h2 class="sec">🔗 {{ t('Transmission chains', '传导链条') }}</h2>
   {% for ch in b.analysis.chains %}
   <div class="chain">
-    <div class="hd"><span class="chband ch-{{ ch.band }}">{{ t(ch.band|capitalize, ({'confirmed':'已确认','forming':'形成中','dormant':'休眠'}).get(ch.band, ch.band)) }}</span> {{ bl(ch.label_en, ch.label_zh) }} <span class="mut" style="font-weight:400">{{ ch.k }}/{{ ch.n }}</span></div>
+    <div class="hd"><span class="chband ch-{{ ch.band }}">{{ t(ch.band|capitalize, ({'aligned':'一致','forming':'形成中','dormant':'休眠'}).get(ch.band, ch.band)) }}</span> {{ bl(ch.label_en, ch.label_zh) }} <span class="mut" style="font-weight:400">{{ ch.k }}/{{ ch.n }}</span></div>
     <div class="legs">
       {% for l in ch.links %}<span class="leg {{ 'on' if l.aligned else 'off' }}">{{ '✓' if l.aligned else '·' }} {{ bl(l.detail_en, l.detail_zh) }}</span>{% endfor %}
     </div>

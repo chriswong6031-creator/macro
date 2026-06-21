@@ -78,8 +78,10 @@ def _margin_score(block: dict) -> tuple[float | None, bool]:
 
 
 def _rank_pct(vals: dict) -> dict:
-    """Cross-sectional percentile (0..1) of each ticker's raw value among those that HAVE the
-    feed. Centered later to [-1,1]. This is what de-degenerates the all-buy analyst feed."""
+    """Cross-sectional MID-RANK percentile (0..1) of each ticker's raw value among those that
+    HAVE the feed. Centered later to [-1,1]. Tied values share one percentile — without this,
+    the ~97%-unanimous-buy analyst feed would get spread across the whole band by sort order
+    and flip stocks' accumulate/distribute side arbitrarily."""
     items = [(t, v) for t, v in vals.items() if v is not None]
     n = len(items)
     if n == 0:
@@ -87,7 +89,17 @@ def _rank_pct(vals: dict) -> dict:
     if n == 1:
         return {items[0][0]: 0.5}
     order = sorted(items, key=lambda kv: kv[1])
-    return {t: i / (n - 1) for i, (t, _v) in enumerate(order)}
+    out: dict = {}
+    i = 0
+    while i < n:
+        j = i
+        while j + 1 < n and order[j + 1][1] == order[i][1]:
+            j += 1
+        pct = ((i + j) / 2.0) / (n - 1)      # mean of the tied run's positional ranks
+        for k in range(i, j + 1):
+            out[order[k][0]] = pct
+        i = j + 1
+    return out
 
 
 def _compute_rows(min_signals: int = 2) -> list[dict]:
@@ -206,4 +218,8 @@ def mastermind(bt: dict | None = None) -> dict:
         "convergence_top": top[:10],
         "convergence_bottom": [_slim(r, "distribute") for r in bt.get("bottom", [])[:10]],
         "crowding_flags": bt.get("crowding_flags", []),
+        "disclaimer_en": "Context only — a display join of three free feeds (consensus × valuation "
+                         "× financing), no validated edge. A watchlist seed, never a size or trade.",
+        "disclaimer_zh": "仅作背景——三个免费数据源（一致预期 × 估值 × 融资）的展示性合并，无已验证优势。"
+                         "仅为自选股种子，绝非仓位或交易。",
     }
