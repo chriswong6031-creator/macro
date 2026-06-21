@@ -298,9 +298,58 @@ def test_exhausted_lands_in_fade_section_and_demotes():
 
 def test_empty_bundle_has_v2_sections():
     hub = H.build(None, None, None, today=_TODAY)
-    for k in ("emerging", "exhausted", "catalysts"):
+    for k in ("emerging", "exhausted", "catalysts", "discovery"):
         assert hub[k] == []
     assert hub["n_emerging"] == 0 and hub["desks"]["special"]["live"] is False
+
+
+# --------------------------------------------------------------------------- #
+# 6. V2 Phase-1 — discovery layer (off-desk + ignored leading signals)
+# --------------------------------------------------------------------------- #
+def test_discovery_off_desk_injected_as_dossier():
+    # OFF is not in any feeder facet → it only enters via the discovery feed
+    b = _bundle({"INUNI": _news("pos")}, [_sig("INUNI", 70)])
+    disc = {"by_ticker": {"OFF": {"ticker": "OFF", "source": "federal_velocity",
+                                  "disc_score": 0.6, "off_desk": True, "reason": "fed $ accel"}},
+            "off_desk": [{"ticker": "OFF", "source": "federal_velocity", "disc_score": 0.6,
+                          "off_desk": True, "reason": "fed $ accel"}], "n_off_desk": 1}
+    hub = H.build(b, None, {}, today=_TODAY, discovery=disc)
+    off = next((d for d in hub["command"] if d["ticker"] == "OFF"), None)
+    assert off is not None and off["stage"] == "discovery" and "discovery" in off["flags"]
+    assert "OFF" in [d["ticker"] for d in hub["discovery"]]
+    assert hub["n_discovery"] >= 1 and hub["counts"]["discovery_off_desk"] == 1
+
+
+def test_discovery_alone_cannot_manufacture_actionable():
+    # a name whose ONLY edge is a single off-tape discovery feed (no genuine non-discovery
+    # evidence) must not be staged 'emerging' nor clear the actionable opportunity threshold.
+    disc = {"by_ticker": {"X": {"ticker": "X", "source": "federal_velocity",
+                                "disc_score": 0.85, "off_desk": False, "reason": "fed $ accel"}}}
+    b = _bundle({"X": _news("neutral", n=0)})        # news-neutral only → ~0 genuine signal magnitude
+    d = H.build(b, None, {}, today=_TODAY, discovery=disc)["command"][0]
+    assert d["stage"] != "emerging"
+    assert d["opportunity_score"] < 35               # bounded boost can't manufacture an actionable name
+
+
+def test_discovery_leg_haircut_on_extended_name():
+    # a discovery signal cannot claim 'room' on an already-extended name
+    disc = {"by_ticker": {"E": {"ticker": "E", "source": "federal_velocity",
+                                "disc_score": 0.85, "off_desk": False, "reason": "fed $"}}}
+    b = _bundle({"E": _news("pos")}, [_sig("E", 70, extended=True)])
+    d = H.build(b, None, {}, today=_TODAY, discovery=disc)["command"][0]
+    assert d["edge_remaining"] < 0.6                 # extended → discovery leg is haircut, no false 'room'
+
+
+def test_discovery_boosts_on_desk_name():
+    # a name in the bundle with a weak facet gets a discovery boost + flag
+    disc = {"by_ticker": {"BIIB": {"ticker": "BIIB", "source": "radar_quiet", "disc_score": 0.55,
+                                   "off_desk": False, "reason": "phase3 + congress buy"}}}
+    base = _bundle({"BIIB": _news("neutral", n=0)})
+    plain = H.build(base, None, {}, today=_TODAY)["command"][0]
+    boosted = H.build(base, None, {}, today=_TODAY, discovery=disc)["command"][0]
+    assert "discovery" in boosted["flags"] and "discovery" not in plain["flags"]
+    assert boosted["opportunity_score"] >= plain["opportunity_score"]
+    assert "BIIB" in [d["ticker"] for d in H.build(base, None, {}, today=_TODAY, discovery=disc)["discovery"]]
 
 
 def test_velocity_ledger(tmp_path, monkeypatch):

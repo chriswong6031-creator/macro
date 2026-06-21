@@ -29,7 +29,7 @@
 </span>
 {%- endmacro %}
 {#- lifecycle stage chip (the V2 headline read) -#}
-{% set STAGE_ZH = {'emerging':'萌芽','early':'早期','consensus':'共识','exhausted':'透支','distribution':'派发','building':'酝酿'} %}
+{% set STAGE_ZH = {'emerging':'萌芽','early':'早期','consensus':'共识','exhausted':'透支','distribution':'派发','building':'酝酿','discovery':'发掘'} %}
 {% macro stage(s) -%}
 <span class="stage {{ s }}"><span class="l-en">{{ s }}</span><span class="l-zh">{{ STAGE_ZH.get(s, s) }}</span></span>
 {%- endmacro %}
@@ -175,7 +175,15 @@
   .stage.consensus{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
   .stage.exhausted{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
   .stage.distribution{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .stage.discovery{ background:color-mix(in srgb,var(--info) 24%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
   .stage.building{ background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--muted); }
+  /* discovery cards */
+  .dcard .et .src{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
+  .dcard .off{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up);margin-left:4px; }
+  .dcard .dscore{ margin-left:auto;font-size:15px;font-weight:800;color:var(--info); }
+  .dcard .dchan{ font-size:10.5px;color:color-mix(in srgb,var(--text) 64%,transparent);line-height:1.4;margin-top:5px; }
   .opp{ display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px; }
   .opp b{ font-size:19px;font-weight:800;line-height:1;letter-spacing:-.02em;
     background:linear-gradient(120deg,var(--info),var(--up));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
@@ -238,6 +246,7 @@
     {% if MC.liquidity %}<span class="mc">{{ t('Liquidity', '流动性') }} <b>{{ MC.liquidity }}</b></span>{% endif %}
     {% if MC.fed_stance %}<span class="mc">{{ t('Fed', '美联储') }} <b>{{ MC.fed_stance }}</b></span>{% endif %}
     {% if hub.n_emerging %}<span class="mc hot">{{ t('Emerging', '萌芽') }} <b>{{ hub.n_emerging }}</b></span>{% endif %}
+    {% if hub.n_discovery %}<span class="mc hot" style="border-color:color-mix(in srgb,var(--info) 50%,var(--line));color:var(--info)">{{ t('Discovery', '发掘') }} <b>{{ hub.n_discovery }}</b></span>{% endif %}
     {% if hub.counts and hub.counts.catalyst %}<span class="mc">{{ t('Catalysts', '催化') }} <b>{{ hub.counts.catalyst }}</b></span>{% endif %}
     {% if hub.n_actionable %}<span class="mc">{{ t('Actionable', '可操作') }} <b>{{ hub.n_actionable }}</b></span>{% endif %}
     {% if hub.n_universe %}<span class="mc">{{ t('Universe', '覆盖') }} <b>{{ hub.n_universe }}</b></span>{% endif %}
@@ -279,6 +288,25 @@
   </div>
   {% else %}<div class="empty">{{ t('No emerging pre-consensus setups today — the tape is led by names that have already moved.', '今日无萌芽期的领先机会 —— 盘面由已经发动的标的主导。') }}</div>{% endif %}
 
+  {# ── DISCOVERY — off-desk / ignored leading signals (needles in the haystack) ── #}
+  {% if hub.discovery %}
+  <div class="band"><h2 style="--accent:var(--info)">{{ ic('radar') }} {{ t('Discovery — what the desks miss', '发掘 —— 各台遗漏之处') }}</h2><span class="ln"></span>
+    <span class="cnt">{{ t('a leading signal the five desks dropped or never read', '五台丢弃或从未读取的领先信号') }}</span></div>
+  <div class="ecards">
+    {% for d in hub.discovery %}{% set dd = d.discovery or {} %}
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">{{ d.ticker }}</span>
+        <span class="src">{{ (dd.source or '')|replace('_',' ') }}</span>
+        {% if dd.off_desk %}<span class="off">{{ t('off-desk','非台内') }}</span>{% endif %}
+        <span class="dscore">{{ ((dd.disc_score or 0)*100)|round|int }}</span></div>
+      <div class="erd">{{ dd.reason }}</div>
+      {% if dd.channels %}<div class="dchan">{{ ic('pulse') }} {{ dd.channels|join(' · ') }}</div>{% endif %}
+      <div class="drv" style="margin-top:6px">{{ stage(d.stage) }}
+        <span style="color:var(--muted)">· {{ t('surfaced into the command list','已上榜可见') if d.stage != 'discovery' else t('not yet on any desk','尚未进入任何信号台') }}</span></div>
+    </div>{% endfor %}
+  </div>
+  {% endif %}
+
   {# ── exhausted (fade) + live catalysts ── #}
   <div class="alerts" style="margin-top:18px">
     <div class="glass acc alert" style="--accent:var(--down)">
@@ -316,7 +344,7 @@
           {% if d.leading_gap and d.leading_gap>0 %}<span style="font-size:9.5px;color:var(--info);font-weight:700">{{ t('leads crowd by','领先') }} +{{ d.leading_gap }}</span>{% endif %}</div>
         <div class="rd2">{{ d.read }}</div>
         {{ edgebar(d.edge_remaining) }}
-        <div class="flags">{% for f in d.flags %}{% if f not in ['emerging'] %}<span class="fl {{ 'edge' if f in ['early_edge'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f in ['confirmed_trend','theme_wide'] else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned','catalyst'] else 'iso' if f=='isolated' else '' }}">{{ f.replace('_',' ') }}</span>{% endif %}{% endfor %}
+        <div class="flags">{% for f in d.flags %}{% if f not in ['emerging'] %}<span class="fl {{ 'edge' if f in ['early_edge','discovery'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f in ['confirmed_trend','theme_wide'] else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned','catalyst'] else 'iso' if f=='isolated' else '' }}">{{ f.replace('_',' ') }}</span>{% endif %}{% endfor %}
           {%- if d.peers %}<span class="peers" title="basket peers also confirming">+{{ d.peer_confirm }} {{ t('peers', '同伴') }}: {{ d.peers|join(' ') }}</span>{% endif %}</div>
         {% if d.falsifier %}<div class="fal">{{ t('Falsifier', '证伪点') }}: <b>{{ d.falsifier }}</b></div>{% endif %}
       </div>

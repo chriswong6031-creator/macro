@@ -217,7 +217,8 @@ def _dirs(v: dict, policy: dict | None) -> dict:
 # away. 1.0 = early / lots of room; 0.0 = late / fully priced-in. Degrades to a
 # neutral 0.5 when a name has no priced-in inputs (e.g. news-only).
 # --------------------------------------------------------------------------- #
-def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None) -> dict:
+def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None,
+                    discovery: dict | None = None) -> dict:
     radar = v.get("radar") or {}
     standout = v.get("standout") or {}
     alt = v.get("alt") or {}
@@ -268,15 +269,27 @@ def _edge_remaining(v: dict, dirs: dict, vel_rec: dict, catalyst: dict | None) -
             comps.append((0.7, _clamp01(1.0 - ds / float(_CATALYST_FRESH_D)),
                           f"fresh {(catalyst.get('category') or 'catalyst').lower()}"))
 
+    n_base = len(comps)                                    # genuine (non-discovery) priced-in evidence
+    if discovery:                                          # off-desk leading accumulation = some room
+        dsc = _f(discovery.get("disc_score"))
+        if dsc is not None:
+            # anti-chase: a discovery leg cannot claim 'room' on an already-extended / run-up name,
+            # and is a MODEST leg (low base, lower weight) so one off-tape feed can't drive edge.
+            ext = alt.get("extended") is True
+            hc = 0.25 if ext else (0.5 if (rs is not None and rs > 40) else 1.0)
+            comps.append((0.5, _clamp01((0.18 + 0.5 * dsc) * hc),
+                          f"discovery: {(discovery.get('source') or '').replace('_', ' ')}"))
+
     if not comps:
-        return {"score": 0.4, "n_components": 0, "drivers": []}   # no priced-in evidence → conservative, not a free 0.5
+        return {"score": 0.4, "n_components": 0, "n_base": 0, "drivers": []}   # conservative, not a free 0.5
     wsum = sum(w for w, _, _ in comps)
     score = sum(w * s for w, s, _ in comps) / wsum
     ranked = sorted(comps, key=lambda c: c[1], reverse=True)
     drivers = [c[2] for c in ranked[:2]]               # the most edge-positive reasons
     if len(comps) > 2 and ranked[-1][1] < 0.35:        # surface the biggest drag — only if not already shown
         drivers.append("⚠ " + ranked[-1][2])
-    return {"score": round(_clamp01(score), 3), "n_components": len(comps), "drivers": drivers}
+    return {"score": round(_clamp01(score), 3), "n_components": len(comps),
+            "n_base": n_base, "drivers": drivers}
 
 
 # --------------------------------------------------------------------------- #
@@ -329,7 +342,8 @@ def _stage(edge: float, gap: int, lean: int, flags: list, n_components: int, lag
 # --------------------------------------------------------------------------- #
 # The per-ticker dossier — composite conviction + 2nd/3rd-order flags
 # --------------------------------------------------------------------------- #
-def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = None) -> dict:
+def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = None,
+             discovery: dict | None = None) -> dict:
     news = v.get("news") or {}
     alt = v.get("alt") or {}
     radar = v.get("radar") or {}
@@ -389,18 +403,25 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
 
     # ── V2: edge-remaining + leading-gap → opportunity (the new ranking key) ──
     gap = _leading_gap(v, dirs)
-    edge = _edge_remaining(v, dirs, nv, catalyst)
+    edge = _edge_remaining(v, dirs, nv, catalyst, discovery)
     signal_core = _f(brain.get("strength")) or 0.0            # genuine magnitude, NOT agreement
+    if discovery:                                             # BOUNDED boost — discovery never SUBSTITUTES for signal
+        dlift = (_f(discovery.get("disc_score")) or 0.0) * 0.7
+        signal_core = signal_core + 0.35 * max(0.0, dlift - signal_core)
     # continuous leading-gap multiplier — no binary cliff: ±15% per net leading desk, capped ±2
     gap_mult = 1.0 + 0.15 * max(-2, min(2, gap["gap"]))
     opportunity = round(min(100.0, 100.0 * signal_core * fals_pen * edge["score"] * gap_mult), 1)
-    stage = _stage(edge["score"], gap["gap"], lean, flags, edge["n_components"], gap["lag_present"])
+    # the lifecycle gate uses NON-discovery evidence (n_base) so a single off-tape discovery
+    # feed cannot, by itself, label a name 'emerging' or push it into the actionable cohort.
+    stage = _stage(edge["score"], gap["gap"], lean, flags, edge["n_base"], gap["lag_present"])
     if stage in ("emerging", "early") and "confirmed_trend" in flags:
         flags.remove("confirmed_trend")                       # pre-consensus ⇒ not a confirmed consensus
     if stage == "emerging":
         flags.append("emerging")
     if catalyst and catalyst.get("live"):
         flags.append("catalyst")
+    if discovery:
+        flags.append("discovery")
 
     # a single human-facing read (3rd-order synthesis)
     read = _read_for(flags, lean, n_confirm, policy, stage, edge, gap)
@@ -412,7 +433,7 @@ def _dossier(t: str, v: dict, pidx: dict, vel: dict, catalyst: dict | None = Non
         "opportunity_score": opportunity, "edge_remaining": edge["score"],
         "edge_drivers": edge["drivers"], "edge_components": edge["n_components"], "stage": stage,
         "leading_gap": gap["gap"], "lead_up": gap["lead_up"], "lag_up": gap["lag_up"],
-        "lag_present": gap["lag_present"], "catalyst": catalyst,
+        "lag_present": gap["lag_present"], "catalyst": catalyst, "discovery": discovery,
         "n_confirm": n_confirm, "n_dissent": n_dissent, "n_facets": len(present),
         "agreement": round(agreement, 2),
         "source_mix": present, "directions": dirs,
@@ -551,11 +572,38 @@ def _catalyst_index(special: dict | None, today: date) -> dict:
     return out
 
 
+def _discovery_dossier(cand: dict, catalyst: dict | None) -> dict:
+    """A dossier for an OFF-desk discovery candidate — a name not in any feeder's universe,
+    surfaced purely by a leading scan (radar QUIET-accumulating / federal velocity)."""
+    t = (cand.get("ticker") or "").upper()
+    dsc = _f(cand.get("disc_score")) or 0.0
+    edge = round(_clamp01(0.55 + 0.4 * dsc), 3)            # off-desk leading signal ⇒ room
+    opp = round(min(100.0, 100.0 * (dsc * 0.7) * edge * 1.15), 1)
+    flags = ["discovery"] + (["catalyst"] if (catalyst and catalyst.get("live")) else [])
+    nulls = {"news": None, "alt": None, "radar": None, "standout": None, "policy": None}
+    return {
+        "ticker": t, "name": t, "sectors": [], "baskets": [],
+        "composite_conviction": round(dsc * 60, 1), "lean": 1,
+        "opportunity_score": opp, "edge_remaining": edge,
+        "edge_drivers": [cand.get("reason") or "off-desk leading signal"],
+        "edge_components": 1, "stage": "discovery",
+        "leading_gap": 1, "lead_up": 1, "lag_up": 0, "lag_present": 0,
+        "catalyst": catalyst, "discovery": cand,
+        "n_confirm": 1, "n_dissent": 0, "n_facets": 0, "agreement": 1.0,
+        "source_mix": ["discovery"], "directions": dict(nulls),
+        "policy": None, "velocity": None, "sentiment_score": 0.0, "second_order": None,
+        "falsifier": None, "falsifier_penalty": 1.0, "peer_confirm": 0, "peers": [],
+        "flags": flags, "read": cand.get("reason") or "Off-desk leading accumulation — not on any desk yet.",
+        "facets": dict(nulls), "evidence": cand.get("reason", ""),
+    }
+
+
 # --------------------------------------------------------------------------- #
 # build
 # --------------------------------------------------------------------------- #
 def build(bundle: dict | None, policy: dict | None, macro_context: dict | None = None,
-          today: date | None = None, top: int = 30, special: dict | None = None) -> dict:
+          today: date | None = None, top: int = 30, special: dict | None = None,
+          discovery: dict | None = None) -> dict:
     """Fuse the intelligence bundle + policy + catalysts into the central command view,
     ranked by EDGE REMAINING (opportunity), not desk agreement. PURE-ish (load_velocity
     touches a ledger). Never raises."""
@@ -564,8 +612,13 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     pidx = build_policy_index(policy)
     vel = load_velocity(tickers, today)
     cidx = _catalyst_index(special, today)
+    didx = (discovery or {}).get("by_ticker") or {}
 
-    dossiers = [_dossier(t, v, pidx, vel, cidx.get(t)) for t, v in tickers.items()]
+    dossiers = [_dossier(t, v, pidx, vel, cidx.get(t), didx.get(t)) for t, v in tickers.items()]
+    # DISCOVERY: inject OFF-desk candidates (not in any feeder's universe) as their own dossiers
+    off = [c for c in ((discovery or {}).get("off_desk") or [])
+           if (c.get("ticker") or "").upper() not in tickers]
+    dossiers += [_discovery_dossier(c, cidx.get((c.get("ticker") or "").upper())) for c in off]
     _peer_confirm(dossiers)                              # 3rd-order: theme-wide vs isolated
     # V2 RANKING: opportunity = signal × edge-remaining × leading-gap. Tie-break on
     # composite conviction. This DEMOTES the confirmed/consensus cohort the v1 sort floated
@@ -577,6 +630,8 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
     catalysts = sorted((d for d in dossiers if "catalyst" in d["flags"]),
                        key=lambda d: ((d.get("catalyst") or {}).get("days_since")
                                       if (d.get("catalyst") or {}).get("days_since") is not None else 9999))
+    discovery_list = sorted((d for d in dossiers if "discovery" in d["flags"]),
+                            key=lambda d: ((d.get("discovery") or {}).get("disc_score") or 0.0), reverse=True)
     early = [d for d in dossiers if {"early_edge", "stealth_accumulation"} & set(d["flags"])]
     crowded = [d for d in dossiers if "crowded_top" in d["flags"]]
     confirmed = [d for d in dossiers if "confirmed_trend" in d["flags"]]
@@ -605,14 +660,17 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
             "special": {"live": bool(cidx)},
         },
         "n_universe": len(dossiers), "n_actionable": n_actionable, "n_emerging": n_emerging,
+        "n_discovery": len(discovery_list),
         "counts": {"emerging": n_emerging, "early": n_early, "exhausted": len(exhausted),
-                   "catalyst": len(catalysts),
+                   "catalyst": len(catalysts), "discovery": len(discovery_list),
+                   "discovery_off_desk": (discovery or {}).get("n_off_desk", 0),
                    "early_edge": len(early), "crowded_top": len(crowded),
                    "confirmed": len(confirmed), "policy_conflict": len(policy_conflict),
                    "velocity_spike": len(spikes),
                    "theme_wide": sum(1 for d in dossiers if "theme_wide" in d["flags"]),
                    "isolated": sum(1 for d in dossiers if "isolated" in d["flags"])},
         "command": dossiers[:top],
+        "discovery": [_compact(d) for d in discovery_list[:14]],
         "emerging": [_compact(d) for d in emerging_hero[:14]],
         "exhausted": [_compact(d) for d in exhausted[:12]],
         "catalysts": [_compact(d) for d in catalysts[:12]],
@@ -635,7 +693,8 @@ def build(bundle: dict | None, policy: dict | None, macro_context: dict | None =
 def _compact(d: dict) -> dict:
     return {k: d[k] for k in ("ticker", "name", "composite_conviction", "opportunity_score",
                               "edge_remaining", "edge_drivers", "stage", "leading_gap", "lean",
-                              "n_confirm", "flags", "read", "sectors", "falsifier", "catalyst")
+                              "n_confirm", "flags", "read", "sectors", "falsifier", "catalyst",
+                              "discovery")
             if k in d}
 
 
@@ -653,9 +712,10 @@ def _read(rel: str):
 
 def load_and_build(today: date | None = None, top: int = 30) -> dict:
     """Read the intelligence bundle + policy + macro frame and emit the command. Never raises."""
-    from engine import intelligence, briefing
+    from engine import intelligence, briefing, intel_discovery
     bundle = intelligence.load_and_build(today)
     policy = _read("site/policy_intent.json")
     macro = briefing.macro_context(today)
     special = _read("site/allocationdata/special_situations.json")
-    return build(bundle, policy, macro, today, top, special=special)
+    discovery = intel_discovery.load_and_build(bundle_universe=set(bundle.get("tickers") or {}), today=today)
+    return build(bundle, policy, macro, today, top, special=special, discovery=discovery)

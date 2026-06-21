@@ -136,7 +136,15 @@
   .stage.consensus{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
   .stage.exhausted{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
   .stage.distribution{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
+  .stage.discovery{ background:color-mix(in srgb,var(--info) 24%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
   .stage.building{ background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--muted); }
+  /* discovery cards */
+  .dcard .et .src{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
+  .dcard .off{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
+    background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up);margin-left:4px; }
+  .dcard .dscore{ margin-left:auto;font-size:15px;font-weight:800;color:var(--info); }
+  .dcard .dchan{ font-size:10.5px;color:color-mix(in srgb,var(--text) 64%,transparent);line-height:1.4;margin-top:5px; }
   .opp{ display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px; }
   .opp b{ font-size:19px;font-weight:800;line-height:1;letter-spacing:-.02em;
     background:linear-gradient(120deg,var(--info),var(--up));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
@@ -280,7 +288,7 @@
 
 <div class="hub-wrap">
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-06-21T09:11:55.634860+00:00">2026-06-21</time></span>
+    <span class="eyebrow"><span class="live"></span><span class="l-en">Central command · five desks fused</span><span class="l-zh">中枢指挥 · 五台融合</span> · <time datetime="2026-06-21T09:39:00.002022+00:00">2026-06-21</time></span>
     <h1><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></h1>
     <p><span class="l-en">Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.</span><span class="l-zh">按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。</span></p>
   </header>
@@ -292,9 +300,10 @@
     <span class="mc"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span> <b>contracting</b></span>
     <span class="mc"><span class="l-en">Fed</span><span class="l-zh">美联储</span> <b>Hawkish</b></span>
     <span class="mc hot"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span> <b>12</b></span>
-    <span class="mc"><span class="l-en">Catalysts</span><span class="l-zh">催化</span> <b>179</b></span>
+    <span class="mc hot" style="border-color:color-mix(in srgb,var(--info) 50%,var(--line));color:var(--info)"><span class="l-en">Discovery</span><span class="l-zh">发掘</span> <b>19</b></span>
+    <span class="mc"><span class="l-en">Catalysts</span><span class="l-zh">催化</span> <b>180</b></span>
     <span class="mc"><span class="l-en">Actionable</span><span class="l-zh">可操作</span> <b>21</b></span>
-    <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>926</b></span>
+    <span class="mc"><span class="l-en">Universe</span><span class="l-zh">覆盖</span> <b>927</b></span>
   </div>
   <div class="posture">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
@@ -513,6 +522,177 @@
       <div class="drv">
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/></svg> Restructuring · 7<span class="l-en">d ago</span><span class="l-zh">天前</span></div>
+    </div>
+  </div>
+  
+
+  
+  
+  <div class="band"><h2 style="--accent:var(--info)">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 7"/></svg> <span class="l-en">Discovery — what the desks miss</span><span class="l-zh">发掘 —— 各台遗漏之处</span></h2><span class="ln"></span>
+    <span class="cnt"><span class="l-en">a leading signal the five desks dropped or never read</span><span class="l-zh">五台丢弃或从未读取的领先信号</span></span></div>
+  <div class="ecards">
+    
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AMZN</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">71</span></div>
+      <div class="erd">13f add + affiliation + material 8k; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> 13f_add · affiliation · material_8k</div>
+      <div class="drv" style="margin-top:6px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BA</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">60</span></div>
+      <div class="erd">affiliation + gov grant + patent cluster; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> affiliation · gov_grant · patent_cluster</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BIIB</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">55</span></div>
+      <div class="erd">clinical phase3 start + congress buy + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · congress_buy · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AXON</span>
+        <span class="src">federal velocity</span>
+        
+        <span class="dscore">52</span></div>
+      <div class="erd">federal obligated $ accelerating 82% vs prior run-rate</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BWXT</span>
+        <span class="src">federal velocity</span>
+        
+        <span class="dscore">50</span></div>
+      <div class="erd">one large federal award (lumpy — not a sustained ramp)</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">VSAT</span>
+        <span class="src">federal velocity</span>
+        <span class="off"><span class="l-en">off-desk</span><span class="l-zh">非台内</span></span>
+        <span class="dscore">45</span></div>
+      <div class="erd">federal obligated $ accelerating 50% vs prior run-rate</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage discovery"><span class="l-en">discovery</span><span class="l-zh">发掘</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">not yet on any desk</span><span class="l-zh">尚未进入任何信号台</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AXP</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">42</span></div>
+      <div class="erd">affiliation + material 8k; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> affiliation · material_8k</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">RKLB</span>
+        <span class="src">federal velocity</span>
+        
+        <span class="dscore">40</span></div>
+      <div class="erd">new / sparse federal obligated-$ flow</div>
+      
+      <div class="drv" style="margin-top:6px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">AVGO</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">39</span></div>
+      <div class="erd">13f add + material 8k; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> 13f_add · material_8k</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">QCOM</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">37</span></div>
+      <div class="erd">affiliation + patent cluster; options call-leaning; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> affiliation · patent_cluster</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">BMY</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">PFE</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">ABBV</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage consensus"><span class="l-en">consensus</span><span class="l-zh">共识</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
+    </div>
+    <div class="glass acc ecard dcard" style="--accent:var(--info)">
+      <div class="et"><span class="tk">RHHBY</span>
+        <span class="src">radar quiet</span>
+        
+        <span class="dscore">35</span></div>
+      <div class="erd">clinical phase3 start + fda label expansion; uncrowded</div>
+      <div class="dchan">
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2.5-7 4 14 2.5-7H21"/></svg> clinical_phase3_start · fda_label_expansion</div>
+      <div class="drv" style="margin-top:6px"><span class="stage building"><span class="l-en">building</span><span class="l-zh">酝酿</span></span>
+        <span style="color:var(--muted)">· <span class="l-en">surfaced into the command list</span><span class="l-zh">已上榜可见</span></span></div>
     </div>
   </div>
   
@@ -1173,29 +1353,6 @@
       </div>
     </div>
     <div class="glass acc row" style="--accent:var(--info)">
-      <div class="id"><span class="tk">RKLB</span><span class="nm">RKLB</span><span class="mtx" title="news · alt · radar · board · policy">
-<span class="cell off"></span>
-<span class="cell off"></span>
-<span class="cell up"></span>
-<span class="cell off"></span>
-<span class="cell off"></span></span></div>
-      <div class="opp"><b>30</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
-      <div class="conv">
-        <div class="convbar "><i style="width:24.0%"></i></div>
-        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 24 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
-      </div>
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage emerging"><span class="l-en">emerging</span><span class="l-zh">萌芽</span></span>
-          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
-        <div class="rd2">A leading desk is firing ahead of 1 still-quiet lagging desk, with ~80% of the move still ahead plus a fresh catalyst — pre-consensus, where the edge is.</div>
-        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:80%"></i></span>
-<span class="ev">80%</span></div>
-        <div class="flags"><span class="fl pol">catalyst</span></div>
-        
-      </div>
-    </div>
-    <div class="glass acc row" style="--accent:var(--info)">
       <div class="id"><span class="tk">COST</span><span class="nm">COST</span><span class="mtx" title="news · alt · radar · board · policy">
 <span class="cell off"></span>
 <span class="cell off"></span>
@@ -1260,6 +1417,29 @@
         <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
 <span class="ebar"><i style="width:80%"></i></span>
 <span class="ev">80%</span></div>
+        <div class="flags"></div>
+        
+      </div>
+    </div>
+    <div class="glass acc row" style="--accent:var(--up)">
+      <div class="id"><span class="tk">LDOS</span><span class="nm">LDOS</span><span class="mtx" title="news · alt · radar · board · policy">
+<span class="cell off"></span>
+<span class="cell off"></span>
+<span class="cell up"></span>
+<span class="cell off"></span>
+<span class="cell off"></span></span></div>
+      <div class="opp"><b>29</b><small><span class="l-en">opp</span><span class="l-zh">机会</span></small></div>
+      <div class="conv">
+        <div class="convbar "><i style="width:18.1%"></i></div>
+        <div class="convn"><span class="l-en">conv</span><span class="l-zh">信念</span> 18 · 1<span class="l-en">d</span><span class="l-zh">台</span></div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="stage early"><span class="l-en">early</span><span class="l-zh">早期</span></span>
+          <span style="font-size:9.5px;color:var(--info);font-weight:700"><span class="l-en">leads crowd by</span><span class="l-zh">领先</span> +1</span></div>
+        <div class="rd2">A leading desk leads, the tape is still catching up — early, ~87% edge remaining.</div>
+        <div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
+<span class="ebar"><i style="width:87%"></i></span>
+<span class="ev">87%</span></div>
         <div class="flags"></div>
         
       </div>
@@ -1366,7 +1546,7 @@
   
 
   <footer class="hf">
-    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-21T09:11:55.634860+00:00">2026-06-21 09:11</time> UTC ·
+    <span class="l-en">Built</span><span class="l-zh">生成于</span> <time datetime="2026-06-21T09:39:00.002022+00:00">2026-06-21 09:39</time> UTC ·
     Context only. A central command that fuses five independent desks — news flow, alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement across desks and is docked by an unanswered falsifier; the second/third-order flags name the setup. The bot sizes through its own risk framework; nothing here sizes alone.
   </footer>
 </div>
