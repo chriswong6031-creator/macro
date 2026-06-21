@@ -1,8 +1,13 @@
 {
-  "built": "2026-06-20T10:24:32.847474+00:00",
+  "built": "2026-06-21T00:39:29.679155+00:00",
   "recipients_ok": 41,
   "recipients_total": 41,
   "errors": 0,
   "months": 25,
-  "last_month": "2026-06-01"
+  "last_month": "2026-06-01",
+  "assistance": {
+    "recipients_ok": 60,
+    "months": 25,
+    "last_month": "2026-06-01"
+  }
 }
