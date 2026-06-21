@@ -165,7 +165,7 @@ def _timing_band(cyc: dict) -> float:
 
 def assess(close: pd.Series, high: pd.Series | None, volume: pd.Series | None, *,
            cyc: dict, mtf: dict, early: dict, wo: dict, bench: pd.Series | None = None,
-           regime: dict | None = None) -> dict | None:
+           regime: dict | None = None, expansion: dict | None = None) -> dict | None:
     """Point-in-time bottom-formation radar. Returns the raw score + per-leg breakdown +
     veto flags + the proposed stage, or None when the cycle isn't computable. The raw
     score becomes a probability only via the fitted calibration curve."""
@@ -206,17 +206,25 @@ def assess(close: pd.Series, high: pd.Series | None, volume: pd.Series | None, *
     d = mtf.get("D", {})
     confirmed = bool(swing and above10 and (d.get("macd_cross_up") or d.get("macd_pos")))
     near_low = cyc.get("dc_phase") in ("approaching_band", "in_band")
+    # the EXPANSION gate is the dead-cat discriminator: a near-low candidate is only
+    # forwarded to the top of the watchlist (PRIMED) when it is a leader whose primary
+    # trend is intact; a high bottom-score with no tailwind is a dead-cat candidate.
+    expansion_ok = (expansion is None) or bool(expansion.get("ok"))
+    lead = legs["divergence"] > 0 or legs["mtf_turn"] >= 0.2
     if blocked:
         stage = "blocked"
     elif confirmed:
         stage = "confirmed"
     elif swing and above10:
         stage = "turning"
-    elif near_low and raw >= 45 and (legs["divergence"] > 0 or legs["mtf_turn"] >= 0.2):
+    elif near_low and raw >= 45 and lead and expansion_ok:
         stage = "primed"               # the anticipatory, pre-confirmation call
+    elif near_low and raw >= 45 and lead and not expansion_ok:
+        stage = "watch_deadcat"        # bottoming but NO tailwind to expand — held back
     else:
         stage = "watch"
 
     return {"raw": round(raw, 1), "legs": {k: round(v, 2) for k, v in legs.items()},
             "vetos": vetos, "blocked": blocked, "stage": stage,
+            "expansion": expansion if expansion else None,
             "has_volume": volume is not None and len(volume) > 0}

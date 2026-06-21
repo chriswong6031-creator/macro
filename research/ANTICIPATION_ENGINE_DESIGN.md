@@ -146,6 +146,36 @@ Volume captured for the breadth universe (`collectors/breadth.py` now caches vol
 (b) wire engine/expansion_gate.py into the PRIMED gate, (c) logistic refit — then re-run the strict
 gate. The signal is real; these three are the path from NO-GO to a possible GO.**
 
+## ITERATION 2 (ATR stop + expansion gate) — DECISIVE NO-GO, and the mechanism
+Wired `engine/expansion_gate.py` (RS leadership + 200-day trend) into PRIMED and widened the
+stop to ~3·ATR. Re-ran on the 593 small-caps:
+| stage | durable% | E[R] |
+|---|---|---|
+| primed (leader + tailwind) | 59.2 | 0.127 |
+| watch_deadcat (bottom score, NO tailwind) | **60.9** | **0.197** |
+| blocked | 56.4 | 0.197 |
+- **The expansion gate is ANTI-predictive:** the names it REJECTED ("no tailwind", broken
+  laggards) bounce MORE durably (60.9%) and with better R (0.197) than the "leaders" it kept
+  (59.2% / 0.127). It actively routes the better-R names away from PRIMED.
+- Cause = **small-cap MEAN-REVERSION**: the most beaten-down/oversold names (low RS, below a
+  falling 200-day — exactly what the leadership gate rejects) have the bounce edge; quality
+  leaders on a pullback are already extended and bounce less. This is the short-term reversal
+  anomaly, the OPPOSITE of the "anticipate a quality leader's durable bottom" thesis.
+- The wider ATR stop LOWERED PRIMED E[R] (0.173→0.127): wider risk shrinks win-R more than it
+  saves on whipsaw stop-outs. The tight stop was better; neither beats the base.
+
+**CONVERGED CONCLUSION (after 2 principled iterations):** anticipation of quality-leader bottoms
+has NO sized edge — across BOTH the survivor and non-survivor universes, under multiple stop and
+gate designs. The disciplined call is to STOP iterating (further tweaking until something "passes"
+is exactly the data-mining the deflated-Sharpe / purged-fold guards penalize). The tier ships
+**watchlist-ordering / heads-up ONLY** — the honest, pre-committed outcome.
+- The ONE real signal surfaced is small-cap oversold REVERSAL (watch_deadcat E[R] 0.197 = base) —
+  a DIFFERENT, explicitly mean-reversion strategy with its own cost/risk profile, NOT the
+  quality-leader anticipation envisioned; pursue separately if desired, never conflate with it.
+- The validated drawdown-control finding stands: waiting for CONFIRMATION reduces drawdown — the
+  two-gauge confirmed engine already shipped IS the right tool. (No logistic refit pursued: it
+  cannot fix a leg/gate that is anti-predictive, and forcing a pass would be overfitting.)
+
 ## Honest limits
 Close-only ceiling (~1100 names can't do volume/Wyckoff); NO measured return edge (may end
 ordering-only); overfitting risk (DSR + purged folds mandatory); irreducible early-call FP (graded

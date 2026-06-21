@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import warnings
 warnings.filterwarnings("ignore")
 import numpy as np, pandas as pd
-from engine import cycles, bottom_radar
+from engine import cycles, bottom_radar, expansion_gate
 from lib import config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -123,18 +123,25 @@ def main() -> int:
                     pct = float((vx[i - 252:i + 1] <= vx[i]).mean())
                     vctx = {"pct": pct, "panic": pct >= 0.85}
                 wo = cycles.washout(sub, cyc, vctx)
+                exp = expansion_gate.assess(sub, bench)   # the dead-cat discriminator
                 r = bottom_radar.assess(sub, hsub, vsub, cyc=cyc, mtf=mtf, early=early,
-                                        wo=wo, bench=bench, regime=reg)
+                                        wo=wo, bench=bench, regime=reg, expansion=exp)
             except Exception:
                 continue
             if not r:
                 continue
-            # only evaluate BOTTOMING context (the radar's job) — skip pure uptrend holds
-            if r["stage"] not in ("primed", "turning", "confirmed", "watch", "blocked"):
+            if r["stage"] not in ("primed", "turning", "confirmed", "watch",
+                                  "watch_deadcat", "blocked"):
                 continue
             entry = cv[i]
+            # STOP: the wider of a volatility-scaled (~3*ATR) stop and just-below the swing
+            # low — the tight swing-low-only stop was hit on the whipsaw before the target
+            # landed, eating PRIMED's expectancy despite its higher durability.
+            atr_frac = float(np.abs(np.diff(cv[max(0, i - 20):i + 1]) / cv[max(0, i - 20):i]).mean())
+            atr_stop = entry * (1 - min(0.14, max(0.05, 3.0 * atr_frac)))
             low_ref = cyc.get("cand_price") or cyc.get("dcl_price") or entry
-            stop = (low_ref if low_ref < entry else entry * 0.94) * (1 - BUFFER)
+            sw_stop = (low_ref if low_ref < entry else entry * 0.94) * (1 - BUFFER)
+            stop = min(atr_stop, sw_stop)             # the lower price = the wider (safer) stop
             path = cv[i + 1:i + 1 + N]
             if len(path) < N:
                 continue
@@ -169,21 +176,28 @@ def main() -> int:
     print("\nPER-STAGE (the ladder):")
     print(f"  {'stage':<10}{'n':>7}{'durable%':>10}{'E[R]':>8}{'MAE_md%':>9}")
     stage_out = {}
-    for st in ("primed", "turning", "confirmed", "watch", "blocked"):
+    for st in ("primed", "turning", "confirmed", "watch", "watch_deadcat", "blocked"):
         m = stage == st
         if m.sum() < 30:
-            print(f"  {st:<10}{m.sum():>7}  (thin)"); continue
+            print(f"  {st:<14}{m.sum():>7}  (thin)"); continue
         rec = {"n": int(m.sum()), "durable_pct": round(100*durable[m].mean(), 1),
                "expectancy_R": round(float(R[m].mean()), 3),
                "mae_med_pct": round(100*float(np.median(mae[m])), 2)}
         stage_out[st] = rec
-        print(f"  {st:<10}{rec['n']:>7}{rec['durable_pct']:>9}%{rec['expectancy_R']:>8}"
+        print(f"  {st:<14}{rec['n']:>7}{rec['durable_pct']:>8}%{rec['expectancy_R']:>8}"
               f"{rec['mae_med_pct']:>9}")
 
-    # (3) dead-cat control
+    # (3) dead-cat control — the EXPANSION GATE is the real discriminator: a near-low
+    # 'primed' (leader w/ tailwind) vs 'watch_deadcat' (same bottom score, NO tailwind).
     vd, nd = durable[blocked], durable[~blocked]
-    print(f"\nDEAD-CAT CONTROL: vetoed durable {100*vd.mean():.0f}% (n={vd.sum() and len(vd)}) "
-          f"vs non-vetoed {100*nd.mean():.0f}% (n={len(nd)})  — vetoed must be LOWER")
+    p_dur = stage_out.get("primed", {}).get("durable_pct")
+    dc_dur = stage_out.get("watch_deadcat", {}).get("durable_pct")
+    exp_sep = (p_dur - dc_dur) / 100.0 if (p_dur is not None and dc_dur is not None) else None
+    print(f"\nDEAD-CAT CONTROL:")
+    print(f"  by veto:      vetoed {100*vd.mean():.0f}% vs non-vetoed {100*nd.mean():.0f}%")
+    if exp_sep is not None:
+        print(f"  by EXPANSION: primed(leader) {p_dur}% vs watch_deadcat(no tailwind) {dc_dur}% "
+              f"-> {exp_sep*100:+.0f}pp separation (the gate's job)")
 
     # verdict — STRICT and honest: PRIMED earns a SIZE only if it genuinely beats the
     # base rate AND the calibration discriminates AND the vetos separate dead-cats.
@@ -197,7 +211,8 @@ def main() -> int:
         calib_ok = (top_dec - bot_dec) >= 0.05            # ≥5pp monotone-ish lift
     except Exception:
         calib_ok = False
-    deadcat_ok = (nd.mean() - vd.mean()) >= 0.05          # vetoed ≥5pp LOWER durable
+    # dead-cat passes if EITHER the vetos OR the expansion gate separate by ≥5pp
+    deadcat_ok = (nd.mean() - vd.mean()) >= 0.05 or (exp_sep is not None and exp_sep >= 0.05)
     primed_beats_base = bool(primed and primed["expectancy_R"] > base_er + 0.03)
     go = bool(primed and primed_beats_base and calib_ok and deadcat_ok)
     print(f"\nVERDICT (strict): calib_lift_ok={calib_ok} deadcat_ok={deadcat_ok} "
