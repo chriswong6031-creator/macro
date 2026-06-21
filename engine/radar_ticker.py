@@ -41,6 +41,78 @@ def _state(act: float, pr: float) -> tuple[str, str]:
     return "QUIET", "quiet"
 
 
+def _attr_note(t, state, basket_name, pct) -> str:
+    pos = f"{int(round(pct * 100))}th pct"
+    if state == "POSITIVE_DIVERGENCE":
+        return (f"{t} lags the {basket_name} basket ({pos} of members) while the theme's activity is "
+                f"up — the unpriced member of a moving theme.")
+    if state == "CONFIRMED_UP":
+        return f"{t} leads the {basket_name} basket ({pos}) and the theme is confirmed — the move is priced."
+    if state == "NEGATIVE_DIVERGENCE":
+        return f"{t} has led the {basket_name} basket ({pos}) but the theme's activity is fading — distribution risk."
+    return f"{t} lags a fading {basket_name} basket ({pos}) — confirmed weak."
+
+
+def _basket_attributed(existing: set, today: date) -> list:
+    """MASKED-NAME fix: attribute basket-level divergence flags down to their MEMBERS.
+
+    The basket radar fires a theme-level flag (e.g. 'housing POSITIVE_DIVERGENCE') but only
+    the ~30 alt-scored names get a per-name read — the other ~320 members are masked. Within
+    a flagged basket, a member LAGGING its peers (bottom of the ret_20d distribution) while
+    the theme's activity is up carries the UNPRICED divergence; a leader has already moved.
+    Uses each member's ret_20d ranked WITHIN the basket (no SPY benchmark needed). The edge
+    is the basket's, discounted by how it's attributed. Context-only; weaker than a direct
+    alt signal (source='basket_attributed')."""
+    radar = rp._load("site/basketdata/radar.json") or {}
+    baskets = rp._load("site/basketdata/baskets.json") or {}
+    bmem = {b.get("id"): (b.get("members") or []) for b in (baskets.get("baskets") or [])}
+    out = []
+    for f in (radar.get("flags") or []):
+        state = f.get("state")
+        if not state or state == "QUIET":
+            continue
+        members = [m for m in (bmem.get(f.get("basket")) or [])
+                   if isinstance(m.get("ret_20d"), (int, float))
+                   and (m.get("symbol") or m.get("ticker"))]
+        if len(members) < 4:
+            continue
+        ranked = sorted(members, key=lambda m: m["ret_20d"])
+        n = len(ranked)
+        bedge = float(f.get("edge_score") or 0)
+        bname = f.get("name") or f.get("basket")
+        bullish = state in ("POSITIVE_DIVERGENCE", "CONFIRMED_UP")
+        for i, m in enumerate(ranked):
+            t = (m.get("symbol") or m.get("ticker") or "").upper()
+            if not t or t in existing:
+                continue
+            pct = i / (n - 1)                            # 0 = worst performer in basket, 1 = best
+            if bullish:
+                if pct <= 0.30:
+                    mstate, lc, depth = "POSITIVE_DIVERGENCE", "forming", (0.30 - pct) / 0.30
+                elif pct >= 0.75:
+                    mstate, lc, depth = "CONFIRMED_UP", "mature", 0.3
+                else:
+                    continue
+            else:
+                if pct >= 0.70:
+                    mstate, lc, depth = "NEGATIVE_DIVERGENCE", "fading", (pct - 0.70) / 0.30
+                elif pct <= 0.25:
+                    mstate, lc, depth = "CONFIRMED_DOWN", "fading", 0.3
+                else:
+                    continue
+            edge = int(max(0, min(100, round(bedge * (0.45 + 0.45 * depth)))))
+            existing.add(t)
+            out.append({
+                "ticker": t, "state": mstate, "lifecycle": lc, "edge_score": edge,
+                "signal_score": None, "rs_vs_spy_60d": None,
+                "within_basket_pct": round(pct, 2), "basket": f.get("basket"),
+                "basket_name": bname, "basket_state": state, "source": "basket_attributed",
+                "channels": [], "affiliations": [],
+                "note": _attr_note(t, mstate, bname, pct),
+            })
+    return out
+
+
 def build(today: date | None = None) -> dict:
     """Compute per-ticker divergence over the alt-signal universe. Never raises."""
     today = today or date.today()
@@ -82,15 +154,21 @@ def build(today: date | None = None) -> dict:
             "conviction": s.get("conviction"), "extended": bool(s.get("extended")),
             "channels": s.get("channels") or [], "affiliations": s.get("affiliations") or [],
             "activity": round(act, 2), "price": round(pr, 2),
-            "flows": flows, "options": options, "crowd": crowd,
+            "flows": flows, "options": options, "crowd": crowd, "source": "signal",
             "note": _note(t, state, score, rs, flows, options),
         })
+
+    # MASKED-NAME fix: attribute basket-level flags down to members not already covered
+    # by a direct alt signal (the ~320 masked basket members).
+    existing = {r["ticker"] for r in rows}
+    attributed = _basket_attributed(existing, today)
+    rows.extend(attributed)
 
     rows.sort(key=lambda r: (r["state"] != "QUIET", r["edge_score"]), reverse=True)
     out = {
         "schema": SCHEMA, "is_context_only": True, "as_of": today.isoformat(),
         "generated_utc": datetime.now(timezone.utc).isoformat(),
-        "regime": regime, "n": len(rows),
+        "regime": regime, "n": len(rows), "n_attributed": len(attributed),
         "n_divergences": sum(1 for r in rows if "DIVERGENCE" in r["state"]),
         "tickers": rows,
         "disclaimer": "Per-name activity (smart-money signal) vs price (60d RS). The divergence "

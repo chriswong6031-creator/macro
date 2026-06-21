@@ -47,8 +47,14 @@ def test_derive_check_rel_return():
     assert ov["kind"] == "rel_return" and ov["op"] == "<" and ov["threshold"] == -0.05 and ov["vs"] == "SPY"
     av = pid._derive_check("TLT", "avoid", 60, pid._cfg())
     assert av["op"] == ">" and av["threshold"] == 0.05
-    soft = pid._derive_check("ITA", "overweight", 40, pid._cfg())   # ITA = soft (no price)
-    assert soft["kind"] == "soft"
+    # ITA (defense, no local series) is now GRADEABLE via a correlated surrogate (XLI)
+    corr = pid._derive_check("ITA", "overweight", 40, pid._cfg())
+    assert corr["kind"] == "rel_return" and corr["via"] == "correlated"
+    assert corr["subject_ticker"] == "XLI" and corr["surrogate_of"] == "ITA"
+    assert corr["threshold"] < -0.05            # wider threshold than a direct proxy (×1.6)
+    # a cash/dollar soft (no equity surrogate) stays soft
+    soft = pid._derive_check("UUP", "overweight", 40, pid._cfg())
+    assert soft["kind"] == "soft" and soft["via"] == "soft"
 
 
 def test_synthesize_builds_and_validates_theses():
@@ -133,10 +139,19 @@ def test_run_persists_and_appends(tmp_path):
 
 
 def test_gld_aliases_to_scorable_gold_futures():
-    tk, vs, kind = pid._resolve_subject("GLD")
-    assert (tk, vs, kind) == ("GC_F", "SPY", "rel_return")
+    tk, vs, kind, via = pid._resolve_subject("GLD")
+    assert (tk, vs, kind, via) == ("GC_F", "SPY", "rel_return", "direct")
     chk = pid._derive_check("GLD", "overweight", 40, pid._cfg())
     assert chk["kind"] == "rel_return" and chk["subject_ticker"] == "GC_F"
+
+
+def test_correlated_surrogates_are_scorable_and_resolve():
+    """Every soft→surrogate mapping must point at a SCORABLE ticker (else the surrogate
+    grade silently expires too) and resolve to a 'correlated' rel_return check."""
+    for soft, surrogate in pid._SOFT_PROXY.items():
+        assert surrogate in pid._SCORABLE, f"{soft} -> {surrogate}: surrogate not scorable"
+        tk, vs, kind, via = pid._resolve_subject(soft)
+        assert kind == "rel_return" and via == "correlated" and tk == surrogate
 
 
 def test_every_scorable_subject_has_a_price_series():
@@ -145,7 +160,7 @@ def test_every_scorable_subject_has_a_price_series():
     from lib import config
     ydir = config.ROOT / "data" / "yahoo"
     for s in pid._SCORABLE:
-        tk, vs, kind = pid._resolve_subject(s)
+        tk, vs, kind, via = pid._resolve_subject(s)
         assert kind == "rel_return", f"{s} should be scorable"
         assert (ydir / f"{tk}.parquet").exists(), f"{s} -> {tk}: no price series (would never score)"
 

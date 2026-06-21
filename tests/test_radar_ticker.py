@@ -319,3 +319,43 @@ if __name__ == "__main__":
         fn()
         print(f"ok  {fn.__name__}")
     print(f"\n{len(fns)} passed")
+
+
+# --------------------------------------------------------------------------- #
+# masked-name fix: basket-level flags attributed to members by within-basket RS
+# --------------------------------------------------------------------------- #
+def test_basket_attribution(monkeypatch):
+    from engine import radar_ticker as rt
+    from engine import radar_plus as rp
+
+    radar = {"flags": [{"basket": "housing", "name": "Housing",
+                        "state": "POSITIVE_DIVERGENCE", "edge_score": 80}]}
+    baskets = {"baskets": [{"id": "housing", "members": [
+        {"symbol": "LAG", "ret_20d": -0.05},   # worst performer → laggard → unpriced divergence
+        {"symbol": "MID1", "ret_20d": 0.01}, {"symbol": "MID2", "ret_20d": 0.02},
+        {"symbol": "MID3", "ret_20d": 0.03},
+        {"symbol": "LEAD", "ret_20d": 0.20},   # best performer → leader → priced
+    ]}]}
+
+    def fake_load(rel):
+        return radar if "radar.json" in rel else baskets if "baskets.json" in rel else {}
+    monkeypatch.setattr(rp, "_load", fake_load)
+
+    out = rt._basket_attributed(set(), date(2026, 6, 20))
+    by = {r["ticker"]: r for r in out}
+    assert by["LAG"]["state"] == "POSITIVE_DIVERGENCE"      # laggard carries the unpriced divergence
+    assert by["LEAD"]["state"] == "CONFIRMED_UP"            # leader has already moved (priced)
+    assert by["LAG"]["edge_score"] > by["LEAD"]["edge_score"]   # laggard gets more attributed edge
+    assert all(r["source"] == "basket_attributed" for r in out)
+    assert by["LAG"]["rs_vs_spy_60d"] is None and "within_basket_pct" in by["LAG"]
+
+
+def test_basket_attribution_skips_existing(monkeypatch):
+    from engine import radar_ticker as rt
+    from engine import radar_plus as rp
+    radar = {"flags": [{"basket": "b", "state": "POSITIVE_DIVERGENCE", "edge_score": 70}]}
+    baskets = {"baskets": [{"id": "b", "members": [
+        {"symbol": f"T{i}", "ret_20d": i / 100.0} for i in range(6)]}]}
+    monkeypatch.setattr(rp, "_load", lambda rel: radar if "radar.json" in rel else baskets)
+    out = rt._basket_attributed({"T0"}, date(2026, 6, 20))    # T0 already scored
+    assert "T0" not in {r["ticker"] for r in out}             # scored names are not overridden

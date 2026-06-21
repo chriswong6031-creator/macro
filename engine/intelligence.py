@@ -79,7 +79,8 @@ def _radar_for(t: str, ridx: dict) -> dict | None:
     if not r or r.get("state") == "QUIET":
         return None
     return {k: r.get(k) for k in ("state", "lifecycle", "edge_score", "signal_score",
-                                  "rs_vs_spy_60d", "note") if r.get(k) is not None}
+                                  "rs_vs_spy_60d", "note", "source", "basket", "basket_state",
+                                  "within_basket_pct") if r.get(k) is not None}
 
 
 def _standout_for(t: str, sidx: dict) -> dict | None:
