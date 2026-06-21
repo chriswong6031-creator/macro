@@ -32,6 +32,8 @@ from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
 from engine import stock_score  # noqa: E402
 from engine import entry_signal  # noqa: E402
+from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
+from engine import dispersion  # noqa: E402 — cross-sectional dispersion regime (selection-gross dial)
 from engine import stock_view  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
 from engine import pullback_zone  # noqa: E402
@@ -736,6 +738,8 @@ def main() -> int:
     factor_z: dict[str, float] = {}
     sue_z: dict[str, float] = {}
     insider_map: dict[str, dict] = {}
+    _factor_legs: dict[str, dict] = {}          # per-ticker value/quality/profitability (composite)
+    _sectors: dict[str, str] = {}               # for sector-neutral combination
     fp = site / "factordata" / "factors.json"
     if fp.exists():
         try:
@@ -746,6 +750,10 @@ def main() -> int:
                     factor_z[_r["ticker"]] = _r["composite"]
                 if _r.get("sue") is not None:
                     sue_z[_r["ticker"]] = _r["sue"]
+                _factor_legs[_r["ticker"]] = {k: _r.get(k) for k in
+                                              ("value", "quality", "profitability")}
+                if _r.get("sector"):
+                    _sectors[_r["ticker"]] = _r["sector"]
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("factors.json unreadable (%s)", e)
     isp = site / "factordata" / "insider_signals.json"
@@ -851,6 +859,34 @@ def main() -> int:
             log.warning("revisions latest.parquet unreadable (%s)", e)
     log.info("revision-momentum: %d names with a cross-sectional z%s", len(revision_z),
              " · GATE GO → board ranks by EDGE" if gate_go else "")
+    # ---- Decorrelated cross-sectional COMPOSITE (engine/composite_score) ----------
+    # The Fundamental-Law lever: a sector-neutral, equal-weight blend of the DECORRELATED
+    # return-predictive legs (momentum + value + quality + profitability + revisions). Our
+    # probe measured these legs are near-uncorrelated (so they stack, ~1.42x single-leg IC).
+    # A transparent CONTEXT score beside conviction — never a per-name verdict (cross-sectional
+    # edge only). Reversal (net-of-cost mirage) + low-vol (a sizing lever) deliberately excluded.
+    composite_pt: dict[str, dict] = {}
+    try:
+        from engine import composite_score
+        _legrows = {}
+        for _t in set(_factor_legs) | set(alpha_pt) | set(revision_z):
+            _fl = _factor_legs.get(_t) or {}
+            _legrows[_t] = {"momentum": (alpha_pt.get(_t) or {}).get("alpha"),
+                            "value": _fl.get("value"), "quality": _fl.get("quality"),
+                            "profitability": _fl.get("profitability"),
+                            "revisions": revision_z.get(_t)}
+        if _legrows:
+            _comp = composite_score.build(pd.DataFrame(_legrows).T, _sectors)
+            if not _comp.empty:
+                for _t, _row in _comp.iterrows():
+                    composite_pt[_t] = {"z": _row["composite"], "n_legs": int(_row["n_legs"]),
+                                        "legs": {c[:-2]: round(float(_row[c]), 2)
+                                                 for c in _comp.columns
+                                                 if c.endswith("_z") and pd.notna(_row[c])}}
+                log.info("decorrelated composite: %d names (mean %.1f legs)",
+                         len(composite_pt), _comp["n_legs"].mean())
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("composite score failed (%s)", e)
     # Customer-demand chains (engine/demand_chain) — the L2 "independent observable"
     # leg of the Demand Context panel: aggregate spender capex/revenue from OTHER
     # companies' SEC filings is the forward-demand pool for each beneficiary cohort
@@ -922,6 +958,7 @@ def main() -> int:
     # composite z (set once all names are profiled), not a per-name logistic skin.
     profiles: dict[str, dict] = {}
     entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (board rows)
+    risk_sig: dict[str, dict] = {}              # vol-managed sizing per name (board rows)
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     to_write: list[tuple[str, dict]] = []
     uni = universe()
@@ -930,9 +967,22 @@ def main() -> int:
     # parabolic/stretched penalty in stock_score._axis_entry that was dead on this board
     # (every standout previously carried ext=None, so a +35%-over-200dma chase got no brake).
     ext_map, lottery_map = {}, {}
+    disp_regime, regime_gross = None, 1.0
     try:
         _ext_closes = pd.concat({t: c for (t, c, *_rest) in uni}, axis=1).sort_index()
         ext_map = extension_signals(_ext_closes)
+        # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high
+        # dispersion => selection earns more => take more gross on the cross-sectional book).
+        # Computed ONCE over the whole-universe return panel; feeds per-name vol-managed sizing.
+        try:
+            disp_regime = dispersion.assess(_ext_closes.pct_change(fill_method=None).tail(280))
+            if disp_regime:
+                regime_gross = disp_regime["gross_mult"]
+                log.info("dispersion regime: %s (pctile %s, avg_corr %s) -> gross x%.2f",
+                         disp_regime["state"], disp_regime.get("dispersion_pctile"),
+                         disp_regime.get("avg_corr"), regime_gross)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("dispersion regime failed (%s)", e)
         # recent single-day MAX return % over the last 21d — the lottery/spike penalty (T5):
         # a top name with a radioactive one-day pop (>~18%) has a NEGATIVE fwd median + ~2x DD.
         lottery_map = (_ext_closes.pct_change().tail(21).max() * 100.0).round(2).to_dict()
@@ -1110,6 +1160,21 @@ def main() -> int:
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})
         rec["conviction"] = prof
+        # ---- Risk-based sizing (engine/risk_sizing) — the VALIDATED Sharpe lever ----
+        # Vol-managed inverse-vol size: bet LESS on high-vol names, MORE on calm ones,
+        # scaled by the dispersion regime. This is HOW MUCH to own (risk), orthogonal to
+        # the conviction score (WHAT to own) and the entry gauge (WHEN). Mastermind + the
+        # board multiply the conviction-base size by `size_mult`.
+        try:
+            rs = risk_sizing.assess(close, regime_gross=regime_gross)
+            if rs:
+                rec["risk_sizing"] = rs
+                if isinstance(prof, dict) and isinstance(prof.get("size"), dict):
+                    prof["size"]["vol_mult"] = rs["size_mult"]      # additive, never overrides
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.warning("risk-sizing for %s failed (%s)", ticker, e)
+        if composite_pt.get(ticker):                # decorrelated cross-sectional composite (context)
+            rec["composite"] = composite_pt[ticker]
         # ---- Entry-timing gauge (engine/entry_signal) — the SECOND gauge ------
         # Conviction answers "own it?"; this answers "buy now / at what price / when?".
         # A structured plan (status, buy zone $, don't-chase line, stop, horizon read)
@@ -1139,6 +1204,8 @@ def main() -> int:
         profiles[ticker] = prof
         if rec.get("entry_signal"):
             entry_sig[ticker] = rec["entry_signal"]    # attached to standout rows below
+        if rec.get("risk_sizing"):
+            risk_sig[ticker] = rec["risk_sizing"]      # attached to standout rows below
         # ---- Macro sensitivity (display-only, never scored) -------------------
         # rate-beta tier + duration bucket + live-regime head/tailwind + inflation
         # label. Uses the archetype merged from fpanels above + the shared context.
@@ -1265,11 +1332,17 @@ def main() -> int:
             r["conviction"] = profiles.get(t)
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
+            if risk_sig.get(t):
+                r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
+            if composite_pt.get(t):
+                r["composite"] = composite_pt[t]     # the decorrelated cross-sectional composite
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
+        if disp_regime:                            # selection-regime gross dial (board + bot)
+            wide["dispersion_regime"] = disp_regime
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
