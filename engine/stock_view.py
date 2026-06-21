@@ -529,14 +529,21 @@ def _ev_ownership(rec: dict) -> dict | None:
         d_zh = "加仓中" if tr["direction"] == "accumulating" else "减仓中"
         bits.append(f"{d_en} ({h0}→{h1} funds, {nq}Q)")
         bits_zh.append(f"{d_zh}（{h0}→{h1} 家，{nq}季）")
+    # quality-weighted clustering: how many BACKTEST-SKILLED (A/B-grade) funds are
+    # buying — "not all managers are equal" (engine/manager_quality.py, descriptive)
+    qc = sm.get("quality_cluster") or {}
+    nqb = qc.get("n_quality_buyers")
+    if nqb:
+        bits.append(f"{nqb} top-grade fund{'s' if nqb != 1 else ''} buying")
+        bits_zh.append(f"{nqb} 家高评级基金买入")
     hhi = _num(sm.get("ownership_hhi"))
     if hhi is not None:
         conc = ("top-heavy" if hhi >= 0.18 else "broadly held" if hhi <= 0.08 else "moderate")
         conc_zh = ("高度集中" if hhi >= 0.18 else "分散持有" if hhi <= 0.08 else "中等集中")
         bits.append(conc); bits_zh.append(conc_zh)
     return _dim("Ownership & flow", "持股与资金", " · ".join(bits), " · ".join(bits_zh),
-                tone="neutral", gloss="Who owns it and how concentrated; multi-quarter 13F holder trend (lagged ~45d, context).",
-                gloss_zh="谁在持有、集中度如何；以及多季度 13F 持有人趋势（滞后约45天，仅供参考）。", expand="ownership")
+                tone="neutral", gloss="Who owns it and how concentrated; multi-quarter 13F holder trend (lagged ~45d) + how many backtest-skilled funds are buying (descriptive context).",
+                gloss_zh="谁在持有、集中度如何；多季度 13F 持有人趋势（滞后约45天）以及有多少回测优质基金在买入（仅供参考）。", expand="ownership")
 
 
 _DUR_ZH = {"neutral": "中性久期", "long": "长久期", "short": "短久期"}
