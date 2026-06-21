@@ -38,6 +38,7 @@ warnings.filterwarnings("ignore")
 
 from lib import config  # noqa: E402
 from engine import forex_inputs, forex_signals, forex_conviction  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 from engine.validation import (  # noqa: E402
     backtest_core, deflated_sharpe, dsr_verdict, ret_moments)
 
@@ -223,7 +224,8 @@ def calibrate_pair(pair: str, sig: pd.DataFrame, meta: dict, cal: dict) -> dict:
             "allocation": allocation}
 
 
-def calibrate_dollar(inputs: dict, cal: dict, cfg: dict, n_trials: int) -> dict | None:
+def calibrate_dollar(inputs: dict, cal: dict, cfg: dict, n_trials: int,
+                     ledger: "TrialLedger | None" = None) -> dict | None:
     """Validate the BROAD-USD REER value factor against forward BROAD-USD returns.
 
     REER value is the only factor with cross-half forward stability at the PAIR level
@@ -268,8 +270,17 @@ def calibrate_dollar(inputs: dict, cal: dict, cfg: dict, n_trials: int) -> dict 
     al = backtest_conviction(broad, factor.clip(-1, 1), cost_bps=float(cal.get("cost_bps", 2.0)))
     dsr = None
     if al:
+        # Honest-N via the Trial Ledger (P3 keystone): the dollar/REER leg is ONE factor
+        # tried on top of the factor×pair screen, so its budget is the declared upper-bound
+        # + 1 (kept as a floor; effective_n = max(1 itemized, n_trials+1) = n_trials+1,
+        # so this leg's DSR is behavior-preserving).
+        led = ledger if ledger is not None else TrialLedger()
+        led.log_trial({"factor": "value_reer", "target": "broad_usd"}, family="forex_dollar",
+                      info_cutoff=str(broad.index.max().date()), source="dollar_reer")
+        led.log_declared_budget(n_trials + 1, family="forex_dollar",
+                                reason="forex.calibration.n_trials factor×pair screen + 1 for the dollar/REER leg")
         ds = deflated_sharpe(al.get("sharpe_daily"), al.get("skew"), al.get("kurt"),
-                             al.get("n_obs"), n_trials + 1, sr_variance=None,
+                             al.get("n_obs"), ledger=led, family="forex_dollar", sr_variance=None,
                              trading_year=TRADING_YEAR)
         if ds is not None:
             ds["verdict"] = dsr_verdict(ds["dsr"])
@@ -296,6 +307,7 @@ def main() -> int:
     # Sharpe live in config with code defaults (ship without a config.yml edit).
     cost_bps = float(cal.get("cost_bps", 2.0))
     n_trials = int(cal.get("n_trials", 60))
+    ledger = TrialLedger()   # persistent multiple-testing memory; supersedes the inline trial_log
 
     report = {"meta": {"split": cal["split_date"], "horizons": cal["forward_days"],
                        "cost_bps_one_way": cost_bps, "n_trials": n_trials,
@@ -311,14 +323,25 @@ def main() -> int:
     # Weights are fit per pair on the full sample and we screened n_trials factor×pair
     # configs, so each per-pair Sharpe is upward-biased. Deflate using the cross-pair
     # daily-Sharpe dispersion as the trial set (floored at the null proxy in-helper).
+    # Honest-N via the Trial Ledger (P3 keystone): log the REAL factor×pair screen — every
+    # (pair, factor) IC computed — at generation, plus the config-declared upper-bound as a
+    # floor. effective_n = max(itemized, declared); the honest itemized count governs when it
+    # exceeds the hand-declared n_trials (it does: the screen is wider than the old literal).
+    _asof = max((results[p].index.max() for p in report["assets"]), default=None)
+    ledger.log_grid([{"pair": p, "factor": f}
+                     for p, a in report["assets"].items() for f in a.get("signals", {})],
+                    family="forex_conviction", source="factor_x_pair",
+                    info_cutoff=str(_asof.date()) if _asof is not None else None)
+    ledger.log_declared_budget(n_trials, family="forex_conviction",
+                               reason="forex.calibration.n_trials — declared factor×pair upper-bound (floor)")
     daily_srs = [a["allocation"]["sharpe_daily"] for a in report["assets"].values()
                  if a.get("allocation", {}).get("sharpe_daily") is not None]
     sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
     for a in report["assets"].values():
         m = a.get("allocation") or {}
         dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
-                              m.get("n_obs"), n_trials, sr_variance=sr_var,
-                              trading_year=TRADING_YEAR)
+                              m.get("n_obs"), ledger=ledger, family="forex_conviction",
+                              sr_variance=sr_var, trading_year=TRADING_YEAR)
         if dsr is not None:
             dsr["sr_variance_source"] = ("max(cross-pair Sharpe dispersion, null SR-sampling proxy)"
                                          if sr_var else "null SR-sampling proxy")
@@ -331,7 +354,7 @@ def main() -> int:
 
     # ---- dollar-index leg: validate the broad-USD REER value factor (adds 1 trial) ----
     try:
-        dollar = calibrate_dollar(inputs, cal, cfg, n_trials)
+        dollar = calibrate_dollar(inputs, cal, cfg, n_trials, ledger=ledger)
     except Exception as e:  # noqa: BLE001 — never break the per-pair report
         print(f"dollar calibration skipped ({e})")
         dollar = None
