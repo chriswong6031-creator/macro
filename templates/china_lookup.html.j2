@@ -165,6 +165,24 @@
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
   #result { display:none; }
+  /* ---- hover tooltips (the ? help icons) — section prose condensed into hover boxes ---- */
+  .help { display:inline-flex; align-items:center; justify-content:center;
+          width:15px; height:15px; border-radius:50%; border:1px solid var(--muted);
+          color:var(--muted); font-size:10px; font-weight:600; cursor:help;
+          position:relative; vertical-align:middle; margin-left:5px; flex:none;
+          text-transform:none; letter-spacing:normal; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%;
+               transform:translateX(-50%); width:300px;
+               background:var(--panel); border:1px solid var(--line);
+               padding:10px 12px; border-radius:9px; z-index:60; font-size:12px;
+               line-height:1.5; color:var(--text); text-align:left; font-weight:400;
+               text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow);
+               pointer-events:none; white-space:normal; }
+  .help:hover .tip { display:block; }
+  th .help .tip, .help.below .tip { bottom:auto; top:150%; }
+  .help.edge-right .tip { left:auto; right:0; transform:none; }
+  .help.edge-left .tip { left:0; right:auto; transform:none; }
+  .tip b { color:var(--text); }
 </style>
 </head>
 <body>
@@ -209,56 +227,49 @@
       <details><summary>{{ t('full reasoning', '完整推理') }}</summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
     </div>
     <div class="panel">
+      <h2>{{ t('Chart', '图表') }}</h2>
+      <div id="tvbox"></div>
+    </div>
+    <div class="panel">
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
-    </div>
-    <div class="panel" id="r_alpha_panel" style="display:none">
-      <h2>{{ t('Relative strength & mean-reversion', '相对强度与均值回归') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span></h2>
-      <div id="r_alpha" class="mtf"></div>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
-        'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole A-share cross-section. <b>Deep-history corrected:</b> A-share momentum is NOT a validated edge (35y test) — A-shares MEAN-REVERT, so do not read high alpha as a buy. The actionable read is the entry tag: <b>extended</b> (just spiked) = reversal RISK / fade; <b>pullback</b> (recent dip) = the constructive MEAN-REVERSION entry — the validated effect. The alpha is relative-strength context, not a buy signal.',
-        '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 A 股横截面的排名。<b>经深度历史校正：</b>A股动量并非有效优势（35年检验）—— A股<b>均值回归</b>，因此切勿把高 alpha 当作买入。可操作的解读是入场标记：<b>extended</b>（刚急涨）＝反转风险/做空；<b>pullback</b>（近期回调）＝有效的<b>均值回归</b>入场。alpha 为相对强度背景，而非买入信号。') }}</p>
+      <div id="r_alpha_panel" style="display:none">
+        <h2 style="margin-top:16px">{{ t('Relative strength & mean-reversion', '相对强度与均值回归') }} <span class="note" style="text-transform:none">· {{ t('sector-neutral residual', '板块中性残差') }}</span>{{ help(
+          'This name\'s return with its MARKET and SECTOR beta removed — sector-neutral residual relative strength (12-1 month); <b>alpha z</b> ranks it vs the whole A-share cross-section. <b>Deep-history corrected:</b> A-share momentum is NOT a validated edge (35y test) — A-shares MEAN-REVERT, so do not read high alpha as a buy. The actionable read is the entry tag: <b>extended</b> (just spiked) = reversal RISK / fade; <b>pullback</b> (recent dip) = the constructive MEAN-REVERSION entry — the validated effect. The alpha is relative-strength context, not a buy signal.',
+          '本股票剔除其市场与板块贝塔后的收益 — 板块中性残差相对强度（12-1 个月）；<b>alpha z</b> 为相对全 A 股横截面的排名。<b>经深度历史校正：</b>A股动量并非有效优势（35年检验）—— A股<b>均值回归</b>，因此切勿把高 alpha 当作买入。可操作的解读是入场标记：<b>extended</b>（刚急涨）＝反转风险/做空；<b>pullback</b>（近期回调）＝有效的<b>均值回归</b>入场。alpha 为相对强度背景，而非买入信号。') }}</h2>
+        <div id="r_alpha" class="mtf"></div>
+      </div>
     </div>
     <div class="panel" id="r_fund_panel" style="display:none">
-      <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span></h2>
-      <div id="r_fund"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+      <h2>{{ t('Fundamentals', '基本面') }} <span class="note" style="text-transform:none">· {{ t('context, not a signal', '背景，而非信号') }}</span>{{ help(
         'Descriptive financial health, valuation, and dividends — a backdrop to read ALONGSIDE the validated reversal / low-vol signals, NOT a buy ranking. On ~35 years of A-share data, value and quality are NOT validated cross-sectional edges (cheap names are often value traps; junk has beaten quality), so do not read "cheap vs sector" or "high Piotroski" as a signal. Piotroski / Altman are standard health scores shown for context; Altman is approximate on A-share accounting. Fundamentals refresh on a slower cadence than price.',
-        '描述性的财务健康、估值与分红 —— 作为与已验证的反转／低波信号并读的背景，而非买入排序。在约35年的A股数据上，价值与质量并非有效的横截面优势（便宜的个股常是价值陷阱；劣质股曾跑赢优质股），因此切勿把“相对板块便宜”或“高 Piotroski”当作信号。Piotroski／Altman 为标准健康评分，仅作背景；Altman 在 A 股会计下为近似值。基本面的更新频率慢于价格。') }}</p>
+        '描述性的财务健康、估值与分红 —— 作为与已验证的反转／低波信号并读的背景，而非买入排序。在约35年的A股数据上，价值与质量并非有效的横截面优势（便宜的个股常是价值陷阱；劣质股曾跑赢优质股），因此切勿把“相对板块便宜”或“高 Piotroski”当作信号。Piotroski／Altman 为标准健康评分，仅作背景；Altman 在 A 股会计下为近似值。基本面的更新频率慢于价格。') }}</h2>
+      <div id="r_fund"></div>
     </div>
     <div class="panel" id="r_vband_panel" style="display:none">
-      <h2>{{ t('Valuation band', '估值分位') }} <span class="note" style="text-transform:none">· {{ t('own 5-year range', '自身5年区间') }}</span></h2>
-      <div id="r_vband" class="fnd-grid"></div>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+      <h2>{{ t('Valuation band', '估值分位') }} <span class="note" style="text-transform:none">· {{ t('own 5-year range', '自身5年区间') }}</span>{{ help(
         'Where today\'s multiple sits inside the stock\'s OWN trailing-5-year range (市盈率/市净率分位) — how A-share desks read valuation. Lower percentile = cheaper than its own norm. Context only: on ~35y of A-share data cheapness is NOT a validated edge (cheap is often a value trap), so a low percentile is not a buy.',
-        '当前估值倍数处于该股<b>自身</b>近5年区间中的位置（市盈率／市净率分位）—— A股机构惯用的估值读法。分位越低＝相对自身越便宜。仅作背景：在约35年A股数据上，便宜并非有效优势（常是价值陷阱），低分位不等于买入。') }}</p>
+        '当前估值倍数处于该股<b>自身</b>近5年区间中的位置（市盈率／市净率分位）—— A股机构惯用的估值读法。分位越低＝相对自身越便宜。仅作背景：在约35年A股数据上，便宜并非有效优势（常是价值陷阱），低分位不等于买入。') }}</h2>
+      <div id="r_vband" class="fnd-grid"></div>
     </div>
     <div class="panel" id="r_analyst_panel" style="display:none">
-      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span></h2>
-      <div id="r_analyst"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+      <h2>👔 {{ t('Analyst &amp; estimates', '分析师与预期') }} <span class="note" style="text-transform:none">· {{ t('sell-side consensus', '卖方一致预期') }}</span>{{ help(
         'Eastmoney sell-side aggregate: 6-month institutional rating mix (买入/增持/中性/减持/卖出), coverage breadth, and forward EPS forecasts; forward P/E uses the live price. Sell-side opinion shown as coverage context, NOT an endorsement — high coverage and a bullish skew are not a validated edge.',
-        '东方财富卖方汇总：近6个月机构评级分布（买入／增持／中性／减持／卖出）、覆盖广度，以及预测每股收益；前瞻市盈率用实时价格计算。卖方观点仅作覆盖背景，并非推荐——高覆盖与看多倾向并非有效优势。') }}</p>
+        '东方财富卖方汇总：近6个月机构评级分布（买入／增持／中性／减持／卖出）、覆盖广度，以及预测每股收益；前瞻市盈率用实时价格计算。卖方观点仅作覆盖背景，并非推荐——高覆盖与看多倾向并非有效优势。') }}</h2>
+      <div id="r_analyst"></div>
     </div>
     <div class="panel" id="r_earn_panel" style="display:none">
       <h2>📅 {{ t('Earnings &amp; disclosure', '财报披露') }}</h2>
       <div id="r_earn"></div>
     </div>
     <div class="panel" id="r_pos_panel" style="display:none">
-      <h2>{{ t('Margin positioning', '融资融券仓位') }} <span class="note" style="text-transform:none">· {{ t('leveraged financing', '杠杆资金') }}</span></h2>
-      <div id="r_pos"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px">{{ t(
+      <h2>{{ t('Margin positioning', '融资融券仓位') }} <span class="note" style="text-transform:none">· {{ t('leveraged financing', '杠杆资金') }}</span>{{ help(
         'Per-name margin financing balance (融资余额) and its ~20-trading-day change — the A-share leverage/crowding plane (the per-stock cut of the market-wide margin meter). A-share leverage is retail-driven, so a fast build-up is a froth/crowding tell and an unwind is de-risking. Context only — leverage is not a validated timing signal, and margin-eligibility is not universal.',
-        '个股融资余额及其约20个交易日的变化 —— A股杠杆／拥挤度平面（全市场两融表的个股切片）。A股杠杆由散户驱动，快速攀升是过热／拥挤信号，回落则是去杠杆。仅作背景 —— 杠杆并非有效择时信号，且并非所有个股都可两融。') }}</p>
+        '个股融资余额及其约20个交易日的变化 —— A股杠杆／拥挤度平面（全市场两融表的个股切片）。A股杠杆由散户驱动，快速攀升是过热／拥挤信号，回落则是去杠杆。仅作背景 —— 杠杆并非有效择时信号，且并非所有个股都可两融。') }}</h2>
+      <div id="r_pos"></div>
     </div>
     <div class="panel">
-      <h2>{{ t('Chart', '图表') }}</h2>
-      <div id="tvbox"></div>
-    </div>
-    <div class="panel">
-      <h2>{{ t('How much to trust the state — measured 2008→2026', '这个状态有多可信 — 实测 2008→2026') }}</h2>
-      <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px">{{ t(
+      <h2>{{ t('How much to trust the state — measured 2008→2026', '这个状态有多可信 — 实测 2008→2026') }}{{ help(
         'A-shares drift up over a month from every state (the market\'s long upward bias); the spread between
         states is small, and the "scary" states measured slightly better forward returns — markets mean-revert
         and full confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
@@ -269,7 +280,8 @@
         "吓人"的状态实测前瞻收益反而略好 — 市场会均值回归，等到完全确认时已错过部分反弹。请把状态用于
         <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
         <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
-        对于风险状态，回撤视角比平均收益更重要。') }}</p>
+        对于风险状态，回撤视角比平均收益更重要。') }}</h2>
+      <table id="r_cal"></table>
     </div>
   </div>
 
@@ -705,6 +717,19 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
+<script>
+  // keep tooltips on-screen: flip below near the top, anchor to the nearest side near edges
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
 <p class="muted" style="font-size:12px">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC · {{ t('charts by TradingView · curated A-share universe, not exhaustive', '图表由 TradingView 提供 · 精选 A 股范围，非全市场') }}</p>
 <footer class="site-footer">
   <span class="made">{{ t('Made with ❤️ in Canada', '用 ❤️ 在加拿大制作') }}</span>
