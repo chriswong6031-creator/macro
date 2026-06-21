@@ -106,6 +106,37 @@ def test_federal_velocity_empty_safe():
 # --------------------------------------------------------------------------- #
 # build — off-desk marking + dedup
 # --------------------------------------------------------------------------- #
+# --------------------------------------------------------------------------- #
+# insider opportunistic-cluster feed
+# --------------------------------------------------------------------------- #
+def _panel(rows):
+    pd = pytest.importorskip("pandas")
+    return pd.DataFrame(rows)
+
+
+def test_insider_cluster_detects_open_market_breadth():
+    pd = pytest.importorskip("pandas")
+    base = {"trans_date": "2026-03-20", "usd": 200000.0, "is_officer": True}
+    rows = [{**base, "ticker": "ABCD", "code": "P", "rptownercik": i} for i in range(4)]  # 4 distinct buyers
+    rows += [{**base, "ticker": "ABCD", "code": "P", "rptownercik": 0}]                    # dup insider (still 4)
+    cands = D.scan_insider_clusters(_panel(rows), min_buyers=3, min_usd=1e5)
+    assert cands and cands[0]["ticker"] == "ABCD"
+    assert cands[0]["opp_buyers"] == 4 and cands[0]["source"] == "insider_cluster"
+    assert cands[0]["disc_score"] <= 0.45                       # lagging confirmer is capped
+
+
+def test_insider_cluster_excludes_junk_grants_sales_and_thin():
+    pd = pytest.importorskip("pandas")
+    base = {"trans_date": "2026-03-20", "usd": 5e5, "is_officer": True}
+    rows = []
+    rows += [{**base, "ticker": "NONE", "code": "P", "rptownercik": i} for i in range(5)]   # sentinel junk
+    rows += [{**base, "ticker": "GRNT", "code": "A", "rptownercik": i} for i in range(5)]   # grants (not P)
+    rows += [{**base, "ticker": "SELL", "code": "S", "rptownercik": i} for i in range(5)]   # sales
+    rows += [{**base, "ticker": "THIN", "code": "P", "rptownercik": i} for i in range(2)]   # only 2 buyers
+    got = {c["ticker"] for c in D.scan_insider_clusters(_panel(rows), min_buyers=3, min_usd=1e5)}
+    assert got == set()                                         # all correctly excluded
+
+
 def test_build_marks_off_desk_and_dedups():
     radar = [_quiet("INUNI", channels=["congress_buy", "material_8k"]),
              _quiet("OFF", channels=["clinical_phase3_start", "fda_label_expansion"])]
