@@ -698,9 +698,13 @@ def mastermind_emit() -> dict:
                 "mc_musd": (float(r["market_cap_musd"]) if pd.notna(r.get("market_cap_musd")) else None),
             })
 
+    from engine import activist
     edf = build_situations()
+    track = activist.filer_track_record(edf, _closes_panel()) if not edf.empty else {"by_filer": {}}
     if not edf.empty:
         for _, r in edf[edf.status == "ok"].iterrows():
+            fname = activist.filer_of(r)
+            ftr = track["by_filer"].get(activist.norm_filer(fname)) if fname else None
             consider(r.get("ticker"), {
                 "ticker": r.get("ticker"), "company": r.get("company"),
                 "category": r.get("category"),
@@ -712,6 +716,8 @@ def mastermind_emit() -> dict:
                 "confidence": r.get("confidence") or "high",
                 "role": (r.get("role") if pd.notna(r.get("role")) else None),
                 "deal_terms": _terms_dict(r.get("llm_terms")) or None,
+                "activist_filer": fname,
+                "filer_track": ftr,
                 "brief": (r.get("summary") if pd.notna(r.get("summary")) else r.get("hk")),
                 "mc_musd": (float(r["mc_musd"]) if pd.notna(r.get("mc_musd")) else None),
             })
@@ -726,11 +732,14 @@ def mastermind_emit() -> dict:
         key=lambda a: (a.get("annualized_pct") is not None, a.get("annualized_pct") or -1e9),
         reverse=True)
 
+    # P3.2 activist track-record book: filers with enough priced campaigns to be "tracked".
+    activist_filers = {k: v for k, v in track["by_filer"].items() if v.get("status") == "tracked"}
+
     return {
         "schema": "special_situations.v1", "generated_at": now,
         "is_context_only": True, "disclaimer": DISCLAIMER,
         "n": len(by_ticker), "by_ticker": by_ticker,
-        "risk_arb": risk_arb,
+        "risk_arb": risk_arb, "activist_filers": activist_filers,
     }
 
 

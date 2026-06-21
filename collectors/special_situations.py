@@ -419,6 +419,36 @@ def enrich_text(limit: int | None = None,
     return df
 
 
+# ---------------------------------------------------------------- activist filer lane (P3.2)
+
+def enrich_filers(limit: int | None = None) -> pd.DataFrame:
+    """Deterministically extract the reporting person (activist) from each Schedule 13D/A
+    cover page and write a `filer` column. No key required — reads the cached filing text
+    (fetching+caching it once). Powers the per-filer track-record (engine.activist)."""
+    from engine import activist
+    df = _read_events()
+    if df is None or df.empty:
+        return df if df is not None else pd.DataFrame()
+    if "filer" not in df.columns:
+        df["filer"] = pd.NA
+    cand = df[df.form_type.isin(["SC 13D", "SC 13D/A", "DEFC14A", "PREC14A"]) & df.filer.isna()]
+    cand = cand.sort_values("date_filed", ascending=False)
+    if limit:
+        cand = cand.head(limit)
+    updates: dict[str, str] = {}
+    for _, r in cand.iterrows():
+        txt = _fetch_filing_text(str(r.cik), str(r.accession))
+        name = activist.extract_reporting_person(txt) if txt else None
+        updates[r.id] = name or ""        # "" = tried, no name (won't re-fetch)
+    if updates:
+        df.loc[df.id.isin(updates), "filer"] = df.loc[df.id.isin(updates), "id"].map(updates)
+        df.to_parquet(_events_path(), index=False)
+    found = sum(1 for v in updates.values() if v)
+    log.info("special_situations filer lane: %d 13Ds read, %d reporting persons extracted",
+             len(updates), found)
+    return df
+
+
 # ---------------------------------------------------------------- LLM lanes (P1.3 summary + P1.1 verify)
 
 # The summary half of the JSON contract (the house style; see recon §E). Both lanes
@@ -452,7 +482,9 @@ SS_SUMMARY_SYSTEM = (
     "desk. Given a corporate-event filing whose category is already known, return ONLY a "
     "compact JSON object (no markdown fence, no prose) with keys:\n"
     f"- {_SS_SUMMARY_RUBRIC}\n"
-    f"- {_SS_TERMS_RUBRIC}"
+    f"- {_SS_TERMS_RUBRIC}\n"
+    '- filer: for a Schedule 13D or contested proxy, the reporting person / activist name '
+    '(the beneficial owner driving the campaign); "" for any other filing.'
 )
 SS_CLASSIFY_SYSTEM = (
     "You are an event-driven research analyst classifying an SEC filing into a special-"
@@ -546,7 +578,7 @@ def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
     df = _read_events()
     if df is None or df.empty:
         return df if df is not None else pd.DataFrame()
-    for col in ("summary", "llm_terms"):
+    for col in ("summary", "llm_terms", "llm_filer"):
         if col not in df.columns:
             df[col] = pd.NA
     if not _llm_ready(cfg):
@@ -571,6 +603,7 @@ def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
 
     summ: dict[str, str] = {}
     terms: dict[str, str] = {}
+    filer: dict[str, str] = {}
     for r in need:
         cpath = cache_dir / f"{r.id}.json"
         if cpath.exists():
@@ -580,7 +613,8 @@ def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
             obj = _llm_call(client, model, SS_SUMMARY_SYSTEM, _llm_prompt(r, text, known_category=True))
             if not obj:
                 continue
-            cached = {"summary": str(obj.get("summary") or "").strip(), "terms": _terms_json(obj)}
+            cached = {"summary": str(obj.get("summary") or "").strip(), "terms": _terms_json(obj),
+                      "filer": str(obj.get("filer") or "").strip()}
             if not cached["summary"]:
                 continue
             cpath.write_text(json.dumps(cached))
@@ -588,13 +622,15 @@ def enrich_summaries(limit: int | None = None) -> pd.DataFrame:
             summ[r.id] = cached["summary"]
         if cached.get("terms"):
             terms[r.id] = cached["terms"]
-    if summ:
-        df.loc[df.id.isin(summ), "summary"] = df.loc[df.id.isin(summ), "id"].map(summ)
-    if terms:
-        df.loc[df.id.isin(terms), "llm_terms"] = df.loc[df.id.isin(terms), "id"].map(terms)
-    if summ or terms:
+        if cached.get("filer"):
+            filer[r.id] = cached["filer"]
+    for col, upd in (("summary", summ), ("llm_terms", terms), ("llm_filer", filer)):
+        if upd:
+            df.loc[df.id.isin(upd), col] = df.loc[df.id.isin(upd), "id"].map(upd)
+    if summ or terms or filer:
         df.to_parquet(_events_path(), index=False)
-    log.info("special_situations summary lane: wrote %d summaries, %d term-sets", len(summ), len(terms))
+    log.info("special_situations summary lane: wrote %d summaries, %d term-sets, %d filers",
+             len(summ), len(terms), len(filer))
     return df
 
 
