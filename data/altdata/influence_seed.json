@@ -1,0 +1,955 @@
+{
+  "schema": "influence.seed.v1",
+  "as_of": "2026-06-19",
+  "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
+  "actors": [
+    {
+      "id": "paul_pelosi",
+      "name": "Paul Pelosi",
+      "name_zh": "保罗·佩洛西",
+      "kind": "influencer",
+      "role": "Investor; spouse of Rep. Nancy Pelosi",
+      "tickers": ["NVDA", "AAPL", "GOOGL", "AMZN"],
+      "note": "Executes trades reported under Nancy Pelosi's STOCK Act periodic transaction reports; widely tracked by congressional trade watchers"
+    },
+    {
+      "id": "nancy_pelosi",
+      "name": "Nancy Pelosi",
+      "name_zh": "南希·佩洛西",
+      "kind": "politician",
+      "role": "U.S. Representative (D-CA); former House Speaker",
+      "tickers": [],
+      "note": "Trades disclosed are executed by husband Paul Pelosi; Pelosi claims no personal stock ownership"
+    },
+    {
+      "id": "tommy_tuberville",
+      "name": "Tommy Tuberville",
+      "name_zh": "汤米·塔伯维尔",
+      "kind": "politician",
+      "role": "U.S. Senator (R-AL); Senate Armed Services Committee member",
+      "tickers": ["QCOM"],
+      "note": "Active trader; 7th most active defense stock trader in Congress in 2024; 910 trades over 3 years per disclosure trackers"
+    },
+    {
+      "id": "marjorie_taylor_greene",
+      "name": "Marjorie Taylor Greene",
+      "name_zh": "玛乔丽·泰勒·格林",
+      "kind": "politician",
+      "role": "U.S. Representative (R-GA)",
+      "tickers": ["NVDA", "AAPL", "PLTR"],
+      "note": "Bought NVDA April 9, 2025 and May 14, 2025; scrutiny over April 9 trade timing near Trump tariff pause announcement"
+    },
+    {
+      "id": "ro_khanna",
+      "name": "Ro Khanna",
+      "name_zh": "罗·卡纳",
+      "kind": "politician",
+      "role": "U.S. Representative (D-CA); pro-semiconductor policy advocate",
+      "tickers": ["ASML", "MU", "UCTT"],
+      "note": "Most active congressional trader in 2025 with 4,081 trades; estimated 112% excess return vs S&P 500 per 2026 analysis; sold ASML, MU, UCTT for large gains"
+    },
+    {
+      "id": "dan_crenshaw",
+      "name": "Dan Crenshaw",
+      "name_zh": "丹·克伦肖",
+      "kind": "politician",
+      "role": "Former U.S. Representative (R-TX); lost primary March 2026",
+      "tickers": ["AAPL", "AMZN", "META", "GOOG"],
+      "note": "Disclosed trades in AAPL, AMZN, GOOG, META, SPY; past STOCK Act disclosure violations; no longer in office as of March 2026"
+    },
+    {
+      "id": "michael_mccaul",
+      "name": "Michael McCaul",
+      "name_zh": "迈克尔·麦考尔",
+      "kind": "politician",
+      "role": "U.S. Representative (R-TX); House Foreign Affairs Committee",
+      "tickers": ["NVDA", "ASML"],
+      "note": "Second most active trader in Congress in 2025, $75M+ volume; July 2025 disclosed NVDA sale ($1.2M) and ASML buy (up to $300K)"
+    },
+    {
+      "id": "elon_musk",
+      "name": "Elon Musk",
+      "name_zh": "埃隆·马斯克",
+      "kind": "exec",
+      "role": "CEO Tesla / CEO SpaceX / founder xAI",
+      "tickers": ["TSLA"],
+      "note": "Largest individual TSLA shareholder; ~20.3% stake per April 2026 SEC 13G/A filing"
+    },
+    {
+      "id": "jensen_huang",
+      "name": "Jensen Huang",
+      "name_zh": "黄仁勋",
+      "kind": "exec",
+      "role": "Co-founder and CEO, NVIDIA Corporation",
+      "tickers": ["NVDA"],
+      "note": "Owns ~852M shares (~3.5% of NVDA) per 2025 filings; largest individual NVDA shareholder; sells under Rule 10b5-1 plan"
+    },
+    {
+      "id": "michael_saylor",
+      "name": "Michael Saylor",
+      "name_zh": "迈克尔·塞勒",
+      "kind": "exec",
+      "role": "Executive Chairman, Strategy Inc. (formerly MicroStrategy)",
+      "tickers": ["MSTR"],
+      "note": "Strategy holds 818,334 BTC as of April 2026, largest publicly traded corporate Bitcoin holder; persistent accumulator via equity ATM"
+    },
+    {
+      "id": "mark_zuckerberg",
+      "name": "Mark Zuckerberg",
+      "name_zh": "马克·扎克伯格",
+      "kind": "exec",
+      "role": "Co-founder and CEO, Meta Platforms",
+      "tickers": ["META"],
+      "note": "Owns ~13.5% economic stake and ~61% voting power via dual-class structure (Class B shares = 10 votes each) per 2025 proxy"
+    },
+    {
+      "id": "sam_altman",
+      "name": "Sam Altman",
+      "name_zh": "山姆·奥特曼",
+      "kind": "exec",
+      "role": "CEO, OpenAI",
+      "tickers": [],
+      "note": "No equity stake in OpenAI per 2025 restructuring; OpenAI filed confidential IPO at $850B+ valuation; closely linked to MSFT as primary cloud partner"
+    },
+    {
+      "id": "larry_ellison",
+      "name": "Larry Ellison",
+      "name_zh": "拉里·埃里森",
+      "kind": "exec",
+      "role": "Co-founder and CTO, Oracle Corporation",
+      "tickers": ["ORCL", "TSLA"],
+      "note": "Owns ~40% of Oracle per Oct 2025 filing; holds ~$1B Tesla stake; disclosed Tesla stake makes him second-largest individual TSLA investor"
+    },
+    {
+      "id": "warren_buffett",
+      "name": "Warren Buffett",
+      "name_zh": "沃伦·巴菲特",
+      "kind": "fund",
+      "role": "Chairman and CEO, Berkshire Hathaway",
+      "tickers": ["AAPL", "OXY", "AXP", "KO", "BAC"],
+      "note": "Berkshire Q1 2026 13F: $263B portfolio; AAPL largest position at ~22% of portfolio; OXY significant stake; added 225% to GOOGL in Q1 2026"
+    },
+    {
+      "id": "bill_ackman",
+      "name": "Bill Ackman",
+      "name_zh": "比尔·阿克曼",
+      "kind": "fund",
+      "role": "Founder and CEO, Pershing Square Capital Management",
+      "tickers": ["AMZN", "MSFT", "UBER", "META"],
+      "note": "Q1 2026 13F: $13.7B portfolio; top holdings Brookfield, AMZN, UBER, MSFT; initiated META in Q4 2025; previously held large NKE position converted to options"
+    },
+    {
+      "id": "carl_icahn",
+      "name": "Carl Icahn",
+      "name_zh": "卡尔·伊坎",
+      "kind": "fund",
+      "role": "Founder and Chairman, Icahn Enterprises",
+      "tickers": ["IEP", "CVI"],
+      "note": "Controls Icahn Enterprises (IEP) holding ~49% of his 13F portfolio; subsidiary CVR Energy (CVI) ~21%; operates in energy, automotive, real estate segments"
+    },
+    {
+      "id": "cathie_wood",
+      "name": "Cathie Wood",
+      "name_zh": "凯西·伍德",
+      "kind": "fund",
+      "role": "Founder and CIO, ARK Invest",
+      "tickers": ["TSLA", "COIN", "PLTR"],
+      "note": "ARK Q4 2025 13F: ~$15B AUM; TSLA largest holding despite late 2025 trimming; COIN and PLTR among top AI/crypto positions; rotating toward crypto infra and AI"
+    },
+    {
+      "id": "michael_burry",
+      "name": "Michael Burry",
+      "name_zh": "迈克尔·伯里",
+      "kind": "fund",
+      "role": "Founder, Scion Asset Management",
+      "tickers": ["MOH", "LULU"],
+      "note": "Q3 2025 13F (latest): 4 holdings, $68M total; Molina Healthcare 35%, Lululemon 26%; added bearish puts on NVDA and PLTR; bullish calls on HAL and PFE"
+    },
+    {
+      "id": "paul_singer",
+      "name": "Paul Singer",
+      "name_zh": "保罗·辛格",
+      "kind": "fund",
+      "role": "Founder and Co-CEO, Elliott Investment Management",
+      "tickers": ["LUV", "BP"],
+      "note": "Elliott AUM $76B (2025); activist campaigns at Southwest Airlines (LUV, peak ~16% stake, trimmed to ~9% by Jan 2026) and BP (significant stake, pushing strategic review)"
+    },
+    {
+      "id": "jim_cramer",
+      "name": "Jim Cramer",
+      "name_zh": "吉姆·克莱默",
+      "kind": "influencer",
+      "role": "Host, CNBC Mad Money; portfolio of charitable trust",
+      "tickers": ["NVDA", "BA", "DHR"],
+      "note": "Manages a publicly disclosed charitable trust; called BA his 'new favorite stock' Sep 2025; trust holds NVDA, DHR, HD among others; widely watched as a contrarian indicator"
+    }
+  ],
+  "themes": {
+    "ai_compute": {
+      "en": "AI compute & data centers",
+      "zh": "AI算力与数据中心"
+    },
+    "bitcoin_treasury": {
+      "en": "Bitcoin treasury corporate strategy",
+      "zh": "企业比特币国库策略"
+    },
+    "semiconductor_chips": {
+      "en": "Semiconductors & chip supply chain",
+      "zh": "半导体与芯片供应链"
+    },
+    "ev_autonomous": {
+      "en": "Electric vehicles & autonomous driving",
+      "zh": "电动汽车与自动驾驶"
+    },
+    "social_media_ai": {
+      "en": "Social media platforms & AI integration",
+      "zh": "社交媒体平台与AI融合"
+    },
+    "cloud_enterprise_software": {
+      "en": "Cloud infrastructure & enterprise software",
+      "zh": "云基础设施与企业软件"
+    },
+    "crypto_digital_assets": {
+      "en": "Crypto & digital assets",
+      "zh": "加密货币与数字资产"
+    },
+    "activist_value": {
+      "en": "Activist value investing",
+      "zh": "积极维权价值投资"
+    },
+    "defense_industrials": {
+      "en": "Defense & industrial companies",
+      "zh": "国防与工业股"
+    },
+    "energy_transition": {
+      "en": "Energy transition & oil majors",
+      "zh": "能源转型与石油巨头"
+    },
+    "genomics_biotech": {
+      "en": "Genomics & disruptive biotech",
+      "zh": "基因组学与颠覆性生物技术"
+    }
+  },
+  "entities": [
+    {
+      "id": "berkshire_hathaway",
+      "name": "Berkshire Hathaway",
+      "ticker": "BRK.B",
+      "brand_theme": "activist_value",
+      "note": "Warren Buffett's conglomerate; largest public equity holdings are AAPL, AXP, KO, BAC, OXY per Q1 2026 13F"
+    },
+    {
+      "id": "pershing_square",
+      "name": "Pershing Square Capital Management",
+      "ticker": null,
+      "brand_theme": "activist_value",
+      "note": "Bill Ackman's hedge fund; $13.7B AUM Q1 2026; concentrated portfolio of 11 holdings"
+    },
+    {
+      "id": "ark_invest",
+      "name": "ARK Invest",
+      "ticker": "ARKK",
+      "brand_theme": "ev_autonomous",
+      "note": "Cathie Wood's actively managed ETF complex; ~$15B AUM Q4 2025; flagship ARKK focuses on disruptive innovation"
+    },
+    {
+      "id": "scion_asset_mgmt",
+      "name": "Scion Asset Management",
+      "ticker": null,
+      "brand_theme": "activist_value",
+      "note": "Michael Burry's fund; very small $68M AUM per Q3 2025 13F; 4 concentrated equity holdings plus options"
+    },
+    {
+      "id": "elliott_mgmt",
+      "name": "Elliott Investment Management",
+      "ticker": null,
+      "brand_theme": "activist_value",
+      "note": "Paul Singer's activist hedge fund; $76B AUM 2025; known for aggressive corporate governance campaigns"
+    },
+    {
+      "id": "icahn_enterprises",
+      "name": "Icahn Enterprises",
+      "ticker": "IEP",
+      "brand_theme": "activist_value",
+      "note": "Carl Icahn's diversified holding company; operates energy (CVR Energy), automotive, real estate segments"
+    },
+    {
+      "id": "strategy_inc",
+      "name": "Strategy Inc (formerly MicroStrategy)",
+      "ticker": "MSTR",
+      "brand_theme": "bitcoin_treasury",
+      "note": "Holds 818,334 BTC as of April 2026 (~$61.8B cost basis); largest publicly traded corporate Bitcoin holder; uses equity/debt ATM to fund BTC accumulation"
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "ticker": null,
+      "brand_theme": "ai_compute",
+      "note": "Sam Altman's AI company; ~$852B valuation post-money as of March 2026 fundraise; MSFT holds ~27% stake; confidential IPO filing underway"
+    },
+    {
+      "id": "tesla_inc",
+      "name": "Tesla Inc",
+      "ticker": "TSLA",
+      "brand_theme": "ev_autonomous",
+      "note": "EV + autonomous driving + energy storage; Musk is CEO and largest individual shareholder (~20.3% per Apr 2026 filing)"
+    },
+    {
+      "id": "nvidia_corp",
+      "name": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "brand_theme": "ai_compute",
+      "note": "Dominant AI GPU supplier; Jensen Huang co-founder and CEO; most-traded tech stock among congressional disclosures"
+    },
+    {
+      "id": "meta_platforms",
+      "name": "Meta Platforms",
+      "ticker": "META",
+      "brand_theme": "social_media_ai",
+      "note": "Zuckerberg controls via dual-class shares (Class B, 10 votes/share); ~61% voting power, ~13.5% economic"
+    },
+    {
+      "id": "oracle_corp",
+      "name": "Oracle Corporation",
+      "ticker": "ORCL",
+      "brand_theme": "cloud_enterprise_software",
+      "note": "Larry Ellison owns ~40% per Oct 2025 filing; major cloud/database player; GPU infrastructure deals tied to AI buildout"
+    },
+    {
+      "id": "cvr_energy",
+      "name": "CVR Energy",
+      "ticker": "CVI",
+      "brand_theme": "energy_transition",
+      "note": "Icahn-controlled refiner and fertilizer company; ~21% of Carl Icahn's 13F portfolio"
+    },
+    {
+      "id": "southwest_airlines",
+      "name": "Southwest Airlines",
+      "ticker": "LUV",
+      "brand_theme": "activist_value",
+      "note": "Elliott's marquee 2024 activist campaign; peak ~16% stake; pushed board overhaul, assigned seating, baggage fees, layoffs; Elliott trimmed to ~9% by Jan 2026"
+    }
+  ],
+  "edges": [
+    {
+      "src": "elon_musk",
+      "rel": "CONTROLS",
+      "dst": "ticker:TSLA",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "CEO and ~20.3% beneficial owner per April 2026 SEC Schedule 13G/A",
+      "url": "https://www.stocktitan.net/sec-filings/TSLA/schedule-13g-a-tesla-inc-amended-passive-investment-disclosure-631d7da19861.html",
+      "date": "2026-04-16"
+    },
+    {
+      "src": "elon_musk",
+      "rel": "AFFILIATES_WITH",
+      "dst": "theme:ev_autonomous",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Tesla is the flagship EV and autonomous driving company; Musk is its public face",
+      "url": "https://www.tesla.com",
+      "date": null
+    },
+    {
+      "src": "elon_musk",
+      "rel": "TALKS_ABOUT",
+      "dst": "theme:ai_compute",
+      "provenance": "FACT",
+      "confidence": 0.85,
+      "note": "Founded xAI; regularly advocates for AI compute; negotiated GPU supply from NVIDIA",
+      "url": "https://www.nasdaq.com/articles/oracle-founder-larry-ellison-just-delivered-fantastic-news-nvidia-stock-investors",
+      "date": null
+    },
+    {
+      "src": "jensen_huang",
+      "rel": "CONTROLS",
+      "dst": "ticker:NVDA",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Co-founder and CEO; owns ~852M shares (~3.5%) per 2025 SEC filings; largest individual shareholder",
+      "url": "https://www.gurufocus.com/insider/4375/jen-hsun-huang",
+      "date": "2025-10-29"
+    },
+    {
+      "src": "jensen_huang",
+      "rel": "AFFILIATES_WITH",
+      "dst": "theme:ai_compute",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "NVIDIA is the dominant AI GPU supplier; Huang is its face and architect of AI compute strategy",
+      "url": "https://eqvista.com/nvidias-ownership-structure/",
+      "date": null
+    },
+    {
+      "src": "michael_saylor",
+      "rel": "CONTROLS",
+      "dst": "strategy_inc",
+      "provenance": "FACT",
+      "confidence": 0.92,
+      "note": "Executive Chairman of Strategy Inc (MSTR); primary architect of the BTC accumulation strategy",
+      "url": "https://www.theblock.co/post/384260/michael-saylors-strategy-kicks-off-2026-with-bitcoin-buy",
+      "date": "2026-01-06"
+    },
+    {
+      "src": "strategy_inc",
+      "rel": "MEMBER_OF",
+      "dst": "theme:bitcoin_treasury",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Holds 818,334 BTC as of April 2026; defines the corporate bitcoin treasury playbook",
+      "url": "https://www.coindesk.com/markets/2026/04/27/michael-saylor-s-strategy-buys-3-273-bitcoin-as-it-inches-closer-to-its-1-million-target",
+      "date": "2026-04-27"
+    },
+    {
+      "src": "michael_saylor",
+      "rel": "TALKS_ABOUT",
+      "dst": "theme:crypto_digital_assets",
+      "provenance": "FACT",
+      "confidence": 0.93,
+      "note": "Prolific public advocate for Bitcoin; media appearances and social media commentary drive BTC-adjacent sentiment",
+      "url": "https://www.techi.com/microstrategy-michael-saylor-bitcoin-strategy/",
+      "date": null
+    },
+    {
+      "src": "mark_zuckerberg",
+      "rel": "CONTROLS",
+      "dst": "meta_platforms",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Co-founder and CEO; ~13.5% economic ownership, ~61% voting power via dual-class Class B shares per 2025 proxy",
+      "url": "https://www.revenuememo.com/p/who-owns-meta",
+      "date": "2025-01-01"
+    },
+    {
+      "src": "meta_platforms",
+      "rel": "MEMBER_OF",
+      "dst": "theme:social_media_ai",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Facebook/Instagram/WhatsApp operator; major AI R&D investor (Llama models, AI integration)",
+      "url": "https://capital.com/en-int/analysis/facebook-shareholder-who-owns-the-most-meta-stock",
+      "date": null
+    },
+    {
+      "src": "sam_altman",
+      "rel": "CONTROLS",
+      "dst": "openai",
+      "provenance": "FACT",
+      "confidence": 0.90,
+      "note": "CEO of OpenAI; leads strategy despite holding no equity per 2025 restructuring",
+      "url": "https://www.cnbc.com/2025/10/28/open-ai-for-profit-microsoft.html",
+      "date": "2025-10-28"
+    },
+    {
+      "src": "openai",
+      "rel": "MEMBER_OF",
+      "dst": "theme:ai_compute",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Largest generative AI company; $852B valuation; MSFT primary cloud partner and ~27% stakeholder",
+      "url": "https://finance.yahoo.com/markets/stocks/articles/sam-altman-openai-confidentially-files-164305538.html",
+      "date": "2026-04-01"
+    },
+    {
+      "src": "sam_altman",
+      "rel": "PARTNERS_WITH",
+      "dst": "ticker:MSFT",
+      "provenance": "FACT",
+      "confidence": 0.90,
+      "note": "Microsoft is OpenAI's primary cloud partner and ~27% shareholder; relationship cemented in 2025 restructuring",
+      "url": "https://www.cnbc.com/2025/10/28/open-ai-for-profit-microsoft.html",
+      "date": "2025-10-28"
+    },
+    {
+      "src": "larry_ellison",
+      "rel": "CONTROLS",
+      "dst": "oracle_corp",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Co-founder and CTO; owns ~40% of ORCL per October 2025 SEC filing",
+      "url": "https://www.benzinga.com/markets/tech/25/12/49543453/larry-ellisons-2025-how-oracle-tesla-and-paramount-skydance-merger-propelled-him-past-elon-musk",
+      "date": "2025-12-01"
+    },
+    {
+      "src": "oracle_corp",
+      "rel": "MEMBER_OF",
+      "dst": "theme:cloud_enterprise_software",
+      "provenance": "FACT",
+      "confidence": 0.90,
+      "note": "Major cloud database and enterprise software provider; expanding into AI infrastructure",
+      "url": "https://www.rttnews.com/2967959/oracle-founder-larry-ellison-reveals-1-bln-stake-in-tesla.aspx",
+      "date": null
+    },
+    {
+      "src": "larry_ellison",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:TSLA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.85,
+      "note": "Disclosed ~$1B Tesla stake; second-largest individual TSLA investor per disclosed filings",
+      "url": "https://www.rttnews.com/2967959/oracle-founder-larry-ellison-reveals-1-bln-stake-in-tesla.aspx",
+      "date": null
+    },
+    {
+      "src": "larry_ellison",
+      "rel": "AFFILIATES_WITH",
+      "dst": "theme:ai_compute",
+      "provenance": "FACT",
+      "confidence": 0.80,
+      "note": "Oracle increasingly positioned as AI infrastructure provider; Ellison arranged Musk-Huang dinner negotiating GPU supply",
+      "url": "https://www.nasdaq.com/articles/oracle-founder-larry-ellison-just-delivered-fantastic-news-nvidia-stock-investors",
+      "date": null
+    },
+    {
+      "src": "warren_buffett",
+      "rel": "CONTROLS",
+      "dst": "berkshire_hathaway",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Chairman and CEO of Berkshire Hathaway; largest shareholder",
+      "url": "https://www.gurufocus.com/guru/warren%2Bbuffett/stock-picks?view=table",
+      "date": "2026-05-15"
+    },
+    {
+      "src": "berkshire_hathaway",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:AAPL",
+      "provenance": "DISCLOSED",
+      "confidence": 0.95,
+      "note": "AAPL is Berkshire's largest 13F position at ~22% of portfolio (~$57.8B) per Q1 2026 13F",
+      "url": "https://seekingalpha.com/article/4905557-tracking-berkshire-hathaway-portfolio-q1-2026-update",
+      "date": "2026-03-31"
+    },
+    {
+      "src": "berkshire_hathaway",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:OXY",
+      "provenance": "DISCLOSED",
+      "confidence": 0.90,
+      "note": "Berkshire is Occidental Petroleum's largest shareholder; position held through Q4 2025 per 13F",
+      "url": "https://stockcircle.com/portfolio/warren-buffett",
+      "date": "2025-12-31"
+    },
+    {
+      "src": "berkshire_hathaway",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:AXP",
+      "provenance": "DISCLOSED",
+      "confidence": 0.92,
+      "note": "American Express second-largest Berkshire 13F position at ~17.4% of portfolio per Q1 2026",
+      "url": "https://seekingalpha.com/article/4905557-tracking-berkshire-hathaway-portfolio-q1-2026-update",
+      "date": "2026-03-31"
+    },
+    {
+      "src": "bill_ackman",
+      "rel": "CONTROLS",
+      "dst": "pershing_square",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Founder and CEO of Pershing Square Capital Management",
+      "url": "https://www.gurufocus.com/guru/bill+ackman/current-portfolio/portfolio?view=table",
+      "date": "2026-05-15"
+    },
+    {
+      "src": "pershing_square",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:AMZN",
+      "provenance": "DISCLOSED",
+      "confidence": 0.90,
+      "note": "Amazon second-largest Pershing Square position at ~17.4% of portfolio per Q1 2026 13F; increased by ~$866M in Q4 2025",
+      "url": "https://valuesider.com/guru/bill-ackman-pershing-square-capital-management/portfolio",
+      "date": "2026-03-31"
+    },
+    {
+      "src": "pershing_square",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:MSFT",
+      "provenance": "DISCLOSED",
+      "confidence": 0.90,
+      "note": "Microsoft ~15.3% of Pershing Square Q1 2026 13F portfolio; core long-term holding",
+      "url": "https://valuesider.com/guru/bill-ackman-pershing-square-capital-management/portfolio",
+      "date": "2026-03-31"
+    },
+    {
+      "src": "pershing_square",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:META",
+      "provenance": "DISCLOSED",
+      "confidence": 0.85,
+      "note": "Pershing Square initiated META position in Q4 2025; funded partly by exiting Chipotle (CMG)",
+      "url": "https://www.gainify.io/blog/bill-ackman-stock-portfolio",
+      "date": "2025-12-31"
+    },
+    {
+      "src": "pershing_square",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:UBER",
+      "provenance": "DISCLOSED",
+      "confidence": 0.90,
+      "note": "Uber third-largest Pershing Square position at ~15.7% per Q1 2026 13F",
+      "url": "https://valuesider.com/guru/bill-ackman-pershing-square-capital-management/portfolio",
+      "date": "2026-03-31"
+    },
+    {
+      "src": "cathie_wood",
+      "rel": "CONTROLS",
+      "dst": "ark_invest",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Founder and CIO of ARK Invest",
+      "url": "https://www.insiderset.com/investor/cathie-wood-ark-invest",
+      "date": null
+    },
+    {
+      "src": "ark_invest",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:TSLA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.92,
+      "note": "TSLA remains ARK's largest holding per Q4 2025 13F despite ~150K shares sold in Dec 2025",
+      "url": "https://seekingalpha.com/news/4536128-ark-outperforms-in-2025-with-tesla-still-cathie-woods-biggest-bet",
+      "date": "2025-12-31"
+    },
+    {
+      "src": "ark_invest",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:COIN",
+      "provenance": "DISCLOSED",
+      "confidence": 0.90,
+      "note": "Coinbase is a top ARK holding; ARK increased its COIN stake significantly per Q4 2025 disclosures",
+      "url": "https://seekingalpha.com/article/4869881-tracking-cathie-woods-ark-invest-13f-portfolio-q4-2025-update",
+      "date": "2025-12-31"
+    },
+    {
+      "src": "ark_invest",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:PLTR",
+      "provenance": "DISCLOSED",
+      "confidence": 0.88,
+      "note": "Palantir is among ARK's top AI-related holdings per Q4 2025 13F",
+      "url": "https://seekingalpha.com/article/4869881-tracking-cathie-woods-ark-invest-13f-portfolio-q4-2025-update",
+      "date": "2025-12-31"
+    },
+    {
+      "src": "ark_invest",
+      "rel": "MEMBER_OF",
+      "dst": "theme:crypto_digital_assets",
+      "provenance": "FACT",
+      "confidence": 0.88,
+      "note": "ARK is a prominent crypto-equity bull; holds COIN, advocates for Bitcoin via ARKB ETF",
+      "url": "https://markets.financialcontent.com/wral/article/marketminute-2025-12-25-cathie-woods-strategic-pivot-ark-invest-trims-tesla-holdings-to-fuel-ai-and-crypto-bets-ahead-of-2026",
+      "date": "2025-12-25"
+    },
+    {
+      "src": "michael_burry",
+      "rel": "CONTROLS",
+      "dst": "scion_asset_mgmt",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Founder of Scion Asset Management; known for the Big Short trade",
+      "url": "https://www.insidermonkey.com/hedge-fund/scion+asset+management/894/",
+      "date": null
+    },
+    {
+      "src": "scion_asset_mgmt",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:MOH",
+      "provenance": "DISCLOSED",
+      "confidence": 0.88,
+      "note": "Molina Healthcare largest Scion holding at 35% of Q3 2025 13F portfolio ($68M total AUM)",
+      "url": "https://valuesider.com/guru/michael-burry-scion-asset-management/portfolio",
+      "date": "2025-09-30"
+    },
+    {
+      "src": "scion_asset_mgmt",
+      "rel": "TALKS_ABOUT",
+      "dst": "ticker:NVDA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.82,
+      "note": "Burry added put options betting against NVDA in Q3 2025; widely reported as a bearish bet on AI/GPU bubble",
+      "url": "https://www.barchart.com/story/news/35881940/michael-burrys-scion-asset-management-bets-against-nvidia-and-palantir",
+      "date": "2025-09-30"
+    },
+    {
+      "src": "scion_asset_mgmt",
+      "rel": "TALKS_ABOUT",
+      "dst": "ticker:PLTR",
+      "provenance": "DISCLOSED",
+      "confidence": 0.82,
+      "note": "Burry added put options against Palantir in Q3 2025; reported alongside NVDA bearish bets",
+      "url": "https://www.barchart.com/story/news/35881940/michael-burrys-scion-asset-management-bets-against-nvidia-and-palantir",
+      "date": "2025-09-30"
+    },
+    {
+      "src": "paul_singer",
+      "rel": "CONTROLS",
+      "dst": "elliott_mgmt",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Founder, President, and Co-CEO of Elliott Investment Management since 1977; $76B AUM",
+      "url": "https://www.elliottmgmt.com/who-we-are/paul-singer/",
+      "date": null
+    },
+    {
+      "src": "elliott_mgmt",
+      "rel": "HOLDS_STAKE",
+      "dst": "southwest_airlines",
+      "provenance": "DISCLOSED",
+      "confidence": 0.90,
+      "note": "Peak ~16% stake; trimmed to ~9% economic by Jan 2026; pushed board overhaul, assigned seating, baggage fees; major 2024-2025 activist campaign",
+      "url": "https://airlinegeeks.com/2026/02/11/activist-investor-pulls-back-from-southwest/",
+      "date": "2026-02-11"
+    },
+    {
+      "src": "southwest_airlines",
+      "rel": "MEMBER_OF",
+      "dst": "theme:activist_value",
+      "provenance": "INFERRED",
+      "confidence": 0.70,
+      "note": "LUV is a high-profile Elliott activist target; strategic changes driven by Elliott's campaign",
+      "url": "https://crankyflier.com/2025/12/18/elliott-starts-to-sell-southwest-stake/",
+      "date": "2025-12-18"
+    },
+    {
+      "src": "elliott_mgmt",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:BP",
+      "provenance": "DISCLOSED",
+      "confidence": 0.82,
+      "note": "Elliott built a significant stake in BP and pushed strategic review including potential transformative measures per Feb 2025 Bloomberg report",
+      "url": "https://www.bloomberg.com/news/videos/2025-02-10/what-does-paul-singer-s-elliott-want-at-bp",
+      "date": "2025-02-10"
+    },
+    {
+      "src": "carl_icahn",
+      "rel": "CONTROLS",
+      "dst": "icahn_enterprises",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Founder and Chairman of IEP; owns ~549M IEP units (~49% of his 13F) per Q4 2025 filings",
+      "url": "https://www.gurufocus.com/guru/carl+icahn/current-portfolio/portfolio?view=table",
+      "date": "2026-05-15"
+    },
+    {
+      "src": "icahn_enterprises",
+      "rel": "HOLDS_STAKE",
+      "dst": "cvr_energy",
+      "provenance": "FACT",
+      "confidence": 0.92,
+      "note": "CVR Energy (CVI) is IEP's subsidiary; ~21% of Carl Icahn's 13F portfolio per Q4 2025",
+      "url": "https://www.gurufocus.com/guru/carl+icahn/current-portfolio/portfolio?view=table",
+      "date": "2026-03-31"
+    },
+    {
+      "src": "icahn_enterprises",
+      "rel": "MEMBER_OF",
+      "dst": "theme:activist_value",
+      "provenance": "FACT",
+      "confidence": 0.88,
+      "note": "IEP's investment segment runs activist-style campaigns; known for hostile takeovers and board fights",
+      "url": "https://finance.yahoo.com/news/carl-icahns-strategic-moves-closer-230624208.html",
+      "date": null
+    },
+    {
+      "src": "jim_cramer",
+      "rel": "TALKS_ABOUT",
+      "dst": "ticker:NVDA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.80,
+      "note": "NVDA is a recurring charitable trust holding and frequent Mad Money discussion topic",
+      "url": "https://www.cnbc.com/2025/04/22/jim-cramer-touts-his-favorite-stock-in-the-portfolio-says-its-being-overlooked.html",
+      "date": "2025-04-22"
+    },
+    {
+      "src": "jim_cramer",
+      "rel": "ENDORSES",
+      "dst": "ticker:BA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.78,
+      "note": "Called Boeing his 'new favorite stock' and 'huge position' in Sep 2025 and year-end 2025 commentary",
+      "url": "https://www.cnbc.com/2025/09/19/jim-cramer-touts-his-new-favorite-stock-but-warns-about-this-risk-to-the-market.html",
+      "date": "2025-09-19"
+    },
+    {
+      "src": "jim_cramer",
+      "rel": "AFFILIATES_WITH",
+      "dst": "theme:ai_compute",
+      "provenance": "INFERRED",
+      "confidence": 0.65,
+      "note": "Cramer regularly discusses AI stocks (NVDA, etc.) on Mad Money; widely tracked as a contrarian sentiment indicator",
+      "url": "https://www.cnbc.com/2025/12/22/jim-cramer-biggest-market-themes-2025.html",
+      "date": "2025-12-22"
+    },
+    {
+      "src": "nancy_pelosi",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:NVDA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.92,
+      "note": "Husband Paul Pelosi bought 50 NVDA call options Nov 22, 2023 ($1-5M range); later disclosed 10,000 NVDA shares June 2024 and more calls Jan 2025",
+      "url": "https://www.quiverquant.com/congresstrading/trade/House-P000197-178",
+      "date": "2023-11-22"
+    },
+    {
+      "src": "nancy_pelosi",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:GOOGL",
+      "provenance": "DISCLOSED",
+      "confidence": 0.88,
+      "note": "Paul Pelosi purchased 50 GOOGL call options ($150 strike, Jan 2026 expiry) on Jan 14 2025 per STOCK Act PTR filed Jan 17 2025",
+      "url": "https://www.ainvest.com/news/nancy-pelosi-s-latest-periodic-transaction-report-filed-1-17-2025-2501101022bf3405204eeb6d/",
+      "date": "2025-01-14"
+    },
+    {
+      "src": "nancy_pelosi",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:AMZN",
+      "provenance": "DISCLOSED",
+      "confidence": 0.88,
+      "note": "Paul Pelosi purchased 50 AMZN call options ($150 strike, Jan 2026 expiry) on Jan 14 2025 per STOCK Act PTR",
+      "url": "https://www.foxbusiness.com/politics/nancy-pelosi-sells-nvidia-apple-buys-alphabet-amazon",
+      "date": "2025-01-14"
+    },
+    {
+      "src": "tommy_tuberville",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:QCOM",
+      "provenance": "DISCLOSED",
+      "confidence": 0.82,
+      "note": "Repeatedly purchased QCOM per congressional trading tracker disclosures; total 910 trades over 3 years per filings",
+      "url": "https://investing.com/news/stock-market-news/us-senator-tommy-tuberville-keeps-buying-up-qcom-stock-3154778",
+      "date": null
+    },
+    {
+      "src": "tommy_tuberville",
+      "rel": "AFFILIATES_WITH",
+      "dst": "theme:defense_industrials",
+      "provenance": "INFERRED",
+      "confidence": 0.72,
+      "note": "Senate Armed Services Committee member; 7th most active defense stock trader in Congress 2024; traded IBM, Honeywell, Accenture",
+      "url": "https://www.alreporter.com/2024/12/30/tuberville-involved-in-defense-stock-trading-while-on-armed-services-committee/",
+      "date": "2024-12-30"
+    },
+    {
+      "src": "marjorie_taylor_greene",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:NVDA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.88,
+      "note": "Bought NVDA April 9, 2025 and May 14, 2025; April 9 buy came before Trump 90-day tariff pause announcement drawing scrutiny",
+      "url": "https://www.defenseworld.net/2025/05/21/rep-marjorie-taylor-greene-purchases-shares-of-nvidia-co-nasdaqnvda.html",
+      "date": "2025-05-14"
+    },
+    {
+      "src": "marjorie_taylor_greene",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:PLTR",
+      "provenance": "DISCLOSED",
+      "confidence": 0.82,
+      "note": "Bought Palantir April 9, 2025 alongside NVDA, AAPL, and ADBE per STOCK Act disclosure",
+      "url": "https://finance.yahoo.com/news/marjorie-taylor-greenes-hearing-disrupted-091619672.html",
+      "date": "2025-04-09"
+    },
+    {
+      "src": "ro_khanna",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:ASML",
+      "provenance": "DISCLOSED",
+      "confidence": 0.85,
+      "note": "ASML among semiconductor stocks Khanna sold for gains in 2025; active trader in chip supply chain names",
+      "url": "https://money.com/congress-stock-market-traders-2026-activity/",
+      "date": "2025-12-08"
+    },
+    {
+      "src": "ro_khanna",
+      "rel": "AFFILIATES_WITH",
+      "dst": "theme:semiconductor_chips",
+      "provenance": "FACT",
+      "confidence": 0.88,
+      "note": "Represents Silicon Valley (CA-17); vocal advocate for CHIPS Act; trades heavily in semiconductor sector names",
+      "url": "https://www.capitoltrades.com/articles/the-chips-for-america-act-here-are-the-semiconductor-stocks-politicians-are-buying",
+      "date": null
+    },
+    {
+      "src": "michael_mccaul",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:NVDA",
+      "provenance": "DISCLOSED",
+      "confidence": 0.88,
+      "note": "Sold $1.2M of NVDA in July 2025; among $75M+ total congressional trades in 2025",
+      "url": "https://www.capitoltrades.com/buzz/rep-mike-mccaul-reports-18m-in-trades-including-nvda-sale-asml-buy-2025-07-11",
+      "date": "2025-07-11"
+    },
+    {
+      "src": "michael_mccaul",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:ASML",
+      "provenance": "DISCLOSED",
+      "confidence": 0.85,
+      "note": "Bought ASML up to $300K in July 2025 alongside NVDA sale per Capitol Trades disclosure",
+      "url": "https://www.capitoltrades.com/buzz/rep-mike-mccaul-reports-18m-in-trades-including-nvda-sale-asml-buy-2025-07-11",
+      "date": "2025-07-11"
+    },
+    {
+      "src": "dan_crenshaw",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:AAPL",
+      "provenance": "DISCLOSED",
+      "confidence": 0.75,
+      "note": "AAPL among Crenshaw's disclosed holdings per filings; no longer in Congress as of March 2026 primary loss",
+      "url": "https://www.gurufocus.com/politician/158/dan-crenshaw",
+      "date": "2022-10-25"
+    },
+    {
+      "src": "dan_crenshaw",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:META",
+      "provenance": "DISCLOSED",
+      "confidence": 0.75,
+      "note": "META among Crenshaw's disclosed holdings per STOCK Act filings; purchased Oct 2022",
+      "url": "https://www.gurufocus.com/politician/158/dan-crenshaw",
+      "date": "2022-10-25"
+    },
+    {
+      "src": "nvidia_corp",
+      "rel": "MEMBER_OF",
+      "dst": "theme:ai_compute",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "NVDA dominates AI GPU supply; H100/H200/B200 chips are the key AI training and inference infrastructure",
+      "url": "https://eqvista.com/nvidias-ownership-structure/",
+      "date": null
+    },
+    {
+      "src": "nvidia_corp",
+      "rel": "MEMBER_OF",
+      "dst": "theme:semiconductor_chips",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "NVDA is the world's largest semiconductor company by market cap",
+      "url": "https://capital.com/en-eu/analysis/nvidia-shareholder-who-owns-most-nvda-stock",
+      "date": null
+    },
+    {
+      "src": "tesla_inc",
+      "rel": "MEMBER_OF",
+      "dst": "theme:ev_autonomous",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "Flagship EV manufacturer with Full Self-Driving and Robotaxi development programs",
+      "url": "https://www.fool.com/investing/how-to-invest/stocks/who-owns-tesla/",
+      "date": null
+    },
+    {
+      "src": "strategy_inc",
+      "rel": "HOLDS_STAKE",
+      "dst": "ticker:MSTR",
+      "provenance": "FACT",
+      "confidence": 0.95,
+      "note": "MSTR is the publicly-traded entity; equity market cap ~$40-43B vs ~$51.7B Bitcoin market value as of early 2026",
+      "url": "https://www.coindesk.com/markets/2026/01/05/strategy-boosted-bitcoin-holdings-and-cash-reserve-last-week",
+      "date": "2026-01-05"
+    }
+  ]
+}

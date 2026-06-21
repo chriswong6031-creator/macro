@@ -426,9 +426,14 @@ def test_calibrate_dollar_reer_leg():
     """The dollar-index REER calibration leg runs (scipy-free) and returns a verdict
     with a deflated-Sharpe gate; it is display-only (never auto-promoted)."""
     from scripts import calibrate_forex
+    from engine.trial_ledger import TrialLedger
+    import tempfile
+    import os
     cfg = config.load()["forex"]
     inputs = forex_inputs.load_all(cfg, active_only=False)
-    out = calibrate_forex.calibrate_dollar(inputs, cfg["calibration"], cfg, n_trials=60)
+    with tempfile.TemporaryDirectory() as _td:   # don't pollute the real data/trial_ledger.jsonl
+        led = TrialLedger(os.path.join(_td, "t.jsonl"))
+        out = calibrate_forex.calibrate_dollar(inputs, cfg["calibration"], cfg, n_trials=60, ledger=led)
     if out is None:
         return                                                          # store may be empty in CI sandbox
     assert out["verdict"] in ("CONFIRMED", "INVERTED", "DIRECTIONAL", "CONTEXT")

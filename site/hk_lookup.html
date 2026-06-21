@@ -130,7 +130,163 @@
   .cv-cau .ccau { font-size:11px; font-weight:700; padding:1px 7px; border-radius:7px;
                   color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
   .cv-note { font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5; }
+  .eqbadge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px;
+             border-radius:11px; font-size:12.5px; font-weight:700; cursor:help;
+             border:1px solid var(--line); white-space:nowrap; }
+  .eqbadge .eqg { font-weight:500; opacity:.8; }
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up); border-color:color-mix(in srgb,var(--up) 40%,transparent); }
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,transparent); }
+  .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   #result { display:none; }
+  /* ---- hover tooltips (the ? help icons) — section prose condensed into hover boxes ---- */
+  .help { display:inline-flex; align-items:center; justify-content:center;
+          width:15px; height:15px; border-radius:50%; border:1px solid var(--muted);
+          color:var(--muted); font-size:10px; font-weight:600; cursor:help;
+          position:relative; vertical-align:middle; margin-left:5px; flex:none;
+          text-transform:none; letter-spacing:normal; }
+  .help .tip { display:none; position:absolute; bottom:150%; left:50%;
+               transform:translateX(-50%); width:300px;
+               background:var(--panel); border:1px solid var(--line);
+               padding:10px 12px; border-radius:9px; z-index:60; font-size:12px;
+               line-height:1.5; color:var(--text); text-align:left; font-weight:400;
+               text-transform:none; letter-spacing:normal; box-shadow:var(--popover-shadow);
+               pointer-events:none; white-space:normal; }
+  .help:hover .tip { display:block; }
+  th .help .tip, .help.below .tip { bottom:auto; top:150%; }
+  .help.edge-right .tip { left:auto; right:0; transform:none; }
+  .help.edge-left .tip { left:0; right:auto; transform:none; }
+  .tip b { color:var(--text); }
+/* _stock_decision.css.j2 — styling for the shared stockview.js decision-first layout.
+   Included inside each analyzer's <style> block. Theme-var routed; directional tones use
+   --up/--down (which intentionally swap under html[data-lang="zh"] red=up), while caution /
+   conflict / falsifier colors are pinned to --warn so their meaning never inverts. */
+
+/* ---- Layer 1: the one verdict band ---- */
+.sv-decision { margin: 10px 0 6px; }
+.sv-verdict-band {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-state-conflict .sv-verdict-band { border-color: var(--warn); }
+.sv-gauge {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 96px; padding: 6px 12px; border-radius: 10px; color: #fff;
+  background: var(--muted);
+}
+.sv-band-high { background: var(--up); }
+.sv-band-constructive { background: color-mix(in srgb, var(--up) 62%, var(--panel)); }
+.sv-band-neutral { background: var(--muted); }
+.sv-band-low { background: var(--down); }
+.sv-band-word { font-weight: 700; font-size: 13px; line-height: 1.1; text-align: center; }
+.sv-score { font-size: 20px; font-weight: 800; margin-top: 2px; }
+.sv-score small { font-size: 11px; font-weight: 600; opacity: .8; }
+.sv-verdict-text { flex: 1; min-width: 200px; }
+.sv-headline { font-size: 18px; font-weight: 750; line-height: 1.25; color: var(--text); }
+.sv-gloss { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.sv-trust {
+  font-size: 11.5px; padding: 4px 9px; border-radius: 999px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--muted);
+  align-self: flex-start; white-space: nowrap;
+}
+
+.sv-timing { font-size: 13px; color: var(--text); margin: 8px 2px 0; }
+.sv-timing-lbl { color: var(--muted); font-weight: 600; }
+.sv-dot { color: var(--muted); }
+.sv-tag {
+  font-weight: 700; padding: 1px 7px; border-radius: 6px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-urg-now, .sv-urg-imminent { color: var(--up); border-color: var(--up); }
+.sv-urg-caution { color: var(--warn); border-color: var(--warn); }
+.sv-urg-exit, .sv-urg-avoid { color: var(--down); border-color: var(--down); }
+.sv-cap { color: var(--warn); font-size: 12px; }
+
+.sv-size { display: flex; align-items: center; gap: 8px; margin: 8px 2px 0; font-size: 13px; }
+.sv-size-lbl { color: var(--muted); font-weight: 600; }
+.sv-size-pct { font-weight: 800; font-size: 15px; color: var(--text); }
+.sv-size-avoid { color: var(--down); }
+.sv-size-full, .sv-size-three-quarter { color: var(--up); }
+.sv-size-bk { color: var(--muted); font-size: 12px; }
+.sv-regime { margin: 8px 2px 0; font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* ---- Layer 1b: fingerprint ---- */
+.sv-fingerprint {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0;
+}
+.sv-axis { min-width: 0; }
+.sv-axis-top { display: flex; justify-content: space-between; align-items: baseline; gap: 4px; }
+.sv-axis-lbl { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sv-axis-pct { font-size: 13px; font-weight: 700; color: var(--text); }
+.sv-axis-na { font-size: 11px; color: var(--muted); }
+.sv-axis-bar { height: 6px; border-radius: 3px; background: var(--panel2); margin-top: 3px; overflow: hidden; }
+.sv-axis-fill { display: block; height: 100%; background: var(--link); border-radius: 3px; }
+.sv-axis-warn .sv-axis-fill { background: var(--warn); }
+
+/* ---- Layer 1c: honesty row ---- */
+.sv-conflict {
+  margin: 8px 0 6px; padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  border: 1px solid var(--warn);
+}
+.sv-conflict-p { font-weight: 700; }
+.sv-honesty { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 8px 0; }
+.sv-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.sv-col-h { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 4px; }
+.sv-why .sv-col-h { color: var(--up); }
+.sv-flip .sv-col-h { color: var(--warn); }
+.sv-list { margin: 0; padding-left: 16px; font-size: 13px; line-height: 1.5; }
+.sv-list li { margin: 1px 0; }
+.sv-fl-high { color: var(--down); font-weight: 600; }
+.sv-empty { font-size: 12.5px; color: var(--muted); margin: 2px 0; }
+
+/* ---- Layer 2: evidence lanes ---- */
+.sv-sec-h { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 6px; }
+.sv-evidence { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sv-dim {
+  background: var(--panel2); border: 1px solid var(--line); border-left-width: 3px;
+  border-radius: 8px; padding: 7px 10px; min-width: 0;
+}
+.sv-dim-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.sv-dim-val { font-size: 13.5px; font-weight: 650; color: var(--text); margin-top: 1px; }
+.sv-dim-gloss { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.sv-t-good { border-left-color: var(--up); }
+.sv-t-bad { border-left-color: var(--down); }
+.sv-t-warn { border-left-color: var(--warn); }
+.sv-t-neutral { border-left-color: var(--muted); }
+
+/* ---- Layer 2b: country slot cards ---- */
+.sv-country { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 10px 0; }
+.sv-card { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.sv-card-h { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+.sv-crow { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; padding: 1px 0; }
+.sv-ck { color: var(--muted); }
+.sv-cv { font-weight: 650; color: var(--text); }
+.sv-c-up { color: var(--up); }
+.sv-c-down { color: var(--down); }
+.sv-cfoot { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.4; }
+
+/* ---- Deep-layer collapsed disclosure groups ---- */
+.sv-group { margin: 0; border-top: 1px solid var(--line); }
+.sv-group > summary {
+  cursor: pointer; list-style: none; padding: 12px 2px; font-size: 12.5px; font-weight: 700;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .04em;
+  display: flex; align-items: center; gap: 8px;
+}
+.sv-group > summary::-webkit-details-marker { display: none; }
+.sv-group > summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.sv-group[open] > summary::before { transform: rotate(90deg); }
+.sv-group > summary:hover { color: var(--text); }
+.sv-group .panel { margin-top: 8px; }
+/* the deep-detail disclosure on the header card (cycle & timing) */
+.sv-deep > summary { cursor: pointer; font-size: 12.5px; color: var(--muted); padding: 6px 0; }
+.sv-deep > summary:hover { color: var(--text); }
+
+@media (max-width: 560px) {
+  .sv-fingerprint { grid-template-columns: repeat(2, 1fr); }
+  .sv-honesty { grid-template-columns: 1fr; }
+  .sv-headline { font-size: 16px; }
+}
 </style>
 </head>
 <body>
@@ -158,46 +314,55 @@
       <div class="topline">
         <h1 id="r_name"></h1>
         <span id="r_state" class="state"></span>
+        <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span style="flex:1"></span>
         <span id="r_asof" class="muted"></span>
       </div>
       <p id="r_summary" class="muted" style="margin:2px 0 6px; font-size:13.5px"></p>
-      <div id="r_conviction" class="conv" style="display:none"></div>
-      <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
-      <p id="r_age" class="agewhen" style="display:none"></p>
-      <p id="r_early" class="early" style="display:none"></p>
-      <ul id="r_points" class="points"></ul>
-      <div id="r_cyclebox" class="cyclebox"></div>
-      <p id="r_flags" class="neg" style="margin:4px 0"></p>
-      <details><summary><span class="l-en">full reasoning</span><span class="l-zh">完整推理</span></summary><p class="muted" id="r_why" style="margin:6px 0"></p></details>
+      <!-- ===== Decision-first layout (shared stockview.js renders rec.view) ===== -->
+      <div id="sv-decision"></div>
+      <div id="sv-fingerprint"></div>
+      <div id="sv-honesty"></div>
+      <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
+      <details class="sv-deep"><summary><span class="l-en">Cycle &amp; timing detail</span><span class="l-zh">周期与时机详情</span></summary>
+        <div id="r_conviction" class="conv" style="display:none"></div>
+        <div id="r_entry" class="entrybar"><span class="entrytag" id="r_tag"></span><span id="r_entrytext"></span></div>
+        <p id="r_age" class="agewhen" style="display:none"></p>
+        <p id="r_early" class="early" style="display:none"></p>
+        <ul id="r_points" class="points"></ul>
+        <div id="r_cyclebox" class="cyclebox"></div>
+        <p id="r_flags" class="neg" style="margin:4px 0"></p>
+        <p class="muted" id="r_why" style="margin:6px 0"></p>
+      </details>
     </div>
+    <!-- ===== Evidence lanes + country slot (Layer 2, shared stockview.js) ===== -->
+    <div id="sv-evidence"></div>
+    <div id="sv-country"></div>
+    <details class="sv-group"><summary><span class="l-en">📊 Fundamentals, analyst &amp; positioning</span><span class="l-zh">📊 基本面、分析师与持仓</span></summary>
+    <div class="panel" id="r_gbeta_panel" style="display:none">
+      <h2><span class="l-en">Global-risk beta</span><span class="l-zh">全球风险贝塔</span> <span class="note" style="text-transform:none">· <span class="l-en">amplifier vs cushion</span><span class="l-zh">放大器 vs 缓冲</span></span><span class="help">?<span class="tip"><span class="l-en">This name's beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.</span><span class="l-zh">本股票对全球风险的贝塔（标普500，滞后一天以反映隔夜美→港传导）。香港没有特异选股优势，因此诚实的个股解读是风险敞口：高贝塔（<b>放大器</b>——全球周期股）随风险开关波动更大；低贝塔（<b>缓冲</b>——本地防御）波动更小。标签结合实时全球风险状态（占优／受冲击／滞后）。实测优势温和——用于在已验证状态内进行仓位管理的风险背景，而非预测或买入信号。贝塔是描述性敞口，并非阿尔法。</span></span></span></h2>
+      <div id="r_gbeta" class="mtf"></div>
+    </div>
+    <div class="panel" id="r_fund_panel" style="display:none">
+      <h2><span class="l-en">Fundamentals</span><span class="l-zh">基本面</span> <span class="note" style="text-transform:none">· <span class="l-en">context, not a signal</span><span class="l-zh">背景，而非信号</span></span><span class="help">?<span class="tip"><span class="l-en">Descriptive financial health, quality, and the analyst-consensus read — a backdrop to read ALONGSIDE the validated global-risk-beta exposure, NOT a buy ranking. HK has no idiosyncratic stock-selection edge, so these are health/coverage context. Analyst targets are sell-side opinion (median across brokers), shown for coverage context, not an endorsement. PE / PB are shown only when the statements are HKD-reported (omitted when a name reports in CNY, to avoid a cross-currency ratio). Fundamentals refresh on a slower cadence than price.</span><span class="l-zh">描述性的财务健康、质量与分析师一致预期 —— 作为与已验证的全球风险贝塔敞口并读的背景，而非买入排序。香港没有特异选股优势，故此为健康／覆盖背景。分析师目标价为卖方观点（各券商中位数），仅作覆盖背景，并非背书。PE／PB 仅在财报以港元列报时显示（以人民币列报时省略，以避免跨币种比率）。基本面的更新频率慢于价格。</span></span></span></h2>
+      <div id="r_fund"></div>
+    </div>
+    <div class="panel" id="r_ah_panel" style="display:none">
+      <h2><span class="l-en">A/H premium</span><span class="l-zh">A/H 溢价</span> <span class="note" style="text-transform:none">· <span class="l-en">mainland A vs HK-listed H</span><span class="l-zh">内地A股 vs 港股H股</span></span><span class="help">?<span class="tip"><span class="l-en">For a dual-listed company, how much DEARER its mainland A-share trades vs this HK-listed H twin, in a common currency. A high premium means the H/HK line is the cheaper way to own the same company; the gap is mean-reverting, so a stretched premium that compresses tends to favour the HK line. Computed basket (1:1 share-equivalence), so lean on the TREND and the percentile within its own history, not the absolute level. Cross-market valuation context, NOT a buy signal.</span><span class="l-zh">对于A+H两地上市的公司，其内地A股相对这只港股H股在同一币种下贵多少。溢价越高，意味着用H股／港股买入同一家公司更便宜；该价差具有均值回归性，因此被拉伸后的溢价一旦收敛，往往利好港股一边。为计算型口径（按1:1股本等值），请侧重趋势与其自身历史分位，而非绝对水平。跨市场估值背景，并非买入信号。</span></span></span></h2>
+      <div id="r_ah"></div>
+    </div>
+    </details>
+    <details class="sv-group"><summary><span class="l-en">📈 Momentum, chart &amp; history</span><span class="l-zh">📈 动量、图表与历史</span></summary>
     <div class="panel">
       <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span></h2>
       <div id="r_mtf"></div>
-    </div>
-    <div class="panel" id="r_gbeta_panel" style="display:none">
-      <h2><span class="l-en">Global-risk beta</span><span class="l-zh">全球风险贝塔</span> <span class="note" style="text-transform:none">· <span class="l-en">amplifier vs cushion</span><span class="l-zh">放大器 vs 缓冲</span></span></h2>
-      <div id="r_gbeta" class="mtf"></div>
-      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">This name's beta to global risk (S&P 500, lagged one day for the overnight US→HK transmission). HK has no idiosyncratic stock-selection edge, so the honest per-name read is RISK EXPOSURE: a high beta (<b>amplifier</b> — global cyclical) moves more with the risk-on/off regime; a low beta (<b>cushion</b> — domestic-defensive) moves less. The tag conditions on the live global risk state (favored / exposed / lags). Measured edge is modest — risk context for sizing within the validated regime, NOT a forecast or a buy signal. Beta is a descriptive exposure, not an alpha.</span><span class="l-zh">本股票对全球风险的贝塔（标普500，滞后一天以反映隔夜美→港传导）。香港没有特异选股优势，因此诚实的个股解读是风险敞口：高贝塔（<b>放大器</b>——全球周期股）随风险开关波动更大；低贝塔（<b>缓冲</b>——本地防御）波动更小。标签结合实时全球风险状态（占优／受冲击／滞后）。实测优势温和——用于在已验证状态内进行仓位管理的风险背景，而非预测或买入信号。贝塔是描述性敞口，并非阿尔法。</span></p>
-    </div>
-    <div class="panel" id="r_fund_panel" style="display:none">
-      <h2><span class="l-en">Fundamentals</span><span class="l-zh">基本面</span> <span class="note" style="text-transform:none">· <span class="l-en">context, not a signal</span><span class="l-zh">背景，而非信号</span></span></h2>
-      <div id="r_fund"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">Descriptive financial health, quality, and the analyst-consensus read — a backdrop to read ALONGSIDE the validated global-risk-beta exposure, NOT a buy ranking. HK has no idiosyncratic stock-selection edge, so these are health/coverage context. Analyst targets are sell-side opinion (median across brokers), shown for coverage context, not an endorsement. PE / PB are shown only when the statements are HKD-reported (omitted when a name reports in CNY, to avoid a cross-currency ratio). Fundamentals refresh on a slower cadence than price.</span><span class="l-zh">描述性的财务健康、质量与分析师一致预期 —— 作为与已验证的全球风险贝塔敞口并读的背景，而非买入排序。香港没有特异选股优势，故此为健康／覆盖背景。分析师目标价为卖方观点（各券商中位数），仅作覆盖背景，并非背书。PE／PB 仅在财报以港元列报时显示（以人民币列报时省略，以避免跨币种比率）。基本面的更新频率慢于价格。</span></p>
-    </div>
-    <div class="panel" id="r_ah_panel" style="display:none">
-      <h2><span class="l-en">A/H premium</span><span class="l-zh">A/H 溢价</span> <span class="note" style="text-transform:none">· <span class="l-en">mainland A vs HK-listed H</span><span class="l-zh">内地A股 vs 港股H股</span></span></h2>
-      <div id="r_ah"></div>
-      <p class="muted" style="font-size:12px; margin-top:10px"><span class="l-en">For a dual-listed company, how much DEARER its mainland A-share trades vs this HK-listed H twin, in a common currency. A high premium means the H/HK line is the cheaper way to own the same company; the gap is mean-reverting, so a stretched premium that compresses tends to favour the HK line. Computed basket (1:1 share-equivalence), so lean on the TREND and the percentile within its own history, not the absolute level. Cross-market valuation context, NOT a buy signal.</span><span class="l-zh">对于A+H两地上市的公司，其内地A股相对这只港股H股在同一币种下贵多少。溢价越高，意味着用H股／港股买入同一家公司更便宜；该价差具有均值回归性，因此被拉伸后的溢价一旦收敛，往往利好港股一边。为计算型口径（按1:1股本等值），请侧重趋势与其自身历史分位，而非绝对水平。跨市场估值背景，并非买入信号。</span></p>
     </div>
     <div class="panel">
       <h2><span class="l-en">Chart</span><span class="l-zh">图表</span></h2>
       <div id="tvbox"></div>
     </div>
     <div class="panel">
-      <h2><span class="l-en">How much to trust the state — measured on HK history</span><span class="l-zh">这个状态有多可信 — 基于香港历史实测</span></h2>
-      <table id="r_cal"></table>
-      <p class="muted" style="font-size:12px; margin-top:8px"><span class="l-en">HK stocks drift up over a month from every state (the market's long upward bias); the spread between
+      <h2><span class="l-en">How much to trust the state — measured on HK history</span><span class="l-zh">这个状态有多可信 — 基于香港历史实测</span><span class="help">?<span class="tip"><span class="l-en">HK stocks drift up over a month from every state (the market's long upward bias); the spread between
         states is small, and the "scary" states measured slightly better forward returns — markets mean-revert
         and full confirmation costs part of the bounce. Use the state for <b>structure</b> (cycle position,
         confirmation checklist, invalidation level) and size positions instead of seeking certainty.
@@ -206,12 +371,16 @@
         "吓人"的状态实测前瞻收益反而略好 — 市场会均值回归，等到完全确认时已错过部分反弹。请把状态用于
         <b>结构判断</b>（周期位置、确认清单、失效价位）并据此控制仓位，而非追求确定性。
         <b>典型回撤</b> = 未来一个月最大跌幅的中位数；<b>最坏回撤</b> = 十分之一的最差月份（第10百分位）—
-        对于风险状态，回撤视角比平均收益更重要。</span></p>
+        对于风险状态，回撤视角比平均收益更重要。</span></span></span></h2>
+      <table id="r_cal"></table>
     </div>
+    </details>
+    <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0"><span class="l-en">How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.</span><span class="l-zh">如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。</span></p>
   </div>
 
 <script src="lightweight-charts-v5.js"></script>
 <script src="chart.js"></script>
+<script src="stockview.js"></script>
 <script>
 (function () {
   var idx = [], cal = null, sel = -1, items = [];
@@ -372,7 +541,13 @@
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');
     document.getElementById('r_summary').textContent = lz(d.ladder.summary_line, d.ladder.summary_line_zh);
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
-    renderConviction(d);
+
+    // Unified decision-first layout from the canonical view-model (engine/stock_view).
+    // Replaces the separate conviction / global-risk-beta / A-H-premium panels with ONE
+    // decision band + fingerprint + honesty row + evidence lanes + country slot.
+    var svOk = !!(window.SV && d.view && window.SV.mount(d));
+
+    if (!svOk) renderConviction(d);
 
     var e = d.ladder.entry || {};
     var eb = document.getElementById('r_entry');
@@ -386,6 +561,15 @@
       ageEl.textContent = lz(d.ladder.age_line, d.ladder.age_line_zh);
       ageEl.style.display = 'block';
     } else { ageEl.style.display = 'none'; }
+
+    var eqEl = document.getElementById('r_eq');
+    if (d.ladder.eq_badge) {
+      var grade = lang() === 'zh' ? (d.ladder.eq_grade_zh || d.ladder.eq_grade) : d.ladder.eq_grade;
+      eqEl.innerHTML = (lang() === 'zh' ? '入场 ' : 'Entry ') + d.ladder.eq_badge + ' <span class="eqg">' + grade + '</span>';
+      eqEl.className = 'eqbadge eq-' + (d.ladder.eq_dir || 'flat');
+      eqEl.title = lz(d.ladder.eq_tip, d.ladder.eq_tip_zh);
+      eqEl.style.display = 'inline-flex';
+    } else { eqEl.style.display = 'none'; }
 
     var pts = (lang() === 'zh' && d.ladder.points_zh && d.ladder.points_zh.length)
       ? d.ladder.points_zh : (d.ladder.points || []);
@@ -414,9 +598,11 @@
     document.getElementById('r_why').textContent = lz(d.ladder.why, d.ladder.why_zh) + ' ' + L('next') + ' ' + lz(d.ladder.next, d.ladder.next_zh);
     window.renderMTF(document.getElementById('r_mtf'), d.mtf);
 
-    // Global-risk beta — the honest per-name HK read (additive; absent on indices/ETFs)
+    // Global-risk beta — now the country_slot "global_beta" card in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var gp = document.getElementById('r_gbeta_panel'), g = d.global_beta;
-    if (g && g.beta != null) {
+    if (svOk) { gp.style.display = 'none'; }
+    else if (g && g.beta != null) {
       var ROLE = {amplifier: ['Amplifier — moves more with global risk', '放大器 — 随全球风险波动更大'],
                   cushion: ['Cushion — domestic-defensive', '缓冲 — 本地防御'],
                   neutral: ['Neutral global-risk exposure', '全球风险敞口中性']};
@@ -502,9 +688,11 @@
       fpEl.style.display = 'block';
     } else { fpEl.style.display = 'none'; }
 
-    // A/H premium — per dual-listed name (additive; only the ~12 A+H pairs carry it)
+    // A/H premium — now the country_slot "ah_premium" card in the shared view;
+    // render the legacy panel only as a fallback when the view-model didn't mount.
     var ahEl = document.getElementById('r_ah_panel'), ah = d.ah_premium;
-    if (ah && ah.premium_pct != null) {
+    if (svOk) { ahEl.style.display = 'none'; }
+    else if (ah && ah.premium_pct != null) {
       var p = ah.premium_pct;
       var ahh = '<div class="fnd-grid">'
         + '<div class="fnd-chip"><div class="k">' + L('ah_prem') + '</div><div class="v">' + (p >= 0 ? '+' : '') + p.toFixed(1) + '%</div></div>'
@@ -532,6 +720,16 @@
     document.getElementById('r_cal').innerHTML = cs;
 
     drawChart(d);
+    hideEmptyGroups();
+  }
+
+  function hideEmptyGroups() {
+    document.querySelectorAll('.sv-group').forEach(function (g) {
+      var panels = g.querySelectorAll('.panel');
+      var anyVisible = false;
+      panels.forEach(function (p) { if (p.style.display !== 'none') anyVisible = true; });
+      g.style.display = (panels.length && !anyVisible) ? 'none' : '';
+    });
   }
 
   // HK charts are drawn from OUR stored EOD closes via TradingView Lightweight
@@ -566,7 +764,20 @@
 </script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-19 08:14 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
+<script>
+  // keep tooltips on-screen: flip below near the top, anchor to the nearest side near edges
+  document.addEventListener('mouseover', function (e) {
+    var h = e.target.closest('.help'); if (!h) return;
+    var r = h.getBoundingClientRect();
+    h.classList.toggle('below', r.top < 340);
+    var tip = h.querySelector('.tip');
+    var half = ((tip && tip.offsetWidth) || 300) / 2 + 16;
+    h.classList.remove('edge-right', 'edge-left');
+    if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');
+    else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
+  });
+</script>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-21 07:21 UTC UTC · <span class="l-en">charts drawn from our own stored EOD prices with TradingView Lightweight Charts · curated HK universe, not exhaustive</span><span class="l-zh">图表由我方存储的日线数据经 TradingView Lightweight Charts 绘制 · 精选港股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>

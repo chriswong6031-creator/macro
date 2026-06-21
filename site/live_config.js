@@ -1,0 +1,1 @@
+window.LIVE_QUOTES_URL="";window.LIVE_POLL_SEC=60;window.LIVE_STALE_MIN=20;window.LIVE_ENABLED=true;

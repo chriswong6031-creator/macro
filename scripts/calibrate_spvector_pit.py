@@ -18,6 +18,7 @@ import pandas as pd
 
 from engine import equity_alloc as ea
 from engine.validation import backtest_core, deflated_sharpe, ret_moments
+from engine.trial_ledger import TrialLedger
 from collectors.fred import load_vintages
 from lib import config, store
 
@@ -48,7 +49,14 @@ def _evaluate(spy, alloc, bills):
     loco = {c: round(_sh(net[~((net.index >= lo) & (net.index <= hi))]) -
                _sh(hold[~((hold.index >= lo) & (hold.index <= hi))]), 2) for c, (lo, hi) in CRISES.items()}
     mom = ret_moments(net)
-    dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], 30, trading_year=ea.TRADING_YEAR) if mom else None
+    if mom:
+        _led = TrialLedger()      # honest-N via the ledger (P3): declared honest count
+        _led.log_declared_budget(30, family="spvector_pit",
+                                 reason="PIT honest count (calibrate_spvector_pit)")
+        dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led,
+                              family="spvector_pit", trading_year=ea.TRADING_YEAR)
+    else:
+        dsr = None
     return {"cagr": _cagr(net), "sharpe": _sh(net), "maxdd": _mdd(net), "loco": loco,
             "dsr": dsr["dsr"] if dsr else None}
 

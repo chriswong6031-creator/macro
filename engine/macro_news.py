@@ -41,18 +41,21 @@ GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
 # macro themes -> keyword buckets. Used BOTH to build the GDELT query AND to
 # tag/relevance-gate each returned headline (deterministic classification).
 MACRO_THEMES: dict[str, list[str]] = {
-    "monetary":  ["federal reserve", "fomc", "rate cut", "rate hike", "interest rate",
-                  "powell", "central bank", "monetary policy", "rate decision"],
-    "inflation": ["inflation", "cpi", "pce", "consumer price", "deflation",
-                  "price pressure", "core prices"],
+    "monetary":  ["federal reserve", "the fed", "fed governor", "fed chair", "fed official",
+                  "fed minutes", "fed meeting", "fomc", "rate cut", "rate hike",
+                  "interest rate", "powell", "central bank", "monetary policy",
+                  "rate decision", "basis point", "dot plot"],
+    "inflation": ["inflation", "cpi", "ppi", "pce", "consumer price", "deflation",
+                  "price pressure", "core prices", "disinflation"],
     "labor":     ["jobs report", "payroll", "nonfarm", "unemployment", "labor market",
-                  "jobless claims", "hiring", "layoff"],
-    "growth":    ["gdp", "recession", "economic growth", "slowdown", "manufacturing",
-                  "ism ", "soft landing", "hard landing", "contraction"],
-    "credit":    ["bond yield", "treasury yield", "credit spread", "corporate bond",
-                  "yield curve", "default rate"],
+                  "jobless claims", "hiring", "layoff", "job openings", "wage growth"],
+    "growth":    ["gdp", "recession", "economy", "economic", "growth", "slowdown",
+                  "manufacturing", "ism ", "pmi", "soft landing", "hard landing",
+                  "contraction", "consumer spending", "retail sales"],
+    "credit":    ["bond yield", "treasury yield", "treasury", "yields", "credit spread",
+                  "corporate bond", "yield curve", "default rate", "the dollar", "greenback"],
     "fiscal":    ["debt ceiling", "government shutdown", "fiscal", "tariff", "trade war",
-                  "sanction", "budget deal"],
+                  "trade deal", "sanction", "budget deal", "deficit", "stimulus", "spending bill"],
 }
 # theme display labels (EN, ZH)
 THEME_LABEL = {
@@ -62,28 +65,23 @@ THEME_LABEL = {
 }
 
 # reputable macro/financial outlets — the source allowlist (substring match on the
-# article domain, so finance.yahoo.com matches yahoo.com). Tune in config.
-# Tier-1 reputable NEWS wires/outlets. A GDELT hit here is kept on the SOURCE
-# alone (no title keyword needed) — the query already matched the macro terms in
-# the article BODY, and these outlets don't churn out stock-pick noise the way the
-# finance aggregators do. Without this, the title-only theme gate drops most real
-# macro stories (reputable headlines rarely put "CPI"/"Fed" in the title).
-_NEWS_SOURCES = [
-    "reuters.com", "apnews.com", "bloomberg.com", "wsj.com", "ft.com",
-    "nytimes.com", "washingtonpost.com", "cnbc.com", "cnn.com", "nbcnews.com",
-    "abcnews.go.com", "cbsnews.com", "npr.org", "pbs.org", "axios.com",
-    "thehill.com", "politico.com", "economist.com", "bbc.com", "bbc.co.uk",
-    "semafor.com", "usatoday.com", "marketwatch.com", "barrons.com",
-    "foxbusiness.com", "rttnews.com", "spglobal.com",
-]
+# article domain, so finance.yahoo.com matches yahoo.com). Sourced from the shared
+# tiered registry in engine.news_common so the whole news suite shares ONE
+# allowlist. Tune in config (`macro_news.sources`).
+#
+# _NEWS_SOURCES — wires + quality press. A GDELT hit here is kept on the SOURCE
+# alone (no title keyword needed): the query already matched the macro terms in
+# the article BODY, and these outlets don't churn out stock-pick noise. Without
+# this, the title-only theme gate drops most real macro stories (reputable
+# headlines rarely put "CPI"/"Fed" in the title).
+from engine import news_common as _nc
 
-# Full quality allowlist (tier-1 + finance aggregators). Articles from the
-# aggregator-only sources must additionally clear the title macro-theme gate, so
-# their stock-pick/retirement noise is filtered out.
-_DEFAULT_SOURCES = _NEWS_SOURCES + [
-    "yahoo.com", "investing.com", "forbes.com", "businessinsider.com",
-    "fortune.com", "morningstar.com", "seekingalpha.com", "kitco.com",
-]
+_NEWS_SOURCES = list(_nc.TIER1_SOURCES) + list(_nc.TIER2_SOURCES)
+
+# Full quality allowlist (wires + press + finance aggregators). Articles from the
+# tier-3 aggregator sources must additionally clear the title macro-theme gate, so
+# their stock-pick/retirement noise is filtered out. Exported for the narrative bus.
+_DEFAULT_SOURCES = list(_nc.ALL_SOURCES)
 
 DISCLAIMER_TEXT = (
     "Context only — not a signal. These headlines are filtered (reputable sources, "
@@ -155,6 +153,19 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict
         kept.append({"title": a.get("title", ""), "url": a.get("url", ""),
                      "domain": dom, "seendate": a.get("seendate", ""), "theme": theme})
     kept.sort(key=lambda h: h.get("seendate", ""), reverse=True)  # (4) newest first
+    # (5) source diversity — cap any one outlet so the scorecard reads as a cross-wire
+    # digest (Bloomberg + Reuters + FT + AP …), not a single verbose RSS feed.
+    cap = int(cfg.get("max_per_domain", 4))
+    if cap > 0:
+        per: dict[str, int] = {}
+        diverse = []
+        for h in kept:
+            d = h.get("domain", "")
+            if per.get(d, 0) >= cap:
+                continue
+            per[d] = per.get(d, 0) + 1
+            diverse.append(h)
+        kept = diverse
     return kept[:top_n]
 
 
@@ -167,7 +178,8 @@ def _query(cfg: dict) -> str:
     # precision step.
     core = ['"federal reserve"', "fomc", "inflation", "cpi", '"interest rates"',
             "recession", '"jobs report"', "payrolls", "gdp", '"treasury yield"',
-            "tariffs", '"debt ceiling"']
+            "tariffs", '"debt ceiling"', '"jobless claims"', '"consumer confidence"',
+            "powell", '"rate cut"']
     q = "(" + " OR ".join(core) + ")"
     # sourcecountry:US removes the flood of foreign local papers at source; the
     # reputable-source allowlist + title theme-gate then run in filter_headlines.
@@ -245,17 +257,39 @@ def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str 
 # public: filtered macro headlines
 # --------------------------------------------------------------------------- #
 def macro_headlines(today: date | None = None) -> dict | None:
-    """Filtered, theme-tagged, deduped recent macro headlines. None when the
-    master switch is off. Never raises."""
+    """Filtered, theme-tagged, deduped recent macro headlines. Always available.
+
+    PRIMARY source is the keyless top-tier RSS layer (engine.news_rss): the wires &
+    quality press — Bloomberg, FT, CNBC, Reuters/AP (via Google News), Axios, Fox
+    Business, the Guardian, NPR, BBC. This replaces the old GDELT-only path that was
+    flaky AND off-by-default (hence the empty scorecard). GDELT stays an optional
+    supplement when `macro_news.enabled` is set. Never raises."""
     cfg = _cfg()
-    if not cfg.get("enabled", False):
-        return None
-    raw, reason = _fetch_gdelt(cfg, today)
-    kept = filter_headlines(raw, cfg)
+    raw: list[dict] = []
+    src = "rss_wires"
+    try:
+        from engine import news_rss
+        raw = list(news_rss.macro_headlines())
+    except Exception as e:  # noqa: BLE001 — degrade, never raise
+        log.warning("macro rss fetch failed (%s)", e)
+
+    reason: str | None = None
+    if cfg.get("enabled", False):                       # optional GDELT supplement
+        g, reason = _fetch_gdelt(cfg, today)
+        raw += g
+        src = "rss_wires+gdelt"
+
+    # precision gate: topic-targeted query hits are macro by construction (always kept);
+    # broad section-feed items must clear the macro-theme keyword gate (drops the
+    # geopolitics / politics / sports the general feeds carry). GDELT items keep their
+    # existing handling in filter_headlines.
+    raw = [a for a in raw if a.get("origin") != "feed" or classify_theme(a.get("title", ""))]
+
+    kept = filter_headlines(raw, {**cfg, "max_show": cfg.get("max_show", 14)})
     return {"schema": "macro_news.v1", "is_context_only": True,
-            "fetched_at": datetime.now(timezone.utc).isoformat(), "source": "gdelt_doc_2.0",
+            "fetched_at": datetime.now(timezone.utc).isoformat(), "source": src,
             "headlines": kept, "n_raw": len(raw), "n_kept": len(kept),
-            "degraded_reason": reason if not kept else None,
+            "degraded_reason": ("no_headlines" if not kept else None),
             "disclaimer": DISCLAIMER_TEXT}
 
 

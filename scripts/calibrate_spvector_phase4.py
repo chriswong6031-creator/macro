@@ -22,6 +22,7 @@ import pandas as pd
 from engine import equity_alloc as ea
 from engine import equity_diversified as ed
 from engine.validation import deflated_sharpe, ret_moments
+from engine.trial_ledger import TrialLedger
 from lib import config, store
 
 COST_BPS = 3.0
@@ -70,7 +71,14 @@ def main() -> int:
         s["y2022"] = _yr_ret(net, 2022); s["dd2022"] = _yr_dd(net, 2022)
         s["y2008"] = _yr_ret(net, 2008)
         mom = ret_moments(net)
-        d = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], N_TRIALS, trading_year=ed.TY) if mom else None
+        if mom:
+            _led = TrialLedger()      # honest-N via the ledger (P3): declared honest count
+            _led.log_declared_budget(N_TRIALS, family="spvector_phase4",
+                                     reason="declared honest count (calibrate_spvector_phase4)")
+            d = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led,
+                                family="spvector_phase4", trading_year=ed.TY)
+        else:
+            d = None
         s["dsr"] = d["dsr"] if d else None
         res[name] = s
 

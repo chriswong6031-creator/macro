@@ -212,6 +212,9 @@
   .tcard .nm { color:inherit; } .tcard a.nm:hover { color:var(--link); }
   .txrow { display:flex; flex-wrap:wrap; gap:4px 6px; margin:2px 0 6px; }
   .tpill.warn { color:var(--warn); } .tpill.neg { color:var(--down); }
+  .tpill.up { color:var(--up); } .tpill.dn { color:var(--down); } .tpill.wn { color:var(--warn); }
+  .sigrow { margin-top:5px; padding-top:5px; border-top:1px dashed var(--line); }
+  .sigrow .tpill { font-weight:600; }
   .tflag { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; }
   .tflag.up { color:var(--up); border-color:var(--up); } .tflag.dn { color:var(--down); border-color:var(--down); } .tflag.wn { color:var(--warn); border-color:var(--warn); }
   .detail-link { display:inline-block; margin-top:8px; font-size:11.5px; color:var(--link); border-top:1px solid var(--line); padding-top:7px; width:100%; }
@@ -292,6 +295,12 @@
     <p class="muted" id="theme-disclaimer" style="font-size:11.5px;margin:0 0 11px"></p>
     <div class="desk" id="theme-desk"></div>
   </section>
+
+  {# 🔥 Forming Narratives — emerging themes our models detect + clean-entry tickers (display-only). #}
+  {% include "_forming_narratives.html.j2" %}
+
+  {# 🛰️ Divergence Radar — federal contract spend vs price (variant edge, display-only). #}
+  {% include "_radar_panel.html.j2" %}
 
   <section id="concentration-section">
     <h2><span class="idx">★</span>🛑 {{ t('Market concentration & theme leadership', '市场集中度与主题领导力') }}
@@ -621,18 +630,21 @@ const RECO_COLOR = {
   avoid:      ['rgba(248,113,113,.16)','rgba(248,113,113,.6)','#ef4444'],
 };
 const badge = (cls,c,en,zh)=>`<span class="${cls}" style="background:${c[0]};border:1px solid ${c[1]};color:${c[2]}">${L(en,zh)}</span>`;
-const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',crowding:'#fb7185'};
-const COMP_LBL = {trend:['trend','趋势'],breadth:['breadth','广度'],impulse:['impulse','脉冲'],macro:['macro','宏观'],crowding:['crowd','拥挤']};
+const COMP_COLOR = {trend:'#5aa7ff',breadth:'#4ade80',impulse:'#a78bfa',macro:'#2dd4bf',mtf:'#f0abfc',volhole:'#fbbf24',crowding:'#fb7185'};
+const COMP_LBL = {trend:['trend','趋势'],breadth:['breadth','广度'],impulse:['impulse','脉冲'],macro:['macro','宏观'],mtf:['MTF','多周期'],volhole:['vol-hole','波动洞'],crowding:['crowd','拥挤']};
+const COMP_POS = ['trend','breadth','impulse','macro','mtf','volhole'];
+const VH_SHORT = {EXPANSION_UP:['breakout','突破','up'],COILED_UP:['coiled↑','蓄势↑','up'],IN_HOLE:['coiled','蓄势','wn'],EXPANDED:['trending','运行',''],COILED_DOWN:['coiled↓','蓄势↓','dn'],EXPANSION_DOWN:['breakdown','跌破','dn']};
+const VERD_SHORT = {'TREND-FOLLOW':['aligned↑','共振↑','up'],'BUY-THE-DIP':['dip-buy','逢低','up'],'CAUTION':['unconfirmed','未确认','wn'],'AVOID':['downtrend','下行','dn'],'WAIT':['mixed','分歧','']};
 
 function compBar(c,w){
-  const parts=['trend','breadth','impulse','macro'].map(k=>({k,v:Math.max(0,(c[k]||0))*w[k]}));
-  parts.push({k:'crowding',v:(c.crowding||0)*w.crowding});
+  const parts=COMP_POS.filter(k=>c[k]!=null).map(k=>({k,v:Math.max(0,(c[k]||0))*(w[k]||0)}));
+  parts.push({k:'crowding',v:(c.crowding||0)*(w.crowding||0)});
   const tot=parts.reduce((a,p)=>a+Math.abs(p.v),0)||1;
   const segs=parts.filter(p=>Math.abs(p.v)>0.001).map(p=>`<i style="width:${(Math.abs(p.v)/tot*100).toFixed(1)}%;background:${COMP_COLOR[p.k]};${p.k==='crowding'?'opacity:.55':''}"></i>`).join('');
   return `<div class="cbar" title="contribution to the score">${segs}</div>`;
 }
 function compLegend(c){
-  return `<div class="clegend">`+['trend','breadth','impulse','macro','crowding'].map(k=>{
+  return `<div class="clegend">`+COMP_POS.filter(k=>c[k]!=null).concat(['crowding']).map(k=>{
     const v=c[k]; const s=(v==null)?'—':((k==='crowding'?'−':(v>=0?'+':''))+Math.abs(v).toFixed(2));
     return `<span><span class="sw" style="background:${COMP_COLOR[k]}"></span>${L(COMP_LBL[k][0],COMP_LBL[k][1])} <b>${s}</b></span>`;
   }).join('')+`</div>`;
@@ -644,13 +656,27 @@ function themeCard(t){
   const b=t.breadth||{}, im=t.impulse||{}, tx=t.textures||{};
   const ba=tx.bull_age||{}, ob=tx.overbought||{}, ce=tx.clean_entry||{}, rr=tx.rollover_risk||{};
   const top=(t.leadership&&t.leadership.top)||[];
+  const ss=t.signal_strength||null;
   const obc = ob.value>=0.6?'neg':ob.value>=0.35?'warn':'';
   const flags=[];
   if(ce.flag) flags.push(`<span class="tflag up">✦ ${L('clean entry','干净入场')}</span>`);
   if(rr.band==='high'||rr.band==='elevated') flags.push(`<span class="tflag ${rr.band==='high'?'dn':'wn'}">⚠ ${L('roll-over','回落风险')}</span>`);
+  // backtested signal-strength chip — the validated risk reads stand out; title is plain
+  // English (never L() inside an attribute — it leaks span markup into the tooltip text).
+  if(ss&&ss.grade==='backtested') flags.push(`<span class="tflag dn" title="${esc(ss.en||'')} (HAC t ${ss.t_hac}, n ${ss.n})">🔬 ${L('backtested risk','已回测风险')}</span>`);
   const bullPill = ba.in_bull
     ? `🐂 ${ba.approx_months!=null?ba.approx_months+'mo':''} ${L(ba.stage||'','')||esc(ba.stage_zh||'')}`
     : `🐻 ${L('downtrend','下行')}`;
+  // consolidated-candle signal pills (MTF confluence · vol-hole · whale · net-flow) — present only US
+  const mtf=t.mtf||null, tape=t.tape||null, sigPills=[];
+  if(mtf&&mtf.confluence){const g=mtf.confluence.grade, vs=VERD_SHORT[g]||['','',''];
+    if(g) sigPills.push(`<span class="tpill ${vs[2]}" title="multi-timeframe confluence: ${esc((mtf.confluence.headline||''))}">🧭 ${L(vs[0],vs[1])}</span>`);}
+  if(tape&&tape.volhole){const st=tape.volhole.state, vs=VH_SHORT[st]||['','',''];
+    if(st) sigPills.push(`<span class="tpill ${vs[2]}" title="volatility black hole: ${esc((tape.volhole.label_en||''))}">🕳️ ${L(vs[0],vs[1])}</span>`);}
+  if(tape&&tape.whale&&tape.whale.accumulation!=null){const w=tape.whale.accumulation, wc=w>=50?'up':w>=35?'wn':'dn';
+    sigPills.push(`<span class="tpill ${wc}" title="whale accumulation (Chaikin money-flow %ile): ${esc(tape.whale.label_en||'')}">🐋 ${Math.round(w)}${tape.whale.trend_5d>0?'↑':tape.whale.trend_5d<0?'↓':''}</span>`);}
+  if(tape&&tape.flow&&tape.flow.cmf!=null){const f=tape.flow.cmf, fc=f>0.05?'up':f<-0.05?'dn':'';
+    sigPills.push(`<span class="tpill ${fc}" title="net money flow (CMF): ${esc(tape.flow.label_en||'')}">${f>0.05?'▸ '+L('inflow','流入'):f<-0.05?'▸ '+L('outflow','流出'):'▸ '+L('flat','均衡')}</span>`);}
   return `<div class="tcard" id="theme-${t.id}" style="--tc:${lc[2]}">
     <div class="top">
       ${badge('tlabel',lc,t.label_en,t.label_zh)}
@@ -663,7 +689,8 @@ function themeCard(t){
       <span class="${cls(r20)}">${fmtPct(r20)} 20d</span>
       <span class="spark">${sparkSvg(spk,{w:84,h:24,color:lc[2]})}</span>
     </div>
-    ${compBar(t.components,(THEME&&THEME.weights)||{trend:.34,breadth:.22,impulse:.10,macro:.20,crowding:.14})}
+    ${compBar(t.components,(THEME&&THEME.weights)||{trend:.26,breadth:.18,impulse:.07,macro:.18,mtf:.16,volhole:.05,crowding:.10})}
+    ${sigPills.length?`<div class="txrow sigrow">${sigPills.join('')}</div>`:''}
     <div class="txrow">
       <span class="tpill" title="bull-market age">${bullPill}</span>
       <span class="tpill ${obc}" title="overbought / extension">${L('OB','超买')} ${esc(ob.band||'—')}</span>
@@ -677,6 +704,7 @@ function themeCard(t){
     </div>
     <details><summary>${L('why &amp; components','理由与分项')}</summary>
       <div class="why">${L(esc(t.reco_why_en),esc(t.reco_why_zh))}</div>
+      ${ss?`<div class="why" style="opacity:.82">${L('Signal grade','信号评级')}: <b>${esc(ss.grade)}</b> — ${L(esc(ss.en||''),esc(ss.zh||''))}</div>`:''}
       ${compLegend(t.components)}
       ${top.length?`<div class="why">${L('leaders','领涨')}: ${top.map(x=>esc(x.ticker)).join(', ')}${t.leadership.breadth==='narrow'?' ⚠':''}</div>`:''}
     </details>
@@ -687,8 +715,42 @@ function renderThemeDesk(){
   const sec=document.getElementById('theme-desk-section');
   if(!THEME||!(THEME.themes||[]).length){ if(sec) sec.style.display='none'; return; }
   document.getElementById('theme-desk').innerHTML=(THEME.themes||[]).map(themeCard).join('');
-  const d=THEME.disclaimer||{}; document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''));
+  const d=THEME.disclaimer||{};
+  // cite the backtest verdict (scripts.calibrate_baskets, 27y SPDR-sector proxy)
+  const cal=THEME.signal_calibration||{};
+  let calNote='';
+  if(cal&&cal.alert_firing_gate){
+    const ic=(cal.cross_sectional_momentum||{}).mean_ic_21d;
+    const nbt=(THEME.themes||[]).filter(t=>(t.signal_strength||{}).grade==='backtested').length;
+    calNote=' '+L(
+      esc(`Backtested on 27y of clean sector history: risk labels (fading/deteriorating) precede deeper forward drawdowns; entry labels show no forward-return edge (rank-IC ≈ ${ic==null?'~0':ic}). The 🔬 chip marks the ${nbt} theme(s) carrying a backtested risk read now.`),
+      esc(`基于27年干净行业历史回测：风险标签（走弱/退潮）领先于更深的前向回撤；入场标签无前向收益优势（rank-IC≈${ic==null?'~0':ic}）。🔬 标记当前 ${nbt} 个带有已回测风险信号的主题。`));
+  }
+  document.getElementById('theme-disclaimer').innerHTML=L(esc(d.en||''),esc(d.zh||''))+calNote;
+  decorateRealActivity();
 }
+// Display-only: stamp each theme card with the Divergence Radar real-activity read
+// (basketdata/radar.json). Bilingual l-en/l-zh spans (toggle-proof). Non-invasive — appends
+// one pill to the card's .txrow; silent if the radar JSON is absent. See site/radar.html.
+function decorateRealActivity(){
+  const ST={POSITIVE_DIVERGENCE:[L('🛰️ activity ahead','🛰️ 活动领先'),'var(--up)'],
+            NEGATIVE_DIVERGENCE:[L('🛰️ price ahead','🛰️ 价格领先'),'var(--warn)'],
+            CONFIRMED_UP:[L('🛰️ confirmed','🛰️ 已印证'),'var(--muted)'],
+            CONFIRMED_DOWN:[L('🛰️ weak','🛰️ 走弱'),'var(--muted)'],
+            QUIET:[L('🛰️ quiet','🛰️ 平静'),'var(--muted)']};
+  fetch('basketdata/radar.json',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(function(d){
+    if(!d||!d.flags) return;
+    d.flags.forEach(function(f){
+      const row=document.querySelector('#theme-'+(f.basket||'')+' .txrow');
+      if(!row||row.querySelector('.ra-pill')) return;
+      const s=ST[f.state]||ST.QUIET;
+      const dv=f.divergence==null?'':' '+(f.divergence>0?'+':'')+f.divergence.toFixed(1);
+      const pill=document.createElement('span');
+      pill.className='tpill ra-pill'; pill.style.borderColor=s[1]; pill.title='real-activity radar';
+      pill.innerHTML=s[0]+dv;
+      row.appendChild(pill);
+    });
+  }).catch(function(){});
 function renderMacroCtx(){
   if(!THEME) return;
   const m=THEME.macro_context||{};

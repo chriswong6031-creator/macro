@@ -129,13 +129,36 @@ def ret_moments(r: pd.Series):
 _ret_moments = ret_moments
 
 
-def deflated_sharpe(sr_daily, skew, kurt, T, n_trials, sr_variance=None,
-                    trading_year: float = 252) -> dict | None:
-    """DSR for a strategy selected as the best of `n_trials` configs.
+def deflated_sharpe(sr_daily, skew, kurt, T, n_trials=None, sr_variance=None,
+                    trading_year: float = 252, *, ledger=None,
+                    family: str | None = None) -> dict | None:
+    """DSR for a strategy selected as the best of N tried configs.
     `sr_daily` = its per-period Sharpe; `sr_variance` = cross-trial variance of the
     per-period Sharpes (if None, fall back to the SR-estimator's own variance as a
     conservative proxy). `trading_year` only scales the *_annual report fields — the
-    DSR probability itself is annualization-invariant."""
+    DSR probability itself is annualization-invariant.
+
+    N (the multiple-testing count) comes from ONE of two sources:
+
+    * `n_trials` (int) — the legacy path: the caller asserts the count. This is the
+      p-hacking surface (a caller can lowball it), so new code should NOT use it; the
+      `tests/test_no_literal_ntrials.py` ratchet blocks new literal callers.
+    * `ledger=` + `family=` — the honest path: N is the count of DISTINCT configs the
+      Trial Ledger recorded for `family` AT GENERATION, which the caller cannot
+      understate. Pass a `engine.trial_ledger.TrialLedger` (duck-typed: anything with
+      an `effective_n(family)` method works).
+
+    Exactly one of {`n_trials`, `ledger`} must be given; passing both is a ValueError."""
+    if (ledger is not None) and (n_trials is not None):
+        raise ValueError(
+            "deflated_sharpe: pass EITHER a literal n_trials OR a ledger= handle, "
+            "not both — they are two ways to set the same N")
+    if ledger is not None:
+        n_trials = ledger.effective_n(family)
+    elif n_trials is None:
+        raise ValueError(
+            "deflated_sharpe requires the multiple-testing N: pass ledger= (honest, "
+            "counted at generation) or n_trials= (legacy literal)")
     if sr_daily is None or T is None or T < 3 or skew is None or kurt is None:
         return None
     var_scaler = 1.0 - skew * sr_daily + ((kurt - 1.0) / 4.0) * sr_daily * sr_daily
@@ -505,3 +528,61 @@ def clark_west(realized, forecast, bench=None, hac_lags: int = 4) -> dict:
                  (1.0 - nw["p"] / 2.0 if t is not None else None))
     return {"cw_t": t, "cw_p": round(one_sided, 4) if one_sided is not None else None,
             "mean_adj": nw.get("mean"), "n": int(len(r))}
+
+
+# --------------------------------------------------------------------------- #
+# INCREMENTAL IC — the institutional honesty test. rank_ic measures a signal's RAW
+# correlation with forward returns, which conflates genuine information with repackaged
+# common-factor exposure (a momentum signal "predicts" partly because it IS momentum). The
+# institutional question is the INCREMENTAL IC: after neutralizing the signal cross-section
+# against the factors you already own (market beta, size, sector, momentum, low-vol), does
+# any independent forecasting power survive? cross_sectional_resid does the one-date
+# neutralization (OLS residual); the per-date residual ICs then feed ic_summary exactly like
+# raw ICs, so the whole HAC-t / BH-FDR gauntlet applies to the HARDER, honest number.
+# --------------------------------------------------------------------------- #
+def cross_sectional_resid(signal, loadings):
+    """Residualize one cross-section of `signal` (ticker->value) against `loadings`
+    (DataFrame ticker x factor) by OLS with an intercept — the part of the signal
+    ORTHOGONAL to the factors you already own. Standardizes the loadings so scale is
+    irrelevant; returns NaN-free residuals on the jointly-present names (>= 5, else empty)."""
+    s = pd.Series(signal).dropna()
+    X = pd.DataFrame(loadings).reindex(s.index)
+    j = pd.concat([s.rename("_y"), X], axis=1).dropna()
+    if len(j) < 5 or j.shape[1] < 2:
+        return pd.Series(dtype=float)
+    y = j["_y"].to_numpy(float)
+    cols = [c for c in j.columns if c != "_y"]
+    Z = j[cols].to_numpy(float)
+    sd = Z.std(axis=0, ddof=0)
+    sd[sd == 0] = 1.0
+    Z = (Z - Z.mean(axis=0)) / sd                       # standardize loadings
+    A = np.column_stack([np.ones(len(y)), Z])           # + intercept
+    beta, *_ = np.linalg.lstsq(A, y, rcond=None)
+    resid = y - A @ beta
+    return pd.Series(resid, index=j.index)
+
+
+def incremental_ic(signal_by_date: dict, fwd_by_date: dict, loadings_by_date: dict,
+                   periods_per_year: int = 12) -> dict:
+    """Raw vs factor-NEUTRALIZED rank-IC across a rebalance grid. `*_by_date` map a date
+    to a cross-section (signal Series / forward-return Series / loadings DataFrame). Returns
+    raw and incremental ic_summary blocks + the mean-IC delta — the share of a signal's edge
+    that is NOT just repackaged factor exposure. A signal whose IC collapses to ~0 after
+    neutralization carries no independent information, however good its raw IC looked."""
+    raw_ics, inc_ics = [], []
+    for d, sig in signal_by_date.items():
+        fwd = fwd_by_date.get(d)
+        if fwd is None or sig is None or len(sig) == 0:
+            continue
+        raw_ics.append(rank_ic(sig, fwd))
+        load = loadings_by_date.get(d)
+        if load is not None and len(load):
+            resid = cross_sectional_resid(sig, load)
+            if len(resid):
+                inc_ics.append(rank_ic(resid, fwd))
+    raw = ic_summary(raw_ics, periods_per_year=periods_per_year)
+    inc = ic_summary(inc_ics, periods_per_year=periods_per_year)
+    rm, im = raw.get("mean_ic"), inc.get("mean_ic")
+    return {"raw": raw, "incremental": inc,
+            "ic_delta": round(im - rm, 4) if (rm is not None and im is not None) else None,
+            "surviving_frac": round(im / rm, 3) if (rm not in (None, 0) and im is not None) else None}

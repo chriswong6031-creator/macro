@@ -27,15 +27,17 @@
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted); font-size:10px; font-weight:600; cursor:help; position:relative; vertical-align:middle; margin-left:5px; }
   .help .tip { display:none; position:absolute; top:140%; left:50%; transform:translateX(-50%); width:280px; background:var(--panel); border:1px solid var(--line); padding:9px 11px; border-radius:8px; z-index:60; font-size:12px; line-height:1.45; color:var(--text); font-weight:400; box-shadow:var(--popover-shadow); pointer-events:none; }
   .help:hover .tip { display:block; }
+  .tabnum { font-variant-numeric:tabular-nums; }
 
   /* ---- symbol picker ---- */
   .pickbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-  .gx-search { position:relative; flex:1 1 280px; max-width:420px; }
-  .gx-search input { width:100%; padding:9px 12px 9px 34px; border:1px solid var(--line); border-radius:9px; background:var(--panel2); color:var(--text); font:inherit; font-size:14px; }
-  .gx-search .mag { position:absolute; left:11px; top:50%; transform:translateY(-50%); opacity:.6; }
-  .gx-sugg { position:absolute; top:108%; left:0; right:0; background:var(--panel); border:1px solid var(--line); border-radius:9px; box-shadow:var(--popover-shadow); z-index:50; max-height:320px; overflow:auto; display:none; }
+  .gx-search { position:relative; flex:1 1 280px; max-width:520px; }
+  .gx-search input { width:100%; padding:11px 12px 11px 38px; border:1px solid var(--line); border-radius:11px; background:var(--panel2); color:var(--text); font:inherit; font-size:15px; }
+  .gx-search input:focus { outline:none; border-color:var(--info); box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%, transparent); }
+  .gx-search .mag { position:absolute; left:13px; top:50%; transform:translateY(-50%); opacity:.6; }
+  .gx-sugg { position:absolute; top:108%; left:0; right:0; background:var(--panel); border:1px solid var(--line); border-radius:9px; box-shadow:var(--popover-shadow); z-index:50; max-height:340px; overflow:auto; display:none; }
   .gx-sugg.on { display:block; }
-  .gx-sugg .row { display:flex; justify-content:space-between; gap:8px; padding:7px 11px; cursor:pointer; }
+  .gx-sugg .row { display:flex; justify-content:space-between; gap:8px; padding:8px 12px; cursor:pointer; }
   .gx-sugg .row:hover, .gx-sugg .row.hl { background:var(--panel2); }
   .gx-sugg .row b { font-weight:600; } .gx-sugg .row .g { color:var(--muted); font-size:11px; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -43,25 +45,74 @@
   .chip.on { color:var(--text); border-color:var(--muted); background:var(--panel); }
 
   /* ---- board ---- */
-  .boardwrap { margin-top:12px; }
   .board { width:100%; border-collapse:collapse; font-size:12.5px; }
   .board th { text-align:right; color:var(--muted); font-weight:500; padding:6px 9px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap; }
   .board th:first-child, .board td:first-child { text-align:left; }
   .board td { padding:6px 9px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
   .board tr.sym { cursor:pointer; } .board tr.sym:hover td { background:var(--panel2); }
   .board tr.sym.sel td { background:var(--panel2); }
-  .board tr.ghead td { color:var(--muted); font-size:11px; letter-spacing:.4px; text-transform:uppercase; padding-top:12px; border-bottom:none; }
+  .board tr.sym.thin td { opacity:.62; }
+  .board tr.ghead td { color:var(--muted); font-size:11px; letter-spacing:.4px; text-transform:uppercase; padding-top:14px; border-bottom:none; }
+  .board tr.ghead td .cov { text-transform:none; letter-spacing:0; color:var(--muted); font-weight:400; margin-left:8px; }
   .reg { font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
   .reg-long { color:var(--up); border-color:var(--up); } .reg-short { color:var(--down); border-color:var(--down); } .reg-na { color:var(--muted); }
   .board .symk { font-weight:600; } .board .symn { color:var(--muted); font-size:11px; margin-left:5px; }
-  .collapse-btn { background:none; border:none; color:var(--link); cursor:pointer; font:inherit; font-size:12px; padding:0; }
+  .board .thinmk { color:var(--orange); margin-left:5px; cursor:help; }
+
+  /* ---- board collapse / expand (hidden on entry) ---- */
+  #gx-boardwrap { position:relative; margin:22px 0 14px; }
+  #gx-boardwrap.collapsed #gx-board-inner { display:none; }
+  #gx-boardwrap:not(.collapsed) #gx-board-expand { display:none; }
+  .gx-board-cta { display:flex; flex-direction:column; align-items:center; gap:3px; width:100%; max-width:560px; margin:6px auto; padding:20px 28px;
+    border:1px dashed var(--line); border-radius:16px; background:var(--panel2); color:var(--text); cursor:pointer; text-align:center; font:inherit;
+    transition:transform .16s ease, border-color .16s ease, box-shadow .2s ease, background .16s ease; }
+  .gx-board-cta:hover { transform:translateY(-2px); border-color:var(--info); border-style:solid; background:var(--panel);
+    box-shadow:0 14px 34px -16px color-mix(in srgb,var(--info) 60%, transparent); }
+  .gx-board-cta .big { font-size:17px; font-weight:700; letter-spacing:.2px; }
+  .gx-board-cta .sub { font-size:12px; color:var(--muted); }
+  #gx-board-inner { position:relative; border:1px solid var(--line); border-radius:14px; background:var(--panel); padding:26px 16px 30px; animation:gxFade .22s ease; }
+  @keyframes gxFade { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+  .board-collapse { position:absolute; left:50%; transform:translateX(-50%); z-index:4; padding:6px 18px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel); color:var(--muted); font:inherit; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;
+    box-shadow:var(--popover-shadow); transition:transform .15s ease, color .15s ease, border-color .15s ease; }
+  .board-collapse:hover { color:var(--text); border-color:var(--info); transform:translateX(-50%) translateY(-1px); }
+  .board-collapse.top { top:-15px; } .board-collapse.bottom { bottom:-15px; }
+  .board-head { display:flex; flex-wrap:wrap; gap:8px 14px; align-items:baseline; justify-content:space-between; margin-bottom:10px; }
 
   /* ---- detail ---- */
   #gx-detail { min-height:120px; }
-  .hero { display:flex; flex-wrap:wrap; align-items:center; gap:8px 20px; }
-  .hero .sym { font-size:24px; font-weight:700; } .hero .nm { color:var(--muted); font-size:13px; }
-  .regbadge { font-size:13px; font-weight:600; padding:5px 13px; border-radius:9px; border:1px solid var(--line); }
-  .heronum { font-size:13px; } .heronum b { font-size:16px; } .heronum.big b { font-size:19px; }
+
+  /* command-center hero (3-zone grid) */
+  .hero3 { display:grid; grid-template-columns:1.5fr 1.05fr 1.05fr; gap:14px; align-items:stretch; }
+  @media (max-width:860px){ .hero3 { grid-template-columns:1fr; } }
+  .hz { background:var(--panel2); border:1px solid var(--line); border-radius:11px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; }
+  .hz-id .sym { font-size:26px; font-weight:800; letter-spacing:.3px; } .hz-id .nm { color:var(--muted); font-size:13px; margin-left:6px; }
+  .hz-id .spot { font-size:30px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .hz-id .spot .lbl { font-size:12px; color:var(--muted); font-weight:500; margin-right:6px; }
+  .regbanner { border-radius:9px; border:1px solid var(--line); padding:9px 12px; font-size:13px; font-weight:600; line-height:1.4; }
+  .regbanner.calm { background:color-mix(in srgb,var(--up) 13%, var(--panel)); border-color:var(--up); }
+  .regbanner.jumpy { background:color-mix(in srgb,var(--down) 13%, var(--panel)); border-color:var(--down); }
+  .regbanner.mixed { background:color-mix(in srgb,var(--g-mid) 30%, var(--panel)); }
+  .vitals { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .vital { background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:8px 10px; }
+  .vital .k { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .vital .v { font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px; line-height:1.2; }
+  .vital .v small { font-size:11px; font-weight:500; color:var(--muted); }
+  .hz-foot { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
+
+  /* headline tilt strip (in hero) */
+  .tiltline { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; }
+  .tiltline .arrow { font-size:16px; font-weight:800; }
+  .tiltline.up .arrow, .tiltline.up b { color:var(--up); } .tiltline.down .arrow, .tiltline.down b { color:var(--down); }
+  .tiltline.pin .arrow { color:var(--orange); } .tiltline.vol .arrow { color:var(--orange); }
+
+  /* pills: strength + horizon */
+  .sbar { display:inline-flex; gap:2px; vertical-align:middle; }
+  .sbar i { width:7px; height:11px; border-radius:2px; background:var(--line); display:inline-block; }
+  .spill { font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+  .hpill { font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:20px; border:1px solid var(--info); color:var(--info); white-space:nowrap; }
+  .tonepill { font-size:10.5px; font-weight:600; padding:1px 8px; border-radius:6px; border:1px solid var(--line); white-space:nowrap; }
+
   .grid2 { display:grid; grid-template-columns:1fr; gap:14px; } @media(min-width:900px){ .grid2 { grid-template-columns:1fr 1fr; } }
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
   .gcard { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; }
@@ -84,32 +135,49 @@
   .help-pop b { font-weight:700; }
 
   /* ---- the Game Plan card (beginner signal read) ---- */
-  .gx-gameplan { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info); border-radius:10px; padding:12px 15px; margin-top:12px; }
+  .gx-gameplan { background:var(--panel2); border:1px solid var(--line); border-left:3px solid var(--info); border-radius:10px; padding:13px 16px; }
   .gx-gameplan.gp-calm, .gx-gameplan.gp-up { border-left-color:var(--up); }
-  .gx-gameplan.gp-jumpy { border-left-color:var(--down); }
+  .gx-gameplan.gp-jumpy, .gx-gameplan.gp-down { border-left-color:var(--down); }
   .gx-gameplan.gp-warn { border-left-color:var(--orange); }
   .gx-gameplan.gp-neutral { border-left-color:var(--info); }
-  .gp-head { display:flex; align-items:center; gap:9px; }
+  .gp-head { display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
   .gp-icon { font-size:20px; line-height:1; }
   .gp-verdict { font-size:17px; font-weight:700; letter-spacing:.2px; }
   .gp-calm .gp-verdict, .gp-up .gp-verdict { color:var(--up); }
-  .gp-jumpy .gp-verdict { color:var(--down); }
+  .gp-jumpy .gp-verdict, .gp-down .gp-verdict { color:var(--down); }
   .gp-warn .gp-verdict { color:var(--orange); }
   .gp-sub { font-size:13.5px; line-height:1.55; margin-top:6px; }
-  .gp-levels { margin-top:11px; border-top:1px solid var(--line); padding-top:10px; display:flex; flex-direction:column; gap:9px; }
+  .gp-levels { margin-top:12px; border-top:1px solid var(--line); padding-top:11px; display:flex; flex-direction:column; gap:11px; }
   .gp-weak { font-size:12px; color:var(--muted); font-style:italic; }
   .gp-lvl { display:grid; grid-template-columns:max-content 1fr; gap:3px 16px; align-items:baseline; }
-  @media (max-width:640px){ .gp-lvl { grid-template-columns:1fr; gap:2px; } }
-  .gp-lk { font-size:13px; white-space:nowrap; }
-  .gp-li { margin-right:5px; }
+  @media (max-width:640px){ .gp-lvl { grid-template-columns:1fr; gap:3px; } }
+  .gp-lk { font-size:13px; white-space:nowrap; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .gp-li { margin-right:1px; }
   .gp-ll { color:var(--muted); }
-  .gp-lv { font-size:14.5px; font-weight:700; margin-left:3px; }
+  .gp-lv { font-size:14.5px; font-weight:700; }
   .gp-lt { font-size:12.5px; color:var(--muted); line-height:1.5; }
-  .gp-range { margin-top:11px; border-top:1px solid var(--line); padding-top:10px; }
+  .gp-range { margin-top:12px; border-top:1px solid var(--line); padding-top:11px; }
   .gp-rk { font-size:12.5px; color:var(--muted); }
   .gp-rv { font-size:15px; margin-top:2px; }
   .gp-rc { margin-top:3px; }
-  .gp-chip { margin-top:11px; font-size:12px; line-height:1.5; border:1px solid var(--orange); border-radius:8px; padding:8px 11px; }
+  .gp-chip { margin-top:12px; font-size:12px; line-height:1.5; border:1px solid var(--orange); border-radius:8px; padding:8px 11px; }
+  /* "what could change it" trigger checklist */
+  .gp-trig { margin-top:12px; border-top:1px solid var(--line); padding-top:11px; }
+  .gp-trig .h { font-size:12.5px; color:var(--muted); margin-bottom:6px; }
+  .gp-trig ul { margin:0; padding-left:2px; list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .gp-trig li { font-size:12.5px; line-height:1.45; display:flex; gap:8px; }
+  .gp-trig li .ic { flex:none; }
+
+  /* ---- directional tilt panel (leans by horizon) ---- */
+  .dt-panel { border-left:3px solid var(--info); }
+  .dt-leg { display:grid; grid-template-columns:26px max-content 1fr; gap:4px 12px; align-items:start; padding:9px 0; border-top:1px solid var(--line); }
+  .dt-leg:first-of-type { border-top:none; }
+  .dt-arrow { font-size:17px; font-weight:800; text-align:center; line-height:1.3; }
+  .dt-arrow.up { color:var(--up); } .dt-arrow.down { color:var(--down); } .dt-arrow.pin { color:var(--orange); } .dt-arrow.flat { color:var(--muted); }
+  .dt-mid { display:flex; flex-direction:column; gap:4px; }
+  .dt-sig { font-size:13px; font-weight:600; }
+  .dt-why { font-size:12.5px; color:var(--muted); line-height:1.45; align-self:center; }
+  .dt-meta { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
 
   /* ---- volatility hole ---- */
   .vhole { border-left:3px solid var(--info); }
@@ -119,6 +187,7 @@
   .vh-badge.up { color:var(--up); border-color:var(--up); } .vh-badge.down { color:var(--down); border-color:var(--down); }
   .vh-badge.neu { color:var(--info); border-color:var(--info); } .vh-badge.vol { color:var(--orange); border-color:var(--orange); }
   .vh-badge.na { color:var(--muted); }
+  .vh-armed { display:inline-block; margin-left:8px; font-size:11px; font-weight:700; color:var(--orange); border:1px solid var(--orange); border-radius:6px; padding:1px 7px; }
   .vh-read { font-size:13.5px; line-height:1.62; margin-top:10px; } .vh-read b { font-weight:700; }
   .vh-band { position:relative; height:52px; margin:16px 8px 8px; }
   .vh-band .track { position:absolute; left:0; right:0; top:23px; height:8px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); }
@@ -135,16 +204,16 @@
   .vh-pill.up { color:var(--up); border-color:var(--up); } .vh-pill.down { color:var(--down); border-color:var(--down); }
   .vh-pill.neu { color:var(--info); } .vh-pill.vol { color:var(--orange); border-color:var(--orange); } .vh-pill.na { color:var(--muted); }
 
-  /* levels ruler — two label lanes (above / below the axis) to avoid collisions */
-  .ruler { position:relative; height:88px; margin:14px 6px 4px; }
-  .ruler .axis { position:absolute; left:0; right:0; top:44px; height:2px; background:var(--line); }
+  /* levels ruler — strength-encoded markers, two label lanes to avoid collisions */
+  .ruler { position:relative; height:96px; margin:16px 6px 6px; }
+  .ruler .axis { position:absolute; left:0; right:0; top:48px; height:2px; background:var(--line); }
   .ruler .mk { position:absolute; top:0; bottom:0; width:0; transform:translateX(-50%); }
-  .ruler .mk i { position:absolute; top:38px; left:0; transform:translateX(-50%); width:2px; height:14px; background:var(--muted); }
+  .ruler .mk i { position:absolute; top:42px; left:0; transform:translateX(-50%); width:3px; height:14px; border-radius:2px; background:var(--muted); }
   .ruler .mk .lbl { position:absolute; left:0; transform:translateX(-50%); text-align:center; white-space:nowrap; }
   .ruler .mk.lane0 .lbl { top:2px; } .ruler .mk.lane1 .lbl { bottom:2px; }
-  .ruler .mk .val { display:block; font-size:11.5px; font-weight:600; }
-  .ruler .mk .lab { display:block; font-size:10px; color:var(--muted); }
-  .ruler .mk.spot i { background:var(--text); height:18px; top:36px; } .ruler .mk.spot .val { color:var(--text); }
+  .ruler .mk .val { display:block; font-size:11.5px; font-weight:700; }
+  .ruler .mk .lab { display:block; font-size:9.5px; color:var(--muted); }
+  .ruler .mk.spot i { background:var(--text); height:20px; top:39px; width:2px; } .ruler .mk.spot .val { color:var(--text); }
   .ruler .mk.cw i { background:var(--up); } .ruler .mk.pw i { background:var(--down); }
   .ruler .mk.flip i { background:var(--info); } .ruler .mk.mp i { background:var(--orange); }
 
@@ -178,9 +247,46 @@
   .floaty-tip { position:fixed; pointer-events:none; z-index:90; background:var(--panel); border:1px solid var(--line); border-radius:7px; padding:6px 9px; font-size:11.5px; box-shadow:var(--popover-shadow); display:none; white-space:nowrap; }
   .gx-loading { color:var(--muted); padding:30px 6px; text-align:center; }
   [data-lang="en"] .l-zh, [data-lang="zh"] .l-en { display:none; }
+
+  /* ---- Market Weather hero (validated index vol regime) ---- */
+  .weather { border-left:3px solid var(--info); }
+  .wx-scored { font-size:11px; font-weight:700; color:var(--up); border:1px solid var(--up); border-radius:6px; padding:2px 8px; white-space:nowrap; }
+  .wx-head { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:6px; }
+  .wx-icon { font-size:30px; line-height:1; }
+  .wx-verdict { font-size:20px; font-weight:800; letter-spacing:.2px; }
+  .wx-calm .wx-verdict, .wx-up .wx-verdict { color:var(--up); }
+  .wx-jumpy .wx-verdict { color:var(--down); } .wx-warn .wx-verdict { color:var(--orange); }
+  .wx-gauge { flex:1 1 180px; min-width:150px; max-width:320px; }
+  .wx-gauge .track { position:relative; height:8px; border-radius:5px; background:linear-gradient(90deg,var(--down),var(--panel2) 50%,var(--up)); border:1px solid var(--line); }
+  .wx-gauge .mk { position:absolute; top:-4px; width:3px; height:14px; background:var(--text); transform:translateX(-50%); border-radius:2px; }
+  .wx-gauge .lbls { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:5px; }
+  .wx-sub { font-size:14px; line-height:1.55; margin-top:11px; }
+  .wx-bullets { margin:10px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
+  .wx-bullets li { font-size:12.5px; line-height:1.5; padding-left:18px; position:relative; }
+  .wx-bullets li::before { content:"▸"; position:absolute; left:2px; color:var(--muted); }
+  .wx-stats { display:flex; flex-wrap:wrap; gap:7px 9px; margin-top:12px; }
+  .wx-stat { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; }
+  .wx-stat .k { color:var(--muted); font-size:10.5px; display:block; } .wx-stat .v { font-weight:700; font-size:13px; }
+  .wx-foot { font-size:11px; color:var(--muted); margin-top:11px; font-style:italic; line-height:1.5; }
+
+  /* ---- measured options-flow card ---- */
+  .fl { background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:12px 15px; border-left:3px solid var(--info); }
+  .fl.s-pos { border-left-color:var(--up); } .fl.s-neg { border-left-color:var(--down); } .fl.s-neutral { border-left-color:var(--info); }
+  .fl-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; }
+  .fl-tag { font-size:13px; font-weight:700; } .fl-verdict { font-size:13.5px; color:var(--text); }
+  .fl.s-pos .fl-verdict { color:var(--up); } .fl.s-neg .fl-verdict { color:var(--down); }
+  .fl-chips { display:flex; flex-wrap:wrap; gap:7px 8px; margin-top:11px; }
+  .fl-chip { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:12px; }
+  .fl-chip .k { color:var(--muted); font-size:10.5px; display:block; } .fl-chip .v { font-weight:700; font-size:14px; }
+  .fl-chip.pos .v { color:var(--up); } .fl-chip.neg .v { color:var(--down); }
+  .fl-chip.soft { border-style:dashed; opacity:.78; } .fl-chip.soft .v { color:var(--muted); font-weight:600; }
+  .fl-sec { margin-top:12px; border-top:1px solid var(--line); padding-top:9px; }
+  .fl-h { font-size:12px; color:var(--muted); font-weight:600; }
+  .fl-sec ul { margin:6px 0 0; padding-left:18px; } .fl-sec li { font-size:12px; line-height:1.55; margin:3px 0; font-variant-numeric:tabular-nums; }
+  .fl-foot { font-size:11px; color:var(--muted); font-style:italic; margin-top:11px; line-height:1.5; }
 </style>
 </head>
-<body>
+<body class="page-gex">
 
 <nav class="site-nav">
     {% include "_navlinks.html.j2" %}
@@ -206,11 +312,21 @@
 <div class="panel">
   <div class="topline">
     <h1>🧲 {{ t('Options Desk', '期权台') }}</h1>
-    <span class="muted sm">{{ t('dealer-gamma levels, the walls, the vol surface & expected move — look up any name', '做市商Gamma价位、墙、波动率曲面与预期波动 — 可查询任意标的') }}</span>
+    <span class="muted sm">{{ t('dealer-gamma levels, the walls, the vol surface, scored signals & a timeframed read — look up any name', '做市商Gamma价位、墙、波动率曲面、评分信号与带时间窗的解读 — 可查询任意标的') }}</span>
   </div>
   <p class="muted sm note">{{ t(
-    "Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional: long gamma → dealers fade moves (price pins / mean-reverts, lower realized vol); short gamma → dealers chase (moves trend / amplify, higher vol). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, FRAGILE for single names (a covered-call ETF or heavy retail call-buying can flip it). Walls / flip / max-pain are levels to watch, never targets.",
-    "每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也无方向性：多头Gamma → 做市商抑制走势（价格磁吸/均值回归、已实现波动更低）；空头Gamma → 做市商追逐（走势趋势化/放大、波动更高）。做市商“多头看涨/空头看跌”的符号是不可观测的假设 — 对指数稳健，对个股脆弱（卖备兑ETF或散户大量买看涨可翻转）。墙/翻转/最大痛点仅供观察，绝非目标价。") }}</p>
+    "Daily, delayed Cboe chains — NOT live intraday flow. A VOL-REGIME + LEVELS MAP (where dealer hedging concentrates), not a buy list and not directional certainty: long gamma → dealers fade moves (price pins / mean-reverts, lower realized vol); short gamma → dealers chase (moves trend / amplify, higher vol). The dealer long-call/short-put SIGN is an unobservable assumption — robust for indices, FRAGILE for single names. Walls / flip / max-pain are levels to watch, never targets; every trigger is a daily CLOSE beyond a level.",
+    "每日、延迟的 Cboe 期权链 — 并非实时盘中流动。这是波动率体制 + 价位地图（做市商对冲集中之处），并非买入清单、也非方向定论：多头Gamma → 做市商抑制走势（价格磁吸/均值回归、已实现波动更低）；空头Gamma → 做市商追逐（走势趋势化/放大、波动更高）。做市商“多头看涨/空头看跌”符号是不可观测的假设 — 对指数稳健，对个股脆弱。墙/翻转/最大痛点仅供观察、绝非目标价；每个触发均为日线收盘越过某价位。") }}</p>
+</div>
+
+<!-- Market Weather: the VALIDATED index vol-regime read (engine/vol_regime; fetched client-side from vol/regime.json) -->
+<div class="panel weather" id="gx-weather" hidden>
+  <div class="topline" style="justify-content:space-between;align-items:flex-start">
+    <h2 style="margin:0">🌦️ {{ t('Market Weather — index vol regime', '市场天气 — 指数波动率体制') }}
+      {{ help('The one read on this page that is VALIDATED, not just displayed: a composite of the VIX/VIX3M term-structure slope + bond-vol (MOVE) + the vol-risk-premium, built from 1990+ history. On 33 years it predicts forward realized vol (HAC t ≈ −10) and, as a long/flat overlay, lifts Sharpe 0.65→0.84 and cuts drawdown (DSR 0.9998). No dealer-sign assumption. It drives a SUBTRACT-ONLY risk/sizing nudge — a regime read, never an intraday timer.', '本页唯一经过验证（而非仅展示）的读数：VIX/VIX3M期限结构斜率 + 债券波动率(MOVE) + 波动风险溢价的综合，基于1990年以来历史。33年中可预测前瞻已实现波动率(HAC t≈−10)，作为多/空仓叠加层将夏普从0.65提升至0.84并降低回撤(DSR 0.9998)。无做市商符号假设。它驱动仅做减法的风险/仓位微调 — 体制读数，绝非盘中择时。') }}</h2>
+    <span class="wx-scored" id="wx-scored" hidden>✓ {{ t('validated', '已验证') }}</span>
+  </div>
+  <div id="gx-weather-body"></div>
 </div>
 
 <details class="primer">
@@ -219,10 +335,10 @@
   <ul>
     <li>{{ t("Dealers are the banks that sell most options. To stay market-neutral, they constantly buy and sell the stock to offset what they've sold — and that hedging quietly pushes the price around.", "做市商是卖出大部分期权的银行。为保持市场中性，它们不断买卖股票以对冲卖出的部分 — 这种对冲会悄悄地推动价格。") }}</li>
     <li>{{ t("Sometimes their hedging calms the market, sometimes it makes it jumpy. When dealers lean against moves (sell rallies, buy dips), price tends to stick in a range. When they pile into moves (buy higher, sell lower), trends and air-pockets run bigger. This is about how volatile, not which direction.", "它们的对冲有时让市场平静、有时让市场跳动。当做市商逆势（涨时卖、跌时买），价格倾向停在区间；当它们顺势（追高、杀低），趋势与急跌都会更大。这关乎波动多大，而非方向。") }}</li>
-    <li>{{ t("“Walls” are price levels where that hedging is heaviest — a call wall above tends to act like a ceiling, a put wall below like a floor. They're where price tends to stall, not targets it aims for.", "“墙”是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。价格倾向在此停滞，而非以其为目标。") }}</li>
+    <li>{{ t("“Walls” are price levels where that hedging is heaviest — a call wall above tends to act like a ceiling, a put wall below like a floor. We score each one Strong → Faint so you can see which walls are firm and which are flimsy. They're where price tends to stall, not targets it aims for.", "“墙”是对冲最重的价位 — 上方看涨墙像天花板，下方看跌墙像地板。我们为每面墙评分（强 → 微弱），以便看清哪些墙坚固、哪些松散。价格倾向在此停滞，而非以其为目标。") }}</li>
     <li>{{ t("“The flip” is the line between calm and jumpy. Above it the market is usually calmer; below it, jumpier. It's a regime boundary you watch like a thermostat — not a support or resistance level.", "“翻转”是平静与跳动的分界。其上市场通常更平静，其下更跳动。它是像恒温器一样观察的体制边界 — 而非支撑或阻力位。") }}</li>
-    <li>{{ t("How to use it: pick a ticker, read the one-line Game Plan, then watch the walls and the flip as the levels that matter today. Every trigger is a daily closing price beyond a level, since the data is end-of-day.", "用法：选一个代码，读一行“行动计划”，再把墙与翻转作为今日关键价位观察。由于数据为收盘，每个触发都是日线收盘越过某价位。") }}</li>
-    <li>{{ t("The dealer math is an assumption — solid for big indices and ETFs (SPX, SPY, QQQ), but shaky and sometimes flat wrong for single stocks. Treat single-name levels as loose context.", "做市商的推算是一种假设 — 对大型指数与ETF（SPX、SPY、QQQ）稳健，但对个股不稳、有时完全错误。个股价位仅作宽松背景。") }}</li>
+    <li>{{ t("The “directional tilt” is split BY TIME WINDOW, because different option forces act on different clocks (an intraday charm drift vs a days-to-weeks skew). Each lean is a tendency from delayed positioning — not a trade and not a target.", "“方向倾向”按时间窗拆分，因为不同期权力量作用于不同时间窗（日内的charm漂移 vs 数日至数周的偏斜）。每条均为延迟仓位的方向倾向 — 非交易、非目标。") }}</li>
+    <li>{{ t("How to use it: pick a ticker, read the one-line Game Plan, check the scored walls and the timeframed tilt, then watch the daily-close triggers. The dealer math is solid for big indices/ETFs but shaky for single stocks — treat single-name levels as loose context.", "用法：选一个代码，读一行“行动计划”，查看评分的墙与带时间窗的倾向，再关注日线收盘触发。做市商推算对大型指数/ETF稳健，对个股不稳 — 个股价位仅作宽松背景。") }}</li>
   </ul>
 </details>
 
@@ -233,47 +349,59 @@
       <input id="gx-q" type="text" autocomplete="off" placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…">
       <div class="gx-sugg" id="gx-sugg"></div>
     </div>
+    <span class="muted sm">{{ t('or open the full sortable board below', '或展开下方完整可排序看板') }} ↓</span>
+  </div>
+</div>
+
+<div id="gx-detail"><div class="gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
+
+<section id="gx-boardwrap" class="collapsed">
+  <button id="gx-board-expand" class="gx-board-cta" type="button">
+    <span class="big">📋 {{ t('Open the full board', '打开完整看板') }}</span>
+    <span class="sub" id="gx-board-cta-sub">{{ t('every name at a glance · sortable · scored', '所有标的一览 · 可排序 · 已评分') }}</span>
+  </button>
+  <div id="gx-board-inner">
+    <button class="board-collapse top" type="button" data-act="collapse">▴ {{ t('Hide board', '收起看板') }}</button>
+    <div class="board-head">
+      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Each column has its own ❓ — hover it for a plain-English explanation. Click a header to sort, or click any row for the full breakdown. Greyed rows (◐) have chains too thin to trust the dealer sign.', '每列都有自己的 ❓ — 悬停查看通俗解释。点击表头排序，或点击任意行查看完整分解。灰色行（◐）期权链过薄，方向不可靠。') }}</h2>
+      <span id="gx-coverage" class="muted sm"></span>
+    </div>
     <div class="chips" id="gx-chips">
       <span class="chip on" data-grp="__all">{{ t('All', '全部') }}</span>
       {% for g in groups %}<span class="chip" data-grp="{{ g }}">{{ td(g) }}</span>{% endfor %}
     </div>
-  </div>
-  <div class="boardwrap">
-    <div class="topline" style="justify-content:space-between">
-      <h2 style="margin:0">{{ t('Board — every name at a glance', '总览 — 所有标的一览') }} {{ help('Each column has its own ❓ — hover it for a plain-English explanation. Click a header to sort, or click any row for the full breakdown.', '每列都有自己的 ❓ — 悬停查看通俗解释。点击表头排序，或点击任意行查看完整分解。') }}</h2>
-      <button class="collapse-btn" id="gx-board-toggle">{{ t('hide', '隐藏') }}</button>
-    </div>
-    <div class="hm-scroll" id="gx-board-scroll">
+    <div class="hm-scroll" id="gx-board-scroll" style="margin-top:10px">
       <table class="board" id="gx-board">
         <thead><tr>
           <th data-sort="key">{{ t('Symbol', '代码') }}</th>
           <th data-sort="spot">{{ t('Spot', '现价') }}</th>
           <th data-sort="regime">{{ t('Regime', '体制') }}<span class="bhelp" data-h="regime" tabindex="0" role="button" aria-label="What is Regime?">?</span></th>
           <th data-sort="vh_state">{{ t('Vol hole', '波动洞') }}<span class="bhelp" data-h="volhole" tabindex="0" role="button" aria-label="What is Vol hole?">?</span></th>
+          <th data-sort="tilt_read">{{ t('Lean', '倾向') }}<span class="bhelp" data-h="lean" tabindex="0" role="button" aria-label="What is Lean?">?</span></th>
           <th data-sort="net_gex_bn">{{ t('Net GEX', '净GEX') }}<span class="bhelp" data-h="netgex" tabindex="0" role="button" aria-label="What is Net GEX?">?</span></th>
           <th data-sort="dist_to_flip_pct">{{ t('Flip', '翻转') }}<span class="bhelp" data-h="flip" tabindex="0" role="button" aria-label="What is Flip?">?</span></th>
           <th data-sort="iv30">IV30<span class="bhelp" data-h="iv30" tabindex="0" role="button" aria-label="What is IV30?">?</span></th>
+          <th data-sort="iv_rank_band">IVR<span class="bhelp" data-h="ivr" tabindex="0" role="button" aria-label="What is IV rank?">?</span></th>
           <th data-sort="daily_move_pct">{{ t('Exp. move', '预期波动') }}<span class="bhelp" data-h="expmove" tabindex="0" role="button" aria-label="What is Expected move?">?</span></th>
           <th data-sort="put_call_oi_ratio">P/C<span class="bhelp" data-h="pc" tabindex="0" role="button" aria-label="What is Put/Call?">?</span></th>
         </tr></thead>
         <tbody><!-- filled by gex.js --></tbody>
       </table>
     </div>
+    <button class="board-collapse bottom" type="button" data-act="collapse">▴ {{ t('Hide board', '收起看板') }}</button>
   </div>
-</div>
-
-<div id="gx-detail"><div class="gx-loading">{{ t('Loading…', '加载中…') }}</div></div>
+</section>
 
 <div class="panel">
   <p class="muted xs" style="margin:0">{{ t(
-    'Source: Cboe delayed option chains (free, keyless) → engine/gex_model.py + engine/gex_engine.py. Greeks dividend-adjusted; the gamma-flip & profile curve are grid-reevaluated across spot. Daily EOD levels, delayed — OI updates once per day, this is NOT live intraday flow. A regime + levels map, display-only, never a scored signal. See LIMITATIONS.md.',
-    '来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_model.py + engine/gex_engine.py。希腊字母经股息调整；Gamma翻转与曲线在现价网格上重估。每日延迟价位 — OI每日更新一次，并非实时盘中流动。体制+价位地图，仅供展示，绝非评分信号。') }}
+    'Source: Cboe delayed option chains (free, keyless) → engine/gex_model.py + engine/gex_engine.py. Greeks dividend-adjusted; the gamma-flip & profile curve are grid-reevaluated across spot. Level strength, 25Δ skew, IV-rank & the timeframed tilt are transparent display-only derivations — never scored signals. Daily EOD levels, delayed — OI updates once per day, this is NOT live intraday flow and misses 0DTE. See LIMITATIONS.md.',
+    '来源：Cboe 延迟期权链（免费、无需密钥）→ engine/gex_model.py + engine/gex_engine.py。希腊字母经股息调整；Gamma翻转与曲线在现价网格上重估。墙强度、25Δ偏斜、IV分位与带时间窗的倾向均为透明的仅供展示推导 — 绝非评分信号。每日延迟价位 — OI每日更新一次，并非实时盘中流动、且不含0DTE。') }}
     {{ t('Generated', '生成于') }} {{ built }}</p>
 </div>
 
 <div class="floaty-tip" id="gx-tip"></div>
 <div class="help-pop" id="gx-htip"></div>
-<script>window.GEX_MANIFEST = {{ manifest_json|safe }}; window.GEX_DEFAULT = "{{ default_key }}";</script>
+<script>window.GEX_MANIFEST = {{ manifest_json|safe }}; window.GEX_DEFAULT = "{{ default_key }}"; window.GEX_COVERAGE = {{ coverage_json|safe }};</script>
 <script src="gex.js"></script>
 <script src="theme.js"></script>
 </body>

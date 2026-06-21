@@ -657,12 +657,39 @@ def options(inputs: dict, cfg: dict) -> pd.DataFrame:
     if snap is not None and not snap.empty:
         o = snap.copy()
         o.index = pd.to_datetime(o.index)
-        for c in ("skew_25d", "rr_25d", "term_slope_30_90", "atm_iv_30d",
-                  "put_call_oi_ratio", "max_pain", "gex_per_1pct_usd",
+        for c in ("skew_25d", "rr_25d", "term_slope_30_90", "atm_iv_7d", "atm_iv_30d",
+                  "atm_iv_90d", "put_call_oi_ratio", "max_pain", "gex_per_1pct_usd",
                   "skew_term", "basis_front_ann", "basis_ann", "basis_slope",
                   "gamma_flip", "dist_to_flip_pct", "gamma_regime"):
             if c in o.columns:
                 out[c] = o[c].reindex(idx).ffill()
+
+    # --- VRP regime: variance-risk-premium z + state (deep 2021->, calibratable). vol_rich
+    #     = implied >> delivered (options expensive → sell-vol / vol mean-reverts down);
+    #     vol_cheap = implied underpricing risk (cheap → vol-expansion / drawdown tail). ---
+    if "vrp" in out:
+        out["vrp_z"] = _zscore(out["vrp"], cfg.get("vrp_z_window_d", 365)).clip(-4, 4)
+        rich, cheap = cfg.get("vrp_rich_z", 0.7), cfg.get("vrp_cheap_z", -0.7)
+        out["vrp_state"] = np.where(out["vrp_z"] >= rich, "vol_rich",
+                           np.where(out["vrp_z"] <= cheap, "vol_cheap", "vol_fair"))
+    # --- DVOL-implied forward expected-move band — the options leg of the RISK model:
+    #     ±1σ price band over the horizon from the implied (annualized) vol. ---
+    if "dvol" in out:
+        h = int(cfg.get("expected_move_horizon_d", 30))
+        sigma = out["dvol"] / 100.0 * np.sqrt(h / 365.0)
+        out["expected_move_pct"] = sigma * 100.0
+        out["em_upper"] = close * (1 + sigma)
+        out["em_lower"] = close * (1 - sigma)
+    # --- IV term structure + 25Δ skew (snapshot context; forward-accumulating) ---
+    if "atm_iv_30d" in out and "atm_iv_90d" in out:
+        term = out["atm_iv_90d"] - out["atm_iv_30d"]
+        out["iv_term_spread"] = term
+        bw = cfg.get("term_backwardation_pct", -1.0)
+        out["iv_term_state"] = np.where(term <= bw, "backwardation",
+                               np.where(term >= -bw, "contango", "flat"))
+    if "rr_25d" in out:
+        out["skew_state"] = np.where(out["rr_25d"] < -1.0, "put_bid",
+                            np.where(out["rr_25d"] > 1.0, "call_bid", "balanced"))
     return out
 
 
@@ -917,6 +944,51 @@ def cme_basis(inputs: dict, cfg: dict) -> pd.DataFrame:
     out["cme_basis_pctile"] = _pctile(basis, cfg.get("pctile_lookback_d", 365)) * 100
     out["cme_basis_regime"] = np.where(basis > cfg.get("froth_pct", 0.7), "contango",
                               np.where(basis < cfg.get("stress_pct", -0.2), "backwardation", "flat"))
+    return out
+
+
+def futures_carry(inputs: dict, cfg: dict) -> pd.DataFrame:
+    """Consolidated derivatives CARRY across the futures complex — one leverage-cycle
+    read fusing the annualized carries already stored: CME regulated basis (2017->),
+    perp funding (annualized, 2023->), and Deribit dated-future basis (snapshot). Each
+    z-scored vs its own ~1y norm, then weighted-averaged. Froth = leveraged longs paying
+    up across the complex (late-cycle); stress = backwardation / negative funding
+    (deleveraging / capitulation). Confirmation context (leg depth varies), not a deep
+    calibration anchor — the honest read."""
+    close = inputs["price"]["close"]
+    idx = close.index
+    out = pd.DataFrame(index=idx)
+    zw = cfg.get("z_window_d", 365)
+    parts, weights = [], []
+
+    fut = inputs.get("btc_future")
+    if fut is not None:
+        f = (fut[fut.columns[0]] if hasattr(fut, "columns") else fut).reindex(idx).ffill(limit=3)
+        cme = (f / close - 1.0) * 100.0
+        out["carry_cme_pct"] = cme
+        parts.append(_zscore(cme, zw)); weights.append(cfg.get("cme_weight", 1.0))
+
+    funding = inputs.get("funding")
+    if funding is not None:
+        ann = funding.reindex(idx).ffill(limit=3) * 3 * 365 * 100   # 8h funding -> annualized %
+        out["carry_funding_ann"] = ann
+        parts.append(_zscore(ann, zw)); weights.append(cfg.get("funding_weight", 0.8))
+
+    snap = inputs.get("options_structure")
+    if snap is not None and not snap.empty and "basis_ann" in snap.columns:
+        b = snap["basis_ann"].copy()
+        b.index = pd.to_datetime(b.index)
+        out["carry_deribit_ann"] = b.reindex(idx).ffill(limit=7)
+        parts.append(_zscore(out["carry_deribit_ann"], zw)); weights.append(cfg.get("deribit_weight", 0.6))
+
+    if parts:
+        stacked = pd.concat(parts, axis=1).clip(-4, 4)
+        wsum = stacked.notna().mul(weights, axis=1).sum(axis=1)
+        carry_z = (stacked.mul(weights, axis=1).sum(axis=1, min_count=1) / wsum.replace(0, np.nan))
+        out["futures_carry_z"] = carry_z.clip(-4, 4)
+        froth, stress = cfg.get("froth_z", 0.8), cfg.get("stress_z", -0.8)
+        out["futures_carry_state"] = np.where(carry_z >= froth, "froth",
+                                     np.where(carry_z <= stress, "stress", "neutral"))
     return out
 
 
@@ -1232,12 +1304,38 @@ def onchain_regime(inputs: dict, cfg: dict) -> pd.DataFrame:
     idx = close.index
     out = pd.DataFrame(index=idx)
 
-    prem = inputs.get("coinbase_premium")
+    # Coinbase Premium MODEL — the US-institutional-demand spread (Coinbase USD vs the
+    # offshore USDT price). Prefer a SELF-COMPUTED premium (our own Coinbase-USD close vs
+    # the OKX BTC-USDT close, fresh daily, 2018->) and splice the bgeo coinbase-premium
+    # index onto any gaps / the deep tail. Then a smoothed level, extremity z/percentile,
+    # a regime state, and a smart-money DIVERGENCE (price trend vs premium trend).
+    prem_bgeo = inputs.get("coinbase_premium")           # bgeo index % (2022->, quota-limited)
+    okx_usdt = inputs.get("okx_spot_usdt")               # offshore USDT reference (2018->)
+    prem = None
+    if okx_usdt is not None:
+        ou = okx_usdt.reindex(idx).ffill(limit=3)
+        prem = ((close - ou) / ou * 100.0).where(ou > 0)  # self-computed Coinbase−OKX spread %
+    if prem_bgeo is not None:
+        pb = prem_bgeo.reindex(idx).ffill(limit=3)
+        prem = pb if prem is None else prem.fillna(pb)    # bgeo fills the pre-2018 tail / gaps
     if prem is not None:
-        p = prem.reindex(idx).ffill(limit=3)
+        p = prem.clip(-5, 5)                              # tame brief dislocation spikes (±10%+)
         out["coinbase_premium"] = p
-        # EMA tames the brief dislocation spikes (±10%+) in the raw index
-        out["coinbase_premium_ema"] = _ema(p.clip(-5, 5), cfg["premium_smooth_d"])
+        ema = _ema(p, cfg["premium_smooth_d"])
+        out["coinbase_premium_ema"] = ema
+        out["coinbase_premium_z"] = _zscore(ema, cfg.get("premium_z_window_d", 180)).clip(-4, 4)
+        out["coinbase_premium_pctile"] = _pctile(ema, cfg.get("premium_pctile_lookback_d", 365)) * 100
+        hi, oh = cfg.get("premium_state_hi", 0.35), cfg.get("premium_state_overheat", 0.9)
+        lo, dp = cfg.get("premium_state_lo", -0.2), cfg.get("premium_state_deep", -0.6)
+        out["coinbase_premium_state"] = np.where(ema >= oh, "overheated",
+                                        np.where(ema >= hi, "premium",
+                                        np.where(ema <= dp, "deep_discount",
+                                        np.where(ema <= lo, "discount", "neutral"))))
+        dw = cfg.get("premium_div_window_d", 21)
+        pr_chg, pm_chg = close.pct_change(dw), ema.diff(dw)
+        div = np.where((pr_chg > 0) & (pm_chg < 0), "distribution",
+              np.where((pr_chg < 0) & (pm_chg > 0), "accumulation", "aligned"))
+        out["coinbase_premium_divergence"] = pd.Series(div, index=idx).where(ema.notna())
 
     ssr = inputs.get("ssr")
     if ssr is not None:
@@ -1269,22 +1367,60 @@ def etf_flow(inputs: dict, cfg: dict) -> pd.DataFrame:
     close = inputs["price"]["close"]
     idx = close.index
     out = pd.DataFrame(index=idx)
-    ef = inputs.get("etf_flow")
-    if ef is None:
-        return out
-    f = ef.reindex(idx)                                    # daily net flow, BTC (NaN pre-launch)
-    out["etf_flow_btc"] = f
-    out["etf_flow_usd_mn"] = (f * close) / 1e6            # USD millions (panel-friendly)
-    sm = f.rolling(cfg["smooth_d"], min_periods=cfg["min_periods_d"]).sum()
-    out["etf_flow_sum"] = sm                              # N-day net flow = the regime
     w, mp = cfg["z_window_d"], cfg["z_min_periods_d"]
-    mu = sm.rolling(w, min_periods=mp).mean()
-    sd = sm.rolling(w, min_periods=mp).std()
-    out["etf_flow_z"] = ((sm - mu) / sd).clip(-3, 3)     # extremity vs recent norm
-    out["etf_flow_cum"] = f.cumsum()                     # holdings proxy (BTC) since launch
-    out["etf_flow_state"] = _hysteresis_tri(
-        out["etf_flow_z"], cfg["state_enter_z"], cfg["state_exit_z"],
-        labels=("distribution", "neutral", "accumulation"))
+    ef = inputs.get("etf_flow")
+    if ef is not None:                                     # bgeo aggregate (BTC) — cross-check / legacy
+        f = ef.reindex(idx)                                # daily net flow, BTC (NaN pre-launch)
+        out["etf_flow_btc"] = f
+        out["etf_flow_usd_mn"] = (f * close) / 1e6        # USD millions (panel-friendly)
+        sm = f.rolling(cfg["smooth_d"], min_periods=cfg["min_periods_d"]).sum()
+        out["etf_flow_sum"] = sm                          # N-day net flow = the regime
+        mu = sm.rolling(w, min_periods=mp).mean()
+        sd = sm.rolling(w, min_periods=mp).std()
+        out["etf_flow_z"] = ((sm - mu) / sd).clip(-3, 3)  # extremity vs recent norm
+        out["etf_flow_cum"] = f.cumsum()                  # holdings proxy (BTC) since launch
+        out["etf_flow_state"] = _hysteresis_tri(
+            out["etf_flow_z"], cfg["state_enter_z"], cfg["state_exit_z"],
+            labels=("distribution", "neutral", "accumulation"))
+
+    # --- Farside per-fund layer (US$m, 2024-01->): richer/fresher/per-issuer. Primary
+    #     going forward; the bgeo BTC series above is the cross-check / fallback. ---
+    fa = inputs.get("farside_total")
+    if fa is not None:
+        tot = fa.reindex(idx)                              # daily net flow, US$m
+        out["etf_flow_total_usd"] = tot
+        usd_sum = tot.rolling(cfg.get("usd_smooth_d", 5), min_periods=2).sum()
+        out["etf_usd_sum"] = usd_sum
+        out["etf_usd_z"] = ((usd_sum - usd_sum.rolling(w, min_periods=mp).mean())
+                            / usd_sum.rolling(w, min_periods=mp).std()).clip(-3, 3)
+        out["etf_usd_cum"] = tot.cumsum().ffill()          # net $ in since launch (AUM-in proxy; carries across non-publish days)
+        if "etf_flow_z" not in out:                        # no bgeo → drive the scored z/state off USD
+            out["etf_flow_z"] = out["etf_usd_z"]
+            out["etf_flow_state"] = _hysteresis_tri(
+                out["etf_flow_z"], cfg["state_enter_z"], cfg["state_exit_z"],
+                labels=("distribution", "neutral", "accumulation"))
+
+    fdf = inputs.get("farside_etf")
+    if fdf is not None and not fdf.empty:
+        fd = fdf.copy()
+        fd.index = pd.to_datetime(fd.index)
+        fd = fd.reindex(idx)
+        funds = [c for c in fd.columns if c != "total"]
+        if "gbtc" in fd.columns and "total" in fd.columns:  # strip GBTC one-way-unlock distortion
+            exg = fd["total"] - fd["gbtc"]
+            out["etf_exgbtc_usd"] = exg
+            out["etf_exgbtc_cum"] = exg.cumsum().ffill()
+        cw = cfg.get("conc_window_d", 21)                  # top issuer's share of GROSS flow (1 = one fund carries it)
+        roll = fd[funds].rolling(cw, min_periods=max(3, cw // 3)).sum()
+        gross = roll.abs().sum(axis=1).replace(0, np.nan)
+        out["etf_concentration"] = (roll.abs().max(axis=1) / gross).clip(0, 1)
+        dw = cfg.get("div_window_d", 21)                   # price-trend vs cumulative-flow-trend divergence
+        if "etf_usd_cum" in out:
+            pr_chg, fl_chg = close.pct_change(dw), out["etf_usd_cum"].diff(dw)
+            out["etf_flow_divergence"] = pd.Series(
+                np.where((pr_chg > 0) & (fl_chg < 0), "distribution",
+                np.where((pr_chg < 0) & (fl_chg > 0), "accumulation", "aligned")),
+                index=idx).where(out["etf_usd_cum"].notna())
     return out
 
 
@@ -1335,6 +1471,31 @@ def macro_overlay(inputs: dict, cfg: dict) -> pd.DataFrame:
     if dxy is not None:
         out["dxy"] = dxy
         drivers["dxy"] = -np.tanh(dxy.pct_change(cfg["dxy_roc_window_d"]) / cfg["dxy_roc_scale"])
+
+    # Tier-3 curve regime + Fed path — emitted as oriented {-2..+2} sub-scores for the
+    # macro-regime composite (engine/btc_regime). DELIBERATELY NOT folded into
+    # macro_score: the calibrated score stays unchanged; these are display-only.
+    spread, us10, dff = s("spread_2s10s"), s("us10y"), s("fed_funds")
+    if spread is not None and us10 is not None:
+        cw = cfg.get("curve_chg_window_d", 20)
+        steepening = spread.diff(cw) > 0          # term spread widening
+        bull = us10.diff(cw) < 0                   # long-end yields falling = "bull"
+        cs = pd.Series(np.nan, index=idx)
+        cs[bull & steepening] = 2                  # bull steepening — recovery fuel (best)
+        cs[bull & ~steepening] = 1                 # bull flattening — mixed-positive
+        cs[~bull & steepening] = -1                # bear steepening — ambiguous
+        cs[~bull & ~steepening] = -2               # bear flattening — worst (Fed choking)
+        out["curve_score"] = cs.where(spread.diff(cw).notna() & us10.diff(cw).notna())
+    if dff is not None:
+        fw = cfg.get("fed_chg_window_d", 60)
+        d_fed = dff.diff(fw)                        # <0 easing (bullish), >0 hiking (bearish)
+        fs = pd.Series(np.nan, index=idx)
+        fs[d_fed.notna()] = 0.0
+        fs[d_fed < -0.25] = 1                       # cutting
+        fs[d_fed < -0.75] = 2                       # cutting fast / post-pivot
+        fs[d_fed > 0.25] = -1                       # hiking
+        fs[d_fed > 0.75] = -2                       # hiking fast
+        out["fed_score"] = fs
 
     if drivers:
         dd = pd.DataFrame(drivers)
@@ -1429,6 +1590,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
     gl = global_liquidity(inputs, cfg["global_liquidity"])
     sc = stablecoin_tide(inputs, cfg["global_liquidity"])  # crypto-native liquidity tide
     cm = cme_basis(inputs, cfg.get("cme_basis", {}))       # regulated institutional carry (context)
+    fc = futures_carry(inputs, cfg.get("futures_carry", {}))  # consolidated derivatives-carry leverage cycle
     # Mastermind upgrade (research/VECTOR_FACTOR_ROADMAP_2026): deep miner-margin anchor +
     # conditional downside/upside beta (both pure-compute, deep) + cohort/attention/flow context.
     me = miner_economics(inputs, cfg.get("miner_econ", {}))
@@ -1442,7 +1604,7 @@ def compute_all(inputs: dict | None = None) -> pd.DataFrame:
                     close=inputs["price"]["close"])
 
     out = pd.concat([inputs["price"][["close"]], mom, rk, bf, st, gg, al,
-                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, cp, po, xa, bh, gl, sc, cm,
+                     va, mn, cb, ex, op, lv, ma, oc, ef, im, cc, cp, po, xa, bh, gl, sc, cm, fc,
                      me, cba, hs, at, tf], axis=1)
     out["cycle_position"] = cycle_stage(mom["momentum"], rk["risk_index"])
     alt = btc_vs_alts(inputs, cfg["btc_vs_alts"])

@@ -24,6 +24,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
 from engine import stock_score  # noqa: E402
+from engine import stock_technicals  # noqa: E402  — richer close-only technical snapshot
+from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
+from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX regime + margin risk
+from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
 from engine.setups import CN_ALPHA_WEIGHT, rank_setups, setup_score  # noqa: E402
@@ -135,10 +139,23 @@ def _one(ticker: str, close: pd.Series, high: pd.Series | None,
         return None
     month = int(c.index.max().month)
     seas = seasonality(c)
+    # RICH close-only technicals (engine.stock_technicals: momentum / 52w-high proximity / BBWP /
+    # HVP / RSI / MA regime) merged with the A-SHARE-specific reversal reads (china_signals: RSI-5/10,
+    # 5d return, distance-from-MA20, MA120 regime gate, price-limit + board type). Supersedes the
+    # thin close-only snapshot. The single-stock volatility black hole + the forward cone are added
+    # too — all best-effort so a thin/odd series never breaks the build.
+    try:
+        _tech = {**stock_technicals.snapshot(c), **china_signals.ashare_tech(c, ticker)}
+    except Exception:  # noqa: BLE001 — fall back to the thin snapshot
+        _tech = snapshot(c)
+    try:
+        _sq = vol_squeeze.assess(c)
+    except Exception:  # noqa: BLE001
+        _sq = None
     return {
         "ticker": ticker, "name": name, "sector": sector, "tv": tv_symbol(ticker),
         "asof": str(c.index.max().date()), "history_days": int(len(c)),
-        "tech": snapshot(c),
+        "tech": _tech, "vol_squeeze": _sq,
         "season_this": season_line(seas, month),
         "season_next": season_line(seas, month % 12 + 1),
         "season_this_zh": season_line(seas, month, zh=True),
@@ -509,7 +526,14 @@ def main(alpha: dict | None = None) -> dict | None:
     for _mod, _kw in (("collectors.china_analyst", {}),
                       ("collectors.china_earnings", {}),
                       ("collectors.china_margin_detail", {}),
-                      ("collectors.china_valuation", {"max_new": _val_cap})):
+                      ("collectors.china_valuation", {"max_new": _val_cap}),
+                      # US-parity alt-data feeds (snapshot refreshers, idempotent within a UTC day)
+                      ("collectors.china_comment", {}),       # 千股千评 attention / inst-participation / main-force cost
+                      ("collectors.china_lhb", {}),           # 龙虎榜 Dragon-Tiger smart/hot-money + institutional seats
+                      ("collectors.china_block_trades", {}),  # 大宗交易 block premium/discount
+                      ("collectors.china_zt_pool", {}),       # 涨停板 limit-up momentum / sector breadth
+                      ("collectors.china_buyback", {}),       # 回购 corporate buybacks
+                      ("collectors.china_pledge", {})):       # 股权质押 forced-sell tail risk
         try:
             importlib.import_module(_mod).refresh(**_kw)
         except Exception as e:  # noqa: BLE001 — additive context, never fatal
@@ -545,6 +569,53 @@ def main(alpha: dict | None = None) -> dict | None:
     liq = current_liquidity()
     log.info("net-liquidity regime for china library: %s", liq or "unknown")
 
+    # QVIX vol-regime overlay — the GEX-analog for A-shares (no single-stock options). A panic SPIKE
+    # (qvix_z high) is the crash-risk regime → a CN macro risk_overlay that taxes a chase + vetoes a
+    # high-conviction verb, mirroring the US VIX overlay. INVERTED interpretation (engine/china_signals).
+    qvix_reg = None
+    cn_risk_overlay: dict = {"stress": 0.0, "drivers": []}
+    try:
+        _qp = config.data_dir() / "china_qvix" / "qvix300.parquet"
+        if _qp.exists():
+            qvix_reg = china_signals.qvix_regime(pd.read_parquet(_qp)["close"])
+        if qvix_reg and qvix_reg.get("stress", 0) > 0:
+            cn_risk_overlay = {"stress": qvix_reg["stress"],
+                               "drivers": [f"QVIX {qvix_reg['regime']}"], "qvix": qvix_reg}
+            log.info("china QVIX regime: %s (z=%s) → stress %.2f",
+                     qvix_reg["regime"], qvix_reg["qvix_z"], qvix_reg["stress"])
+    except Exception as e:  # noqa: BLE001 — additive overlay, never fatal
+        log.warning("china qvix regime unavailable (%s)", e)
+
+    # per-stock margin-financing (融资余额) crowding — a surging balance is the 2015 fire-sale
+    # mechanism (leverage crowding), a contrarian RISK. Reuses the fragility idio-risk slot + a caution.
+    margin_crowd: dict[str, dict] = {}
+    try:
+        _mp = config.data_dir() / "china_margin_detail" / "detail.parquet"
+        if _mp.exists():
+            _md = pd.read_parquet(_mp)
+            for _, _r in _md.iterrows():
+                fb, fbp = china_signals._f(_r.get("fin_balance")), china_signals._f(_r.get("fin_balance_prior"))
+                chg = ((fb / fbp - 1.0) * 100.0) if (fb and fbp and fbp > 0) else None
+                mc = china_signals.margin_crowding(chg, None)
+                if mc and mc["risk"] > 0:
+                    margin_crowd[str(_r.get("ticker"))] = mc
+            log.info("china margin crowding: %d names flagged", len(margin_crowd))
+    except Exception as e:  # noqa: BLE001 — additive risk leg, never fatal
+        log.warning("china margin crowding unavailable (%s)", e)
+    try:
+        _csi = store.read("china", CSI300_ETF)
+        _csi_close = _csi["close"] if _csi is not None and "close" in _csi.columns else None
+    except Exception:  # noqa: BLE001
+        _csi_close = None
+    # hoist the anticipation engine + its gate ONCE (the cone is close-driven; the gate read would
+    # otherwise repeat ~800×). None-safe: if the engine is unavailable, the cone is simply skipped.
+    try:
+        from engine.anticipation import anticipate as _anticipate, load_gate as _load_gate
+        _ant_gate = _load_gate("US")
+    except Exception:  # noqa: BLE001
+        _anticipate = None
+        _ant_gate = None
+
     # cross-sectional legs the unified Conviction Profile joins per name (engine/
     # stock_score): the VALIDATED A-share reversal z (the selection leg for CN) + the
     # strongest-theme basket tailwind. Both best-effort — a missing leg stays absent,
@@ -552,9 +623,13 @@ def main(alpha: dict | None = None) -> dict | None:
     rev_z_by: dict[str, float] = {}
     try:
         _rev = compute_china_reversal() or {}
-        for _r in _rev.get("watch", []):
+        # rev_z_all covers the WHOLE screened universe (the fix): the validated reversal selection
+        # leg now populates conviction for every name, not just the top-16 display watch list.
+        rev_z_by = dict(_rev.get("rev_z_all") or {})
+        for _r in _rev.get("watch", []):            # back-compat: ensure the display names are in too
             if _r.get("ticker") and _r.get("rev_z") is not None:
-                rev_z_by[_r["ticker"]] = _r["rev_z"]
+                rev_z_by.setdefault(_r["ticker"], _r["rev_z"])
+        log.info("china reversal-z: populated for %d names (was top-16 only)", len(rev_z_by))
     except Exception as e:  # noqa: BLE001 — additive leg, never fatal
         log.warning("china reversal-z map unavailable (%s)", e)
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
@@ -587,9 +662,25 @@ def main(alpha: dict | None = None) -> dict | None:
         # is a HARD verb modifier (a downtrend caps the entry axis and forbids a Buy
         # verb). Fund priors are OMITTED — the raw Piotroski/Altman scores are not
         # unit-variance cross-sectional z's, and a missing leg is honest (never neutral).
+        # forward anticipation cone (close-only) — feeds the risk-shape entry tilt + favourable-cone
+        # note in the shared engine; best-effort (skips quietly on thin history).
+        if _anticipate is not None:
+            try:
+                _ant = _anticipate(close.dropna(), bench=_csi_close, asset_class="cn_equity",
+                                   gate=_ant_gate)
+                if _ant:
+                    rec["anticipation"] = _ant
+            except Exception:  # noqa: BLE001 — additive cone, never fatal
+                pass
+        # margin-financing crowding → the fragility idio-risk slot + a caution (contrarian leverage risk)
+        _mc = margin_crowd.get(ticker)
+        if _mc and _mc.get("crowded"):
+            rec["fragility"] = True
+            rec["margin_crowd"] = _mc
         norm = stock_score.normalize_rec(
             rec, "CN", rev_z=rev_z_by.get(ticker), basket=basket_tw.get(ticker))
-        prof = stock_score.conviction_profile(norm, "CN", ctx={"as_of": (alpha or {}).get("as_of")})
+        prof = stock_score.conviction_profile(norm, "CN", ctx={
+            "as_of": (alpha or {}).get("as_of"), "risk_overlay": cn_risk_overlay})
         rec["conviction"] = prof
         profiles[ticker] = prof
         _tech = rec.get("tech") or {}
@@ -613,6 +704,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # it up — and the fundamentals re-read pass that follows preserves it).
     stock_score.attach_panel_scores(profiles)
     for safe, rec in to_write:
+        rec["view"] = stock_view.build_view(rec, "CN")   # canonical render model (rebuilt below once val/margin land)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
 
     # descriptive FUNDAMENTALS + additive CONTEXT panels (analyst consensus / earnings
@@ -656,6 +748,7 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             rec = json.loads(fp.read_text())
             rec.update(patch)
+            rec["view"] = stock_view.build_view(rec, "CN")   # rebuild so val_band + margin_fin cards appear
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001
             continue
@@ -704,6 +797,8 @@ def main(alpha: dict | None = None) -> dict | None:
         eligible = sum(1 for _s, r in cand if (r.get("alpha") or 0) >= 0.5)
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
+        if qvix_reg:                         # the market vol-regime banner (GEX-analog for A-shares)
+            wide["qvix_regime"] = qvix_reg
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
         log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",

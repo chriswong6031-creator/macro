@@ -26,6 +26,7 @@ import pandas as pd
 
 from engine import equity_alloc as ea
 from engine.validation import backtest_core, block_bootstrap_ci, deflated_sharpe, ret_moments
+from engine.trial_ledger import TrialLedger
 from lib import config, store
 
 COST_BPS = 3.0
@@ -103,7 +104,14 @@ def evaluate(spy: pd.Series, alloc: pd.Series, bills: pd.Series, baseline_sharpe
     ddci = paired_dd_reduction_ci(net, hold)
     # DSR
     mom = ret_moments(net)
-    dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], N_TRIALS_HONEST, trading_year=TY) if mom else None
+    if mom:
+        _led = TrialLedger()      # honest-N via the ledger (P3): declared pre-registered budget
+        _led.log_declared_budget(N_TRIALS_HONEST, family="spvector",
+                                 reason="pre-registered candidate configs tried (calibrate_spvector)")
+        dsr = deflated_sharpe(mom[0], mom[1], mom[2], mom[3], ledger=_led, family="spvector",
+                              trading_year=TY)
+    else:
+        dsr = None
     # whipsaw: fraction of position-change events that reverse within 21d
     pos = bt["pos"]; chg = pos.diff().fillna(0)
     flips = chg[chg != 0]

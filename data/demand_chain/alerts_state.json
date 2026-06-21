@@ -1,0 +1,14 @@
+{
+  "ACLS": "ahead_of_consensus",
+  "ADBE": "ahead_of_consensus",
+  "CARR": "consensus_at_risk",
+  "CLSK": "ahead_of_consensus",
+  "LII": "consensus_at_risk",
+  "MAS": "consensus_at_risk",
+  "OC": "consensus_at_risk",
+  "PANW": "ahead_of_consensus",
+  "PCG": "ahead_of_consensus",
+  "QCOM": "ahead_of_consensus",
+  "SO": "ahead_of_consensus",
+  "VST": "ahead_of_consensus"
+}

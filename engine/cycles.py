@@ -217,7 +217,7 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
 
     # candidate for the NEXT cycle low: the lowest bar of the recent decline.
     # Only meaningful once the cycle is old enough that a new low is due.
-    cand_day = cand_price = cand_swing = cand_age = None
+    cand_day = cand_price = cand_swing = cand_age = cand_depth_pct = None
     if dc_day >= dc_band[0] - 10:
         recent = c.iloc[-25:]
         cand_ts = recent.idxmin()
@@ -230,6 +230,16 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
             cand_swing = bool((c.loc[cand_ts:].iloc[1:] > bar_high).any())
         else:
             cand_swing = False
+        # depth of the candidate pullback = decline from the local swing-high in the
+        # ~3 weeks BEFORE the low to the low itself. A genuine daily-cycle low is a
+        # real correction (several %); a 1-2% wobble near the highs is a continuation,
+        # not a fresh cycle — this depth lets the ladder tell the two apart so a
+        # stretched up-trend can't masquerade as a "fresh buy" (the TTWO/ECG case).
+        pre = c.loc[:cand_ts]
+        if len(pre) >= 2:
+            swing_hi = float(pre.iloc[-15:].max())
+            if swing_hi > 0:
+                cand_depth_pct = round(100.0 * (swing_hi - cand_price) / swing_hi, 1)
 
     # translation of the LAST COMPLETED cycle
     translation = None
@@ -291,7 +301,7 @@ def cycle_state(close: pd.Series, high: pd.Series | None = None,
         "dc_day": dc_day, "dc_band": dc_band, "dc_early": dc_early, "dc_phase": dc_phase,
         "last_dcl": str(last_dcl.date()), "dcl_price": round(dcl_price, 2),
         "cand_dcl": cand_day, "cand_price": round(cand_price, 2) if cand_price else None,
-        "cand_swing": cand_swing, "cand_age": cand_age,
+        "cand_swing": cand_swing, "cand_age": cand_age, "cand_depth_pct": cand_depth_pct,
         "translation": translation, "failed_cycle": failed, "failed_age": failed_age,
         "swing_low": swing_low, "above_ma10": above_ma10, "ma10_rising": ma10_rising,
         "ic_week": ic_week, "ic_band": ic_band_w, "ic_phase": ic_phase, "ic_failed": ic_failed,
@@ -519,6 +529,12 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
     """Actionable timing call + a rough days-to-entry estimate from cycle
     position and the MACD cross trajectory. Clearly an estimate, ranged."""
     d = mtf.get("D", {})
+    _d3, _wk = mtf.get("3D", {}), mtf.get("W", {})
+    # belt-and-suspenders cycle-top guard: a higher-timeframe momentum down-cross
+    # (3-day/weekly) means even a daily TURN SIGNALED is NOT a 'now' half-buy — it
+    # is a wait. The state machine already routes most tops to TOP WATCH; this keeps
+    # entry_timing self-consistent for any TURN SIGNALED that still reaches here.
+    htf_rollover = bool(_d3.get("macd_cross_dn") or _wk.get("macd_cross_dn"))
     lo_band, hi_band = cyc.get("dc_band", DC_BAND)
     dc = cyc.get("dc_day", 0)
     btc = d.get("macd_bars_to_cross")
@@ -534,6 +550,15 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
                            f"止损设于 {inval} 下方。在周线确认前并非投资性买入；多数最终失败，"
                            "少数则开启新周期。"}
     if state == "FRESH BUY":
+        if cyc.get("dc_phase") == "stretched":
+            # the count is stretched well past the band — an UNCONFIRMED new cycle, not a
+            # fresh low to chase 'now'. Buy on confirmation (the ECG day-93 case).
+            return {"tag": "BUY SOON", "tag_zh": "即将买入", "urgency": "imminent", "days_lo": 1, "days_hi": 5,
+                    "text": ("A daily turn fired off a real pullback, but the cycle count is stretched "
+                             "well past its usual window — treat it as an unconfirmed new cycle and buy "
+                             "on confirmation (a higher low holding + the weekly turning up), not here."),
+                    "text_zh": ("日线已在一次真实回调后转向，但周期天数已远超通常窗口——"
+                                "应视为未确认的新周期，请在确认后买入（更高低点站稳 + 周线转向），而非此处。")}
         return {"tag": "BUY NOW", "tag_zh": "立即买入", "urgency": "now",
                 "text": "Confirmed cycle low — the entry window is open now, "
                         f"with a clear exit if it closes back below {cyc.get('cand_price') or cyc.get('dcl_price')}.",
@@ -547,7 +572,26 @@ def entry_timing(state: str, cyc: dict, mtf: dict) -> dict:
         # here (it's already above), which is the lag the SNDK case exposed.
         # (a) Swing low printed but not yet reclaimed → the genuine "buy on the
         # reclaim" case, where that copy is correct.
-        if cyc.get("above_ma10"):
+        if cyc.get("above_ma10") and htf_rollover:
+            return {"tag": "WAIT", "tag_zh": "等待", "urgency": "soon",
+                    "text": ("The daily turn is in, but a higher timeframe (3-day/weekly) "
+                             "momentum just crossed down — don't add into a rolling-over higher "
+                             "timeframe. Wait for it to stabilise or for the next daily cycle low."),
+                    "text_zh": ("日线已转向，但更高周期（3 日/周线）动量刚刚向下交叉——"
+                                "不要在更高周期掉头时加仓。等待其企稳，或等待下一个日线周期低点。")}
+        if cyc.get("above_ma10") and cyc.get("dc_phase") == "stretched":
+            # a reclaim THIS far past the cycle band is an unconfirmed new cycle, not a
+            # 'now' buy — the daily count is too stretched to trust the low yet, so call
+            # it on-confirmation (BUY SOON) rather than half-size now (the ECG day-93 case).
+            return {"tag": "BUY SOON", "tag_zh": "即将买入", "urgency": "imminent", "days_lo": 1, "days_hi": 5,
+                    "text": ("The daily turn is in off a real pullback, but the cycle count is "
+                             "stretched well past its usual window — so this is an UNCONFIRMED new "
+                             "cycle, not a fresh low yet. Buy on confirmation (a higher low + the "
+                             "weekly turning up), not here."),
+                    "text_zh": ("日线已在一次真实回调后转向，但周期天数已远超通常窗口——"
+                                "因此这是未确认的新周期，尚非全新低点。请在确认后买入"
+                                "（更高的低点 + 周线转向），而非此处。")}
+        if cyc.get("above_ma10") and not htf_rollover:
             cl = cyc.get("cand_price") or cyc.get("dcl_price")
             age = cyc.get("cand_age")
             ago = f" ~{age} day(s) ago" if age else ""
@@ -689,7 +733,8 @@ def regime_state(cyc: dict, mtf: dict) -> dict:
 
 def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                  liquidity: str | None = None,
-                 macro_drag: float | None = None, macro_beta: float = 0.0) -> dict:
+                 macro_drag: float | None = None, macro_beta: float = 0.0,
+                 vol_regime: dict | None = None) -> dict:
     """Combine cycle position + multi-timeframe indicators into one state,
     with a plain next-step line. The higher-timeframe regime (weekly + 3-day +
     investor cycle) gates and can RE-LABEL the daily signal: a daily buy setup
@@ -714,6 +759,26 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     late = cyc["dc_phase"] in ("approaching_band", "in_band", "stretched")
     # a late-cycle decline hunts the NEXT low via the candidate trough
     cand_confirmed = bool(late and cyc.get("cand_swing") and cyc["above_ma10"])
+
+    # ── Cycle-top guard (engine v2): multi-timeframe momentum-rollover signal ────
+    # The macd_curl_dn / macd_cross_dn / macd_approaching_dn flags (D/3D/W) were
+    # COMPUTED but never read by the buy logic, so a late name whose momentum was
+    # already rolling over still printed FRESH BUY / BUY NOW (HWM day-35, RSI 62,
+    # daily curl-down — 62% of live 'now' calls were late/stretched). This boolean
+    # feeds the extension/late-cross gate below, which reroutes such names to TOP
+    # WATCH ('don't chase'). Kept as a single chokepoint so the rich gate copy and
+    # the extended_gate=True entry flag stay consistent.
+    _d3, _wk = mtf.get("3D", {}), mtf.get("W", {})
+    _rsi_d = d.get("rsi14") or 50
+    htf_rollover = bool(_d3.get("macd_cross_dn") or _wk.get("macd_cross_dn"))
+    daily_rollover = bool(d.get("macd_cross_dn") or d.get("macd_curl_dn")
+                          or d.get("macd_approaching_dn"))
+    # Balanced veto (user-tuned): a real momentum turn-down that should stop a fresh
+    # 'now' buy — a higher-TF down-cross, a confirmed daily down-cross with a firm RSI,
+    # or any daily roll-over while the name is already late in its cycle.
+    rollover_veto = bool(htf_rollover
+                         or (d.get("macd_cross_dn") and _rsi_d >= 60)
+                         or (daily_rollover and late))
 
     if cyc["failed_cycle"] and not cyc["above_ma10"]:
         state = "DECLINE"
@@ -779,7 +844,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                   f"（约第 {lo_b}-{hi_b} 天，现为第 {cyc['dc_day']} 天）。")
     elif cyc["swing_low"] and cyc["dc_day"] <= dc_early and cyc["above_ma10"] \
             and (d.get("macd_cross_up") or d.get("macd_pos")):
-        state = "FRESH BUY" if weekly_ok else "TURN SIGNALED"
+        # even a fresh daily low is only a PARTIAL buy when a higher timeframe is
+        # rolling over (3-day/weekly down-cross) — demote to TURN SIGNALED, not 'now'.
+        state = "FRESH BUY" if (weekly_ok and not htf_rollover) else "TURN SIGNALED"
         why = (f"New daily cycle, day {cyc['dc_day']}: swing low in, price back above the "
                "10-day average, daily momentum positive"
                + (" — and the weekly timeframe agrees." if weekly_ok else
@@ -893,8 +960,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     rsi_d = d.get("rsi14") or 50
     rsi_3 = t3.get("rsi14") or 50
     rsi_w = w.get("rsi14") or 50
+    overbought_late = rsi_d > 70 or (rsi_3 > 70 and rsi_w > 70)
     if state in ("FRESH BUY", "TURN SIGNALED") and cyc.get("above_ma10") \
-            and (rsi_d > 70 or (rsi_3 > 70 and rsi_w > 70)):
+            and (overbought_late or rollover_veto):
         extended_gate = True
         state = "TOP WATCH"
         cl = cyc.get("cand_price") or cyc.get("dcl_price")
@@ -902,18 +970,29 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         ago = f" ~{age} day(s) ago" if age else ""
         ago_zh = f"约 {age} 天前" if age else "近期"
         ref = f" @ {cl}" if cl else ""
-        hot = f"daily RSI {rsi_d:.0f}"
-        hot_zh = f"日线 RSI {rsi_d:.0f}"
-        if rsi_3 > 70 and rsi_w > 70:
-            hot += f", 3-day {rsi_3:.0f} & weekly {rsi_w:.0f}"
-            hot_zh += f"、3 日 {rsi_3:.0f} 与周线 {rsi_w:.0f}"
+        # adapt the caveat to WHY the chase fired: overbought, or momentum rolling over
+        # (the HWM case: late in the cycle with the daily MACD already curling down).
+        if overbought_late:
+            hot = f"daily RSI {rsi_d:.0f}"
+            hot_zh = f"日线 RSI {rsi_d:.0f}"
+            if rsi_3 > 70 and rsi_w > 70:
+                hot += f", 3-day {rsi_3:.0f} & weekly {rsi_w:.0f}"
+                hot_zh += f"、3 日 {rsi_3:.0f} 与周线 {rsi_w:.0f}"
+            caveat, caveat_zh = f"overbought ({hot})", f"已超买（{hot_zh}）"
+        else:
+            tf_word = ("the 3-day/weekly momentum has crossed down" if htf_rollover
+                       else "the daily momentum is already rolling over")
+            tf_word_zh = ("3 日/周线动量已向下交叉" if htf_rollover
+                          else "日线动量已开始掉头向下")
+            caveat = f"momentum is fading — {tf_word}"
+            caveat_zh = f"动量正在衰竭——{tf_word_zh}"
         why = (f"A daily bottoming setup did fire (swing low in, momentum turned up), but it's "
                f"LATE — price is already extended above the cycle low (formed{ago}{ref}) and "
-               f"overbought ({hot}). A momentum cross is a LAGGING confirmation: after a vertical "
+               f"{caveat}. A momentum cross is a LAGGING confirmation: after a vertical "
                "run it only triggers once the move is mature, so the bottoming entry has already "
                "passed. This is a chase, not a fresh buy.")
         why_zh = (f"日线筑底形态确实已经触发（摆动低点出现、动量转向上行），但为时已晚——"
-                  f"价格已显著高于周期低点（{ago_zh}形成{ref}）且已超买（{hot_zh}）。"
+                  f"价格已显著高于周期低点（{ago_zh}形成{ref}）且{caveat_zh}。"
                   "动量交叉属于滞后确认：在垂直拉升之后，只有当走势已经成熟时才会触发，"
                   "因此筑底入场早已错过。这是追高，而非新的买入。")
         nxt = ("Don't initiate here. Wait for a pullback toward the 10-day average — or the next "
@@ -1019,6 +1098,43 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
                              "在此环境下买入形态历史上回撤更深，因此应要求更多确认并降低仓位。"
                              "这是风险/仓位提示，并非预测。")
 
+    # ── Index vol-regime (risk-OFF sizing caution) ───────────────────────────
+    # When the validated INDEX vol-regime (engine.vol_regime -> site/vol/regime.json) is in a
+    # risk-off KILL-SWITCH state (warning / backwardation-stress: VIX/VIX3M backwardation +
+    # bond-vol stress + a thin vol-risk-premium), shave conviction on FRESH BUY / TURN SIGNALED
+    # only. UNIFORM (index-level, like LIQ_HEADWIND — every name shares the same market vol
+    # regime), SUBTRACT-ONLY, buy-setup-only. The continuous SCORED composite deepens the cut
+    # only when its gate is open (vol_regime['scored_active']); otherwise the published STATE
+    # label alone drives a bounded caution. Drawdown/sizing caution, NOT a forecast.
+    vr_effect = None
+    vr_pen = 0
+    vr_line = vr_line_zh = ""
+    _vr = vol_regime if isinstance(vol_regime, dict) else None
+    _vro = (config.load()["engine"].get("vol_regime_overlay") or {})
+    vr_on = bool(_vr and _vro.get("enabled", True))
+    vr_state = (_vr or {}).get("regime")
+    if vr_on and state in LIQ_NUDGE_STATES and vr_state in ("warning", "backwardation-stress"):
+        _rhead = float(_vro.get("ladder_headwind", 7))
+        sev = 1.0 if vr_state == "backwardation-stress" else 0.6     # warning is the milder state
+        # gate-open scored composite (risk-off) deepens the caution, capped so it never exceeds 1.5x
+        sc = (_vr or {}).get("scored_score")
+        if (_vr or {}).get("scored_active") and sc is not None and float(sc) < 0:
+            sev = min(sev * (1.0 + abs(float(sc))), 1.5)
+        vr_pen = int(round(_rhead * sev))
+        if vr_pen > 0:
+            score -= vr_pen
+            vr_effect = "headwind"
+            _sn = "backwardation-stress" if vr_state == "backwardation-stress" else "warning"
+            vr_line = ("Vol-regime headwind: the index vol-regime is risk-off "
+                       f"({_sn} — term-structure backwardation / bond-vol stress), so market-wide "
+                       "drawdown risk is elevated. Buy setups here have historically taken deeper "
+                       "dips — demand extra confirmation and smaller size. A risk/sizing caution, "
+                       "not a forecast.")
+            vr_line_zh = ("波动率状态逆风：指数波动率处于风险偏离状态"
+                          f"（{_sn}——期限结构倒挂/债券波动率承压），全市场回撤风险升高。"
+                          "此环境下买入形态历史上回撤更深——应要求更多确认并降低仓位。"
+                          "这是风险/仓位提示，并非预测。")
+
     disp = STATE_DISPLAY[state]
     plain = cycle_plain(cyc)
     entry = entry_timing(state, cyc, mtf)
@@ -1027,9 +1143,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
         # read "don't chase", not the generic TOP WATCH "take profits"
         entry = {"tag": "DON'T CHASE", "tag_zh": "勿追高", "urgency": "caution",
                  "text": ("You missed the bottoming entry — the low already formed and price is now "
-                          f"extended and overbought ({hot}). Don't chase; wait for a pullback to the "
+                          f"extended ({caveat}). Don't chase; wait for a pullback to the "
                           "10-day average or the next cycle low. Hold if already long."),
-                 "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸且超买（{hot_zh}）。"
+                 "text_zh": (f"已错过筑底入场——低点已经形成，目前价格已拉伸（{caveat_zh}）。"
                              "不要追高；等待回调至 10 日均线或下一个周期低点。若已持有则继续持有。")}
 
     # ── Two-axis summary: TACTICAL (this daily state) vs REGIME (bigger picture),
@@ -1134,7 +1250,11 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             "macro_effect": macro_effect, "macro_pen": macro_pen,
             "macro_drag": (round(float(macro_drag), 3) if macro_on else None),
             "macro_beta": (float(macro_beta) if macro_on else 0.0),
-            "macro_line": macro_line, "macro_line_zh": macro_line_zh}
+            "macro_line": macro_line, "macro_line_zh": macro_line_zh,
+            "vol_regime_state": (vr_state if vr_on else None),
+            "vol_regime_effect": vr_effect, "vol_regime_pen": vr_pen,
+            "vol_regime_scored_active": bool((_vr or {}).get("scored_active")),
+            "vol_regime_line": vr_line, "vol_regime_line_zh": vr_line_zh}
 
 
 # ----------------------------------------------------- signal age / strength ----
@@ -1642,7 +1762,7 @@ def bottom_confidence_fields(bc: dict) -> dict:
 def analyze(close: pd.Series, high: pd.Series | None = None,
             kind: str = "equity", liquidity: str | None = None,
             macro_drag: float | None = None, macro_beta: float = 0.0,
-            vix_ctx: dict | None = None) -> dict:
+            vix_ctx: dict | None = None, vol_regime: dict | None = None) -> dict:
     """`liquidity` = live US net-liquidity regime ("expanding"/"contracting"/
     "neutral", from engine.regime.liquidity_overlay), threaded into the ladder as
     an orthogonal macro conviction modifier. None => no liquidity context (keeps
@@ -1652,13 +1772,17 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     (this name's sector sensitivity, engine.conditions.sector_macro_beta) add a
     risk-OFF, subtract-only, buy-setup-only conviction penalty for macro-sensitive
     names. `vix_ctx` = market panic context (engine.cycles.market_vix_context) used
-    by the Phase-2 washout knife-risk temper on Bottom Confidence. Defaults keep
-    every existing caller unchanged."""
+    by the Phase-2 washout knife-risk temper on Bottom Confidence.
+
+    `vol_regime` = the published INDEX vol-regime snapshot (engine.vol_regime.published_snapshot:
+    {regime, scored_score, scored_active, vol_target_scalar, ...}). In a risk-off kill-switch
+    regime it adds a UNIFORM, subtract-only, buy-setup-only sizing caution (deepened only when its
+    validation gate is open). Defaults keep every existing caller unchanged."""
     cyc = cycle_state(close, high, kind)
     mtf = mtf_snapshot(close, kind)
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
-                       macro_drag=macro_drag, macro_beta=macro_beta)
+                       macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime)
     if lad:
         age = signal_age(close, lad["state"], high, kind)
         if age:

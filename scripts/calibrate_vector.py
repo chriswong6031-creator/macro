@@ -44,6 +44,7 @@ from engine.validation import (  # noqa: E402 — stability gates (D-vec-GATES)
     block_bootstrap_ci, brier_reliability, dsr_verdict, platt_fit, purged_folds,
     top_correlated_pairs, vif,
 )
+from engine.trial_ledger import TrialLedger  # noqa: E402
 
 TRADING_YEAR = 365  # BTC trades every day
 
@@ -632,8 +633,14 @@ def main() -> int:
         daily_srs = [v["sharpe_daily"] for v in va.values() if v.get("sharpe_daily") is not None]
         sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
         m = va[sel]
+        # honest-N via the ledger (P3): itemize the allocation variants tried + declare the
+        # config upper-bound as a floor → effective_n = max(itemized, declared) = n_trials.
+        _led = TrialLedger()
+        _led.log_grid([{"variant": k} for k in va], family="vector", source="alloc_variant")
+        _led.log_declared_budget(n_trials, family="vector",
+                                 reason="cfg.calibration.n_trials — declared upper-bound (calibrate_vector)")
         dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
-                              m.get("n_obs"), n_trials, sr_variance=sr_var,
+                              m.get("n_obs"), ledger=_led, family="vector", sr_variance=sr_var,
                               trading_year=TRADING_YEAR)
         if dsr is not None:
             dsr["selected_variant"] = sel

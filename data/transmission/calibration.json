@@ -6,7 +6,7 @@
     "split": "2015-01-01",
     "ic_strong": 0.1,
     "ic_weak": 0.04,
-    "asof": "2026-06-16",
+    "asof": "2026-06-18",
     "note": "Transmission = signed Spearman IC(driver_t, asset forward 63d return); display-only coefficients. Scored gate = driver as STRESS vs forward 63d S&P drawdown (calibrate_bonds discipline) + purged-CV sign robustness + bootstrap-CI tercile edge + Clark-West return-forecast bar. No look-ahead."
   },
   "transmission_matrix": {
@@ -16,47 +16,47 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.059,
           "ic_pre": -0.139,
-          "ic_post": 0.046,
+          "ic_post": 0.048,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.014,
           "ic_pre": -0.069,
-          "ic_post": 0.072,
+          "ic_post": 0.073,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6056,
-          "ic": -0.014,
+          "n": 6058,
+          "ic": -0.013,
           "ic_pre": -0.1,
-          "ic_post": 0.033,
+          "ic_post": 0.034,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 6056,
-          "ic": -0.028,
+          "n": 6058,
+          "ic": -0.027,
           "ic_pre": -0.039,
-          "ic_post": 0.061,
+          "ic_post": 0.063,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.135,
           "ic_pre": 0.13,
           "ic_post": 0.114,
@@ -66,57 +66,57 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.017,
+          "n": 2728,
+          "ic": 0.018,
           "ic_pre": null,
-          "ic_post": 0.017,
+          "ic_post": 0.018,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 6056,
-          "ic": -0.139,
+          "n": 6058,
+          "ic": -0.138,
           "ic_pre": -0.18,
-          "ic_post": -0.077,
+          "ic_post": -0.076,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
-          "ic": 0.012,
+          "n": 6058,
+          "ic": 0.011,
           "ic_pre": 0.075,
-          "ic_post": -0.137,
+          "ic_post": -0.138,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
-          "ic": 0.027,
+          "n": 6058,
+          "ic": 0.028,
           "ic_pre": 0.058,
-          "ic_post": -0.082,
+          "ic_post": -0.081,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.059,
           "ic_pre": -0.159,
-          "ic_post": -0.007,
+          "ic_post": -0.006,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.171,
           "ic_pre": -0.271,
           "ic_post": -0.104,
@@ -126,47 +126,47 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6056,
-          "ic": 0.362,
+          "n": 6058,
+          "ic": 0.361,
           "ic_pre": 0.374,
-          "ic_post": 0.354,
+          "ic_post": 0.353,
           "verdict": "CONFIRMED",
           "effect": "tailwind"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6056,
-          "ic": -0.036,
+          "n": 6058,
+          "ic": -0.037,
           "ic_pre": 0.119,
-          "ic_post": -0.265,
+          "ic_post": -0.266,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6056,
-          "ic": 0.129,
+          "n": 6058,
+          "ic": 0.13,
           "ic_pre": 0.19,
-          "ic_post": -0.049,
+          "ic_post": -0.048,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.274,
           "ic_pre": -0.31,
-          "ic_post": -0.185,
+          "ic_post": -0.184,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.046,
           "ic_pre": null,
           "ic_post": -0.06,
@@ -176,20 +176,20 @@
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.175,
           "ic_pre": 0.122,
-          "ic_post": 0.2,
+          "ic_post": 0.201,
           "verdict": "CONFIRMED",
           "effect": "tailwind"
         },
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": 0.183,
           "ic_pre": 0.266,
-          "ic_post": 0.096,
+          "ic_post": 0.095,
           "verdict": "CONFIRMED",
           "effect": "tailwind"
         }
@@ -201,17 +201,17 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 5993,
-          "ic": -0.195,
+          "n": 5995,
+          "ic": -0.194,
           "ic_pre": -0.167,
-          "ic_post": -0.224,
+          "ic_post": -0.223,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.196,
           "ic_pre": -0.197,
           "ic_post": -0.197,
@@ -221,7 +221,7 @@
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.174,
           "ic_pre": -0.131,
           "ic_post": -0.218,
@@ -231,7 +231,7 @@
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.193,
           "ic_pre": -0.209,
           "ic_post": -0.193,
@@ -241,7 +241,7 @@
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.022,
           "ic_pre": 0.004,
           "ic_post": -0.036,
@@ -251,17 +251,17 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.023,
+          "n": 2728,
+          "ic": 0.024,
           "ic_pre": null,
-          "ic_post": 0.023,
+          "ic_post": 0.024,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.161,
           "ic_pre": -0.109,
           "ic_post": -0.225,
@@ -271,17 +271,17 @@
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.112,
           "ic_pre": -0.142,
-          "ic_post": -0.06,
+          "ic_post": -0.061,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.215,
           "ic_pre": -0.198,
           "ic_post": -0.224,
@@ -291,7 +291,7 @@
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.127,
           "ic_pre": -0.116,
           "ic_post": -0.127,
@@ -301,7 +301,7 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.042,
           "ic_pre": -0.0,
           "ic_post": -0.079,
@@ -311,8 +311,8 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 5993,
-          "ic": -0.001,
+          "n": 5995,
+          "ic": -0.002,
           "ic_pre": 0.052,
           "ic_post": -0.058,
           "verdict": "CONTEXT",
@@ -321,7 +321,7 @@
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.181,
           "ic_pre": -0.17,
           "ic_post": -0.178,
@@ -331,7 +331,7 @@
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.168,
           "ic_pre": -0.162,
           "ic_post": -0.146,
@@ -341,7 +341,7 @@
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.006,
           "ic_pre": 0.005,
           "ic_post": -0.002,
@@ -351,7 +351,7 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.311,
           "ic_pre": null,
           "ic_post": -0.3,
@@ -361,7 +361,7 @@
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.146,
           "ic_pre": 0.225,
           "ic_post": 0.079,
@@ -371,8 +371,8 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
-          "ic": -0.079,
+          "n": 5597,
+          "ic": -0.08,
           "ic_pre": 0.018,
           "ic_post": -0.173,
           "verdict": "CONTEXT",
@@ -386,97 +386,97 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 8645,
-          "ic": -0.124,
+          "n": 8647,
+          "ic": -0.123,
           "ic_pre": -0.092,
-          "ic_post": -0.193,
+          "ic_post": -0.192,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 7052,
-          "ic": -0.104,
+          "n": 7054,
+          "ic": -0.103,
           "ic_pre": -0.052,
-          "ic_post": -0.199,
+          "ic_post": -0.198,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6735,
+          "n": 6737,
           "ic": -0.087,
           "ic_pre": 0.004,
-          "ic_post": -0.212,
+          "ic_post": -0.211,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.099,
           "ic_pre": -0.053,
-          "ic_post": -0.197,
+          "ic_post": -0.196,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.032,
           "ic_pre": 0.049,
-          "ic_post": 0.003,
+          "ic_post": 0.002,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.035,
+          "n": 2728,
+          "ic": 0.036,
           "ic_pre": null,
-          "ic_post": 0.035,
+          "ic_post": 0.036,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.038,
           "ic_pre": 0.054,
-          "ic_post": -0.195,
+          "ic_post": -0.194,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
-          "ic": -0.026,
+          "n": 7110,
+          "ic": -0.027,
           "ic_pre": 0.029,
-          "ic_post": -0.11,
+          "ic_post": -0.111,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.141,
           "ic_pre": -0.086,
-          "ic_post": -0.232,
+          "ic_post": -0.231,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.044,
           "ic_pre": -0.004,
           "ic_post": -0.1,
@@ -486,7 +486,7 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.012,
           "ic_pre": 0.064,
           "ic_post": -0.054,
@@ -496,7 +496,7 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": -0.06,
           "ic_pre": -0.04,
           "ic_post": -0.097,
@@ -506,18 +506,18 @@
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6672,
+          "n": 6674,
           "ic": -0.04,
           "ic_pre": 0.052,
-          "ic_post": -0.178,
+          "ic_post": -0.179,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6667,
-          "ic": -0.035,
+          "n": 6669,
+          "ic": -0.034,
           "ic_pre": 0.014,
           "ic_post": -0.123,
           "verdict": "CONTEXT",
@@ -526,17 +526,17 @@
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 14341,
+          "n": 14343,
           "ic": -0.038,
           "ic_pre": -0.042,
-          "ic_post": 0.012,
+          "ic_post": 0.013,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.24,
           "ic_pre": null,
           "ic_post": -0.27,
@@ -546,7 +546,7 @@
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6168,
+          "n": 6170,
           "ic": 0.076,
           "ic_pre": 0.137,
           "ic_post": 0.041,
@@ -556,10 +556,10 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": -0.099,
           "ic_pre": 0.047,
-          "ic_post": -0.223,
+          "ic_post": -0.224,
           "verdict": "CONTEXT",
           "effect": "headwind"
         }
@@ -571,47 +571,47 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 6056,
-          "ic": -0.222,
+          "n": 6058,
+          "ic": -0.221,
           "ic_pre": -0.281,
-          "ic_post": -0.152,
+          "ic_post": -0.151,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 6056,
-          "ic": -0.28,
+          "n": 6058,
+          "ic": -0.279,
           "ic_pre": -0.38,
-          "ic_post": -0.165,
+          "ic_post": -0.164,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6056,
-          "ic": -0.223,
+          "n": 6058,
+          "ic": -0.222,
           "ic_pre": -0.243,
-          "ic_post": -0.252,
+          "ic_post": -0.251,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 6056,
-          "ic": -0.286,
+          "n": 6058,
+          "ic": -0.285,
           "ic_pre": -0.37,
-          "ic_post": -0.153,
+          "ic_post": -0.151,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.045,
           "ic_pre": 0.048,
           "ic_post": 0.006,
@@ -621,47 +621,47 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": -0.096,
+          "n": 2728,
+          "ic": -0.095,
           "ic_pre": null,
-          "ic_post": -0.096,
+          "ic_post": -0.095,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.199,
           "ic_pre": -0.174,
-          "ic_post": -0.214,
+          "ic_post": -0.213,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.061,
           "ic_pre": -0.045,
-          "ic_post": 0.082,
+          "ic_post": 0.081,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.225,
           "ic_pre": -0.281,
-          "ic_post": -0.261,
+          "ic_post": -0.26,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.109,
           "ic_pre": -0.193,
           "ic_post": -0.104,
@@ -671,7 +671,7 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.112,
           "ic_pre": -0.177,
           "ic_post": -0.09,
@@ -681,17 +681,17 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6056,
-          "ic": -0.05,
+          "n": 6058,
+          "ic": -0.051,
           "ic_pre": -0.165,
-          "ic_post": 0.072,
+          "ic_post": 0.071,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.065,
           "ic_pre": -0.027,
           "ic_post": -0.16,
@@ -701,17 +701,17 @@
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.123,
           "ic_pre": -0.176,
-          "ic_post": -0.123,
+          "ic_post": -0.122,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.1,
           "ic_pre": 0.143,
           "ic_post": 0.159,
@@ -721,7 +721,7 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.308,
           "ic_pre": null,
           "ic_post": -0.334,
@@ -731,7 +731,7 @@
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.054,
           "ic_pre": 0.152,
           "ic_post": -0.114,
@@ -741,10 +741,10 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": -0.16,
           "ic_pre": -0.1,
-          "ic_post": -0.263,
+          "ic_post": -0.264,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         }
@@ -756,7 +756,7 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.028,
           "ic_pre": 0.107,
           "ic_post": -0.058,
@@ -766,7 +766,7 @@
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.049,
           "ic_pre": -0.028,
           "ic_post": -0.073,
@@ -776,27 +776,27 @@
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 5993,
-          "ic": -0.009,
+          "n": 5995,
+          "ic": -0.008,
           "ic_pre": 0.092,
-          "ic_post": -0.107,
+          "ic_post": -0.106,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.04,
           "ic_pre": -0.012,
-          "ic_post": -0.081,
+          "ic_post": -0.08,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.06,
           "ic_pre": 0.082,
           "ic_post": 0.034,
@@ -806,78 +806,78 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.023,
+          "n": 2728,
+          "ic": 0.024,
           "ic_pre": null,
-          "ic_post": 0.023,
+          "ic_post": 0.024,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.081,
           "ic_pre": 0.228,
-          "ic_post": -0.085,
+          "ic_post": -0.084,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.018,
           "ic_pre": 0.075,
-          "ic_post": -0.164,
+          "ic_post": -0.165,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.044,
           "ic_pre": 0.036,
-          "ic_post": -0.145,
+          "ic_post": -0.144,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.069,
           "ic_pre": 0.151,
-          "ic_post": -0.019,
+          "ic_post": -0.018,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.066,
           "ic_pre": 0.121,
-          "ic_post": 0.025,
+          "ic_post": 0.026,
           "verdict": "DIRECTIONAL",
           "effect": "tailwind"
         },
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.118,
           "ic_pre": -0.156,
-          "ic_post": -0.077,
+          "ic_post": -0.078,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 5993,
-          "ic": 0.046,
+          "n": 5995,
+          "ic": 0.045,
           "ic_pre": 0.113,
           "ic_post": -0.075,
           "verdict": "CONTEXT",
@@ -886,17 +886,17 @@
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 5993,
+          "n": 5995,
           "ic": 0.096,
           "ic_pre": 0.189,
-          "ic_post": -0.061,
+          "ic_post": -0.06,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.041,
           "ic_pre": -0.062,
           "ic_post": 0.031,
@@ -906,17 +906,17 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
-          "ic": -0.005,
+          "n": 3004,
+          "ic": -0.006,
           "ic_pre": null,
-          "ic_post": -0.054,
+          "ic_post": -0.055,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 5993,
+          "n": 5995,
           "ic": -0.001,
           "ic_pre": -0.014,
           "ic_post": 0.031,
@@ -926,7 +926,7 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": -0.119,
           "ic_pre": -0.075,
           "ic_post": -0.143,
@@ -941,7 +941,7 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.166,
           "ic_pre": -0.167,
           "ic_post": -0.132,
@@ -951,7 +951,7 @@
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.213,
           "ic_pre": -0.272,
           "ic_post": -0.134,
@@ -961,7 +961,7 @@
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.135,
           "ic_pre": -0.195,
           "ic_post": -0.205,
@@ -971,7 +971,7 @@
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.261,
           "ic_pre": -0.272,
           "ic_post": -0.143,
@@ -981,7 +981,7 @@
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.053,
           "ic_pre": 0.045,
           "ic_post": -0.016,
@@ -991,7 +991,7 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
+          "n": 2728,
           "ic": -0.066,
           "ic_pre": null,
           "ic_post": -0.066,
@@ -1001,7 +1001,7 @@
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.149,
           "ic_pre": -0.085,
           "ic_post": -0.178,
@@ -1011,8 +1011,8 @@
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
-          "ic": -0.012,
+          "n": 6058,
+          "ic": -0.011,
           "ic_pre": -0.13,
           "ic_post": -0.038,
           "verdict": "CONTEXT",
@@ -1021,17 +1021,17 @@
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
-          "ic": -0.163,
+          "n": 6058,
+          "ic": -0.164,
           "ic_pre": -0.302,
-          "ic_post": -0.278,
+          "ic_post": -0.277,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.022,
           "ic_pre": -0.073,
           "ic_post": -0.121,
@@ -1041,8 +1041,8 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 6056,
-          "ic": 0.009,
+          "n": 6058,
+          "ic": 0.008,
           "ic_pre": 0.017,
           "ic_post": -0.083,
           "verdict": "CONTEXT",
@@ -1051,7 +1051,7 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.076,
           "ic_pre": -0.243,
           "ic_post": 0.077,
@@ -1061,17 +1061,17 @@
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.13,
           "ic_pre": -0.165,
-          "ic_post": -0.258,
+          "ic_post": -0.257,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.198,
           "ic_pre": -0.409,
           "ic_post": -0.189,
@@ -1081,7 +1081,7 @@
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.072,
           "ic_pre": 0.205,
           "ic_post": 0.131,
@@ -1091,17 +1091,17 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.307,
           "ic_pre": null,
-          "ic_post": -0.287,
+          "ic_post": -0.288,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.205,
           "ic_pre": 0.261,
           "ic_post": -0.041,
@@ -1111,8 +1111,8 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
-          "ic": -0.11,
+          "n": 5597,
+          "ic": -0.109,
           "ic_pre": -0.306,
           "ic_post": -0.176,
           "verdict": "CONFIRMED",
@@ -1126,180 +1126,180 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 8645,
+          "n": 8647,
           "ic": -0.097,
           "ic_pre": -0.067,
-          "ic_post": -0.145,
+          "ic_post": -0.144,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 7052,
+          "n": 7054,
           "ic": -0.063,
           "ic_pre": 0.036,
-          "ic_post": -0.135,
+          "ic_post": -0.134,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6735,
+          "n": 6737,
           "ic": -0.018,
           "ic_pre": 0.033,
-          "ic_post": -0.091,
+          "ic_post": -0.089,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.117,
           "ic_pre": 0.009,
-          "ic_post": -0.126,
+          "ic_post": -0.124,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.015,
           "ic_pre": -0.041,
-          "ic_post": 0.124,
+          "ic_post": 0.123,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.157,
+          "n": 2728,
+          "ic": 0.158,
           "ic_pre": null,
-          "ic_post": 0.157,
+          "ic_post": 0.158,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.145,
           "ic_pre": -0.08,
-          "ic_post": -0.177,
+          "ic_post": -0.176,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.035,
           "ic_pre": -0.086,
-          "ic_post": -0.007,
+          "ic_post": -0.008,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.043,
           "ic_pre": -0.046,
-          "ic_post": -0.086,
+          "ic_post": -0.085,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.023,
           "ic_pre": -0.023,
-          "ic_post": 0.008,
+          "ic_post": 0.009,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.043,
           "ic_pre": 0.049,
-          "ic_post": 0.02,
+          "ic_post": 0.021,
           "verdict": "DIRECTIONAL",
           "effect": "tailwind"
         },
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": -0.017,
           "ic_pre": 0.112,
-          "ic_post": -0.104,
+          "ic_post": -0.105,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6672,
+          "n": 6674,
           "ic": 0.031,
           "ic_pre": 0.048,
-          "ic_post": 0.035,
+          "ic_post": 0.034,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": 0.003,
           "ic_pre": 0.07,
-          "ic_post": -0.072,
+          "ic_post": -0.071,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 12993,
+          "n": 12995,
           "ic": -0.056,
           "ic_pre": -0.065,
-          "ic_post": 0.018,
+          "ic_post": 0.019,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.096,
           "ic_pre": null,
-          "ic_post": -0.041,
+          "ic_post": -0.042,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6168,
+          "n": 6170,
           "ic": 0.238,
           "ic_pre": 0.246,
-          "ic_post": 0.162,
+          "ic_post": 0.163,
           "verdict": "CONFIRMED",
           "effect": "tailwind"
         },
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": -0.08,
           "ic_pre": -0.266,
-          "ic_post": -0.061,
+          "ic_post": -0.062,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         }
@@ -1311,7 +1311,7 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 8645,
+          "n": 8647,
           "ic": -0.165,
           "ic_pre": -0.059,
           "ic_post": -0.351,
@@ -1321,17 +1321,17 @@
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 7052,
+          "n": 7054,
           "ic": -0.153,
           "ic_pre": -0.016,
-          "ic_post": -0.325,
+          "ic_post": -0.324,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6735,
+          "n": 6737,
           "ic": -0.096,
           "ic_pre": -0.0,
           "ic_post": -0.241,
@@ -1341,7 +1341,7 @@
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.165,
           "ic_pre": -0.028,
           "ic_post": -0.308,
@@ -1351,7 +1351,7 @@
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.032,
           "ic_pre": -0.014,
           "ic_post": -0.053,
@@ -1361,7 +1361,7 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
+          "n": 2728,
           "ic": -0.062,
           "ic_pre": null,
           "ic_post": -0.062,
@@ -1371,27 +1371,27 @@
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.14,
           "ic_pre": -0.031,
-          "ic_post": -0.295,
+          "ic_post": -0.294,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.016,
           "ic_pre": -0.004,
-          "ic_post": -0.04,
+          "ic_post": -0.041,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.177,
           "ic_pre": -0.171,
           "ic_post": -0.18,
@@ -1401,7 +1401,7 @@
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.071,
           "ic_pre": -0.087,
           "ic_post": -0.054,
@@ -1411,7 +1411,7 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.02,
           "ic_pre": -0.005,
           "ic_post": -0.063,
@@ -1421,7 +1421,7 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": -0.073,
           "ic_pre": 0.125,
           "ic_post": -0.302,
@@ -1431,7 +1431,7 @@
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6672,
+          "n": 6674,
           "ic": 0.027,
           "ic_pre": 0.111,
           "ic_post": -0.035,
@@ -1441,7 +1441,7 @@
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": 0.058,
           "ic_pre": 0.224,
           "ic_post": -0.156,
@@ -1451,7 +1451,7 @@
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 12993,
+          "n": 12995,
           "ic": -0.02,
           "ic_pre": -0.05,
           "ic_post": 0.097,
@@ -1461,17 +1461,17 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": -0.192,
           "ic_pre": null,
-          "ic_post": -0.17,
+          "ic_post": -0.171,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6168,
+          "n": 6170,
           "ic": 0.071,
           "ic_pre": 0.189,
           "ic_post": -0.045,
@@ -1481,7 +1481,7 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": -0.099,
           "ic_pre": -0.085,
           "ic_post": -0.157,
@@ -1496,68 +1496,68 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 8645,
-          "ic": -0.109,
+          "n": 8647,
+          "ic": -0.108,
           "ic_pre": -0.172,
-          "ic_post": -0.088,
+          "ic_post": -0.087,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 7052,
-          "ic": -0.168,
+          "n": 7054,
+          "ic": -0.167,
           "ic_pre": -0.307,
-          "ic_post": -0.088,
+          "ic_post": -0.087,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6735,
-          "ic": -0.187,
+          "n": 6737,
+          "ic": -0.186,
           "ic_pre": -0.229,
-          "ic_post": -0.187,
+          "ic_post": -0.186,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 7108,
-          "ic": -0.139,
+          "n": 7110,
+          "ic": -0.138,
           "ic_pre": -0.287,
-          "ic_post": -0.076,
+          "ic_post": -0.075,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.031,
           "ic_pre": 0.049,
-          "ic_post": -0.041,
+          "ic_post": -0.042,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": -0.157,
+          "n": 2728,
+          "ic": -0.156,
           "ic_pre": null,
-          "ic_post": -0.157,
+          "ic_post": -0.156,
           "verdict": "CONTEXT",
           "effect": "headwind"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 7108,
-          "ic": -0.117,
+          "n": 7110,
+          "ic": -0.116,
           "ic_pre": -0.184,
           "ic_post": -0.135,
           "verdict": "CONFIRMED",
@@ -1566,27 +1566,27 @@
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
-          "ic": 0.044,
+          "n": 7110,
+          "ic": 0.043,
           "ic_pre": -0.065,
-          "ic_post": 0.182,
+          "ic_post": 0.181,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
-          "ic": -0.144,
+          "n": 7110,
+          "ic": -0.143,
           "ic_pre": -0.13,
-          "ic_post": -0.172,
+          "ic_post": -0.171,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.089,
           "ic_pre": -0.091,
           "ic_post": -0.111,
@@ -1596,8 +1596,8 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 7108,
-          "ic": -0.191,
+          "n": 7110,
+          "ic": -0.19,
           "ic_pre": -0.272,
           "ic_post": -0.107,
           "verdict": "CONFIRMED",
@@ -1606,37 +1606,37 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": 0.035,
           "ic_pre": -0.044,
-          "ic_post": 0.045,
+          "ic_post": 0.044,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6672,
+          "n": 6674,
           "ic": -0.088,
           "ic_pre": -0.097,
-          "ic_post": -0.08,
+          "ic_post": -0.081,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6667,
-          "ic": -0.09,
+          "n": 6669,
+          "ic": -0.089,
           "ic_pre": -0.14,
-          "ic_post": -0.065,
+          "ic_post": -0.064,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 14404,
+          "n": 14406,
           "ic": 0.04,
           "ic_pre": 0.034,
           "ic_post": 0.239,
@@ -1646,8 +1646,8 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
-          "ic": -0.253,
+          "n": 3004,
+          "ic": -0.254,
           "ic_pre": null,
           "ic_post": -0.307,
           "verdict": "CONTEXT",
@@ -1656,7 +1656,7 @@
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6168,
+          "n": 6170,
           "ic": -0.058,
           "ic_pre": 0.125,
           "ic_post": -0.198,
@@ -1666,10 +1666,10 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
+          "n": 5597,
           "ic": -0.129,
           "ic_pre": 0.024,
-          "ic_post": -0.219,
+          "ic_post": -0.22,
           "verdict": "CONTEXT",
           "effect": "headwind"
         }
@@ -1681,48 +1681,48 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 8645,
-          "ic": -0.023,
+          "n": 8647,
+          "ic": -0.022,
           "ic_pre": -0.019,
-          "ic_post": -0.034,
+          "ic_post": -0.033,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 7052,
-          "ic": -0.096,
+          "n": 7054,
+          "ic": -0.095,
           "ic_pre": -0.136,
-          "ic_post": -0.049,
+          "ic_post": -0.047,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6735,
-          "ic": -0.078,
+          "n": 6737,
+          "ic": -0.077,
           "ic_pre": -0.136,
-          "ic_post": -0.015,
+          "ic_post": -0.013,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.073,
           "ic_pre": -0.101,
-          "ic_post": -0.051,
+          "ic_post": -0.05,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 7108,
-          "ic": 0.101,
+          "n": 7110,
+          "ic": 0.1,
           "ic_pre": 0.081,
           "ic_post": 0.129,
           "verdict": "CONFIRMED",
@@ -1731,97 +1731,97 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.064,
+          "n": 2728,
+          "ic": 0.065,
           "ic_pre": null,
-          "ic_post": 0.064,
+          "ic_post": 0.065,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": -0.078,
           "ic_pre": -0.095,
-          "ic_post": -0.056,
+          "ic_post": -0.055,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.084,
           "ic_pre": -0.027,
-          "ic_post": 0.171,
+          "ic_post": 0.169,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 7108,
-          "ic": -0.067,
+          "n": 7110,
+          "ic": -0.066,
           "ic_pre": -0.09,
-          "ic_post": -0.048,
+          "ic_post": -0.046,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.014,
           "ic_pre": 0.064,
-          "ic_post": -0.048,
+          "ic_post": -0.047,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 7108,
+          "n": 7110,
           "ic": 0.008,
           "ic_pre": 0.09,
-          "ic_post": -0.086,
+          "ic_post": -0.085,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6667,
-          "ic": -0.069,
+          "n": 6669,
+          "ic": -0.07,
           "ic_pre": -0.009,
-          "ic_post": -0.14,
+          "ic_post": -0.141,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6672,
+          "n": 6674,
           "ic": 0.126,
           "ic_pre": 0.056,
-          "ic_post": 0.165,
+          "ic_post": 0.164,
           "verdict": "CONFIRMED",
           "effect": "tailwind"
         },
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6667,
+          "n": 6669,
           "ic": 0.021,
           "ic_pre": 0.044,
-          "ic_post": -0.032,
+          "ic_post": -0.031,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 14404,
+          "n": 14406,
           "ic": -0.035,
           "ic_pre": -0.069,
           "ic_post": 0.143,
@@ -1831,17 +1831,17 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
-          "ic": 0.003,
+          "n": 3004,
+          "ic": 0.002,
           "ic_pre": null,
-          "ic_post": -0.023,
+          "ic_post": -0.024,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6168,
+          "n": 6170,
           "ic": 0.026,
           "ic_pre": 0.079,
           "ic_post": -0.008,
@@ -1851,10 +1851,10 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
-          "ic": -0.193,
+          "n": 5597,
+          "ic": -0.194,
           "ic_pre": -0.191,
-          "ic_post": -0.181,
+          "ic_post": -0.182,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         }
@@ -1866,28 +1866,28 @@
         "SPY": {
           "label": "S&P 500",
           "kind": "equity",
-          "n": 6056,
-          "ic": 0.051,
+          "n": 6058,
+          "ic": 0.05,
           "ic_pre": 0.138,
-          "ic_post": -0.032,
+          "ic_post": -0.033,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "QQQ": {
           "label": "Nasdaq 100 (long-duration growth)",
           "kind": "equity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.004,
           "ic_pre": 0.038,
-          "ic_post": -0.048,
+          "ic_post": -0.049,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "IWM": {
           "label": "Russell 2000 (small caps)",
           "kind": "equity",
-          "n": 6056,
-          "ic": 0.017,
+          "n": 6058,
+          "ic": 0.016,
           "ic_pre": 0.08,
           "ic_post": -0.105,
           "verdict": "CONTEXT",
@@ -1896,17 +1896,17 @@
         "XLK": {
           "label": "Technology",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.04,
           "ic_pre": 0.014,
-          "ic_post": -0.055,
+          "ic_post": -0.056,
           "verdict": "CONTEXT",
-          "effect": "neutral"
+          "effect": "headwind"
         },
         "XLU": {
           "label": "Utilities (bond proxy)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.024,
           "ic_pre": -0.041,
           "ic_post": -0.061,
@@ -1916,37 +1916,37 @@
         "XLRE": {
           "label": "Real Estate (rate-sensitive)",
           "kind": "sector",
-          "n": 2726,
-          "ic": 0.096,
+          "n": 2728,
+          "ic": 0.095,
           "ic_pre": null,
-          "ic_post": 0.096,
+          "ic_post": 0.095,
           "verdict": "CONTEXT",
           "effect": "tailwind"
         },
         "XLF": {
           "label": "Financials (rate beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.083,
           "ic_pre": 0.166,
-          "ic_post": 0.046,
+          "ic_post": 0.045,
           "verdict": "DIRECTIONAL",
           "effect": "tailwind"
         },
         "XLE": {
           "label": "Energy (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.003,
           "ic_pre": -0.046,
-          "ic_post": 0.018,
+          "ic_post": 0.019,
           "verdict": "CONTEXT",
           "effect": "neutral"
         },
         "XLB": {
           "label": "Materials (inflation beneficiary)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.001,
           "ic_pre": -0.059,
           "ic_post": 0.017,
@@ -1956,7 +1956,7 @@
         "XLP": {
           "label": "Staples (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.129,
           "ic_pre": 0.165,
           "ic_post": 0.028,
@@ -1966,7 +1966,7 @@
         "XLV": {
           "label": "Health Care (defensive)",
           "kind": "sector",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.218,
           "ic_pre": 0.282,
           "ic_post": 0.114,
@@ -1976,18 +1976,18 @@
         "GC=F": {
           "label": "Gold",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.282,
           "ic_pre": -0.302,
-          "ic_post": -0.311,
+          "ic_post": -0.31,
           "verdict": "CONFIRMED",
           "effect": "headwind"
         },
         "CL=F": {
           "label": "Oil (WTI)",
           "kind": "commodity",
-          "n": 6056,
-          "ic": 0.051,
+          "n": 6058,
+          "ic": 0.052,
           "ic_pre": -0.102,
           "ic_post": 0.239,
           "verdict": "CONTEXT",
@@ -1996,17 +1996,17 @@
         "HG=F": {
           "label": "Copper",
           "kind": "commodity",
-          "n": 6056,
+          "n": 6058,
           "ic": -0.134,
           "ic_pre": -0.249,
-          "ic_post": -0.028,
+          "ic_post": -0.029,
           "verdict": "DIRECTIONAL",
           "effect": "headwind"
         },
         "DX-Y.NYB": {
           "label": "US Dollar (DXY)",
           "kind": "fx",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.149,
           "ic_pre": 0.17,
           "ic_post": 0.148,
@@ -2016,7 +2016,7 @@
         "BTC-USD": {
           "label": "Bitcoin (long-duration)",
           "kind": "crypto",
-          "n": 3002,
+          "n": 3004,
           "ic": 0.111,
           "ic_pre": null,
           "ic_post": 0.164,
@@ -2026,7 +2026,7 @@
         "TLT": {
           "label": "Long Treasuries (20y+)",
           "kind": "bond",
-          "n": 6056,
+          "n": 6058,
           "ic": 0.019,
           "ic_pre": -0.005,
           "ic_post": -0.094,
@@ -2036,54 +2036,979 @@
         "FXI": {
           "label": "China large-cap (EM proxy)",
           "kind": "em",
-          "n": 5595,
-          "ic": -0.177,
+          "n": 5597,
+          "ic": -0.176,
           "ic_pre": -0.297,
-          "ic_post": -0.156,
+          "ic_post": -0.155,
           "verdict": "CONFIRMED",
           "effect": "headwind"
+        }
+      }
+    },
+    "curvature": {
+      "label": "2s5s10s curvature (butterfly)",
+      "assets": {
+        "SPY": {
+          "label": "S&P 500",
+          "kind": "equity",
+          "n": 8647,
+          "ic": -0.229,
+          "ic_pre": -0.131,
+          "ic_post": -0.384,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "QQQ": {
+          "label": "Nasdaq 100 (long-duration growth)",
+          "kind": "equity",
+          "n": 7054,
+          "ic": -0.202,
+          "ic_pre": -0.109,
+          "ic_post": -0.326,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "IWM": {
+          "label": "Russell 2000 (small caps)",
+          "kind": "equity",
+          "n": 6737,
+          "ic": -0.19,
+          "ic_pre": -0.116,
+          "ic_post": -0.305,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLK": {
+          "label": "Technology",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.217,
+          "ic_pre": -0.121,
+          "ic_post": -0.324,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLU": {
+          "label": "Utilities (bond proxy)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.033,
+          "ic_pre": -0.033,
+          "ic_post": -0.036,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLRE": {
+          "label": "Real Estate (rate-sensitive)",
+          "kind": "sector",
+          "n": 2728,
+          "ic": -0.096,
+          "ic_pre": null,
+          "ic_post": -0.096,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "XLF": {
+          "label": "Financials (rate beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.2,
+          "ic_pre": -0.098,
+          "ic_post": -0.305,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLE": {
+          "label": "Energy (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.105,
+          "ic_pre": -0.136,
+          "ic_post": -0.076,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLB": {
+          "label": "Materials (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.179,
+          "ic_pre": -0.156,
+          "ic_post": -0.237,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLP": {
+          "label": "Staples (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.075,
+          "ic_pre": -0.085,
+          "ic_post": -0.045,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "XLV": {
+          "label": "Health Care (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.072,
+          "ic_pre": -0.072,
+          "ic_post": -0.073,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "GC=F": {
+          "label": "Gold",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": -0.034,
+          "ic_pre": 0.129,
+          "ic_post": -0.273,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "CL=F": {
+          "label": "Oil (WTI)",
+          "kind": "commodity",
+          "n": 6674,
+          "ic": -0.047,
+          "ic_pre": -0.045,
+          "ic_post": -0.006,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "HG=F": {
+          "label": "Copper",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": -0.051,
+          "ic_pre": 0.068,
+          "ic_post": -0.209,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "DX-Y.NYB": {
+          "label": "US Dollar (DXY)",
+          "kind": "fx",
+          "n": 12995,
+          "ic": 0.002,
+          "ic_pre": -0.028,
+          "ic_post": 0.117,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "BTC-USD": {
+          "label": "Bitcoin (long-duration)",
+          "kind": "crypto",
+          "n": 3004,
+          "ic": -0.231,
+          "ic_pre": null,
+          "ic_post": -0.185,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "TLT": {
+          "label": "Long Treasuries (20y+)",
+          "kind": "bond",
+          "n": 6170,
+          "ic": 0.164,
+          "ic_pre": 0.305,
+          "ic_post": -0.025,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "FXI": {
+          "label": "China large-cap (EM proxy)",
+          "kind": "em",
+          "n": 5597,
+          "ic": -0.028,
+          "ic_pre": 0.014,
+          "ic_post": -0.131,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        }
+      }
+    },
+    "slope_chg63": {
+      "label": "2s10s 63d change (steepening)",
+      "assets": {
+        "SPY": {
+          "label": "S&P 500",
+          "kind": "equity",
+          "n": 8647,
+          "ic": 0.049,
+          "ic_pre": -0.083,
+          "ic_post": 0.328,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "QQQ": {
+          "label": "Nasdaq 100 (long-duration growth)",
+          "kind": "equity",
+          "n": 7054,
+          "ic": 0.062,
+          "ic_pre": -0.068,
+          "ic_post": 0.301,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "IWM": {
+          "label": "Russell 2000 (small caps)",
+          "kind": "equity",
+          "n": 6737,
+          "ic": 0.045,
+          "ic_pre": -0.061,
+          "ic_post": 0.217,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLK": {
+          "label": "Technology",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.03,
+          "ic_pre": -0.105,
+          "ic_post": 0.271,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLU": {
+          "label": "Utilities (bond proxy)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.009,
+          "ic_pre": -0.099,
+          "ic_post": 0.193,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLRE": {
+          "label": "Real Estate (rate-sensitive)",
+          "kind": "sector",
+          "n": 2728,
+          "ic": 0.328,
+          "ic_pre": null,
+          "ic_post": 0.328,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLF": {
+          "label": "Financials (rate beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.0,
+          "ic_pre": -0.139,
+          "ic_post": 0.236,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLE": {
+          "label": "Energy (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.1,
+          "ic_pre": -0.121,
+          "ic_post": -0.104,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLB": {
+          "label": "Materials (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.058,
+          "ic_pre": 0.009,
+          "ic_post": 0.148,
+          "verdict": "DIRECTIONAL",
+          "effect": "tailwind"
+        },
+        "XLP": {
+          "label": "Staples (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.008,
+          "ic_pre": -0.078,
+          "ic_post": 0.153,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLV": {
+          "label": "Health Care (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.016,
+          "ic_pre": -0.009,
+          "ic_post": 0.07,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "GC=F": {
+          "label": "Gold",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": 0.089,
+          "ic_pre": 0.014,
+          "ic_post": 0.192,
+          "verdict": "DIRECTIONAL",
+          "effect": "tailwind"
+        },
+        "CL=F": {
+          "label": "Oil (WTI)",
+          "kind": "commodity",
+          "n": 6674,
+          "ic": -0.04,
+          "ic_pre": -0.045,
+          "ic_post": -0.067,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "HG=F": {
+          "label": "Copper",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": -0.07,
+          "ic_pre": -0.199,
+          "ic_post": 0.115,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "DX-Y.NYB": {
+          "label": "US Dollar (DXY)",
+          "kind": "fx",
+          "n": 12932,
+          "ic": -0.053,
+          "ic_pre": -0.029,
+          "ic_post": -0.117,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "BTC-USD": {
+          "label": "Bitcoin (long-duration)",
+          "kind": "crypto",
+          "n": 3004,
+          "ic": 0.159,
+          "ic_pre": null,
+          "ic_post": 0.136,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "TLT": {
+          "label": "Long Treasuries (20y+)",
+          "kind": "bond",
+          "n": 6170,
+          "ic": 0.11,
+          "ic_pre": 0.028,
+          "ic_post": 0.212,
+          "verdict": "DIRECTIONAL",
+          "effect": "tailwind"
+        },
+        "FXI": {
+          "label": "China large-cap (EM proxy)",
+          "kind": "em",
+          "n": 5597,
+          "ic": -0.018,
+          "ic_pre": -0.036,
+          "ic_post": 0.022,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        }
+      }
+    },
+    "ntfs": {
+      "label": "Near-term forward spread",
+      "assets": {
+        "SPY": {
+          "label": "S&P 500",
+          "kind": "equity",
+          "n": 8647,
+          "ic": -0.198,
+          "ic_pre": -0.1,
+          "ic_post": -0.364,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "QQQ": {
+          "label": "Nasdaq 100 (long-duration growth)",
+          "kind": "equity",
+          "n": 7054,
+          "ic": -0.177,
+          "ic_pre": -0.039,
+          "ic_post": -0.343,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "IWM": {
+          "label": "Russell 2000 (small caps)",
+          "kind": "equity",
+          "n": 6737,
+          "ic": -0.134,
+          "ic_pre": -0.053,
+          "ic_post": -0.254,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLK": {
+          "label": "Technology",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.213,
+          "ic_pre": -0.066,
+          "ic_post": -0.336,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLU": {
+          "label": "Utilities (bond proxy)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.054,
+          "ic_pre": -0.087,
+          "ic_post": -0.009,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "XLRE": {
+          "label": "Real Estate (rate-sensitive)",
+          "kind": "sector",
+          "n": 2728,
+          "ic": -0.049,
+          "ic_pre": null,
+          "ic_post": -0.049,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "XLF": {
+          "label": "Financials (rate beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.196,
+          "ic_pre": -0.097,
+          "ic_post": -0.294,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLE": {
+          "label": "Energy (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.058,
+          "ic_pre": -0.086,
+          "ic_post": -0.045,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "XLB": {
+          "label": "Materials (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.224,
+          "ic_pre": -0.251,
+          "ic_post": -0.198,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        },
+        "XLP": {
+          "label": "Staples (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.113,
+          "ic_pre": -0.169,
+          "ic_post": -0.037,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "XLV": {
+          "label": "Health Care (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.059,
+          "ic_pre": -0.078,
+          "ic_post": -0.048,
+          "verdict": "DIRECTIONAL",
+          "effect": "headwind"
+        },
+        "GC=F": {
+          "label": "Gold",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": -0.09,
+          "ic_pre": 0.109,
+          "ic_post": -0.315,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "CL=F": {
+          "label": "Oil (WTI)",
+          "kind": "commodity",
+          "n": 6674,
+          "ic": 0.024,
+          "ic_pre": 0.086,
+          "ic_post": -0.013,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "HG=F": {
+          "label": "Copper",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": -0.01,
+          "ic_pre": 0.143,
+          "ic_post": -0.181,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "DX-Y.NYB": {
+          "label": "US Dollar (DXY)",
+          "kind": "fx",
+          "n": 12995,
+          "ic": -0.014,
+          "ic_pre": -0.042,
+          "ic_post": 0.137,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "BTC-USD": {
+          "label": "Bitcoin (long-duration)",
+          "kind": "crypto",
+          "n": 3004,
+          "ic": -0.19,
+          "ic_pre": null,
+          "ic_post": -0.155,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "TLT": {
+          "label": "Long Treasuries (20y+)",
+          "kind": "bond",
+          "n": 6170,
+          "ic": 0.108,
+          "ic_pre": 0.205,
+          "ic_post": -0.035,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "FXI": {
+          "label": "China large-cap (EM proxy)",
+          "kind": "em",
+          "n": 5597,
+          "ic": -0.111,
+          "ic_pre": -0.161,
+          "ic_post": -0.15,
+          "verdict": "CONFIRMED",
+          "effect": "headwind"
+        }
+      }
+    },
+    "real_speed_abs": {
+      "label": "|Real 10y 63d speed| (violence)",
+      "assets": {
+        "SPY": {
+          "label": "S&P 500",
+          "kind": "equity",
+          "n": 5995,
+          "ic": -0.018,
+          "ic_pre": -0.05,
+          "ic_post": 0.019,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "QQQ": {
+          "label": "Nasdaq 100 (long-duration growth)",
+          "kind": "equity",
+          "n": 5995,
+          "ic": 0.006,
+          "ic_pre": 0.001,
+          "ic_post": 0.017,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "IWM": {
+          "label": "Russell 2000 (small caps)",
+          "kind": "equity",
+          "n": 5995,
+          "ic": -0.013,
+          "ic_pre": -0.028,
+          "ic_post": 0.006,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLK": {
+          "label": "Technology",
+          "kind": "sector",
+          "n": 5995,
+          "ic": -0.006,
+          "ic_pre": -0.022,
+          "ic_post": 0.017,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLU": {
+          "label": "Utilities (bond proxy)",
+          "kind": "sector",
+          "n": 5995,
+          "ic": -0.009,
+          "ic_pre": -0.091,
+          "ic_post": 0.074,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLRE": {
+          "label": "Real Estate (rate-sensitive)",
+          "kind": "sector",
+          "n": 2728,
+          "ic": 0.057,
+          "ic_pre": null,
+          "ic_post": 0.057,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLF": {
+          "label": "Financials (rate beneficiary)",
+          "kind": "sector",
+          "n": 5995,
+          "ic": -0.045,
+          "ic_pre": -0.111,
+          "ic_post": 0.029,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "XLE": {
+          "label": "Energy (inflation beneficiary)",
+          "kind": "sector",
+          "n": 5995,
+          "ic": -0.005,
+          "ic_pre": 0.021,
+          "ic_post": -0.047,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLB": {
+          "label": "Materials (inflation beneficiary)",
+          "kind": "sector",
+          "n": 5995,
+          "ic": 0.022,
+          "ic_pre": -0.0,
+          "ic_post": 0.042,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLP": {
+          "label": "Staples (defensive)",
+          "kind": "sector",
+          "n": 5995,
+          "ic": 0.01,
+          "ic_pre": -0.037,
+          "ic_post": 0.054,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLV": {
+          "label": "Health Care (defensive)",
+          "kind": "sector",
+          "n": 5995,
+          "ic": -0.007,
+          "ic_pre": -0.051,
+          "ic_post": 0.048,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "GC=F": {
+          "label": "Gold",
+          "kind": "commodity",
+          "n": 5995,
+          "ic": 0.111,
+          "ic_pre": 0.067,
+          "ic_post": 0.155,
+          "verdict": "CONFIRMED",
+          "effect": "tailwind"
+        },
+        "CL=F": {
+          "label": "Oil (WTI)",
+          "kind": "commodity",
+          "n": 5995,
+          "ic": -0.01,
+          "ic_pre": 0.073,
+          "ic_post": -0.106,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "HG=F": {
+          "label": "Copper",
+          "kind": "commodity",
+          "n": 5995,
+          "ic": 0.011,
+          "ic_pre": 0.003,
+          "ic_post": -0.005,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "DX-Y.NYB": {
+          "label": "US Dollar (DXY)",
+          "kind": "fx",
+          "n": 5995,
+          "ic": -0.094,
+          "ic_pre": -0.156,
+          "ic_post": 0.004,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "BTC-USD": {
+          "label": "Bitcoin (long-duration)",
+          "kind": "crypto",
+          "n": 3004,
+          "ic": -0.027,
+          "ic_pre": null,
+          "ic_post": -0.041,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "TLT": {
+          "label": "Long Treasuries (20y+)",
+          "kind": "bond",
+          "n": 5995,
+          "ic": 0.025,
+          "ic_pre": -0.006,
+          "ic_post": 0.055,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "FXI": {
+          "label": "China large-cap (EM proxy)",
+          "kind": "em",
+          "n": 5597,
+          "ic": 0.028,
+          "ic_pre": -0.008,
+          "ic_post": 0.07,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        }
+      }
+    },
+    "trend_spread": {
+      "label": "3m10y trend (2y smooth, Faria-Verona)",
+      "assets": {
+        "SPY": {
+          "label": "S&P 500",
+          "kind": "equity",
+          "n": 8647,
+          "ic": 0.0,
+          "ic_pre": 0.144,
+          "ic_post": -0.258,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "QQQ": {
+          "label": "Nasdaq 100 (long-duration growth)",
+          "kind": "equity",
+          "n": 7054,
+          "ic": -0.012,
+          "ic_pre": 0.144,
+          "ic_post": -0.188,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "IWM": {
+          "label": "Russell 2000 (small caps)",
+          "kind": "equity",
+          "n": 6737,
+          "ic": 0.082,
+          "ic_pre": 0.237,
+          "ic_post": -0.161,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLK": {
+          "label": "Technology",
+          "kind": "sector",
+          "n": 7110,
+          "ic": -0.032,
+          "ic_pre": 0.149,
+          "ic_post": -0.173,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLU": {
+          "label": "Utilities (bond proxy)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.094,
+          "ic_pre": 0.253,
+          "ic_post": -0.139,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLRE": {
+          "label": "Real Estate (rate-sensitive)",
+          "kind": "sector",
+          "n": 2728,
+          "ic": -0.064,
+          "ic_pre": null,
+          "ic_post": -0.064,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "XLF": {
+          "label": "Financials (rate beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.04,
+          "ic_pre": 0.21,
+          "ic_post": -0.172,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLE": {
+          "label": "Energy (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.053,
+          "ic_pre": 0.161,
+          "ic_post": -0.106,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLB": {
+          "label": "Materials (inflation beneficiary)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.023,
+          "ic_pre": 0.093,
+          "ic_post": -0.116,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "XLP": {
+          "label": "Staples (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.116,
+          "ic_pre": 0.239,
+          "ic_post": -0.071,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "XLV": {
+          "label": "Health Care (defensive)",
+          "kind": "sector",
+          "n": 7110,
+          "ic": 0.101,
+          "ic_pre": 0.174,
+          "ic_post": -0.038,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "GC=F": {
+          "label": "Gold",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": -0.114,
+          "ic_pre": 0.043,
+          "ic_post": -0.354,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "CL=F": {
+          "label": "Oil (WTI)",
+          "kind": "commodity",
+          "n": 6674,
+          "ic": 0.014,
+          "ic_pre": 0.038,
+          "ic_post": -0.016,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "HG=F": {
+          "label": "Copper",
+          "kind": "commodity",
+          "n": 6669,
+          "ic": 0.051,
+          "ic_pre": 0.204,
+          "ic_post": -0.212,
+          "verdict": "CONTEXT",
+          "effect": "tailwind"
+        },
+        "DX-Y.NYB": {
+          "label": "US Dollar (DXY)",
+          "kind": "fx",
+          "n": 14155,
+          "ic": -0.097,
+          "ic_pre": -0.131,
+          "ic_post": 0.089,
+          "verdict": "CONTEXT",
+          "effect": "headwind"
+        },
+        "BTC-USD": {
+          "label": "Bitcoin (long-duration)",
+          "kind": "crypto",
+          "n": 3004,
+          "ic": -0.0,
+          "ic_pre": null,
+          "ic_post": 0.054,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
+        },
+        "TLT": {
+          "label": "Long Treasuries (20y+)",
+          "kind": "bond",
+          "n": 6170,
+          "ic": 0.121,
+          "ic_pre": 0.123,
+          "ic_post": 0.028,
+          "verdict": "DIRECTIONAL",
+          "effect": "tailwind"
+        },
+        "FXI": {
+          "label": "China large-cap (EM proxy)",
+          "kind": "em",
+          "n": 5597,
+          "ic": -0.029,
+          "ic_pre": -0.152,
+          "ic_post": -0.1,
+          "verdict": "CONTEXT",
+          "effect": "neutral"
         }
       }
     }
   },
   "scenario_betas": {
     "real10y_chg63": {
-      "SPY": -0.0301,
-      "QQQ": -0.0509,
-      "IWM": -0.0209,
-      "XLK": -0.051,
-      "XLU": -0.0604,
-      "XLRE": -0.1195,
+      "SPY": -0.03,
+      "QQQ": -0.0508,
+      "IWM": -0.0208,
+      "XLK": -0.0508,
+      "XLU": -0.0605,
+      "XLRE": -0.1194,
       "XLF": 0.0171,
-      "XLE": 0.0231,
+      "XLE": 0.023,
       "XLB": -0.0415,
       "XLP": -0.0305,
       "XLV": -0.0322,
-      "GC=F": -0.1076,
-      "CL=F": -0.0032,
-      "HG=F": -0.039,
+      "GC=F": -0.1077,
+      "CL=F": -0.0033,
+      "HG=F": -0.0389,
       "DX-Y.NYB": 0.0397,
-      "BTC-USD": -0.1634,
-      "TLT": -0.1207,
+      "BTC-USD": -0.1637,
+      "TLT": -0.1206,
       "FXI": -0.0723
     },
     "be10y_chg63": {
       "SPY": 0.1316,
-      "QQQ": 0.152,
-      "IWM": 0.1819,
-      "XLK": 0.1441,
+      "QQQ": 0.1519,
+      "IWM": 0.1818,
+      "XLK": 0.144,
       "XLU": 0.0432,
-      "XLRE": 0.0758,
-      "XLF": 0.1794,
+      "XLRE": 0.0757,
+      "XLF": 0.1793,
       "XLE": 0.2434,
       "XLB": 0.2005,
       "XLP": 0.0529,
       "XLV": 0.0668,
       "GC=F": 0.0468,
-      "CL=F": 0.4183,
-      "HG=F": 0.2914,
+      "CL=F": 0.4184,
+      "HG=F": 0.2913,
       "DX-Y.NYB": -0.0389,
-      "BTC-USD": 0.5826,
+      "BTC-USD": 0.583,
       "TLT": -0.1345,
       "FXI": 0.1708
     },
@@ -2091,7 +3016,7 @@
       "SPY": 0.0322,
       "QQQ": 0.0723,
       "IWM": 0.0827,
-      "XLK": 0.064,
+      "XLK": 0.0641,
       "XLU": -0.0069,
       "XLRE": -0.0579,
       "XLF": 0.0878,
@@ -2100,10 +3025,10 @@
       "XLP": 0.0048,
       "XLV": 0.0239,
       "GC=F": -0.0456,
-      "CL=F": 0.1721,
+      "CL=F": 0.172,
       "HG=F": 0.1057,
       "DX-Y.NYB": 0.0135,
-      "BTC-USD": 0.0615,
+      "BTC-USD": 0.0614,
       "TLT": -0.1451,
       "FXI": 0.029
     },
@@ -2111,29 +3036,29 @@
       "SPY": 0.0075,
       "QQQ": 0.004,
       "IWM": 0.0379,
-      "XLK": 0.004,
+      "XLK": 0.0039,
       "XLU": -0.0397,
-      "XLRE": -0.0427,
+      "XLRE": -0.0428,
       "XLF": 0.0481,
       "XLE": 0.0381,
       "XLB": 0.0443,
       "XLP": -0.0081,
       "XLV": -0.0023,
-      "GC=F": -0.0202,
+      "GC=F": -0.0201,
       "CL=F": 0.0793,
       "HG=F": 0.0603,
       "DX-Y.NYB": -0.0074,
-      "BTC-USD": 0.2456,
+      "BTC-USD": 0.2458,
       "TLT": -0.1002,
-      "FXI": 0.0212
+      "FXI": 0.0213
     }
   },
   "scored_gate": {
     "real10y_chg63": {
       "label": "Real-rate SPEED (63d rise) — 'speed breaks equities'",
       "stress_sign": 1,
-      "n": 5993,
-      "span": "2003-04-01..2026-03-19",
+      "n": 5995,
+      "span": "2003-04-01..2026-03-23",
       "ic_dd_full": 0.139,
       "ic_dd_pre": 0.052,
       "ic_dd_post": 0.222,
@@ -2141,12 +3066,12 @@
       "conditional": {
         "terciles": {
           "low": {
-            "n": 1998,
+            "n": 1999,
             "p_dd10": 0.1,
             "mean_dd_depth_pct": 4.1
           },
           "mid": {
-            "n": 1997,
+            "n": 1998,
             "p_dd10": 0.087,
             "mean_dd_depth_pct": 4.2
           },
@@ -2165,12 +3090,12 @@
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.10539,
+        "oos_r2": -0.10517,
         "clark_west": {
-          "cw_t": -1.118,
-          "cw_p": 0.8683,
+          "cw_t": -1.106,
+          "cw_p": 0.8657,
           "mean_adj": -0.0001,
-          "n": 5679
+          "n": 5681
         }
       },
       "verdict": "DIRECTIONAL",
@@ -2179,8 +3104,8 @@
     "real10y": {
       "label": "Real-rate LEVEL (high real yields)",
       "stress_sign": 1,
-      "n": 6056,
-      "span": "2003-01-02..2026-03-19",
+      "n": 6058,
+      "span": "2003-01-02..2026-03-23",
       "ic_dd_full": 0.047,
       "ic_dd_pre": 0.053,
       "ic_dd_post": 0.004,
@@ -2188,12 +3113,12 @@
       "conditional": {
         "terciles": {
           "low": {
-            "n": 2019,
+            "n": 2020,
             "p_dd10": 0.096,
             "mean_dd_depth_pct": 4.2
           },
           "mid": {
-            "n": 2018,
+            "n": 2019,
             "p_dd10": 0.173,
             "mean_dd_depth_pct": 5.2
           },
@@ -2212,12 +3137,12 @@
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.17117,
+        "oos_r2": -0.17087,
         "clark_west": {
-          "cw_t": -0.942,
-          "cw_p": 0.8268,
-          "mean_adj": -0.00013,
-          "n": 5742
+          "cw_t": -0.932,
+          "cw_p": 0.8242,
+          "mean_adj": -0.00012,
+          "n": 5744
         }
       },
       "verdict": "DIRECTIONAL",
@@ -2226,8 +3151,8 @@
     "corepce_gap": {
       "label": "Core-PCE-vs-target gap (sticky inflation)",
       "stress_sign": 1,
-      "n": 14404,
-      "span": "1971-01-04..2026-03-19",
+      "n": 14406,
+      "span": "1971-01-04..2026-03-23",
       "ic_dd_full": 0.042,
       "ic_dd_pre": 0.009,
       "ic_dd_post": 0.13,
@@ -2240,12 +3165,12 @@
             "mean_dd_depth_pct": 4.9
           },
           "mid": {
-            "n": 4801,
+            "n": 4802,
             "p_dd10": 0.1,
             "mean_dd_depth_pct": 4.5
           },
           "high": {
-            "n": 4801,
+            "n": 4802,
             "p_dd10": 0.125,
             "mean_dd_depth_pct": 4.7
           }
@@ -2259,12 +3184,12 @@
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.3112,
+        "oos_r2": -0.31096,
         "clark_west": {
-          "cw_t": 1.666,
-          "cw_p": 0.0478,
+          "cw_t": 1.67,
+          "cw_p": 0.0474,
           "mean_adj": 0.00038,
-          "n": 8331
+          "n": 8333
         }
       },
       "verdict": "DIRECTIONAL",
@@ -2273,8 +3198,8 @@
     "infl_accel": {
       "label": "Inflation re-acceleration (3m>12m)",
       "stress_sign": 1,
-      "n": 14404,
-      "span": "1971-01-04..2026-03-19",
+      "n": 14406,
+      "span": "1971-01-04..2026-03-23",
       "ic_dd_full": 0.053,
       "ic_dd_pre": 0.049,
       "ic_dd_post": 0.073,
@@ -2287,12 +3212,12 @@
             "mean_dd_depth_pct": 4.5
           },
           "mid": {
-            "n": 4801,
+            "n": 4802,
             "p_dd10": 0.091,
             "mean_dd_depth_pct": 4.2
           },
           "high": {
-            "n": 4801,
+            "n": 4802,
             "p_dd10": 0.163,
             "mean_dd_depth_pct": 5.4
           }
@@ -2300,18 +3225,18 @@
         "base_p_dd10": 0.123,
         "high_edge_pp": 4.0,
         "high_p_dd10_ci": [
-          0.105,
-          0.162,
-          0.226
+          0.104,
+          0.163,
+          0.227
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.12829,
+        "oos_r2": -0.1281,
         "clark_west": {
-          "cw_t": -1.203,
-          "cw_p": 0.8856,
+          "cw_t": -1.192,
+          "cw_p": 0.8834,
           "mean_adj": -0.00011,
-          "n": 8331
+          "n": 8333
         }
       },
       "verdict": "DIRECTIONAL",
@@ -2320,8 +3245,8 @@
     "exp_wedge": {
       "label": "Expectations unanchoring (market>model)",
       "stress_sign": 1,
-      "n": 6056,
-      "span": "2003-01-02..2026-03-19",
+      "n": 6058,
+      "span": "2003-01-02..2026-03-23",
       "ic_dd_full": -0.054,
       "ic_dd_pre": -0.05,
       "ic_dd_post": -0.106,
@@ -2329,12 +3254,12 @@
       "conditional": {
         "terciles": {
           "low": {
-            "n": 2019,
+            "n": 2020,
             "p_dd10": 0.138,
             "mean_dd_depth_pct": 5.0
           },
           "mid": {
-            "n": 2018,
+            "n": 2019,
             "p_dd10": 0.184,
             "mean_dd_depth_pct": 5.5
           },
@@ -2353,12 +3278,12 @@
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.09926,
+        "oos_r2": -0.099,
         "clark_west": {
-          "cw_t": 2.14,
-          "cw_p": 0.0162,
-          "mean_adj": 0.00025,
-          "n": 5742
+          "cw_t": 2.151,
+          "cw_p": 0.0158,
+          "mean_adj": 0.00026,
+          "n": 5744
         }
       },
       "verdict": "INVERTED",
@@ -2367,8 +3292,8 @@
     "curve_tp_adj": {
       "label": "TP-adjusted curve inversion (flip: low=stress)",
       "stress_sign": -1,
-      "n": 12993,
-      "span": "1976-06-01..2026-03-19",
+      "n": 12995,
+      "span": "1976-06-01..2026-03-23",
       "ic_dd_full": 0.005,
       "ic_dd_pre": 0.01,
       "ic_dd_post": 0.031,
@@ -2376,8 +3301,8 @@
       "conditional": {
         "terciles": {
           "low": {
-            "n": 4331,
-            "p_dd10": 0.15,
+            "n": 4332,
+            "p_dd10": 0.151,
             "mean_dd_depth_pct": 5.1
           },
           "mid": {
@@ -2386,7 +3311,7 @@
             "mean_dd_depth_pct": 4.2
           },
           "high": {
-            "n": 4331,
+            "n": 4332,
             "p_dd10": 0.11,
             "mean_dd_depth_pct": 4.5
           }
@@ -2394,18 +3319,18 @@
         "base_p_dd10": 0.117,
         "high_edge_pp": -0.7,
         "high_p_dd10_ci": [
-          0.061,
+          0.062,
           0.11,
-          0.166
+          0.167
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.25973,
+        "oos_r2": -0.25953,
         "clark_west": {
-          "cw_t": -1.03,
-          "cw_p": 0.8484,
+          "cw_t": -1.026,
+          "cw_p": 0.8475,
           "mean_adj": -0.00019,
-          "n": 8331
+          "n": 8333
         }
       },
       "verdict": "CONTEXT",
@@ -2414,8 +3339,8 @@
     "nom10y_chg63": {
       "label": "Nominal-rate SPEED (63d rise)",
       "stress_sign": 1,
-      "n": 14341,
-      "span": "1971-04-01..2026-03-19",
+      "n": 14343,
+      "span": "1971-04-01..2026-03-23",
       "ic_dd_full": 0.095,
       "ic_dd_pre": 0.068,
       "ic_dd_post": 0.208,
@@ -2428,12 +3353,12 @@
             "mean_dd_depth_pct": 4.4
           },
           "mid": {
-            "n": 4780,
+            "n": 4781,
             "p_dd10": 0.123,
             "mean_dd_depth_pct": 4.7
           },
           "high": {
-            "n": 4780,
+            "n": 4781,
             "p_dd10": 0.119,
             "mean_dd_depth_pct": 5.0
           }
@@ -2447,40 +3372,285 @@
         ]
       },
       "return_forecast_test": {
-        "oos_r2": -0.1152,
+        "oos_r2": -0.11508,
         "clark_west": {
-          "cw_t": 0.636,
-          "cw_p": 0.2622,
+          "cw_t": 0.642,
+          "cw_p": 0.2606,
           "mean_adj": 7e-05,
-          "n": 8331
+          "n": 8333
         }
       },
       "verdict": "DIRECTIONAL",
+      "scored_eligible": false
+    },
+    "ntfs": {
+      "label": "Near-term forward spread inversion (flip: low=stress; Engstrom-Sharpe beats 2s10s)",
+      "stress_sign": -1,
+      "n": 12995,
+      "span": "1976-06-01..2026-03-23",
+      "ic_dd_full": -0.018,
+      "ic_dd_pre": 0.048,
+      "ic_dd_post": -0.213,
+      "cv_robust": false,
+      "conditional": {
+        "terciles": {
+          "low": {
+            "n": 4332,
+            "p_dd10": 0.083,
+            "mean_dd_depth_pct": 4.3
+          },
+          "mid": {
+            "n": 4331,
+            "p_dd10": 0.163,
+            "mean_dd_depth_pct": 5.2
+          },
+          "high": {
+            "n": 4332,
+            "p_dd10": 0.105,
+            "mean_dd_depth_pct": 4.3
+          }
+        },
+        "base_p_dd10": 0.117,
+        "high_edge_pp": -1.2,
+        "high_p_dd10_ci": [
+          0.058,
+          0.103,
+          0.161
+        ]
+      },
+      "return_forecast_test": {
+        "oos_r2": -0.26525,
+        "clark_west": {
+          "cw_t": -0.629,
+          "cw_p": 0.7354,
+          "mean_adj": -0.0001,
+          "n": 8333
+        }
+      },
+      "verdict": "CONTEXT",
+      "scored_eligible": false
+    },
+    "curvature": {
+      "label": "Curve curvature (2s5s10s butterfly — humped = late-cycle)",
+      "stress_sign": 1,
+      "n": 12995,
+      "span": "1976-06-01..2026-03-23",
+      "ic_dd_full": 0.032,
+      "ic_dd_pre": -0.013,
+      "ic_dd_post": 0.177,
+      "cv_robust": false,
+      "conditional": {
+        "terciles": {
+          "low": {
+            "n": 4332,
+            "p_dd10": 0.109,
+            "mean_dd_depth_pct": 4.4
+          },
+          "mid": {
+            "n": 4331,
+            "p_dd10": 0.126,
+            "mean_dd_depth_pct": 4.9
+          },
+          "high": {
+            "n": 4332,
+            "p_dd10": 0.116,
+            "mean_dd_depth_pct": 4.5
+          }
+        },
+        "base_p_dd10": 0.117,
+        "high_edge_pp": -0.1,
+        "high_p_dd10_ci": [
+          0.063,
+          0.115,
+          0.176
+        ]
+      },
+      "return_forecast_test": {
+        "oos_r2": -0.30873,
+        "clark_west": {
+          "cw_t": -1.347,
+          "cw_p": 0.9111,
+          "mean_adj": -0.00023,
+          "n": 8333
+        }
+      },
+      "verdict": "CONTEXT",
+      "scored_eligible": false
+    },
+    "real_speed_abs": {
+      "label": "Real-rate move VIOLENCE (|63d speed|, either direction)",
+      "stress_sign": 1,
+      "n": 5995,
+      "span": "2003-04-01..2026-03-23",
+      "ic_dd_full": 0.112,
+      "ic_dd_pre": 0.161,
+      "ic_dd_post": 0.057,
+      "cv_robust": false,
+      "conditional": {
+        "terciles": {
+          "low": {
+            "n": 1999,
+            "p_dd10": 0.097,
+            "mean_dd_depth_pct": 4.4
+          },
+          "mid": {
+            "n": 1998,
+            "p_dd10": 0.131,
+            "mean_dd_depth_pct": 4.5
+          },
+          "high": {
+            "n": 1998,
+            "p_dd10": 0.159,
+            "mean_dd_depth_pct": 5.4
+          }
+        },
+        "base_p_dd10": 0.129,
+        "high_edge_pp": 3.0,
+        "high_p_dd10_ci": [
+          0.081,
+          0.159,
+          0.249
+        ]
+      },
+      "return_forecast_test": {
+        "oos_r2": -0.11284,
+        "clark_west": {
+          "cw_t": -1.203,
+          "cw_p": 0.8856,
+          "mean_adj": -0.00013,
+          "n": 5681
+        }
+      },
+      "verdict": "DIRECTIONAL",
+      "scored_eligible": false
+    },
+    "slope_chg63": {
+      "label": "Curve flattening impulse (flip: − = flattening = stress; INVERTED if post-inversion steepening is the tell)",
+      "stress_sign": -1,
+      "n": 12932,
+      "span": "1976-08-27..2026-03-23",
+      "ic_dd_full": -0.032,
+      "ic_dd_pre": -0.085,
+      "ic_dd_post": 0.169,
+      "cv_robust": false,
+      "conditional": {
+        "terciles": {
+          "low": {
+            "n": 4311,
+            "p_dd10": 0.151,
+            "mean_dd_depth_pct": 5.2
+          },
+          "mid": {
+            "n": 4310,
+            "p_dd10": 0.105,
+            "mean_dd_depth_pct": 4.6
+          },
+          "high": {
+            "n": 4311,
+            "p_dd10": 0.097,
+            "mean_dd_depth_pct": 4.0
+          }
+        },
+        "base_p_dd10": 0.118,
+        "high_edge_pp": -2.1,
+        "high_p_dd10_ci": [
+          0.054,
+          0.096,
+          0.148
+        ]
+      },
+      "return_forecast_test": {
+        "oos_r2": -0.12276,
+        "clark_west": {
+          "cw_t": 0.755,
+          "cw_p": 0.2251,
+          "mean_adj": 8e-05,
+          "n": 8333
+        }
+      },
+      "verdict": "CONTEXT",
+      "scored_eligible": false
+    },
+    "trend_spread": {
+      "label": "3m10y TREND inversion (flip: low trend = stress) — Faria-Verona OOS equity-premium claim, tested on the return-forecast bar",
+      "stress_sign": -1,
+      "n": 14155,
+      "span": "1971-12-21..2026-03-23",
+      "ic_dd_full": 0.163,
+      "ic_dd_pre": 0.234,
+      "ic_dd_post": -0.031,
+      "cv_robust": false,
+      "conditional": {
+        "terciles": {
+          "low": {
+            "n": 4719,
+            "p_dd10": 0.049,
+            "mean_dd_depth_pct": 3.3
+          },
+          "mid": {
+            "n": 4718,
+            "p_dd10": 0.135,
+            "mean_dd_depth_pct": 4.8
+          },
+          "high": {
+            "n": 4718,
+            "p_dd10": 0.188,
+            "mean_dd_depth_pct": 6.0
+          }
+        },
+        "base_p_dd10": 0.124,
+        "high_edge_pp": 6.4,
+        "high_p_dd10_ci": [
+          0.124,
+          0.187,
+          0.255
+        ]
+      },
+      "return_forecast_test": {
+        "oos_r2": -0.27277,
+        "clark_west": {
+          "cw_t": 3.567,
+          "cw_p": 0.0002,
+          "mean_adj": 0.00055,
+          "n": 8333
+        }
+      },
+      "verdict": "CONTEXT",
       "scored_eligible": false
     }
   },
   "collinearity": {
     "vif": {
-      "real10y": 8.81,
-      "real10y_chg63": 167568.05,
-      "nom10y_chg63": 240131.3,
-      "be10y": 334636.14,
-      "be10y_chg63": 109310.56,
-      "be5y5y": 16.02,
-      "curve_tp_adj": 3.78,
-      "policy_gap": 2.22,
-      "corepce_gap": 2.65,
-      "infl_accel": 1.9,
-      "exp_wedge": 12.7,
-      "_scored_be10y_chg": 1.72,
-      "_scored_tips_nominal": 334642.12,
-      "_scored_sticky_dir": 1.46
+      "real10y": 10.32,
+      "real10y_chg63": -42245656143770.22,
+      "nom10y_chg63": -60532940210911.03,
+      "be10y": -50340055167067.48,
+      "be10y_chg63": -27555031480173.53,
+      "be5y5y": 16.65,
+      "curve_tp_adj": 7.66,
+      "policy_gap": 11.6,
+      "corepce_gap": 3.54,
+      "infl_accel": 1.97,
+      "exp_wedge": 15.49,
+      "curvature": 2.91,
+      "slope_chg63": 2.9,
+      "ntfs": 13.92,
+      "real_speed_abs": 1.37,
+      "trend_spread": 3.8,
+      "_scored_be10y_chg": 1.77,
+      "_scored_tips_nominal": -50340210489382.44,
+      "_scored_sticky_dir": 1.54
     },
     "top_pairs": [
       {
         "a": "be10y",
         "b": "_scored_tips_nominal",
         "corr": 1.0
+      },
+      {
+        "a": "policy_gap",
+        "b": "ntfs",
+        "corr": 0.89
       },
       {
         "a": "be10y",
@@ -2498,9 +3668,39 @@
         "corr": 0.74
       },
       {
+        "a": "curvature",
+        "b": "ntfs",
+        "corr": 0.72
+      },
+      {
+        "a": "curve_tp_adj",
+        "b": "ntfs",
+        "corr": 0.67
+      },
+      {
+        "a": "ntfs",
+        "b": "trend_spread",
+        "corr": 0.67
+      },
+      {
+        "a": "curve_tp_adj",
+        "b": "trend_spread",
+        "corr": 0.64
+      },
+      {
+        "a": "policy_gap",
+        "b": "trend_spread",
+        "corr": 0.63
+      },
+      {
         "a": "real10y",
         "b": "exp_wedge",
         "corr": 0.61
+      },
+      {
+        "a": "policy_gap",
+        "b": "curvature",
+        "corr": 0.6
       }
     ]
   }

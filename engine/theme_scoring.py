@@ -28,16 +28,25 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine import basket_score, group_flow
+from engine import basket_index, basket_mtf, basket_score, basket_tape, group_flow, vol_regime
 from engine.baskets import _ew_level, _mtd_anchor, _perf
 from engine.equity_factors import _names_sectors
 from lib import config
 
 log = logging.getLogger(__name__)
 
-# Composite weights (sum of the positive legs = 1.0; crowding is a separate penalty).
+# Composite weights (all legs incl. the crowding penalty sum to 1.0; the score renormalises over
+# whichever legs are AVAILABLE, so a basket/region without a deep candle keeps the same scale).
 # Surfaced to the page so the score is never a black box.
-WEIGHTS = {"trend": 0.34, "breadth": 0.22, "impulse": 0.10, "macro": 0.20, "crowding": 0.14}
+#
+# `mtf` (multi-timeframe trend structure) and `volhole` (vol-compression regime resolution) are
+# the new legs from the consolidated candle. Phase-0 (scripts/basket_signals_phase0) measured ~0
+# forward-return IC for theme momentum and no edge for the vol-hole breakout — the ONE validated
+# content is the long-trend / drawdown-control channel. So these legs carry MODEST weight, are
+# fully transparent, and their real teeth are in the reco GATE below (a basket below its long-term
+# trend cannot be ENTER/ACCUMULATE), not in pretending to forecast returns.
+WEIGHTS = {"trend": 0.26, "breadth": 0.18, "impulse": 0.07, "macro": 0.18,
+           "mtf": 0.16, "volhole": 0.05, "crowding": 0.10}
 
 UP_DAY, DOWN_DAY = 0.03, -0.03   # the ±3% impulse thresholds (user spec)
 HI_LO_WINDOW = 252               # 52-week new-high / new-low window
@@ -306,8 +315,63 @@ def _crowding_pen(fp: dict, lead: dict, crowd: dict | None) -> tuple[float, list
     return float(np.clip(pen, 0, 1)), reasons
 
 
+# ------------------------------------------------- consolidated-candle signals
+_SIG_CACHE: dict[tuple, dict] = {}
+
+
+def _basket_signals(members: list[dict], conv_map: dict | None = None) -> dict:
+    """Build the basket's consolidated CANDLE (deep, current-membership) and run the MTF +
+    tape engines on it. Cached by membership so build_baskets reuses it for the detail pages.
+    {} when no member OHLCV resolves (e.g. non-US regions — the store is US-only today), in
+    which case the mtf/volhole legs renormalise out of the score cleanly."""
+    key = tuple(sorted(m.get("ticker", "") for m in members))
+    if key in _SIG_CACHE:
+        return _SIG_CACHE[key]
+    out: dict = {}
+    try:
+        idx = basket_index.deep_calendar(members)
+        if len(idx) >= 60:
+            cand, meta = basket_index.consolidated_candle(members, idx, "equal", conv_map, pit=False)
+            if cand is not None:
+                out = {"mtf": basket_mtf.basket_mtf(cand),
+                       "tape": basket_tape.basket_tape(cand, meta),
+                       "meta": meta}
+    except Exception as e:  # noqa: BLE001 — additive overlay
+        log.warning("basket signals failed: %s", e)
+        out = {}
+    _SIG_CACHE[key] = out
+    return out
+
+
+def _mtf_reasons(mtf: dict | None, tape: dict | None) -> list[str]:
+    """Short human reasons from the MTF confluence + vol-hole, for the theme card."""
+    out: list[str] = []
+    grade = ((mtf or {}).get("confluence") or {}).get("grade")
+    _g = {"TREND-FOLLOW": "all timeframes aligned up", "BUY-THE-DIP": "dip within an uptrend",
+          "CAUTION": "unconfirmed turn vs the bigger trend", "AVOID": "downtrend across timeframes"}
+    if grade and grade != "WAIT":
+        out.append(_g.get(grade, grade.lower()))
+    st = ((tape or {}).get("volhole") or {}).get("state")
+    if st == "EXPANSION_UP":
+        out.append("breaking out of the vol hole")
+    elif st == "EXPANSION_DOWN":
+        out.append("breaking down out of the vol hole")
+    elif st in ("IN_HOLE", "COILED_UP", "COILED_DOWN"):
+        out.append("coiled in a volatility hole")
+    return out
+
+
+def _long_below_trend(mtf: dict | None) -> bool:
+    """The validated drawdown-control gate: is the basket BELOW its long-term trend (monthly +
+    cycle governor pointing down)?  Phase-0: below-trend baskets drew ~1.5-2pp deeper forward
+    drawdowns at equal forward return — so we never recommend ENTER/ACCUMULATE against it."""
+    ls = ((mtf or {}).get("confluence") or {}).get("long_sign")
+    return ls is not None and ls < 0
+
+
 # --------------------------------------------------------------- labels / recos
-def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | None) -> str:
+def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | None,
+           mtf: dict | None = None, tape: dict | None = None) -> str:
     accel = fp.get("accel_z") or 0.0
     rs_p = fp.get("rs_pctile")
     extended = rs_p is not None and rs_p >= 0.80
@@ -318,27 +382,55 @@ def _label(score: float, fp: dict, perf: dict, breadth: dict, delta_5d: float | 
     breadth_ok = (pct50 is None or pct50 >= 0.5) and net_nh >= 0
     falling = (delta_5d or 0.0) < 0
     breaking = (pct50 is not None and pct50 < 0.4) or net_nh < 0 or accel < -0.5
+    vh_state = ((tape or {}).get("volhole") or {}).get("state")
+    long_dn = _long_below_trend(mtf)
+    long_up = (((mtf or {}).get("confluence") or {}).get("long_sign") or 0) > 0
 
     if (r20 or 0.0) < 0 and breaking:
         return "deteriorating"
+    if vh_state == "EXPANSION_DOWN" and long_dn:
+        return "deteriorating"
     if extended and accel < -0.3 and falling:
         return "fading"
-    if score >= 62 and mom_pos and breadth_ok and accel > -0.5:
+    if vh_state == "EXPANSION_DOWN":
+        return "fading"
+    # ROLLOVER GUARD — momentum scores look great right up until the top. A high-scoring theme
+    # rolling over on the 5-day (a MATERIAL negative 5d relative) while NO LONGER making net new
+    # highs (breadth stalling at the top) is FADING, not DOMINANT — even if its longer-window
+    # acceleration still reads positive. This spares a strong theme still printing new highs after
+    # a small wobble (net_nh > 0) but catches the early top. (Fix: 'regional_banks' read
+    # DOMINANT/ACCUMULATE on a 66 score with 5d rel -2.4% and zero net new highs.)
+    if (falling and (delta_5d or 0.0) <= -0.015 and net_nh <= 0
+            and score >= 62 and mom_pos and breadth_ok and not long_dn):
+        return "fading"
+    if score >= 62 and mom_pos and breadth_ok and accel > -0.5 and not long_dn:
         return "dominant"
+    if ((accel > 0.4 or vh_state in ("EXPANSION_UP", "COILED_UP")) and long_up
+            and not extended and not falling and (r20 or 0.0) >= -0.005):
+        return "emerging"
     if accel > 0.4 and not extended and not falling and (r20 or 0.0) >= -0.005:
         return "emerging"
     return "neutral"
 
 
-def _reco(label: str, macro: float, crowd_pen: float, fp: dict) -> str:
+def _reco(label: str, macro: float, crowd_pen: float, fp: dict,
+          mtf: dict | None = None, tape: dict | None = None) -> str:
     rs_p = fp.get("rs_pctile") or 0.0
+    below_trend = _long_below_trend(mtf)         # drawdown-control gate (the validated channel)
+    vh_state = ((tape or {}).get("volhole") or {}).get("state")
     if label == "deteriorating":
         return "avoid"
     if label == "fading":
         return "trim"
+    if vh_state == "EXPANSION_DOWN":
+        return "trim"
     if label == "emerging":
+        if below_trend:
+            return "hold"
         return "enter" if (macro >= -0.25 and crowd_pen < 0.65) else "hold"
     if label == "dominant":
+        if below_trend:
+            return "hold"
         return "accumulate" if (rs_p < 0.85 and crowd_pen < 0.6 and macro >= -0.1) else "hold"
     return "hold"
 
@@ -355,6 +447,53 @@ _RECO_WHY = {
     "avoid": ("Momentum and breadth breaking down — stand aside.",
               "动量与广度同步走弱 — 暂避。"),
 }
+
+
+# ----------------------------------------------- backtested signal-strength grading
+def _signal_calibration() -> dict:
+    """The backtested signal-PRECISION verdict from scripts.calibrate_baskets
+    (data/strategies/baskets_calibration.json — the 27y SPDR-sector proxy kill-test).
+    Display/grade only, additive — returns {} if absent so the page falls back to the
+    honest 'descriptive' framing. The signal LOGIC (_label) is shared across regions, so
+    the US-proxy verdict is cited cross-market, exactly as engine.narrative_rotation cites
+    its 27y phase0 (HK already falls back to the US sector run)."""
+    try:
+        p = config.data_dir() / "strategies" / "baskets_calibration.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        return d.get("verdict", {}) if isinstance(d, dict) else {}
+    except Exception:  # noqa: BLE001 — grading is enrichment, never fatal
+        return {}
+
+
+def _signal_strength(label: str, cal: dict) -> dict | None:
+    """Grade a theme's CURRENT label by what the backtest measured about it. The risk
+    labels (fading / deteriorating) carry a MEASURABLE forward-drawdown edge on the proxy →
+    graded 'backtested'; the continuation labels (emerging / dominant) showed NO forward-
+    return edge (rank-IC ~ 0) → graded 'descriptive', so the UI can never read them as a
+    forecast. cal {} → None (the page keeps its existing honest framing)."""
+    if not cal:
+        return None
+    if label in ("fading", "deteriorating"):
+        v = cal.get(label) or {}
+        measured = v.get("verdict") == "measurable_edge"
+        return {"grade": "backtested" if measured else "unconfirmed", "kind": "risk",
+                "measured": bool(measured), "metric": "fwd 21d drawdown",
+                "mean_pct": v.get("mean_pct"), "t_hac": v.get("t_hac"), "n": v.get("n"),
+                "en": ("Backtested risk read — on 27y of clean sector history this label "
+                       "precedes deeper forward drawdowns (it is a risk timer, not a return "
+                       "forecast)." if measured else
+                       "Risk read — not separately confirmed on the proxy."),
+                "zh": ("已回测的风险信号 — 在27年干净行业历史上，该标签领先于更深的前向回撤"
+                       "（风险计时器，非收益预测）。" if measured else
+                       "风险信号 — 代理上未单独验证。")}
+    if label in ("emerging", "dominant"):
+        return {"grade": "descriptive", "kind": "continuation", "measured": False,
+                "metric": "fwd 21d relative return",
+                "en": "Descriptive — no measured forward-return edge on the 27y proxy "
+                      "(rank-IC ~ 0). A focus / structure lens, never a forecast.",
+                "zh": "描述性 — 在27年代理上无可测的前向收益优势（rank-IC≈0）。"
+                      "聚焦/结构透镜，绝非预测。"}
+    return None
 
 
 # ------------------------------------------------------------------- main compute
@@ -380,6 +519,16 @@ def compute_theme_intel(region: str = "us") -> dict | None:
     cfg = group_flow._cfg()
     nm = _names_sectors() if region == "us" else {}    # US GICS names; regions show tickers
     mc = _macro_context(region)
+    cal = _signal_calibration()                        # backtested signal-strength verdict (or {})
+    # SUBTRACT-ONLY vol-regime sizing overlay (engine/vol_regime): scales basket gross by the
+    # mechanical vol-target scalar (always-on) + a regime-state caution, and — when the regime is
+    # a risk-off kill-switch state — stands the aggressive recos DOWN (enter/accumulate -> hold).
+    # Never lifts a score, a rank, or a reco; pure caution. Inert when the regime is calm.
+    rg_snap = vol_regime.published_snapshot()
+    rg_size = vol_regime.sizing_overlay(rg_snap, vol_regime.overlay_config())
+    # graduated caution: WARNING shrinks gross (the rg_size scalar) but leaves recos intact;
+    # only the hard backwardation-stress KILL-SWITCH stands the aggressive recos down to hold.
+    rg_kill = bool(rg_snap) and rg_snap.get("regime") == "backwardation-stress"
     i = len(idx) - 1
     i5 = max(0, i - 5)
     ytd_anchor = idx[idx < pd.Timestamp(idx.max().year, 1, 1)].max() \
@@ -444,15 +593,37 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         macro, m_why = _macro_leg(bid, mc)
         crowd_pen, c_why = _crowding_pen(fp, lead, crowd)
 
-        raw = (WEIGHTS["trend"] * trend + WEIGHTS["breadth"] * breadth
-               + WEIGHTS["impulse"] * impulse + WEIGHTS["macro"] * macro
-               - WEIGHTS["crowding"] * crowd_pen)
+        # consolidated-candle legs (deep, current-membership): multi-timeframe trend structure +
+        # vol-compression regime. Whale/flow ride along as display-only context (not scored).
+        sig = _basket_signals(members)
+        mtf = sig.get("mtf") or {}
+        tape = sig.get("tape") or {}
+        mtf_leg = mtf.get("momentum_score")
+        volhole_leg = (tape.get("volhole") or {}).get("score")
+        mtf_why = _mtf_reasons(mtf, tape)
+
+        # score = weighted blend, RENORMALISED over the legs actually available (so a basket/
+        # region without a deep candle keeps the same scale as the original 4-leg score).
+        parts = {"trend": trend, "breadth": breadth, "impulse": impulse, "macro": macro}
+        if mtf_leg is not None:
+            parts["mtf"] = float(mtf_leg)
+        if volhole_leg is not None:
+            parts["volhole"] = float(volhole_leg)
+        wmass = sum(WEIGHTS[k] for k in parts) + WEIGHTS["crowding"]
+        raw = (sum(WEIGHTS[k] * v for k, v in parts.items())
+               - WEIGHTS["crowding"] * crowd_pen) / wmass
         score = int(round(50 + 50 * float(np.clip(raw, -1, 1))))
 
         delta_5d = (perf.get("5d") or {}).get("rel")
-        label = _label(score, fp, perf, breadth_d, delta_5d)
-        reco = _reco(label, macro, crowd_pen, fp)
-        reasons = (t_why + m_why + c_why)[:4] or ["mixed signals"]
+        label = _label(score, fp, perf, breadth_d, delta_5d, mtf, tape)
+        reco = _reco(label, macro, crowd_pen, fp, mtf, tape)
+        # SUBTRACT-ONLY vol-regime caution: in a risk-off kill-switch regime, stand the
+        # aggressive recos DOWN to "hold" (never the reverse, never touches score/rank). This
+        # is what drops these baskets out of act_now while the regime is stressed.
+        regime_demoted = False
+        if rg_kill and reco in ("enter", "accumulate"):
+            reco, regime_demoted = "hold", True
+        reasons = (t_why + mtf_why + m_why + c_why)[:4] or ["mixed signals"]
 
         # advanced display-only textures (bull age / overbought / clean entry / roll-over)
         textures = basket_score.theme_textures(lvl, fp, fp5, crowd, breadth_d, perf)
@@ -476,11 +647,18 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "category": b.get("category", "Other"),
             "score": score,
             "components": {"trend": _r(trend), "breadth": _r(breadth), "impulse": _r(impulse),
-                           "macro": _r(macro), "crowding": _r(crowd_pen)},
+                           "macro": _r(macro),
+                           **({"mtf": _r(parts["mtf"])} if "mtf" in parts else {}),
+                           **({"volhole": _r(parts["volhole"])} if "volhole" in parts else {}),
+                           "crowding": _r(crowd_pen)},
+            "mtf": mtf or None, "tape": tape or None,
             "label": label, "label_en": LABELS[label][0], "label_zh": LABELS[label][1],
             "reco": reco, "reco_en": RECOS[reco][0], "reco_zh": RECOS[reco][1],
             "reco_why_en": _RECO_WHY[reco][0], "reco_why_zh": _RECO_WHY[reco][1],
+            "regime_demoted": regime_demoted,
             "reasons": reasons,
+            "signal_strength": _signal_strength(label, cal),
+
             "rs_pctile": _r(fp.get("rs_pctile")),
             "accel_z": _r(fp.get("accel_z")),
             "perf": {k: {"rel": _r((perf.get(k) or {}).get("rel"), 4),
@@ -602,15 +780,36 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         "bench_label": bench_label, "bench_label_zh": bench_label_zh,
         "disclaimer": {
             "en": ("Transparent decision-support, not a validated buy list. Every theme score "
-                   "decomposes into the legs shown (trend · breadth · impulse · macro · −crowding); "
-                   "the macro leg is a documented regime prior, and baskets are ~3y hindsight-curated. "
-                   "A focus/structure lens, like the Flow Lens — never an oracle."),
+                   "decomposes into the legs shown (trend · breadth · impulse · macro · MTF · "
+                   "vol-hole · −crowding); the macro leg is a documented regime prior, and baskets "
+                   "are ~3y hindsight-curated. The MTF (multi-timeframe trend) and vol-hole legs run "
+                   "on the basket's consolidated candle: Phase-0 measured ~0 forward-return edge for "
+                   "theme momentum, so they shape the READ and gate the recommendation against the "
+                   "long-term trend (drawdown control — the one validated channel), not a return "
+                   "forecast. Whale / volume / net-flow are display-only context. A focus/structure "
+                   "lens, like the Flow Lens — never an oracle."),
             "zh": ("透明的决策支持，并非经验证的买入清单。每个主题评分都拆解为所示各项（趋势·广度·"
-                   "脉冲·宏观·−拥挤）；宏观项为有据可查的周期先验，篮子为约3年事后筛选。这是聚焦/"
-                   "结构透镜，如资金流透视 — 绝非预言。"),
+                   "脉冲·宏观·多周期·波动洞·−拥挤）；宏观项为有据可查的周期先验，篮子为约3年事后筛选。"
+                   "多周期（趋势结构）与波动洞两项基于篮子的合成K线计算：Phase-0 实测主题动量对未来"
+                   "收益几乎无预测力，故它们用于刻画状态、并以长期趋势对建议进行回撤控制式约束（唯一"
+                   "经验证的渠道），而非收益预测。巨鲸/成交量/净流入仅作展示性背景。这是聚焦/结构透镜，"
+                   "如资金流透视 — 绝非预言。"),
         },
         "macro_context": mc["display"],
         "weights": WEIGHTS,
+        "signal_calibration": cal,
+        "regime_sizing": {
+            **rg_size,
+            "en": ("Index vol-regime sizing (subtract-only): scale basket gross to "
+                   f"~{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}% of normal "
+                   "and stand aggressive recos down in a risk-off regime. Drawdown / "
+                   "capital-efficiency caution, not a return forecast — never lifts a score "
+                   "or rank. The continuous validated score moves money only when its gate is open."),
+            "zh": ("指数波动率状态仓位（仅做减法）：将篮子总仓位缩放至约"
+                   f"{int(round((rg_size.get('gross_scalar') or 1.0) * 100))}%，并在风险偏离"
+                   "状态下将激进建议下调。这是回撤/资金效率提示，并非收益预测——绝不抬高评分或排名。"
+                   "连续验证分数仅在其闸门开启时才动用资金。"),
+        },
         "themes": themes,
         "rotation_5d": {"climbers": climbers, "fallers": fallers},
         "impulse_scorecard": {

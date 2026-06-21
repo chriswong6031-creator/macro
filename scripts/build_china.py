@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_china")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "timemachine.js",
-          "charts.js", "tablesort.js", "aibrief.js")
+          "charts.js", "tablesort.js", "aibrief.js", "stockview.js")
 
 
 def _range_selector() -> dict:
@@ -797,6 +797,31 @@ def main() -> int:
             _build_sector_pages(env)
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china sector pages build failed (%s); skipping", e)
+
+        # China Intelligence surfaces (News powerhouse → Policy Watch → Alt-Data →
+        # Divergence Radar) + the transmission bus that bundles them for the future
+        # China Mastermind. Each is additive + None-safe; standalone pages built here so
+        # the daily China build refreshes them. See research/CHINA_INTEL_POWERHOUSE.md.
+        for _name, _mod, _fn in (
+            # predictive validation FIRST — earns the signal weights altdata + analysis read
+            ("china validation", "engine.china_validation", "validate_all"),
+            ("china news powerhouse", "scripts.build_china_news", "build"),
+            ("china policy watch", "scripts.build_china_policy_watch", "build"),
+            ("china alt-data desk", "scripts.build_china_altdata", "build"),
+            ("china divergence radar", "scripts.build_china_radar", "build"),
+            # central-intelligence synthesis MUST run after the surfaces, before the hub/bus
+            ("china central analysis", "scripts.build_china_synthesis", "build"),
+        ):
+            try:
+                import importlib
+                getattr(importlib.import_module(_mod), _fn)()
+            except Exception as e:  # noqa: BLE001 — additive, never fatal
+                log.error("%s build failed (%s); skipping", _name, e)
+        try:
+            from scripts.build_china_intel import build as _build_china_intel
+            _build_china_intel()      # fan-in 4 surfaces + analysis + hub for the China Mastermind
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china intel hub/bus build failed (%s); skipping", e)
     except Exception as e:  # noqa: BLE001
         log.error("china page render failed (%s); skipping", e)
         return 0

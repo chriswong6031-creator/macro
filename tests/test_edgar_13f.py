@@ -155,3 +155,77 @@ def test_overlap_stats_vip_threshold_and_empty():
     assert sm.overlap_stats(many)["is_vip"] is True          # >= _VIP_MIN
     assert sm.overlap_stats(many[:2])["is_vip"] is False
     assert sm.overlap_stats([_holder("X", "exit", 0.0, 1.0)]) == {"vip": 0}
+
+
+def _series(*holder_counts, vals=None):
+    vals = vals or [c * 100.0 for c in holder_counts]
+    return [{"period": f"2024-{3*(i+1):02d}-31", "n_funds": c, "value_usd": v}
+            for i, (c, v) in enumerate(zip(holder_counts, vals))]
+
+
+def test_accumulation_trend_holder_count_drives_direction():
+    up = sm.accumulation_trend(_series(2, 3, 4, 5))
+    assert up["direction"] == "accumulating"
+    assert up["holders_first"] == 2 and up["holders_last"] == 5
+    assert up["holders_delta"] == 3 and up["n_quarters"] == 4
+    assert up["holders_series"] == [2, 3, 4, 5]
+
+    down = sm.accumulation_trend(_series(6, 6, 4, 3))
+    assert down["direction"] == "distributing" and down["holders_delta"] == -3
+
+    # trailing exit-to-zero is the signal — must NOT read as "stable"
+    exited = sm.accumulation_trend(_series(3, 3, 3, 0))
+    assert exited["direction"] == "distributing"
+    assert exited["holders_last"] == 0 and exited["holders_delta"] == -3
+
+
+def test_accumulation_trend_value_breaks_holder_ties():
+    flat_up = sm.accumulation_trend(_series(3, 3, 3, vals=[100.0, 150.0, 200.0]))
+    assert flat_up["direction"] == "accumulating"          # +100% value, holders flat
+    assert flat_up["value_change_pct"] == 100.0
+    flat_down = sm.accumulation_trend(_series(3, 3, vals=[200.0, 100.0]))
+    assert flat_down["direction"] == "distributing"        # -50% value
+    flat_stable = sm.accumulation_trend(_series(3, 3, vals=[100.0, 105.0]))
+    assert flat_stable["direction"] == "stable"            # +5% < threshold
+
+
+def test_accumulation_trend_needs_two_real_quarters():
+    assert sm.accumulation_trend(_series(4)) is None       # one point
+    assert sm.accumulation_trend([]) is None
+    # leading empty quarters (name not yet held) are dropped before the >=2 check
+    assert sm.accumulation_trend(
+        [{"period": "2024-03-31", "n_funds": 0, "value_usd": 0.0},
+         {"period": "2024-06-31", "n_funds": 0, "value_usd": 0.0},
+         {"period": "2024-09-31", "n_funds": 2, "value_usd": 200.0}]) is None
+
+
+def test_accumulation_trend_emits_lookahead_free_as_of():
+    # filing dates lag quarter-end ~45d — the trend must surface the FILING date
+    # as `available_on`, never the quarter-end, so a scorer can't peek ahead.
+    s = [{"period": "2024-03-31", "n_funds": 2, "value_usd": 100.0, "filing_date": "2024-05-15"},
+         {"period": "2024-06-30", "n_funds": 4, "value_usd": 200.0, "filing_date": "2024-08-14"}]
+    tr = sm.accumulation_trend(s)
+    assert tr["to_period"] == "2024-06-30"                 # quarter-end (display)
+    assert tr["available_on"] == "2024-08-14"              # PUBLIC filing date (scoring)
+    assert tr["available_on_first"] == "2024-05-15"
+    assert tr["available_on"] > tr["to_period"]            # filing strictly after quarter-end
+
+
+def test_as_of_for_scoring_contract():
+    s = [{"period": "2024-03-31", "n_funds": 2, "value_usd": 100.0, "filing_date": "2024-05-15"},
+         {"period": "2024-06-30", "n_funds": 3, "value_usd": 150.0, "filing_date": "2024-08-14"}]
+    assert sm.as_of_for_scoring(sm.accumulation_trend(s)) == "2024-08-14"
+    assert sm.as_of_for_scoring(None) is None
+    # legacy snapshots w/o filing_date -> no as-of -> trend must NOT be scored
+    assert sm.as_of_for_scoring(sm.accumulation_trend(_series(2, 3))) is None
+
+
+def test_smart_money_trend_never_keys_scoring_on_quarter_end():
+    """Guard the look-ahead contract: as_of_for_scoring must return the filing date,
+    which is strictly later than the quarter-end `to_period`. A regression that made
+    scoring key on `to_period` would surface here."""
+    s = [{"period": "2024-09-30", "n_funds": 1, "value_usd": 50.0, "filing_date": "2024-11-14"},
+         {"period": "2024-12-31", "n_funds": 2, "value_usd": 120.0, "filing_date": "2025-02-14"}]
+    tr = sm.accumulation_trend(s)
+    asof = sm.as_of_for_scoring(tr)
+    assert asof == "2025-02-14" and asof != tr["to_period"] and asof > tr["to_period"]

@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span> — <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span></title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  
+  .rd-hero { max-width:1060px; margin:18px auto 0; }
+  .rd-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .rd-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .rd-hero h1 { letter-spacing:0; }
+  .rd-hero .lens { font-size:12px; color:var(--muted); }
+  .rd-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
+  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
+  .dcards { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; margin:12px 0; }
+  .dcard { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; border-left:4px solid var(--line); }
+  .dcard.positive { border-left-color:#1f9a55; }
+  .dcard.negative { border-left-color:#d23f3f; }
+  .dcard .hd { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .sgn { font-size:10px; font-weight:800; padding:2px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em; }
+  .sgn.positive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .sgn.negative { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .dcard .pair { font-weight:700; font-size:14px; }
+  .dcard .det { font-size:12px; color:var(--muted); margin:5px 0; }
+  .dcard .rs { font-size:12px; font-variant-numeric:tabular-nums; }
+  .dcard .hyp { font-size:12.5px; line-height:1.5; border-left:2px solid var(--link); padding-left:9px; margin-top:8px; opacity:.92; }
+  .dcard .cvx { margin-left:auto; font-size:13px; font-weight:800; font-variant-numeric:tabular-nums; color:var(--link); }
+  .dcard .cand { font-size:11.5px; color:var(--muted); margin-top:7px; }
+  .dcard .hd { justify-content:flex-start; }
+  .strength { height:5px; border-radius:3px; background:var(--panel2); overflow:hidden; margin-top:8px; }
+  .strength > i { display:block; height:100%; background:var(--link); }
+  .inline-list { display:flex; flex-wrap:wrap; gap:7px; margin:8px 0; }
+  .ichip { font-size:11.5px; padding:4px 10px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); }
+  .b-hit{color:#1f9a55}.b-miss{color:#d23f3f}.b-open{color:var(--muted)}
+  .led-stat { display:flex; gap:18px; flex-wrap:wrap; margin:8px 0; font-size:13px; color:var(--muted); }
+  .led-stat b { color:var(--text); font-size:17px; }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
+
+</style>
+
+</head>
+<body>
+<nav class="site-nav">
+    
+
+
+    <div class="nav-links">
+    <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
+    <div class="nav-dd">
+      <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
+        <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
+        <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
+        <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
+        <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
+        <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
+        <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="hk.html">🇭🇰 <span class="l-en">Hong Kong</span><span class="l-zh">香港</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="hk.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">HSI · southbound · global risk</span><span class="l-zh">HSI · 南向 · 全球风险</span></span></a>
+        <a href="hk_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">HK-listed standouts · alpha</span><span class="l-zh">HK上市精选 · 阿尔法</span></span></a>
+        <a href="baskets_hk.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs HSI</span><span class="l-zh">等权主题篮子 vs 恒指</span></span></a>
+        <a href="allocation_hk.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="canada.html">🇨🇦 <span class="l-en">Canada</span><span class="l-zh">加拿大</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="canada.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">TSX · BoC · commodity overlay</span><span class="l-zh">TSX · 加央行 · 商品叠加</span></span></a>
+        <a href="canada_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">TSX standouts · sectors · alpha</span><span class="l-zh">TSX精选 · 板块 · 阿尔法</span></span></a>
+        <a href="baskets_canada.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P/TSX</span><span class="l-zh">等权主题篮子 vs 标普/多伦多</span></span></a>
+        <a href="allocation_canada.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="intl.html">🌍 <span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intl.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        <a href="intl_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Cross-market standouts · sectors</span><span class="l-zh">跨市场精选 · 板块</span></span></a>
+        <a href="baskets_intl.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">💠 <span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="vector.html">₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="vector.html">📊 <span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
+            <a href="vector_allocation.html">◎ <span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+          </div>
+        </div>
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="commodities.html">🛢 <span class="l-en">Commodities</span><span class="l-zh">大宗商品</span> <span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="commodities.html">📊 <span class="l-en">Commodity Dashboard</span><span class="l-zh">商品仪表盘</span><span class="d"><span class="l-en">Gold · silver · copper · oil · complex</span><span class="l-zh">金 · 银 · 铜 · 油 · 综合</span></span></a>
+            <a href="commodity_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Per-commodity tactical strategies</span><span class="l-zh">分品种战术策略</span></span></a>
+            <a href="spr.html">🛢️ <span class="l-en">Strategic Reserves</span><span class="l-zh">战略储备</span><span class="d"><span class="l-en">SPR levels by country vs oil prices</span><span class="l-zh">各国战略储备水平与油价</span></span></a>
+          </div>
+        </div>
+        <a href="forex.html">💱 <span class="l-en">Forex</span><span class="l-zh">外汇</span><span class="d"><span class="l-en">Dollar desk · G10 carry · pairs</span><span class="l-zh">美元桌 · G10套息 · 货币对</span></span></a>
+        <a href="bonds.html">🏛️ <span class="l-en">Bonds</span><span class="l-zh">债券</span><span class="d"><span class="l-en">Curve · credit · duration compass</span><span class="l-zh">曲线 · 信用 · 久期罗盘</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
+      <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
+        <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
+        <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
+        <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
+        <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
+        <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
+        <a href="factors.html">🧮 <span class="l-en">Factors & Seasonality</span><span class="l-zh">因子 & 季节性</span><span class="d"><span class="l-en">Value · quality · low-vol · monthly calendar</span><span class="l-zh">价值 · 质量 · 低波动 · 月历</span></span></a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+
+<section class="rd-hero">
+  <p class="eyebrow">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></p>
+  <h1><span class="l-en">China Divergence Radar</span><span class="l-zh">中国背离雷达</span></h1>
+  <p class="lens"><span class="l-en">Free, management-independent demand/policy/flow signals vs sector price · falsifiable · context only · as of</span><span class="l-zh">免费、独立于管理层的需求/政策/资金信号 vs 板块价格 · 可证伪 · 仅供参考 · 截至</span> 2026-06-21</p>
+</section>
+
+<div class="rd-wrap">
+
+
+  <div class="callout"><span class="l-en">How to read: each card pairs a free macro/policy/flow signal with the sector it transmits to. POSITIVE = support improving while price still lags (potential catch-up); NEGATIVE = support fading while price still leads (potential vulnerability). Same-direction pairs stay silent. Every divergence is a dated, falsifiable hypothesis the ledger scores.</span><span class="l-zh">解读：每张卡片将一个免费宏观/政策/资金信号与其传导的板块配对。正向＝支撑改善但价格仍滞后（潜在补涨）；负向＝支撑转弱但价格仍领先（潜在脆弱）。同向配对保持静默。每个背离都是有日期、可证伪的假设，由台账评分。</span></div>
+
+  <!-- ===== active divergences ===== -->
+  <h2 class="sec">📡 <span class="l-en">Active divergences</span><span class="l-zh">活跃背离</span> <span style="font-size:12px;color:var(--muted)">4/8</span></h2>
+  
+  <div class="dcards">
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></span>
+        <span class="cvx">27</span>
+      </div>
+      <div class="det"><span class="l-en">Mfg PMI 50.0 (+1.0 3m)</span><span class="l-zh">制造业PMI 50.0（3月+1.0）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-8.6%</b> <span class="mut">(z -1.08)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:27%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>云铝股份</b> (000807.SZ) · <b>中国稀土</b> (000831.SZ) · <b>盛和资源</b> (600392.SS)</div>
+      <div class="hyp"><span class="l-en">If Mfg PMI is leading, Nonferrous metals should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，有色金属未来约3个月应跑赢沪深300。</span></div>
+    </div>
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Brokers</span><span class="l-zh">券商</span></span>
+        <span class="cvx">24</span>
+      </div>
+      <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-12.4%</b> <span class="mut">(z -0.94)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:24%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>东方证券</b> (600958.SS) · <b>000166.SZ</b> (000166.SZ) · <b>中金公司</b> (601995.SS)</div>
+      <div class="hyp"><span class="l-en">If PBoC easing is leading, Brokers should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，券商未来约3个月应跑赢沪深300。</span></div>
+    </div>
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">Mfg PMI</span><span class="l-zh">制造业PMI</span> → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></span>
+        <span class="cvx">19</span>
+      </div>
+      <div class="det"><span class="l-en">Mfg PMI 50.0 (+1.0 3m)</span><span class="l-zh">制造业PMI 50.0（3月+1.0）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-4.2%</b> <span class="mut">(z -0.76)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:19%"></i></div>
+      <div class="cand">🎯 <span class="l-en">Candidates</span><span class="l-zh">候选</span>: <b>格林美</b> (002340.SZ) · <b>比亚迪</b> (002594.SZ) · <b>宁德时代</b> (300750.SZ)</div>
+      <div class="hyp"><span class="l-en">If Mfg PMI is leading, New-energy vehicle should outperform CSI 300 over ~3 months.</span><span class="l-zh">若制造业PMI领先，新能源车未来约3个月应跑赢沪深300。</span></div>
+    </div>
+    
+    <div class="dcard positive">
+      <div class="hd">
+        <span class="sgn positive"><span class="l-en">Positive</span><span class="l-zh">正向</span></span>
+        <span class="pair"><span class="l-en">PBoC easing</span><span class="l-zh">央行宽松</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span>
+        <span class="cvx">16</span>
+      </div>
+      <div class="det"><span class="l-en">12m easing score +20 (LPR +0bp, RRR -1.00pp)</span><span class="l-zh">12月宽松分 +20（LPR +0基点，准备金 -1.00pp）</span></div>
+      <div class="rs"><span class="l-en">Sector vs CSI 300 (63d)</span><span class="l-zh">板块 vs 沪深300（63日）</span>: <b class="r-neg">-21.8%</b> <span class="mut">(z -0.63)</span>
+      · <span class="mut"><span class="l-en">track record</span><span class="l-zh">历史</span>: <span class="l-en">unproven</span><span class="l-zh">未验证</span></span></div>
+      <div class="strength"><i style="width:16%"></i></div>
+      
+      <div class="hyp"><span class="l-en">If PBoC easing is leading, Real estate should outperform CSI 300 over ~3 months.</span><span class="l-zh">若央行宽松领先，房地产未来约3个月应跑赢沪深300。</span></div>
+    </div>
+    
+  </div>
+  
+
+  <!-- ===== in line (silent) ===== -->
+  
+  <h2 class="sec">🔇 <span class="l-en">In line (silent)</span><span class="l-zh">一致（静默）</span></h2>
+  <p style="font-size:12px;color:var(--muted)"><span class="l-en">Signal and price agree — confirming, no divergence edge.</span><span class="l-zh">信号与价格一致——确认，无背离信号。</span></p>
+  <div class="inline-list">
+    <span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Banks</span><span class="l-zh">银行</span></span><span class="ichip"><span class="l-en">Credit impulse (TSF)</span><span class="l-zh">信用脉冲(社融)</span> → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></span><span class="ichip"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Semiconductors</span><span class="l-zh">半导体</span></span><span class="ichip"><span class="l-en">Southbound flow</span><span class="l-zh">南向资金</span> → <span class="l-en">Defense</span><span class="l-zh">国防军工</span></span>
+  </div>
+  
+
+  <!-- ===== ledger ===== -->
+  
+  <h2 class="sec">📒 <span class="l-en">Falsification ledger</span><span class="l-zh">证伪台账</span></h2>
+  <div class="led-stat">
+    <span><b>4</b> <span class="l-en">logged</span><span class="l-zh">已记录</span></span>
+    <span><b>0</b> <span class="l-en">resolved</span><span class="l-zh">已结</span></span>
+    
+    <span>4 <span class="l-en">open</span><span class="l-zh">未结</span></span>
+  </div>
+  
+  <table class="data">
+    <thead><tr><th><span class="l-en">Fired</span><span class="l-zh">触发</span></th><th><span class="l-en">Signal → Sector</span><span class="l-zh">信号→板块</span></th><th><span class="l-en">Sign</span><span class="l-zh">方向</span></th><th><span class="l-en">Fwd rel</span><span class="l-zh">后续相对</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th></tr></thead>
+    <tbody>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pboc_easing → <span class="l-en">Real estate</span><span class="l-zh">房地产</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pboc_easing → <span class="l-en">Brokers</span><span class="l-zh">券商</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pmi → <span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+      <tr>
+        <td>2026-06-20</td>
+        <td>pmi → <span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></td>
+        <td><span class="l-en">Positive</span><span class="l-zh">正向</span></td>
+        <td>—</td>
+        <td class="b-open"><span class="l-en">Open</span><span class="l-zh">未结</span></td>
+      </tr>
+    
+    </tbody>
+  </table>
+  
+  
+
+  <p class="disc"><span class="l-en">Context only — a divergence is a falsifiable hypothesis, not a trade. No validated edge; the ledger tracks whether these calls hold.</span><span class="l-zh">仅作背景——背离是可证伪的假设，而非交易。无已验证优势；台账追踪这些判断是否成立。</span></p>
+
+</div>
+
+
+<footer class="rfoot">
+  <span class="l-en">Research Reports are read-only analysis for informational purposes only — not investment advice. Figures are point-in-time and may be revised.</span><span class="l-zh">研究报告仅为信息性分析，不构成投资建议。数据为特定时点快照，可能被修订。</span>
+</footer>
+
+<script src="theme.js"></script>
+</body>
+</html>

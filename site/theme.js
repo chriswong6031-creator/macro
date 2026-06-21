@@ -382,6 +382,30 @@
     });
   }
 
+  /* ---- non-anchor chip links inside card anchors --------------------------
+     The standout-stock cards are <a> elements, so a real <a> chip inside them
+     would be invalid HTML (the parser auto-closes the card anchor, shattering
+     the card across grid cells). Such chips are rendered as <span class="...-link"
+     data-href="..."> instead; this delegate navigates them on click, stopping
+     propagation so the chip beats the card's own link. Keyboard-accessible via
+     role="link" tabindex="0". Delegated on document so revealed cards work too. */
+  function initSpotLinks() {
+    if (document.documentElement.dataset.spotLinks) return;   // install once
+    document.documentElement.dataset.spotLinks = '1';
+    function go(e) {
+      var el = e.target.closest('[data-href]');
+      if (!el) return;
+      e.preventDefault(); e.stopPropagation();
+      window.location.href = el.getAttribute('data-href');
+    }
+    document.addEventListener('click', go);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        if (e.target && e.target.matches && e.target.matches('[data-href]')) go(e);
+      }
+    });
+  }
+
   // Wrap wide data tables in a horizontal-scroll container so they scroll WITHIN their
   // card on narrow screens instead of bleeding past the viewport (mobile fix). Runs before
   // tablesort (theme.js loads first) so the filter box lands above the wrapper, and again on
@@ -422,6 +446,7 @@
     initActiveNav();
     initMobileNav();
     initShowMore();
+    initSpotLinks();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load

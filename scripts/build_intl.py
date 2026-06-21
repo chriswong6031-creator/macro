@@ -27,7 +27,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_intl")
 
 ASSETS = ("theme.css", "theme.js", "mtf.js", "chart_i18n.js", "charts.js",
-          "tablesort.js", "stockdata.js")
+          "tablesort.js", "stockdata.js", "stockview.js")
 
 # quad colour keys (match the .q-Qn CSS) — uniform with the other verticals
 QUAD_MEANING = {

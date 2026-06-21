@@ -12,10 +12,31 @@ is drawdown-control, not alpha. Mirrors the theme_crowding / group_flow honesty 
 """
 from __future__ import annotations
 
+import json
+
 import numpy as np
 import pandas as pd
 
 from lib import config
+
+# Hand weights for the rollover_risk breadth-free legs (rs>=.8 · rolling-over · decel<-.4 ·
+# below-50d · 5d<-1%&rs>.7). scripts.calibrate_baskets can OVERRIDE these with OOS-validated
+# weights (it found below-50d + extension dominate forward drawdown; the accel legs add
+# nothing OOS) — read additively, fall back to the hand weights if the calibration is absent.
+_ROLLOVER_HAND = (0.30, 0.25, 0.20, 0.15, 0.10)
+
+
+def _rollover_weights() -> tuple:
+    try:
+        p = config.data_dir() / "strategies" / "baskets_calibration.json"
+        d = json.loads(p.read_text()) if p.exists() else {}
+        rf = d.get("rollover_fit") or {}
+        w = rf.get("wired_weights")
+        if rf.get("verdict") == "ship_fitted_weights" and isinstance(w, list) and len(w) == 5:
+            return tuple(float(x) for x in w)
+    except Exception:  # noqa: BLE001 — calibration is enrichment, never fatal
+        pass
+    return _ROLLOVER_HAND
 
 
 def _rsi(s: pd.Series, n: int = 14) -> float | None:
@@ -77,11 +98,14 @@ def overbought(lvl: pd.Series, rs_pctile: float | None, crowd: dict | None) -> d
     rsi = _rsi(lvl)
     ext = None
     if isinstance(crowd, dict):
-        legs = crowd.get("legs") or {}
-        e = legs.get("extension") if isinstance(legs.get("extension"), dict) else {}
-        for k in ("pct_extended", "frac", "value", "share"):
+        # READ THE % of members extended from crowd["extension"] (pct_stretched /
+        # pct_parabolic, emitted 0-100 by theme_crowding) — NOT legs["extension"]["value"],
+        # which is the median ext Z-SCORE (~0-3): feeding that to `min(ext*1.5,1.2)` pins
+        # the band to its 1.2 ceiling for any z>=0.8, collapsing the overbought resolution.
+        e = crowd.get("extension") if isinstance(crowd.get("extension"), dict) else {}
+        for k in ("pct_stretched", "pct_parabolic"):
             if isinstance(e.get(k), (int, float)):
-                ext = float(e[k])
+                ext = float(e[k]) / 100.0          # 0-100 -> fraction extended
                 break
     comps = []
     if rsi is not None:
@@ -144,28 +168,32 @@ def rollover_risk(lvl: pd.Series, fp: dict | None, fp5: dict | None,
     breadth deteriorating, below short trend. 'Risky right now, about to roll over.'"""
     s = lvl.dropna()
     reasons, r = [], 0.0
+    # breadth-free leg weights: OOS-calibrated (below-50d + extension dominate fwd drawdown)
+    # when scripts.calibrate_baskets has shipped them, else the hand weights. A 0-weight leg
+    # still appends its descriptive reason but adds nothing to the risk score.
+    W = _rollover_weights()
     rs_p = (fp or {}).get("rs_pctile")
     accel = (fp or {}).get("accel_z")
     accel5 = (fp5 or {}).get("accel_z")
     if rs_p is not None and rs_p >= 0.8:
-        r += 0.30; reasons.append("extended (RS " + str(round(rs_p * 100)) + "%ile)")
+        r += W[0]; reasons.append("extended (RS " + str(round(rs_p * 100)) + "%ile)")
     if accel is not None and accel5 is not None and accel < accel5 and accel < 0:
-        r += 0.25; reasons.append("momentum rolling over")
+        r += W[1]; reasons.append("momentum rolling over")
     elif accel is not None and accel < -0.4:
-        r += 0.20; reasons.append("decelerating")
+        r += W[2]; reasons.append("decelerating")
     pct50 = (breadth_d or {}).get("pct50")
     nh, nl = (breadth_d or {}).get("nh", 0), (breadth_d or {}).get("nl", 0)
     if pct50 is not None and pct50 < 0.45:
-        r += 0.20; reasons.append("breadth weakening")
+        r += 0.20; reasons.append("breadth weakening")     # breadth legs stay hand (no single-ETF proxy)
     if nl > nh:
         r += 0.10; reasons.append("more new lows")
     if len(s) >= 50:
         sma50 = s.rolling(50, min_periods=25).mean().iloc[-1]
         if pd.notna(sma50) and s.iloc[-1] < sma50:
-            r += 0.15; reasons.append("below 50d")
+            r += W[3]; reasons.append("below 50d")
     d5 = (perf or {}).get("5d", {}).get("rel")
     if d5 is not None and d5 < -0.01 and rs_p is not None and rs_p > 0.7:
-        r += 0.10; reasons.append("rolling off the high")
+        r += W[4]; reasons.append("rolling off the high")
     band, band_zh = ("high", "高") if r >= 0.6 else ("elevated", "升高") if r >= 0.35 else ("low", "低")
     return {"risk": round(min(r, 1.0), 3), "band": band, "band_zh": band_zh,
             "reasons": reasons[:4], "directional": False}
@@ -207,17 +235,28 @@ def act_now_stocks(members: list, theme: dict) -> dict:
         c = m.get("conviction")
         if not c or c.get("score") is None:
             continue
-        v = (c.get("verdict") or "").lower()
-        is_buy = ("buy" in v or "add" in v) and not c.get("cycle_blocked")
+        # Two-gauge: a member is "act now" only when the ENTRY gauge says the window is
+        # open (buy_now / partial), not when the conviction score is merely high — and
+        # never when the cycle blocks. Falls back to the entry-axis percentile for any
+        # older record that predates the entry_signal block.
+        entry = c.get("entry") or {}
+        status = entry.get("status")
         ep = c.get("entry_pct")
-        good_entry = ep is None or ep >= 0.45
-        if is_buy and (c.get("score") or 0) >= 50 and good_entry:
+        if status:
+            is_buy = status in ("buy_now", "partial") and not c.get("cycle_blocked")
+        else:
+            v = (c.get("verdict") or "").lower()
+            is_buy = ("buy" in v or "add" in v or "leader" in v) and not c.get("cycle_blocked") \
+                and (ep is None or ep >= 0.45)
+        if is_buy and (c.get("score") or 0) >= 50:
             buys.append({"symbol": m.get("symbol"), "name": m.get("name"),
                          "score": c.get("score"), "verdict": c.get("verdict"),
                          "verdict_zh": c.get("verdict_zh"), "entry_pct": ep,
+                         "entry_status": status, "act_level": entry.get("act_level"),
+                         "zone_low": entry.get("zone_low"), "zone_high": entry.get("zone_high"),
                          "ret_20d": m.get("ret_20d"), "ret_ytd": m.get("ret_ytd"),
                          "rationale": m.get("rationale")})
-    buys.sort(key=lambda x: (-(x.get("entry_pct") or 0), -(x.get("score") or 0)))
+    buys.sort(key=lambda x: (-(x.get("act_level") or 0), -(x.get("entry_pct") or 0), -(x.get("score") or 0)))
     if not buys:
         return {"status": "no_clean_entries", "buys": [],
                 "note_en": "Theme is in favour, but no member has a clean entry right now — most are extended or mid-trend. Wait for a pullback.",
@@ -248,7 +287,9 @@ def market_concentration(region: str = "us") -> dict:
         except Exception:  # noqa: BLE001
             return None
     adv, dec = f("adv"), f("dec")
-    ad = round(adv / dec, 2) if (adv is not None and dec) else None
+    # guard dec>0 explicitly — a falsy-but-negative dec would pass `and dec` and yield a
+    # nonsensical negative advance/decline ratio.
+    ad = round(adv / dec, 2) if (adv is not None and dec is not None and dec > 0) else None
     out = {"adv": int(adv) if adv is not None else None,
            "dec": int(dec) if dec is not None else None, "ad_ratio": ad,
            "pct_above_50": round(f("pct_above_50"), 1) if f("pct_above_50") is not None else None,

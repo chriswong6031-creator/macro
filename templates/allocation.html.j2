@@ -35,6 +35,8 @@
   .prow:first-of-type { border-top:0; } .prow:hover { background:var(--panel2); }
   .pverb { font-size:10px; font-weight:700; border:1px solid; border-radius:6px; padding:1px 6px; white-space:nowrap; }
   .prow .pn { font-weight:650; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sb-badge { font-size:10px; font-weight:700; color:var(--warn); margin-left:5px;
+              padding:0 4px; border-radius:6px; background:color-mix(in srgb, var(--warn) 12%, transparent); }
   .prow .pw { font-variant-numeric:tabular-nums; font-weight:700; }
   .palert { display:flex; gap:9px; padding:7px 0; border-top:1px solid var(--line); font-size:12.5px; }
   .palert:first-of-type { border-top:0; }
@@ -190,7 +192,8 @@
     {% for w in d.allocation.weights %}
     <div class="arow">
       <span class="nm">#{{ w.rank }} {{ t(w.name, w.name_zh) }}
-        {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}</span>
+        {% if w.crowded %}<span class="chip hot" style="margin-left:4px">{{ t('crowded', '拥挤') }}</span>{% endif %}
+        {% if w.val_upgrade %}<span class="chip" style="margin-left:4px;color:var(--up);border-color:var(--up)" title="real-activity radar: independent activity is running ahead of price — promoted one slot earlier">🛰️ {{ t('activity ahead ⬆', '活动领先 ⬆') }}</span>{% endif %}</span>
       <span class="bar"><span class="fill" style="width:{{ ((w.weight/0.35*100) if w.weight>0 else 0)|round(1) }}%"></span></span>
       <span class="wv">{{ (w.weight*100)|round|int }}%</span>
     </div>
@@ -210,6 +213,31 @@
     '每个父级主题最多持有 1 个，避免组合沦为同一笔交易的四种说法。被替换（仍在趋势中，仅排序较低）') }}: {% for x in d.allocation.de_overlapped %}<span class="chip">{{ x.name }}</span>{% endfor %}</p>
   {% endif %}
 </div>
+
+{% if d.allocation.vol_overlay %}
+{% set vo = d.allocation.vol_overlay %}
+{% set ddci = vo.measured.dd_reduction_pp_ci or [None, None, None] %}
+<!-- ============ 01a DE-RISK OVERLAY (calibrated vol-target) ============ -->
+<h2><span class="idx">⚖</span>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
+  <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') if not vo.applied else t('backtested · applied', '已回测 · 已应用') }}</span></h2>
+<div class="panel">
+  <div class="gauge" style="margin-bottom:8px">
+    <div class="gz"><div class="k">{{ t('Book vol now', '当前组合波动') }}</div><div class="v">{{ (vo.book_vol_ann*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('Suggested scale', '建议缩放') }}</div><div class="v">{{ (vo.scalar*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('Gross after', '叠加后净敞口') }}</div><div class="v">{{ (vo.gross_after*100)|round|int }}%</div></div>
+    <div class="gz"><div class="k">{{ t('→ cash', '→ 现金') }}</div><div class="v">{{ (vo.cash_after*100)|round|int }}%</div></div>
+  </div>
+  <p class="tagline"><span class="l-en">{{ vo.note_en }}</span><span class="l-zh">{{ vo.note_zh }}</span></p>
+  <p class="tagline" style="margin-top:6px;opacity:.8">🔬 {{ t('Measured on the 27y US clean-sector proxy (cited cross-market — the signal logic is shared, not re-validated per region)', '基于27年美国干净行业代理实测（跨市场引用 — 信号逻辑共享，未按地区单独验证）') }}:
+    {{ t('max-drawdown reduction', '最大回撤降低') }} {{ ddci[1] if ddci[1] is not none else '—' }}pp
+    {{ t('CI', '区间') }} [{{ ddci[0] if ddci[0] is not none else '—' }}, {{ ddci[2] if ddci[2] is not none else '—' }}],
+    {{ t('beats a trend-only brake', '优于纯趋势刹车') }}: {{ '✓' if vo.measured.beats_trend_brake else '—' }},
+    DSR {{ vo.measured.dsr }} ({{ vo.measured.n_trials }} {{ t('configs', '配置') }}).
+    {{ t('Grade', '评级') }}: <b>{{ vo.measured.verdict }}</b> —
+    {{ t('it cuts drawdown but does not raise Sharpe enough to clear the multiple-testing bar, so it stays a suggestion.',
+         '降低回撤但夏普提升不足以通过多重检验门槛，故仅作为建议。') }}</p>
+</div>
+{% endif %}
 
 <!-- ============ 01b PLAYBOOK: BUY & SELL ENTRIES ============ -->
 <h2><span class="idx">★</span>🎯 {{ t('Buy & sell entries — the playbook', '买卖入场 — 操作手册') }}
@@ -260,6 +288,8 @@
   <tr class="{{ '' if r.eligible else 'inelig' }}">
     <td><b><a class="tlink" href="{{ BASKETS_PAGE }}#b-{{ r.id }}">{{ t(r.name, r.name_zh) }}<span class="jump" title="Open in Thematic Baskets">↗</span></a></b>
       {% if r.rank==1 %}<span class="stage lead">{{ t('LEADER', '领跑') }}</span>{% endif %}
+      {% if r.val_upgrade %}<span class="stage" style="color:var(--up)" title="real-activity radar: activity ahead of price">🛰️ {{ t('activity ⬆', '活动领先⬆') }}</span>
+      {% elif r.val_state == 'fading' %}<span class="stage" style="color:var(--warn)" title="real-activity radar: activity behind price">🛰️ {{ t('fading', '退潮') }}</span>{% endif %}
       <div class="legrow">{{ r.category }} · {{ r.n_live }} {{ t('names', '只') }}</div></td>
     <td class="num"><b>{{ '%.2f'|format(r.score) if r.score is not none else '—' }}</b></td>
     <td>{% if r.eligible %}<span class="stage" style="color:var(--up)">▲ {{ t('in trend', '趋势内') }}</span>{% else %}<span class="stage" style="color:var(--muted)">▽ {{ t('off trend', '趋势外') }}</span>{% endif %}</td>
@@ -401,7 +431,10 @@ const ALLOC = {{ data_json|safe }};
 const ROT_ALERTS = {{ rotation_alerts_json|safe }};
 const RISK_HIST = {{ risk_history_json|safe }};
 const ACT_NOW = {{ act_now_json|safe }};
+const STANDOUTS = {{ standouts_json|default('{}')|safe }};   // theme id -> # members on the US standout buy board
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+// ★N badge: how many individual standouts back this theme (the allocation→stock bridge)
+const sbBadge = id => { const n=STANDOUTS[id]; return n?` <span class="sb-badge" title="${n} member(s) on the US standout buy board">★${n}</span>`:''; };
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const bid = s => /^[a-z0-9_-]+$/i.test(s||'') ? s : '';
@@ -413,11 +446,11 @@ function renderEntries(){
   // BUY/HOLD: the de-overlapped trending book + (US) clean-entry buys not already held
   let buy=(alloc.weights||[]).map(w=>`<a class="prow" href="basket/${bid(w.id)}.html">
     <span class="pverb" style="color:var(--up);border-color:var(--up)">${L('HOLD / ADD','持有/加仓')}</span>
-    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
+    <span class="pn">#${w.rank} ${L(esc(w.name),esc(w.name_zh))}${sbBadge(w.id)}</span><span class="pw">${Math.round((w.weight||0)*100)}%</span></a>`);
   if(an && an.buy){ an.buy.filter(x=>!held.has(x.id)).forEach(x=>{
     const v=x.action==='enter'?['ENTER','建仓']:['ACCUMULATE','加仓'];
     buy.push(`<a class="prow" href="basket/${bid(x.id)}.html"><span class="pverb" style="color:#16a34a;border-color:#16a34a">${L(v[0],v[1])}</span>
-      <span class="pn">${L(esc(x.name),esc(x.name_zh))}</span><span class="pw">${x.score}</span></a>`); }); }
+      <span class="pn">${L(esc(x.name),esc(x.name_zh))}${sbBadge(x.id)}</span><span class="pw">${x.score}</span></a>`); }); }
   // REDUCE/AVOID: (US) act_now reduce + crowded held + de-overlapped displaced (context)
   let sell=[];
   if(an && an.reduce){ an.reduce.forEach(x=>{ const v=x.action==='avoid'?['AVOID','回避','#ef4444']:['TRIM','减仓','#f97316'];

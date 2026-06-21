@@ -225,28 +225,34 @@ def test_eq_fields_and_analyze() -> None:
 # ----------------------------------------------------- extension / late-cross ----
 
 def _extended_snapshot(rsi_d: float, rsi_3: float, rsi_w: float,
-                       above_ma10: bool = True, weekly_cross: bool = False) -> tuple[dict, dict]:
+                       above_ma10: bool = True, weekly_cross: bool = False,
+                       dc_phase: str = "stretched", dc_day: int = 68,
+                       curl_dn: bool = False) -> tuple[dict, dict]:
     """SNDK-shaped cycle+mtf snapshot: a late, stretched daily cycle that printed
     a swing low and reclaimed the 10-day average with the daily MACD just crossed
-    up — i.e. the cand-confirmed buy path. The RSI levels are the knob under test."""
+    up — i.e. the cand-confirmed buy path. The RSI levels are the knob under test.
+    `dc_phase`/`dc_day` select cycle position; `curl_dn` arms the daily roll-over
+    flag (the HWM case: late, not overbought, but momentum already turning down)."""
     cyc = {
-        "dc_day": 68, "dc_band": (36, 42), "dc_early": 12, "dc_phase": "stretched",
+        "dc_day": dc_day, "dc_band": (36, 42), "dc_early": 12, "dc_phase": dc_phase,
         "last_dcl": "2026-03-01", "dcl_price": 527.33,
         "cand_dcl": "2026-05-18", "cand_price": 1333.01, "cand_swing": True, "cand_age": 18,
+        "cand_depth_pct": 9.0,
         "translation": "right", "failed_cycle": False, "failed_age": None,
         "swing_low": True, "above_ma10": above_ma10, "ma10_rising": True,
         "ic_week": 45, "ic_band": (16, 26), "ic_phase": "overdue", "ic_failed": False,
         "n_troughs": 5,
     }
 
-    def tf(rsi: float, cross_up: bool = False) -> dict:
+    def tf(rsi: float, cross_up: bool = False, mcurl_dn: bool = False) -> dict:
         return {"rsi14": rsi, "rsi5": rsi, "stoch": 55.0, "macd_pos": True,
                 "macd_cross_up": cross_up, "macd_cross_dn": False,
                 "macd_approaching_up": False, "macd_approaching_dn": False,
-                "macd_curl_up": False, "macd_curl_dn": False, "macd_bars_to_cross": None,
+                "macd_curl_up": False, "macd_curl_dn": mcurl_dn, "macd_bars_to_cross": None,
                 "stoch_cross_up": False, "stoch_cross_dn": False}
 
-    mtf = {"D": tf(rsi_d, cross_up=True), "3D": tf(rsi_3), "W": tf(rsi_w, cross_up=weekly_cross)}
+    mtf = {"D": tf(rsi_d, cross_up=True, mcurl_dn=curl_dn), "3D": tf(rsi_3),
+           "W": tf(rsi_w, cross_up=weekly_cross)}
     return cyc, mtf
 
 
@@ -290,15 +296,52 @@ def test_turn_signaled_text_not_self_contradictory_above_ma() -> None:
     SIGNALED copy must not tell the user to wait for it to 'close back above' —
     that contradiction was the lag the SNDK card exposed. The genuine pre-reclaim
     case keeps the original 'buy on the reclaim' copy."""
-    cyc, mtf = _extended_snapshot(54, 60, 57, above_ma10=True)
+    # a NON-stretched reclaim is the genuine partial-now entry (HALF SIZE); the copy
+    # must not tell the user to wait for a reclaim they have already done.
+    cyc, mtf = _extended_snapshot(54, 60, 57, above_ma10=True,
+                                  dc_phase="in_band", dc_day=40)
     above = entry_timing("TURN SIGNALED", cyc, mtf)
     assert above["tag"] == "HALF SIZE", above
     assert "closes back above" not in above["text"]
     assert "already in" in above["text"]
-    cyc_below, _ = _extended_snapshot(40, 45, 48, above_ma10=False)
+    cyc_below, _ = _extended_snapshot(40, 45, 48, above_ma10=False,
+                                      dc_phase="in_band", dc_day=40)
     below = entry_timing("TURN SIGNALED", cyc_below, mtf)
     assert below["tag"] == "BUY SOON"
-    assert "closes back above" in below["text"]
+
+
+def test_cycle_top_rollover_veto_demotes_late_curl_down() -> None:
+    """The HWM bug: a LATE (not stretched) cand-confirmed buy whose daily momentum
+    is already curling down — NOT overbought (RSI 62) so the old gate missed it —
+    must be demoted to TOP WATCH / 'don't chase', never urgency='now'."""
+    cyc, mtf = _extended_snapshot(62, 60, 58, above_ma10=True,
+                                  dc_phase="approaching_band", dc_day=35, curl_dn=True)
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TOP WATCH", lad["state"]
+    assert lad["entry"]["urgency"] != "now", lad["entry"]
+    assert lad["entry"]["tag"] == "DON'T CHASE", lad["entry"]
+
+
+def test_cycle_top_stretched_reclaim_is_buy_soon_not_now() -> None:
+    """The ECG day-93 case: a reclaim this far past the cycle band is an UNCONFIRMED
+    new cycle — entry must be 'imminent' (buy on confirmation), never 'now'."""
+    for state in ("FRESH BUY", "TURN SIGNALED"):
+        cyc, mtf = _extended_snapshot(57, 58, 56, above_ma10=True,
+                                      dc_phase="stretched", dc_day=93)
+        e = entry_timing(state, cyc, mtf)
+        assert e["urgency"] == "imminent", (state, e)
+        assert e["tag"] == "BUY SOON", (state, e)
+
+
+def test_cycle_top_htf_down_cross_blocks_now() -> None:
+    """A higher-timeframe (3-day/weekly) confirmed down-cross blocks a fresh 'now'
+    buy even when the daily looks fine (the NVDA/MYRG case)."""
+    cyc, mtf = _extended_snapshot(55, 56, 54, above_ma10=True,
+                                  dc_phase="approaching_band", dc_day=33)
+    mtf["3D"]["macd_cross_dn"] = True            # higher TF rolled over
+    lad = ladder_state(cyc, mtf)
+    assert lad["state"] == "TOP WATCH", lad["state"]
+    assert lad["entry"]["urgency"] != "now", lad["entry"]
 
 
 def test_eq_freshness_decays_for_a_late_cross() -> None:

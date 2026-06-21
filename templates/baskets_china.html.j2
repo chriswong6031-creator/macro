@@ -111,10 +111,14 @@
       '精选 A 股主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。以沪深 300 为基准。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
   </header>
 
-  {% include "_baskets_desk.html.j2" %}
-
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation_china.json" data-page="allocation_china.html"></section>
+
+  {% include "_baskets_desk.html.j2" %}
+
+  {# 🔥 Forming Narratives — emerging A-share themes our models detect + clean-entry tickers. #}
+  {% set ne_base = "chinabasketdata/" %}
+  {% include "_forming_narratives.html.j2" %}
 
   <div id="content">
     <section id="table-section">

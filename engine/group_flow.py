@@ -140,11 +140,15 @@ def fingerprint_at(prep: dict, i: int, cfg: dict) -> dict | None:
 
     rets = prep["rets"]
     cohesion = cohesion_chg = None
-    if i >= cw:
+    if i >= cw - 1:
         cohesion = _mean_pairwise_corr(rets.iloc[i - cw + 1:i + 1])
-        prev = _mean_pairwise_corr(rets.iloc[max(0, i - cw + 1 - rw):i + 1 - rw])
-        if cohesion is not None and prev is not None:
-            cohesion_chg = cohesion - prev
+        # cohesion_chg only once the PRIOR window is also a FULL cw-bar window — else the
+        # max(0,...) truncates it to <cw bars and the correlation denominator is biased
+        # (cohesion measured on 40 bars vs a 20-30 bar prior on bars 40-80).
+        if i >= cw + rw - 1:
+            prev = _mean_pairwise_corr(rets.iloc[i - cw + 1 - rw:i + 1 - rw])
+            if cohesion is not None and prev is not None:
+                cohesion_chg = cohesion - prev
 
     # combined flow score: weighted mean over the legs that exist (z-like scale)
     legs = {"accel": accel_z, "broadening": broadening_z,

@@ -1,0 +1,98 @@
+# Institutional-Grade Roadmap (free-data constraints)
+
+**Author:** Head of Research · **Date:** 2026-06-21 · **Scope:** how far the free-data macro/equity stack is from institutional grade, and the shortest honest path there.
+
+All numbers below were re-verified against the live tree (`.venv` scipy, cwd = worktree). Where the source diagnosis quoted a file that is **absent** from this checkout (`sue_deep_closes.parquet`, `_closes_deep.parquet`, `_closes_delisted.parquet`), I say so explicitly — those magnitudes are not auditable here.
+
+---
+
+## 1. Honest verdict: are we institutional grade?
+
+**No — and the gap is structural, not cosmetic.** But the *discipline layer* is already institutional, which is rare and is what makes the gaps fixable.
+
+What is genuinely institutional-grade today (verified in code):
+- **Validation toolkit** — `engine/validation.py` has `rank_ic`, `ic_summary`, `newey_west_tstat` (HAC), `benjamini_hochberg` (BH-FDR), `deflated_sharpe` (refuses to run without a trial budget), `block_bootstrap_ci`, `oos_r2`, `clark_west`, `vif`, `resid_z`. This is a proper multiple-testing / OOS gauntlet.
+- **Leak-free PIT scorecard** — `scripts/factor_ic_scorecard.py` → `data/edgar/ic_scorecard.json` is a 60-quarter (2011→2025), ~1,154-name, point-in-time factor IC report with HAC-t and BH-FDR, and it **self-flags `survivorship_biased: true`**. The code already labels its own outputs "OPTIMISTIC bound."
+- **A real PIT membership ledger** — `data/breadth/sp1500_pit_membership.parquet`: 3,286 intervals, 2,589 distinct tickers, 1996→2026, with closed `end_date`s every year.
+
+Why we are **not** institutional grade — three structural walls, each verified:
+
+1. **Survivorship.** Of 1,083 dead names (every PIT interval closed), **0/1,083 have any price** in the closes cache and **0/1,083 have fundamentals** (`fundamentals_panel.parquet` sources its universe from *current* constituents). Every IC, percentile, and factor spread in the stack is computed on survivors only.
+2. **Breadth.** The live cross-sectional price panel (`_closes_cache.parquet`) is **316 trading days × 505 names** (2025-03-18 → 2026-06-18). Measured mean pairwise return correlation `rho_bar ≈ 0.13–0.20` collapses ~500 names to **~5–8 independent bets** (BR_eff). By the Fundamental Law (IR = IC·√breadth), annual breadth ≈ 20–31; **IR = 1.0 would require IC ≈ 0.178, ~7× the best surviving factor (payout, IC 0.0247).** Institutional IR is structurally unreachable on this universe.
+3. **No realized forward attribution.** No persistent trial ledger (`data/trial_ledger.jsonl` **absent**), no live shadow book over the traded score, 0 matured rows in any forward book. The stack has never graded its *live* score against forward returns.
+
+The load-bearing empirical fact: the committed scorecard already shows **only `payout` survives BH-FDR (q=0.0715)**, `value` fails (q=0.247), the equal-weight `composite` IC is **negative (−0.0072)**, and `composite_orth` is ~0 (+0.0024). On the *optimistic* survivor bound, the factor zoo is already mostly dead. So the institutional win here is **de-biasing and honest measurement — confirming which "edges" are phantom and retiring them before the sizer touches them — not minting alpha.**
+
+**Verdict in one line:** institutional in *discipline*, far from institutional in *data breadth and survivorship*; the correct strategy is to spend effort on the two things that make every other number trustworthy (a leak-free forward audit, and a delisting-aware panel), and to *cut* the optimizer/covariance ambitions the codebase itself already reasoned are overfit on free data.
+
+---
+
+## 2. Ranked pain-point ledger (with quantified evidence)
+
+| Rank | Pain point | Severity | Quantified evidence (verified live) | The gap |
+|---|---|---|---|---|
+| 1 | **No forward shadow book / no persistent trial ledger** | high → keystone | `data/trial_ledger.jsonl` **absent**; 9 research scripts use tempfile ledgers (memory destroyed each run); 47 scripts pass literal `n_trials=`; all forward books show 0 matured rows. | The traded score has *never* been graded on realized forward returns; program-wide multiple-testing N is uncollected. Overfit-proof to fix (measurement, not a fitted model). |
+| 2 | **Survivorship / no delisting-aware PIT prices+fundamentals** | critical | 1,083 dead names: **0/1,083** in price cache, **0/1,083** in fundamentals. 492/1,083 (45%) resolve to a CIK via SEC ticker maps; delisted filer XBRL (ATVI, acq. 2023) returns full 2009–2017 revenue with true `filed` timestamps. | Every IC/factor/percentile is survivor-only → textbook inflation. Fundamentals recoverable now; prices are the wall (~0 from yfinance). |
+| 3 | **Raw IC, not incremental — no neutralization** | critical | `rank_ic`/`ic_summary` correlate RAW z vs forward return; `factor_ic_scorecard.py` feeds RAW columns. `factor_orthogonal` is imported only by `canada_factor_beta`/a phase0 diag/the scorecard — **never** by `stock_score.py` or `build_stock_library.py`. Live test: neutralizing momentum on trailing vol moved IC 0.21→0.16; low-vol −0.13→−0.06 (direction confirmed; n=3 → magnitudes are noise). | The factor zoo and the live composite are graded on raw IC, so the system can't separate independent information from repackaged beta/size/sector. |
+| 4 | **Transaction-cost & capacity realism** | high | `backtest_core` charges flat one-way bps; `COST_BPS=5.0` hard-coded for every name/size; **volume cache exists but is never read** for cost. No ADV/impact/capacity/borrow term. | A flat scalar can't price a $5M microcap trade vs a $9k AAPL trade, can't give a capacity number, and silently flatters high-turnover signals (the two "kept" signals turn over ~8×/yr). |
+| 5 | **Breadth / IR ceiling (Fundamental Law)** | critical | `rho_bar ≈ 0.13–0.20` → BR_eff ≈ 5–8 → annual breadth ≈ 20–31; IR=1.0 needs IC≈0.178 (~7× payout). Orthogonalization not shipped; `_EDGE_W` hand-weighted; only payout survives FDR. | The lever is breadth-manufacturing + neutralization, not single-factor polish — but cross-name correlation caps realized IR at ~0.3–0.4 regardless. Structural wall. |
+| 6 | **Multi-signal combination discipline** | medium | Board sorts on `composite_z` (hand-weighted `_WEIGHT_PRIOR`, self-labeled "uncalibrated PRIOR"); `composite_score.build` called `weights=None`, attached as **context only** (`build_stock_library.py:879,1308-1309`). EDGE legs un-residualized (revision↔mom corr ~0.45). | Both weight vectors are *asserted*, not IC-estimated; the decorrelated composite is benched while the hand-weighted blend ranks. |
+| 7 | **Cross-asset / macro conditioning of stock alpha** | medium → low | Conditioning = one 3-valued `calm` scalar dimming ONE momentum leg (`_MOM_W_STRESS 0.04→_MOM_W_CALM 0.28`). Credit interaction lives in the stress bucket (live: stress HY-widening +1.54% vs tightening, a scalar can't encode it) but HAC-deflates to t≈0.8–1.5 over ~6–12 episodes in 33y. | Real expressivity gap, but the cross-sectional fix is un-buildable on the current tree (3 cross-sections) and high overfit-risk. Only the VIX-term-structure *size* dial clears the bar. |
+| 8 | **Portfolio construction / shrinkage-cov optimizer** | medium → low | No single-name optimizer, no covariance off-diagonal in sizing; `risk_sizing.py` **explicitly rejects** Ledoit-Wolf ("overkill… unestimable/overfit… single avg-corr 0.35 is the shrinkage-equivalent"). Walk-forward LW min-var did NOT beat inverse-vol on net Sharpe; only bought ~13% lower vol at higher turnover. | An optimizer on ~0-IC signals fits estimation error. A risk/concentration lever, not a Sharpe lever — and there is no validated alpha to harvest yet. |
+
+---
+
+## 3. Phased roadmap to institutional grade (free-data ceiling honest throughout)
+
+### Phase 0 — Honest measurement floor (build first; overfit-proof)
+*Make the system able to tell the truth about its own live score before changing any model.*
+- **Persist one canonical `data/trial_ledger.jsonl`** and migrate the 47 literal-`n_trials=` callers + 9 tempfile callers to family-namespaced generation-time logging, so DSR sees a real program-wide N.
+- **Stand up ONE daily shadow book over `stock_score`**: at build time append `(date, ticker, score, percentile, regime)` to an append-only store; a maturation step joins fully-elapsed horizons (21/63/126d) to forward returns from the breadth caches and emits rolling forward rank-IC + IC-IR + HAC-t + Clark-West vs an expanding-mean benchmark.
+- **Payoff:** the first realized forward audit of the traded score; retires understated-N p-hacking. **Honest expectation:** given the composite's measured ~0 IC, the forward book likely confirms `stock_score` cross-sectional IC ≈ 0 — and publishing *that* is the institutional win.
+
+### Phase 1 — De-bias the cross-section (fundamentals first, prices as a gated spike)
+- **Move B (do now, days, validated) — SHIPPED (this PR):** `collectors/edgar_deadnames.py` + `scripts/build_dead_name_fundamentals.py`. Two-half design: (1) a resumable, cached dead ticker→CIK resolver (`dead_name_cik.json`) — audited M&A/rename seed + `company_tickers.json` + Polygon, with the seed taking precedence to defeat ticker-reuse mis-resolution; (2) a `data.sec.gov` companyfacts pull that extends `fundamentals_panel`'s exact schema with dead-name rows **stamped `asof_date` = the true SEC `filed` date** (not period_end, and strictly *more* leak-safe than the survivor panel's flat +120d proxy). Handles the two companyfacts traps (comparative-year `fy` contamination; 52/53-week frame labeling). `merged_panel()` concatenates; `coverage()` ships the `dead_name_coverage` ratio onto the IC scorecard. Verified locally on a 15-name dead seed (exact values: ATVI/AET/XLNX/RTN…), 0 leak violations, 12 tests. **Env note:** CIK-resolution-at-scale needs www.sec.gov / Polygon (IP-gated → runs in CI, cache persists); the companyfacts pull runs anywhere. (~36–45% dead-name fundamental coverage at scale; the remaining ~591 need a `formerNames` crawl.)
+- **Move C (already wired, keep compounding):** `universe_history.update_membership()` accrues a bias-free *go-forward* PIT panel.
+- **Move A (separate, lower-confidence research spike):** dead-name *prices* via Stooq/Nasdaq daily — gated on proving yield from a non-blocked IP. Realistic recovery ~30–500 of 1,083, skewed recent/large. **Do not let the keystone depend on it.** Stamp imputed delisting returns (−30% perf / −100% bankruptcy) and ship a `dead_name_coverage` ratio on every output.
+
+### Phase 2 — Incremental IC + honest combination
+- Add `cross_sectional_resid(signal, loadings, sector)` + `incremental_ic_summary` to `validation.py`; emit `mean_ic_raw` AND `mean_ic_incr` (+delta) per scorecard row; run **BH-FDR on incremental p-values** (strictly harder, can only shrink the survivor set).
+- **Ship the decorrelated equal-weight composite as the rank key** (replace the asserted `composite_z` prior) — but **IC-test `composite_score`'s actual 5-leg blend on the PIT grid first** (the scorecard's negative composite is the *fundamentals* composite, a different artifact). Residualize the one correlated EDGE pair (mom off revision) via `resid_z`. **Cut the IC-weighter** or pin it hard to equal-weight (it raises OOS variance on noisy free-data ICs).
+
+### Phase 3 — Cost/capacity realism + risk lever (display-only, gated)
+- Extend `backtest_core` with an optional square-root-impact model: `impact_bps = spread/2 + η·σ·√(participation)`, `participation = traded$/ADV$`, ADV from `(close·volume).rolling(21).median()` (volume is on disk). Emit a per-signal **capacity curve** + "AUM where net Sharpe < buy&hold"; make turnover a first-class selection penalty.
+- Add a Ledoit-Wolf min-var / risk-parity **leaf** for concentration control + per-name risk contributions — **framed as a risk/drawdown lever, not a Sharpe source** (validated: ~13% lower vol, no return edge), re-run on the PIT membership before any claim. Add the VIX-term-structure dial to the *size* layer only.
+
+### Phase 4 — Breadth honesty (the wall)
+- A small (≤6-leg), VIF<5, FDR-gated, ledger-logged signal factory from *already-collected* EDGAR line items (gross-margin trend, asset-turnover Δ, NOA, cash-conversion, accrual components, Form-4 cluster breadth, 8-K velocity — **drop R&D/sales: tag not collected; drop short-interest delta: no PIT history**). Combine by inverse-correlation shrinkage weights. **Frame as a falsifiable, decorrelated context score — never as alpha.** Realistic combined IC ~0.02–0.026 → IR ~0.10–0.22. State the ~0.3–0.4 free-data IR ceiling.
+
+---
+
+## 4. KEYSTONE — build first
+
+### Forward shadow book + persistent program-wide trial ledger
+
+**Why this and not survivorship first.** Three verifiers flagged keystone-class items: the survivorship panel (Dim 1), incremental IC (Dim 2), and the forward shadow book (Dim 7-validation). The shadow book wins the tie-break on **four counts**: (1) it is *impossible to overfit* — it is measurement, not a fitted model; (2) it is fully free-data — it grades existing scores against forward prices already in the breadth caches; (3) it is falsifiable by construction; and (4) **it is the precondition for trusting every other upgrade** — factor neutralization, the optimizer, capacity, and the de-biased panel are all unverifiable noise until there is a live forward tape to grade them on. Survivorship recovery (Move B) is the strong #2 and should run in parallel, but it changes *backtested* numbers; the shadow book is the only thing that produces a *realized live* number, and the codebase currently produces none.
+
+**Build spec — files:**
+- `data/trial_ledger.jsonl` — stand up the canonical persistent ledger (the path already exists as `DEFAULT_PATH` in `engine/trial_ledger.py`; it is just never written). Migrate the 9 tempfile callers and the 47 literal-`n_trials=` callers to `ledger.log_trial(config, family=…)` at generation time.
+- `engine/shadow_book.py` (new) — `snapshot(date, recs)` appends `(date, ticker, score, percentile, regime, horizon_targets)` to an append-only `data/shadow/stock_score_book.jsonl`; `mature(asof)` joins rows whose horizon has *fully elapsed* to forward returns from `data/breadth/_closes_cache.parquet`; `grade()` emits rolling forward `rank_ic` + `ic_summary` (IC-IR, HAC-t via `newey_west_tstat`) + `clark_west`/`oos_r2` vs expanding-mean benchmark — all primitives already in `engine/validation.py`.
+- `scripts/build_stock_library.py` — one call to `shadow_book.snapshot(...)` after scoring (additive, display-only).
+- `scripts/mature_shadow_book.py` (new) — nightly maturation + grading step, writes `site/shadow/audit.json`.
+
+**Leak-free validation plan:**
+1. Score is **frozen at build time** (`t`); forward return is appended only after the horizon fully elapses (`t+h`) — no backfill, no peeking.
+2. Grade **only fully-matured rows**; the maturation join must never touch a horizon that hasn't closed (explicit guard).
+3. Grade on the **same survivorship-honest universe the score trades**, and stamp the survivorship caveat on the artifact (as the scorecard already does).
+4. **Pre-register the success bar** before accumulating: forward IC-IR_ann > 0 with HAC t > 2 and Clark-West p < 0.05. It cannot be moved later.
+5. The program-wide N from the persistent ledger **deflates** any "the score works" headline (DSR).
+
+**Expected result (be honest):** Given the committed scorecard (composite IC −0.0072, only payout survives FDR, all on the *optimistic* survivor bound), the strong prior is that the forward book shows **`stock_score` cross-sectional forward IC ≈ 0** after a few quarters. **That is the institutional win, not a loss:** the system would, for the first time, *know* its traded score carries no realized cross-sectional alpha, and the correct response — publish it and stop sizing on it — is something the current architecture literally cannot produce because nothing matures or persists. Closing this gap likely **reduces our apparent edge**, which is exactly the point.
+
+**Risks:**
+- **Horizon latency** — forward results need ~2-3 quarters minimum to be meaningful; the audit is empty until then. Mitigant: it costs almost nothing to run and the ledger value (program-wide N) is immediate.
+- **Maturation leak** — grading a horizon before it elapses would silently inflate IC. Mitigant: explicit elapsed-horizon guard + a unit test that asserts no row is graded before `t+h`.
+- **Flattering subsample** — scoring only survivors (or only names with clean data) inflates the result. Mitigant: grade the full traded universe and ship the `dead_name_coverage` / survivorship caveat on the artifact.
+- **Cross-build overwrite** — the book must *append*, not overwrite, across nightly rebuilds (the current forward books fail here). Mitigant: append-only JSONL keyed by `(date, ticker, horizon)`.
+
+**Free-data ceiling:** the forward book is an *optimistic bound* on live alpha (yfinance serves only listed names → survivor universe); state this on the artifact and never sell it as clean institutional attribution.

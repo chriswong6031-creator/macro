@@ -36,6 +36,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 warnings.filterwarnings("ignore")
 
 from engine import commodity_signals  # noqa: E402
+from engine.trial_ledger import TrialLedger  # noqa: E402
 from engine.validation import (  # noqa: E402
     backtest_core, deflated_sharpe, dsr_verdict, ret_moments)
 from lib import config  # noqa: E402
@@ -210,7 +211,8 @@ RISK_BANDS = ([-0.1, 25, 50, 75, 100], ["0-25", "25-50", "50-75", "75-100"])
 
 def build_asset(asset: str, df: pd.DataFrame, complex_regime: pd.Series,
                 cal: dict, alloc_variants: dict,
-                cost_bps: float = 0.0, n_trials: int = 1) -> dict:
+                cost_bps: float = 0.0, n_trials: int = 1,
+                ledger: "TrialLedger | None" = None) -> dict:
     horizons = cal["forward_days"]
     df = df.loc[cal["start_date"]:].copy()
     close = df["close"]
@@ -284,8 +286,20 @@ def build_asset(asset: str, df: pd.DataFrame, complex_regime: pd.Series,
         daily_srs = [v["sharpe_daily"] for v in va.values() if v.get("sharpe_daily") is not None]
         sr_var = float(np.var(daily_srs, ddof=1)) if len(daily_srs) >= 2 else None
         m = va[sel]
+        # Honest multiple-testing N via the Trial Ledger (P3 keystone): log the variants
+        # actually backtested for THIS asset, plus the hand-declared upper-bound from
+        # config as a FLOOR (it can only raise the haircut, never lower it). effective_n =
+        # max(itemized, declared) = the old n_trials, so the DSR stays behavior-preserving.
+        led = ledger if ledger is not None else TrialLedger()
+        fam = f"commodities_{asset}"
+        cutoff = str(df.index.max().date())
+        led.log_grid([{"asset": asset, "alloc_variant": k} for k in va],
+                     family=fam, info_cutoff=cutoff, source="alloc_variant")
+        led.log_declared_budget(n_trials, family=fam,
+                                reason="config.commodities.calibration.n_trials — manual "
+                                       "upper-bound of signal/threshold/window variants per asset")
         dsr = deflated_sharpe(m.get("sharpe_daily"), m.get("skew"), m.get("kurt"),
-                              m.get("n_obs"), n_trials, sr_variance=sr_var,
+                              m.get("n_obs"), ledger=led, family=fam, sr_variance=sr_var,
                               trading_year=TRADING_YEAR)
         if dsr is not None:
             dsr["selected_variant"] = sel
@@ -329,10 +343,12 @@ def main() -> int:
     outdir = config.data_dir() / "commodity"
     outdir.mkdir(parents=True, exist_ok=True)
     assets = [a for a in res if a != "_complex"]
+    ledger = TrialLedger()   # persistent multiple-testing memory; supersedes the inline trial_log
     for asset in assets:
         report["assets"][asset] = build_asset(asset, res[asset], complex_regime,
                                                cal, alloc_variants,
-                                               cost_bps=cost_bps, n_trials=n_trials)
+                                               cost_bps=cost_bps, n_trials=n_trials,
+                                               ledger=ledger)
         res[asset].to_parquet(outdir / f"signals_{asset}.parquet")
     res["_complex"].to_parquet(outdir / "signals_complex.parquet")
 

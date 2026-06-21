@@ -82,6 +82,25 @@ _SCHEMA_TAIL = (
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 
+# Producer tail — ONLY appended to the macro lens. Lets the brain stake its OWN falsifiable
+# cross-asset leans (graded by master_brain_scorer), turning it from a read-only loop into a
+# full closed loop. Subjects are restricted to instruments that are actually in the price
+# cache (UUP/EEM/GLD are NOT cached → US dollar / EM / Gold are intentionally omitted).
+_MACRO_THESES_TAIL = (
+    "\n\nOPTIONALLY add a `theses` array — but usually EMPTY. Stake a lean ONLY on a "
+    "genuine multi-dashboard cross-asset divergence you have real conviction in; a lean is a "
+    "DIRECTION, never a size, and it is graded against realized prices, so OMIT rather than "
+    "pad. Each thesis object:\n"
+    "    subject: one of \"US equities\",\"Long Treasuries\",\"Investment-grade credit\","
+    "\"High-yield credit\",\"Small caps\",\"Growth over value\",\"Semiconductors\","
+    "\"China equities\",\"Bitcoin\",\"VIX\".\n"
+    "    lean: one of \"overweight\",\"underweight\",\"avoid\",\"fade-fear\" (fade-fear is VIX-only).\n"
+    "    conviction: \"low\"|\"medium\"|\"high\" — default low; reserve high for genuine agreement.\n"
+    "    horizon_d: integer trading days, 5..60.\n"
+    "    thesis: one sentence naming the divergence.\n"
+    "    falsifier_text: one concrete condition that would prove the lean wrong."
+)
+
 MASTER_SYSTEM_TMPL = (
     "You are a senior cross-asset macro strategist writing a SHORT morning brief for "
     "a solo top-down trader. You are given the trader's OWN deterministic dashboard "
@@ -109,6 +128,11 @@ MASTER_SYSTEM_TMPL = (
     "causal chains are active. The coefficients are MEASURED forward IC but `scored` is "
     "false on purpose — the gate found no leg robust enough to time returns, so frame it "
     "as RISK (which assets are pressured), never as a return forecast.\n"
+    "- The nested `yield_curve` is the curve read: state the regime (bull/bear × steepener/"
+    "flattener) and its Fed-cycle phase, the recession-dashboard risk (n flags from the "
+    "near-term forward spread / 3m10y probit / un-inversion / TP-adjusted slope), the policy "
+    "stance, and the curve's style tilt (value vs growth, size). Display-only context — the "
+    "curve is REACTIVE; narrate the backdrop, never call it a timing signal.\n"
     "- OPEN with the dominant driver in `macro.market_drivers` when one is present — "
     "name it, the evidence, and what would invalidate it. It is a DETERMINISTIC "
     "cross-asset attribution: narrate it, do not recompute it. If it reads 'mixed' or "
@@ -121,12 +145,15 @@ MASTER_SYSTEM_TMPL = (
     "honoring its FACT/INFERENCE/PRIOR labels — never trade a PRIOR or THEORY as fact.\n"
     "- Evaluate the trader's working rotation thesis against the actual state; say "
     "explicitly where reality tracks it and where it diverges.\n"
+    "- If `desk_track_records` is present, CALIBRATE to it: weight each desk's read by its "
+    "measured hit-rate, and treat a cold desk (few scored, tiny sample) or a sub-50% desk as "
+    "weak evidence — don't amplify a conflict that rests only on a desk that has been wrong.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
     "that. Give the read and what to watch.\n"
     "- Be honest about uncertainty and small samples. Flag conflicts rather than "
     "papering over them. Cite which dashboard supports each claim.\n\n"
     "Working rotation thesis to test:\n{thesis}\n\n"
-    + _SCHEMA_TAIL
+    + _SCHEMA_TAIL + _MACRO_THESES_TAIL
 )
 
 CHINA_SYSTEM_TMPL = (
@@ -189,6 +216,154 @@ _BRIEF_FIELDS = ("summary", "regime_read", "conflicts", "rotation_check",
 
 def _cfg() -> dict:
     return config.load().get("master_brain", {}) or {}
+
+
+# --------------------------------------------------------------------------- #
+# the macro PRODUCER — the brain's own falsifiable cross-asset leans. Mirrors the proven
+# engine.ai_desk producer (resolve subject → engine-derived machine-checkable falsifier →
+# validated thesis → append-only ledger), graded by engine.master_brain_scorer. ADDITIVE,
+# macro-lens only, degrade-never-raise. ai_desk imports master_brain at module top, so every
+# ai_desk reference here MUST be lazy (inside a function) to avoid an import cycle.
+# --------------------------------------------------------------------------- #
+_THESIS_LEANS = ("overweight", "underweight", "avoid", "fade-fear")
+_CONVICTIONS = ("low", "medium", "high")
+_BENCH = "SPY"
+_VIX = "_VIX"
+# subject (lowercased) -> (ticker, benchmark). ONLY tickers verified present in data/yahoo/.
+# UUP/EEM/GLD are NOT cached, so US dollar / Emerging markets / Gold are omitted until a
+# collector backfill; the cache-gate in _mb_derive_check is the safety net for map drift.
+_XASSET_ETF = {
+    "us equities": ("SPY", None),
+    "long treasuries": ("TLT", "SPY"),
+    "investment-grade credit": ("LQD", "SPY"),
+    "high-yield credit": ("HYG", "SPY"),
+    "small caps": ("IWM", "SPY"),
+    "growth over value": ("IWF", "IWD"),
+    "semiconductors": ("SMH", "SPY"),
+    "china equities": ("FXI", "SPY"),
+    "bitcoin": ("BTC-USD", "SPY"),   # NB: BTC trades 7d but check_by uses BusinessDay (context-only)
+}
+
+
+def _mb_cached(ticker, root) -> bool:
+    try:
+        from engine.ai_desk import _close_series        # lazy — avoid the ai_desk import cycle
+        s = _close_series(ticker, root)
+        return s is not None and not s.empty
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _mb_resolve(subject: str):
+    s = (subject or "").strip().lower()
+    if s in _XASSET_ETF:
+        t, vs = _XASSET_ETF[s]
+        return t, vs, "rel_return"
+    if s in ("vix", "fear", "fade-fear"):
+        return _VIX, None, "level"
+    return None, None, "soft"
+
+
+def _mb_derive_check(subject: str, lean: str, horizon: int, root) -> dict:
+    ticker, vs, kind = _mb_resolve(subject)
+    if kind == "rel_return":
+        # cache-presence gate: an uncached ticker would silently EXPIRE after the grace
+        # window (never 'soft'), so downgrade to soft → logged-unscored, honest.
+        if root is not None and not _mb_cached(ticker, root):
+            return {"kind": "soft", "reason": f"{ticker} not in price cache"}
+        thr = 0.05
+        if lean == "overweight":
+            op, threshold = "<", -thr
+        elif lean in ("underweight", "avoid"):
+            op, threshold = ">", thr
+        else:
+            return {"kind": "soft", "reason": f"lean '{lean}' has no relative-return rule"}
+        return {"kind": "rel_return", "subject_ticker": ticker, "vs": vs,
+                "op": op, "threshold": threshold, "horizon_d": horizon}
+    if kind == "level":
+        if lean == "fade-fear":
+            return {"kind": "level", "subject_ticker": ticker, "vs": None, "op": ">",
+                    "ref": "entry", "horizon_d": horizon,
+                    "note": "FALSE if VIX makes a new high above the entry level within horizon"}
+        return {"kind": "soft", "reason": f"lean '{lean}' has no level rule"}
+    return {"kind": "soft", "reason": "subject not resolvable to a closeable instrument"}
+
+
+def _mb_check_by(asof, horizon: int):
+    try:
+        import pandas as pd                               # lazy — master_brain stays pandas-free at import
+        return (pd.Timestamp(asof) + pd.offsets.BusinessDay(int(horizon))).date().isoformat()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _mb_build_thesis(t: dict, i: int, asof, root, cfg: dict) -> dict | None:
+    """Validate one model-authored cross-asset lean + attach the engine-derived falsifier.
+    Returns None for malformed / non-directional entries (every kept lean is scorable)."""
+    if not isinstance(t, dict):
+        return None
+    subject = str(t.get("subject") or "").strip()
+    lean = str(t.get("lean") or "").strip().lower()
+    if not subject or lean not in _THESIS_LEANS:
+        return None
+    try:
+        horizon = int(t.get("horizon_d") or 20)
+    except Exception:  # noqa: BLE001
+        horizon = 20
+    horizon = max(5, min(60, horizon))
+    conv = str(t.get("conviction") or "low").strip().lower()
+    if conv not in _CONVICTIONS:
+        conv = "low"
+    return {
+        "id": f"mb-{asof}-{i + 1}",
+        "subject": subject, "lean": lean, "conviction": conv, "horizon_d": horizon,
+        "thesis": t.get("thesis"),
+        "falsifier": {"text": t.get("falsifier_text"),
+                      "check": _mb_derive_check(subject, lean, horizon, root)},
+        "check_by": _mb_check_by(asof, horizon),
+    }
+
+
+def _mb_entry_levels(check: dict, asof, root) -> dict:
+    out = {}
+    try:
+        from engine.ai_desk import _level_asof           # lazy — avoid the import cycle
+        for key in ("subject_ticker", "vs"):
+            tk = check.get(key)
+            if tk:
+                lv = _level_asof(tk, root, asof)
+                if lv is not None:
+                    out[tk] = lv
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
+def _append_ledger(brief: dict, root) -> None:
+    """Append the macro brief's theses to data/master_brain/theses.jsonl. Never fatal."""
+    theses = brief.get("theses") or []
+    if not theses:
+        return
+    try:
+        from engine.regime_label import quad_label
+        d = Path(root) / "data" / "master_brain"
+        d.mkdir(parents=True, exist_ok=True)
+        asof = brief.get("state_asof")
+        regime = quad_label(root)
+        with open(d / "theses.jsonl", "a") as fh:
+            for t in theses:
+                check = (t.get("falsifier") or {}).get("check") or {}
+                row = {
+                    "id": t["id"], "logged_at": brief["generated_at"], "state_asof": asof,
+                    "subject": t["subject"], "lean": t["lean"], "conviction": t["conviction"],
+                    "horizon_d": t["horizon_d"], "falsifier": t["falsifier"],
+                    "check_by": t["check_by"], "entry_levels": _mb_entry_levels(check, asof, root),
+                    "regime": regime, "status": "open", "scored_at": None,
+                    "outcome": None, "realized": None,
+                }
+                fh.write(json.dumps(row, default=str) + "\n")
+    except Exception as e:  # noqa: BLE001
+        log.warning("master_brain: ledger append failed: %s", e)
 
 
 def enabled() -> bool:
@@ -410,7 +585,7 @@ def _transmission_summary(macro: dict | None) -> dict | None:
     st = t.get("state") or {}
     def lab(d):  # the EN side of a bilingual label dict
         return (d or {}).get("label", {}).get("en") if isinstance(d, dict) else None
-    return {
+    out = {
         "rates": lab(st.get("rates")), "inflation": lab(st.get("inflation")),
         "expectations": lab(st.get("expectations")),
         "headwinds": [h.get("asset") for h in (t.get("headwinds") or [])[:4]],
@@ -418,6 +593,23 @@ def _transmission_summary(macro: dict | None) -> dict | None:
         "active_chains": [c.get("id") for c in (t.get("chains") or []) if c.get("active")],
         "scored": False,
     }
+    # slim yield-curve read (engine/yield_curve.py) — regime + recession dashboard +
+    # the curve's sector/style tilt. Display-only context; the curve narrates, never sizes.
+    yc = (macro or {}).get("yield_curve")
+    if yc:
+        reg = yc.get("regime") or {}
+        rec = yc.get("recession") or {}
+        fac = (yc.get("signals") or {}).get("stock_factor") or {}
+        out["yield_curve"] = {
+            "regime": (reg.get("label") or {}).get("en"),
+            "fed_phase": (reg.get("fed_phase") or {}).get("en"),
+            "favored": reg.get("favored"), "pressured": reg.get("pressured"),
+            "recession_risk": rec.get("risk"), "recession_flags": rec.get("flags"),
+            "policy_stance": (rec.get("policy_stance") or {}).get("stance"),
+            "style": {k: fac.get(k) for k in ("value_vs_growth", "size", "duration_factor")},
+            "market_tendency": ((yc.get("signals") or {}).get("market_tendency") or {}).get("drawdown_risk"),
+        }
+    return out
 
 
 def _policy_intel_summary(root: Path) -> dict | None:
@@ -434,6 +626,36 @@ def _policy_intel_summary(root: Path) -> dict | None:
         "starved": [r.get("theme_en") for r in (rot.get("starved") or [])][:4],
         "open_predictions_n": sum(1 for p in (intel.get("predictions") or []) if p.get("status") == "open"),
     }
+
+
+_DESK_TRACKS = (
+    ("ai_desk", "data/ai_desk/track_record.json"),
+    ("policy_intent", "data/policy_intent/track_record.json"),
+    ("altdata", "data/altdata/track_record.json"),
+    ("radar", "data/radar/track_record.json"),
+    ("stock_desk", "data/stock_desk/track_record.json"),
+    ("demand_chain", "data/demand_chain/track_record.json"),
+)
+
+
+def _desk_track_records(root) -> dict:
+    """Compact hit-rate summary of the Phase-C falsifiable-thesis desks, injected into the
+    macro state so the Brain calibrates its synthesis to which desks have actually been
+    right — down-weighting a desk that is cold (tiny sample) or has been wrong. This is the
+    read-back that turns the flagship brain from an open loop into a consumer of measured
+    desk accuracy. CONTEXT-ONLY; reads the scorers' track_record.json (never a score/size)."""
+    out = {}
+    for name, rel in _DESK_TRACKS:
+        d = _read_json(Path(root) / rel)
+        if not isinstance(d, dict):
+            continue
+        ov = d.get("overall") or {}
+        rec = {"scored": d.get("scored_total"), "open": d.get("open"),
+               "hit_rate": ov.get("hit_rate"), "dir_accuracy": ov.get("dir_accuracy")}
+        if d.get("calibration_note"):
+            rec["note"] = d["calibration_note"]
+        out[name] = rec
+    return out
 
 
 def gather_state(root: Path | None = None) -> dict:
@@ -486,6 +708,18 @@ def gather_state(root: Path | None = None) -> dict:
     pol = _policy_intel_summary(root)
     if pol:
         state["policy_intel"] = pol
+    # event-driven special situations (display-only leaf): macro-level landscape only.
+    # Per-ticker situation context is consumed directly from site/allocationdata/
+    # special_situations.json (schema special_situations.v1, is_context_only).
+    ss = _read_json(root / "data/regime/special_situations_latest.json")
+    if ss:
+        state["special_situations"] = {k: ss.get(k) for k in
+                                       ("total", "n_categories", "cross_border", "top_categories")}
+    # Read-back: the measured hit-rates of the falsifiable-thesis desks, so the Brain
+    # calibrates its synthesis to which desks have actually been right (close the loop).
+    tracks = _desk_track_records(root)
+    if tracks:
+        state["desk_track_records"] = tracks
     return state
 
 
@@ -543,6 +777,28 @@ def gather_china_state(root: Path | None = None) -> dict:
     bonds = _bonds_backdrop(root)
     if bonds:
         state["bonds"] = bonds
+    # China intelligence surfaces (news media-sentiment · PBoC stance · alt-data convergence ·
+    # divergence radar) — the transmission bus already fans these four into one compact,
+    # context-only block. Display/context for the narrator; never scored.
+    try:
+        from engine import china_intel_bus
+        b = china_intel_bus.briefing()
+        # widened whitelist (v3): the central-analysis synthesis (now opportunity/edge/lifecycle-
+        # ranked) + flagged tickers + what-changed + the risk-appetite regime + off-desk discovery
+        # must propagate, not just the raw surface blocks (the whitelist gates them).
+        keys = ("news", "policy", "altdata", "radar",
+                "analysis", "conviction", "cross_surface", "flagged_tickers",
+                "what_changed", "salience", "regime", "discovery")
+        intel = {k: b.get(k) for k in keys if b.get(k)}
+        if intel:
+            intel["digest"] = b.get("digest")     # the synthesis-led plain-text rollup
+            # the context-only contract MUST travel with the hoisted conviction/flagged tickers
+            intel["is_context_only"] = True
+            intel["disclaimer"] = b.get("disclaimer")
+            intel["disclaimer_zh"] = b.get("disclaimer_zh")
+            state["china_intel"] = intel
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.debug("china_intel state unavailable (%s)", e)
     return state
 
 
@@ -640,7 +896,7 @@ def _call_model(system: str, user: str, cfg: dict) -> tuple[str | None, str | No
 # --------------------------------------------------------------------------- #
 # public: synthesize one brief
 # --------------------------------------------------------------------------- #
-def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro") -> dict:
+def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro", root=None) -> dict:
     """Run the LLM synthesis over a gathered state for one LENS. Always returns a
     brief record (degraded fields flagged); never raises."""
     cfg = cfg or _cfg()
@@ -652,6 +908,7 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro") -> dic
         "state_asof": _state_asof(state),
         "summary": None, "regime_read": None, "conflicts": [], "rotation_check": None,
         "transmission": [], "watch_items": [], "confidence": "low",
+        "theses": [],    # macro-lens producer leans (always present → additive when absent)
         "raw_text": None, "degraded_reason": None, "disclaimer": DISCLAIMER_TEXT,
     }
     system = spec["system"].format(thesis=_thesis_for(lens, cfg))
@@ -670,6 +927,21 @@ def synthesize(state: dict, cfg: dict | None = None, lens: str = "macro") -> dic
     for k in _BRIEF_FIELDS:
         if k in parsed:
             brief[k] = parsed[k]
+    # macro-lens producer: stake the brain's OWN falsifiable leans. Wrapped in its own try so
+    # a theses bug can NEVER discard the free-text already copied above (the schema tail is
+    # placed last, so a truncated reply drops the trailing theses array first, not the narrative).
+    if lens == "macro" and cfg.get("emit_theses", True):
+        try:
+            raw = parsed.get("theses") if isinstance(parsed.get("theses"), list) else []
+            built = []
+            for t in raw[: int(cfg.get("max_theses", 2))]:
+                th = _mb_build_thesis(t, len(built), brief["state_asof"], root, cfg)
+                if th is not None:
+                    built.append(th)
+            brief["theses"] = built
+        except Exception as e:  # noqa: BLE001 — a theses bug must never lose the free-text
+            log.warning("master_brain: theses parse failed: %s", e)
+            brief["theses"] = []
     if reason:
         brief["degraded_reason"] = reason          # parsed, but flag e.g. truncation
     return brief
@@ -788,7 +1060,7 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
                              "— skipping regen, keeping prior brief", lens, age, interval)
                     return prev
         state = spec["state_fn"](root)
-        brief = synthesize(state, cfg, lens=lens)
+        brief = synthesize(state, cfg, lens=lens, root=root)
         _translate_brief(brief, cfg)          # attach brief['zh'] for the 中文 toggle
         if persist:
             try:
@@ -801,6 +1073,8 @@ def run(persist: bool = True, root: Path | None = None, force: bool = False,
                     (site / spec["out"]).write_text(payload)
             except Exception as e:  # noqa: BLE001
                 log.warning("master_brief persist failed (lens=%s: %s)", lens, e)
+        if lens == "macro":                   # producer: append the brain's own leans (macro only)
+            _append_ledger(brief, root)
         return brief
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("master_brain run failed (lens=%s: %s)", lens, e)

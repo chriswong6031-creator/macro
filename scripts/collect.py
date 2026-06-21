@@ -40,7 +40,8 @@ def all_adapters() -> dict:
         ("cboe_putcall", "collectors.cboe", "PutCallAdapter"),
         ("cboe_gex", "collectors.cboe", "GexAdapter"),
         ("cboe_skew", "collectors.cboe_indices", "CboeSkewAdapter"),   # tail-risk index (research/QUANT_FACTOR_EXPANSION.md)
-        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle -> VIX thin-quote sanitizer (engine/dislocation.py)
+        ("cboe_vvix", "collectors.cboe_indices", "CboeVvixAdapter"),   # vol-of-vol 2006+ -> engine/vol_regime VVIX-VIX leg (research/VOL_REGIME_DATA_ACCRUAL.md)
+        ("cboe_vix_futures", "collectors.cboe_vix_futures", "CboeVixFuturesAdapter"),  # front VX settle (sanitizer) + full M1..M6 curve (forward-accruing; research/VOL_REGIME_DATA_ACCRUAL.md)
         ("fedboard_ebp", "collectors.fedboard", "EbpAdapter"),         # Excess Bond Premium (credit risk-appetite)
         ("sovereign", "collectors.sovereign", "SovereignAdapter"),     # ECB euro-area + JGB sovereign yields (Bonds Phase 5)
         ("frbsf_sentiment", "collectors.frbsf", "NewsSentimentAdapter"),  # SF Fed Daily News Sentiment (real-activity nowcast)
@@ -62,8 +63,22 @@ def all_adapters() -> dict:
         ("fundamentals", "collectors.fundamentals", "FundamentalsAdapter"),
         ("stock_fundamentals", "collectors.sector_holdings", "StockFundamentalsAdapter"),
         ("edgar_13f", "collectors.edgar_13f", "Edgar13FAdapter"),  # curated super-investor 13F holdings (smart money)
+        ("openfigi", "collectors.openfigi", "OpenFigiAdapter"),    # keyless CUSIP->ticker master -> unhides foreign/ADR 13F lines (engine/smart_money.full_cusip_map)
         ("ofr", "collectors.ofr", "OfrAdapter"),                   # OFR short-term funding monitor (repo/SOFR plumbing)
         ("prediction_markets", "collectors.prediction_markets", "PredictionMarketsAdapter"),  # Polymarket macro-event odds
+        ("usaspending", "collectors.usaspending", "UsaspendingAdapter"),  # federal contract obligations + ASSISTANCE grants/loans per curated ticker -> Divergence Radar + gov_grant convergence channel
+        # Beyond-Quiver alt-data/divergence sources (keyless except grants_gov; all degrade gracefully)
+        ("edgar_8k", "collectors.edgar_8k", "Edgar8KAdapter"),     # SEC 8-K material-event velocity (theme_event radar leg) + per-ticker material_8k convergence channel
+        ("beneficial_ownership", "collectors.beneficial_ownership", "BeneficialOwnershipAdapter"),  # keyless SC 13D/13G sweep + filer enrichment -> per-ticker ownership-regime (engine/beneficial_ownership.py)
+        ("openfda", "collectors.openfda", "OpenFdaAdapter"),       # Drugs@FDA approvals/label-expansions -> fda_approval/fda_label_expansion channels (healthcare blind spot)
+        ("huggingface", "collectors.huggingface", "HuggingFaceAdapter"),  # HF model-download velocity -> hf_model_momentum channel (AI adoption blind spot)
+        ("grants_gov", "collectors.grants_gov", "GrantsGovAdapter"),      # Simpler Grants.gov pre-award FOA flow (theme_event radar leg); GATED on free GRANTS_GOV_API_KEY -> 'blocked' without it
+        ("clinicaltrials", "collectors.clinicaltrials", "ClinicalTrialsAdapter"),  # keyless ClinicalTrials.gov Phase-3 starts/halts -> clinical_phase3_start channel
+        ("finnhub_altdata", "collectors.finnhub_altdata", "FinnhubAltdataAdapter"),  # analyst trends + insider MSPR + earnings surprises (existing FINNHUB key) -> 3 convergence channels
+        ("finra_short_volume", "collectors.finra_short_volume", "FinraShortVolumeAdapter"),  # keyless daily consolidated short-VOLUME (fresher than bi-monthly short interest) -> stock-page short_flow confirmer
+        ("polygon_news", "collectors.polygon_news", "PolygonNewsAdapter"),  # Polygon news-sentiment roll-up (existing POLYGON key) -> news_sentiment channel
+        ("github_repos", "collectors.github_repos", "GithubReposAdapter"),  # GitHub star velocity (optional GITHUB_TOKEN) -> github_momentum channel
+        ("sam_gov", "collectors.sam_gov", "SamGovAdapter"),               # SAM.gov pre-award solicitations by NAICS (theme_event radar leg); GATED on SAM_API_KEY -> 'blocked' without it
         ("bis", "collectors.bis", "BisAdapter"),                   # BIS global credit-cycle (credit-gap + DSR)
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
@@ -77,7 +92,12 @@ def all_adapters() -> dict:
         ("china_qvix", "collectors.china_qvix", "ChinaQvixAdapter"),           # 300/50ETF option-implied vol ("China VIX") — fear/euphoria + drawdown
         ("china_credit", "collectors.china_credit", "ChinaCreditAdapter"),     # 社融 TSF (mofcom, legacy-SSL)
         ("china_property", "collectors.china_property", "ChinaPropertyAdapter"),  # 70-city price breadth + climate + CGB + rebar/iron-ore
+        ("china_pboc", "collectors.china_pboc", "ChinaPbocAdapter"),           # PBoC corridor legs: FX reserves+gold / repo fixings FR007 / USD-CNY ref (engine/china_policy_watch.py)
+        ("china_yield_spread", "collectors.china_yield_spread", "ChinaYieldSpreadAdapter"),  # CN vs US sovereign curve + slope + CN-US spread — ACCRUING (no engine consumer yet)
+        ("china_cgb_curve", "collectors.china_cgb_curve", "ChinaCgbCurveAdapter"),  # full CGB term structure — ACCRUING (no engine consumer yet)
+        ("china_a_valuation", "collectors.china_a_valuation", "ChinaAValuationAdapter"),  # whole-A median PE/PB + 10y/all percentiles (hub valuation anchor / anti-chase)
         ("china_news", "collectors.china_news", "ChinaNewsAdapter"),           # CCTV 新闻联播 official policy-tone series (keyless; display-only news/sentiment panel)
+        ("china_news_wire", "collectors.china_news_wire", "ChinaNewsWireAdapter"),  # multi-source flash-wire daily tone -> media-sentiment index (engine/china_news_intel.py)
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
@@ -110,6 +130,38 @@ def all_adapters() -> dict:
         ("defillama", "collectors.crypto_misc", "DefiLlamaAdapter"),
         ("mempool", "collectors.crypto_misc", "MempoolAdapter"),
         ("wikipedia_btc", "collectors.crypto_misc", "WikipediaBtcAdapter"),  # keyless attention axis
+        ("farside", "collectors.farside", "FarsideAdapter"),  # per-fund spot-BTC-ETF flows (US$m, 2024->)
+        # Quiver Quantitative alt-data suite (Trader plan) — cross-sectional EVENT
+        # feeds -> data/quiver/<dataset>.parquet (append-only, key-deduped). Feeds the
+        # Alternative Data desk + the Claude-CLI brain feed. Each needs QUIVER_API_KEY
+        # (else reports 'blocked'). See collectors/quiver.py.
+        ("quiver_congress", "collectors.quiver", "CongressAdapter"),
+        ("quiver_senate", "collectors.quiver", "SenateAdapter"),
+        ("quiver_house", "collectors.quiver", "HouseAdapter"),
+        ("quiver_lobbying", "collectors.quiver", "LobbyingAdapter"),
+        ("quiver_govcontracts", "collectors.quiver", "GovContractsAdapter"),
+        ("quiver_offexchange", "collectors.quiver", "OffExchangeAdapter"),
+        ("quiver_insiders", "collectors.quiver", "InsidersAdapter"),
+        ("quiver_flights", "collectors.quiver", "FlightsAdapter"),
+        ("quiver_patents", "collectors.quiver", "PatentsAdapter"),
+        ("quiver_wsb", "collectors.quiver", "WallStreetBetsAdapter"),
+        ("quiver_twitter", "collectors.quiver", "TwitterAdapter"),
+        ("quiver_sec13f", "collectors.quiver", "Sec13FAdapter"),
+        ("quiver_sec13f_changes", "collectors.quiver", "Sec13FChangesAdapter"),
+        ("quiver_cnbc", "collectors.quiver", "CnbcAdapter"),
+        ("quiver_spacs", "collectors.quiver", "SpacsAdapter"),
+        ("quiver_trump", "collectors.quiver", "TrumpTradesAdapter"),
+        ("quiver_corpdonors", "collectors.quiver", "CorporateDonorsAdapter"),
+        ("quiver_news", "collectors.quiver", "QuiverNewsAdapter"),
+        ("quiver_congressholdings", "collectors.quiver", "CongressHoldingsAdapter"),
+        ("quiver_bills", "collectors.quiver", "BillSummariesAdapter"),
+        ("quiver_appratings", "collectors.quiver", "AppRatingsAdapter"),
+        # Per-ticker (Top Shareholders + Exec-Comp) over a focused watchlist (graph +
+        # convergent names) — these Quiver endpoints take a ticker, no bulk cross-section.
+        ("quiver_watchlist", "collectors.quiver_watchlist", "QuiverWatchlistAdapter"),
+        # SEC EDGAR full-text search for Trump-linked entity filings — the genuinely-early
+        # channel (8-K/S-4/425/EX-99 at filing time). Keyless (UA only). See collectors/edgar_trumpflow.py.
+        ("edgar_trumpflow", "collectors.edgar_trumpflow", "EdgarTrumpflowAdapter"),
     ]
     for key, mod, cls in specs:
         try:
@@ -198,6 +250,18 @@ def main() -> int:
         fetch_basket_extras()
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket extras step failed: %s", e)
+
+    # Baskets-only DEEP OHLCV store (data/baskets/ohlcv/<T>.parquet): full open/high/low/
+    # close/VOLUME per member, the candle the consolidated-index engines (basket_index ->
+    # basket_mtf + basket_tape) render whale accumulation / Chaikin money-flow / vol-hole on.
+    # The close-only extras store above can't feed volume. Separate per-ticker store, merged
+    # onto prior, additive, never fatal. See scripts/fetch_basket_ohlcv.py.
+    try:
+        from scripts.fetch_basket_ohlcv import main as fetch_basket_ohlcv
+        log.info("=== refreshing thematic-basket OHLCV (volume) ===")
+        fetch_basket_ohlcv([])
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket OHLCV step failed: %s", e)
 
     # Polygon options-OI accrual: snapshot the GEX universe's chains and store the RAW
     # per-strike open interest the Cboe path throws away (the one thing that can't be

@@ -1,0 +1,74 @@
+{
+  "schema": "altdata_brain.v1",
+  "is_context_only": false,
+  "actionable": true,
+  "generated_at": "2026-06-21T07:56:27.075052+00:00",
+  "state_asof": "2026-06-21",
+  "model": "claude-opus-4-8",
+  "regime_read": null,
+  "regime_read_zh": null,
+  "theses": [],
+  "track_record": {
+    "schema": "altdata_brain_track_record.v1",
+    "as_of": "2026-06-21",
+    "scored_total": 0,
+    "open": 0,
+    "unscored_soft": 0,
+    "expired": 0,
+    "overall": {
+      "n": 0,
+      "hits": 0,
+      "misses": 0,
+      "hit_rate": null,
+      "dir_accuracy": null
+    },
+    "by_conviction": {
+      "high": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      },
+      "medium": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      },
+      "low": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      }
+    },
+    "by_kind": {
+      "rel_return": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      },
+      "level": {
+        "n": 0,
+        "hits": 0,
+        "misses": 0,
+        "hit_rate": null,
+        "dir_accuracy": null
+      }
+    },
+    "calibration_note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
+    "calibration_note_zh": "\u5c1a\u65e0\u5224\u65ad\u88ab\u8bc4\u5206 \u2014\u2014 \u5f85\u9996\u6279\u6838\u67e5\u65e5\u5230\u671f\u540e\u5f00\u59cb\u7d2f\u79ef\u6218\u7ee9\uff1b\u5728\u6b64\u4e4b\u524d\u7f6e\u4fe1\u4fdd\u6301\u514b\u5236\u3002",
+    "recent": [],
+    "note": "Alt-data brain theses graded vs SPY. The actionable axis is calibrated by this track record; conviction defers to it."
+  },
+  "confidence": "low",
+  "n_clusters": 12,
+  "raw_text": null,
+  "degraded_reason": "llm_error",
+  "disclaimer": "An AI reading of the desk's own deterministic convergence \u2014 accountable and falsifiable, not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its own risk framework; treat as odds, not a forecast."
+}

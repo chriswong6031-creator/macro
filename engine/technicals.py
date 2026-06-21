@@ -66,7 +66,8 @@ def snapshot(close: pd.Series) -> dict:
         if pd.notna(t["sma200"]) else None,
         "rsi14": round(float(t["rsi14"]), 0) if pd.notna(t["rsi14"]) else None,
         "macd_pos": bool(t["macd_pos"]),
-        "off_52w_high_pct": round(float(t["off_52w_high_pct"]), 1),
+        "off_52w_high_pct": round(float(t["off_52w_high_pct"]), 1)
+        if pd.notna(t["off_52w_high_pct"]) else None,
     }
 
 

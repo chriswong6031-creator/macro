@@ -136,7 +136,21 @@
   .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
   .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
-  .nb-tier { font-size:8px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
+  .nb-tier { font-size:9px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
+  /* volatility black hole + honesty notes (China overhaul) */
+  .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
+  .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
+              color:var(--muted); white-space:nowrap; }
+  .vf-coil { color:var(--link); border-color:color-mix(in srgb,var(--link) 38%,var(--line));
+             background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
+  .vf-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line)); }
+  .vf-down { color:var(--down); border-color:color-mix(in srgb,var(--down) 40%,var(--line)); }
+  .vf-exp { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+  .vf-marg { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,var(--line));
+             background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .nb-note { font-size:8.5px; line-height:1.3; margin-top:3px; padding:2px 5px; border-radius:6px;
+             color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(12, 1fr); }
   .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 15px 17px; }
   .span12 { grid-column: span 12; } .span8 { grid-column: span 8; }
@@ -1023,6 +1037,13 @@
       {{ help("The actionable per-stock shortlist — the China parallel of the US 'Standout individual stocks' card strip. REVERSAL-led after the deep-history correction: on ~35 years of A-share data, cross-sectional MOMENTUM is NOT a validated edge; short-term <b>reversal</b> is (research/CHINA_HK_STOCK_SIGNALS.md, reports/china-residual-alpha-deep.md). So this surfaces decent-quality names (some residual relative strength) sitting at a <b>cycle-confirmed mean-reversion entry</b> — a recent <b>pullback</b>, not an extended spike. Ranked by the <b>setup</b> score, which LEADS with the validated effects (the calibrated cycle entry + the pullback/reversal overlay); the residual is only a light quality tiebreaker (0.35×). The 🛡🔄 <b>safer rebound</b> chip flags a CONFLUENCE name — one that is BOTH a deep-dip reversal candidate AND a low-vol defensive name (both validated legs agree). An <b>extended</b> name is reversal RISK, not a buy. Context to size and confirm — not a buy list.", "可操作的个股精选名单 —— 美国“表现突出的个股”卡片的中国版。经深度历史校正后改为反转主导：在约35年的A股数据上，横截面动量并非有效优势；短期<b>反转</b>才是（research/CHINA_HK_STOCK_SIGNALS.md、reports/china-residual-alpha-deep.md）。因此这里筛选出具备一定残差相对强度、且处于<b>周期确认的均值回归入场点</b>（近期<b>回调</b>而非急涨过热）的优质个股。按<b>配置分</b>排序，该分以已验证的效应为主（校准的周期入场＋回调/反转叠加）；残差仅作轻量质量加权（0.35×）。🛡🔄 <b>稳健反弹</b>标记表示<b>合流</b>个股 —— 既是深跌反转候选、又是低波防御股（两条已验证支线一致）。<b>extended</b>（急涨）个股是反转风险而非买入。用于定仓与确认的背景 —— 而非买入清单。") }}
     </h2>
     <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Decent names at a cycle-confirmed mean-reversion entry — the validated A-share read, ranked by setup score (cycle entry + pullback/reversal). Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. The selection axis is the validated reversal context (high-variance, not a buy list). A research shortlist to size and confirm, not a buy list.', '处于周期确认均值回归入场点的优质个股 —— 已验证的A股解读，按配置分（周期入场＋回调/反转）排序。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。选股维度即已验证的均值回归参考（高波动，非买入清单）。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
+    {% if setups.qvix_regime %}{% set q = setups.qvix_regime %}
+    <div style="margin:6px 0 9px;padding:7px 11px;border-radius:9px;font-size:11.5px;line-height:1.5;border:1px solid var(--line);border-left:3px solid {{ 'var(--warn)' if q.verdict=='caution' else ('var(--link)' if q.verdict=='confirm' else 'var(--muted)') }};background:color-mix(in srgb,{{ 'var(--warn)' if q.verdict=='caution' else 'var(--link)' }} 7%,var(--panel))">
+      <span style="font-size:13px">{% if q.regime=='panic' %}🌀{% elif q.regime=='suppressed' %}🧊{% else %}〰{% endif %}</span>
+      <b>{{ t('QVIX vol regime', 'QVIX 波动区制') }}: {{ t(q.regime, {'panic':'恐慌','elevated':'偏高','normal':'正常','suppressed':'受抑'}.get(q.regime, q.regime)) }}</b>
+      (z {{ '%+.1f'|format(q.qvix_z) }}{% if q.level is not none %}, {{ q.level }}{% endif %}) — <span class="l-en">{{ q.en }}</span><span class="l-zh">{{ q.zh }}</span>
+      {{ help("The GEX-analog for A-shares (no single-stock options): the China VIX (QVIX, from 50/300-ETF options) vol-regime. CRITICAL — the US 'high VIX = fear' reading is INVERTED here: China has a positive return-volatility correlation, so a high QVIX level often accompanies a speculative rally. We gate on the QVIX z-score vs its own 60-day (the rate of change), not the level. A panic SPIKE is the crash-risk regime (taxes a chase + vetoes a high-conviction verb); a suppressed regime is a coiled, constructive vol environment. Market-wide context, not a per-stock signal.", "A 股的 GEX 类比（无个股期权）：中国波动率指数（QVIX，源自 50/300ETF 期权）的波动区制。关键 —— 美式“高 VIX=恐慌”在此相反：中国收益-波动正相关，高 QVIX 水平常伴随投机性上涨。我们以 QVIX 相对自身 60 日的 z 分数（变化率）而非水平来判定。恐慌飙升是崩盘风险区制（对追高征税并否决高确信结论）；受抑区制则是蓄势、有利的波动环境。全市场背景，而非个股信号。") }}
+    </div>{% endif %}
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -1030,7 +1051,7 @@
         <div class="nb-top">
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ nm(n.name) }}</span>
-          {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
@@ -1063,7 +1084,16 @@
         </div>
         {% endif %}
         {% if c %}
+        {# volatility black hole (vol_squeeze) + margin-crowding chips #}
+        {% set _vs = c.vol_squeeze %}
+        {% if (_vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION']) or c.risk and c.risk.components and c.risk.components.fragility %}
+        <div class="nb-vf">
+          {% if _vs and _vs.state in ['COILED','FIRED_UP','FIRED_DOWN','EXPANSION'] %}
+          <span class="nb-vchip {{ {'COILED':'vf-coil','FIRED_UP':'vf-up','FIRED_DOWN':'vf-down','EXPANSION':'vf-exp'}[_vs.state] }}" title="Volatility black hole{% if _vs.days_compressed %} · {{ _vs.days_compressed }}d compressed{% endif %} — {{ _vs.caveat }} | 波动黑洞 — {{ _vs.caveat_zh }}">{% if _vs.state=='COILED' %}🌀 {{ t('Coiled','蓄势') }}{% elif _vs.state=='FIRED_UP' %}🚀 {{ t('Firing↑','向上突破') }}{% elif _vs.state=='FIRED_DOWN' %}🔻 {{ t('Firing↓','向下突破') }}{% else %}💥 {{ t('Vol expansion','波动扩张') }}{% endif %}</span>{% endif %}
+          {% if c.risk and c.risk.components and c.risk.components.fragility %}<span class="nb-vchip vf-marg" title="Margin financing (融资余额) crowding — a surging leverage balance is the 2015 fire-sale mechanism; a contrarian RISK, sized down. | 融资余额拥挤 — 杠杆快速堆积即2015年踩踏机制；逆向风险，已减仓。">⚠ {{ t('Margin crowded','两融拥挤') }}</span>{% endif %}
+        </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
+        {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
         <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
         {% endif %}
       </a>
@@ -1567,6 +1597,8 @@ window.__CHART_SWAP__ = {
 <script src="mtf.js"></script>
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
+<script src="live_config.js"></script>
+<script src="live.js"></script>
 <script>
   // keep tooltips on-screen: flip below near the top of the viewport, and anchor to
   // the nearest side when the help icon is close to the left/right edge

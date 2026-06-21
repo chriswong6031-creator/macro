@@ -1,0 +1,178 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro bl(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+
+{% block title %}{{ t('PBoC & Policy Watch', '央行与政策观察') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .pw-hero { max-width:1060px; margin:18px auto 0; }
+  .pw-hero .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--link); font-weight:600; margin:0 0 8px; }
+  .pw-hero h1 { font-size:29px; margin:0 0 8px; letter-spacing:-.01em; }
+  html[data-lang="zh"] .pw-hero h1 { letter-spacing:0; }
+  .pw-hero .lens { font-size:12px; color:var(--muted); }
+  .pw-wrap { max-width:1060px; margin:0 auto; }
+  h2.sec { font-size:19px; margin:28px 0 8px; border-top:1px solid var(--line); padding-top:18px; display:flex; align-items:baseline; gap:9px; }
+  .callout { border-radius:12px; padding:13px 16px; margin:14px 0; border:1px solid var(--line); background:var(--panel2); font-size:13.5px; line-height:1.6; }
+  .callout .co-h { font-weight:700; display:block; margin-bottom:4px; }
+  .callout.key { border-left:4px solid #46b87a; }
+  .callout.warn { border-left:4px solid var(--warn); }
+  .stance-hero { display:flex; flex-wrap:wrap; gap:14px; align-items:center; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin:14px 0; }
+  .stance-badge { font-size:22px; font-weight:800; padding:6px 16px; border-radius:999px; }
+  .st-easing { color:#1f9a55; background:color-mix(in srgb,#1f9a55 14%,transparent); }
+  .st-tightening { color:#d23f3f; background:color-mix(in srgb,#d23f3f 14%,transparent); }
+  .st-neutral { color:var(--muted); background:var(--panel2); }
+  .stance-hero .why { font-size:13px; color:var(--muted); flex:1; min-width:240px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .card .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .card .v { font-size:22px; font-weight:700; margin-top:3px; }
+  .card .s { font-size:11px; color:var(--muted); margin-top:3px; }
+  .moves { list-style:none; padding:0; margin:8px 0; }
+  .moves li { font-size:13px; padding:5px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; }
+  .moves .dt { color:var(--muted); font-variant-numeric:tabular-nums; min-width:92px; }
+  .ease { color:#1f9a55; } .tighten { color:#d23f3f; }
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { text-align:left; padding:7px 9px; background:var(--panel2); color:var(--muted); font-weight:600; border-bottom:2px solid var(--line); }
+  table.data td { padding:7px 9px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; white-space:nowrap; }
+  .p-supportive { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
+  .p-restrictive { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
+  .p-neutral { color:var(--muted); background:var(--panel2); }
+  .chips { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0; }
+  .nchip { font-size:12px; padding:4px 11px; border-radius:999px; background:var(--panel2); border:1px solid var(--line); }
+  .nchip b { color:var(--link); }
+  .feed { list-style:none; padding:0; margin:10px 0; }
+  .feed li { padding:8px 0; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:flex-start; }
+  .feed .tag { font-size:10px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--panel2); border:1px solid var(--line); white-space:nowrap; min-width:74px; text-align:center; }
+  .feed .tt { font-size:13.5px; line-height:1.45; }
+  .feed .tt a { color:var(--text); } .feed .tt a:hover { color:var(--link); }
+  .b-open { color:var(--muted); background:var(--panel2); }
+  .disc { font-size:11.5px; color:var(--muted); margin-top:12px; line-height:1.55; }
+{% endblock %}
+
+{% block content %}
+<section class="pw-hero">
+  <p class="eyebrow">🏛️ {{ t('PBoC & Policy Watch', '央行与政策观察') }}</p>
+  <h1>{{ t('China Central Bank & Policy Watch', '中国央行与政策观察') }}</h1>
+  <p class="lens">{{ t('PBoC rate corridor · liquidity · FX · NBS prints · State-Council/NDRC policy · context only · as of', '央行利率走廊 · 流动性 · 外汇 · 统计局数据 · 国务院/发改委政策 · 仅供参考 · 截至') }} {{ pw.asof if pw else '—' }}</p>
+</section>
+
+<div class="pw-wrap">
+{% if not pw %}
+  <div class="callout">{{ t('Policy data is still warming up — this page populates after the first collect + build cycle.', '政策数据仍在预热——本页将在首次采集与构建周期后填充。') }}</div>
+{% else %}
+
+  {% if pw.intel and pw.intel.thesis %}
+  <div class="callout key"><span class="co-h">{{ t('The policy thesis', '政策核心论点') }}</span>{{ bl(pw.intel.thesis.en, pw.intel.thesis.zh) }}</div>
+  {% endif %}
+  {% if pw.intel and pw.intel.regime_read %}
+  <div class="callout warn"><span class="co-h">{{ t('How to read it', '如何解读') }}</span>{{ bl(pw.intel.regime_read.en, pw.intel.regime_read.zh) }}</div>
+  {% endif %}
+
+  <!-- ===== PBoC stance + rate corridor ===== -->
+  {% if pw.pboc %}
+  <h2 class="sec">🪙 {{ t('PBoC stance & rate corridor', '央行立场与利率走廊') }}</h2>
+  <div class="stance-hero">
+    <span class="stance-badge st-{{ pw.pboc.stance }}">{{ bl(pw.pboc.stance_en, pw.pboc.stance_zh) }}</span>
+    <span class="why">{{ bl(pw.pboc.rationale.en, pw.pboc.rationale.zh) }}</span>
+  </div>
+  <div class="grid">
+    {% for c in pw.pboc.corridor %}
+    <div class="card"><div class="k">{{ bl(c.label_en, c.label_zh) }}</div><div class="v">{{ '%.2f'|format(c.value) }}{{ c.unit }}</div></div>
+    {% endfor %}
+  </div>
+
+  <!-- ===== FX & reserves ===== -->
+  {% set fx = pw.pboc.fx %}
+  <h2 class="sec">💱 {{ t('FX & reserves', '外汇与储备') }}</h2>
+  <div class="grid">
+    {% if fx.reserves %}<div class="card"><div class="k">{{ t('FX reserves', '外汇储备') }}</div><div class="v">${{ (fx.reserves/10000)|round(2) }}T</div><div class="s">{% if fx.reserves_mom %}{{ '%+.0f'|format(fx.reserves_mom) }} {{ t('bn MoM', '亿环比') }}{% endif %} · {{ fx.asof_reserves }}</div></div>{% endif %}
+    {% if fx.gold %}<div class="card"><div class="k">{{ t('Gold reserves', '黄金储备') }}</div><div class="v">{{ fx.gold|round(0)|int }}t</div></div>{% endif %}
+    {% if fx.usd_cny %}<div class="card"><div class="k">{{ t('USD / CNY', '美元兑人民币') }}</div><div class="v">{{ '%.3f'|format(fx.usd_cny) }}</div><div class="s">{% if fx.usd_cny_chg_20d is not none %}{{ '%+.3f'|format(fx.usd_cny_chg_20d) }} {{ t('20d', '20日') }}{% endif %} · {{ fx.asof_cny }}</div></div>{% endif %}
+  </div>
+
+  {% if pw.pboc.last_moves %}
+  <h3 style="font-size:14px;color:var(--muted);margin:14px 0 4px">{{ t('Recent policy moves', '近期政策动作') }}</h3>
+  <ul class="moves">
+    {% for m in pw.pboc.last_moves %}
+    <li><span class="dt">{{ m.date }}</span><span class="{{ 'ease' if m.easing else 'tighten' }}">{{ bl(m.detail_en, m.detail_zh) }}</span></li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% endif %}
+
+  <!-- ===== NBS latest prints ===== -->
+  {% if pw.nbs_prints %}
+  <h2 class="sec">📊 {{ t('NBS latest prints', '统计局最新数据') }}</h2>
+  <div class="grid">
+    {% for r in pw.nbs_prints %}
+    <div class="card"><div class="k">{{ bl(r.label_en, r.label_zh) }}</div><div class="v">{{ r.value }}{{ r.unit }}</div><div class="s">{{ r.asof }}</div></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== NPC targets ===== -->
+  {% if pw.intel and pw.intel.npc_targets_2026 %}
+  <h2 class="sec">🎯 {{ t('NPC 2026 targets', '两会2026目标') }}</h2>
+  <div class="chips">
+    {% for tg in pw.intel.npc_targets_2026 %}
+    <span class="nchip">{{ bl(tg.label_en, tg.label_zh) }} <b>{{ tg.value }}</b></span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ===== sector-policy tracker ===== -->
+  {% if pw.intel and pw.intel.sector_policy %}
+  <h2 class="sec">🧭 {{ t('Sector-policy tracker', '行业政策追踪') }}</h2>
+  <table class="data">
+    <thead><tr><th>{{ t('Sector', '行业') }}</th><th>{{ t('Stance', '立场') }}</th><th>{{ t('Policy read', '政策解读') }}</th></tr></thead>
+    <tbody>
+    {% for s in pw.intel.sector_policy %}
+      <tr>
+        <td>{{ bl(s.sector_en, s.sector_zh) }}{% if s.baskets %}<br><span class="bk" style="font-size:10px;color:var(--muted)">{{ s.baskets|join(' · ') }}</span>{% endif %}</td>
+        <td><span class="pill p-{{ s.stance }}">{{ t(s.stance|capitalize, ({'supportive':'支持','restrictive':'限制','neutral':'中性'}).get(s.stance, s.stance)) }}</span></td>
+        <td>{{ bl(s.note_en, s.note_zh) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <!-- ===== official policy tape ===== -->
+  {% if pw.policy_feed %}
+  <h2 class="sec">📰 {{ t('Official policy tape', '官方政策快讯') }}</h2>
+  <ul class="feed">
+    {% for it in pw.policy_feed %}
+    <li>
+      <span class="tag">{{ bl(it.theme_en, it.theme_zh) }}</span>
+      <div class="tt">
+        {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>{% else %}{{ it.title }}{% endif %}
+        {% if it.scheduled_ref %} <span style="font-size:10px;color:#e0973a">📅 {{ it.scheduled_ref }}</span>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <!-- ===== prediction ledger ===== -->
+  {% if pw.intel and pw.intel.predictions %}
+  <h2 class="sec">🔮 {{ t('Policy prediction ledger', '政策预测台账') }}</h2>
+  <p style="font-size:12px;color:var(--muted)">{{ t('Dated, falsifiable PBoC / fiscal calls — accountability, not a forecast service.', '有日期、可证伪的央行／财政判断——问责，而非预测服务。') }}</p>
+  <table class="data">
+    <thead><tr><th>{{ t('Prediction', '预测') }}</th><th>{{ t('Check by', '核查日') }}</th><th>{{ t('Status', '状态') }}</th></tr></thead>
+    <tbody>
+    {% for p in pw.intel.predictions %}
+      <tr><td>{{ bl(p.text_en, p.text_zh) }}</td><td>{{ p.check_by }}</td><td><span class="pill b-open">{{ t(p.status|capitalize, ({'open':'未结','hit':'命中','miss':'落空'}).get(p.status, p.status)) }}</span></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+
+  <p class="disc">{{ t('Context only — not a signal, score or trade. PBoC corridor + NBS prints are point-in-time and may be revised; the sector matrix, NPC targets and prediction ledger are a hand-curated, dated intel substrate (data/china_policy/intel.json), not a model output.', '仅作背景，非信号、评分或交易。央行利率走廊与统计局数据为特定时点快照，可能修订；行业矩阵、两会目标与预测台账为人工整理、有日期的情报底稿（data/china_policy/intel.json），并非模型输出。') }}</p>
+{% endif %}
+</div>
+{% endblock %}

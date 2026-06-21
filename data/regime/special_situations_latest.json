@@ -1,0 +1,21 @@
+{
+  "total": 542,
+  "n_categories": 19,
+  "cross_border": 207,
+  "top_categories": [
+    {
+      "category": "Acquisitions",
+      "n": 106
+    },
+    {
+      "category": "SPACs",
+      "n": 64
+    },
+    {
+      "category": "Delistings",
+      "n": 64
+    }
+  ],
+  "floor_musd": 100.0,
+  "built": "2026-06-21 07:53 UTC"
+}

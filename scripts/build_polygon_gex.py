@@ -91,7 +91,11 @@ def accrue(as_of=None) -> dict:
         return {"status": "no_key"}
 
     asof = _as_date(as_of)
-    symbols = list(cfg["gex"]["symbols"])
+    from engine.options_universe import gex_symbols
+    symbols = gex_symbols(cfg.get("gex"))
+    log.info("polygon: snapshotting %d underlyings (%d anchors + baskets=%s)",
+             len(symbols), len(cfg["gex"].get("symbols") or []),
+             cfg["gex"].get("include_baskets", False))
     raw = client.snapshot(symbols, asof)
     if raw.empty:
         log.warning("polygon: snapshot empty — nothing accrued")

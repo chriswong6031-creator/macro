@@ -54,6 +54,24 @@ def build_drivers(f: pd.DataFrame) -> pd.DataFrame:
         d["infl_accel"] = f["core_pce_3m_ann"] - f["core_pce_yoy"]
     if "breakeven_5y5y" in f and "infl_exp_5y" in f:
         d["exp_wedge"] = f["breakeven_5y5y"] - f["infl_exp_5y"]
+    # --- curve-SHAPE drivers (the yield_curve engine's metrics) — measured here so the
+    # IC matrix carries their per-asset cells AND the scored-leg gate tests them on the
+    # same forward-drawdown bar as every other rate leg. Excluded from READ_DRIVERS (the
+    # live headwind/tailwind read) — they enrich the calibration, not the live aggregate.
+    if all(c in f for c in ("us2y", "us5y", "us10y")):
+        d["curvature"] = 2 * f["us5y"] - f["us2y"] - f["us10y"]          # 2s5s10s butterfly
+    if "spread_2s10s" in f:
+        d["slope_chg63"] = f["spread_2s10s"] - f["spread_2s10s"].shift(H)
+    if all(c in f for c in ("us1y", "us2y", "us3m")):                    # Engstrom-Sharpe NTFS
+        y15 = f["us1y"] + 0.50 * (f["us2y"] - f["us1y"])
+        y175 = f["us1y"] + 0.75 * (f["us2y"] - f["us1y"])
+        d["ntfs"] = (y175 * 1.75 - y15 * 1.50) / 0.25 - f["us3m"]
+    if "us10y_real" in f:                                                # |real-rate speed| = violence
+        d["real_speed_abs"] = (f["us10y_real"] - f["us10y_real"].shift(H)).abs()
+    # low-frequency TREND of the 3m10y spread (Faria-Verona 2020) — the one curve read
+    # claimed to carry OOS equity-premium content; tested here on the return-forecast bar.
+    if "spread_10y3m" in f:
+        d["trend_spread"] = f["spread_10y3m"].rolling(504, min_periods=252).mean()
     return d
 
 
@@ -70,6 +88,11 @@ DRIVERS_META = {
     "corepce_gap": ("Core PCE YoY − 2% target", "核心PCE同比−2%目标", "level"),
     "infl_accel": ("Inflation re-acceleration (3m−12m)", "通胀再加速（3月−12月）", "change"),
     "exp_wedge": ("Expectations wedge (mkt − model)", "预期缺口（市场−模型）", "level"),
+    "curvature": ("2s5s10s curvature (butterfly)", "2-5-10年曲率（蝶式）", "level"),
+    "slope_chg63": ("2s10s 63d change (steepening)", "2-10年63日变动（变陡）", "change"),
+    "ntfs": ("Near-term forward spread", "近端远期利差", "level"),
+    "real_speed_abs": ("|Real 10y 63d speed| (violence)", "|实际10年63日速度|（剧烈度）", "change"),
+    "trend_spread": ("3m10y trend (2y smooth, Faria-Verona)", "3月-10年趋势（2年平滑）", "level"),
 }
 
 # The drivers used in the LIVE headwind/tailwind read + chains: the CHANGE/shock and

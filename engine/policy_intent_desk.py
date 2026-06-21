@@ -36,6 +36,7 @@ from engine import master_brain as _mb              # reuse the DeepSeek/Anthrop
 from engine import ai_desk as _desk                 # reuse _level_asof / _check_by
 from engine import ai_desk_scorer as _scorer        # reuse the predicate evaluators
 from engine.catalyst_tone import _extract_json      # shared tolerant JSON parser
+from engine.regime_label import quad_label          # regime stamp → by_regime track record
 
 log = logging.getLogger(__name__)
 
@@ -64,6 +65,17 @@ _ALLOWED = _SCORABLE | _SOFT
 # subject name the LLM uses -> the actual cached price ticker (data/yahoo). GLD has no
 # local series; gold futures GC_F does, so a gold lean stays gradeable, not phantom-expired.
 _ALIAS = {"GLD": "GC_F"}
+# CORRELATED SURROGATES — a soft proxy (no local price series) mapped to a scorable cousin,
+# so the highest-conviction longest-horizon themes (defense, nuclear/uranium, rare-earths)
+# get GRADED instead of silently expiring. The surrogate is broader (defense ⊂ industrials),
+# so a hit/miss is WEAKER evidence than a direct one — flagged via='correlated', graded on a
+# wider threshold, and the track record keeps direct vs surrogate hit-rates separate. The
+# cash/dollar/bitcoin softs (BIL/SHV/UUP/IBIT) have no equity surrogate → stay soft.
+_SOFT_PROXY = {
+    "ITA": "XLI", "XAR": "XLI", "PPA": "XLI", "SHLD": "XLI",     # defense → industrials
+    "URA": "XLU", "URNM": "XLU", "CCJ": "XLU",                   # uranium / nuclear → utilities
+    "REMX": "XLB", "MP": "XLB",                                  # rare earths → materials
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -107,28 +119,38 @@ def _read_json(path: Path):
 # falsifier derivation (mirrors ai_desk._derive_check, proxy-vs-SPY)
 # --------------------------------------------------------------------------- #
 def _resolve_subject(subject: str):
-    """-> (ticker, vs, kind). kind in {'rel_return','soft'}."""
+    """-> (ticker, vs, kind, via). kind in {'rel_return','soft'}; via in {'direct','correlated','soft'}."""
     t = (subject or "").strip().upper()
     if t in _SCORABLE:
-        return _ALIAS.get(t, t), _BENCH, "rel_return"   # resolve to the cached price ticker
+        return _ALIAS.get(t, t), _BENCH, "rel_return", "direct"   # resolve to the cached price ticker
+    if t in _SOFT_PROXY:
+        return _SOFT_PROXY[t], _BENCH, "rel_return", "correlated"  # gradeable via a correlated cousin
     if t in _SOFT:
-        return t, None, "soft"
-    return None, None, "soft"
+        return t, None, "soft", "soft"
+    return None, None, "soft", "soft"
 
 
 def _derive_check(subject: str, lean: str, horizon: int, cfg: dict) -> dict:
     thr = float((cfg.get("falsifier_defaults", {}) or {}).get("rel_return", 0.05))
-    ticker, vs, kind = _resolve_subject(subject)
+    ticker, vs, kind, via = _resolve_subject(subject)
     if kind == "rel_return":
+        # a correlated surrogate is noisier than a direct proxy → widen the threshold so we
+        # don't false-fail a defense lean on industrials' idiosyncratic wobble.
+        eff_thr = thr * (1.6 if via == "correlated" else 1.0)
         if lean == "overweight":
-            op, threshold = "<", -thr            # FALSE if it underperforms SPY by >= thr
+            op, threshold = "<", -eff_thr        # FALSE if it underperforms SPY by >= thr
         elif lean in ("underweight", "avoid"):
-            op, threshold = ">", thr             # FALSE if it outperforms SPY by >= thr
+            op, threshold = ">", eff_thr         # FALSE if it outperforms SPY by >= thr
         else:
-            return {"kind": "soft", "reason": f"lean '{lean}' has no relative-return rule"}
-        return {"kind": "rel_return", "subject_ticker": ticker, "vs": vs,
-                "op": op, "threshold": threshold, "horizon_d": horizon}
-    return {"kind": "soft", "reason": f"'{subject}' not a scorable proxy (no local price series)"}
+            return {"kind": "soft", "via": "soft", "reason": f"lean '{lean}' has no relative-return rule"}
+        check = {"kind": "rel_return", "subject_ticker": ticker, "vs": vs, "via": via,
+                 "op": op, "threshold": threshold, "horizon_d": horizon}
+        if via == "correlated":
+            check["surrogate_of"] = (subject or "").strip().upper()
+            check["note"] = f"graded via correlated surrogate {ticker} (no local series for {check['surrogate_of']})"
+        return check
+    return {"kind": "soft", "via": "soft",
+            "reason": f"'{subject}' not a scorable proxy (no local price series, no correlated surrogate)"}
 
 
 def _build_thesis(t: dict, i: int, asof, cfg: dict, run_token: str = "") -> dict | None:
@@ -313,6 +335,7 @@ def _append_ledger(brief: dict, root) -> None:
         d = Path(root) / "data" / "policy_intent"
         d.mkdir(parents=True, exist_ok=True)
         asof = brief.get("state_asof")
+        regime = quad_label(root)
         with open(d / "theses.jsonl", "a") as fh:
             for t in theses:
                 check = (t.get("falsifier") or {}).get("check") or {}
@@ -328,7 +351,7 @@ def _append_ledger(brief: dict, root) -> None:
                     "actor": t.get("actor"), "subject": t["subject"], "lean": t["lean"],
                     "conviction": t["conviction"], "horizon_d": t["horizon_d"],
                     "falsifier": t["falsifier"], "check_by": t["check_by"],
-                    "entry_levels": entry,
+                    "entry_levels": entry, "regime": regime,
                     "status": "open", "scored_at": None, "outcome": None, "realized": None,
                 }, default=str) + "\n")
     except Exception as e:  # noqa: BLE001

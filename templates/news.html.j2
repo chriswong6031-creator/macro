@@ -1,0 +1,357 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{#- inline SVG icons (Lucide-style, currentColor) — replace emoji that render as
+    tofu boxes on some systems and look crisper. One macro, switch on name. -#}
+{% macro ic(name) -%}
+{% set P = {
+  'macro':    '<path d="M3 21h18M5 21V10m4 11V10m6 11V10m4 11V10M12 3 3 8h18z"/>',
+  'market':   '<path d="m3 17 6-6 4 4 8-8"/><path d="M17 7h4v4"/>',
+  'mag7':     '<path d="m12 3 2.4 5 5.6.6-4.2 3.8 1.2 5.6L12 21l-5 2.9 1.2-5.6L4 14.6l5.6-.6z"/>',
+  'sectors':  '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/>',
+  'baskets':  '<path d="m5 11 14 0-1.4 8.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8zM9 11 12 4l3 7"/>',
+  'narrative':'<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 0 1 3 3v6.5"/>',
+  'news':     '<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/>',
+  'calendar': '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/>',
+  'brief':    '<path d="M5 3v4M3 5h4M6 17v4m-2-2h4"/><path d="m13 4 2.4 6.2L21 12l-5.6 1.8L13 20l-2.4-6.2L5 12l5.6-1.8z"/>'
+} %}
+<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ P.get(name, '')|safe }}</svg>
+{%- endmacro %}
+{#- one headline row. Tolerant of macro/china/financial shapes. NEVER puts t()
+    inside an attribute (datetime= takes the raw ISO string, which is data). -#}
+{% macro headline(h, labels={}) -%}
+{% set ts = h.seendate or h.time %}
+{% set sent = h.sentiment or h.llm_tone %}
+<li class="hl">
+  <a class="hl-title" href="{{ h.url or '#' }}" target="_blank" rel="noopener noreferrer">{{ h.title }}</a>
+  {% if h.summary %}<div class="hl-sum">{{ h.summary }}</div>{% endif %}
+  <div class="hl-meta">
+    {% if h.theme and labels.get(h.theme) %}<span class="chip chip-th">{{ t(labels[h.theme][0], labels[h.theme][1]) }}</span>{% endif %}
+    {% for tk in (h.tickers or [])[:3] %}<span class="chip chip-tk">{{ tk }}</span>{% endfor %}
+    {% if sent and sent in ['pos','neg'] %}<span class="chip s-{{ sent }}">{{ '▲' if sent=='pos' else '▼' }}</span>{% endif %}
+    <span class="src">{{ h.source or h.domain }}</span>
+    {% if ts %}<time class="ago" datetime="{{ ts }}">{{ ts[:10] }}</time>{% endif %}
+  </div>
+</li>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ t('Market News', '市场新闻') }}</title>
+<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="theme.css">
+<style>
+  body.page-news{ margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  /* celestial backdrop (sky.js) — copied from index.html (these styles aren't in theme.css) */
+  #sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
+  @media(max-width:560px){ #sky{--cs:clamp(92px,26vw,124px)} }
+  #sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #sky-sun,#sky-moon{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
+    transform:translate(-50%,calc(-50% + 80vh));opacity:0;
+    transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
+  #sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
+  #sky[data-sky="night"] #sky-moon{transform:translate(-50%,-50%);opacity:1}
+  #sky-sun{background:radial-gradient(circle at 50% 50%,#fffdf7 0%,#fff2cc 20%,#ffd87f 40%,#ffb84d 58%,rgba(255,156,54,.34) 76%,transparent 84%);
+    box-shadow:0 0 46px 6px rgba(255,226,150,.6),0 0 110px 28px rgba(255,192,92,.38),0 0 220px 86px rgba(255,170,68,.18),0 0 360px 160px rgba(255,160,60,.08)}
+  #sky-sun::after{content:'';position:absolute;inset:12%;border-radius:50%;mix-blend-mode:screen;
+    background:radial-gradient(circle at 44% 40%,rgba(255,255,255,.95) 0%,rgba(255,247,214,.25) 42%,transparent 62%);animation:sky-breathe 6.5s ease-in-out infinite}
+  #sky-moon{background:radial-gradient(circle at 34% 28%,#ffffff 0%,#eef2fb 26%,#cdd8ee 58%,#9fafcf 100%);
+    box-shadow:inset -24px -20px 50px rgba(16,26,54,.58),inset 12px 9px 24px rgba(255,255,255,.42),0 0 56px 10px rgba(150,182,242,.3),0 0 160px 60px rgba(120,162,232,.15)}
+  #sky-moon::after{content:'';position:absolute;inset:-30%;border-radius:50%;
+    background:radial-gradient(circle,rgba(150,182,242,.16) 0%,transparent 62%);animation:sky-breathe 7.5s ease-in-out infinite}
+  @keyframes sky-breathe{0%,100%{opacity:.6}50%{opacity:.95}}
+  @media (prefers-reduced-motion:reduce){ #sky-sun,#sky-moon{transition:none} #sky-sun::after,#sky-moon::after{animation:none} }
+  .news-wrap{ max-width:1180px; margin:0 auto; padding:10px 18px 72px; position:relative; z-index:1; }
+  /* hero */
+  .nh{ margin:14px 0 6px; }
+  .nh .eyebrow{ display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:500;
+    color:var(--muted); padding:4px 11px; border-radius:999px;
+    background:color-mix(in srgb,var(--panel) 70%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 75%,transparent); backdrop-filter:blur(8px); }
+  .nh .live{ width:7px; height:7px; border-radius:50%; background:var(--ok); position:relative; }
+  .nh .live::after{ content:""; position:absolute; inset:-4px; border-radius:50%;
+    border:1.5px solid var(--ok); opacity:.5; animation:nhPulse 2.4s ease-out infinite; }
+  @keyframes nhPulse{ 0%{transform:scale(.6);opacity:.6} 100%{transform:scale(1.7);opacity:0} }
+  .nh h1{ font-size:clamp(28px,4.2vw,44px); font-weight:800; letter-spacing:-.02em; margin:10px 0 4px;
+    background:linear-gradient(180deg,var(--text),color-mix(in srgb,var(--text) 55%,transparent));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:0 1px 30px color-mix(in srgb,var(--info) 22%,transparent); }
+  .nh p{ margin:0; color:var(--muted); max-width:620px; font-size:14.5px; }
+  /* sticky jump pills */
+  .jump{ position:sticky; top:0; z-index:20; display:flex; gap:7px; flex-wrap:wrap; padding:11px 0 9px;
+    margin:14px 0 6px; background:color-mix(in srgb,var(--bg) 78%,transparent); backdrop-filter:blur(10px); }
+  .jump a{ font-size:12.5px; font-weight:600; padding:5px 12px; border-radius:999px;
+    color:color-mix(in srgb,var(--text) 78%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+    background:color-mix(in srgb,var(--panel) 55%,transparent); transition:.16s ease; }
+  .jump a.on,.jump a:hover{ background:var(--info); color:#fff; border-color:var(--info);
+    box-shadow:0 4px 14px -6px color-mix(in srgb,var(--info) 70%,transparent); }
+  /* band section header */
+  .band{ display:flex; align-items:center; gap:12px; margin:30px 0 13px; }
+  .band h2{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--muted); margin:0; white-space:nowrap; display:flex; align-items:center; gap:7px; }
+  .band .ln{ flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent); }
+  .band .cnt{ font-size:11.5px; color:color-mix(in srgb,var(--text) 50%,transparent); white-space:nowrap; }
+  /* glass cards */
+  .glass{ background:color-mix(in srgb,var(--panel) 82%,transparent);
+    border:1px solid color-mix(in srgb,var(--line) 82%,transparent); border-radius:15px;
+    backdrop-filter:blur(13px) saturate(1.08);
+    box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),0 8px 26px -18px rgba(0,0,0,.5); }
+  .acc{ position:relative; overflow:hidden; }
+  .acc::before{ content:""; position:absolute; top:0; left:0; right:0; height:2.5px;
+    background:linear-gradient(90deg,var(--accent,var(--info)),transparent 78%); opacity:.85; }
+  .grid{ display:grid; gap:13px; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); }
+  .ncard{ padding:14px 15px; transition:transform .18s cubic-bezier(.2,.7,.3,1),border-color .18s,box-shadow .18s; }
+  .ncard:hover{ transform:translateY(-3px); border-color:color-mix(in srgb,var(--accent,var(--info)) 45%,var(--line));
+    box-shadow:0 14px 32px -20px color-mix(in srgb,var(--accent,var(--info)) 70%,#000); }
+  .ncard h3{ font-size:14px; font-weight:700; margin:0 0 9px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .ncard h3 .ico{ width:26px; height:26px; border-radius:8px; display:grid; place-items:center; font-size:14px;
+    background:color-mix(in srgb,var(--accent,var(--info)) 16%,var(--panel)); }
+  .ncard h3 .etf,.ncard h3 .chip-tk{ font-size:10.5px; font-weight:700; padding:1px 7px; border-radius:7px;
+    font-family:ui-monospace,Menlo,monospace;
+    background:color-mix(in srgb,var(--accent,var(--info)) 16%,transparent); color:var(--accent,var(--link)); }
+  .brief{ padding:12px 15px; border-left:3px solid var(--info); border-radius:0 13px 13px 0; margin:0 0 14px;
+    font-size:13.5px; background:color-mix(in srgb,var(--info) 8%,transparent); }
+  /* headline list */
+  ul.hl-list{ list-style:none; margin:0; padding:0; }
+  .hl{ padding:9px 0; border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent); }
+  .hl:first-child{ border-top:0; padding-top:2px; }
+  .hl-title{ font-weight:560; font-size:13.5px; line-height:1.4; }
+  .hl-title:hover{ color:var(--link); }
+  .hl-sum{ font-size:12.5px; color:color-mix(in srgb,var(--text) 64%,transparent); margin-top:3px;
+    display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .hl-meta{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:5px;
+    font-size:11px; color:color-mix(in srgb,var(--text) 52%,transparent); }
+  .chip{ font-size:10px; font-weight:600; padding:1px 6px; border-radius:6px;
+    background:color-mix(in srgb,var(--text) 9%,transparent); }
+  .chip-tk{ font-family:ui-monospace,Menlo,monospace; }
+  .chip-th{ background:color-mix(in srgb,var(--info) 15%,transparent); color:var(--info); }
+  .s-pos{ background:color-mix(in srgb,var(--up) 24%,transparent); color:var(--up); }
+  .s-neg{ background:color-mix(in srgb,var(--down) 24%,transparent); color:var(--down); }
+  .src{ font-weight:600; } .ago{ margin-left:auto; white-space:nowrap; }
+  /* per-name SIGNAL chip (Phase 3 link: radar + alt, client-filled) */
+  .sig{ margin-left:auto; display:inline-flex; gap:5px; align-items:center; }
+  .sig .sg{ font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:6px; letter-spacing:.02em; }
+  .sg-edge{ background:color-mix(in srgb,#16a34a 20%,transparent); color:#16a34a; }
+  .sg-early{ background:color-mix(in srgb,var(--info) 22%,transparent); color:var(--info); }
+  .sg-crowd{ background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--warn); }
+  .sg-dist{ background:color-mix(in srgb,var(--down) 22%,transparent); color:var(--down); }
+  .cats{ display:flex; gap:7px; flex-wrap:wrap; margin:2px 0 12px; }
+  .cat-cnt{ font-size:11.5px; padding:3px 10px; border-radius:8px;
+    background:color-mix(in srgb,var(--panel) 70%,transparent); border:1px solid color-mix(in srgb,var(--line) 70%,transparent); }
+  details.bg{ margin:0 0 11px; }
+  details.bg>summary{ cursor:pointer; font-weight:700; font-size:13px; padding:7px 0; list-style:none;
+    color:color-mix(in srgb,var(--text) 85%,transparent); }
+  details.bg>summary::-webkit-details-marker{ display:none; }
+  details.bg>summary::before{ content:"▸"; margin-right:8px; color:var(--info); }
+  details.bg[open]>summary::before{ content:"▾"; }
+  .cat-list{ list-style:none; margin:0; padding:0; }
+  .cat-list li{ padding:7px 0; border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent);
+    display:flex; gap:11px; font-size:13px; }
+  .cat-list li:first-child{ border-top:0; }
+  .cat-list .d{ font-family:ui-monospace,Menlo,monospace; font-size:12px; white-space:nowrap; color:var(--muted); }
+  .disc{ font-size:11px; color:color-mix(in srgb,var(--text) 48%,transparent); margin-top:11px; line-height:1.5; }
+  .empty{ font-size:12.5px; color:var(--muted); padding:9px 0; }
+  footer.nf{ margin-top:28px; padding-top:16px; border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+    font-size:11px; color:var(--muted); line-height:1.6; }
+  /* inline SVG icons — crisp, always render (no emoji tofu) */
+  .ic-svg{ width:15px; height:15px; flex:none; vertical-align:middle; }
+  .band h2 .ic-svg{ width:15px; height:15px; color:var(--accent,var(--info)); }
+  .ncard h3 .ico{ color:var(--accent,var(--info)); }
+  .ncard h3 .ico .ic-svg{ width:15px; height:15px; }
+  .brief .ic-svg{ width:16px; height:16px; color:var(--info); margin-right:2px; }
+  /* align the (full-bleed) nav with the centered content column — match .news-wrap's
+     content-box max-width:1180 + 18px padding so the link row lines up with the cards */
+  body.page-news > .site-nav{ max-width:1180px; margin:14px auto 8px; padding:0 18px; }
+  @media (prefers-reduced-motion:reduce){ .ncard,.jump a{ transition:none; } .nh .live::after{ animation:none; } }
+</style>
+</head>
+<body class="page-news">
+<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div></div>
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search any stock, ETF, commodity or crypto"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="news-wrap">
+  <header class="nh">
+    <span class="eyebrow"><span class="live"></span>{{ t('Live · curated &amp; source-ranked', '实时 · 精选并按来源排序') }}
+      {%- if built %} · <time datetime="{{ built }}">{{ built[:10] }}</time>{% endif %}</span>
+    <h1>{{ t('Market News', '市场新闻') }}</h1>
+    <p>{{ t('Curated from the wires &amp; quality press — Reuters, Bloomberg, the FT, WSJ, CNBC, AP &amp; more — across macro, the US tape, the Mag-7, every GICS sector and thematic basket. Each name carries its live radar + alt-data signal. Context only, never a trade trigger.',
+            '精选自通讯社与优质财经媒体 —— 路透、彭博、金融时报、华尔街日报、CNBC、美联社等 —— 覆盖宏观、美股大盘、七巨头、各 GICS 板块与主题篮子。每只标的都附带其实时雷达与替代数据信号。仅供参考，绝非交易触发。') }}</p>
+  </header>
+
+  <nav class="jump" aria-label="Sections">
+    {% if macro %}<a href="#macro">{{ t('Macro', '宏观') }}</a>{% endif %}
+    {% if fin %}<a href="#market">{{ t('Market', '大盘') }}</a><a href="#mag7">{{ t('Mag-7', '七巨头') }}</a>
+    <a href="#sectors">{{ t('Sectors', '板块') }}</a><a href="#baskets">{{ t('Baskets', '篮子') }}</a>{% endif %}
+    {% if narrative %}<a href="#narrative">{{ t('Narrative', '叙事') }}</a>{% endif %}
+  </nav>
+
+  {# ===================== MACRO ===================== #}
+  {% if macro %}
+  <section id="macro">
+    <div class="band"><h2>{{ ic('macro') }} {{ t('Macro', '宏观') }}</h2><span class="ln"></span>
+      <span class="cnt">{{ macro.n_kept }} {{ t('headlines', '头条') }}</span></div>
+    {% if macro_brief and macro_brief.text %}<div class="brief glass">{{ ic('brief') }} {{ macro_brief.text }}</div>{% endif %}
+    <div class="grid">
+      <div class="glass acc ncard" style="--accent:var(--info)">
+        <h3><span class="ico">{{ ic('news') }}</span>{{ t('Top macro headlines', '宏观头条') }}</h3>
+        {% if macro.headlines %}<ul class="hl-list">{% for h in macro.headlines %}{{ headline(h, macro_theme_label) }}{% endfor %}</ul>
+        {% else %}<div class="empty">{{ t('Quiet macro tape.', '宏观平静。') }}</div>{% endif %}
+      </div>
+      <div class="glass acc ncard" style="--accent:var(--warn)">
+        <h3><span class="ico">{{ ic('calendar') }}</span>{{ t('Upcoming catalysts', '即将到来的催化') }}</h3>
+        {% if macro_catalysts %}<ul class="cat-list">{% for c in macro_catalysts[:12] %}<li>
+          <span class="d">{{ c.date }}{% if c.time_et %} · {{ c.time_et }}{% endif %}</span><span>{{ c.label or c.type }}</span></li>{% endfor %}</ul>
+        {% else %}<div class="empty">{{ t('No scheduled releases in the window.', '窗口内无定期数据发布。') }}</div>{% endif %}
+      </div>
+    </div>
+    <div class="disc">{{ macro_disclaimer }}<br><span class="l-zh">{{ macro_disclaimer_zh }}</span></div>
+  </section>
+  {% endif %}
+
+  {# ===================== MARKET ===================== #}
+  {% if fin %}
+  <section id="market">
+    <div class="band"><h2>{{ ic('market') }} {{ t('Market-wide', '全市场') }}</h2><span class="ln"></span>
+      <span class="cnt">{{ t('broad equity tape', '大盘舆情') }}</span></div>
+    <div class="glass acc ncard" style="--accent:var(--up)">
+      {% if fin.market %}<ul class="hl-list">{% for h in fin.market %}{{ headline(h) }}{% endfor %}</ul>
+      {% else %}<div class="empty">{{ t('Quiet tape — no fresh market headlines.', '大盘平静 — 暂无最新头条。') }}</div>{% endif %}
+    </div>
+  </section>
+
+  <section id="mag7">
+    <div class="band"><h2>{{ ic('mag7') }} {{ t('Magnificent Seven', '七巨头') }}</h2><span class="ln"></span>
+      <span class="cnt">{{ t('per-name · with live signal', '逐只 · 含实时信号') }}</span></div>
+    <div class="grid">
+      {% for t_ in mag7_order %}{% set m = fin.mag7.get(t_) %}{% if m %}
+      <div class="glass acc ncard" style="--accent:var(--info)">
+        <h3><span class="chip-tk">{{ t_ }}</span>{% if m.name and m.name != t_ %} {{ m.name }}{% endif %}
+          <span class="sig" data-sig="{{ t_ }}"></span></h3>
+        {% if m.headlines %}<ul class="hl-list">{% for h in m.headlines %}{{ headline(h) }}{% endfor %}</ul>
+        {% else %}<div class="empty">{{ t('No recent headlines.', '近期无头条。') }}</div>{% endif %}
+      </div>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section id="sectors">
+    <div class="band"><h2>{{ ic('sectors') }} {{ t('Sectors', '板块') }}</h2><span class="ln"></span>
+      <span class="cnt">{{ t('11 GICS', '11 GICS') }}</span></div>
+    <div class="grid">
+      {% for etf, label in sector_etfs.items() %}{% set s = fin.sectors.get(etf) %}{% if s %}
+      <div class="glass acc ncard" style="--accent:var(--orange)">
+        <h3><span class="etf">{{ etf }}</span> {{ t(label[0], label[1]) }}</h3>
+        {% if s.headlines %}<ul class="hl-list">{% for h in s.headlines %}{{ headline(h) }}{% endfor %}</ul>
+        {% else %}<div class="empty">{{ t('No recent headlines.', '近期无头条。') }}</div>{% endif %}
+      </div>{% endif %}{% endfor %}
+    </div>
+  </section>
+
+  <section id="baskets">
+    <div class="band"><h2>{{ ic('baskets') }} {{ t('Thematic baskets', '主题篮子') }}</h2><span class="ln"></span>
+      <span class="cnt">{{ fin.baskets|length }}</span></div>
+    {% set cats = {} %}
+    {% for key, b in fin.baskets.items() %}{% set _ = cats.setdefault(b.category or 'Other', []).append((key, b)) %}{% endfor %}
+    {% for cat, items in cats.items() %}
+    <details class="bg"{% if loop.first %} open{% endif %}>
+      <summary>{{ cat }} <span class="src">({{ items|length }})</span></summary>
+      <div class="grid">{% for key, b in items %}
+        <div class="glass acc ncard" style="--accent:var(--info)">
+          <h3>{{ b.name }}{% if b.name_zh %} <span class="l-zh" style="font-weight:400;opacity:.7">{{ b.name_zh }}</span>{% endif %}
+            {% if b.etf %}<span class="etf">{{ b.etf }}</span>{% endif %}</h3>
+          {% if b.headlines %}<ul class="hl-list">{% for h in b.headlines[:5] %}{{ headline(h) }}{% endfor %}</ul>
+          {% else %}<div class="empty">{{ t('No recent headlines.', '近期无头条。') }}</div>{% endif %}
+        </div>{% endfor %}</div>
+    </details>{% endfor %}
+    <div class="disc">{{ fin.disclaimer }}<br><span class="l-zh">{{ fin.disclaimer_zh }}</span></div>
+  </section>
+  {% endif %}
+
+  {# China has its own dedicated News feed across the China dashboards — intentionally
+     not duplicated here. #}
+
+  {# ===================== NARRATIVE ===================== #}
+  {% if narrative %}{% set NV = narrative %}
+  <section id="narrative">
+    <div class="band"><h2>{{ ic('narrative') }} {{ t('Narrative event bus', '叙事事件总线') }}</h2><span class="ln"></span>
+      {% if NV.events %}<span class="cnt">{{ NV.events.n_recent }} {{ t('events', '事件') }}</span>{% endif %}</div>
+    <div class="glass acc ncard" style="--accent:var(--info)">
+      {% if NV.events and NV.events.by_theme %}<div class="cats">
+        {% for th, n in NV.events.by_theme.items() %}<span class="cat-cnt">{{ th }} · {{ n }}</span>{% endfor %}
+        {% if NV.events.unscheduled_share is not none %}<span class="cat-cnt">{{ (NV.events.unscheduled_share*100)|round|int }}% {{ t('unscheduled', '非计划') }}</span>{% endif %}
+      </div>{% endif %}
+      {% if NV.events and NV.events['items'] %}<ul class="hl-list">{% for h in NV.events['items'] %}{{ headline(h) }}{% endfor %}</ul>
+      {% else %}<div class="empty">{{ t('Nothing accrued yet — the bus fills over the coming days.', '尚无累积 — 事件总线将在未来数日填充。') }}</div>{% endif %}
+    </div>
+    {% if NV.disclaimer %}<div class="disc">{{ NV.disclaimer }}<br><span class="l-zh">{{ NV.disclaimer_zh }}</span></div>{% endif %}
+  </section>
+  {% endif %}
+
+  <footer class="nf">
+    {{ t('Built', '生成于') }} <time datetime="{{ built }}">{{ built[:16].replace('T',' ') }}</time> UTC
+    {%- if llm_provider %} · {{ t('Summaries', '摘要') }}: {{ llm_provider }}{% endif %} ·
+    {{ t('All news is context only — never an input to any score, signal or allocation. Per-name signal chips link the live Divergence Radar + Alt-Data desks.',
+          '所有新闻仅作背景 — 绝不进入任何评分、信号或配置。逐只信号标签链接实时背离雷达与替代数据台。') }}
+  </footer>
+</div>
+
+<script src="theme.js"></script>
+<script defer src="sky.js"></script>
+<script>
+(function(){
+  function ago(iso){ var d=new Date(iso); if(isNaN(d)) return null; var s=(Date.now()-d.getTime())/1000; if(s<0)s=0;
+    var zh=document.documentElement.getAttribute('data-lang')==='zh';
+    if(s<3600) return Math.max(1,Math.round(s/60))+(zh?'分钟前':'m ago');
+    if(s<86400) return Math.round(s/3600)+(zh?'小时前':'h ago');
+    if(s<604800) return Math.round(s/86400)+(zh?'天前':'d ago'); return d.toISOString().slice(0,10); }
+  function paintTimes(){ document.querySelectorAll('time.ago[datetime]').forEach(function(el){ var r=ago(el.getAttribute('datetime')); if(r) el.textContent=r; }); }
+  paintTimes(); document.addEventListener('langchange', paintTimes);
+
+  // active jump pill
+  var links=[].slice.call(document.querySelectorAll('.jump a'));
+  var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));}).filter(Boolean);
+  function onScroll(){ var y=window.scrollY+70, cur=null; secs.forEach(function(s){ if(s.offsetTop<=y) cur=s.id; });
+    links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href')==='#'+cur); }); }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+
+  // Phase-3 link: fill per-name signal chips from the unified intelligence bundle
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  fetch('intelligence/by_ticker.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null;}).then(function(d){
+    if(!d||!d.tickers) return; var T=d.tickers;
+    document.querySelectorAll('.sig[data-sig]').forEach(function(el){
+      var v=T[el.getAttribute('data-sig')]; if(!v) return; var chips=[];
+      if(v.radar&&v.radar.edge_score!=null) chips.push('<span class="sg sg-edge" title="radar edge score">📡 '+v.radar.edge_score+'</span>');
+      if(v.alt&&v.alt.signal_score!=null) chips.push('<span class="sg sg-edge" title="alt-data signal">🏛️ '+v.alt.signal_score+'</span>');
+      if(v.read&&v.read.label&&v.read.label!=='quiet'){
+        var lab=v.read.label, cls=lab==='crowded_top'||lab==='distribution'?'sg-crowd':lab==='fading'?'sg-dist':'sg-early';
+        chips.push('<span class="sg '+cls+'" title="'+esc(v.read.read||'')+'">'+lab.replace('_',' ')+'</span>');
+      }
+      if(chips.length) el.innerHTML=chips.join('');
+    });
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>

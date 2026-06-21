@@ -171,6 +171,24 @@ def mastermind_cards(P=None) -> list[dict]:
     return out
 
 
+def _snap(cards: list[dict], ress: list[dict], built: str) -> dict:
+    """Mastermind emit contract (v2). The bot reads CURRENT ALLOCATION WEIGHTS from
+    JSON here — no HTML scrape — plus the price ``asof`` and a ``stale_after_min``
+    so it can fall back gracefully. This is a NIGHTLY artifact: the GTAA rebalances
+    weekly, so a day-old snapshot is fine; the intraday live mark sits in
+    site/live/overlay.json (allocations), keyed on the same asset tickers."""
+    asof = next((r.get("asof") for r in ress if r.get("asof")), None)
+    return {
+        "schema": "masterminds.latest.v2", "n": len(cards), "built": built,
+        "asof": asof, "stale_after_min": 1440,
+        "cards": [{"key": c["key"], "name": c["name_en"], "cagr": c["cagr"],
+                   "sharpe": c["sharpe"], "maxdd": c["maxdd"],
+                   "asof": r.get("asof"), "gross_now": r.get("gross_now"),
+                   "alloc": r.get("alloc", [])}
+                  for c, r in zip(cards, ress)],
+    }
+
+
 def build() -> str:
     built = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
@@ -182,24 +200,22 @@ def build() -> str:
     site = config.ROOT / config.load()["storage"]["site_dir"]
 
     P = M._prices()
-    cards = []
+    cards, ress = [], []
     for pk in ("conservative", "moderate", "aggressive"):
         res = M.backtest(pk, P)
         if res.get("error"):
             continue
         cards.append(_rich_card(pk, res))          # same rich card as the strategies.html hero
+        ress.append(res)                           # keep alloc/asof for the emit contract
         html = env.get_template("mastermind_detail.html.j2").render(**_detail_vm(pk, res, built), C=C)
         (site / f"strategy_mm_{pk}.html").write_text(html)
 
     hub = env.get_template("masterminds.html.j2").render(cards=cards, built=built, C=C)
     (site / "masterminds.html").write_text(hub)
 
-    snap = {"n": len(cards), "built": built,
-            "cards": [{"key": c["key"], "name": c["name_en"], "cagr": c["cagr"],
-                       "sharpe": c["sharpe"], "maxdd": c["maxdd"]} for c in cards]}
     snap_dir = config.data_dir() / "regime"
     snap_dir.mkdir(parents=True, exist_ok=True)
-    (snap_dir / "masterminds_latest.json").write_text(json.dumps(snap, indent=2))
+    (snap_dir / "masterminds_latest.json").write_text(json.dumps(_snap(cards, ress, built), indent=2))
     return str(site / "masterminds.html")
 
 
