@@ -216,9 +216,10 @@
 
 {% if d.allocation.vol_overlay %}
 {% set vo = d.allocation.vol_overlay %}
+{% set ddci = vo.measured.dd_reduction_pp_ci or [None, None, None] %}
 <!-- ============ 01a DE-RISK OVERLAY (calibrated vol-target) ============ -->
 <h2><span class="idx">⚖</span>{{ t('Optional de-risk overlay', '可选降风险叠加') }}
-  <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') }}</span></h2>
+  <span class="chip">{{ t('backtested · offered, not forced', '已回测 · 可选而非强制') if not vo.applied else t('backtested · applied', '已回测 · 已应用') }}</span></h2>
 <div class="panel">
   <div class="gauge" style="margin-bottom:8px">
     <div class="gz"><div class="k">{{ t('Book vol now', '当前组合波动') }}</div><div class="v">{{ (vo.book_vol_ann*100)|round|int }}%</div></div>
@@ -227,9 +228,9 @@
     <div class="gz"><div class="k">{{ t('→ cash', '→ 现金') }}</div><div class="v">{{ (vo.cash_after*100)|round|int }}%</div></div>
   </div>
   <p class="tagline"><span class="l-en">{{ vo.note_en }}</span><span class="l-zh">{{ vo.note_zh }}</span></p>
-  <p class="tagline" style="margin-top:6px;opacity:.8">🔬 {{ t('Measured (27y clean sector proxy)', '实测（27年干净行业代理）') }}:
-    {{ t('max-drawdown reduction', '最大回撤降低') }} {{ vo.measured.dd_reduction_pp_ci[1] }}pp
-    {{ t('CI', '区间') }} [{{ vo.measured.dd_reduction_pp_ci[0] }}, {{ vo.measured.dd_reduction_pp_ci[2] }}],
+  <p class="tagline" style="margin-top:6px;opacity:.8">🔬 {{ t('Measured on the 27y US clean-sector proxy (cited cross-market — the signal logic is shared, not re-validated per region)', '基于27年美国干净行业代理实测（跨市场引用 — 信号逻辑共享，未按地区单独验证）') }}:
+    {{ t('max-drawdown reduction', '最大回撤降低') }} {{ ddci[1] if ddci[1] is not none else '—' }}pp
+    {{ t('CI', '区间') }} [{{ ddci[0] if ddci[0] is not none else '—' }}, {{ ddci[2] if ddci[2] is not none else '—' }}],
     {{ t('beats a trend-only brake', '优于纯趋势刹车') }}: {{ '✓' if vo.measured.beats_trend_brake else '—' }},
     DSR {{ vo.measured.dsr }} ({{ vo.measured.n_trials }} {{ t('configs', '配置') }}).
     {{ t('Grade', '评级') }}: <b>{{ vo.measured.verdict }}</b> —

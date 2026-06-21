@@ -1,7 +1,7 @@
 {
   "schema": "baskets_calibration.v1",
   "region": "us",
-  "generated_at": "2026-06-21T08:14:28.777012+00:00",
+  "generated_at": "2026-06-21T09:05:59.825691+00:00",
   "fwd_horizons_d": [
     21,
     63

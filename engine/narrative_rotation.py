@@ -605,13 +605,17 @@ def _vol_overlay(top: list, weights: dict, byid: dict) -> dict | None:
     if bv.shape[0] <= vol_win:
         return None
     book_vol = float(bv.iloc[-1])
-    # RELATIVE target = target_mult x the book's own trailing-median vol (matches the backtest)
-    target = target_mult * float(bv.tail(756).median())
+    # RELATIVE target = target_mult x the book's own trailing-median vol — computed with the
+    # EXACT same rolling form as scripts.calibrate_baskets._book_voltarget so the live scalar
+    # reproduces the backtested one (no faithfulness drift).
+    med = bv.rolling(756, min_periods=252).median().iloc[-1]
+    target = target_mult * float(med) if pd.notna(med) else None
     if not book_vol or not np.isfinite(book_vol) or not target:
         return None
-    # de-risk only; never let the book fall below (1-MAX_CASH) gross (wires MAX_CASH)
-    eff_floor = max(floor, (1.0 - MAX_CASH) / gross0)
-    scalar = float(np.clip(target / book_vol, eff_floor, cap))
+    # floor matches the BACKTEST (SZ_FLOOR) so the measured DD-reduction applies to what we
+    # show; the de-risk-only property comes from cap<=1.0, not the floor. (MAX_CASH governs
+    # the rotation cash escape, not this overlay — flooring here would weaken the validated cut.)
+    scalar = float(np.clip(target / book_vol, floor, cap))
     derisked = {bid: round(weights[bid] * scalar, 3) for bid in weights}
     new_gross = round(sum(derisked.values()), 3)
     ddci = (cal.get("dd_reduction_ci") or {}).get("dd_reduction_pp_ci") or [None, None, None]
