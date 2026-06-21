@@ -77,6 +77,20 @@ def _arb_str(a: dict | None) -> str:
     return " · ".join(parts)
 
 
+def _prior_str(p: dict | None) -> str:
+    """Compact historical-context line: 'hist 60% win · +2.4%/20d (n=10)'."""
+    if not p:
+        return ""
+    bits = []
+    if p.get("win_20d_pct") is not None:
+        bits.append(f"{p['win_20d_pct']:.0f}% win")
+    if p.get("med_ret_20d_pct") is not None:
+        bits.append(f"{p['med_ret_20d_pct']:+.1f}%/20d")
+    if not bits:
+        return ""
+    return "hist " + " · ".join(bits) + f" (n={p.get('n', 0)})"
+
+
 def _usd_m(mc) -> str:
     if mc is None:
         return "—"
@@ -129,6 +143,7 @@ def build(refresh: bool = True) -> str:
             "summary": _txt(s.get("summary"), dash=""), "live": bool(s.get("live")),
             "low_conf": s.get("confidence") == "low", "arb": _arb_str(s.get("arb")),
             "n_amend": int(s.get("n_amendments") or 0), "terminal": s.get("terminal"),
+            "prior": _prior_str(s.get("prior")),
         } for s in rows_src]
         groups.append({"cat": cat, "cat_zh": CAT_ZH.get(cat, cat),
                        "color": CAT_COLOR.get(cat, C["muted"]), "n": len(rows), "rows": rows})

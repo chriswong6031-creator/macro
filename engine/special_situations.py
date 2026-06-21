@@ -616,6 +616,62 @@ def _news_rows() -> list[dict]:
     return rows
 
 
+PRIOR_MIN_N = 5          # don't show a prior thinner than this (noise floor)
+
+
+def _priors() -> tuple[dict, dict]:
+    """Historical forward-return context from the P5.1 backtest, read-only:
+    ((category, stage) -> prior) from the EDGAR by-stage priors, and (category -> prior)
+    from the by-category priors as a fallback. {} if the artifacts are absent."""
+    import json as _json
+    stage_p: dict = {}
+    cat_p: dict = {}
+    sp = config.data_dir() / GROUP / "edgar_backtest_priors.json"
+    if sp.exists():
+        try:
+            for v in (_json.loads(sp.read_text()).get("by_category_stage") or {}).values():
+                stage_p[(v.get("category"), v.get("stage"))] = v
+        except Exception:  # noqa: BLE001
+            pass
+    cp = config.data_dir() / GROUP / "backtest_priors.json"
+    if cp.exists():
+        try:
+            cat_p = _json.loads(cp.read_text()).get("by_category") or {}
+        except Exception:  # noqa: BLE001
+            pass
+    return stage_p, cat_p
+
+
+def _prior_for(cat, stage, stage_p: dict, cat_p: dict) -> dict | None:
+    """Best prior for a situation: (category, stage) if it clears the sample floor, else
+    the category-level prior. None when neither has enough history. Context, not a forecast."""
+    def _mk(p, scope):
+        return {"scope": scope, "n": int(p.get("n") or 0),
+                "win_20d_pct": p.get("win_20d_pct"), "med_ret_20d_pct": p.get("med_ret_20d_pct"),
+                "med_ret_60d_pct": p.get("med_ret_60d_pct")}
+    p = stage_p.get((cat, stage))
+    if p and (p.get("n") or 0) >= PRIOR_MIN_N and p.get("win_20d_pct") is not None:
+        return _mk(p, f"{cat} · {stage}")
+    c = cat_p.get(cat)
+    if c and (c.get("n") or 0) >= PRIOR_MIN_N and c.get("win_20d_pct") is not None:
+        return _mk(c, cat)
+    return None
+
+
+def _attach_priors(sits: list[dict]) -> int:
+    """Attach a historical `prior` block to each situation by (category, stage). In place."""
+    stage_p, cat_p = _priors()
+    if not stage_p and not cat_p:
+        return 0
+    n = 0
+    for s in sits:
+        pr = _prior_for(s.get("category"), s.get("stage"), stage_p, cat_p)
+        if pr:
+            s["prior"] = pr
+            n += 1
+    return n
+
+
 def desk_payload(latest_issue_only: bool = True) -> dict:
     """Merged desk: latest-issue digest situations (with summaries) + live EDGAR,
     deduped by (ticker, category). EDGAR-confirmed digest rows get live=True and the
@@ -678,6 +734,7 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
     sits.sort(key=lambda s: (s.get("date_filed") or "", s.get("category") or ""), reverse=True)
 
     n_arb = _enrich_arb(sits)        # P1.2 merger-arb spread on deal situations w/ a price
+    n_prior = _attach_priors(sits)   # P5.1 historical category x stage forward-return context
 
     counts: dict[str, int] = {}
     for s in sits:
@@ -691,6 +748,7 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         "cross_border": sum(1 for s in sits if s.get("cross_border")),
         "with_summary": sum(1 for s in sits if s.get("summary")),
         "with_arb": n_arb,
+        "with_prior": n_prior,
         "high_confidence": sum(1 for s in sits if s.get("confidence") == "high"),
         "low_confidence": sum(1 for s in sits if s.get("confidence") == "low"),
         "floor_musd": floor,
@@ -762,6 +820,9 @@ def mastermind_emit() -> dict:
                 "brief": (r.get("summary") if pd.notna(r.get("summary")) else r.get("hk")),
                 "mc_musd": (float(r["mc_musd"]) if pd.notna(r.get("mc_musd")) else None),
             })
+
+    # P5.1 historical-prior context (category x stage forward returns) on each name.
+    _attach_priors(list(by_ticker.values()))
 
     # P1.2 merger-arb book: attach spread economics + surface a risk-arb context list for
     # the trading brain (announced cash deals with a price). Context only, never a size.

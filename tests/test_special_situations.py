@@ -406,6 +406,46 @@ def test_summary_lane_llm_ready_gate(monkeypatch):
     assert ss._llm_ready({"enabled": True, "llm_brief": True}) is False   # no key
 
 
+# ---- historical priors context (P5.1 consumption) ---------------------------
+def test_prior_for_stage_then_category_fallback():
+    stage_p = {("Going-Private", "live"): {"category": "Going-Private", "stage": "live",
+                                           "n": 10, "win_20d_pct": 90.0, "med_ret_20d_pct": 0.5,
+                                           "med_ret_60d_pct": 2.4}}
+    cat_p = {"Going-Private": {"n": 50, "win_20d_pct": 65.0, "med_ret_20d_pct": 1.0,
+                              "med_ret_60d_pct": 3.0}}
+    # exact (category, stage) wins when it clears the sample floor
+    p = sse._prior_for("Going-Private", "live", stage_p, cat_p)
+    assert p["scope"] == "Going-Private · live" and p["win_20d_pct"] == 90.0
+    # unknown stage -> category fallback
+    p2 = sse._prior_for("Going-Private", "announced", stage_p, cat_p)
+    assert p2["scope"] == "Going-Private" and p2["n"] == 50
+    # thin (category, stage) below floor -> category fallback
+    thin = {("Going-Private", "live"): {"category": "Going-Private", "stage": "live",
+                                        "n": 2, "win_20d_pct": 100.0}}
+    assert sse._prior_for("Going-Private", "live", thin, cat_p)["scope"] == "Going-Private"
+    # nothing -> None
+    assert sse._prior_for("Mystery", "x", stage_p, cat_p) is None
+
+
+def test_attach_priors_and_desk_surfaces_it(tmp_path, monkeypatch):
+    import json
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({1: "ABC"}, {}))
+    (tmp_path / "special_situations").mkdir()
+    (tmp_path / "special_situations" / "edgar_backtest_priors.json").write_text(json.dumps(
+        {"by_category_stage": {"Acquisitions · vote-scheduled": {
+            "category": "Acquisitions", "stage": "vote-scheduled", "n": 11,
+            "win_20d_pct": 64.0, "med_ret_20d_pct": 1.2, "med_ret_60d_pct": 3.0}}}))
+    pd.DataFrame([{"id": "e1", "form_type": "DEFM14A", "company": "ABC Inc", "cik": "1",
+                   "items": None, "date_filed": "2026-06-17", "source_url": "u"}]
+                 ).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    d = sse.desk_payload()
+    abc = {s["ticker"]: s for s in d["situations"]}["ABC"]
+    assert abc["prior"]["scope"] == "Acquisitions · vote-scheduled"
+    assert abc["prior"]["win_20d_pct"] == 64.0
+    assert d["coverage"]["with_prior"] >= 1
+
+
 # ---- lifecycle / stage tracking (P3.1) --------------------------------------
 def test_lifecycle_links_amendments(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
