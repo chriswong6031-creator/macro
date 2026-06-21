@@ -297,6 +297,74 @@ def block_trades() -> dict[str, dict]:
     return out
 
 
+def fundflow() -> dict[str, dict]:
+    """主力资金流向 (collectors/tushare_moneyflow, GATED): per-name main-force (超大单+大单) net
+    inflow as a signed accumulate(+)/distribute(−) read. {} when the Tushare token is absent
+    (the free push2 feed is unreachable from a non-CN IP, so there is no fallback — the leg is
+    simply omitted, never read as 0). main_net / net_amount are 万元; flow_score is bounded [-1,1]
+    on the net rate (the convergence re-ranks it cross-sectionally anyway)."""
+    df = _read_table("tushare", "moneyflow")
+    if df is None or df.empty:
+        return {}
+    out: dict[str, dict] = {}
+    for r in df.itertuples():
+        t = str(getattr(r, "ticker", "") or "")
+        if not t:
+            continue
+        rate = _num(getattr(r, "main_net_rate", None))
+        net = _num(getattr(r, "main_net", None))
+        namt = _num(getattr(r, "net_amount", None))
+        if rate is None and net is None:
+            continue
+        out[t] = {"main_net": None if net is None else round(net, 1),
+                  "net_amount": None if namt is None else round(namt, 1),
+                  "main_net_rate": None if rate is None else round(rate, 2),
+                  "name": str(getattr(r, "name", "") or "") or t,
+                  "flow_score": round(_clip((rate if rate is not None else 0.0) / 20.0), 3)}
+    return out
+
+
+def broker_gold(top_n: int = 24) -> list[dict]:
+    """券商每月金股 (collectors/tushare_broker, GATED): the names most picked by sell-side desks
+    this month, as a pick-count CONVICTION TALLY. [] when the Tushare token is absent. DISPLAY-ONLY
+    — a discrete monthly pick list, not the ~97%-buy ratings; never scored into the convergence."""
+    df = _read_table("tushare", "broker")
+    if df is None or df.empty:
+        return []
+    out: list[dict] = []
+    for r in df.itertuples():
+        t = str(getattr(r, "ticker", "") or "")
+        if not t:
+            continue
+        try:
+            brokers = json.loads(getattr(r, "brokers", "[]") or "[]")
+        except Exception:  # noqa: BLE001
+            brokers = []
+        out.append({"ticker": t, "name": str(getattr(r, "name", "") or "") or t,
+                    "n_brokers": int(_num(getattr(r, "n_brokers", None)) or len(brokers)),
+                    "brokers": brokers, "month": str(getattr(r, "month", "") or "")})
+    out.sort(key=lambda x: x["n_brokers"], reverse=True)
+    return out[:top_n]
+
+
+def chips() -> dict[str, dict]:
+    """筹码胜率 (collectors/tushare_chips, GATED): per-name holder cost-basis + win-rate. {} when the
+    Tushare token is absent. DISPLAY-ONLY positioning context (registered pending in china_signal_lab)."""
+    df = _read_table("tushare", "chips")
+    if df is None or df.empty:
+        return {}
+    out: dict[str, dict] = {}
+    for r in df.itertuples():
+        t = str(getattr(r, "ticker", "") or "")
+        if not t:
+            continue
+        wr = _num(getattr(r, "winner_rate", None))
+        out[t] = {"winner_rate": None if wr is None else round(wr, 1),
+                  "weight_avg": _num(getattr(r, "weight_avg", None)),
+                  "cost_50pct": _num(getattr(r, "cost_50pct", None))}
+    return out
+
+
 def zt_pool() -> dict[str, dict]:
     """涨停板 (collectors/china_zt_pool): limit-up momentum tier + seal quality + froth."""
     df = _read_table("china_zt_pool", "pool")

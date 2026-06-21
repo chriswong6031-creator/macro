@@ -62,14 +62,14 @@
   <div class="callout warn">{{ t('No validated edge is claimed. Convergence is a display JOIN of three independent free feeds — where they agree, not a backtest. A-share cross-sectional value Sharpe is negative and sell-side ratings are near-universally "buy"; treat this as a watchlist seed + a Phase-0 candidate, never a sizer.', '不声称任何已验证的优势。共振只是三个独立免费数据源的展示性合并——展示其一致之处，而非回测。A股横截面价值夏普为负、卖方评级近乎全为『买入』；请将其视为自选股种子与Phase-0候选，绝非仓位依据。') }}</div>
 
   {% if ad and ad.triple %}
-  <h2 class="sec">🎯 {{ t('Multi-feed convergence', '多源共振') }} <span style="font-size:12px;color:var(--muted)">{{ t('≥3 of 6 independent feeds agree', '6源中≥3源一致') }} · {{ ad.n_triple }}</span></h2>
-  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Cross-sectional mid-rank percentile per feed (signed, −1 distribute … +1 accumulate): consensus · valuation · financing · 千股千评 attention · 龙虎榜 hot-money · 大宗交易 block. No validated edge claimed.', '每个数据源的横截面中位排名分位（带符号，−1派发…+1吸筹）：一致预期·估值·融资·千股千评·龙虎榜·大宗交易。不声称已验证优势。') }}</p>
+  <h2 class="sec">🎯 {{ t('Multi-feed convergence', '多源共振') }} <span style="font-size:12px;color:var(--muted)">{{ t('≥3 of 7 independent feeds agree', '7源中≥3源一致') }} · {{ ad.n_triple }}</span></h2>
+  <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">{{ t('Cross-sectional mid-rank percentile per feed (signed, −1 distribute … +1 accumulate): consensus · valuation · financing · 主力资金 flow · 千股千评 attention · 龙虎榜 hot-money · 大宗交易 block. No validated edge claimed.', '每个数据源的横截面中位排名分位（带符号，−1派发…+1吸筹）：一致预期·估值·融资·主力资金·千股千评·龙虎榜·大宗交易。不声称已验证优势。') }}</p>
   <table class="data">
     <thead><tr>
       <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
       <th class="num">{{ t('Convergence', '共振') }}</th><th>{{ t('Conviction', '置信') }}</th><th class="num">{{ t('%ile', '分位') }}</th>
       <th class="num">{{ t('Consensus', '一致') }}</th><th class="num">{{ t('Value', '估值') }}</th><th class="num">{{ t('Financing', '融资') }}</th>
-      <th class="num">{{ t('Comment', '千评') }}</th><th class="num">{{ t('LHB', '龙虎') }}</th><th class="num">{{ t('Block', '大宗') }}</th>
+      <th class="num">{{ t('Flow', '主力') }}</th><th class="num">{{ t('Comment', '千评') }}</th><th class="num">{{ t('LHB', '龙虎') }}</th><th class="num">{{ t('Block', '大宗') }}</th>
       <th>{{ t('Flags', '标记') }}</th>
     </tr></thead>
     <tbody>
@@ -80,13 +80,33 @@
         <td><span class="cvband {{ 'cv-pos' if r.convergence>0 else 'cv-neg' }}">{{ bl(r.conviction_band_en or 'None', r.conviction_band_zh or '无') }}</span></td>
         <td class="num">{{ r.rank_pctile }}</td>
         <td class="num">{{ sc(r.analyst) }}</td><td class="num">{{ sc(r.value) }}</td><td class="num">{{ sc(r.margin) }}</td>
-        <td class="num">{{ sc(r.comment) }}</td><td class="num">{{ sc(r.lhb) }}</td><td class="num">{{ sc(r.block) }}</td>
+        <td class="num">{{ sc(r.flow) }}</td><td class="num">{{ sc(r.comment) }}</td><td class="num">{{ sc(r.lhb) }}</td><td class="num">{{ sc(r.block) }}</td>
         <td>{% for fl in r.flags %}<span class="flag">{{ bl((crowd_labels.get(fl) or [fl,fl])[0], (crowd_labels.get(fl) or [fl,fl])[1]) }}</span> {% endfor %}</td>
       </tr>
     {% endfor %}
     </tbody>
   </table>
   <p style="font-size:11px;color:var(--muted)">{{ t('Flags = multi-leg crowding (contrarian fragility, latest snapshot, NOT scored): margin froth · pledge tail · limit-up froth · attention spike · rich valuation.', '标记＝多腿拥挤（逆向脆弱性，最新快照，不评分）：融资过热·质押风险·涨停过热·关注度飙升·估值偏高。') }}</p>
+  {% endif %}
+
+  {% if broker_gold %}
+  <h2 class="sec">🏅 {{ t('Broker gold-stock picks', '券商金股') }} <span style="font-size:12px;color:var(--muted)">{{ broker_gold[0].month }} · {{ t('Tushare premium', 'Tushare 付费') }}</span></h2>
+  <p style="font-size:12px;color:var(--muted)">{{ t('Names most-picked by sell-side desks this month, as a pick-count conviction tally — a discrete monthly list, not the ~97%-buy ratings. Display-only, never scored.', '当月被卖方研究所推荐最多的个股，按推荐家数计——离散月度名单，区别于近97%『买入』评级。仅展示，不评分。') }}</p>
+  <table class="data">
+    <thead><tr>
+      <th>{{ t('Ticker', '代码') }}</th><th>{{ t('Name', '名称') }}</th>
+      <th class="num">{{ t('# brokers', '券商家数') }}</th><th>{{ t('Picked by', '推荐机构') }}</th>
+    </tr></thead>
+    <tbody>
+    {% for r in broker_gold %}
+      <tr>
+        <td>{{ r.ticker }}</td><td>{{ r.name }}</td>
+        <td class="num conv r-pos">{{ r.n_brokers }}</td>
+        <td style="font-size:11.5px;color:var(--muted)">{{ r.brokers[:6]|join(' · ') }}{% if r.brokers|length > 6 %} …{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
   {% endif %}
 
   {% if ad and ad.crowding_flags %}

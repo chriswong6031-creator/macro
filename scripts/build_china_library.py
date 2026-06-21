@@ -533,7 +533,16 @@ def main(alpha: dict | None = None) -> dict | None:
                       ("collectors.china_block_trades", {}),  # 大宗交易 block premium/discount
                       ("collectors.china_zt_pool", {}),       # 涨停板 limit-up momentum / sector breadth
                       ("collectors.china_buyback", {}),       # 回购 corporate buybacks
-                      ("collectors.china_pledge", {})):       # 股权质押 forced-sell tail risk
+                      ("collectors.china_pledge", {}),        # 股权质押 forced-sell tail risk
+                      # PREMIUM Tushare feeds — GATED on TUSHARE_TOKEN (each refresh() self-no-ops
+                      # without the token, so CI / keyless builds are unaffected). See
+                      # research/TUSHARE_INTEGRATION.md.
+                      ("collectors.tushare_valuation", {}),   # daily_basic per-name PE/PB/turnover/mv
+                      ("collectors.tushare_margin", {}),      # margin_detail per-name 融资余额
+                      ("collectors.tushare_moneyflow", {}),   # moneyflow_dc per-name + sector 主力资金 (push2 replacement)
+                      ("collectors.tushare_chips", {}),       # cyq_perf 筹码胜率 holder cost-basis
+                      ("collectors.tushare_broker", {}),      # broker_recommend 券商金股 pick tally
+                      ("collectors.tushare_forecast", {})):   # forecast 业绩预告 + report_rc revision
         try:
             importlib.import_module(_mod).refresh(**_kw)
         except Exception as e:  # noqa: BLE001 — additive context, never fatal
