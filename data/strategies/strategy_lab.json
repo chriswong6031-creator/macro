@@ -1,0 +1,2285 @@
+{
+  "schema": "strategy_lab.v1",
+  "generated_utc": "2026-06-21T09:55:20+00:00",
+  "universe": {
+    "n_names": 110,
+    "source": "data/stocks (deep-history mega-caps)",
+    "survivorship": "BIASED \u2014 only currently-listed names; optimistic bound"
+  },
+  "config": {
+    "cost_bps": 5.0,
+    "horizons": [
+      1,
+      5,
+      10,
+      21,
+      63
+    ],
+    "n_trials_honest": 23,
+    "fdr_alpha": 0.1,
+    "dsr_pass": 0.9
+  },
+  "time_series": [
+    {
+      "key": "rsi2_oversold",
+      "name": "RSI(2) oversold in uptrend",
+      "family": "mean_reversion",
+      "horizon": 5,
+      "thesis": "Connors short-term reversion; buy panic dips while >200dma.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.016,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.041,
+        "cagr": 0.0433,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.152,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.185,
+        "split_half_excess": [
+          -0.131,
+          -0.004
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.06403,
+        "sr_annual": 1.02,
+        "sr0_daily": 0.018236,
+        "sr0_annual": 0.29,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -1.688,
+        "kurt": 68.765
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.7,
+          1.03,
+          1.33
+        ],
+        "maxdd_ci_pct": [
+          -24.8,
+          -15.2,
+          -6.9
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.073,
+        "beat_bench_maxdd_frac": 0.973,
+        "median_sharpe": 0.34,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": 0.0358,
+        "t_across_names": 9.875,
+        "p": 0.0,
+        "hit_frac": 0.836,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.011,
+        "base_fwd_mae_med": -0.0121,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118613,
+          "mean_fwd": 0.0015,
+          "hit": 0.516
+        },
+        {
+          "band": "q2",
+          "n": 118613,
+          "mean_fwd": 0.0024,
+          "hit": 0.527
+        },
+        {
+          "band": "q3",
+          "n": 118613,
+          "mean_fwd": 0.0031,
+          "hit": 0.533
+        },
+        {
+          "band": "q4",
+          "n": 118613,
+          "mean_fwd": 0.0035,
+          "hit": 0.54
+        },
+        {
+          "band": "q5",
+          "n": 118614,
+          "mean_fwd": 0.0052,
+          "hit": 0.558
+        }
+      ],
+      "p_value": 0.0,
+      "verdict": "ENTRY-SIGNAL (predictive timing overlay)",
+      "tags": [
+        "entry_overlay",
+        "risk_control",
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "bb_reversion",
+      "name": "Bollinger %b lower-band reversion",
+      "family": "mean_reversion",
+      "horizon": 10,
+      "thesis": "Buy below the lower band inside an uptrend.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.7,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.357,
+        "cagr": 0.0232,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.141,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.11,
+        "split_half_excess": [
+          -0.644,
+          -0.128
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.9966,
+        "sr_daily": 0.044106,
+        "sr_annual": 0.7,
+        "sr0_daily": 0.01855,
+        "sr0_annual": 0.29,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -3.119,
+        "kurt": 167.254
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.4,
+          0.72,
+          1.06
+        ],
+        "maxdd_ci_pct": [
+          -22.8,
+          -13.9,
+          -6.0
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.027,
+        "beat_bench_maxdd_frac": 0.982,
+        "median_sharpe": 0.25,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": 0.0287,
+        "t_across_names": 4.71,
+        "p": 0.0,
+        "hit_frac": 0.755,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0186,
+        "base_fwd_mae_med": -0.0208,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118471,
+          "mean_fwd": 0.0047,
+          "hit": 0.544
+        },
+        {
+          "band": "q2",
+          "n": 118470,
+          "mean_fwd": 0.0056,
+          "hit": 0.553
+        },
+        {
+          "band": "q3",
+          "n": 118470,
+          "mean_fwd": 0.0063,
+          "hit": 0.554
+        },
+        {
+          "band": "q4",
+          "n": 118470,
+          "mean_fwd": 0.0061,
+          "hit": 0.549
+        },
+        {
+          "band": "q5",
+          "n": 118471,
+          "mean_fwd": 0.0089,
+          "hit": 0.572
+        }
+      ],
+      "p_value": 2.475692018055753e-06,
+      "verdict": "ENTRY-SIGNAL (predictive timing overlay)",
+      "tags": [
+        "entry_overlay",
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "dd_reversion",
+      "name": "Pullback-from-20d-high reversion",
+      "family": "mean_reversion",
+      "horizon": 10,
+      "thesis": "Buy a >=7% pullback from the recent high while >200dma.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.897,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.16,
+        "cagr": 0.0507,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.214,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.194,
+        "split_half_excess": [
+          -0.321,
+          -0.049
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.056534,
+        "sr_annual": 0.9,
+        "sr0_daily": 0.018466,
+        "sr0_annual": 0.29,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -2.358,
+        "kurt": 93.804
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.58,
+          0.91,
+          1.25
+        ],
+        "maxdd_ci_pct": [
+          -32.2,
+          -20.5,
+          -9.5
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.045,
+        "beat_bench_maxdd_frac": 0.909,
+        "median_sharpe": 0.312,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": 0.029,
+        "t_across_names": 4.852,
+        "p": 0.0,
+        "hit_frac": 0.764,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0223,
+        "base_fwd_mae_med": -0.0208,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118542,
+          "mean_fwd": 0.0052,
+          "hit": 0.547
+        },
+        {
+          "band": "q2",
+          "n": 118542,
+          "mean_fwd": 0.0056,
+          "hit": 0.551
+        },
+        {
+          "band": "q3",
+          "n": 118542,
+          "mean_fwd": 0.0061,
+          "hit": 0.553
+        },
+        {
+          "band": "q4",
+          "n": 118542,
+          "mean_fwd": 0.0064,
+          "hit": 0.55
+        },
+        {
+          "band": "q5",
+          "n": 118543,
+          "mean_fwd": 0.0084,
+          "hit": 0.571
+        }
+      ],
+      "p_value": 1.2223704131120172e-06,
+      "verdict": "ENTRY-SIGNAL (predictive timing overlay)",
+      "tags": [
+        "entry_overlay"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "dist_below_ma",
+      "name": "Stretch-below-20dma reversion",
+      "family": "mean_reversion",
+      "horizon": 8,
+      "thesis": "Buy when price is unusually far below its 20dma in an uptrend.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.827,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.23,
+        "cagr": 0.0447,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.19,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.231,
+        "split_half_excess": [
+          -0.379,
+          -0.133
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.9999,
+        "sr_daily": 0.052081,
+        "sr_annual": 0.83,
+        "sr0_daily": 0.018188,
+        "sr0_annual": 0.29,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -2.211,
+        "kurt": 83.803
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.53,
+          0.84,
+          1.16
+        ],
+        "maxdd_ci_pct": [
+          -31.6,
+          -19.0,
+          -9.5
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.036,
+        "beat_bench_maxdd_frac": 0.927,
+        "median_sharpe": 0.324,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": 0.0275,
+        "t_across_names": 6.076,
+        "p": 0.0,
+        "hit_frac": 0.745,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0165,
+        "base_fwd_mae_med": -0.0174,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118570,
+          "mean_fwd": 0.004,
+          "hit": 0.541
+        },
+        {
+          "band": "q2",
+          "n": 118570,
+          "mean_fwd": 0.0044,
+          "hit": 0.547
+        },
+        {
+          "band": "q3",
+          "n": 118570,
+          "mean_fwd": 0.0046,
+          "hit": 0.542
+        },
+        {
+          "band": "q4",
+          "n": 118570,
+          "mean_fwd": 0.005,
+          "hit": 0.546
+        },
+        {
+          "band": "q5",
+          "n": 118571,
+          "mean_fwd": 0.0071,
+          "hit": 0.564
+        }
+      ],
+      "p_value": 1.2289929074427164e-09,
+      "verdict": "ENTRY-SIGNAL (predictive timing overlay)",
+      "tags": [
+        "entry_overlay",
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "gap_fade",
+      "name": "Down-day fade in uptrend",
+      "family": "entry_timing",
+      "horizon": 3,
+      "thesis": "Fade a >=2% down day inside an uptrend.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.465,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.592,
+        "cagr": 0.0187,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.17,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.135,
+        "split_half_excess": [
+          -0.847,
+          -0.39
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.8975,
+        "sr_daily": 0.029272,
+        "sr_annual": 0.46,
+        "sr0_daily": 0.017781,
+        "sr0_annual": 0.28,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -3.235,
+        "kurt": 116.929
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.2,
+          0.47,
+          0.76
+        ],
+        "maxdd_ci_pct": [
+          -30.9,
+          -17.1,
+          -8.9
+        ],
+        "sharpe_gt0_prob": 0.999,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.009,
+        "beat_bench_maxdd_frac": 0.855,
+        "median_sharpe": 0.158,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": 0.0141,
+        "t_across_names": 4.803,
+        "p": 0.0,
+        "hit_frac": 0.727,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0088,
+        "base_fwd_mae_med": -0.0071,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118643,
+          "mean_fwd": 0.0013,
+          "hit": 0.516
+        },
+        {
+          "band": "q2",
+          "n": 118643,
+          "mean_fwd": 0.0018,
+          "hit": 0.521
+        },
+        {
+          "band": "q3",
+          "n": 118643,
+          "mean_fwd": 0.002,
+          "hit": 0.518
+        },
+        {
+          "band": "q4",
+          "n": 118643,
+          "mean_fwd": 0.0019,
+          "hit": 0.525
+        },
+        {
+          "band": "q5",
+          "n": 118643,
+          "mean_fwd": 0.0022,
+          "hit": 0.53
+        }
+      ],
+      "p_value": 1.5656660954377344e-06,
+      "verdict": "ENTRY-SIGNAL (predictive timing overlay)",
+      "tags": [
+        "entry_overlay"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "internal_reversal",
+      "name": "Lower-low/higher-close reversal",
+      "family": "entry_timing",
+      "horizon": 3,
+      "thesis": "Internal-bar reversal (lower low, higher close) in an uptrend.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.647,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.41,
+        "cagr": 0.022,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.123,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.22,
+        "split_half_excess": [
+          -0.33,
+          -0.502
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.9972,
+        "sr_daily": 0.040777,
+        "sr_annual": 0.65,
+        "sr0_daily": 0.016914,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.239,
+        "kurt": 8.797
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.4,
+          0.65,
+          0.91
+        ],
+        "maxdd_ci_pct": [
+          -16.9,
+          -10.1,
+          -6.7
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.0,
+        "beat_bench_maxdd_frac": 0.8,
+        "median_sharpe": 0.14,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0091,
+        "t_across_names": -3.339,
+        "p": 0.0008,
+        "hit_frac": 0.364,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0065,
+        "base_fwd_mae_med": -0.0071,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118643,
+          "mean_fwd": 0.002,
+          "hit": 0.528
+        },
+        {
+          "band": "q2",
+          "n": 118643,
+          "mean_fwd": 0.002,
+          "hit": 0.523
+        },
+        {
+          "band": "q3",
+          "n": 118643,
+          "mean_fwd": 0.002,
+          "hit": 0.522
+        },
+        {
+          "band": "q4",
+          "n": 118643,
+          "mean_fwd": 0.002,
+          "hit": 0.521
+        },
+        {
+          "band": "q5",
+          "n": 118643,
+          "mean_fwd": 0.0014,
+          "hit": 0.517
+        }
+      ],
+      "p_value": 0.0008400656932348038,
+      "verdict": "NO EDGE",
+      "tags": [
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0008,
+        "q": 0.0014,
+        "reject": true
+      }
+    },
+    {
+      "key": "oversold_uptrend",
+      "name": "RSI(14)<35 buy-the-dip",
+      "family": "mean_reversion",
+      "horizon": 10,
+      "thesis": "Classic oversold-in-uptrend dip buy.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.602,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.455,
+        "cagr": 0.014,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.089,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.057,
+        "split_half_excess": [
+          -0.692,
+          -0.273
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.9865,
+        "sr_daily": 0.037939,
+        "sr_annual": 0.6,
+        "sr0_daily": 0.017832,
+        "sr0_annual": 0.28,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -1.829,
+        "kurt": 158.288
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.33,
+          0.62,
+          0.97
+        ],
+        "maxdd_ci_pct": [
+          -16.2,
+          -9.1,
+          -4.8
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.009,
+        "beat_bench_maxdd_frac": 1.0,
+        "median_sharpe": 0.2,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": 0.0299,
+        "t_across_names": 5.443,
+        "p": 0.0,
+        "hit_frac": 0.755,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0179,
+        "base_fwd_mae_med": -0.0206,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 118542,
+          "mean_fwd": 0.0048,
+          "hit": 0.542
+        },
+        {
+          "band": "q2",
+          "n": 118542,
+          "mean_fwd": 0.006,
+          "hit": 0.556
+        },
+        {
+          "band": "q3",
+          "n": 118542,
+          "mean_fwd": 0.0058,
+          "hit": 0.553
+        },
+        {
+          "band": "q4",
+          "n": 118542,
+          "mean_fwd": 0.0062,
+          "hit": 0.549
+        },
+        {
+          "band": "q5",
+          "n": 118543,
+          "mean_fwd": 0.0087,
+          "hit": 0.571
+        }
+      ],
+      "p_value": 5.2385712656644046e-08,
+      "verdict": "ENTRY-SIGNAL (predictive timing overlay)",
+      "tags": [
+        "entry_overlay",
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "nr7_breakout",
+      "name": "NR7 volatility-contraction breakout",
+      "family": "breakout",
+      "horizon": 8,
+      "thesis": "Buy the breakout after the tightest range in 7 bars.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.758,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.3,
+        "cagr": 0.0371,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.175,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.326,
+        "split_half_excess": [
+          -0.28,
+          -0.346
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.9998,
+        "sr_daily": 0.047721,
+        "sr_annual": 0.76,
+        "sr0_daily": 0.016926,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.206,
+        "kurt": 9.065
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.5,
+          0.76,
+          1.03
+        ],
+        "maxdd_ci_pct": [
+          -23.1,
+          -14.2,
+          -9.6
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.009,
+        "beat_bench_maxdd_frac": 0.827,
+        "median_sharpe": 0.231,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0009,
+        "t_across_names": -0.194,
+        "p": 0.8463,
+        "hit_frac": 0.445,
+        "n_names": 110
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.016,
+        "base_fwd_mae_med": -0.0176,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 102387,
+          "mean_fwd": 0.0046,
+          "hit": 0.539
+        },
+        {
+          "band": "q2",
+          "n": 102386,
+          "mean_fwd": 0.0049,
+          "hit": 0.545
+        },
+        {
+          "band": "q3",
+          "n": 102386,
+          "mean_fwd": 0.0049,
+          "hit": 0.542
+        },
+        {
+          "band": "q4",
+          "n": 102386,
+          "mean_fwd": 0.005,
+          "hit": 0.545
+        },
+        {
+          "band": "q5",
+          "n": 102387,
+          "mean_fwd": 0.0046,
+          "hit": 0.544
+        }
+      ],
+      "p_value": 0.8462917518375281,
+      "verdict": "NO EDGE",
+      "tags": [
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.8463,
+        "q": 0.8463,
+        "reject": false
+      }
+    },
+    {
+      "key": "tsmom_200",
+      "name": "Above 200dma trend",
+      "family": "trend",
+      "horizon": 63,
+      "thesis": "Long while above the 200dma (Faber-style risk gate).",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.064,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": 0.007,
+        "cagr": 0.0991,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.241,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.677,
+        "split_half_excess": [
+          -0.047,
+          0.014
+        ],
+        "split_ok": false
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.06704,
+        "sr_annual": 1.06,
+        "sr0_daily": 0.017099,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.438,
+        "kurt": 6.314
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.8,
+          1.07,
+          1.35
+        ],
+        "maxdd_ci_pct": [
+          -34.3,
+          -22.0,
+          -15.6
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.164,
+        "beat_bench_maxdd_frac": 0.691,
+        "median_sharpe": 0.432,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.044,
+        "t_across_names": -4.705,
+        "p": 0.0,
+        "hit_frac": 0.324,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0599,
+        "base_fwd_mae_med": -0.0576,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 212439,
+          "mean_fwd": 0.0552,
+          "hit": 0.647
+        },
+        {
+          "band": "q2",
+          "n": 212439,
+          "mean_fwd": 0.0448,
+          "hit": 0.62
+        },
+        {
+          "band": "q3",
+          "n": 212439,
+          "mean_fwd": 0.0431,
+          "hit": 0.622
+        },
+        {
+          "band": "q4",
+          "n": 212439,
+          "mean_fwd": 0.0407,
+          "hit": 0.622
+        },
+        {
+          "band": "q5",
+          "n": 212439,
+          "mean_fwd": 0.0468,
+          "hit": 0.631
+        }
+      ],
+      "p_value": 2.5425147140989424e-06,
+      "verdict": "RISK-CONTROL (drawdown/de-risk)",
+      "tags": [
+        "risk_control"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "tsmom_10mo",
+      "name": "Above 10-month MA trend",
+      "family": "trend",
+      "horizon": 63,
+      "thesis": "Long while above the 10-month MA.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.057,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.0,
+        "cagr": 0.0988,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.24,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.68,
+        "split_half_excess": [
+          -0.062,
+          0.015
+        ],
+        "split_ok": false
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.06659,
+        "sr_annual": 1.06,
+        "sr0_daily": 0.017121,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.475,
+        "kurt": 6.715
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.79,
+          1.06,
+          1.34
+        ],
+        "maxdd_ci_pct": [
+          -35.2,
+          -22.5,
+          -15.9
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.182,
+        "beat_bench_maxdd_frac": 0.709,
+        "median_sharpe": 0.437,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.041,
+        "t_across_names": -4.472,
+        "p": 0.0,
+        "hit_frac": 0.38,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0599,
+        "base_fwd_mae_med": -0.0577,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 212329,
+          "mean_fwd": 0.0548,
+          "hit": 0.646
+        },
+        {
+          "band": "q2",
+          "n": 212329,
+          "mean_fwd": 0.0448,
+          "hit": 0.621
+        },
+        {
+          "band": "q3",
+          "n": 212329,
+          "mean_fwd": 0.043,
+          "hit": 0.622
+        },
+        {
+          "band": "q4",
+          "n": 212329,
+          "mean_fwd": 0.0409,
+          "hit": 0.623
+        },
+        {
+          "band": "q5",
+          "n": 212329,
+          "mean_fwd": 0.047,
+          "hit": 0.632
+        }
+      ],
+      "p_value": 7.764448118674494e-06,
+      "verdict": "RISK-CONTROL (drawdown/de-risk)",
+      "tags": [
+        "risk_control"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "tsmom_12_1",
+      "name": "Own 12-1 momentum > 0",
+      "family": "trend",
+      "horizon": 63,
+      "thesis": "Long while trailing 12-1 total return is positive.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.067,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": 0.01,
+        "cagr": 0.1184,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.304,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.705,
+        "split_half_excess": [
+          -0.022,
+          0.013
+        ],
+        "split_ok": false
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.067212,
+        "sr_annual": 1.07,
+        "sr0_daily": 0.017801,
+        "sr0_annual": 0.28,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -1.248,
+        "kurt": 34.798
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.78,
+          1.08,
+          1.38
+        ],
+        "maxdd_ci_pct": [
+          -45.3,
+          -30.5,
+          -17.9
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.191,
+        "beat_bench_maxdd_frac": 0.773,
+        "median_sharpe": 0.492,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0241,
+        "t_across_names": -3.103,
+        "p": 0.0019,
+        "hit_frac": 0.343,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0547,
+        "base_fwd_mae_med": -0.0576,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 208611,
+          "mean_fwd": 0.0421,
+          "hit": 0.617
+        },
+        {
+          "band": "q2",
+          "n": 208611,
+          "mean_fwd": 0.0448,
+          "hit": 0.619
+        },
+        {
+          "band": "q3",
+          "n": 208611,
+          "mean_fwd": 0.0462,
+          "hit": 0.633
+        },
+        {
+          "band": "q4",
+          "n": 208611,
+          "mean_fwd": 0.0484,
+          "hit": 0.644
+        },
+        {
+          "band": "q5",
+          "n": 208611,
+          "mean_fwd": 0.0479,
+          "hit": 0.634
+        }
+      ],
+      "p_value": 0.0019135453737628705,
+      "verdict": "RISK-CONTROL (drawdown/de-risk)",
+      "tags": [
+        "risk_control",
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0019,
+        "q": 0.0029,
+        "reject": true
+      }
+    },
+    {
+      "key": "ma_cross_50_200",
+      "name": "50/200 MA cross",
+      "family": "trend",
+      "horizon": 63,
+      "thesis": "Golden/death cross trend state.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.016,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.042,
+        "cagr": 0.1064,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.287,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.679,
+        "split_half_excess": [
+          -0.204,
+          0.07
+        ],
+        "split_ok": false
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.063976,
+        "sr_annual": 1.02,
+        "sr0_daily": 0.017787,
+        "sr0_annual": 0.28,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -1.356,
+        "kurt": 33.72
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.72,
+          1.03,
+          1.33
+        ],
+        "maxdd_ci_pct": [
+          -45.0,
+          -29.6,
+          -17.6
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.155,
+        "beat_bench_maxdd_frac": 0.727,
+        "median_sharpe": 0.467,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0217,
+        "t_across_names": -2.432,
+        "p": 0.015,
+        "hit_frac": 0.38,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0594,
+        "base_fwd_mae_med": -0.0564,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 212439,
+          "mean_fwd": 0.0512,
+          "hit": 0.635
+        },
+        {
+          "band": "q2",
+          "n": 212439,
+          "mean_fwd": 0.0454,
+          "hit": 0.627
+        },
+        {
+          "band": "q3",
+          "n": 212439,
+          "mean_fwd": 0.0436,
+          "hit": 0.622
+        },
+        {
+          "band": "q4",
+          "n": 212439,
+          "mean_fwd": 0.0416,
+          "hit": 0.622
+        },
+        {
+          "band": "q5",
+          "n": 212439,
+          "mean_fwd": 0.0489,
+          "hit": 0.637
+        }
+      ],
+      "p_value": 0.014999667915155834,
+      "verdict": "RISK-CONTROL (drawdown/de-risk)",
+      "tags": [
+        "risk_control"
+      ],
+      "fdr": {
+        "p": 0.015,
+        "q": 0.0203,
+        "reject": true
+      }
+    },
+    {
+      "key": "ma_slope_50",
+      "name": "Rising 50dma",
+      "family": "trend",
+      "horizon": 42,
+      "thesis": "Long while the 50dma is rising and price is above it.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.94,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.117,
+        "cagr": 0.0653,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.188,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.474,
+        "split_half_excess": [
+          -0.145,
+          -0.139
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.059241,
+        "sr_annual": 0.94,
+        "sr0_daily": 0.017059,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.391,
+        "kurt": 9.353
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.68,
+          0.94,
+          1.21
+        ],
+        "maxdd_ci_pct": [
+          -26.2,
+          -16.7,
+          -11.8
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.064,
+        "beat_bench_maxdd_frac": 0.764,
+        "median_sharpe": 0.324,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0299,
+        "t_across_names": -3.792,
+        "p": 0.0001,
+        "hit_frac": 0.33,
+        "n_names": 109
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0474,
+        "base_fwd_mae_med": -0.0473,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 214111,
+          "mean_fwd": 0.0373,
+          "hit": 0.629
+        },
+        {
+          "band": "q2",
+          "n": 214111,
+          "mean_fwd": 0.0309,
+          "hit": 0.609
+        },
+        {
+          "band": "q3",
+          "n": 214111,
+          "mean_fwd": 0.0282,
+          "hit": 0.597
+        },
+        {
+          "band": "q4",
+          "n": 214111,
+          "mean_fwd": 0.0275,
+          "hit": 0.598
+        },
+        {
+          "band": "q5",
+          "n": 214111,
+          "mean_fwd": 0.0302,
+          "hit": 0.599
+        }
+      ],
+      "p_value": 0.00014937267103354301,
+      "verdict": "NO EDGE",
+      "tags": [],
+      "fdr": {
+        "p": 0.0001,
+        "q": 0.0003,
+        "reject": true
+      }
+    },
+    {
+      "key": "donchian_55_20",
+      "name": "Donchian 55/20 breakout",
+      "family": "breakout",
+      "horizon": 63,
+      "thesis": "Turtle channel breakout with a 20-day trailing exit.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 0.874,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.183,
+        "cagr": 0.0538,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.195,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.407,
+        "split_half_excess": [
+          -0.206,
+          -0.21
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.055063,
+        "sr_annual": 0.87,
+        "sr0_daily": 0.017108,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.495,
+        "kurt": 13.064
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.62,
+          0.88,
+          1.14
+        ],
+        "maxdd_ci_pct": [
+          -23.7,
+          -15.1,
+          -10.5
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.055,
+        "beat_bench_maxdd_frac": 0.809,
+        "median_sharpe": 0.274,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0544,
+        "t_across_names": -5.917,
+        "p": 0.0,
+        "hit_frac": 0.315,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0535,
+        "base_fwd_mae_med": -0.0577,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 213429,
+          "mean_fwd": 0.0537,
+          "hit": 0.646
+        },
+        {
+          "band": "q2",
+          "n": 213429,
+          "mean_fwd": 0.0469,
+          "hit": 0.626
+        },
+        {
+          "band": "q3",
+          "n": 213429,
+          "mean_fwd": 0.0453,
+          "hit": 0.625
+        },
+        {
+          "band": "q4",
+          "n": 213429,
+          "mean_fwd": 0.0434,
+          "hit": 0.627
+        },
+        {
+          "band": "q5",
+          "n": 213429,
+          "mean_fwd": 0.0418,
+          "hit": 0.619
+        }
+      ],
+      "p_value": 3.288245231658493e-09,
+      "verdict": "NO EDGE",
+      "tags": [
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "accel_mom",
+      "name": "Momentum acceleration",
+      "family": "trend",
+      "horizon": 42,
+      "thesis": "Long when 3-month momentum leads 12-month momentum.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 109,
+      "agg": {
+        "sharpe": 0.481,
+        "bench_sharpe": 1.056,
+        "excess_sharpe": -0.574,
+        "cagr": 0.0214,
+        "bench_cagr": 0.184,
+        "maxdd": -0.231,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.178,
+        "split_half_excess": [
+          -0.655,
+          -0.518
+        ],
+        "split_ok": true
+      },
+      "dsr": {
+        "dsr": 0.9401,
+        "sr_daily": 0.03033,
+        "sr_annual": 0.48,
+        "sr0_daily": 0.016917,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.251,
+        "kurt": 26.051
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.22,
+          0.48,
+          0.74
+        ],
+        "maxdd_ci_pct": [
+          -28.3,
+          -16.2,
+          -10.4
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.009,
+        "beat_bench_maxdd_frac": 0.881,
+        "median_sharpe": 0.141,
+        "median_hold_sharpe": 0.568
+      },
+      "ic": {
+        "mean_ic": 0.0085,
+        "t_across_names": 1.249,
+        "p": 0.2118,
+        "hit_frac": 0.56,
+        "n_names": 109
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0485,
+        "base_fwd_mae_med": -0.0473,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 209507,
+          "mean_fwd": 0.0332,
+          "hit": 0.615
+        },
+        {
+          "band": "q2",
+          "n": 209507,
+          "mean_fwd": 0.0317,
+          "hit": 0.617
+        },
+        {
+          "band": "q3",
+          "n": 209507,
+          "mean_fwd": 0.0307,
+          "hit": 0.612
+        },
+        {
+          "band": "q4",
+          "n": 209507,
+          "mean_fwd": 0.0304,
+          "hit": 0.604
+        },
+        {
+          "band": "q5",
+          "n": 209507,
+          "mean_fwd": 0.027,
+          "hit": 0.589
+        }
+      ],
+      "p_value": 0.21176920947601174,
+      "verdict": "NO EDGE",
+      "tags": [],
+      "fdr": {
+        "p": 0.2118,
+        "q": 0.2214,
+        "reject": false
+      }
+    },
+    {
+      "key": "vol_scaled_trend",
+      "name": "Vol-targeted 200dma trend",
+      "family": "trend",
+      "horizon": 63,
+      "thesis": "Above-200dma trend sized to a 15% vol target.",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.073,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": 0.016,
+        "cagr": 0.057,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.136,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.427,
+        "split_half_excess": [
+          -0.032,
+          0.021
+        ],
+        "split_ok": false
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.067583,
+        "sr_annual": 1.07,
+        "sr0_daily": 0.01716,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.533,
+        "kurt": 6.854
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.79,
+          1.08,
+          1.38
+        ],
+        "maxdd_ci_pct": [
+          -21.0,
+          -13.2,
+          -9.2
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.227,
+        "beat_bench_maxdd_frac": 0.982,
+        "median_sharpe": 0.481,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.044,
+        "t_across_names": -4.705,
+        "p": 0.0,
+        "hit_frac": 0.324,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0545,
+        "base_fwd_mae_med": -0.0576,
+        "shallower": true
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 212439,
+          "mean_fwd": 0.0552,
+          "hit": 0.647
+        },
+        {
+          "band": "q2",
+          "n": 212439,
+          "mean_fwd": 0.0448,
+          "hit": 0.62
+        },
+        {
+          "band": "q3",
+          "n": 212439,
+          "mean_fwd": 0.0431,
+          "hit": 0.622
+        },
+        {
+          "band": "q4",
+          "n": 212439,
+          "mean_fwd": 0.0407,
+          "hit": 0.622
+        },
+        {
+          "band": "q5",
+          "n": 212439,
+          "mean_fwd": 0.0468,
+          "hit": 0.631
+        }
+      ],
+      "p_value": 2.5425147140989424e-06,
+      "verdict": "RISK-CONTROL (drawdown/de-risk)",
+      "tags": [
+        "risk_control",
+        "shallower_entry_drawdown"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    },
+    {
+      "key": "low_vol_state",
+      "name": "Low-volatility state",
+      "family": "trend",
+      "horizon": 63,
+      "thesis": "Long while realized vol sits below its 1-year median (low-vol anomaly).",
+      "kind": "time_series",
+      "survivorship": "biased_megacap_survivors",
+      "n_names": 110,
+      "agg": {
+        "sharpe": 1.046,
+        "bench_sharpe": 1.057,
+        "excess_sharpe": -0.011,
+        "cagr": 0.0877,
+        "bench_cagr": 0.1844,
+        "maxdd": -0.205,
+        "bench_maxdd": -0.495,
+        "time_in_mkt": 0.53,
+        "split_half_excess": [
+          -0.256,
+          0.178
+        ],
+        "split_ok": false
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.065894,
+        "sr_annual": 1.05,
+        "sr0_daily": 0.017219,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13625,
+        "skew": -0.535,
+        "kurt": 14.457
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.75,
+          1.05,
+          1.35
+        ],
+        "maxdd_ci_pct": [
+          -36.4,
+          -22.7,
+          -15.4
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13625
+      },
+      "per_name": {
+        "beat_bench_sharpe_frac": 0.218,
+        "beat_bench_maxdd_frac": 0.864,
+        "median_sharpe": 0.457,
+        "median_hold_sharpe": 0.571
+      },
+      "ic": {
+        "mean_ic": -0.0641,
+        "t_across_names": -8.943,
+        "p": 0.0,
+        "hit_frac": 0.194,
+        "n_names": 108
+      },
+      "entry_quality": {
+        "fire_fwd_mae_med": -0.0603,
+        "base_fwd_mae_med": -0.0576,
+        "shallower": false
+      },
+      "band": [
+        {
+          "band": "q1",
+          "n": 213231,
+          "mean_fwd": 0.0573,
+          "hit": 0.633
+        },
+        {
+          "band": "q2",
+          "n": 213231,
+          "mean_fwd": 0.043,
+          "hit": 0.621
+        },
+        {
+          "band": "q3",
+          "n": 213231,
+          "mean_fwd": 0.0426,
+          "hit": 0.622
+        },
+        {
+          "band": "q4",
+          "n": 213231,
+          "mean_fwd": 0.0435,
+          "hit": 0.638
+        },
+        {
+          "band": "q5",
+          "n": 213231,
+          "mean_fwd": 0.0446,
+          "hit": 0.629
+        }
+      ],
+      "p_value": 0.0,
+      "verdict": "RISK-CONTROL (drawdown/de-risk)",
+      "tags": [
+        "risk_control"
+      ],
+      "fdr": {
+        "p": 0.0,
+        "q": 0.0,
+        "reject": true
+      }
+    }
+  ],
+  "cross_sectional": [
+    {
+      "key": "xs_mom_12_1",
+      "name": "Cross-sectional 12-1 momentum",
+      "family": "selection_xs",
+      "kind": "cross_sectional",
+      "horizon": 21,
+      "survivorship": "BIASED \u2014 114 surviving mega-caps; treat as CONTEXT not alpha",
+      "ic": {
+        "mean_ic": 0.035,
+        "ic_vol": 0.2563,
+        "ic_ir": 0.137,
+        "ic_ir_ann": 0.473,
+        "t_hac": 3.869,
+        "p_hac": 0.0001,
+        "hit": 0.563,
+        "n": 760
+      },
+      "tercile": {
+        "long_sharpe": 1.148,
+        "ew_sharpe": 1.058,
+        "excess_t": 3.399,
+        "n_months": 760
+      },
+      "p_value": 0.0001,
+      "verdict": "CONTEXT \u2014 IC FDR-significant",
+      "fdr": {
+        "p": 0.0001,
+        "q": 0.0002,
+        "reject": true
+      }
+    },
+    {
+      "key": "xs_mom_6_1",
+      "name": "Cross-sectional 6-1 momentum",
+      "family": "selection_xs",
+      "kind": "cross_sectional",
+      "horizon": 21,
+      "survivorship": "BIASED \u2014 114 surviving mega-caps; treat as CONTEXT not alpha",
+      "ic": {
+        "mean_ic": 0.0136,
+        "ic_vol": 0.2439,
+        "ic_ir": 0.056,
+        "ic_ir_ann": 0.193,
+        "t_hac": 1.516,
+        "p_hac": 0.1295,
+        "hit": 0.53,
+        "n": 760
+      },
+      "tercile": {
+        "long_sharpe": 0.997,
+        "ew_sharpe": 1.067,
+        "excess_t": 0.96,
+        "n_months": 760
+      },
+      "p_value": 0.1295,
+      "verdict": "NO XS EDGE (context-only)",
+      "fdr": {
+        "p": 0.1295,
+        "q": 0.1489,
+        "reject": false
+      }
+    },
+    {
+      "key": "xs_near_52w_high",
+      "name": "Proximity to 52-week high",
+      "family": "selection_xs",
+      "kind": "cross_sectional",
+      "horizon": 21,
+      "survivorship": "BIASED \u2014 114 surviving mega-caps; treat as CONTEXT not alpha",
+      "ic": {
+        "mean_ic": -0.0159,
+        "ic_vol": 0.2508,
+        "ic_ir": -0.064,
+        "ic_ir_ann": -0.22,
+        "t_hac": -1.936,
+        "p_hac": 0.0528,
+        "hit": 0.474,
+        "n": 760
+      },
+      "tercile": {
+        "long_sharpe": 1.041,
+        "ew_sharpe": 1.072,
+        "excess_t": -2.1,
+        "n_months": 760
+      },
+      "p_value": 0.0528,
+      "verdict": "NO XS EDGE (context-only)",
+      "fdr": {
+        "p": 0.0528,
+        "q": 0.0675,
+        "reject": true
+      }
+    },
+    {
+      "key": "xs_fip",
+      "name": "Frog-in-the-pan continuity momentum",
+      "family": "selection_xs",
+      "kind": "cross_sectional",
+      "horizon": 21,
+      "survivorship": "BIASED \u2014 114 surviving mega-caps; treat as CONTEXT not alpha",
+      "ic": {
+        "mean_ic": 0.0106,
+        "ic_vol": 0.201,
+        "ic_ir": 0.053,
+        "ic_ir_ann": 0.182,
+        "t_hac": 1.415,
+        "p_hac": 0.1571,
+        "hit": 0.522,
+        "n": 760
+      },
+      "tercile": {
+        "long_sharpe": 1.002,
+        "ew_sharpe": 1.058,
+        "excess_t": 1.306,
+        "n_months": 760
+      },
+      "p_value": 0.1571,
+      "verdict": "NO XS EDGE (context-only)",
+      "fdr": {
+        "p": 0.1571,
+        "q": 0.1721,
+        "reject": false
+      }
+    },
+    {
+      "key": "xs_resid_mom",
+      "name": "Residual (beta-adj) 12-1 momentum",
+      "family": "selection_xs",
+      "kind": "cross_sectional",
+      "horizon": 21,
+      "survivorship": "BIASED \u2014 114 surviving mega-caps; treat as CONTEXT not alpha",
+      "ic": {
+        "mean_ic": 0.019,
+        "ic_vol": 0.2338,
+        "ic_ir": 0.081,
+        "ic_ir_ann": 0.282,
+        "t_hac": 1.912,
+        "p_hac": 0.0559,
+        "hit": 0.545,
+        "n": 457
+      },
+      "tercile": {
+        "long_sharpe": 1.115,
+        "ew_sharpe": 1.063,
+        "excess_t": 2.209,
+        "n_months": 457
+      },
+      "p_value": 0.0559,
+      "verdict": "CONTEXT \u2014 IC FDR-significant",
+      "fdr": {
+        "p": 0.0559,
+        "q": 0.0677,
+        "reject": true
+      }
+    },
+    {
+      "key": "xs_low_vol",
+      "name": "Low realized-vol (low-vol anomaly)",
+      "family": "selection_xs",
+      "kind": "cross_sectional",
+      "horizon": 21,
+      "survivorship": "BIASED \u2014 114 surviving mega-caps; treat as CONTEXT not alpha",
+      "ic": {
+        "mean_ic": -0.0305,
+        "ic_vol": 0.2908,
+        "ic_ir": -0.105,
+        "ic_ir_ann": -0.364,
+        "t_hac": -2.98,
+        "p_hac": 0.0029,
+        "hit": 0.455,
+        "n": 760
+      },
+      "tercile": {
+        "long_sharpe": 1.063,
+        "ew_sharpe": 1.07,
+        "excess_t": -3.903,
+        "n_months": 760
+      },
+      "p_value": 0.0029,
+      "verdict": "NO XS EDGE (context-only)",
+      "fdr": {
+        "p": 0.0029,
+        "q": 0.0042,
+        "reject": true
+      }
+    }
+  ],
+  "combined": {
+    "entry_timing": {
+      "name": "Entry-timing composite (blended oversold overlay)",
+      "ic": {
+        "composite_mean_ic": 0.0389,
+        "composite_t_across_names": 9.741,
+        "best_leg_mean_ic": 0.0345,
+        "blend_lift_vs_best_leg": 0.0044,
+        "n_names": 110
+      },
+      "quintile": {
+        "q_means_fwd5": [
+          0.0013,
+          0.0029,
+          0.0032,
+          0.0036,
+          0.0052
+        ],
+        "top_minus_bottom": 0.0039,
+        "spread_t": 25.0,
+        "n": 731320
+      },
+      "tradable_gated_vs_naive": {
+        "gated_sharpe": 0.786,
+        "naive_uptrend_sharpe": 1.049,
+        "always_in_sharpe": 1.057,
+        "gated_maxdd": -0.16,
+        "naive_maxdd": -0.287,
+        "always_in_maxdd": -0.495,
+        "gated_time_in_mkt": 0.613,
+        "dsr": {
+          "dsr": 0.9993,
+          "sr_daily": 0.049508,
+          "sr_annual": 0.79,
+          "sr0_daily": 0.01877,
+          "sr0_annual": 0.3,
+          "n_trials": 23,
+          "T": 13625,
+          "skew": -3.176,
+          "kurt": 148.249
+        }
+      },
+      "interpretation": "Entry composite is an OVERLAY: it improves the SHORT-HORIZON entry of a name already selected (positive blended IC, top-vs-bottom oversold quintile spread). It does not beat always-invested standalone \u2014 its role is better fills + shallower entry drawdown, gated by the validated uptrend filter."
+    },
+    "selection": {
+      "name": "Selection composite (12-1 + residual momentum)",
+      "blend_ic": {
+        "mean_ic": 0.0352,
+        "ic_vol": 0.2562,
+        "ic_ir": 0.138,
+        "ic_ir_ann": 0.477,
+        "t_hac": 3.908,
+        "p_hac": 0.0001,
+        "hit": 0.563,
+        "n": 760
+      },
+      "mom_only_ic": {
+        "mean_ic": 0.035,
+        "ic_vol": 0.2563,
+        "ic_ir": 0.137,
+        "ic_ir_ann": 0.473,
+        "t_hac": 3.869,
+        "p_hac": 0.0001,
+        "hit": 0.563,
+        "n": 760
+      },
+      "survivorship": "BIASED \u2014 context only, never sizes alone"
+    }
+  },
+  "institutional": {
+    "vol_managed": {
+      "name": "Vol-managed sizing (Moreira-Muir / Barroso-Santa-Clara)",
+      "sleeves": {
+        "buyhold": {
+          "sharpe": 1.056,
+          "cagr": 0.1842,
+          "maxdd": -0.495
+        },
+        "voltarget_derisk": {
+          "sharpe": 1.154,
+          "cagr": 0.0923,
+          "maxdd": -0.265
+        },
+        "voltarget_lever": {
+          "sharpe": 1.157,
+          "cagr": 0.0941,
+          "maxdd": -0.267
+        },
+        "trend": {
+          "sharpe": 1.064,
+          "cagr": 0.0991,
+          "maxdd": -0.241
+        },
+        "trend_voltarget": {
+          "sharpe": 1.075,
+          "cagr": 0.0572,
+          "maxdd": -0.135
+        }
+      },
+      "buyhold_to_voltarget_derisk": {
+        "d_sharpe": 0.098,
+        "d_maxdd": 0.23
+      },
+      "trend_to_voltarget": {
+        "d_sharpe": 0.011,
+        "d_maxdd": 0.106
+      },
+      "dsr": {
+        "dsr": 1.0,
+        "sr_daily": 0.072915,
+        "sr_annual": 1.16,
+        "sr0_daily": 0.017231,
+        "sr0_annual": 0.27,
+        "n_trials": 23,
+        "T": 13624,
+        "skew": -0.564,
+        "kurt": 8.604
+      },
+      "bootstrap": {
+        "sharpe_ci": [
+          0.86,
+          1.16,
+          1.45
+        ],
+        "maxdd_ci_pct": [
+          -30.5,
+          -19.7,
+          -13.8
+        ],
+        "sharpe_gt0_prob": 1.0,
+        "block": 21,
+        "B": 4000,
+        "n": 13624
+      },
+      "interpretation": "Vol-targeting holds ~constant risk \u2192 higher Sharpe and shallower drawdown vs the unscaled sleeve. A capital-efficiency lever, kept regardless of IC; the levered variant adds return in calm regimes."
+    },
+    "regime_conditioning": {
+      "name": "Regime-conditioning of the entry-timing edge",
+      "spx_regime": {
+        "bull_market": {
+          "mean_ic": 0.0336,
+          "t": 8.07,
+          "n": 110
+        },
+        "bear_market": {
+          "mean_ic": 0.0739,
+          "t": 9.81,
+          "n": 109
+        }
+      },
+      "vix_regime": {
+        "calm": {
+          "mean_ic": 0.0261,
+          "t": 5.11,
+          "n": 110
+        },
+        "stress": {
+          "mean_ic": 0.0525,
+          "t": 11.02,
+          "n": 110
+        }
+      },
+      "regime_dependent": false,
+      "recommendation": "Edge roughly regime-stable; light conditioning only."
+    }
+  }
+}
