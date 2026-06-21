@@ -46,6 +46,13 @@ OTHER = "Other"
 MATURE_CATEGORIES = frozenset({
     ACQ, DIV, ACT, REV, TO, GP, CAP, SPIN, RIGHTS, RESTR, LIQ, DELIST, ITEND, TERM, SPAC, MGMT, OTHER,
 })
+# categories the LLM lane may auto-promote to the desk. Management Changes is EXCLUDED: a
+# verification sample showed the model over-fires it on foreign-6-K AGM / "management
+# information circular" / meeting-reminder notices (4 of 5 sampled were misfires), and the
+# recon says it's a tiny category that only matters when it co-occurs with activism. Keep it
+# off the desk rather than admit that noise; the activist 13D/proxy lane already catches the
+# real cases.
+LLM_PROMOTABLE = MATURE_CATEGORIES - {MGMT}
 # default stage when the LLM promotes an ambiguous filing and no stage is already set
 LLM_STAGE_DEFAULT: dict[str, str] = {
     ACQ: "announced", DIV: "announced", ACT: "initiated", REV: "initiated", TO: "live",
@@ -410,7 +417,7 @@ def build_situations() -> pd.DataFrame:
             if col not in df.columns:
                 df[col] = pd.NA
         llm = df.llm_category.astype("string").str.strip()
-        valid = llm.isin(MATURE_CATEGORIES).fillna(False)
+        valid = llm.isin(LLM_PROMOTABLE).fillna(False)
         is_none = llm.str.lower().eq("none").fillna(False)
         if valid.any():
             df.loc[valid, "category"] = llm[valid]
