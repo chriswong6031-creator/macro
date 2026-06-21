@@ -1,0 +1,121 @@
+{
+  "verdict": "NO-GO",
+  "decision": "CLOSE THE BOOK on reversal as selection alpha \u2014 it is a net-of-cost mirage.",
+  "reasons": [
+    "tradeable (liquid) residual reversal is net-NEGATIVE after 10bps (-1.34%/yr) \u2014 the mirage: gross edge is eaten by turnover cost",
+    "liquid residual reversal IC not significant (HAC-t 0.351)"
+  ],
+  "lookback_d": 21,
+  "fwd_d": 21,
+  "rebalance": "monthly",
+  "span": "1962-06-29..2026-04-30",
+  "rebalances": 767,
+  "effective_breadth": 72,
+  "ic": {
+    "reversal_raw": {
+      "mean_ic": 0.018,
+      "ic_vol": 0.1849,
+      "ic_ir": 0.097,
+      "ic_ir_ann": 0.336,
+      "t_hac": 2.497,
+      "p_hac": 0.0125,
+      "hit": 0.551,
+      "n": 767
+    },
+    "reversal_resid": {
+      "mean_ic": 0.0193,
+      "ic_vol": 0.1879,
+      "ic_ir": 0.103,
+      "ic_ir_ann": 0.356,
+      "t_hac": 2.755,
+      "p_hac": 0.0059,
+      "hit": 0.548,
+      "n": 767
+    },
+    "reversal_resid_liquid": {
+      "mean_ic": 0.0027,
+      "ic_vol": 0.2082,
+      "ic_ir": 0.013,
+      "ic_ir_ann": 0.046,
+      "t_hac": 0.351,
+      "p_hac": 0.7254,
+      "hit": 0.506,
+      "n": 553
+    }
+  },
+  "net_of_cost_spread": {
+    "reversal_raw": {
+      "gross": {
+        "ann_pct": 6.13,
+        "sharpe_ann": 0.454,
+        "t_hac": 3.493,
+        "dsr": 0.9697,
+        "n": 647
+      },
+      "net_10bps": {
+        "ann_pct": 4.22,
+        "sharpe_ann": 0.312,
+        "t_hac": 2.41,
+        "dsr": 0.7906,
+        "n": 647
+      },
+      "net_20bps": {
+        "ann_pct": 2.31,
+        "sharpe_ann": 0.171,
+        "t_hac": 1.322,
+        "dsr": 0.3997,
+        "n": 647
+      }
+    },
+    "reversal_resid": {
+      "gross": {
+        "ann_pct": 6.1,
+        "sharpe_ann": 0.453,
+        "t_hac": 3.407,
+        "dsr": 0.9692,
+        "n": 647
+      },
+      "net_10bps": {
+        "ann_pct": 4.19,
+        "sharpe_ann": 0.312,
+        "t_hac": 2.349,
+        "dsr": 0.7882,
+        "n": 647
+      },
+      "net_20bps": {
+        "ann_pct": 2.29,
+        "sharpe_ann": 0.17,
+        "t_hac": 1.285,
+        "dsr": 0.3969,
+        "n": 647
+      }
+    },
+    "reversal_resid_liquid": {
+      "gross": {
+        "ann_pct": 0.61,
+        "sharpe_ann": 0.032,
+        "t_hac": 0.212,
+        "dsr": 0.0941,
+        "n": 498
+      },
+      "net_10bps": {
+        "ann_pct": -1.34,
+        "sharpe_ann": -0.069,
+        "t_hac": -0.464,
+        "dsr": 0.0244,
+        "n": 498
+      },
+      "net_20bps": {
+        "ann_pct": -3.28,
+        "sharpe_ann": -0.171,
+        "t_hac": -1.142,
+        "dsr": 0.0042,
+        "n": 498
+      }
+    }
+  },
+  "leak_free": true,
+  "survivorship_biased": true,
+  "price_span": "1962-01-02..2026-06-18",
+  "caveat": "No non-survivor price panel locally \u2192 run on the SURVIVORSHIP-BIASED large-cap panel (~114 names), which is GENEROUS to reversal (omits delisted blow-ups). A net-of-cost failure here is therefore CONCLUSIVE; a pass would need a non-survivor confirm before any tilt. Costs: 10/20 bps per side on realized turnover."
+}
