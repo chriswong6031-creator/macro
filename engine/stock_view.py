@@ -512,9 +512,10 @@ def _ev_squeeze(rec: dict) -> dict | None:
 def _ev_ownership(rec: dict) -> dict | None:
     ff = rec.get("fund_flows") or []
     sm = rec.get("smart_money") or {}
+    bo = rec.get("beneficial_ownership") or {}
     n_funds = len(ff) if isinstance(ff, list) else 0
     n_hold = sm.get("n_holders")
-    if not n_funds and not n_hold:
+    if not n_funds and not n_hold and bo.get("signal") != "high":
         return None
     bits, bits_zh = [], []
     if n_funds:
@@ -536,6 +537,14 @@ def _ev_ownership(rec: dict) -> dict | None:
     if nqb:
         bits.append(f"{nqb} top-grade fund{'s' if nqb != 1 else ''} buying")
         bits_zh.append(f"{nqb} 家高评级基金买入")
+    # 13D/G beneficial-ownership regime — only the SIGNAL (activist 13D / 13G→13D
+    # flip) surfaces; custodian/index 13G aggregation is filtered out as noise.
+    if bo.get("signal") == "high":
+        filer = (bo.get("latest_filer") or "").title().strip()
+        tag = "13G→13D flip" if bo.get("is_flip") else "activist 13D"
+        tag_zh = "13G→13D 转换" if bo.get("is_flip") else "维权 13D"
+        bits.append(f"{tag}{f' ({filer})' if filer else ''}")
+        bits_zh.append(f"{tag_zh}{f'（{filer}）' if filer else ''}")
     hhi = _num(sm.get("ownership_hhi"))
     if hhi is not None:
         conc = ("top-heavy" if hhi >= 0.18 else "broadly held" if hhi <= 0.08 else "moderate")

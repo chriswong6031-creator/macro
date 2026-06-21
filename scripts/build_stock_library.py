@@ -771,6 +771,14 @@ def main() -> int:
             smart_money = (json.loads(smp.read_text()) or {}).get("by_ticker", {})
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("smartmoney.json unreadable (%s)", e)
+    # per-stock 13D/G beneficial-ownership regime (activist 13D + 13G→13D flip = signal;
+    # custodian/index 13G = aggregation NOISE). Reads the sweep cache directly. CONTEXT.
+    beneficial_ownership: dict[str, dict] = {}
+    try:
+        from engine.beneficial_ownership import load_regime
+        beneficial_ownership = load_regime()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("beneficial_ownership regime unreadable (%s)", e)
     # per-stock dealer-gamma (DISPLAY-ONLY, gated from the score by validate_gex). PRIMARY =
     # the pre-built site/gex board payloads (rich: walls + vol_hole + consistent units), which
     # already cover the curated optionable universe. The live compute_gex path is only used as a
@@ -1078,6 +1086,8 @@ def main() -> int:
                 cand.append(sc)
         if smart_money.get(ticker):
             rec["smart_money"] = smart_money[ticker]
+        if beneficial_ownership.get(ticker):
+            rec["beneficial_ownership"] = beneficial_ownership[ticker]
         # ---- richer OHLCV technical snapshot + single-stock volatility black hole ------
         # Supersede the thin close-only snapshot with the research-vetted read (ATR/ADX/
         # squeeze/volume where full OHLCV exists; momentum / 52w-proximity / realized-vol
