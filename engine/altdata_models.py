@@ -89,7 +89,9 @@ CHANNEL_WEIGHTS: dict[str, float] = {
     "insider_buy":        0.60,   # single open-market insider buy
     "insider_mspr":       0.55,   # Finnhub insider sentiment (MSPR) strongly positive — cross-check
     "material_8k":        0.55,   # cluster of material 8-K filings (filing-time corporate activity)
+    "activist_13d":       0.55,   # Special-Situations handshake (P3.3): a high-conf 13D activist campaign
     "darkpool_accum":     0.55,   # off-exchange accumulation (z-scored)
+    "special_situation":  0.40,   # Special-Situations handshake (P3.3): a high-conf live deal/event on the name
     "lobbying_spike":     0.50,   # lobbying spend spiking off a real base
     "trump":              0.50,   # Donald-Trump trade / branded affiliation
     "affiliation":        0.50,   # influence-graph edge (actor -> this name)
@@ -593,6 +595,15 @@ def channel_records(signals: dict, affiliations: dict | None = None) -> dict[str
         m = rec(r["ticker"])
         if m is not None:
             m["metrics"]["donor_usd"] = r.get("total_usd")
+
+    # --- special-situations cross-emit (P3.3 handshake): the event desk lights a channel ---
+    # so a confirmed corporate event converges with the hard alt-data feeds on the same name.
+    for r in signals.get("special_situations", []):
+        if r.get("activist"):
+            who = r.get("filer")
+            add(r["ticker"], "activist_13d", "13D activist campaign" + (f" — {who}" if who else ""))
+        else:
+            add(r["ticker"], "special_situation", r.get("detail") or "live special situation")
 
     # --- influence-graph affiliations (actor -> name) ---
     for tk, detail in (affiliations or {}).items():

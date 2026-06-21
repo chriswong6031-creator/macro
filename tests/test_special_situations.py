@@ -160,12 +160,21 @@ def test_dates_to_sweep_skips_weekends_and_honors_watermark(tmp_store, monkeypat
 
 def test_engine_is_display_only_leaf():
     """Load-bearing honesty invariant: the desk is context-only, never scored,
-    and must not pull the scoring path into the import graph."""
+    and must not pull the scoring path into the import graph. Checked in a FRESH
+    subprocess so the result is independent of whatever other tests imported into
+    this process's sys.modules (the invariant is about THIS module's import graph)."""
+    import subprocess
     import sys
     assert sse.SCORED is False
-    # importing the engine must not have imported regime/conditions/run
-    assert not any(m in sys.modules for m in
-                   ("engine.regime", "engine.conditions", "engine.run", "conditions"))
+    code = (
+        "import sys, engine.special_situations\n"
+        "bad=[m for m in ('engine.regime','engine.conditions','engine.run','conditions') "
+        "if m in sys.modules]\n"
+        "raise SystemExit('pulled scoring path: '+repr(bad) if bad else 0)"
+    )
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True,
+                       cwd=str(config.ROOT))
+    assert r.returncode == 0, (r.stdout + r.stderr)
 
 
 def test_classify_structured_forms():
@@ -353,6 +362,41 @@ def test_backtest_forward_return():
     assert bt._fwd(s, 3, 2) == round(110 / 103 - 1, 10) or abs(bt._fwd(s, 3, 2) - (110/103 - 1)) < 1e-9
 
 
+def test_backtest_agg_stage_groups():
+    import pandas as pd
+    btdf = pd.DataFrame([
+        {"category": "Going-Private", "stage": "live", "ticker": "A", "r5": 0.01, "r20": 0.02, "r60": 0.03, "x5": 0.0, "x20": 0.01, "x60": 0.0},
+        {"category": "Going-Private", "stage": "live", "ticker": "B", "r5": 0.03, "r20": 0.04, "r60": 0.05, "x5": 0.0, "x20": 0.02, "x60": 0.0},
+        {"category": "Going-Private", "stage": "closed", "ticker": "C", "r5": -0.01, "r20": -0.02, "r60": None, "x5": 0.0, "x20": -0.01, "x60": None},
+    ])
+    res = bt._agg_stage(btdf)
+    rows = {(r.category, r.stage): r for _, r in res.iterrows()}
+    assert (("Going-Private", "live") in rows) and (("Going-Private", "closed") in rows)
+    assert rows[("Going-Private", "live")].n == 2
+    assert rows[("Going-Private", "live")].med_r20 == 3.0          # median of 2%, 4%
+
+
+def test_backtest_run_edgar_filing_date_entry(tmp_path, monkeypatch):
+    """run_edgar enters at the first close on/after the FILING date and forward-returns it."""
+    import pandas as pd
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({1: "ABC"}, {"ABC": 500.0}))
+    (tmp_path / "special_situations").mkdir()
+    # one classifiable activist situation on ABC, filed 2026-06-10
+    _events([{"id": "1", "form_type": "SC 13D", "company": "ABC Inc", "cik": "1",
+              "items": None, "date_filed": "2026-06-10"}]
+            ).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    # a price panel where ABC rises 10% over 5 trading days from entry
+    idx = pd.bdate_range("2026-06-01", periods=20)   # idx[7] == 2026-06-10 (entry)
+    (tmp_path / "breadth").mkdir()
+    pd.DataFrame({"ABC": [100.0] * 12 + [110.0] * 8}, index=idx).to_parquet(
+        tmp_path / "breadth" / "_closes_cache.parquet")   # entry 100 -> +5d (idx[12]) 110
+    btdf = bt.run_edgar()
+    row = btdf.set_index("ticker").loc["ABC"]
+    assert row["category"] == "Activist Campaigns" and row["stage"] in ("initiated", "—")
+    assert round(row["r5"], 4) == 0.10                            # 100 -> 110 over 5 days
+
+
 def test_summary_lane_llm_ready_gate(monkeypatch):
     monkeypatch.setattr(config, "secret", lambda n: "key")
     assert ss._llm_ready({"enabled": True, "llm_brief": True}) is True
@@ -360,6 +404,148 @@ def test_summary_lane_llm_ready_gate(monkeypatch):
     assert ss._llm_ready({"enabled": False, "llm_brief": True}) is False
     monkeypatch.setattr(config, "secret", lambda n: None)
     assert ss._llm_ready({"enabled": True, "llm_brief": True}) is False   # no key
+
+
+# ---- lifecycle / stage tracking (P3.1) --------------------------------------
+def test_lifecycle_links_amendments(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    _events([
+        {"id": "1", "form_type": "SC 13D", "company": "X", "cik": "7", "items": None, "date_filed": "2026-06-01"},
+        {"id": "2", "form_type": "SC 13D/A", "company": "X", "cik": "7", "items": None, "date_filed": "2026-06-10"},
+    ]).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations().set_index("id")
+    assert df.loc["2", "n_amendments"] == 1                 # one /A amendment in the timeline
+    assert df.loc["2", "current_stage"] == "escalation"     # latest filing's stage
+    lc = sse.lifecycle(sse.build_situations())
+    assert lc[("7", "Activist Campaigns")]["n_filings"] == 2
+
+
+def test_lifecycle_terminal_terminated(tmp_path, monkeypatch):
+    """A filer with both a merger proxy AND a deal-termination event -> the deal reads 'terminated'."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    ev = _events([
+        {"id": "1", "form_type": "DEFM14A", "company": "DealCo", "cik": "8", "items": None, "date_filed": "2026-05-01"},
+        {"id": "2", "form_type": "8-K", "company": "DealCo", "cik": "8", "items": "1.02", "date_filed": "2026-06-01"},
+    ])
+    ev["text_category"] = [None, "Deal Terminations"]       # 1.02 + termination keyword -> promoted
+    ev["text_stage"] = [None, "terminated"]
+    ev.to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations().set_index("id")
+    assert df.loc["1", "deal_terminal"] == "terminated"
+    assert df.loc["1", "current_stage"] == "terminated"
+
+
+def test_lifecycle_terminal_closed(tmp_path, monkeypatch):
+    """An 8-K Item 2.01 (completion) by the deal filer flips the deal to 'closed' — even
+    though the 2.01 8-K itself is only a deferred row."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    (tmp_path / "special_situations").mkdir()
+    _events([
+        {"id": "1", "form_type": "DEFM14A", "company": "DealCo", "cik": "9", "items": None, "date_filed": "2026-05-01"},
+        {"id": "2", "form_type": "8-K", "company": "DealCo", "cik": "9", "items": "2.01", "date_filed": "2026-06-01"},
+    ]).to_parquet(tmp_path / "special_situations" / "events.parquet")
+    df = sse.build_situations().set_index("id")
+    assert df.loc["1", "current_stage"] == "closed"
+    assert df.loc["1", "deal_terminal"] == "closed"
+
+
+# ---- LLM verify lane (P1.1) -------------------------------------------------
+def test_parse_llm_json_robust():
+    assert ss._parse_llm_json('{"category": "Acquisitions"}')["category"] == "Acquisitions"
+    # tolerates a ```json fence
+    assert ss._parse_llm_json('```json\n{"category": "Spin-Offs"}\n```')["category"] == "Spin-Offs"
+    # tolerates leading prose
+    assert ss._parse_llm_json('Here you go: {"category": "Other", "role": "filer"}')["role"] == "filer"
+    assert ss._parse_llm_json("not json at all") == {}
+    assert ss._parse_llm_json(None) == {}
+
+
+class _FakeResp:
+    def __init__(self, text):
+        self.content = [type("B", (), {"type": "text", "text": text})()]
+
+
+class _FakeClient:
+    """Returns a fixed JSON reply for every messages.create call."""
+    def __init__(self, text):
+        self._text = text
+        self.messages = self
+
+    def create(self, **_kw):
+        return _FakeResp(self._text)
+
+
+def _mock_llm(monkeypatch, reply_json: str):
+    monkeypatch.setattr(config, "secret", lambda n: "key")
+    monkeypatch.setattr(ss, "_cfg", lambda: {"enabled": True, "llm_brief": True})
+    monkeypatch.setattr(ss, "_llm_client", lambda cfg: (_FakeClient(reply_json), "deepseek-chat"))
+    monkeypatch.setattr(ss, "_fetch_filing_text", lambda cik, acc, **kw: "filing body text")
+
+
+def _seed_defer_event(tmp_path):
+    (tmp_path / "special_situations").mkdir()
+    pd.DataFrame([{"id": "e1", "form_type": "8-K", "company": "Acme Inc", "cik": "10",
+                   "accession": "acc1", "items": "8.01", "date_filed": "2026-06-12",
+                   "source_url": "u"}]
+                 ).to_parquet(tmp_path / "special_situations" / "events.parquet")
+
+
+def test_enrich_classify_writes_verdict(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    _mock_llm(monkeypatch, '{"category": "Acquisitions", "role": "target", "confidence": "high",'
+                           ' "summary": "Acme to be acquired for $25/sh cash.",'
+                           ' "deal_terms": {"price_per_share": 25.0, "consideration": "cash"}}')
+    _seed_defer_event(tmp_path)
+    df = ss.enrich_classify().set_index("id")
+    assert df.loc["e1", "llm_category"] == "Acquisitions"
+    assert df.loc["e1", "llm_role"] == "target"
+    assert df.loc["e1", "llm_confidence"] == "high"
+    assert "price_per_share" in df.loc["e1", "llm_terms"]
+
+
+def test_llm_verdict_promotes_in_engine(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    _mock_llm(monkeypatch, '{"category": "Strategic Reviews", "role": "filer", "confidence": "high",'
+                           ' "summary": "Board to explore alternatives.", "deal_terms": {}}')
+    _seed_defer_event(tmp_path)
+    ss.enrich_classify()
+    df = sse.build_situations().set_index("id")
+    assert df.loc["e1", "status"] == "ok"
+    assert df.loc["e1", "category"] == "Strategic Reviews"
+    assert df.loc["e1", "confidence"] == "high"          # LLM-verified, not the keyword 'low'
+    assert df.loc["e1", "stage"] == "initiated"          # default stage for Strategic Reviews
+
+
+def test_llm_none_kills_false_positive(tmp_path, monkeypatch):
+    """The precision fix: a deferred filing the LLM judges NOT a situation is dropped,
+    even if the keyword text-lane had promoted it."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(sse, "_universe_caps", lambda: ({}, {}))
+    _mock_llm(monkeypatch, '{"category": "None", "role": "none", "confidence": "high",'
+                           ' "summary": "", "deal_terms": {}}')
+    _seed_defer_event(tmp_path)
+    # pretend the noisy keyword lane already (wrongly) promoted it
+    df0 = ss._read_events()
+    df0["text_category"] = "Acquisitions"
+    df0["text_stage"] = "announced"
+    df0.to_parquet(tmp_path / "special_situations" / "events.parquet")
+    ss.enrich_classify()
+    df = sse.build_situations().set_index("id")
+    assert df.loc["e1", "status"] == "skip"              # LLM "None" overrides the keyword FP
+
+
+def test_enrich_classify_noop_when_gated(tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(ss, "_cfg", lambda: {"enabled": True, "llm_brief": False})  # gate off
+    _seed_defer_event(tmp_path)
+    df = ss.enrich_classify()
+    assert df["llm_category"].isna().all()               # nothing classified, no network
 
 
 def test_summary_lane_noop_when_gated(tmp_path, monkeypatch):

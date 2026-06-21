@@ -863,6 +863,30 @@ def convergence(signals: dict, top: int = 25, affiliations: dict | None = None) 
 
 
 # --------------------------------------------------------------------------- feed
+def special_situations_signal() -> list[dict]:
+    """P3.3 handshake: read the Special-Situations desk's last per-ticker emit and surface
+    high-confidence events so they light an Alt-Data convergence channel on the same name.
+    Display-only + slow signal, so last-known is fine; absent/low-confidence -> dropped.
+    (Build order: alt-data runs before special-situations, so this consumes yesterday's
+    emit — acceptable for a multi-week 13D/deal signal.)"""
+    p = config.ROOT / "site" / "allocationdata" / "special_situations.json"
+    if not p.exists():
+        return []
+    try:
+        data = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001
+        return []
+    out: list[dict] = []
+    for tk, r in (data.get("by_ticker") or {}).items():
+        if str(r.get("confidence") or "").lower() == "low":
+            continue                              # never propagate unverified keyword guesses
+        cat = r.get("category")
+        out.append({"ticker": tk, "category": cat, "confidence": r.get("confidence"),
+                    "activist": cat == "Activist Campaigns",
+                    "filer": r.get("activist_filer"), "detail": cat})
+    return out
+
+
 def build_feed() -> dict:
     now = datetime.now(timezone.utc)
     datasets: dict[str, dict] = {}
@@ -888,6 +912,7 @@ def build_feed() -> dict:
     signals["fda"] = safe(fda_events, [])
     signals["hf"] = safe(hf_momentum, [])
     signals["material_8k"] = safe(material_events, [])
+    signals["special_situations"] = safe(special_situations_signal, [])   # P3.3 event-desk handshake
     # deferred sources (existing keys / keyless; gated ones degrade to empty)
     signals["unusual_options"] = safe(unusual_options, [])
     signals["analyst"] = safe(analyst_trends, [])

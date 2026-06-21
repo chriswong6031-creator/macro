@@ -40,6 +40,19 @@ ACQ, DIV, ACT, REV = "Acquisitions", "Divestitures", "Activist Campaigns", "Stra
 TO, GP, CAP, SPIN = "Tender Offers", "Going-Private", "Capital Returns", "Spin-Offs"
 RIGHTS, RESTR, LIQ, DELIST = "Rights Offerings", "Restructuring", "Liquidations", "Delistings"
 ITEND, TERM, SPAC, MGMT = "Issuer Tenders", "Deal Terminations", "SPACs", "Management Changes"
+OTHER = "Other"
+
+# the mature taxonomy an LLM verdict (P1.1) may legitimately promote to (excludes "None")
+MATURE_CATEGORIES = frozenset({
+    ACQ, DIV, ACT, REV, TO, GP, CAP, SPIN, RIGHTS, RESTR, LIQ, DELIST, ITEND, TERM, SPAC, MGMT, OTHER,
+})
+# default stage when the LLM promotes an ambiguous filing and no stage is already set
+LLM_STAGE_DEFAULT: dict[str, str] = {
+    ACQ: "announced", DIV: "announced", ACT: "initiated", REV: "initiated", TO: "live",
+    GP: "live", CAP: "announced", SPIN: "announced", RIGHTS: "live", RESTR: "announced",
+    LIQ: "announced", DELIST: "notice", ITEND: "live", TERM: "terminated", SPAC: "de-SPAC",
+    MGMT: "change", OTHER: "announced",
+}
 
 # --- form_type -> (category, stage) for structured forms --------------------
 STRUCTURED: dict[str, tuple[str, str]] = {
@@ -231,6 +244,20 @@ def apply_floor(mc_musd: float | None, floor: float) -> bool | None:
     return float(mc_musd) >= float(floor)
 
 
+def _terms_dict(raw: object) -> dict:
+    """Parse the LLM `llm_terms` JSON string (deal terms) into a dict; {} on anything else."""
+    if not raw or (isinstance(raw, float) and pd.isna(raw)):
+        return {}
+    if isinstance(raw, dict):
+        return raw
+    try:
+        import json as _json
+        obj = _json.loads(str(raw))
+        return obj if isinstance(obj, dict) else {}
+    except Exception:  # noqa: BLE001
+        return {}
+
+
 # ---- enrichment (market cap for the floor) ---------------------------------
 
 def _universe_caps() -> tuple[dict[int, str], dict[str, float]]:
@@ -277,6 +304,52 @@ def _universe_caps() -> tuple[dict[int, str], dict[str, float]]:
     return cik_ticker, mc
 
 
+# categories that progress along an announced -> closed / terminated arc (P3.1)
+_DEAL_ARC = frozenset({ACQ, TO, GP, SPIN, DIV})
+
+
+def lifecycle(df: pd.DataFrame) -> dict[tuple, dict]:
+    """Link the SAME deal's filings into a timeline — our edge over the stageless weekly
+    digest. Group classified events by (cik, category), order by filing date, and derive a
+    current stage + stage history + amendment count. Terminal states ("terminated" / "closed")
+    are inferred from the filer's OTHER rows: a Deal-Terminations event, an 8-K Item 2.01
+    completion, or a Form 15 deregistration. Returns {(cik, category): {...}}. Pure."""
+    out: dict[tuple, dict] = {}
+    if df is None or df.empty:
+        return out
+    # per-filer terminal signals, read across ALL of a CIK's rows (not just one category)
+    term: dict[str, set] = {}
+    for cik, g in df.groupby(df.cik.astype(str)):
+        flags: set[str] = set()
+        if (g.category == TERM).any():
+            flags.add("terminated")
+        items = g["items"].astype(str) if "items" in g.columns else pd.Series("", index=g.index)
+        if items.str.contains("2.01", na=False).any() or g.form_type.isin(["15-12B", "15-12G"]).any():
+            flags.add("closed")
+        if flags:
+            term[cik] = flags
+    work = df[df.status == "ok"]
+    for (cik, cat), g in work.groupby([work.cik.astype(str), work.category]):
+        g = g.sort_values("date_filed")
+        hist = [{"date": r.get("date_filed"), "stage": r.get("stage"), "form": r.get("form_type")}
+                for _, r in g.iterrows()]
+        cur = g.iloc[-1].get("stage")
+        terminal = None
+        if cat in _DEAL_ARC:
+            flags = term.get(str(cik), set())
+            if "terminated" in flags:
+                terminal, cur = "terminated", "terminated"
+            elif "closed" in flags:
+                terminal, cur = "closed", "closed"
+        out[(str(cik), cat)] = {
+            "current_stage": cur, "stage_history": hist,
+            "n_amendments": int(g.form_type.astype(str).str.contains(r"/A", na=False).sum()),
+            "n_filings": int(len(g)), "first_date": g.date_filed.min(),
+            "last_date": g.date_filed.max(), "terminal": terminal,
+        }
+    return out
+
+
 def build_situations() -> pd.DataFrame:
     """Classify + enrich + floor every stored event. Returns the full frame
     (all rows, with category/stage/status/ticker/mc/floor_pass/cross_border)."""
@@ -314,6 +387,29 @@ def build_situations() -> pd.DataFrame:
         df.loc[promote, "status"] = "ok"
         df.loc[promote, "confidence"] = "low"        # keyword heuristic, not verified
 
+    # LLM verify lane (P1.1): the model read the deferred filings and returned a verified
+    # category + role + confidence. This OVERRIDES the noisy keyword text-lane — a real
+    # category becomes high/medium-confidence; category "None" is the model judging it not a
+    # special situation, which DROPS the keyword false positive (the ~67%-FP precision fix).
+    if "llm_category" in df.columns:
+        for col in ("llm_confidence", "llm_role", "role"):
+            if col not in df.columns:
+                df[col] = pd.NA
+        llm = df.llm_category.astype("string").str.strip()
+        valid = llm.isin(MATURE_CATEGORIES).fillna(False)
+        is_none = llm.str.lower().eq("none").fillna(False)
+        if valid.any():
+            df.loc[valid, "category"] = llm[valid]
+            df.loc[valid, "status"] = "ok"
+            df.loc[valid, "role"] = df.loc[valid, "llm_role"]
+            conf = df.loc[valid, "llm_confidence"].astype("string").str.lower()
+            df.loc[valid, "confidence"] = conf.where(conf.isin(["high", "medium", "low"]), "medium")
+            df.loc[valid, "stage"] = df.loc[valid].apply(
+                lambda r: r["stage"] if (r.get("stage") and not (isinstance(r["stage"], float) and pd.isna(r["stage"])))
+                else LLM_STAGE_DEFAULT.get(r["category"], "announced"), axis=1)
+        if is_none.any():
+            df.loc[is_none, ["status", "category", "stage", "confidence"]] = ["skip", None, None, "high"]
+
     # cross-filing Going-Private upgrade: any CIK with an SC 13E-3 -> its merger
     # proxy / third-party tender is an affiliate take-private (§B1).
     gp_ciks = set(df.loc[df.form_type.str.startswith("SC 13E3"), "cik"].astype(str))
@@ -345,6 +441,14 @@ def build_situations() -> pd.DataFrame:
     df["mc_musd"] = df.ticker.apply(lambda t: mc.get(t))
     floor = float(_cfg().get("market_cap_floor_musd", 100))
     df["floor_pass"] = df.mc_musd.apply(lambda m: apply_floor(m, floor))
+
+    # lifecycle / stage tracking (P3.1): link each deal's filings into a timeline and stamp
+    # the current stage (incl. terminal "terminated"/"closed") + amendment count per row.
+    lc = lifecycle(df)
+    keys = list(zip(df.cik.astype(str), df.category))
+    df["current_stage"] = [(lc.get(k) or {}).get("current_stage") for k in keys]
+    df["n_amendments"] = [(lc.get(k) or {}).get("n_amendments") for k in keys]
+    df["deal_terminal"] = [(lc.get(k) or {}).get("terminal") for k in keys]
     return df
 
 
@@ -416,6 +520,102 @@ def _digest_rows(latest_issue_only: bool = True) -> list[dict]:
     return rows
 
 
+def _closes_panel() -> pd.DataFrame:
+    """US daily closes (breadth caches + the backtest backfill), tickers as columns.
+    Reused by the merger-arb spread lane (P1.2) to read live + unaffected prices."""
+    frames = []
+    for g in ("breadth", "midcap_breadth", "smallcap_breadth"):
+        p = config.data_dir() / g / "_closes_cache.parquet"
+        if p.exists():
+            frames.append(pd.read_parquet(p))
+    btp = config.data_dir() / GROUP / "bt_prices.parquet"
+    if btp.exists():
+        frames.append(pd.read_parquet(btp))
+    if not frames:
+        return pd.DataFrame()
+    df = pd.concat(frames, axis=1, sort=False)
+    try:
+        df.index = pd.to_datetime(df.index)
+    except Exception:  # noqa: BLE001
+        return pd.DataFrame()
+    return df.loc[:, ~df.columns.duplicated()].sort_index()
+
+
+def _price_before(series: pd.Series, date_str: object, offset_rows: int) -> float | None:
+    """Close ~offset_rows trading days before date_str — the unaffected-price proxy."""
+    s = series.dropna()
+    if s.empty or not date_str or (isinstance(date_str, float) and pd.isna(date_str)):
+        return None
+    try:
+        d = pd.Timestamp(date_str)
+    except Exception:  # noqa: BLE001
+        return None
+    pos = s.index.searchsorted(d)
+    j = int(pos) - int(offset_rows)
+    return float(s.iloc[j]) if 0 <= j < len(s) else None
+
+
+def _enrich_arb(sits: list[dict]) -> int:
+    """Attach an `arb` block (spread / annualized / days-to-close / downside-on-break) to
+    each Acquisition / Tender Offer / Going-Private situation that carries a deal price.
+    Mutates `sits` in place; returns how many were enriched. Best-effort, never raises."""
+    from engine import special_arb as arb
+    try:
+        panel = _closes_panel()
+    except Exception as e:  # noqa: BLE001
+        log.warning("special_situations arb: closes panel failed: %s", e)
+        return 0
+    if panel.empty:
+        return 0
+    last = panel.iloc[-1]
+    n = 0
+    for s in sits:
+        if s.get("category") not in arb.ARB_CATEGORIES:
+            continue
+        terms = arb.parse_terms(s.get("deal_terms"))
+        if not terms.get("price_per_share"):
+            continue
+        base = _norm_ticker(s.get("ticker"))
+        if not base or base not in panel.columns:
+            continue
+        lp = last.get(base)
+        when = s.get("date_filed") or s.get("date")
+        unaff = _price_before(panel[base], when, 30)
+        m = arb.arb_metrics(terms["price_per_share"], lp,
+                            expected_close=terms.get("expected_close"),
+                            consideration=terms.get("consideration"),
+                            currency=terms.get("currency"),
+                            unaffected_price=unaff)
+        if m:
+            s["arb"] = m
+            n += 1
+    return n
+
+
+def _news_rows() -> list[dict]:
+    """Newswire-lane situations (P2.1) for the form-absent categories. Separate low-confidence
+    lane (data/special_situations/news.parquet); kept out of build_situations / the backtest
+    so the EDGAR point-in-time signal stays clean. Empty unless the gated lane has run."""
+    p = config.data_dir() / GROUP / "news.parquet"
+    if not p.exists():
+        return []
+    d = pd.read_parquet(p)
+    if d.empty:
+        return []
+    rows = []
+    for _, r in d.iterrows():
+        rows.append({
+            "id": f"news-{r.get('id')}", "ticker": r.get("ticker"), "company": r.get("company"),
+            "category": r.get("category"), "stage": r.get("stage") or "announced",
+            "form_type": "Newswire", "cross_border": False, "mc_musd": None,
+            "date_filed": r.get("date"), "source_url": r.get("url"),
+            "summary": (r.get("summary") if pd.notna(r.get("summary")) else None),
+            "business_desc": None, "country": "US", "source_lane": "newswire",
+            "live": False, "confidence": r.get("confidence") or "low",
+        })
+    return rows
+
+
 def desk_payload(latest_issue_only: bool = True) -> dict:
     """Merged desk: latest-issue digest situations (with summaries) + live EDGAR,
     deduped by (ticker, category). EDGAR-confirmed digest rows get live=True and the
@@ -442,6 +642,13 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         r["live"] = nt in edgar_tickers                       # our pipeline independently flagged this name
         merged[(nt, r["category"])] = r
 
+    # newswire lane (P2.1): add the form-absent categories where the digest doesn't already
+    # cover the same (ticker, category). Low-confidence; EDGAR confirmation upgrades below.
+    for r in _news_rows():
+        k = (_norm_ticker(r["ticker"]), r["category"])
+        if k not in merged:
+            merged[k] = r
+
     if not (elive is None or elive.empty):
         for _, r in elive.iterrows():
             k = (_norm_ticker(r.get("ticker")), r.get("category"))
@@ -451,7 +658,10 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
             else:
                 merged[k] = {
                     "id": r.get("id"), "ticker": r.get("ticker"), "company": r.get("company"),
-                    "category": r.get("category"), "stage": r.get("stage") or "",
+                    "category": r.get("category"),
+                    "stage": r.get("current_stage") or r.get("stage") or "",
+                    "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,
+                    "terminal": (r.get("deal_terminal") if pd.notna(r.get("deal_terminal")) else None),
                     "form_type": r.get("form_type"), "cross_border": bool(r.get("cross_border")),
                     "mc_musd": r.get("mc_musd"), "date_filed": r.get("date_filed"),
                     "source_url": r.get("source_url"),
@@ -459,11 +669,15 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
                     "business_desc": None, "country": "US",
                     "source_lane": "edgar", "live": True,
                     "confidence": r.get("confidence") or "high",
+                    "role": (r.get("role") if pd.notna(r.get("role")) else None),
+                    "deal_terms": _terms_dict(r.get("llm_terms")),
                 }
 
     sits = [s for s in merged.values()
             if apply_floor(s.get("mc_musd"), floor) is not False]   # keep True + unknown
     sits.sort(key=lambda s: (s.get("date_filed") or "", s.get("category") or ""), reverse=True)
+
+    n_arb = _enrich_arb(sits)        # P1.2 merger-arb spread on deal situations w/ a price
 
     counts: dict[str, int] = {}
     for s in sits:
@@ -473,8 +687,10 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         "digest_situations": sum(1 for s in sits if s["source_lane"] == "digest"),
         "edgar_confirmed": sum(1 for s in sits if s["source_lane"] == "digest" and s.get("live")),
         "edgar_only": sum(1 for s in sits if s["source_lane"] == "edgar"),
+        "newswire": sum(1 for s in sits if s["source_lane"] == "newswire"),
         "cross_border": sum(1 for s in sits if s.get("cross_border")),
         "with_summary": sum(1 for s in sits if s.get("summary")),
+        "with_arb": n_arb,
         "high_confidence": sum(1 for s in sits if s.get("confidence") == "high"),
         "low_confidence": sum(1 for s in sits if s.get("confidence") == "low"),
         "floor_musd": floor,
@@ -514,24 +730,57 @@ def mastermind_emit() -> dict:
                 "mc_musd": (float(r["market_cap_musd"]) if pd.notna(r.get("market_cap_musd")) else None),
             })
 
+    for r in _news_rows():
+        consider(r.get("ticker"), {
+            "ticker": r.get("ticker"), "company": r.get("company"),
+            "category": r.get("category"), "stage": r.get("stage") or "announced",
+            "date": r.get("date_filed"), "country": "US", "cross_border": False,
+            "source": "newswire", "source_url": r.get("source_url"), "confidence": "low",
+            "brief": r.get("summary"), "mc_musd": None,
+        })
+
+    from engine import activist
     edf = build_situations()
+    track = activist.filer_track_record(edf, _closes_panel()) if not edf.empty else {"by_filer": {}}
     if not edf.empty:
         for _, r in edf[edf.status == "ok"].iterrows():
+            fname = activist.filer_of(r)
+            ftr = track["by_filer"].get(activist.norm_filer(fname)) if fname else None
             consider(r.get("ticker"), {
                 "ticker": r.get("ticker"), "company": r.get("company"),
-                "category": r.get("category"), "stage": r.get("stage") or "",
+                "category": r.get("category"),
+                "stage": r.get("current_stage") or r.get("stage") or "",
+                "n_amendments": int(r["n_amendments"]) if pd.notna(r.get("n_amendments")) else 0,
                 "date": r.get("date_filed"), "country": "US",
                 "cross_border": bool(r.get("cross_border")),
                 "source": "edgar", "source_url": r.get("source_url"),
                 "confidence": r.get("confidence") or "high",
+                "role": (r.get("role") if pd.notna(r.get("role")) else None),
+                "deal_terms": _terms_dict(r.get("llm_terms")) or None,
+                "activist_filer": fname,
+                "filer_track": ftr,
                 "brief": (r.get("summary") if pd.notna(r.get("summary")) else r.get("hk")),
                 "mc_musd": (float(r["mc_musd"]) if pd.notna(r.get("mc_musd")) else None),
             })
+
+    # P1.2 merger-arb book: attach spread economics + surface a risk-arb context list for
+    # the trading brain (announced cash deals with a price). Context only, never a size.
+    _enrich_arb(list(by_ticker.values()))
+    risk_arb = sorted(
+        ({"ticker": r.get("ticker"), "company": r.get("company"), "category": r.get("category"),
+          "source": r.get("source"), **r["arb"]}
+         for r in by_ticker.values() if r.get("arb")),
+        key=lambda a: (a.get("annualized_pct") is not None, a.get("annualized_pct") or -1e9),
+        reverse=True)
+
+    # P3.2 activist track-record book: filers with enough priced campaigns to be "tracked".
+    activist_filers = {k: v for k, v in track["by_filer"].items() if v.get("status") == "tracked"}
 
     return {
         "schema": "special_situations.v1", "generated_at": now,
         "is_context_only": True, "disclaimer": DISCLAIMER,
         "n": len(by_ticker), "by_ticker": by_ticker,
+        "risk_arb": risk_arb, "activist_filers": activist_filers,
     }
 
 

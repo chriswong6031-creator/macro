@@ -49,6 +49,7 @@ STAGE_ZH = {
     "vote-scheduled": "已定投票", "registered": "已登记", "terminated": "已终止",
     "filed": "已申报", "notice": "通知", "completed": "已完成", "change": "变动",
     "proxy-fight": "代理权之争", "target-response": "标的回应",
+    "closed": "已成交", "terminated": "已终止", "de-SPAC": "去SPAC",
 }
 
 
@@ -60,6 +61,20 @@ def _txt(v, dash: str = "—") -> str:
         return dash
     s = str(v).strip()
     return dash if (not s or s.lower() == "nan") else s
+
+
+def _arb_str(a: dict | None) -> str:
+    """Compact merger-arb line: 'spread +8.3% · +24%/yr · ~120d · break -31%'."""
+    if not a:
+        return ""
+    parts = [f"spread {a['gross_spread_pct']:+.1f}%"]
+    if a.get("annualized_pct") is not None:
+        parts.append(f"{a['annualized_pct']:+.0f}%/yr")
+    if a.get("days_to_close"):
+        parts.append(f"~{a['days_to_close']}d")
+    if a.get("downside_on_break_pct") is not None:
+        parts.append(f"break {a['downside_on_break_pct']:+.0f}%")
+    return " · ".join(parts)
 
 
 def _usd_m(mc) -> str:
@@ -77,10 +92,14 @@ def _usd_m(mc) -> str:
 def build(refresh: bool = True) -> str:
     if refresh:
         from collectors import special_situations as col
+        from collectors import special_news as colnews
         try:
             col.fetch_events()        # sweep new daily-index dates (bounded by watermark)
-            col.enrich_text()         # classify new deferred filings from text (cached)
-            col.enrich_summaries()    # 88-word summary for EDGAR-only situations (gated; no-op without key)
+            col.enrich_text()         # cheap keyword pre-filter on deferred filings (cached)
+            col.enrich_filers()       # P3.2 reporting-person from 13D cover pages (deterministic, no key)
+            col.enrich_classify()     # P1.1 LLM-verify deferred filings: category/role/terms (gated; no-op without key)
+            col.enrich_summaries()    # 88-word summary (+ deal terms, activist filer) for structured situations (gated)
+            colnews.fetch_news_situations()  # P2.1 newswire form-absent categories (gated; no-op when off)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 
@@ -104,7 +123,8 @@ def build(refresh: bool = True) -> str:
             "cross_border": bool(s.get("cross_border")), "mc": _usd_m(s.get("mc_musd")),
             "url": s.get("edgar_url") or s.get("source_url"),
             "summary": _txt(s.get("summary"), dash=""), "live": bool(s.get("live")),
-            "low_conf": s.get("confidence") == "low",
+            "low_conf": s.get("confidence") == "low", "arb": _arb_str(s.get("arb")),
+            "n_amend": int(s.get("n_amendments") or 0), "terminal": s.get("terminal"),
         } for s in rows_src]
         groups.append({"cat": cat, "cat_zh": CAT_ZH.get(cat, cat),
                        "color": CAT_COLOR.get(cat, C["muted"]), "n": len(rows), "rows": rows})
