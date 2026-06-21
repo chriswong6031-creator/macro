@@ -10,7 +10,14 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pipeline
+  # Daily runs in its OWN lane so a long-running backfill / weekly job can never
+  # queue-cancel or starve the daily data refresh (the bug: a 2-3h special-sits
+  # backfill held the shared "pipeline" lane and the data on the site froze for
+  # hours while feature deploys kept happening). Every push step in this workflow
+  # uses a rebase-retry loop, so running concurrently with a batch job is race-safe.
+  # cancel-in-progress stays false: a queued daily still runs (two simultaneous
+  # dailies would simply dedup to the latest).
+  group: pipeline-daily
   cancel-in-progress: false
 
 jobs:
