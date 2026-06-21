@@ -1,0 +1,85 @@
+{
+  "schema": "china_validation.v1",
+  "is_context_only": true,
+  "generated_utc": "2026-06-21T12:47:40.602326+00:00",
+  "fdr_alpha": 0.1,
+  "horizons": [
+    5,
+    10,
+    21,
+    63
+  ],
+  "families": {
+    "valuation": {
+      "family": "valuation",
+      "status": "accruing",
+      "tier": "display",
+      "proven": false,
+      "n_obs": 0,
+      "by_horizon": {},
+      "sign_expected": 1,
+      "reason": "only 0 cross-sections (< MIN_DATES 6)",
+      "is_context_only": true,
+      "q_fdr": null
+    },
+    "margin": {
+      "family": "margin",
+      "status": "tested",
+      "tier": "pending",
+      "proven": false,
+      "n_obs": 3412,
+      "by_horizon": {
+        "5": {
+          "mean_ic": 0.00142,
+          "ic_ir": null,
+          "t_hac": 1.655,
+          "p_hac": 0.0979,
+          "hit": null,
+          "n": 3412
+        },
+        "10": {
+          "mean_ic": 0.00224,
+          "ic_ir": null,
+          "t_hac": 1.352,
+          "p_hac": 0.1764,
+          "hit": null,
+          "n": 3407
+        },
+        "21": {
+          "mean_ic": 0.00387,
+          "ic_ir": null,
+          "t_hac": 1.095,
+          "p_hac": 0.2737,
+          "hit": null,
+          "n": 3396
+        },
+        "63": {
+          "mean_ic": 0.01524,
+          "ic_ir": null,
+          "t_hac": 1.295,
+          "p_hac": 0.1952,
+          "hit": null,
+          "n": 3354
+        }
+      },
+      "sign_expected": -1,
+      "sign_ok": false,
+      "t_hac": 1.095,
+      "mean_ic": 0.00387,
+      "is_context_only": true,
+      "q_fdr": 0.2737
+    },
+    "news_sentiment": {
+      "family": "news_sentiment",
+      "status": "accruing",
+      "tier": "display",
+      "proven": false,
+      "n_obs": 0,
+      "by_horizon": {},
+      "sign_expected": -1,
+      "reason": "signal series missing",
+      "is_context_only": true,
+      "q_fdr": null
+    }
+  }
+}
