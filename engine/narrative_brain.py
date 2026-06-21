@@ -330,6 +330,8 @@ def _append_ledger(brief: dict, root=None) -> int:
     try:
         p = (config.data_dir() if root is None else (Path(root) / "data")) / "narrative_brain" / "theses.jsonl"
         p.parent.mkdir(parents=True, exist_ok=True)
+        from engine.regime_label import quad_label      # regime stamp → by_regime track record
+        regime = quad_label(config.ROOT if root is None else Path(root))
         seen = set()
         if p.exists():
             for line in p.read_text().splitlines():
@@ -342,7 +344,7 @@ def _append_ledger(brief: dict, root=None) -> int:
             for r in rows:
                 if r["id"] in seen:
                     continue
-                fh.write(json.dumps(r, separators=(",", ":")) + "\n")
+                fh.write(json.dumps({**r, "regime": regime}, separators=(",", ":")) + "\n")
                 n += 1
         return n
     except Exception as e:  # noqa: BLE001
