@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -44,6 +45,7 @@ def test_tilt_conditioning():
 
 
 def test_structure_and_recovery():
+    pytest.importorskip("scipy")   # the Spearman rank check below routes through scipy.stats
     closes, factor, names, sectors, true = _synthetic()
     out = gb.compute_global_betas(closes, factor, "Neutral", names, sectors,
                                   win=120, shrink=1.0, min_names=8)
