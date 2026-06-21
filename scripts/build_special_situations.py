@@ -92,12 +92,14 @@ def _usd_m(mc) -> str:
 def build(refresh: bool = True) -> str:
     if refresh:
         from collectors import special_situations as col
+        from collectors import special_news as colnews
         try:
             col.fetch_events()        # sweep new daily-index dates (bounded by watermark)
             col.enrich_text()         # cheap keyword pre-filter on deferred filings (cached)
             col.enrich_filers()       # P3.2 reporting-person from 13D cover pages (deterministic, no key)
             col.enrich_classify()     # P1.1 LLM-verify deferred filings: category/role/terms (gated; no-op without key)
             col.enrich_summaries()    # 88-word summary (+ deal terms, activist filer) for structured situations (gated)
+            colnews.fetch_news_situations()  # P2.1 newswire form-absent categories (gated; no-op when off)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 

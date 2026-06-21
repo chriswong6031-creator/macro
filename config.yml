@@ -4027,3 +4027,7 @@ special_situations:                # event-driven Special Situations desk (displ
   api_key_env: "DEEPSEEK_API_KEY"
   llm_base_url: "https://api.deepseek.com/anthropic"
   llm_min_confidence: "medium"
+  # P2.1 newswire lane — catches the form-absent categories (Strategic Reviews, Capital
+  # Returns, Deal Terminations, Divestitures) from quality wires. OFF until CI-verified;
+  # display-only, low-confidence, explicit-ticker items only.
+  newswire: false

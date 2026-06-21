@@ -592,6 +592,30 @@ def _enrich_arb(sits: list[dict]) -> int:
     return n
 
 
+def _news_rows() -> list[dict]:
+    """Newswire-lane situations (P2.1) for the form-absent categories. Separate low-confidence
+    lane (data/special_situations/news.parquet); kept out of build_situations / the backtest
+    so the EDGAR point-in-time signal stays clean. Empty unless the gated lane has run."""
+    p = config.data_dir() / GROUP / "news.parquet"
+    if not p.exists():
+        return []
+    d = pd.read_parquet(p)
+    if d.empty:
+        return []
+    rows = []
+    for _, r in d.iterrows():
+        rows.append({
+            "id": f"news-{r.get('id')}", "ticker": r.get("ticker"), "company": r.get("company"),
+            "category": r.get("category"), "stage": r.get("stage") or "announced",
+            "form_type": "Newswire", "cross_border": False, "mc_musd": None,
+            "date_filed": r.get("date"), "source_url": r.get("url"),
+            "summary": (r.get("summary") if pd.notna(r.get("summary")) else None),
+            "business_desc": None, "country": "US", "source_lane": "newswire",
+            "live": False, "confidence": r.get("confidence") or "low",
+        })
+    return rows
+
+
 def desk_payload(latest_issue_only: bool = True) -> dict:
     """Merged desk: latest-issue digest situations (with summaries) + live EDGAR,
     deduped by (ticker, category). EDGAR-confirmed digest rows get live=True and the
@@ -617,6 +641,13 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         nt = _norm_ticker(r["ticker"])
         r["live"] = nt in edgar_tickers                       # our pipeline independently flagged this name
         merged[(nt, r["category"])] = r
+
+    # newswire lane (P2.1): add the form-absent categories where the digest doesn't already
+    # cover the same (ticker, category). Low-confidence; EDGAR confirmation upgrades below.
+    for r in _news_rows():
+        k = (_norm_ticker(r["ticker"]), r["category"])
+        if k not in merged:
+            merged[k] = r
 
     if not (elive is None or elive.empty):
         for _, r in elive.iterrows():
@@ -656,6 +687,7 @@ def desk_payload(latest_issue_only: bool = True) -> dict:
         "digest_situations": sum(1 for s in sits if s["source_lane"] == "digest"),
         "edgar_confirmed": sum(1 for s in sits if s["source_lane"] == "digest" and s.get("live")),
         "edgar_only": sum(1 for s in sits if s["source_lane"] == "edgar"),
+        "newswire": sum(1 for s in sits if s["source_lane"] == "newswire"),
         "cross_border": sum(1 for s in sits if s.get("cross_border")),
         "with_summary": sum(1 for s in sits if s.get("summary")),
         "with_arb": n_arb,
@@ -697,6 +729,15 @@ def mastermind_emit() -> dict:
                 "brief": (str(summ)[:300] if summ and pd.notna(summ) else r.get("headline")),
                 "mc_musd": (float(r["market_cap_musd"]) if pd.notna(r.get("market_cap_musd")) else None),
             })
+
+    for r in _news_rows():
+        consider(r.get("ticker"), {
+            "ticker": r.get("ticker"), "company": r.get("company"),
+            "category": r.get("category"), "stage": r.get("stage") or "announced",
+            "date": r.get("date_filed"), "country": "US", "cross_border": False,
+            "source": "newswire", "source_url": r.get("source_url"), "confidence": "low",
+            "brief": r.get("summary"), "mc_musd": None,
+        })
 
     from engine import activist
     edf = build_situations()
