@@ -47,6 +47,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import validation as V              # noqa: E402
+from engine.trial_ledger import TrialLedger     # noqa: E402
 from engine.group_flow import _causal_z         # noqa: E402
 from engine.indicators import pct_rank_window    # noqa: E402
 from engine.theme_scoring import _label, _reco, WEIGHTS  # noqa: E402
@@ -431,7 +432,8 @@ SZ_TARGETS = [0.7, 0.85, 1.0, 1.2]   # MULTIPLES of the book's OWN trailing-medi
                                      # across universes: sectors ~15% vol, themes ~40% — both "run
                                      # toward typical vol; de-risk when hotter, lever when calmer")
 SZ_CAPS = [1.0, 1.3, 1.5]
-SZ_N_TRIALS = len(SZ_VOL_WINS) * len(SZ_TARGETS) * len(SZ_CAPS)   # 36 — honest DSR haircut
+SZ_N_TRIALS = len(SZ_VOL_WINS) * len(SZ_TARGETS) * len(SZ_CAPS)   # 36 in-code grid (logged to ledger)
+SZ_FAMILY = "baskets_voltarget_sizing"           # Trial-Ledger multiple-testing budget key
 # default = DE-RISK-ONLY (cap 1.0): the overlay can only cut exposure, never lever above the
 # base book. Levering up (cap>1) chases a Sharpe lift the data doesn't support and deepens
 # some resampled drawdowns — the honest drawdown-control default never exceeds the base.
@@ -454,13 +456,15 @@ def _daily_bill(idx) -> pd.Series:
 
 
 def _rotation_book(P: pd.DataFrame, top_n: int = 4, lookback: int = 12,
-                   trend_ma: int = 200) -> pd.DataFrame:
+                   trend_ma: int = 200, mom_monthly: pd.DataFrame | None = None) -> pd.DataFrame:
     """Daily EW weights of the validated dual-momentum book: monthly select the top_n by
-    (lookback-1)m relative momentum among names ABOVE their own trend_ma, equal-weight,
-    daily hold; idle slots (fewer than top_n trend) sit in cash. Causal (month-end decision
-    uses data through that month-end; backtest_portfolio applies the next-bar lag)."""
+    (lookback-1)m momentum among names ABOVE their own trend_ma, equal-weight, daily hold;
+    idle slots (fewer than top_n trend) sit in cash. Causal (month-end decision uses data
+    through that month-end; backtest_portfolio applies the next-bar lag). `mom_monthly`
+    overrides the ranking signal (e.g. RESIDUAL momentum for the Build#4 A/B) — the absolute-
+    trend gate stays the price 200d gate, applied identically to both books."""
     M = P.resample("ME").last()
-    mom = M.pct_change(lookback) - M.pct_change(1)
+    mom = mom_monthly if mom_monthly is not None else (M.pct_change(lookback) - M.pct_change(1))
     above = (P > P.rolling(trend_ma, min_periods=trend_ma // 2).mean())
     w = pd.DataFrame(0.0, index=M.index, columns=P.columns)
     for dt in M.index[max(lookback, 10):]:
@@ -576,19 +580,27 @@ def run_sizing(region: str = "us") -> dict:
     vt = bt(vt_w)
     brake = bt(_book_brake(ew, P, float(vt_w.abs().sum(axis=1).mean())))
 
-    # DSR over the honest 36-config grid (vol_win x target x cap)
+    # DSR over the sizing grid (vol_win x target_mult x cap). Honest multiple-testing
+    # accounting: log EVERY config to the Trial Ledger AT GENERATION (the caller cannot
+    # lowball it), plus a declared budget covering the research variants NOT itemized here
+    # (the earlier absolute-vol-target grid + the de-risk-only-vs-lever + regime-throttle
+    # exploration). The DSR then deflates by the ledger's count, not a literal.
+    led = TrialLedger()
+    grid = [{"vol_win": a, "target_mult": t, "cap": c}
+            for a in SZ_VOL_WINS for t in SZ_TARGETS for c in SZ_CAPS]
+    led.log_grid(grid, family=SZ_FAMILY, info_cutoff="2026-06-21", source="calibrate_baskets:sizing")
+    led.log_declared_budget(80, family=SZ_FAMILY,
+                            reason="vol-target research: absolute(36)+relative(36) grids + cap/throttle variants")
     srs, best = [], None
-    for a in SZ_VOL_WINS:
-        for t in SZ_TARGETS:
-            for c in SZ_CAPS:
-                m = V.ret_moments(bt(_book_voltarget(ew, P, a, t, c))["net"])
-                if m is None:
-                    continue
-                srs.append(m[0])
-                if best is None or m[0] > best[0]:
-                    best = (m[0], m[1], m[2], m[3], (a, t, c))
+    for cfg in grid:
+        m = V.ret_moments(bt(_book_voltarget(ew, P, cfg["vol_win"], cfg["target_mult"], cfg["cap"]))["net"])
+        if m is None:
+            continue
+        srs.append(m[0])
+        if best is None or m[0] > best[0]:
+            best = (m[0], m[1], m[2], m[3], (cfg["vol_win"], cfg["target_mult"], cfg["cap"]))
     sr_var = float(np.var(srs, ddof=1)) if len(srs) > 1 else None
-    dsr = V.deflated_sharpe(best[0], best[1], best[2], best[3], SZ_N_TRIALS,
+    dsr = V.deflated_sharpe(best[0], best[1], best[2], best[3], ledger=led, family=SZ_FAMILY,
                             sr_variance=sr_var, trading_year=252) if best else None
 
     ddci = _dd_reduction_ci(vt["net"], base["net"])
@@ -644,7 +656,7 @@ def run_sizing(region: str = "us") -> dict:
 
     return {"universe": "proxy_spdr_sectors", "span": [str(P.index.min().date()), str(P.index.max().date())],
             "verdict": verdict, "default": {"vol_win": vw, "target_mult": tg, "cap": cp, "floor": SZ_FLOOR},
-            "best_cfg": best[4] if best else None, "n_trials": SZ_N_TRIALS, "cost_bps": SZ_COST_BPS,
+            "best_cfg": best[4] if best else None, "n_trials": led.effective_n(SZ_FAMILY), "cost_bps": SZ_COST_BPS,
             "dsr": (dsr or {}).get("dsr"), "dsr_verdict": V.dsr_verdict((dsr or {}).get("dsr", 0)) if dsr else None,
             "vt": {"sharpe": round(vt_sh, 3), "maxdd_pct": round(vt_dd * 100, 1),
                    "cagr": vt.get("cagr"), "avg_gross": round(float(vt.get("avg_leverage", 0) or 0), 2),
@@ -657,6 +669,72 @@ def run_sizing(region: str = "us") -> dict:
                                 "dd_reduction_vs_vt_ci": thr_ddci,
                                 "sharpe": round(_ann_sharpe(thr["net"]), 3),
                                 "maxdd_pct": round(_maxdd_ret(thr["net"]) * 100, 1)}}
+
+
+# =========================================================================== #
+# BUILD#4 — residual (beta-stripped) momentum A/B. Does ranking the trend-gated book by
+# RESIDUAL momentum cut CRASH risk (MaxDD / skew) vs TOTAL momentum, additively after the
+# trend gate? Ship only if the DD-reduction CI vs the total book excludes 0; else residual
+# momentum stays a descriptive z-leg (the plan's pre-registered kill-test).
+# =========================================================================== #
+def _residual_momentum_monthly(P: pd.DataFrame, bench: pd.Series, lookback: int = 12,
+                               beta_win: int = 252, shrink: float = 0.5) -> pd.DataFrame:
+    """Monthly (lookback-1)m RESIDUAL momentum. Residual return e_i = r_i − β_i·bench (causal
+    rolling β shrunk toward 1, Blitz-style); the daily residual-return index is resampled
+    monthly and read as (lookback-1)m momentum, exactly parallel to the total-price form."""
+    rets, br = P.pct_change(), bench.pct_change()
+    resid = pd.DataFrame(index=P.index, columns=P.columns, dtype=float)
+    for c in P.columns:
+        r = rets[c]
+        cov = r.rolling(beta_win, min_periods=beta_win // 2).cov(br)
+        var = br.rolling(beta_win, min_periods=beta_win // 2).var()
+        beta = (cov / var.replace(0, np.nan)).shift(1)               # causal
+        beta = shrink * 1.0 + (1 - shrink) * beta                    # shrink toward 1
+        resid[c] = r - beta * br
+    ri = (1.0 + resid.fillna(0.0)).cumprod()                          # residual-return index
+    rim = ri.resample("ME").last()
+    return rim.pct_change(lookback) - rim.pct_change(1)
+
+
+def _skew(r: pd.Series):
+    r = r.dropna()
+    if len(r) < 12 or r.std() == 0:
+        return None
+    z = (r - r.mean()) / r.std()
+    return float((z ** 3).mean())
+
+
+def run_ranking_ab(region: str = "us") -> dict:
+    from engine import active_alloc as aa
+    spec = REGION_SECTORS[region]
+    P = sector_prices(region, monthly=False)
+    spy = _adj(spec["bench"], spec["group"])
+    if P.empty or spy is None or P.shape[1] < 4:
+        return {"error": "insufficient proxy data"}
+    spy = spy.reindex(P.index).ffill()
+    bill = _daily_bill(P.index)
+    led = TrialLedger()
+    abgrid = [{"beta_win": bw, "shrink": sh, "lookback": 12}
+              for bw in (126, 252, 504) for sh in (0.0, 0.5, 1.0)]
+    led.log_grid(abgrid, family="baskets_residual_rank", info_cutoff="2026-06-21",
+                 source="calibrate_baskets:residual_ab")
+    ew_total = _rotation_book(P)
+    mom_resid = _residual_momentum_monthly(P, spy, beta_win=252, shrink=0.5)
+    ew_resid = _rotation_book(P, mom_monthly=mom_resid)
+
+    def bt(w):
+        return aa.backtest_portfolio(w, P, bill, cost_bps=SZ_COST_BPS)
+
+    tot, res = bt(ew_total), bt(ew_resid)
+    ddci = _dd_reduction_ci(res["net"], tot["net"])       # residual vs total, BOTH trend-gated
+    additive = bool(ddci.get("favorable"))
+    return {"universe": "proxy_spdr_sectors", "n_trials": led.effective_n("baskets_residual_rank"),
+            "total": {"sharpe": round(_ann_sharpe(tot["net"]), 3), "maxdd_pct": round(_maxdd_ret(tot["net"]) * 100, 1),
+                      "skew": round(_skew(tot["net"]) or 0, 2), "cagr": tot.get("cagr")},
+            "residual": {"sharpe": round(_ann_sharpe(res["net"]), 3), "maxdd_pct": round(_maxdd_ret(res["net"]) * 100, 1),
+                         "skew": round(_skew(res["net"]) or 0, 2), "cagr": res.get("cagr")},
+            "dd_reduction_vs_total_ci": ddci,
+            "verdict": "additive_crash_control" if additive else "not_additive_descriptive"}
 
 
 # --------------------------------------------------------------------------- #
@@ -839,6 +917,15 @@ def main(do_live: bool = False) -> int:
     log.info("running SIZING / REGIME backtest (vol-target + throttle)…")
     out["sizing"] = run_sizing("us")
     _print_sizing(out["sizing"])
+
+    log.info("running BUILD#4 residual-momentum A/B…")
+    out["ranking_ab"] = run_ranking_ab("us")
+    ab = out["ranking_ab"]
+    if not ab.get("error"):
+        print(f"\n=== RESIDUAL-MOMENTUM A/B (both trend-gated, n_trials {ab.get('n_trials')}) ===")
+        print(f"  total-mom book:    Sharpe {ab['total']['sharpe']}  MaxDD {ab['total']['maxdd_pct']}%  skew {ab['total']['skew']}")
+        print(f"  residual-mom book: Sharpe {ab['residual']['sharpe']}  MaxDD {ab['residual']['maxdd_pct']}%  skew {ab['residual']['skew']}")
+        print(f"  DD-reduction (resid vs total) CI: {ab['dd_reduction_vs_total_ci'].get('dd_reduction_pp_ci')}  → {ab['verdict']}")
     if do_live:
         log.info("running LIVE universe (3y baskets, descriptive)…")
         out["live"] = run_live("us")

@@ -149,3 +149,27 @@ def test_vol_overlay_display_only_offered_not_applied(monkeypatch):
     assert vo["gross_after"] <= vo["gross_before"]              # de-risk only, never levers up
     monkeypatch.setattr(nr, "_sizing_calibration", lambda: {})
     assert nr._vol_overlay(["t1"], {"t1": 0.25}, byid) is None  # absent -> None
+
+
+# ----------------------------------------------------------- residual A/B (Build#4)
+def test_residual_momentum_monthly_causal_and_columns():
+    """Residual momentum uses a SHIFTED (causal) beta and emits a monthly per-name frame."""
+    idx = pd.date_range("2018-01-01", periods=600, freq="B")
+    rng = np.random.default_rng(5)
+    P = pd.DataFrame({c: 100 * np.cumprod(1 + rng.normal(0, 0.02, 600)) for c in ["A", "B", "C"]}, index=idx)
+    bench = pd.Series(100 * np.cumprod(1 + rng.normal(0, 0.015, 600)), index=idx)
+    rm = cb._residual_momentum_monthly(P, bench, beta_win=126, shrink=0.5)
+    assert set(rm.columns) == {"A", "B", "C"}
+    assert bool(rm.index.is_month_end.all())                 # monthly index
+    assert rm.iloc[0].isna().all()                           # warm-up -> NaN, no look-ahead
+
+
+def test_rotation_book_honors_momentum_override():
+    """The Build#4 A/B reuses _rotation_book with a residual-momentum override; the override
+    must drive selection (here it forces B) while the price trend-gate still applies."""
+    idx = pd.date_range("2017-01-01", periods=700, freq="B")
+    P = pd.DataFrame({"A": np.linspace(100, 220, 700), "B": np.linspace(100, 160, 700)}, index=idx)
+    M = P.resample("ME").last()
+    mom = pd.DataFrame(0.0, index=M.index, columns=["A", "B"]); mom["B"] = 1.0  # prefer B
+    w = cb._rotation_book(P, top_n=1, mom_monthly=mom)
+    assert (w["B"] > 0).any() and float(w["A"].sum()) == 0.0
