@@ -43,7 +43,7 @@
     "label": "deteriorating",
     "name": "Battery & Lithium",
     "name_zh": "\u9502\u7535\u6c60",
-    "rank": 9,
+    "rank": 10,
     "reco": "avoid",
     "score": 41
   },
@@ -51,9 +51,9 @@
     "label": "neutral",
     "name": "Brokers & Securities",
     "name_zh": "\u5238\u5546",
-    "rank": 10,
+    "rank": 9,
     "reco": "hold",
-    "score": 41
+    "score": 42
   },
   "cn_coal": {
     "label": "deteriorating",

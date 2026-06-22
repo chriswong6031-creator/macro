@@ -1,12 +1,13 @@
 {
   "date": "2026-06-21",
   "regime": "mixed / no clear trend",
-  "breadth": 0.2,
+  "breadth": 0.3,
   "favored": [
     "equity_us",
     "equity_sm",
     "credit_hy",
-    "copper"
+    "copper",
+    "dollar"
   ],
   "correlation": "concentrated"
 }

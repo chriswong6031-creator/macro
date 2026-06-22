@@ -154,3 +154,5 @@
 {"date": "2026-06-18", "ticker": "FWRD", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-18", "ticker": "PPC", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-18", "ticker": "SDGR", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-18", "ticker": "PFBC", "score": 85.0, "percentile": 85.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-18", "ticker": "ENSG", "score": 97.0, "percentile": 97.0, "regime": "mixed", "horizons": [21, 63, 126]}

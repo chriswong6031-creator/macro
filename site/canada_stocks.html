@@ -91,6 +91,35 @@
   .nb-note { font-size:8.5px; line-height:1.3; margin-top:3px; padding:2px 5px; border-radius:6px;
              color:var(--muted); background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
   .nb-note-anticipation { color:var(--link); background:color-mix(in srgb,var(--link) 8%,var(--panel)); }
+  /* ---- vol-managed size chip + entry-timing gauge (mirrors the US standout card) ---- */
+  .nb-bot { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:4px; font-size:10px; }
+  .nb-size { font-size:9.5px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;
+             padding:0 5px; border-radius:6px; border:1px solid var(--line); color:var(--muted); }
+  .nb-size.sz-up { color:var(--up); border-color:color-mix(in srgb,var(--up) 38%,var(--line));
+                   background:color-mix(in srgb,var(--up) 10%,var(--panel)); }
+  .nb-size.sz-dn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 42%,var(--line));
+                   background:color-mix(in srgb,var(--warn) 10%,var(--panel)); }
+  .nb-entry { margin:5px 0 1px; padding:5px 7px; border-radius:8px; border-left:3px solid var(--muted);
+              background:color-mix(in srgb,var(--text) 4%,var(--panel)); }
+  .nbe-buy_now, .nbe-partial { border-left-color:var(--up);
+              background:color-mix(in srgb,var(--up) 7%,var(--panel)); }
+  .nbe-buy_soon, .nbe-watch { border-left-color:var(--g-cold); }
+  .nbe-wait_pullback, .nbe-hold { border-left-color:var(--warn); }
+  .nbe-extended, .nbe-topping { border-left-color:var(--warn);
+              background:color-mix(in srgb,var(--warn) 7%,var(--panel)); }
+  .nbe-exit, .nbe-avoid, .nbe-blocked { border-left-color:var(--down);
+              background:color-mix(in srgb,var(--down) 7%,var(--panel)); }
+  .nbe-head { display:flex; align-items:center; gap:5px; }
+  .nbe-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
+  .nbe-dot.a3 { background:var(--up); box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 22%,transparent); }
+  .nbe-dot.a2 { background:var(--g-cold); }
+  .nbe-dot.a1 { background:var(--warn); }
+  .nbe-dot.a0 { background:var(--down); }
+  .nbe-status { font-size:10px; font-weight:800; color:var(--text); line-height:1.2; }
+  .nbe-zone { display:flex; align-items:baseline; gap:5px; margin-top:3px; }
+  .nbe-lbl { color:var(--muted); font-size:8px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+  .nbe-px { font-weight:800; font-size:11px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .nbe-pct { color:var(--muted); font-size:9px; font-variant-numeric:tabular-nums; }
   .ab { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
   .abcol h3 { font-size:12px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.04em; }
   .abcol .it { font-size:12.5px; padding:3px 0; border-bottom:1px solid var(--line); }
@@ -328,7 +357,7 @@
     <h1>🇨🇦 <span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-19 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-21 16:38 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-06-19 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-06-22 01:20 UTC</span>
   </div>
   
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">Standout TSX names ranked by sector-neutral residual momentum, with the cycle entry as timing context. Search any TSX stock from the box above; click a card for the full breakdown.</span><span class="l-zh">按板块中性残差动量排名的 TSX 个股精选，并以周期入场作为时机背景。可在上方搜索框查询任意 TSX 个股；点击卡片查看完整拆解。</span>
@@ -396,6 +425,30 @@
       
       
       
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~13+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$479.60–$502.50</span>
+          <span class="nbe-pct">-6.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 55.8% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -454,6 +507,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 82, 3-day 83 & weekly 89)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$160.20–$164.00</span>
+          <span class="nbe-pct">-4.3%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.58 of the conviction-base size (forecast vol 10.2% · inverse-vol ×2.15 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.58×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +32% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +32% — 追高</span><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -506,6 +583,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$155.20–$157.20</span>
+          <span class="nbe-pct">-2.6%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.36 of the conviction-base size (forecast vol 19.5% · inverse-vol ×1.13 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.36×</span>
+      </div>
+      
       
       
       
@@ -567,6 +668,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (momentum is fading — the 3-day/weekly momentum has crossed down). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$40.36–$42.17</span>
+          <span class="nbe-pct">-6.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 55.7% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -625,6 +750,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. Stretched/late — protect gains and don't start new positions; let the next low set up first.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$307.20–$308.00</span>
+          <span class="nbe-pct">-2.3%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.61 of the conviction-base size (forecast vol 43.0% · inverse-vol ×0.51 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.61×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +31% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +31% — 追高</span><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -677,6 +826,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$218.00–$221.20</span>
+          <span class="nbe-pct">-8.1%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 92.9% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
       
       
       
@@ -738,6 +911,30 @@
       
       
       
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$66.64–$67.65</span>
+          <span class="nbe-pct">-0.7%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.77 of the conviction-base size (forecast vol 14.9% · inverse-vol ×1.48 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.77×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -790,6 +987,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 74, 3-day 76 & weekly 82)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$123.80–$127.90</span>
+          <span class="nbe-pct">-5.8%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.85 of the conviction-base size (forecast vol 31.0% · inverse-vol ×0.71 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.85×</span>
+      </div>
+      
       
       
       
@@ -848,6 +1069,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 42.4. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$42.30–$43.01</span>
+          <span class="nbe-pct">-2.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.81 of the conviction-base size (forecast vol 32.5% · inverse-vol ×0.68 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.81×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -900,6 +1145,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$11.50–$12.05</span>
+          <span class="nbe-pct">-2.3%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 64.2% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
       
       
       
@@ -961,6 +1230,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 71, 3-day 82 & weekly 84)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$84.74–$86.85</span>
+          <span class="nbe-pct">-3.6%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.38 of the conviction-base size (forecast vol 19.1% · inverse-vol ×1.15 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.38×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1013,6 +1306,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 33.15. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$33.92–$34.73</span>
+          <span class="nbe-pct">-2.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.87 of the conviction-base size (forecast vol 30.2% · inverse-vol ×0.73 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.87×</span>
+      </div>
+      
       
       
       
@@ -1074,6 +1391,30 @@
       
       
       
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~19+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$11.97–$12.31</span>
+          <span class="nbe-pct">-4.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.57 of the conviction-base size (forecast vol 46.1% · inverse-vol ×0.48 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.57×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -1129,6 +1470,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.95 of the conviction-base size (forecast vol 27.7% · inverse-vol ×0.8 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.95×</span>
+      </div>
+      
       
       
       
@@ -1190,6 +1549,30 @@
       
       
       
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~12+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$40.51–$40.91</span>
+          <span class="nbe-pct">-1.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.3 of the conviction-base size (forecast vol 20.4% · inverse-vol ×1.08 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.30×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1242,6 +1625,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 76, 3-day 85 & weekly 88)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$82.11–$84.75</span>
+          <span class="nbe-pct">-5.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.2 of the conviction-base size (forecast vol 22.1% · inverse-vol ×1.0 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.20×</span>
+      </div>
+      
       
       
       
@@ -1303,6 +1710,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 84, 3-day 79 & weekly 83)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$114.60–$118.00</span>
+          <span class="nbe-pct">-5.8%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.38 of the conviction-base size (forecast vol 11.1% · inverse-vol ×1.98 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.38×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1355,6 +1786,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$23.18</span>
+          <span class="nbe-pct">-0.3%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.84 of the conviction-base size (forecast vol 14.4% · inverse-vol ×1.53 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.84×</span>
+      </div>
+      
       
       
       
@@ -1416,6 +1871,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$22.41</span>
+          <span class="nbe-pct">-1.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.74 of the conviction-base size (forecast vol 15.1% · inverse-vol ×1.45 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.74×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1468,6 +1947,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~7 day(s) ago @ 13.51 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
+        <div class="nbe-head">
+          <span class="nbe-dot a3"></span>
+          <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$15.51–$16.64</span>
+          <span class="nbe-pct">-3.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 71.8% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
       
       
       
@@ -1529,6 +2032,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$59.99–$60.09</span>
+          <span class="nbe-pct">-3.8%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.82 of the conviction-base size (forecast vol 32.4% · inverse-vol ×0.68 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.82×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +72% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +72% — 追高</span><span class="l-en">⚠ cycle: UPTREND</span><span class="l-zh">⚠ 周期：上涨趋势</span></div>
       <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈10% median upside vs ≈7% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 10% 对平均回撤约 7%）——因子维度未计入的有利风险形态。</span></div>
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1584,6 +2111,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 21.34. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$21.13–$21.46</span>
+          <span class="nbe-pct">-2.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.11 of the conviction-base size (forecast vol 23.9% · inverse-vol ×0.92 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.11×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +31% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +31% — 追高</span><span class="l-en">⚠ cycle: UNCONFIRMED TURN</span><span class="l-zh">⚠ 周期：未确认转向</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1636,6 +2187,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$98.94</span>
+          <span class="nbe-pct">-2.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.63 of the conviction-base size (forecast vol 42.2% · inverse-vol ×0.52 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.63×</span>
+      </div>
+      
       
       
       
@@ -1697,6 +2272,30 @@
       
       
       
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~19+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$13.13–$13.59</span>
+          <span class="nbe-pct">-5.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 68.6% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-coil" title="Volatility black hole · 5d compressed — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">🌀 <span class="l-en">Coiled</span><span class="l-zh">蓄势</span></span>
       </div>
@@ -1755,6 +2354,30 @@
       
       
       
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$78.96–$80.53</span>
+          <span class="nbe-pct">-1.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.44 of the conviction-base size (forecast vol 18.4% · inverse-vol ×1.2 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.44×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1807,6 +2430,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$87.52–$90.55</span>
+          <span class="nbe-pct">-1.7%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.61 of the conviction-base size (forecast vol 43.4% · inverse-vol ×0.51 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.61×</span>
+      </div>
+      
       
       
       
@@ -1865,6 +2512,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. Stretched/late — protect gains and don't start new positions; let the next low set up first.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$19.86–$20.20</span>
+          <span class="nbe-pct">-2.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.65 of the conviction-base size (forecast vol 16.0% · inverse-vol ×1.38 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.65×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈6% median upside vs ≈4% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 6% 对平均回撤约 4%）——因子维度未计入的有利风险形态。</span></div>
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1920,6 +2591,30 @@
       
       
       
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~10+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$92.27–$93.07</span>
+          <span class="nbe-pct">-1.3%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.86 of the conviction-base size (forecast vol 14.2% · inverse-vol ×1.55 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.86×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -1972,6 +2667,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$45.23</span>
+          <span class="nbe-pct">-0.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 56.8% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
       
       
       
@@ -2033,6 +2752,24 @@
       
       
       
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 83.8% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -2091,6 +2828,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 80, 3-day 85 & weekly 85)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$272.00–$279.40</span>
+          <span class="nbe-pct">-2.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.42 of the conviction-base size (forecast vol 10.9% · inverse-vol ×2.01 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.42×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2143,6 +2904,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-buy_now" title="ENTRY timing (gauge 2) — when & at what price to buy. Confirmed cycle low — the entry window is open now, with a clear exit if it closes back below 52.16.">
+        <div class="nbe-head">
+          <span class="nbe-dot a3"></span>
+          <span class="nbe-status"><span class="l-en">Buy zone — entry open now</span><span class="l-zh">买入区 — 入场窗口已开启</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$55.81–$59.11</span>
+          <span class="nbe-pct">-2.8%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 56.6% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
       
       
       
@@ -2204,6 +2989,30 @@
       
       
       
+      <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~7 day(s) ago @ 13.39 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
+        <div class="nbe-head">
+          <span class="nbe-dot a3"></span>
+          <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$14.54–$15.80</span>
+          <span class="nbe-pct">-4.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 67.5% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -2262,6 +3071,30 @@
       
       
       
+      <div class="nb-entry nbe-partial" title="ENTRY timing (gauge 2) — when & at what price to buy. The daily turn is already in — a low formed ~7 day(s) ago @ 6.35 and price is back above the 10-day average. What's missing is the weekly timeframe confirming, so this is a partial-conviction entry available now, not a pending trigger: take a half position here, or wait for the weekly to turn.">
+        <div class="nbe-head">
+          <span class="nbe-dot a3"></span>
+          <span class="nbe-status"><span class="l-en">Partial entry — half size now</span><span class="l-zh">部分入场 — 当前可建半仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$7.00–$7.58</span>
+          <span class="nbe-pct">-3.8%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 79.1% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2314,6 +3147,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (overbought (daily RSI 81, 3-day 84 & weekly 86)). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$230.60–$235.40</span>
+          <span class="nbe-pct">-3.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.64 of the conviction-base size (forecast vol 10.0% · inverse-vol ×2.2 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.64×</span>
+      </div>
+      
       
       
       
@@ -2372,6 +3229,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$21.43–$23.12</span>
+          <span class="nbe-pct">-4.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 73.3% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2427,6 +3308,24 @@
       
       
       
+      <div class="nb-entry nbe-exit" title="ENTRY timing (gauge 2) — when & at what price to buy. Momentum rolled over and the 10-day average is lost — reduce or tighten stops.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Exit / reduce — rolling over</span><span class="l-zh">离场/减仓 — 掉头向下</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.85 of the conviction-base size (forecast vol 31.0% · inverse-vol ×0.71 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.85×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +39% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +39% — 追高</span><span class="l-en">⚠ cycle: TOPPING</span><span class="l-zh">⚠ 周期：做顶中</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2479,6 +3378,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$35.80–$37.13</span>
+          <span class="nbe-pct">-1.8%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.49 of the conviction-base size (forecast vol 54.1% · inverse-vol ×0.41 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.49×</span>
+      </div>
+      
       
       
       
@@ -2540,6 +3463,30 @@
       
       
       
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$89.87–$91.94</span>
+          <span class="nbe-pct">-1.1%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.14 of the conviction-base size (forecast vol 23.2% · inverse-vol ×0.95 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.14×</span>
+      </div>
+      
+      
+      
+      
       
       <div class="nb-note nb-note-rank"><span class="l-en">ℹ Score is a within-board percentile RANK (top of today's board), not an absolute 0-100 conviction — the verdict reflects the absolute read.</span><span class="l-zh">ℹ 评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数。</span></div>
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2592,6 +3539,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-exit" title="ENTRY timing (gauge 2) — when & at what price to buy. Momentum rolled over and the 10-day average is lost — reduce or tighten stops.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Exit / reduce — rolling over</span><span class="l-zh">离场/减仓 — 掉头向下</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.4 of the conviction-base size (forecast vol 18.9% · inverse-vol ×1.17 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.40×</span>
+      </div>
+      
       
       
       
@@ -2653,6 +3618,24 @@
       
       
       
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.53 of the conviction-base size (forecast vol 49.7% · inverse-vol ×0.44 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.53×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2705,6 +3688,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. Stretched/late — protect gains and don't start new positions; let the next low set up first.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$38.13–$38.84</span>
+          <span class="nbe-pct">-1.6%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.53 of the conviction-base size (forecast vol 50.1% · inverse-vol ×0.44 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.53×</span>
+      </div>
+      
       
       
       
@@ -2766,6 +3773,30 @@
       
       
       
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$198.30–$204.20</span>
+          <span class="nbe-pct">-1.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.0 of the conviction-base size (forecast vol 26.3% · inverse-vol ×0.84 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.00×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +32% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +32% — 追高</span><span class="l-en">⚠ cycle: BOTTOMING</span><span class="l-zh">⚠ 周期：筑底中</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2818,6 +3849,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~13+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$13.72–$13.85</span>
+          <span class="nbe-pct">-1.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.8 of the conviction-base size (forecast vol 14.7% · inverse-vol ×1.5 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.80×</span>
+      </div>
+      
       
       
       
@@ -2876,6 +3931,24 @@
       
       
       
+      <div class="nb-entry nbe-exit" title="ENTRY timing (gauge 2) — when & at what price to buy. Momentum rolled over and the 10-day average is lost — reduce or tighten stops.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Exit / reduce — rolling over</span><span class="l-zh">离场/减仓 — 掉头向下</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.1 of the conviction-base size (forecast vol 24.1% · inverse-vol ×0.91 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.10×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: TOPPING</span><span class="l-zh">⚠ 周期：做顶中</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2931,6 +4004,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$24.76</span>
+          <span class="nbe-pct">-2.0%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 56.3% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -2983,6 +4080,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$22.76</span>
+          <span class="nbe-pct">-1.3%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.54 of the conviction-base size (forecast vol 48.6% · inverse-vol ×0.45 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.54×</span>
+      </div>
+      
       
       
       
@@ -3044,6 +4165,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$10.01</span>
+          <span class="nbe-pct">-0.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 55.8% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -3102,6 +4247,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$17.15–$17.27</span>
+          <span class="nbe-pct">-2.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.6 of the conviction-base size (forecast vol 10.2% · inverse-vol ×2.16 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.60×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3154,6 +4323,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.12 of the conviction-base size (forecast vol 23.5% · inverse-vol ×0.94 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.12×</span>
+      </div>
+      
       
       
       
@@ -3215,6 +4402,30 @@
       
       
       
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–2 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$50.72–$51.30</span>
+          <span class="nbe-pct">-0.6%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×2.02 of the conviction-base size (forecast vol 13.0% · inverse-vol ×1.69 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 2.02×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3267,6 +4478,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.6 of the conviction-base size (forecast vol 43.9% · inverse-vol ×0.5 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.60×</span>
+      </div>
+      
       
       
       
@@ -3325,6 +4554,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 52.71. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$52.81–$53.34</span>
+          <span class="nbe-pct">-1.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.58 of the conviction-base size (forecast vol 16.7% · inverse-vol ×1.31 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.58×</span>
+      </div>
+      
+      
+      
+      
       
       <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈7% median upside vs ≈4% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 7% 对平均回撤约 4%）——因子维度未计入的有利风险形态。</span></div>
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3377,6 +4630,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.54 of the conviction-base size (forecast vol 48.8% · inverse-vol ×0.45 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.54×</span>
+      </div>
+      
       
       
       
@@ -3438,6 +4709,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (momentum is fading — the daily momentum is already rolling over). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$22.46</span>
+          <span class="nbe-pct">-1.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.5 of the conviction-base size (forecast vol 52.8% · inverse-vol ×0.42 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.50×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-vf">
         <span class="nb-vchip vf-exp" title="Volatility black hole — Volatility compression read — a TIMING context, not a direction call. A durable squeeze means a larger move is loading; which way is unconfirmed until price breaks the box (on volume). Moderate edge, never a standalone signal. | 波动黑洞 — 波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。">💥 <span class="l-en">Vol expansion</span><span class="l-zh">波动扩张</span></span>
       </div>
@@ -3496,6 +4791,30 @@
       
       
       
+      <div class="nb-entry nbe-buy_soon" title="ENTRY timing (gauge 2) — when & at what price to buy. Setup almost complete — likely buy trigger in ~1–3 trading days if it closes back above its 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a2"></span>
+          <span class="nbe-status"><span class="l-en">Buy soon — on confirmation</span><span class="l-zh">即将买入 — 待确认</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$53.67–$56.19</span>
+          <span class="nbe-pct">-2.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.71 of the conviction-base size (forecast vol 37.3% · inverse-vol ×0.59 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.71×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3548,6 +4867,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$17.90–$18.10</span>
+          <span class="nbe-pct">-1.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×3.0 of the conviction-base size (forecast vol 7.4% · inverse-vol ×2.5 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 3.00×</span>
+      </div>
+      
       
       
       
@@ -3606,6 +4949,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$30.31–$30.92</span>
+          <span class="nbe-pct">-2.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.47 of the conviction-base size (forecast vol 17.9% · inverse-vol ×1.23 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.47×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3661,6 +5028,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 34.26. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$39.92–$40.56</span>
+          <span class="nbe-pct">-7.6%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 58.5% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3713,6 +5104,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-wait_pullback" title="ENTRY timing (gauge 2) — when & at what price to buy. A normal mid-cycle dip below the 10-day average — the real cycle low isn't due for ~21+ trading days. Wait for support to hold, or for the next low to set up.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Wait for the pullback</span><span class="l-zh">等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$40.28–$40.31</span>
+          <span class="nbe-pct">-0.1%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×3.0 of the conviction-base size (forecast vol 2.3% · inverse-vol ×2.5 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 3.00×</span>
+      </div>
+      
       
       
       
@@ -3774,6 +5189,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. An unconfirmed turn: a daily low is forming while the bigger picture is still bearish. Nimble traders only — small size, defined stop below 5.6. Not an investment buy until the weekly confirms; most of these fail, a minority start a new cycle.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$5.43–$5.57</span>
+          <span class="nbe-pct">-3.7%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.66 of the conviction-base size (forecast vol 40.2% · inverse-vol ×0.55 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.66×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3829,6 +5268,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. Stretched/late — protect gains and don't start new positions; let the next low set up first.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$62.14–$62.64</span>
+          <span class="nbe-pct">-1.5%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.63 of the conviction-base size (forecast vol 16.2% · inverse-vol ×1.36 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.63×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ extended +35% over 200dma — chasing</span><span class="l-zh">⚠ 高于200日均线 +35% — 追高</span><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3881,6 +5344,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.94 of the conviction-base size (forecast vol 28.0% · inverse-vol ×0.79 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.94×</span>
+      </div>
+      
       
       
       
@@ -3942,6 +5423,30 @@
       
       
       
+      <div class="nb-entry nbe-hold" title="ENTRY timing (gauge 2) — when & at what price to buy. Trend intact — hold; add on dips toward the 10-day average.">
+        <div class="nbe-head">
+          <span class="nbe-dot a1"></span>
+          <span class="nbe-status"><span class="l-en">Hold — don't add here</span><span class="l-zh">持有 — 此处不宜加仓</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$21.96–$22.33</span>
+          <span class="nbe-pct">-2.4%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.01 of the conviction-base size (forecast vol 26.1% · inverse-vol ×0.84 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.01×</span>
+      </div>
+      
+      
+      
+      
       
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -3994,6 +5499,30 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. Stretched/late — protect gains and don't start new positions; let the next low set up first.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$29.39–$29.84</span>
+          <span class="nbe-pct">-2.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-up" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×3.0 of the conviction-base size (forecast vol 8.1% · inverse-vol ×2.5 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 3.00×</span>
+      </div>
+      
       
       
       
@@ -4052,6 +5581,30 @@
       
       
       
+      <div class="nb-entry nbe-topping" title="ENTRY timing (gauge 2) — when & at what price to buy. Stretched/late — protect gains and don't start new positions; let the next low set up first.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Topping — protect gains</span><span class="l-zh">见顶 — 保护利润</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$102.30</span>
+          <span class="nbe-pct">-0.2%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size " title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×1.0 of the conviction-base size (forecast vol 26.5% · inverse-vol ×0.83 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 1.00×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -4104,6 +5657,24 @@
         </div>
         
       </div>
+      
+      
+      
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.86 of the conviction-base size (forecast vol 30.5% · inverse-vol ×0.72 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.86×</span>
+      </div>
+      
       
       
       
@@ -4165,6 +5736,30 @@
       
       
       
+      <div class="nb-entry nbe-extended" title="ENTRY timing (gauge 2) — when & at what price to buy. You missed the bottoming entry — the low already formed and price is now extended (momentum is fading — the daily momentum is already rolling over). Don't chase; wait for a pullback to the 10-day average or the next cycle low. Hold if already long.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Extended — wait for a pullback</span><span class="l-zh">过度拉伸 — 等待回撤</span></span>
+        </div>
+        
+        <div class="nbe-zone">
+          <span class="nbe-lbl"><span class="l-en">Buy zone</span><span class="l-zh">买入区</span></span>
+          <span class="nbe-px">$8.25–$8.26</span>
+          <span class="nbe-pct">-3.9%</span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.48 of the conviction-base size (forecast vol 56.4% · inverse-vol ×0.4 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.48×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: NEARING A HIGH</span><span class="l-zh">⚠ 周期：接近高点</span></div>
       
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -4220,6 +5815,24 @@
       
       
       
+      <div class="nb-entry nbe-blocked" title="ENTRY timing (gauge 2) — when & at what price to buy. Downtrend — stand aside until a new cycle low forms and confirms.">
+        <div class="nbe-head">
+          <span class="nbe-dot a0"></span>
+          <span class="nbe-status"><span class="l-en">Blocked — failed cycle</span><span class="l-zh">受阻 — 失败周期</span></span>
+        </div>
+        
+      </div>
+      
+      
+      
+      
+      <div class="nb-bot">
+        <span class="nb-size sz-dn" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×0.79 of the conviction-base size (forecast vol 33.6% · inverse-vol ×0.65 · regime ×1.2). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ 0.79×</span>
+      </div>
+      
+      
+      
+      
       <div class="nb-cau"><span class="l-en">⚠ cycle: DOWNTREND</span><span class="l-zh">⚠ 周期：下跌趋势</span></div>
       <div class="nb-note nb-note-anticipation"><span class="l-en">ℹ Forward risk cone is favourable (≈24% median upside vs ≈7% average drawdown) — a constructive risk SHAPE the factor axes don't price.</span><span class="l-zh">ℹ 前瞻风险锥形态有利（中位上行约 24% 对平均回撤约 7%）——因子维度未计入的有利风险形态。</span></div>
       <div class="nb-tier"><span class="l-en">Residual-momentum prior — unvalidated, not a standalone edge</span><span class="l-zh">残差动量先验 — 未验证，非独立超额收益</span></div>
@@ -4271,7 +5884,7 @@
 
 
 
-<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-21 16:38 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
+<p class="muted small"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-22 01:20 UTC · <span class="l-en">Keyless data: yfinance · Bank of Canada VALET · StatsCan WDS · FRED. Educational context, not investment advice.</span><span class="l-zh">无密钥数据：yfinance · 加拿大央行 VALET · 统计局 WDS · FRED。教育性背景，非投资建议。</span></p>
 
 <script src="mtf.js"></script>
 <script src="theme.js"></script>

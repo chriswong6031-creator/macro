@@ -365,8 +365,8 @@
         "unemployment": 6.7,
         "unemployment_chg6m": 0.1,
         "m2_yoy": 5.1,
-        "fx": 1.1469,
-        "fx_strength_3m": -1.19,
+        "fx": 1.1459,
+        "fx_strength_3m": -1.28,
         "realvol": 9.5,
         "drawdown": -0.6
       },
@@ -592,7 +592,7 @@
           "cc": "EZ",
           "flag": "\ud83c\uddea\ud83c\uddfa",
           "name": "Eurozone",
-          "value": -1.19
+          "value": -1.28
         },
         {
           "cc": "IN",

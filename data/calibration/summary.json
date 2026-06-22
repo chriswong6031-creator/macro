@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-06-21",
+  "as_of": "2026-06-22",
   "desks": [
     {
       "name": "AI Desk",
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 71,
+      "open": 75,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 22,
+      "open": 21,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -85,8 +85,8 @@
       {
         "family": "china_validation",
         "itemized": 0,
-        "declared": 12,
-        "effective_n": 12
+        "declared": 20,
+        "effective_n": 20
       },
       {
         "family": "signal_factory",
@@ -114,7 +114,7 @@
       }
     ],
     "total_families": 5,
-    "total_effective_n": 29
+    "total_effective_n": 37
   },
   "summary_note": "0/6 desk loops live; 6 still cold (windows maturing). Display-only \u2014 track records calibrate conviction, never size a position."
 }

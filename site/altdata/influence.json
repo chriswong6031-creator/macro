@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-21T16:50:01.019996+00:00",
+  "generated_utc": "2026-06-22T01:31:07.361989+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -998,11 +998,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.75,
+      "alt_score": 5,
+      "alt_weighted": 2.15,
       "alt_channels": [
         "13f_add",
         "affiliation",
+        "app_demand",
         "gov_contract",
         "patent_cluster"
       ],
@@ -1229,10 +1230,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
+        "news_sentiment",
         "patent_cluster"
       ],
       "top_holder": {
@@ -1279,11 +1281,10 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.45,
+      "alt_score": 2,
+      "alt_weighted": 1.05,
       "alt_channels": [
         "affiliation",
-        "app_demand",
         "material_8k"
       ],
       "top_holder": {
@@ -1314,27 +1315,6 @@
       "top_holder": null
     },
     {
-      "ticker": "BAC",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
-      "alt_channels": [
-        "affiliation",
-        "app_demand"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "UBER",
       "actors": [
         {
@@ -1347,10 +1327,11 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.0,
+      "alt_score": 3,
+      "alt_weighted": 1.4,
       "alt_channels": [
         "affiliation",
+        "app_demand",
         "trump"
       ],
       "top_holder": {
@@ -1393,17 +1374,39 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 1.05,
+      "alt_score": 3,
+      "alt_weighted": 1.45,
       "alt_channels": [
         "activist_13d",
-        "affiliation"
+        "affiliation",
+        "app_demand"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
         "title": "Institution",
         "shares": 60577139
       }
+    },
+    {
+      "ticker": "BP",
+      "actors": [
+        {
+          "actor": "Paul Singer",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "special_situation"
+      ],
+      "top_holder": null
     },
     {
       "ticker": "DHR",
@@ -1565,6 +1568,30 @@
       "top_holder": null
     },
     {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 651076825
+      }
+    },
+    {
       "ticker": "CVI",
       "actors": [
         {
@@ -1609,26 +1636,6 @@
       "actors": [
         {
           "actor": "Michael Burry",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": null
-    },
-    {
-      "ticker": "BP",
-      "actors": [
-        {
-          "actor": "Paul Singer",
           "kind": "fund",
           "rel": "AFFILIATES_WITH",
           "provenance": "DISCLOSED",

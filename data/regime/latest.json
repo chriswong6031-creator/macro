@@ -416,12 +416,8 @@
     "dropped_fields": [],
     "evidence": [
       {
-        "field": "tone_score",
-        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
-      },
-      {
         "field": "guidance_direction",
-        "quote_span": "maintain the target range"
+        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
       }
     ],
     "degraded_reason": null,
@@ -926,7 +922,7 @@
   },
   "fed_path": {
     "asof": "2026-06-18",
-    "built": "2026-06-21T15:33:54.800910+00:00",
+    "built": "2026-06-22T00:15:49.144096+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -935,19 +931,19 @@
       "now": 3.63,
       "m1": 3.63,
       "m3": 3.77,
-      "m6": 3.98,
-      "m12": 4.13
+      "m6": 3.99,
+      "m12": 4.15
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": 50,
+    "implied_bp_12m": 52,
     "implied_cuts_12m": -2,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
       "m3": 3.84,
-      "m6": 4.04,
-      "m12": 4.16
+      "m6": 4.06,
+      "m12": 4.18
     },
     "dots": [
       {
@@ -967,18 +963,18 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.8,
-      "market": 3.98,
-      "gap_bp": 18,
+      "market": 3.99,
+      "gap_bp": 19,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e"
     },
     "ntfs": 0.8,
     "curve_tp_adj": 1.04,
     "rate_exp_proxy": 0.57,
-    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% \u2192 4.13%)",
-    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f2\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 4.13%\uff09",
-    "read_en": "At end-2026 the market implies 3.98% vs the Fed's 3.80% median dot (+18bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.80pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.98% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+18\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.80\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% \u2192 4.15%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f2\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 4.15%\uff09",
+    "read_en": "At end-2026 the market implies 3.99% vs the Fed's 3.80% median dot (+19bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.80pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.99% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+19\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.80\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
@@ -989,18 +985,18 @@
     "color": "down",
     "implied_cuts_12m": -2.0,
     "guidance": "on_hold",
-    "market_vs_fed_bp": 18.0,
+    "market_vs_fed_bp": 19.0,
     "market_vs_fed_en": "market more hawkish than the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e",
     "drivers_en": [
       "market prices ~2.0 hike(s) over 12m",
       "statement guidance on-hold",
-      "market more hawkish than the Fed (+18bp)"
+      "market more hawkish than the Fed (+19bp)"
     ],
     "drivers_zh": [
       "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea62.0\u6b21\u52a0\u606f",
       "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
-      "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+18bp\uff09"
+      "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+19bp\uff09"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -3086,7 +3082,89 @@
       "transition": 0.0
     }
   },
-  "vol_regime": null,
+  "vol_regime": {
+    "available": true,
+    "asof": "2026-06-18",
+    "regime": "normalizing",
+    "risk_score": 0.11,
+    "scored_score": null,
+    "scored_active": false,
+    "vix": 16.4,
+    "ts_slope": 0.838,
+    "ts_slope_state": "contango",
+    "ts9": 0.849,
+    "move": 65.4,
+    "move_pctile": 0.078,
+    "move_vix": 3.987,
+    "vrp": -0.42,
+    "vrp_pctile": 0.054,
+    "vrp_chg_21d": -4.13,
+    "vrp_state": "collapsing (de-risk)",
+    "skew": 146.7,
+    "skew_cost_pctile": 0.503,
+    "insurance_cost": "normal",
+    "downside_vrp": 4.028,
+    "vvix": 88.4,
+    "vvix_vix": 5.392,
+    "vvix_pctile": 0.097,
+    "vvix_vix_pctile": 0.294,
+    "vvix_state": "normal",
+    "vol_target_scalar": 0.73,
+    "fragility_confluence": 1,
+    "flags": [
+      "vrp_collapse"
+    ],
+    "legs": {
+      "ts_slope": {
+        "z": 0.855,
+        "scored": false,
+        "sign": null,
+        "eligible": true
+      },
+      "move": {
+        "z": 1.322,
+        "scored": false,
+        "sign": null,
+        "eligible": true
+      },
+      "vrp": {
+        "z": -1.354,
+        "scored": false,
+        "sign": null,
+        "eligible": true
+      },
+      "ts9": {
+        "z": 0.778,
+        "scored": false,
+        "sign": null,
+        "eligible": false
+      },
+      "skew_cost": {
+        "z": -0.142,
+        "scored": false,
+        "sign": null,
+        "eligible": false
+      },
+      "downside_vrp": {
+        "z": 2.5,
+        "scored": false,
+        "sign": null,
+        "eligible": false
+      },
+      "vvix": {
+        "z": -0.36,
+        "scored": false,
+        "sign": null,
+        "eligible": false
+      }
+    },
+    "gate": {
+      "scored_any": false,
+      "asof": null,
+      "note": null
+    },
+    "doctrine": "Index vol-regime: validated on 1990+ history, no dealer-sign assumption. Legs are SCORED only when the validation gate marks them earned; otherwise display/context. A regime read, not an intraday timer (delayed-EOD inputs)."
+  },
   "playbook": {
     "headline": "Goldilocks \u2014 growth improving while inflation cools. Posture: NEUTRAL \u2014 no edge either way; core holdings only, no new conviction bets.",
     "dial": {
@@ -4439,62 +4517,62 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4172.9,
+        "price": 4168.2,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -8.0,
-        "pct_vs_200dma": -6.1,
-        "rsi14": 37.0,
-        "macd_pos": true,
-        "off_52w_high_pct": -21.5,
+        "pct_vs_50dma": -7.9,
+        "pct_vs_200dma": -6.2,
+        "rsi14": 36.0,
+        "macd_pos": false,
+        "off_52w_high_pct": -21.6,
         "season_this": "Jun: -0.8% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.8%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -4.6
+        "mom_60d_pct": -7.2
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 76.54,
+        "price": 77.77,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -18.2,
-        "pct_vs_200dma": 3.7,
-        "rsi14": 32.0,
+        "pct_vs_50dma": -16.5,
+        "pct_vs_200dma": 5.2,
+        "rsi14": 34.0,
         "macd_pos": false,
-        "off_52w_high_pct": -32.2,
-        "season_this": "Jun: +2.4% avg, up 65% of years (n=26)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.4%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -19.0
+        "off_52w_high_pct": -31.1,
+        "season_this": "Jun: +2.5% avg, up 65% of years (n=26)",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.5%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": -21.9
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.34,
+        "price": 6.33,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 1.5,
-        "pct_vs_200dma": 13.4,
+        "pct_vs_50dma": 1.3,
+        "pct_vs_200dma": 13.1,
         "rsi14": 49.0,
         "macd_pos": false,
         "off_52w_high_pct": -4.7,
         "season_this": "Jun: -0.5% avg, up 54% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 16.3
+        "mom_60d_pct": 15.9
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 100.85,
+        "price": 100.84,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 1.9,
+        "pct_vs_50dma": 1.8,
         "pct_vs_200dma": 2.2,
         "rsi14": 71.0,
         "macd_pos": true,
         "off_52w_high_pct": -0.0,
         "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 0.9
+        "mom_60d_pct": 0.7
       }
     ],
     "evidence": {
