@@ -187,6 +187,11 @@
 </style>
 </head>
 <body>
+  {% set nav_search_lib = 'chinastockdata/index.json' %}
+  {% set nav_search_target = 'china_lookup.html' %}
+  {% set nav_search_placeholder_en = 'Search any A-share, sector ETF, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意 A 股、板块 ETF 或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>🔎 {{ t('A-Share analyzer', 'A股分析') }}</h1>
@@ -194,10 +199,6 @@
         <input id="q" placeholder="搜索任意 A 股 / 板块ETF / 指数… (e.g. 600519, 茅台 ticker, Banks)" autocomplete="off">
         <div id="sugg"></div>
       </div>
-      <a class="navbtn" href="china.html">{{ t('← China A-Shares', '← 中国A股') }}</a>
-      <a class="navbtn" href="index.html">{{ t('🏠 Home', '🏠 首页') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     <p class="muted" style="margin:8px 0 0">{{ t('Every name gets the same treatment as the sector board:
       cycle position (daily + weekly), three-timeframe momentum visuals, a clear entry/exit call, and the
