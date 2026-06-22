@@ -792,7 +792,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # within-market percentile display score (mutates the conviction blocks in place;
     # rec['conviction'] is the SAME object, so the deferred per-stock JSONs below pick
     # it up — and the fundamentals re-read pass that follows preserves it).
-    stock_score.attach_panel_scores(profiles)
+    stock_score.attach_panel_scores(profiles, "CN")
     for safe, rec in to_write:
         rec["view"] = stock_view.build_view(rec, "CN")   # canonical render model (rebuilt below once val/margin land)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))

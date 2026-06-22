@@ -496,7 +496,7 @@ def main(alpha: dict | None = None) -> dict | None:
 
     # within-market percentile display score (mutates each conviction block in place;
     # rec['conviction'] is the SAME object, so the per-stock JSONs pick it up below).
-    stock_score.attach_panel_scores(profiles)
+    stock_score.attach_panel_scores(profiles, "CA")
     for safe, rec in to_write.values():
         rec["view"] = stock_view.build_view(rec, "CA")   # canonical render model (rebuilt below once factor_beta lands)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
