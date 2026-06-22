@@ -1,19 +1,17 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.412,
+  "roro": 0.272,
   "cap_recent": true,
   "fear_built": 0.502,
-  "roro_velocity": -0.166,
-  "vel_pctile": 0.194,
-  "legs_up": 1,
+  "roro_velocity": -0.112,
+  "vel_pctile": 0.268,
+  "legs_up": 0,
   "legs_total": 7,
-  "flipped_legs": [
-    "hy_oas"
-  ],
-  "days_since_last_snap": 4,
-  "fear_rebuilding": true,
-  "vix_term": 0.838,
+  "flipped_legs": [],
+  "days_since_last_snap": 6,
+  "fear_rebuilding": false,
+  "vix_term": 0.872,
   "status": "dormant",
   "gates": {
     "velocity": false,
@@ -22,12 +20,6 @@
     "washout": true
   },
   "min_legs": 4,
-  "flipped_legs_named": [
-    {
-      "key": "hy_oas",
-      "en": "HY credit spread",
-      "zh": "\u9ad8\u6536\u76ca\u4fe1\u7528\u5229\u5dee"
-    }
-  ],
+  "flipped_legs_named": [],
   "magnitude_band": null
 }

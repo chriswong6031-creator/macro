@@ -1,5 +1,5 @@
 {
-  "cash": 0.428,
+  "cash": 0.354,
   "crash": false,
   "eligible": [
     "ai_infra",
@@ -9,11 +9,8 @@
     "crypto",
     "cybersecurity",
     "data_center_power",
-    "defense",
-    "defensives",
     "energy_complex",
     "industrial_distribution",
-    "insurance",
     "mag7",
     "managed_care",
     "memory_storage",
