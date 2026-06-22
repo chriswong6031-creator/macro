@@ -62,8 +62,14 @@ WEIGHTS = {"trend": 0.26, "breadth": 0.18, "impulse": 0.07, "macro": 0.18,
 #                 region-available stand-in for mtf.confluence.long_sign (the drawdown gate).
 # These are injected into `fp` for non-US ONLY, so the US page (which has the real mtf candle and
 # the validated rs_pctile behaviour) is byte-identical.
-EXT_HI = 1.6     # ext_abs z above this == parabolic / "don't chase" (blocks ACCUMULATE/EMERGING)
-EXT_LO = 0.8     # ext_abs z above this starts contributing to the crowding penalty
+# Only a genuine PARABOLIC blow-off blocks the leader's buy verb. The house rule
+# ([narrative-rotation-validation]) is that crowding/extension DOWN-SIZES the dominant theme
+# (via the crowding penalty → allocation sizing), it never FADES it ("fading the leader is the
+# documented failure mode"). So EXT_HI is set high (≈top-2% of the theme's own stretch history):
+# a leader that has merely run hard stays ACCUMULATE (down-sized), and only a vertical blow-off
+# (ext_abs ≥ 2σ) is held back as "don't chase". EXT_LO starts the graded crowding penalty earlier.
+EXT_HI = 2.0     # ext_abs z above this == parabolic / "don't chase" (blocks ACCUMULATE/EMERGING)
+EXT_LO = 0.8     # ext_abs z above this starts contributing to the (down-sizing) crowding penalty
 
 UP_DAY, DOWN_DAY = 0.03, -0.03   # the ±3% impulse thresholds (user spec)
 HI_LO_WINDOW = 252               # 52-week new-high / new-low window
