@@ -98,6 +98,8 @@
 <script>
 const DETAIL = {{ detail_json|safe }};
 const L = (en,zh)=>`<span class="l-en">${en}</span><span class="l-zh">${zh==null?en:zh}</span>`;
+const BENCH = DETAIL.bench_label || 'S&P 500';          // regional benchmark label (CSI 300 / Hang Seng / S&P-TSX)
+const BENCHZ = DETAIL.bench_label_zh || BENCH;
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const fmtPct = x => x==null ? '—' : (x>=0?'+':'')+(x*100).toFixed(1)+'%';
@@ -229,7 +231,7 @@ function render(){
         <div class="sbx"><div class="v">${th.score!=null?th.score:'—'}</div><div class="k">${L('score','评分')}</div></div>
         <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('tlabel',lc,th.label_en||(th.label||'—'),th.label_zh||'')}</div><div class="k">${L('lifecycle','生命周期')}</div></div>
         <div class="sbx"><div class="v" style="font-size:13px;padding-top:7px">${badge('treco',rc,th.reco_en||(th.reco||'—'),th.reco_zh||'')}</div><div class="k">${L('action','结论')}</div></div>
-        <div class="sbx"><div class="v ${cls((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}">${fmtPct((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}</div><div class="k">${L('20d vs S&P','20日 vs 标普')}</div></div>
+        <div class="sbx"><div class="v ${cls((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}">${fmtPct((th.perf&&th.perf['20d'])?th.perf['20d'].rel:null)}</div><div class="k">${L('20d vs '+BENCH,'20日 vs '+BENCHZ)}</div></div>
       </div>
       <div class="muted sm" style="margin-top:8px;max-width:42ch">${L(esc(th.reco_why_en||''),esc(th.reco_why_zh||''))}</div>
     </div>
@@ -286,7 +288,7 @@ function render(){
     <div class="cbar">${bar}</div>
     <div class="muted sm">${POS.concat(['crowding']).map(k=>`<span style="margin-right:12px"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${COMP_COLOR[k]};margin-right:3px"></span>${k} ${comp[k]==null?'—':(k==='crowding'?'−':(comp[k]>=0?'+':''))+Math.abs(comp[k]).toFixed(2)}</span>`).join('')}</div>
     <div class="kpis" style="margin-top:12px">
-      ${['5d','20d','60d','ytd'].map(hz=>{const p=(th.perf||{})[hz]||{};return `<div><div class="k">${hz.toUpperCase()} vs S&P</div><div class="v ${cls(p.rel)}">${fmtPct(p.rel)}</div></div>`;}).join('')}
+      ${['5d','20d','60d','ytd'].map(hz=>{const p=(th.perf||{})[hz]||{};return `<div><div class="k">${L(hz.toUpperCase()+' vs '+BENCH, hz.toUpperCase()+' vs '+BENCHZ)}</div><div class="v ${cls(p.rel)}">${fmtPct(p.rel)}</div></div>`;}).join('')}
       <div><div class="k">${L('above 50d','站上50日')}</div><div class="v">${bd.pct50==null?'—':Math.round(bd.pct50*100)+'%'}</div></div>
       <div><div class="k">${L('new hi / lo','新高/低')}</div><div class="v"><span class="pos">${bd.nh||0}</span>/<span class="neg">${bd.nl||0}</span></div></div>
       <div><div class="k">${L('adv / dec today','今日涨/跌')}</div><div class="v"><span class="pos">${th.adv||0}</span>/<span class="neg">${th.dec||0}</span></div></div>
@@ -308,7 +310,7 @@ function render(){
   const entryCell=(c)=>{const e=c&&c.entry; if(!e||!e.status) return '<span class="muted sm">—</span>';
     const col = e.act_level>=3?cssv('--up'):e.act_level>=2?cssv('--g-cold'):e.act_level>=1?cssv('--warn'):cssv('--down');
     const zone = e.zone_low!=null?(' $'+e.zone_low.toFixed(2)+(e.zone_high&&e.zone_high!=e.zone_low?'–$'+e.zone_high.toFixed(2):'')):'';
-    return `<span style="font-weight:700;color:${col}">${esc(L(e.headline||e.status,e.headline_zh||e.status))}</span><span class="muted sm">${zone}</span>`;};
+    return `<span style="font-weight:700;color:${col}">${L(esc(e.headline||e.status),esc(e.headline_zh||e.status))}</span><span class="muted sm">${zone}</span>`;};
   const rows=mem.map(m=>{const c=m.conviction;
     const star=m.on_board?` <a class="sb-star" href="${SB?'../us_stocks.html':'#'}" title="On the US standout buy board right now">★</a>`:'';
     return `<tr>
