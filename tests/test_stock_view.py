@@ -38,6 +38,14 @@ def test_build_view_shape():
     assert v["fingerprint"]["axes"][0]["key"] == "selection"
 
 
+def test_legacy_boolean_fragility_does_not_crash():
+    """Older/build-specific records may mark fragility as a bool; the shared view
+    renderer must coerce it instead of assuming the richer crowding payload."""
+    rec = _profiled("CN", rev_z=1.2, fragility=True)
+    v = sv.build_view(rec, "CN")
+    assert any(f["en"] == "Crowded & fragile" for f in v["falsifiers"])
+
+
 def test_every_emitted_verdict_has_a_gloss():
     """The gloss can never become a 5th drifting headline: it must be a pure lookup on
     the verdict enum. Build the full verdict universe and assert coverage."""

@@ -619,6 +619,10 @@ jobs:
           # them — same as the force-tracked stock-search libraries. -f overrides the
           # ignore; || true so an empty/absent dir (feature off) never fails the commit.
           git add -f site/stockbrief 2>/dev/null || true
+          # China stock-search library: gitignored like the other markets' libraries —
+          # force-add it so the committed-tree deploy ships every indexed A-share detail
+          # JSON, not just the old tracked subset.
+          git add -f site/chinastockdata 2>/dev/null || true
           # Canada stock-search library: gitignored like the other markets' libraries,
           # but (unlike them) force-added here so the committed-tree deploy ships it —
           # otherwise canada_stock.html's search 404s on canadastockdata/index.json.
