@@ -89,3 +89,6 @@
 {"date": "2026-06-22", "basket": "space_economy", "state": "QUIET"}
 {"date": "2026-06-22", "basket": "critical_minerals", "state": "QUIET"}
 {"date": "2026-06-22", "basket": "regional_banks", "state": "QUIET"}
+{"date": "2026-06-22", "basket": "big_pharma", "state": "CONFIRMED_DOWN"}
+{"date": "2026-06-22", "basket": "insurance", "state": "QUIET"}
+{"date": "2026-06-22", "basket": "industrial_distribution", "state": "QUIET"}

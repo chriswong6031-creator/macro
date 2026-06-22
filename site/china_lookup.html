@@ -329,6 +329,7 @@
       <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
@@ -344,6 +345,7 @@
       <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
@@ -429,7 +431,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -548,8 +550,9 @@
   var q = document.getElementById('q'), sugg = document.getElementById('sugg');
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
   var T = {
-    en: { asof: 'data through', notlib: 'NOT IN LIBRARY',
-          notlibmsg: 'Not in the nightly library (curated A-share large-caps + sector ETFs + indices). Add it in one line: config.yml → china.constituents.',
+    en: { asof: 'data through', notlib: 'NOT IN LIBRARY', detailmiss: 'DETAIL FILE MISSING',
+          notlibmsg: 'Not in the nightly library (broad A-share search universe + sector ETFs + indices). If this is a Shanghai/Shenzhen A-share, expand config.yml → china.search_universe or add it to that collector/cache.',
+          detailmissmsg: 'This ticker is in the search index, but its detail JSON was not deployed. Rebuild the China library and force-add site/chinastockdata.',
           season: 'Seasonality', failed: '⚠ Failed cycle — price is below the low that started this cycle; the larger trend is usually rolling over.',
           next: 'Next:', cu: ' just crossed up', cd: ' just crossed down',
           bullx: ' bars to bull cross', bearx: ' bars to bear cross',
@@ -568,8 +571,9 @@
           e_today: 'today', e_soon: '⚠ Reports soon — results risk near-term',
           p_fin: 'Financing balance', p_chg: '20-day change', p_pct: '% of market cap',
           p_build: 'leverage building', p_unwind: 'de-leveraging' },
-    zh: { asof: '数据截至', notlib: '不在库中',
-          notlibmsg: '不在每晚更新的标的库中（精选 A 股大盘股 ＋ 板块 ETF ＋ 指数）。一行即可添加：config.yml → china.constituents。',
+    zh: { asof: '数据截至', notlib: '不在库中', detailmiss: '详情文件缺失',
+          notlibmsg: '不在每晚更新的标的库中（广域 A 股搜索库 ＋ 板块 ETF ＋ 指数）。若这是沪深 A 股，可扩展 config.yml → china.search_universe，或加入该采集器/缓存。',
+          detailmissmsg: '该标的已在搜索索引中，但详情 JSON 未部署。请重建中国标的库并强制加入 site/chinastockdata。',
           season: '季节性', failed: '⚠ 失败周期 — 价格已跌破启动本周期的低点；此时更大的趋势通常正在转向下行。',
           next: '下一步：', cu: ' 刚上穿', cd: ' 刚下穿',
           bullx: ' 根K线后金叉', bearx: ' 根K线后死叉',
@@ -656,14 +660,15 @@
       if (!r.ok) throw new Error('not in library');
       return r.json();
     }).then(render).catch(function () {
+      var inIndex = idx.some(function (x) { return x.t === t; });
       document.getElementById('result').style.display = 'block';
       document.getElementById('r_name').textContent = t;
-      document.getElementById('r_state').textContent = L('notlib');
+      document.getElementById('r_state').textContent = inIndex ? L('detailmiss') : L('notlib');
       document.getElementById('r_state').className = 'state';
       document.getElementById('r_conviction').style.display = 'none';
       document.getElementById('r_entry').style.display = 'none';
       document.getElementById('r_points').innerHTML = '';
-      document.getElementById('r_cyclebox').innerHTML = L('notlibmsg');
+      document.getElementById('r_cyclebox').innerHTML = inIndex ? L('detailmissmsg') : L('notlibmsg');
     });
   }
 
@@ -1005,7 +1010,7 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-22 02:30 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-22 05:02 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>

@@ -30,7 +30,7 @@
   .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-
+  
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
   .news-shell { max-width:1180px; margin:0 auto; }
@@ -128,8 +128,10 @@
 
 </head>
 <body>
-<nav class="site-nav">
 
+
+<nav class="site-nav">
+  
 
 
     <div class="nav-links">
@@ -140,16 +142,14 @@
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
-        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
-        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
-        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
-        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -159,8 +159,13 @@
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
-        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -214,9 +219,14 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
         <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
         <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
-        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Congress · insiders · contracts · Trump trades · convergence</span><span class="l-zh">国会 · 内部人 · 合同 · 特朗普交易 · 汇聚</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
@@ -227,11 +237,12 @@
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock, ETF, commodity or crypto…"
+      data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -248,52 +259,52 @@
   <section class="news-hero">
     <article class="hero-main">
       <div>
-        <p class="eyebrow"><span class="live-dot"></span><span class="l-en">Stock & Market News Feed</span><span class="l-zh">股票与市场新闻流</span><span>2026-06-21</span></p>
-
-        <h1><a href="https://www.cnbc.com/2026/06/21/top-wall-street-analysts-like-these-3-dividend-stocks-for-solid-returns.html" target="_blank" rel="noopener"><span class="l-en">Top Wall Street analysts like these 3 dividend stocks for solid returns</span><span class="l-zh">顶级华尔街分析师看好这3只分红股，稳健回报可期</span></a></h1>
+        <p class="eyebrow"><span class="live-dot"></span><span class="l-en">Stock & Market News Feed</span><span class="l-zh">股票与市场新闻流</span><span>2026-06-18</span></p>
+        
+        <h1><a href="https://www.cnbc.com/2026/06/21/top-wall-street-analysts-like-these-3-dividend-stocks-for-solid-returns.html" target="_blank" rel="noopener"><span class="l-en">Top Wall Street analysts like these 3 dividend stocks for solid returns</span><span class="l-zh">顶级华尔街分析师看好这3只高股息股票，有望带来稳健回报</span></a></h1>
         <p class="hero-dek"><span class="l-en">Qualitative stock and market headlines: earnings, guidance, analyst moves, deals, buybacks and company-specific catalysts, tagged for tickers and transmission channels.</span><span class="l-zh">定性股票与市场新闻：业绩、指引、分析师动作、并购、回购与个股催化，并标注相关标的与传导通道。</span></p>
-
+        
       </div>
       <div class="hero-meta">
-
-        <span class="theme-chip th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+        
+        <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
         <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
         <span class="intel-pill imp-high"><b>88</b>/100 high</span>
         <a class="read-link" href="https://www.cnbc.com/2026/06/21/top-wall-street-analysts-like-these-3-dividend-stocks-for-solid-returns.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读来源</span></a>
-
+        
       </div>
-
+      
       <div class="intel-row">
         <span class="intel-pill">analyst</span><span class="intel-pill">capital_return</span>
         <span class="intel-pill tk-chip">SPY</span>
       </div>
-
+      
     </article>
 
     <aside class="hero-side" aria-label="News context">
-      <div class="ticker ">
+      <div class="ticker sent-neg">
         <div><div class="k"><span class="l-en">SF-Fed News Sentiment</span><span class="l-zh">旧金山联储新闻情绪</span></div>
-          <div class="v"><span class="l-en">Unavailable</span><span class="l-zh">暂无</span></div>
+          <div class="v"><span class="l-en">Pessimistic</span><span class="l-zh">悲观</span></div>
           <div class="s"><span class="l-en">quant series, not headline AI</span><span class="l-zh">量化序列，非逐条AI</span></div></div>
-        <div class="num">-</div>
+        <div class="num">-0.1</div>
       </div>
-      <div class="ticker ndi-calm">
+      <div class="ticker ndi-high">
         <div><div class="k"><span class="l-en">Narrative Dominance</span><span class="l-zh">叙事主导</span></div>
-          <div class="v"><span class="l-en">Context</span><span class="l-zh">背景</span></div>
+          <div class="v"><span class="l-en">High</span><span class="l-zh">高</span></div>
           <div class="s"><span class="l-en">display-only risk texture</span><span class="l-zh">仅展示风险纹理</span></div></div>
-        <div class="num">-</div>
+        <div class="num">83.6</div>
       </div>
       <div class="ticker">
         <div><div class="k"><span class="l-en">Filtered Headlines</span><span class="l-zh">筛选头条</span></div>
           <div class="v">18 <span class="l-en">kept</span><span class="l-zh">保留</span></div>
-          <div class="s">315 <span class="l-en">official</span><span class="l-zh">官方</span> · 157 RSS · 0 GDELT</div></div>
+          <div class="s">323 <span class="l-en">official</span><span class="l-zh">官方</span> · 144 RSS · 0 GDELT</div></div>
         <div class="num">18</div>
       </div>
       <div class="ticker">
         <div><div class="k"><span class="l-en">Intelligence Mix</span><span class="l-zh">情报结构</span></div>
-          <div class="v">7 <span class="l-en">high impact</span><span class="l-zh">高影响</span></div>
-          <div class="s">deals</div></div>
-        <div class="num">71</div>
+          <div class="v">5 <span class="l-en">high impact</span><span class="l-zh">高影响</span></div>
+          <div class="s">fiscal_trade</div></div>
+        <div class="num">65</div>
       </div>
     </aside>
   </section>
@@ -309,405 +320,53 @@
         <div class="filter-row" id="themeFilters">
           <button class="filter-btn on" data-theme="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
           <button class="filter-btn" data-importance="high"><span class="l-en">High impact</span><span class="l-zh">高影响</span></button>
-
+          
           <button class="filter-btn" data-theme="monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></button>
-
+          
           <button class="filter-btn" data-theme="inflation"><span class="l-en">Inflation</span><span class="l-zh">通胀</span></button>
-
+          
           <button class="filter-btn" data-theme="labor"><span class="l-en">Labor</span><span class="l-zh">就业</span></button>
-
+          
           <button class="filter-btn" data-theme="growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></button>
-
+          
           <button class="filter-btn" data-theme="credit"><span class="l-en">Rates</span><span class="l-zh">利率</span></button>
-
+          
           <button class="filter-btn" data-theme="fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></button>
-
+          
           <button class="filter-btn" data-theme="earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></button>
-
+          
           <button class="filter-btn" data-theme="guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></button>
-
+          
           <button class="filter-btn" data-theme="analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></button>
-
+          
           <button class="filter-btn" data-theme="deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></button>
-
+          
           <button class="filter-btn" data-theme="capital_return"><span class="l-en">Buybacks</span><span class="l-zh">回购/分红</span></button>
-
+          
           <button class="filter-btn" data-theme="stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></button>
-
+          
           <button class="filter-btn" data-theme="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></button>
-
+          
         </div>
         <span class="feed-count" id="feedCount"></span>
       </div>
 
-
+      
       <div class="feed" id="newsFeed">
-
-        <a class="news-card" href="https://seekingalpha.com/news/4605319-german-government-set-to-buy-stake-in-knds-ahead-of-planned-ipo?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="high" data-search="german government set to buy stake in knds ahead of planned ipo 德国政府计划在knds上市前收购其股份 seekingalpha.com deals equities deals ">
+        
+        <a class="news-card" href="https://www.cnbc.com/2026/06/20/south-korea-tech-samsung-sk-hynix-bonus-bank-of-korea.html" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="high" data-search="massive bonuses for south korea's chip workers puts central bank on inflation alert 韩国芯片工人巨额奖金引发通胀担忧，央行警惕 cnbc.com stocks inflation credit xlf xlk">
           <div class="news-date">
             <span class="rank">#2</span>
             <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
           </div>
           <div class="news-body">
             <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
               <span class="intel-pill imp-high"><b>74</b>/100</span>
             </div>
-            <h2 class="news-title"><span class="l-en">German government set to buy stake in KNDS ahead of planned IPO</span><span class="l-zh">德国政府计划在KNDS上市前收购其股份</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">equities</span><span class="intel-pill">deals</span>
-
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.marketwatch.com/story/microns-earnings-are-a-must-watch-market-event-with-profit-growth-approaching-1-000-78ec4549?mod=mw_rss_topstories" target="_blank" rel="noopener"
-           data-theme="earnings" data-importance="medium" data-search="micron’s earnings are a must-watch market event — with profit growth approaching 1,000% 美光财报成市场必看事件——利润增长逼近1000% marketwatch.com earnings growth earnings mu">
-          <div class="news-date">
-            <span class="rank">#3</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="source-chip"><b>MarketWatch - Top Stories</b> · tier1</span>
-              <span class="intel-pill imp-medium"><b>71</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Micron’s earnings are a must-watch market event — with profit growth approaching 1,000%</span><span class="l-zh">美光财报成市场必看事件——利润增长逼近1000%</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">growth</span><span class="intel-pill">earnings</span>
-              <span class="intel-pill tk-chip">MU</span>
-              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/15/wall-streets-fear-gauge-tumbles-as-traders-bid-up-spacex-shares.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="high" data-search="wall street's fear gauge tumbles as traders bid up spacex shares 华尔街恐慌指数大跌，交易员追捧spacex股票 cnbc.com stocks fiscal_trade spy spcx">
-          <div class="news-date">
-            <span class="rank">#4</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>74</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Wall Street's fear gauge tumbles as traders bid up SpaceX shares</span><span class="l-zh">华尔街恐慌指数大跌，交易员追捧SpaceX股票</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">fiscal_trade</span>
-              <span class="intel-pill tk-chip">SPY</span><span class="intel-pill tk-chip">SPCX</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/15/spacex-ipo-leaves-retail-investors-with-too-few-shares-and-a-tough-hold-or-sell-decision.html" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="high" data-search="spacex ipo leaves retail investors with too few shares and a tough hold-or-sell decision spacex ipo留给散户的股份太少，持有还是卖出成难题 cnbc.com deals equities deals spcx">
-          <div class="news-date">
-            <span class="rank">#5</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>74</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">SpaceX IPO leaves retail investors with too few shares and a tough hold-or-sell decision</span><span class="l-zh">SpaceX IPO留给散户的股份太少，持有还是卖出成难题</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">equities</span><span class="intel-pill">deals</span>
-              <span class="intel-pill tk-chip">SPCX</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://seekingalpha.com/news/4605281-here-are-the-major-earnings-before-the-open-monday?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
-           data-theme="earnings" data-importance="high" data-search="here are the major earnings before the open monday 以下是周一开盘前的主要财报 seekingalpha.com earnings earnings ">
-          <div class="news-date">
-            <span class="rank">#6</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>74</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Here are the major earnings before the open Monday</span><span class="l-zh">以下是周一开盘前的主要财报</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">earnings</span>
-
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/19/spacex-stock-risk-buy-sell.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="high" data-search="the riskiest spacex stock trade of all had a big first week 风险最高的spacex股票交易首周表现强劲 cnbc.com stocks fiscal_trade spcx">
-          <div class="news-date">
-            <span class="rank">#7</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Stock Blog</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>74</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">The riskiest SpaceX stock trade of all had a big first week</span><span class="l-zh">风险最高的SpaceX股票交易首周表现强劲</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">fiscal_trade</span>
-              <span class="intel-pill tk-chip">SPCX</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/21/the-ai-trade-has-left-the-hyperscalers-in-the-dust-what-will-it-take-for-that-to-change-.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="the ai trade has left the hyperscalers in the dust. what will it take for that to change? ai炒作已让超大规模企业黯然失色，改变现状需要什么？ cnbc.com stocks fiscal_trade qqq">
-          <div class="news-date">
-            <span class="rank">#8</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Stock Blog</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">The AI trade has left the hyperscalers in the dust. What will it take for that to change?</span><span class="l-zh">AI炒作已让超大规模企业黯然失色，改变现状需要什么？</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">fiscal_trade</span>
-              <span class="intel-pill tk-chip">QQQ</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/18/spacex-stock-elon-musk-rally-cools.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="spacex stock sinks for a second day as company slips below amazon in market cap spacex股价连跌两日，市值跌至亚马逊之下 cnbc.com stocks stocks amzn spcx">
-          <div class="news-date">
-            <span class="rank">#9</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">SpaceX stock sinks for a second day as company slips below Amazon in market cap</span><span class="l-zh">SpaceX股价连跌两日，市值跌至亚马逊之下</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">stocks</span>
-              <span class="intel-pill tk-chip">AMZN</span><span class="intel-pill tk-chip">SPCX</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/18/the-average-spacex-buyer-post-ipo-is-almost-under-water-after-two-day-slide.html" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="medium" data-search="the average spacex buyer post-ipo is almost under water after two-day slide spacex ipo后平均买家在连续两日下跌后几乎亏损 cnbc.com deals equities deals spcx">
-          <div class="news-date">
-            <span class="rank">#10</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">The average SpaceX buyer post-IPO is almost under water after two-day slide</span><span class="l-zh">SpaceX IPO后平均买家在连续两日下跌后几乎亏损</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">equities</span><span class="intel-pill">deals</span>
-              <span class="intel-pill tk-chip">SPCX</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/19/musk-spacex-billionaire-shareholders.html" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="medium" data-search="musk's spacex stake is worth over $1 trillion. here are the other billionaire shareholders 马斯克持有的spacex股份价值超1万亿美元，其他亿万富翁股东一览 cnbc.com deals deals spcx">
-          <div class="news-date">
-            <span class="rank">#11</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Musk's SpaceX stake is worth over $1 trillion. Here are the other billionaire shareholders</span><span class="l-zh">马斯克持有的SpaceX股份价值超1万亿美元，其他亿万富翁股东一览</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">deals</span>
-              <span class="intel-pill tk-chip">SPCX</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high" data-search="federal reserve holds interest rates steady and hints at rate hike later this year 美联储维持利率不变，暗示年内可能加息 npr.org monetary rates ">
-          <div class="news-date">
-            <span class="rank">#12</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="source-chip"><b>NPR - Business</b> · tier1</span>
-              <span class="intel-pill imp-high"><b>82</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Federal Reserve holds interest rates steady and hints at rate hike later this year</span><span class="l-zh">美联储维持利率不变，暗示年内可能加息</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">rates</span>
-
-              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/18/kalshi-traders-see-greater-than-50percent-odds-the-fed-will-hike-rates-this-year.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="kalshi traders see greater than 50% odds the fed will hike rates this year kalshi交易员认为美联储今年加息概率超过50% cnbc.com stocks rates fiscal_trade ">
-          <div class="news-date">
-            <span class="rank">#13</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Kalshi traders see greater than 50% odds the Fed will hike rates this year</span><span class="l-zh">Kalshi交易员认为美联储今年加息概率超过50%</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">rates</span><span class="intel-pill">fiscal_trade</span>
-
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/18/apples-upcoming-price-hikes-are-good-for-the-company-not-so-good-for-consumers.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="apple's upcoming price hikes are good for the company not so good for consumers 苹果即将涨价对公司有利，消费者却遭殃 cnbc.com stocks stocks aapl">
-          <div class="news-date">
-            <span class="rank">#14</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Apple's upcoming price hikes are good for the company not so good for consumers</span><span class="l-zh">苹果即将涨价对公司有利，消费者却遭殃</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">stocks</span>
-              <span class="intel-pill tk-chip">AAPL</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/18/california-ipo-tax-windfall.html" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="medium" data-search="california’s counting on an ipo tax windfall. several factors are complicating the equation 加州指望ipo税收红利，多重因素令计划复杂化 cnbc.com deals equities deals ">
-          <div class="news-date">
-            <span class="rank">#15</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">California’s counting on an IPO tax windfall. Several factors are complicating the equation</span><span class="l-zh">加州指望IPO税收红利，多重因素令计划复杂化</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">equities</span><span class="intel-pill">deals</span>
-
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/17/allbirds-bird-ai-smartbird-ceo.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="allbirds continues ai pivot with name change and ceo hire, sending stock soaring allbirds继续向ai转型，更名并任命ceo，股价飙升 cnbc.com stocks stocks qqq">
-          <div class="news-date">
-            <span class="rank">#16</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Allbirds continues AI pivot with name change and CEO hire, sending stock soaring</span><span class="l-zh">Allbirds继续向AI转型，更名并任命CEO，股价飙升</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">stocks</span>
-              <span class="intel-pill tk-chip">QQQ</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/16/kalshi-traders-think-anthropic-will-restore-access-to-ai-model-quickly.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="prediction market traders speculate anthropic will restore access quickly to ai model after trump admin directed it to limit reach 预测市场交易员猜测，在特朗普政府指示限制覆盖范围后，anthropic将迅速恢复ai模型的访问权限 cnbc.com stocks fiscal_trade qqq">
-          <div class="news-date">
-            <span class="rank">#17</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Prediction market traders speculate Anthropic will restore access quickly to AI model after Trump admin directed it to limit reach</span><span class="l-zh">预测市场交易员猜测，在特朗普政府指示限制覆盖范围后，Anthropic将迅速恢复AI模型的访问权限</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">fiscal_trade</span>
-              <span class="intel-pill tk-chip">QQQ</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-
-        <a class="news-card" href="https://www.cnbc.com/2026/06/20/south-korea-tech-samsung-sk-hynix-bonus-bank-of-korea.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="medium" data-search="massive bonuses for south korea's chip workers puts central bank on inflation alert 韩国芯片工人巨额奖金引发央行通胀预警 cnbc.com monetary inflation credit xlf xlk">
-          <div class="news-date">
-            <span class="rank">#18</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>66</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Massive bonuses for South Korea's chip workers puts central bank on inflation alert</span><span class="l-zh">韩国芯片工人巨额奖金引发央行通胀预警</span></h2>
+            <h2 class="news-title"><span class="l-en">Massive bonuses for South Korea's chip workers puts central bank on inflation alert</span><span class="l-zh">韩国芯片工人巨额奖金引发通胀担忧，央行警惕</span></h2>
             <div class="intel-row">
               <span class="intel-pill">inflation</span><span class="intel-pill">credit</span>
               <span class="intel-pill tk-chip">XLF</span><span class="intel-pill tk-chip">XLK</span>
@@ -716,110 +375,499 @@
             <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
           </div>
         </a>
-
+        
+        <a class="news-card" href="https://seekingalpha.com/news/4605281-here-are-the-major-earnings-before-the-open-monday?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="high" data-search="here are the major earnings before the open monday 周一开盘前主要财报一览 seekingalpha.com stocks earnings ">
+          <div class="news-date">
+            <span class="rank">#3</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
+              <span class="intel-pill imp-high"><b>74</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Here are the major earnings before the open Monday</span><span class="l-zh">周一开盘前主要财报一览</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">earnings</span>
+              
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">tier-1 macro term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://seekingalpha.com/news/4605324-china-hits-back-slaps-trade-restrictions-on-us-entities-including-mp-materials-and-usa-rare-earth?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="china hits back: slaps trade restrictions on u.s. entities including mp materials and usa rare earth 中国反击：对mp materials、usa rare earth等美国实体实施贸易限制 seekingalpha.com stocks fiscal_trade mp">
+          <div class="news-date">
+            <span class="rank">#4</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>67</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">China hits back: Slaps trade restrictions on U.S. entities including MP Materials and USA Rare Earth</span><span class="l-zh">中国反击：对MP Materials、USA Rare Earth等美国实体实施贸易限制</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">fiscal_trade</span>
+              <span class="intel-pill tk-chip">MP</span>
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.cnbc.com/2026/06/21/the-ai-trade-has-left-the-hyperscalers-in-the-dust-what-will-it-take-for-that-to-change-.html" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="the ai trade has left the hyperscalers in the dust. what will it take for that to change? ai交易让超大规模企业相形见绌，改变现状需要什么？ cnbc.com stocks fiscal_trade qqq">
+          <div class="news-date">
+            <span class="rank">#5</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>CNBC - Stock Blog</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>67</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">The AI trade has left the hyperscalers in the dust. What will it take for that to change?</span><span class="l-zh">AI交易让超大规模企业相形见绌，改变现状需要什么？</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">fiscal_trade</span>
+              <span class="intel-pill tk-chip">QQQ</span>
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.cnbc.com/2026/06/19/spacex-stock-risk-buy-sell.html" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="high" data-search="the riskiest spacex stock trade of all had a big first week 史上风险最高的spacex股票交易首周表现亮眼 cnbc.com stocks fiscal_trade ">
+          <div class="news-date">
+            <span class="rank">#6</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>CNBC - Stock Blog</b> · stock_wire</span>
+              <span class="intel-pill imp-high"><b>74</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">The riskiest SpaceX stock trade of all had a big first week</span><span class="l-zh">史上风险最高的SpaceX股票交易首周表现亮眼</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">fiscal_trade</span>
+              
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://seekingalpha.com/news/4605322-microsoft-s-satya-nadella-calls-for-ai-reset-beyond-frontier-model-race?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="microsoft’s satya nadella calls for ai reset beyond frontier model race 微软纳德拉呼吁在基础模型竞赛之外重启ai方向 seekingalpha.com stocks stocks qqq msft">
+          <div class="news-date">
+            <span class="rank">#7</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Microsoft’s Satya Nadella calls for AI reset beyond frontier model race</span><span class="l-zh">微软纳德拉呼吁在基础模型竞赛之外重启AI方向</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">stocks</span>
+              <span class="intel-pill tk-chip">QQQ</span><span class="intel-pill tk-chip">MSFT</span>
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://seekingalpha.com/news/4605330-boeing-names-travis-sullivan-southeast-asia-president?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="boeing names travis sullivan southeast asia president 波音任命travis sullivan为东南亚区总裁 seekingalpha.com stocks stocks ba">
+          <div class="news-date">
+            <span class="rank">#8</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Boeing names Travis Sullivan Southeast Asia president</span><span class="l-zh">波音任命Travis Sullivan为东南亚区总裁</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">stocks</span>
+              <span class="intel-pill tk-chip">BA</span>
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.marketwatch.com/story/im-spending-170-000-to-upgrade-my-home-for-my-aging-parents-can-i-get-tax-breaks-3adf0236?mod=mw_rss_topstories" target="_blank" rel="noopener"
+           data-theme="analyst" data-importance="medium" data-search="i’m spending $170,000 to upgrade my home for my aging parents. can i get tax breaks? 我花17万美元为年迈父母改造房屋，能享受税收减免吗？ marketwatch.com analyst analyst ">
+          <div class="news-date">
+            <span class="rank">#9</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-analyst"><span class="l-en">Analysts</span><span class="l-zh">分析师</span></span>
+              <span class="source-chip"><b>MarketWatch - Top Stories</b> · tier1</span>
+              <span class="intel-pill imp-medium"><b>64</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">I’m spending $170,000 to upgrade my home for my aging parents. Can I get tax breaks?</span><span class="l-zh">我花17万美元为年迈父母改造房屋，能享受税收减免吗？</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">analyst</span>
+              
+              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.benzinga.com/money/pancakeswap-cake-price-prediction" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="pancakeswap (cake) price prediction: 2025, 2026, 2030 pancakeswap (cake) 价格预测：2025、2026、2030 benzinga.com stocks stocks cake">
+          <div class="news-date">
+            <span class="rank">#10</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Benzinga</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">PancakeSwap (CAKE) Price Prediction: 2025, 2026, 2030</span><span class="l-zh">PancakeSwap (CAKE) 价格预测：2025、2026、2030</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">stocks</span>
+              <span class="intel-pill tk-chip">CAKE</span>
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.benzinga.com/money/arweave-ar-price-prediction" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="arweave (ar) price prediction: 2025, 2026, 2030 arweave (ar) 价格预测：2025、2026、2030 benzinga.com stocks stocks ar">
+          <div class="news-date">
+            <span class="rank">#11</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Benzinga</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Arweave (AR) Price Prediction: 2025, 2026, 2030</span><span class="l-zh">Arweave (AR) 价格预测：2025、2026、2030</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">stocks</span>
+              <span class="intel-pill tk-chip">AR</span>
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="high" data-search="federal reserve holds interest rates steady and hints at rate hike later this year 美联储维持利率不变，暗示年内可能加息 npr.org growth rates ">
+          <div class="news-date">
+            <span class="rank">#12</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="source-chip"><b>NPR - Business</b> · tier1</span>
+              <span class="intel-pill imp-high"><b>74</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Federal Reserve holds interest rates steady and hints at rate hike later this year</span><span class="l-zh">美联储维持利率不变，暗示年内可能加息</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">rates</span>
+              
+              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.benzinga.com/money/toncoin-ton-price-prediction" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="toncoin (ton) price prediction 2025, 2026, 2027-2030 toncoin (ton) 价格预测：2025、2026、2027-2030 benzinga.com stocks stocks ">
+          <div class="news-date">
+            <span class="rank">#13</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Benzinga</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Toncoin (TON) Price Prediction 2025, 2026, 2027-2030</span><span class="l-zh">Toncoin (TON) 价格预测：2025、2026、2027-2030</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">stocks</span>
+              
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.benzinga.com/money/myro-price-prediction" target="_blank" rel="noopener"
+           data-theme="stocks" data-importance="medium" data-search="myro (myro) price prediction: 2025, 2026, 2030 myro (myro) 价格预测：2025、2026、2030 benzinga.com stocks stocks ">
+          <div class="news-date">
+            <span class="rank">#14</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="source-chip"><b>Benzinga</b> · stock_wire</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Myro (MYRO) Price Prediction: 2025, 2026, 2030</span><span class="l-zh">Myro (MYRO) 价格预测：2025、2026、2030</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">stocks</span>
+              
+              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://home.treasury.gov/news/press-releases/sb0531" target="_blank" rel="noopener"
+           data-theme="guidance" data-importance="medium" data-search="fincen issues guidance to help financial institutions eliminate fraud through information sharing fincen发布指南，帮助金融机构通过信息共享消除欺诈 home.treasury.gov guidance rates fiscal_trade guidance ">
+          <div class="news-date">
+            <span class="rank">#15</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-guidance"><span class="l-en">Guidance</span><span class="l-zh">指引</span></span>
+              <span class="source-chip"><b>Treasury - Press Releases</b> · official</span>
+              <span class="intel-pill imp-medium"><b>60</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">FinCEN Issues Guidance to Help Financial Institutions Eliminate Fraud Through Information Sharing</span><span class="l-zh">FinCEN发布指南，帮助金融机构通过信息共享消除欺诈</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">rates</span><span class="intel-pill">fiscal_trade</span><span class="intel-pill">guidance</span>
+              
+              <span class="intel-pill">first-party Treasury source</span><span class="intel-pill">tier-1 macro term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.marketwatch.com/story/microns-earnings-are-a-must-watch-market-event-with-profit-growth-approaching-1-000-78ec4549?mod=mw_rss_topstories" target="_blank" rel="noopener"
+           data-theme="growth" data-importance="medium" data-search="micron’s earnings are a must-watch market event — with profit growth approaching 1,000% 美光财报成市场焦点——利润增长逼近1000% marketwatch.com growth growth earnings mu">
+          <div class="news-date">
+            <span class="rank">#16</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="source-chip"><b>MarketWatch - Top Stories</b> · tier1</span>
+              <span class="intel-pill imp-medium"><b>55</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Micron’s earnings are a must-watch market event — with profit growth approaching 1,000%</span><span class="l-zh">美光财报成市场焦点——利润增长逼近1000%</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">growth</span><span class="intel-pill">earnings</span>
+              <span class="intel-pill tk-chip">MU</span>
+              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://www.irs.gov/" target="_blank" rel="noopener"
+           data-theme="earnings" data-importance="medium" data-search="internal revenue service (irs) 美国国税局 home.treasury.gov earnings rates fiscal_trade earnings ">
+          <div class="news-date">
+            <span class="rank">#17</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="source-chip"><b>Treasury - Press Releases</b> · official</span>
+              <span class="intel-pill imp-medium"><b>53</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Internal Revenue Service (IRS)</span><span class="l-zh">美国国税局</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">rates</span><span class="intel-pill">fiscal_trade</span><span class="intel-pill">earnings</span>
+              
+              <span class="intel-pill">first-party Treasury source</span><span class="intel-pill">market-sensitive term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
+        <a class="news-card" href="https://home.treasury.gov/policy-issues/tax-policy/revenue-proposals" target="_blank" rel="noopener"
+           data-theme="earnings" data-importance="medium" data-search="revenue proposals 收入提案 home.treasury.gov earnings rates fiscal_trade earnings ">
+          <div class="news-date">
+            <span class="rank">#18</span>
+            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
+          </div>
+          <div class="news-body">
+            <div class="news-top">
+              <span class="theme-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="source-chip"><b>Treasury - Press Releases</b> · official</span>
+              <span class="intel-pill imp-medium"><b>53</b>/100</span>
+            </div>
+            <h2 class="news-title"><span class="l-en">Revenue Proposals</span><span class="l-zh">收入提案</span></h2>
+            <div class="intel-row">
+              <span class="intel-pill">rates</span><span class="intel-pill">fiscal_trade</span><span class="intel-pill">earnings</span>
+              
+              <span class="intel-pill">first-party Treasury source</span><span class="intel-pill">market-sensitive term</span>
+            </div>
+            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
+          </div>
+        </a>
+        
       </div>
       <div class="empty-state hidden" id="noFiltered">
         <h2><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h2>
         <p><span class="l-en">Clear the search or switch back to All themes.</span><span class="l-zh">清空搜索或切回全部主题。</span></p>
       </div>
-
-
+      
+      
       <p class="disc"><span class="l-en">Context only — not a signal. These headlines are filtered (reputable sources, macro themes only) and shown as background; the “sentiment” gauge is the SF-Fed Daily News Sentiment Index (a quantitative series), NOT a per-headline AI judgement. Nothing here is an input to any score, signal or allocation, and the mechanical model never sees it. Upcoming-catalyst dates are scheduling information, not forecasts.</span><span class="l-zh">仅作背景，非信号。以下头条已经过筛选（仅可靠来源、仅宏观主题）；“情绪”指标采用旧金山联储每日新闻情绪指数（一个量化序列），并非逐条新闻的 AI 判断。这里没有任何内容会进入任何评分、信号或配置，机械模型也从不读取它们。即将到来的催化日期为日程信息，而非预测。</span></p>
-
+      
     </div>
 
     <aside class="rail">
       <section class="rail-card">
         <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
-        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main">7 high-impact items; dominant channel deals; source mix stock_wire:16, tier1:2</div></div>
+        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main">5 high-impact items; dominant channel fiscal_trade; source mix stock_wire:12, tier1:3, official:3</div></div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div>
           <div class="rail-main">
-            <span class="rail-tag">deals</span><span class="rail-tag">fiscal_trade</span><span class="rail-tag">equities</span><span class="rail-tag">stocks</span><span class="rail-tag">earnings</span>
+            <span class="rail-tag">fiscal_trade</span><span class="rail-tag">stocks</span><span class="rail-tag">earnings</span><span class="rail-tag">rates</span><span class="rail-tag">analyst</span>
           </div>
         </div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div>
           <div class="rail-main">
-            <span class="rail-tag">SPCX</span><span class="rail-tag">QQQ</span><span class="rail-tag">SPY</span><span class="rail-tag">MU</span><span class="rail-tag">AMZN</span><span class="rail-tag">AAPL</span>
+            <span class="rail-tag">QQQ</span><span class="rail-tag">SPY</span><span class="rail-tag">XLF</span><span class="rail-tag">XLK</span><span class="rail-tag">MP</span><span class="rail-tag">MSFT</span>
           </div>
         </div>
         <div class="rail-line">
           <div class="rail-date"><span class="l-en">Sources</span><span class="l-zh">来源</span></div>
           <div class="rail-main">
-            <span class="rail-tag">stock_wire 16</span><span class="rail-tag">tier1 2</span>
+            <span class="rail-tag">stock_wire 12</span><span class="rail-tag">tier1 3</span><span class="rail-tag">official 3</span>
           </div>
         </div>
       </section>
 
       <section class="rail-card">
         <h2><span class="l-en">High-impact calendar</span><span class="l-zh">高影响日程</span></h2>
-
+        
         <div class="rail-line">
           <div class="rail-date">Thu Jun 25<br>08:30 ET</div>
           <div class="rail-main"><span class="rail-tag">GDP</span>GDP (BEA estimate)</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">Thu Jun 25<br>08:30 ET</div>
           <div class="rail-main"><span class="rail-tag">PCE</span>PCE / personal income (BEA)</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">Thu Jul 2<br>08:30 ET</div>
           <div class="rail-main"><span class="rail-tag">NFP</span>Jobs report (nonfarm payrolls)</div>
         </div>
-
+        
       </section>
 
       <section class="rail-card">
         <h2><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化</span></h2>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-23<br>13:00 ET</div>
           <div class="rail-main"><span class="rail-tag">AUCTION</span>2-Year Note auction</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-24<br>13:00 ET</div>
           <div class="rail-main"><span class="rail-tag">AUCTION</span>2-Year Note auction (reopening)</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-24<br>13:00 ET</div>
           <div class="rail-main"><span class="rail-tag">AUCTION</span>5-Year Note auction</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-25<br>08:30 ET</div>
           <div class="rail-main"><span class="rail-tag">GDP</span>GDP (BEA estimate)</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-25<br>08:30 ET</div>
           <div class="rail-main"><span class="rail-tag">PCE</span>PCE / personal income (BEA)</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-25<br>08:30 ET</div>
           <div class="rail-main"><span class="rail-tag">CLAIMS</span>Initial jobless claims</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-06-25<br>13:00 ET</div>
           <div class="rail-main"><span class="rail-tag">AUCTION</span>7-Year Note auction</div>
         </div>
-
+        
         <div class="rail-line">
           <div class="rail-date">2026-07-01<br>10:00 ET</div>
           <div class="rail-main"><span class="rail-tag">ISM_MFG</span>ISM Manufacturing PMI</div>
         </div>
-
+        
       </section>
 
+      
+      <section class="rail-card">
+        <h2><span class="l-en">Market-implied odds</span><span class="l-zh">市场隐含概率</span></h2>
+        
+        <div class="rail-line" style="display:block">
+          <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
+          
+          <div class="odds-row"><span class="o">No change</span><b>75.5%</b><span></span></div>
+          
+          <div class="odds-row"><span class="o">25 bps increase</span><b>23.2%</b><span class="r-neg">-0.1</span></div>
+          
+          <div class="odds-row"><span class="o">25 bps decrease</span><b>1.6%</b><span></span></div>
+          
+        </div>
+        
+        <div class="rail-line" style="display:block">
+          <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
+          
+          <div class="odds-row"><span class="o">0 (0 bps)</span><b>80.6%</b><span class="r-pos">+0.1</span></div>
+          
+          <div class="odds-row"><span class="o">1 (25 bps)</span><b>14.5%</b><span></span></div>
+          
+          <div class="odds-row"><span class="o">2 (50 bps)</span><b>2.5%</b><span class="r-pos">+0.2</span></div>
+          
+        </div>
+        
+      </section>
+      
 
-
-
+      
+      <section class="rail-card">
+        <h2><span class="l-en">Narrative texture</span><span class="l-zh">叙事纹理</span></h2>
+        <div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">99.2<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
+        <div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">97.1<span class="l-en">th pct</span><span class="l-zh">百分位</span> · <span class="l-en">led by</span><span class="l-zh">主导</span> <span class="l-en">threats</span><span class="l-zh">威胁</span></div></div>
+        <div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">54.5<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
+        
+        <div class="rail-line"><div class="rail-date"><span class="l-en">Bus</span><span class="l-zh">总线</span></div><div class="rail-main">60 <span class="l-en">events</span><span class="l-zh">事件</span>/7d · 33% <span class="l-en">unscheduled</span><span class="l-zh">非排程</span></div></div>
+        
+      </section>
+      
     </aside>
   </section>
 </main>

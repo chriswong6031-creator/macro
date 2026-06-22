@@ -30,7 +30,7 @@
   .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
   .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
   footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
-
+  
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
   .shell { max-width:1180px; margin:0 auto; }
@@ -101,8 +101,10 @@
 
 </head>
 <body>
-<nav class="site-nav">
 
+
+<nav class="site-nav">
+  
 
 
     <div class="nav-links">
@@ -113,16 +115,14 @@
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
-        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="ipo.html">🆕 <span class="l-en">IPO Radar</span><span class="l-zh">新股雷达</span><span class="d"><span class="l-en">IPO window · aftermarket reality</span><span class="l-zh">新股窗口 · 二级市场现实</span></span></a>
+        <a href="special_situations.html">⚡ <span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span><span class="d"><span class="l-en">Activist · M&A · spin-offs · take-privates</span><span class="l-zh">维权 · 并购 · 分拆 · 私有化</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
-        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
         <a href="alerts.html">🚨 <span class="l-en">Alert Center</span><span class="l-zh">警报中心</span><span class="d"><span class="l-en">Ranked & triaged alerts</span><span class="l-zh">分级分诊的警报</span></span></a>
         <a href="gex.html">🧲 <span class="l-en">Options Desk</span><span class="l-zh">期权台</span><span class="d"><span class="l-en">GEX · walls · vol surface</span><span class="l-zh">GEX · 墙 · 波动率曲面</span></span></a>
-        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
-        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -132,8 +132,13 @@
         <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
-        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
+        <a href="china_strategies.html">🎛️ <span class="l-en">Strategies</span><span class="l-zh">策略</span><span class="d"><span class="l-en">Tactical strategy scorecards</span><span class="l-zh">战术策略记分卡</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">News & Intelligence</span><span class="l-zh">新闻与情报</span><span class="d"><span class="l-en">Multi-source news tape · media sentiment</span><span class="l-zh">多源新闻脉搏 · 媒体情绪</span></span></a>
+        <a href="china_policy_watch.html">🏛️ <span class="l-en">PBoC & Policy Watch</span><span class="l-zh">央行与政策观察</span><span class="d"><span class="l-en">Rate corridor · liquidity · sector policy</span><span class="l-zh">利率走廊 · 流动性 · 行业政策</span></span></a>
+        <a href="china_altdata.html">🛰️ <span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span><span class="d"><span class="l-en">Smart-money convergence · signal lab</span><span class="l-zh">主力共振 · 信号实验室</span></span></a>
+        <a href="china_radar.html">📡 <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Policy/flow signal vs sector price</span><span class="l-zh">政策/资金信号 vs 板块价格</span></span></a>
+        <a href="china_intel.html">🧠 <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">All China intel + Mastermind feed</span><span class="l-zh">全部中国情报 + Mastermind信号</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -187,9 +192,14 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)">🔬 <span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
+        <a href="intelligence_hub.html">🛰️ <span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></a>
         <a href="reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
         <a href="policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
-        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Congress · insiders · contracts · Trump trades · convergence</span><span class="l-zh">国会 · 内部人 · 合同 · 特朗普交易 · 汇聚</span></span></a>
+        <a href="alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
+        <a href="demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
+        <a href="etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
+        <a href="anticipation.html">🔮 <span class="l-en">Anticipation</span><span class="l-zh">预判</span><span class="d"><span class="l-en">Multi-horizon outcome cones</span><span class="l-zh">多周期结果锥</span></span></a>
         <a href="transmission.html">🔀 <span class="l-en">Rate & Inflation Transmission</span><span class="l-zh">利率与通胀传导</span><span class="d"><span class="l-en">How rates & inflation move every asset</span><span class="l-zh">利率与通胀如何驱动各类资产</span></span></a>
         <a href="crossasset.html">🧭 <span class="l-en">Cross-Asset</span><span class="l-zh">跨资产</span><span class="d"><span class="l-en">Correlations · trend · global liquidity</span><span class="l-zh">相关性 · 趋势 · 全球流动性</span></span></a>
         <a href="signal_lab.html">🔬 <span class="l-en">Signal Lab</span><span class="l-zh">信号实验室</span><span class="d"><span class="l-en">Consolidated validation scorecard</span><span class="l-zh">验证记分卡汇总</span></span></a>
@@ -200,11 +210,12 @@
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock, ETF, commodity or crypto…"
+      data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -221,42 +232,42 @@
   <section class="hero">
     <article class="hero-main">
       <div>
-        <p class="eyebrow"><span class="live"></span><span class="l-en">China News Intelligence</span><span class="l-zh">中国新闻情报流</span><span>2026-06-21</span></p>
-
-        <h1><a href="https://www.yicai.com/news/103238607.html" target="_blank" rel="noopener"><span class="l-en">6月LPR报价出炉：1年期和5年期以上利率均维持不变 22日公布的贷款市场报价利率（LPR）中，1 年期和 5 年期以上品种均维持在 3.0% 和 3.5% 不变。 40分钟前</span><span class="l-zh">6月LPR报价出炉：1年期和5年期以上利率均维持不变 22日公布的贷款市场报价利率（LPR）中，1 年期和 5 年期以上品种均维持在 3.0% 和 3.5% 不变。 40分钟前</span></a></h1>
+        <p class="eyebrow"><span class="live"></span><span class="l-en">China News Intelligence</span><span class="l-zh">中国新闻情报流</span><span></span></p>
+        
+        <h1><a href="https://www.yicai.com/news/103238607.html" target="_blank" rel="noopener"><span class="l-en">6月LPR报价出炉：1年期和5年期以上利率均维持不变 22日公布的贷款市场报价利率（LPR）中，1 年期和 5 年期以上品种均维持在 3.0% 和 3.5% 不变。 3小时前</span><span class="l-zh">6月LPR报价出炉：1年期和5年期以上利率均维持不变 22日公布的贷款市场报价利率（LPR）中，1 年期和 5 年期以上品种均维持在 3.0% 和 3.5% 不变。 3小时前</span></a></h1>
         <p class="dek"><span class="l-en">Chinese-native financial media, official policy pages, Eastmoney flashes and global wire normalized into importance, channel and market-proxy tags.</span><span class="l-zh">中文财经媒体、官方政策页面、东方财富快讯与全球新闻线被统一为重要性、传导通道与市场代理标签。</span></p>
-
+        
       </div>
       <div>
         <div class="meta">
-
-
+          
+          
           <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
           <span class="chip"><b>第一财经</b> · china_native</span>
           <span class="chip imp-high"><b>68</b>/100 high</span>
           <a class="read" href="https://www.yicai.com/news/103238607.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读来源</span></a>
-
+          
         </div>
-
+        
         <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">credit_impulse</span><span class="chip tk">512800.SS</span></div>
-
+        
       </div>
     </article>
     <aside class="side">
       <div class="tile">
         <div><div class="k"><span class="l-en">Official Policy Tone</span><span class="l-zh">官方政策基调</span></div><div class="v"><span class="l-en">building</span><span class="l-zh">积累中</span></div><div class="s"><span class="l-en">CCTV 新闻联播 z-score</span><span class="l-zh">央视新闻联播 z 分数</span></div></div>
-        <div class="num">-0.2</div>
+        <div class="num">-1.1</div>
       </div>
       <div class="tile">
-        <div><div class="k"><span class="l-en">Official Sources</span><span class="l-zh">官方来源</span></div><div class="v">30 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">PBoC · NBS · MOF</span><span class="l-zh">央行 · 统计局 · 财政部</span></div></div>
-        <div class="num">30</div>
+        <div><div class="k"><span class="l-en">Official Sources</span><span class="l-zh">官方来源</span></div><div class="v">123 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">PBoC · NBS · MOF</span><span class="l-zh">央行 · 统计局 · 财政部</span></div></div>
+        <div class="num">123</div>
       </div>
       <div class="tile">
-        <div><div class="k"><span class="l-en">Native + Global Wire</span><span class="l-zh">中文源 + 全球新闻线</span></div><div class="v">411 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">Yicai · STCN · CNStock · SCMP · Caixin</span><span class="l-zh">第一财经 · 证券时报 · 上海证券报 · SCMP · 财新</span></div></div>
-        <div class="num">411</div>
+        <div><div class="k"><span class="l-en">Native + Global Wire</span><span class="l-zh">中文源 + 全球新闻线</span></div><div class="v">420 <span class="l-en">items</span><span class="l-zh">条</span></div><div class="s"><span class="l-en">Yicai · STCN · CNStock · SCMP · Caixin</span><span class="l-zh">第一财经 · 证券时报 · 上海证券报 · SCMP · 财新</span></div></div>
+        <div class="num">420</div>
       </div>
       <div class="tile">
-        <div><div class="k"><span class="l-en">Kept Feed</span><span class="l-zh">保留新闻</span></div><div class="v">18 <span class="l-en">kept</span><span class="l-zh">保留</span></div><div class="s">18/501 <span class="l-en">raw candidates</span><span class="l-zh">原始候选</span></div></div>
+        <div><div class="k"><span class="l-en">Kept Feed</span><span class="l-zh">保留新闻</span></div><div class="v">18 <span class="l-en">kept</span><span class="l-zh">保留</span></div><div class="s">18/543 <span class="l-en">raw candidates</span><span class="l-zh">原始候选</span></div></div>
         <div class="num">18</div>
       </div>
       <div class="tile">
@@ -273,336 +284,335 @@
         <div class="filters" id="filters">
           <button class="fbtn on" data-theme="all"><span class="l-en">All</span><span class="l-zh">全部</span></button>
           <button class="fbtn" data-importance="high"><span class="l-en">High impact</span><span class="l-zh">高影响</span></button>
-          <button class="fbtn" data-theme="monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></button><button class="fbtn" data-theme="inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></button><button class="fbtn" data-theme="growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></button><button class="fbtn" data-theme="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></button><button class="fbtn" data-theme="fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></button><button class="fbtn" data-theme="policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></button><button class="fbtn" data-theme="markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></button><button class="fbtn" data-theme="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></button>
+          <button class="fbtn" data-theme="monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></button><button class="fbtn" data-theme="inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></button><button class="fbtn" data-theme="growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></button><button class="fbtn" data-theme="credit"><span class="l-en">Credit</span><span class="l-zh">信用</span></button><button class="fbtn" data-theme="fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></button><button class="fbtn" data-theme="policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></button><button class="fbtn" data-theme="politics"><span class="l-en">Politics</span><span class="l-zh">政治/地缘</span></button><button class="fbtn" data-theme="tech"><span class="l-en">Tech</span><span class="l-zh">科技</span></button><button class="fbtn" data-theme="markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></button><button class="fbtn" data-theme="macro"><span class="l-en">Macro</span><span class="l-zh">宏观</span></button>
         </div>
         <span class="count" id="count"></span>
       </div>
-
+      
       <div class="feed" id="feed">
-
-        <a class="card" href="https://www.stcn.com/article/detail/3970662.html" target="_blank" rel="noopener"
-           data-theme="policy" data-importance="high" data-search="支持力度加码 深化“两创板”改革 资本市场全面拥抱新质生产力 支持力度加码 深化“两创板”改革 资本市场全面拥抱新质生产力   证券时报 policy 512880.ss">
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3971509.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high" data-search="调价！东方锆业一字板！央行购金意愿创纪录，超跌+低pe概念股揭晓 调价！东方锆业一字板！央行购金意愿创纪录，超跌+低pe概念股揭晓   证券时报 pboc_liquidity 512880.ss">
           <div class="rank"><b>#2</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
-              <span class="chip theme th-policy"><span class="l-en">Policy</span><span class="l-zh">政策</span></span>
+              
+              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="chip"><b>证券时报</b> · china_native</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">支持力度加码 深化“两创板”改革 资本市场全面拥抱新质生产力</span><span class="l-zh">支持力度加码 深化“两创板”改革 资本市场全面拥抱新质生产力</span></h2>
-
-            <div class="intel"><span class="chip">policy</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
+            <h2 class="title"><span class="l-en">调价！东方锆业一字板！央行购金意愿创纪录，超跌+低PE概念股揭晓</span><span class="l-zh">调价！东方锆业一字板！央行购金意愿创纪录，超跌+低PE概念股揭晓</span></h2>
+            
+            <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.stcn.com/article/detail/3970947.html" target="_blank" rel="noopener"
            data-theme="monetary" data-importance="high" data-search="6月lpr报价出炉：1年期和5年期以上利率均维持不变 6月lpr报价出炉：1年期和5年期以上利率均维持不变   证券时报 pboc_liquidity 512880.ss">
           <div class="rank"><b>#3</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="chip"><b>证券时报</b> · china_native</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
             <h2 class="title"><span class="l-en">6月LPR报价出炉：1年期和5年期以上利率均维持不变</span><span class="l-zh">6月LPR报价出炉：1年期和5年期以上利率均维持不变</span></h2>
-
+            
             <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
-        <a class="card" href="https://www.stcn.com/article/detail/3971012.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high" data-search="央行今日开展4765亿元7天期逆回购操作 央行今日开展4765亿元7天期逆回购操作   证券时报 pboc_liquidity 512880.ss">
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3971519.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high" data-search="央行购金意愿创纪录 超跌+低pe概念股揭晓 央行购金意愿创纪录 超跌+低pe概念股揭晓   证券时报 pboc_liquidity 512880.ss">
           <div class="rank"><b>#4</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="chip"><b>证券时报</b> · china_native</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">央行今日开展4765亿元7天期逆回购操作</span><span class="l-zh">央行今日开展4765亿元7天期逆回购操作</span></h2>
-
+            <h2 class="title"><span class="l-en">央行购金意愿创纪录 超跌+低PE概念股揭晓</span><span class="l-zh">央行购金意愿创纪录 超跌+低PE概念股揭晓</span></h2>
+            
             <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.cnstock.com/commonDetail/732072" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high" data-search="6月lpr报价出炉：5年期和1年期利率均维持不变 快讯 · lpr 14分钟前 6月lpr报价出炉：5年期和1年期利率均维持不变 快讯 · lpr 14分钟前   上海证券报 pboc_liquidity 512880.ss">
+           data-theme="monetary" data-importance="high" data-search="6月lpr报价出炉：5年期和1年期利率均维持不变 快讯 · lpr 3小时前 6月lpr报价出炉：5年期和1年期利率均维持不变 快讯 · lpr 3小时前   上海证券报 pboc_liquidity 512880.ss">
           <div class="rank"><b>#5</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="chip"><b>上海证券报</b> · china_native</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">6月LPR报价出炉：5年期和1年期利率均维持不变 快讯 · LPR 14分钟前</span><span class="l-zh">6月LPR报价出炉：5年期和1年期利率均维持不变 快讯 · LPR 14分钟前</span></h2>
-
+            <h2 class="title"><span class="l-en">6月LPR报价出炉：5年期和1年期利率均维持不变 快讯 · LPR 3小时前</span><span class="l-zh">6月LPR报价出炉：5年期和1年期利率均维持不变 快讯 · LPR 3小时前</span></h2>
+            
             <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.yicai.com/news/103238454.html" target="_blank" rel="noopener"
            data-theme="growth" data-importance="high" data-search="浙南小城翻身战：从gdp“腰斩”到蓄力重返百强｜探新长三角 从“垫底”到冲刺，回升的不仅是gdp曲线，更是一场产业逻辑、城市格局与发展理念的深层重构。 昨天 20:19 浙南小城翻身战：从gdp“腰斩”到蓄力重返百强｜探新长三角 从“垫底”到冲刺，回升的不仅是gdp曲线，更是一场产业逻辑、城市格局与发展理念的深层重构。 昨天 20:19   第一财经 growth ">
           <div class="rank"><b>#6</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
               <span class="chip"><b>第一财经</b> · china_native</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
             <h2 class="title"><span class="l-en">浙南小城翻身战：从GDP“腰斩”到蓄力重返百强｜探新长三角 从“垫底”到冲刺，回升的不仅是GDP曲线，更是一场产业逻辑、城市格局与发展理念的深层重构。 昨天 20:19</span><span class="l-zh">浙南小城翻身战：从GDP“腰斩”到蓄力重返百强｜探新长三角 从“垫底”到冲刺，回升的不仅是GDP曲线，更是一场产业逻辑、城市格局与发展理念的深层重构。 昨天 20:19</span></h2>
-
+            
             <div class="intel"><span class="chip">growth</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.scmp.com/business/banking-finance/article/3357835/buyers-hunt-bargains-amid-signs-chinas-home-prices-are-bottoming-out?utm_source=rss_feed" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="medium" data-search="buyers hunt bargains amid signs that china’s home prices are bottoming out 买家逢低买入，迹象显示中国房价正触底企稳 expectations have heightened in major chinese cities like shanghai that home prices are bottoming out following a six-year property slump, as would-be buyers actively hunt bargains amid the recent policy easing.
+           data-theme="growth" data-importance="medium" data-search="buyers hunt bargains amid signs that china’s home prices are bottoming out  expectations have heightened in major chinese cities like shanghai that home prices are bottoming out following a six-year property slump, as would-be buyers actively hunt bargains amid the recent policy easing.
 brisk transactions are also shoring up brokers’ confidence in the market where the prices of some lived-in flats have almost halved from their peak.
-“most of the buyers are not betting on a turnaround, they just feel that home prices are more attractive now as the authorities could... 在上海等中国主要城市，经过六年的楼市低迷后，购房者对房价触底的预期升温，近期政策放宽下潜在买家积极寻购低价房源。活跃的交易也提振了中介信心，部分二手房价已较峰值近乎腰斩。 scmp - china economy property 512880.ss 512200.ss">
+“most of the buyers are not betting on a turnaround, they just feel that home prices are more attractive now as the authorities could...  scmp - china economy property 512880.ss 512200.ss">
           <div class="rank"><b>#7</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
               <span class="chip"><b>SCMP - China Economy</b> · global_wire</span>
               <span class="chip imp-medium"><b>62</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">Buyers hunt bargains amid signs that China’s home prices are bottoming out</span><span class="l-zh">买家逢低买入，迹象显示中国房价正触底企稳</span></h2>
+            <h2 class="title"><span class="l-en">Buyers hunt bargains amid signs that China’s home prices are bottoming out</span><span class="l-zh">Buyers hunt bargains amid signs that China’s home prices are bottoming out</span></h2>
             <p class="summary"><span class="l-en">Expectations have heightened in major Chinese cities like Shanghai that home prices are bottoming out following a six-year property slump, as would-be buyers actively hunt bargains amid the recent policy easing.
 Brisk transactions are also shoring up brokers’ confidence in the market where the prices of some lived-in flats have almost halved from their peak.
-“Most of the buyers are not betting on a turnaround, they just feel that home prices are more attractive now as the authorities could...</span><span class="l-zh">在上海等中国主要城市，经过六年的楼市低迷后，购房者对房价触底的预期升温，近期政策放宽下潜在买家积极寻购低价房源。活跃的交易也提振了中介信心，部分二手房价已较峰值近乎腰斩。</span></p>
+“Most of the buyers are not betting on a turnaround, they just feel that home prices are more attractive now as the authorities could...</span><span class="l-zh">Expectations have heightened in major Chinese cities like Shanghai that home prices are bottoming out following a six-year property slump, as would-be buyers actively hunt bargains amid the recent policy easing.
+Brisk transactions are also shoring up brokers’ confidence in the market where the prices of some lived-in flats have almost halved from their peak.
+“Most of the buyers are not betting on a turnaround, they just feel that home prices are more attractive now as the authorities could...</span></p>
             <div class="intel"><span class="chip">property</span><span class="chip tk">512880.SS</span><span class="chip tk">512200.SS</span><span class="chip">tier-1 China wire</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.stcn.com/article/detail/3970977.html" target="_blank" rel="noopener"
            data-theme="fiscal" data-importance="medium" data-search="财政部：在政府采购活动中对46家美企采取相关措施 财政部：在政府采购活动中对46家美企采取相关措施   证券时报 fiscal_trade 512880.ss">
           <div class="rank"><b>#8</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
               <span class="chip"><b>证券时报</b> · china_native</span>
               <span class="chip imp-medium"><b>60</b>/100</span>
             </div>
             <h2 class="title"><span class="l-en">财政部：在政府采购活动中对46家美企采取相关措施</span><span class="l-zh">财政部：在政府采购活动中对46家美企采取相关措施</span></h2>
-
+            
             <div class="intel"><span class="chip">fiscal_trade</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.stcn.com/article/detail/3970669.html" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="实探端午假期深圳水贝黄金消费：金价回落释放刚需 实探端午假期深圳水贝黄金消费：金价回落释放刚需   证券时报 consumer 512880.ss">
           <div class="rank"><b>#9</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
               <span class="chip"><b>证券时报</b> · china_native</span>
               <span class="chip imp-medium"><b>60</b>/100</span>
             </div>
             <h2 class="title"><span class="l-en">实探端午假期深圳水贝黄金消费：金价回落释放刚需</span><span class="l-zh">实探端午假期深圳水贝黄金消费：金价回落释放刚需</span></h2>
-
+            
             <div class="intel"><span class="chip">consumer</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.cnstock.com/commonDetail/732037" target="_blank" rel="noopener"
            data-theme="markets" data-importance="medium" data-search="从场景上新到体验升级 端午假期特色文旅引领消费新趋势 从场景上新到体验升级 端午假期特色文旅引领消费新趋势   上海证券报 consumer 512880.ss">
           <div class="rank"><b>#10</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
               <span class="chip"><b>上海证券报</b> · china_native</span>
               <span class="chip imp-medium"><b>60</b>/100</span>
             </div>
             <h2 class="title"><span class="l-en">从场景上新到体验升级 端午假期特色文旅引领消费新趋势</span><span class="l-zh">从场景上新到体验升级 端午假期特色文旅引领消费新趋势</span></h2>
-
+            
             <div class="intel"><span class="chip">consumer</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.cnstock.com/commonDetail/732077" target="_blank" rel="noopener"
-           data-theme="fiscal" data-importance="medium" data-search="财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 15分钟前 财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 15分钟前   上海证券报 fiscal_trade 512880.ss">
+           data-theme="fiscal" data-importance="medium" data-search="财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 3小时前 财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 3小时前   上海证券报 fiscal_trade 512880.ss">
           <div class="rank"><b>#11</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-fiscal"><span class="l-en">Fiscal/Trade</span><span class="l-zh">财政/贸易</span></span>
               <span class="chip"><b>上海证券报</b> · china_native</span>
               <span class="chip imp-medium"><b>60</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 15分钟前</span><span class="l-zh">财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 15分钟前</span></h2>
-
+            <h2 class="title"><span class="l-en">财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 3小时前</span><span class="l-zh">财政部：在政府采购活动中对46家美国企业采取相关措施 快讯 · 财政部 3小时前</span></h2>
+            
             <div class="intel"><span class="chip">fiscal_trade</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
-        <a class="card" href="https://finance.eastmoney.com/a/202606223777160729.html" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium" data-search="华泰证券港股策略：红利买点尚未出现 华泰证券港股策略：红利买点尚未出现 【华泰证券港股策略：红利买点尚未出现】华泰证券发布港股策略研报称，对更多关注股息回报的投资者，当前港股红利低波指数ttm股息率5%，仍处在历史区间下沿，指数层面尚未跌出性价比，建议关注派息率稳定、预期股息率高于6%、roe提升的细分个股，如食品饮料和部分工业股。港股总体而言，中枢反转仍要看大厂ai进展和消费修复催化，当前尚未到合适时机。 【华泰证券港股策略：红利买点尚未出现】华泰证券发布港股策略研报称，对更多关注股息回报的投资者，当前港股红利低波指数ttm股息率5%，仍处在历史区间下沿，指数层面尚未跌出性价比，建议关注派息率稳定、预期股息率高于6%、roe提升的细分个股，如食品饮料和部分工业股。港股总体而言，中枢反转仍要看大厂ai进展和消费修复催化，当前尚未到合适时机。 eastmoney consumer industrial tech_policy 512880.ss">
+        
+        <a class="card" href="https://www.scmp.com/economy/policy/article/3357389/why-deeper-china-ties-matter-europe-seeks-power-its-ai-ambitions-beyond-america?utm_source=rss_feed" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="medium" data-search="why deeper china ties matter as europe seeks to power its ai ambitions beyond america  europe should welcome more chinese investment and deepen industrial partnerships with china as it seeks to reduce its dependence on us technology and finance the industries of the future, according to one of the architects of the euro.
+christian noyer, a founding vice-president of the european central bank, former governor of the bank of france and lead author of a landmark proposal to integrate the continent’s capital markets, said europe should remain open to chinese investment as it sought...  scmp - business industrial markets tech_policy 510300.ss">
           <div class="rank"><b>#12</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
-              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>Eastmoney</b> · domestic_wire</span>
-              <span class="chip imp-medium"><b>49</b>/100</span>
-            </div>
-            <h2 class="title"><span class="l-en">华泰证券港股策略：红利买点尚未出现</span><span class="l-zh">华泰证券港股策略：红利买点尚未出现</span></h2>
-            <p class="summary"><span class="l-en">【华泰证券港股策略：红利买点尚未出现】华泰证券发布港股策略研报称，对更多关注股息回报的投资者，当前港股红利低波指数TTM股息率5%，仍处在历史区间下沿，指数层面尚未跌出性价比，建议关注派息率稳定、预期股息率高于6%、ROE提升的细分个股，如食品饮料和部分工业股。港股总体而言，中枢反转仍要看大厂AI进展和消费修复催化，当前尚未到合适时机。</span><span class="l-zh">【华泰证券港股策略：红利买点尚未出现】华泰证券发布港股策略研报称，对更多关注股息回报的投资者，当前港股红利低波指数TTM股息率5%，仍处在历史区间下沿，指数层面尚未跌出性价比，建议关注派息率稳定、预期股息率高于6%、ROE提升的细分个股，如食品饮料和部分工业股。港股总体而言，中枢反转仍要看大厂AI进展和消费修复催化，当前尚未到合适时机。</span></p>
-            <div class="intel"><span class="chip">consumer</span><span class="chip">industrial</span><span class="chip">tech_policy</span><span class="chip tk">512880.SS</span><span class="chip">domestic flash wire</span><span class="chip">market-sensitive term</span></div>
-          </div>
-        </a>
-
-        <a class="card" href="https://www.scmp.com/economy/policy/article/3357389/why-deeper-china-ties-matter-europe-seeks-power-its-ai-ambitions-beyond-america?utm_source=rss_feed" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="medium" data-search="why deeper china ties matter as europe seeks to power its ai ambitions beyond america 欧洲寻求超越美国实现ai雄心，深化与中国合作为何至关重要 europe should welcome more chinese investment and deepen industrial partnerships with china as it seeks to reduce its dependence on us technology and finance the industries of the future, according to one of the architects of the euro.
-christian noyer, a founding vice-president of the european central bank, former governor of the bank of france and lead author of a landmark proposal to integrate the continent’s capital markets, said europe should remain open to chinese investment as it sought... 欧洲应欢迎更多中国投资并深化产业合作，以降低对美国技术的依赖并为未来产业提供融资——这是欧元设计者之一、欧洲央行创始副行长、前法国央行行长克里斯蒂安·诺耶的观点。 scmp - business industrial markets tech_policy 510300.ss">
-          <div class="rank"><b>#13</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
-          <div class="body">
-            <div class="top">
-
+              
               <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="chip"><b>SCMP - Business</b> · global_wire</span>
               <span class="chip imp-medium"><b>62</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">Why deeper China ties matter as Europe seeks to power its AI ambitions beyond America</span><span class="l-zh">欧洲寻求超越美国实现AI雄心，深化与中国合作为何至关重要</span></h2>
+            <h2 class="title"><span class="l-en">Why deeper China ties matter as Europe seeks to power its AI ambitions beyond America</span><span class="l-zh">Why deeper China ties matter as Europe seeks to power its AI ambitions beyond America</span></h2>
             <p class="summary"><span class="l-en">Europe should welcome more Chinese investment and deepen industrial partnerships with China as it seeks to reduce its dependence on US technology and finance the industries of the future, according to one of the architects of the euro.
-Christian Noyer, a founding vice-president of the European Central Bank, former governor of the Bank of France and lead author of a landmark proposal to integrate the continent’s capital markets, said Europe should remain open to Chinese investment as it sought...</span><span class="l-zh">欧洲应欢迎更多中国投资并深化产业合作，以降低对美国技术的依赖并为未来产业提供融资——这是欧元设计者之一、欧洲央行创始副行长、前法国央行行长克里斯蒂安·诺耶的观点。</span></p>
+Christian Noyer, a founding vice-president of the European Central Bank, former governor of the Bank of France and lead author of a landmark proposal to integrate the continent’s capital markets, said Europe should remain open to Chinese investment as it sought...</span><span class="l-zh">Europe should welcome more Chinese investment and deepen industrial partnerships with China as it seeks to reduce its dependence on US technology and finance the industries of the future, according to one of the architects of the euro.
+Christian Noyer, a founding vice-president of the European Central Bank, former governor of the Bank of France and lead author of a landmark proposal to integrate the continent’s capital markets, said Europe should remain open to Chinese investment as it sought...</span></p>
             <div class="intel"><span class="chip">industrial</span><span class="chip">markets</span><span class="chip">tech_policy</span><span class="chip tk">510300.SS</span><span class="chip">tier-1 China wire</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.caixinglobal.com/2026-06-16/china-industrial-output-beats-estimates-as-ai-boom-offsets-property-drag-102454731.html" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="medium" data-search="china industrial output beats estimates as ai boom offsets property drag 中国工业产出超预期，ai热潮抵消房地产拖累   caixin global - economy property industrial tech_policy 512200.ss">
-          <div class="rank"><b>#14</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+           data-theme="growth" data-importance="medium" data-search="china industrial output beats estimates as ai boom offsets property drag    caixin global - economy property industrial tech_policy 512200.ss">
+          <div class="rank"><b>#13</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
               <span class="chip"><b>Caixin Global - Economy</b> · global_wire</span>
               <span class="chip imp-medium"><b>62</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">China Industrial Output Beats Estimates as AI Boom Offsets Property Drag</span><span class="l-zh">中国工业产出超预期，AI热潮抵消房地产拖累</span></h2>
-
+            <h2 class="title"><span class="l-en">China Industrial Output Beats Estimates as AI Boom Offsets Property Drag</span><span class="l-zh">China Industrial Output Beats Estimates as AI Boom Offsets Property Drag</span></h2>
+            
             <div class="intel"><span class="chip">property</span><span class="chip">industrial</span><span class="chip">tech_policy</span><span class="chip tk">512200.SS</span><span class="chip">tier-1 China wire</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.pbc.gov.cn/en/3688110/3688172/2026/2026061717385739034/index.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high" data-search="pboc to launch repo facility for overseas central banking institutions (announcement onâ open market businessâ no.3â [2026]) 中国人民银行将面向境外央行类机构推出回购便利工具（公开市场业务公告〔2026〕第3号）   pboc pboc_liquidity ">
+           data-theme="monetary" data-importance="high" data-search="pboc to launch repo facility for overseas central banking institutions (announcement onâ open market businessâ no.3â [2026])    pboc pboc_liquidity ">
+          <div class="rank"><b>#14</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
+          <div class="body">
+            <div class="top">
+              
+              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
+              <span class="chip"><b>PBoC</b> · official</span>
+              <span class="chip imp-high"><b>68</b>/100</span>
+            </div>
+            <h2 class="title"><span class="l-en">PBOC to Launch Repo Facility for Overseas Central Banking Institutions (Announcement onÂ Open Market BusinessÂ No.3Â [2026])</span><span class="l-zh">PBOC to Launch Repo Facility for Overseas Central Banking Institutions (Announcement onÂ Open Market BusinessÂ No.3Â [2026])</span></h2>
+            
+            <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">official policy source</span><span class="chip">tier-1 China macro term</span></div>
+          </div>
+        </a>
+        
+        <a class="card" href="https://www.pbc.gov.cn/en/3688110/3688172/2026/2026061717452740753/index.html" target="_blank" rel="noopener"
+           data-theme="monetary" data-importance="high" data-search="pboc optimizes the operational arrangements for overnight ad hoc repo/reverse repo operations in open market operations (announcement on open market business no.2 [2026])    pboc pboc_liquidity ">
           <div class="rank"><b>#15</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
               <span class="chip"><b>PBoC</b> · official</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">PBOC to Launch Repo Facility for Overseas Central Banking Institutions (Announcement onÂ Open Market BusinessÂ No.3Â [2026])</span><span class="l-zh">中国人民银行将面向境外央行类机构推出回购便利工具（公开市场业务公告〔2026〕第3号）</span></h2>
-
+            <h2 class="title"><span class="l-en">PBOC Optimizes the Operational Arrangements for Overnight Ad hoc Repo/Reverse Repo Operations in Open Market Operations (Announcement on Open Market Business No.2 [2026])</span><span class="l-zh">PBOC Optimizes the Operational Arrangements for Overnight Ad hoc Repo/Reverse Repo Operations in Open Market Operations (Announcement on Open Market Business No.2 [2026])</span></h2>
+            
             <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">official policy source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
-        <a class="card" href="https://www.pbc.gov.cn/en/3688110/3688172/2026/2026061717452740753/index.html" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="high" data-search="pboc optimizes the operational arrangements for overnight ad hoc repo/reverse repo operations in open market operations (announcement on open market business no.2 [2026]) 中国人民银行优化公开市场临时正/逆回购操作安排（公开市场业务公告〔2026〕第2号）   pboc pboc_liquidity ">
+        
+        <a class="card" href="https://www.stcn.com/article/detail/3971438.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="a股突变！ai主线迎来调整，多只热门股走弱，风格切换能否成功？ a股突变！ai主线迎来调整，多只热门股走弱，风格切换能否成功？   证券时报 markets tech_policy 512880.ss">
           <div class="rank"><b>#16</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
-              <span class="chip theme th-monetary"><span class="l-en">PBoC</span><span class="l-zh">央行</span></span>
-              <span class="chip"><b>PBoC</b> · official</span>
-              <span class="chip imp-high"><b>68</b>/100</span>
+              
+              <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
+              <span class="chip"><b>证券时报</b> · china_native</span>
+              <span class="chip imp-medium"><b>54</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">PBOC Optimizes the Operational Arrangements for Overnight Ad hoc Repo/Reverse Repo Operations in Open Market Operations (Announcement on Open Market Business No.2 [2026])</span><span class="l-zh">中国人民银行优化公开市场临时正/逆回购操作安排（公开市场业务公告〔2026〕第2号）</span></h2>
-
-            <div class="intel"><span class="chip">pboc_liquidity</span><span class="chip">official policy source</span><span class="chip">tier-1 China macro term</span></div>
+            <h2 class="title"><span class="l-en">A股突变！AI主线迎来调整，多只热门股走弱，风格切换能否成功？</span><span class="l-zh">A股突变！AI主线迎来调整，多只热门股走弱，风格切换能否成功？</span></h2>
+            
+            <div class="intel"><span class="chip">markets</span><span class="chip">tech_policy</span><span class="chip tk">512880.SS</span><span class="chip">native Chinese financial source</span><span class="chip">dashboard core theme</span></div>
           </div>
         </a>
-
+        
         <a class="card" href="https://www.stats.gov.cn/english/PressRelease/202606/t20260611_1963929.html" target="_blank" rel="noopener"
-           data-theme="inflation" data-importance="high" data-search="industrial producer price indexes in may 2026 2026年5月工业生产者出厂价格指数   nbs industrial ">
+           data-theme="inflation" data-importance="high" data-search="industrial producer price indexes in may 2026    nbs industrial ">
           <div class="rank"><b>#17</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-inflation"><span class="l-en">Inflation</span><span class="l-zh">物价</span></span>
               <span class="chip"><b>NBS</b> · official</span>
               <span class="chip imp-high"><b>68</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">Industrial Producer Price Indexes in May 2026</span><span class="l-zh">2026年5月工业生产者出厂价格指数</span></h2>
-
+            <h2 class="title"><span class="l-en">Industrial Producer Price Indexes in May 2026</span><span class="l-zh">Industrial Producer Price Indexes in May 2026</span></h2>
+            
             <div class="intel"><span class="chip">industrial</span><span class="chip">official policy source</span><span class="chip">tier-1 China macro term</span></div>
           </div>
         </a>
-
-        <a class="card" href="https://www.scmp.com/business/article/3357636/hong-kong-property-sales-more-measured-interest-rate-increase-looms?utm_source=rss_feed" target="_blank" rel="noopener"
-           data-theme="markets" data-importance="medium" data-search="hong kong property sales more measured as interest rate increase looms 利率上调预期下香港楼市成交趋于谨慎 hong kong homebuyers showed interest in 130 flats put on sale by developers on thursday evening, but the pace of buying was more measured after an interest-rate increase later this year became more likely.
-agents said 30 of the 75 units put on sale at phase 4b of la montagne at the southside project at wong chuk hang mtr station sold on thursday.
-the two-bedroom units had saleable areas ranging from 484 to 546 sq ft, with prices starting at hk$13.4 million (us$1.7 million) after discounts.
-with... 香港购房者周四晚间对新推130套住宅表现出兴趣，但受年内加息可能性增强影响，购房节奏趋于谨慎。代理称，黄竹坑地铁站南岸项目la montagne第4b期推出的75套房源中，30套于周四售出。 scmp - business property 512200.ss">
+        
+        <a class="card" href="https://www.yicai.com/news/103238460.html" target="_blank" rel="noopener"
+           data-theme="markets" data-importance="medium" data-search="端午“爷叔团”热度上升，世界杯电影节梦幻“联动” 今年端午假期因与世界杯、父亲节及电影节等节日活动重合，推动文旅市场呈现民俗游、赛事游和毕业游并行发展的态势，带动了文商旅体展融合消费的增长。 昨天 20:36 端午“爷叔团”热度上升，世界杯电影节梦幻“联动” 今年端午假期因与世界杯、父亲节及电影节等节日活动重合，推动文旅市场呈现民俗游、赛事游和毕业游并行发展的态势，带动了文商旅体展融合消费的增长。 昨天 20:36   第一财经 consumer ">
           <div class="rank"><b>#18</b><span><span class="l-en">story</span><span class="l-zh">条目</span></span></div>
           <div class="body">
             <div class="top">
-
+              
               <span class="chip theme th-markets"><span class="l-en">Markets</span><span class="l-zh">市场</span></span>
-              <span class="chip"><b>SCMP - Business</b> · global_wire</span>
-              <span class="chip imp-medium"><b>62</b>/100</span>
+              <span class="chip"><b>第一财经</b> · china_native</span>
+              <span class="chip imp-medium"><b>60</b>/100</span>
             </div>
-            <h2 class="title"><span class="l-en">Hong Kong property sales more measured as interest rate increase looms</span><span class="l-zh">利率上调预期下香港楼市成交趋于谨慎</span></h2>
-            <p class="summary"><span class="l-en">Hong Kong homebuyers showed interest in 130 flats put on sale by developers on Thursday evening, but the pace of buying was more measured after an interest-rate increase later this year became more likely.
-Agents said 30 of the 75 units put on sale at Phase 4B of La Montagne at the Southside project at Wong Chuk Hang MTR station sold on Thursday.
-The two-bedroom units had saleable areas ranging from 484 to 546 sq ft, with prices starting at HK$13.4 million (US$1.7 million) after discounts.
-With...</span><span class="l-zh">香港购房者周四晚间对新推130套住宅表现出兴趣，但受年内加息可能性增强影响，购房节奏趋于谨慎。代理称，黄竹坑地铁站南岸项目La Montagne第4B期推出的75套房源中，30套于周四售出。</span></p>
-            <div class="intel"><span class="chip">property</span><span class="chip tk">512200.SS</span><span class="chip">tier-1 China wire</span><span class="chip">tier-1 China macro term</span></div>
+            <h2 class="title"><span class="l-en">端午“爷叔团”热度上升，世界杯电影节梦幻“联动” 今年端午假期因与世界杯、父亲节及电影节等节日活动重合，推动文旅市场呈现民俗游、赛事游和毕业游并行发展的态势，带动了文商旅体展融合消费的增长。 昨天 20:36</span><span class="l-zh">端午“爷叔团”热度上升，世界杯电影节梦幻“联动” 今年端午假期因与世界杯、父亲节及电影节等节日活动重合，推动文旅市场呈现民俗游、赛事游和毕业游并行发展的态势，带动了文商旅体展融合消费的增长。 昨天 20:36</span></h2>
+            
+            <div class="intel"><span class="chip">consumer</span><span class="chip">native Chinese financial source</span><span class="chip">market-sensitive term</span></div>
           </div>
         </a>
-
+        
       </div>
       <div class="empty hidden" id="none"><h2><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h2><p><span class="l-en">Clear search or switch back to All themes.</span><span class="l-zh">清空搜索或切回全部主题。</span></p></div>
-
+      
       <p class="disc"><span class="l-en">Context only — not a signal. The policy-tone read is a z-score of a crude lexicon proxy on the CCTV 新闻联播 broadcast (relative, never an absolute sentiment); the headlines are deterministically filtered (macro themes only, each tagged) Eastmoney flash-wire items. Nothing here is an input to any score, signal, regime or allocation, and the mechanical model never sees it.</span><span class="l-zh">仅作背景，非信号。政策基调读数是对央视《新闻联播》文本的粗略词典代理的 z 标准化（相对值，并非绝对情绪）；头条为东方财富快讯经确定性筛选（仅宏观主题，逐条标注）的条目。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。</span></p>
     </div>
 
     <aside class="rail">
       <section class="rail-card">
         <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
-        <div class="line"><div class="date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="main">9 high-impact China items; dominant channel pboc_liquidity; source mix china_native:10, global_wire:4, official:3</div></div>
-        <div class="line"><div class="date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div><div class="main"><span class="tag">pboc_liquidity</span><span class="tag">industrial</span><span class="tag">property</span><span class="tag">consumer</span><span class="tag">tech_policy</span></div></div>
+        <div class="line"><div class="date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="main">9 high-impact China items; dominant channel pboc_liquidity; source mix china_native:12, global_wire:3, official:3</div></div>
+        <div class="line"><div class="date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div><div class="main"><span class="tag">pboc_liquidity</span><span class="tag">consumer</span><span class="tag">industrial</span><span class="tag">tech_policy</span><span class="tag">property</span></div></div>
         <div class="line"><div class="date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div><div class="main"><span class="tag">512880.SS</span><span class="tag">512200.SS</span><span class="tag">512800.SS</span><span class="tag">510300.SS</span></div></div>
-        <div class="line"><div class="date"><span class="l-en">Sources</span><span class="l-zh">来源</span></div><div class="main"><span class="tag">china_native 10</span><span class="tag">global_wire 4</span><span class="tag">official 3</span><span class="tag">domestic_wire 1</span></div></div>
+        <div class="line"><div class="date"><span class="l-en">Sources</span><span class="l-zh">来源</span></div><div class="main"><span class="tag">china_native 12</span><span class="tag">global_wire 3</span><span class="tag">official 3</span></div></div>
       </section>
 
       <section class="rail-card">
         <h2><span class="l-en">China high-impact calendar</span><span class="l-zh">中国高影响日程</span></h2>
-
+        
         <div class="line"><div class="date">Mon Jun 22</div><div class="main"><span class="tag">LPR</span><span class="l-en">LPR fix (loan prime rate)</span><span class="l-zh">LPR 报价（贷款市场报价利率）</span></div></div>
-
+        
         <div class="line"><div class="date">Tue Jun 30</div><div class="main"><span class="tag">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div></div>
-
+        
       </section>
       <section class="rail-card">
         <h2><span class="l-en">All scheduled catalysts</span><span class="l-zh">全部排定催化</span></h2>
-
+        
         <div class="line"><div class="date">2026-06-22</div><div class="main"><span class="tag">LPR</span><span class="l-en">LPR fix (loan prime rate)</span><span class="l-zh">LPR 报价（贷款市场报价利率）</span></div></div>
-
+        
         <div class="line"><div class="date">2026-06-30</div><div class="main"><span class="tag">PMI</span><span class="l-en">NBS PMI (mfg + non-mfg)</span><span class="l-zh">国家统计局 PMI（制造业＋非制造业）</span></div></div>
-
+        
         <div class="line"><div class="date">2026-07-01</div><div class="main"><span class="tag">CAIXIN_M</span><span class="l-en">Caixin Manufacturing PMI</span><span class="l-zh">财新制造业 PMI</span></div></div>
-
+        
+        <div class="line"><div class="date">2026-07-03</div><div class="main"><span class="tag">CAIXIN_S</span><span class="l-en">Caixin Services PMI</span><span class="l-zh">财新服务业 PMI</span></div></div>
+        
       </section>
-
+      
       <section class="rail-card">
         <h2><span class="l-en">Policy-tone provenance</span><span class="l-zh">政策基调来源</span></h2>
-        <div class="line"><div class="date">2026-06-19</div><div class="main"><span class="l-en">Tone z-score</span><span class="l-zh">基调 z 分数</span> <b>-0.16</b> · 7<span class="l-en">d series</span><span class="l-zh">天序列</span></div></div>
+        <div class="line"><div class="date">2026-06-21</div><div class="main"><span class="l-en">Tone z-score</span><span class="l-zh">基调 z 分数</span> <b>-1.05</b> · 9<span class="l-en">d series</span><span class="l-zh">天序列</span></div></div>
       </section>
-
+      
     </aside>
   </section>
 </main>
