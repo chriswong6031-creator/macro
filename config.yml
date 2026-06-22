@@ -4073,9 +4073,12 @@ special_situations:                # event-driven Special Situations desk (displ
   # yields real items (live sample: ROKU/PayPal strategic reviews, Yum divestiture, buybacks).
   # display-only, low-confidence; deduped by (ticker, category) on the desk.
   newswire: true
-  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX). Still OFF: the name_resolver's
-  # foreign coverage is too thin (only digest_db's ~2.5k non-US names; no SEC-equivalent map),
-  # so live sampling yielded ~0. The intl CLASSIFIER core is solid + tested; re-enable once a
-  # real UK/CA name->ticker map (or direct RNS/SEDAR-newswire feeds) is wired.
+  # Phase 4 international lanes — UK (LSE/RNS) + Canada (TSX). Both use the intl classifier +
+  # name_resolver (UK/CA names now resolve via the stock-search libraries).
+  # CANADA is ON: it adds a direct GlobeNewswire-Canada RSS source on top of Google-News,
+  # strictly gated (spam/French filtered, must classify AND resolve a .TO ticker). LOW yield —
+  # there is no clean free Canadian special-situations feed (SEDAR+ direct is ToS/CAPTCHA-
+  # barred), so this captures the occasional real TSX deal PR; precision-gated, never noisy.
+  # UK stays OFF: no direct RNS feed wired yet, and Google-News alone yields ~0 (feed recall).
   intl_uk: false
-  intl_canada: false
+  intl_canada: true
