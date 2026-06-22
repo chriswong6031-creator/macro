@@ -249,6 +249,7 @@ def test_feed_end_to_end_monkeypatched():
     orig_polygon = fn._polygon_news
     orig_finnhub = fn._finnhub_news
     orig_gdelt = fn._gdelt_thematic
+    orig_rss = fn._rss_news
 
     try:
         # _polygon_news(cfg, now) -> list of normalised items
@@ -260,12 +261,17 @@ def test_feed_end_to_end_monkeypatched():
             "market": [],
             "sectors": {etf: [] for etf in fn._SECTOR_QUERIES},
         }
+        # _rss_news(cfg, emap, now) -> {market, company, sectors}. Mock to empty so the
+        # routing assertions stay deterministic (live wires would otherwise crowd the
+        # synthetic items out of the capped sections).
+        fn._rss_news = lambda cfg, emap, now: {"market": [], "company": [], "sectors": {}}
 
         result = fn.feed(use_cache=False)
     finally:
         fn._polygon_news = orig_polygon
         fn._finnhub_news = orig_finnhub
         fn._gdelt_thematic = orig_gdelt
+        fn._rss_news = orig_rss
 
     assert result is not None
     assert result.get("schema") == "financial_news.v1"

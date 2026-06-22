@@ -61,17 +61,30 @@ TIER2_SOURCES = [
 # clear a theme/entity gate before they're kept, never the source alone.
 TIER3_SOURCES = [
     "yahoo.com", "investing.com", "seekingalpha.com", "kitco.com",
-    "benzinga.com", "zacks.com", "fool.com", "thefly.com", "tipranks.com",
+    "benzinga.com", "zacks.com", "fool.com", "thefly.com",
     "finance.yahoo.com", "markets.businessinsider.com", "stocktwits.com",
 ]
+
+# Hard blocklist — pure stock-pick content mills. Never surfaces, on ANY tier and
+# even from provider feeds (Polygon/Finnhub publisher = TipRanks). A blocklisted
+# domain is tier-0 (dropped) AND filtered explicitly before any provider floor.
+BLOCKED_SOURCES = ["tipranks.com"]
 
 ALL_SOURCES = TIER1_SOURCES + TIER2_SOURCES + TIER3_SOURCES
 _TIER_WEIGHT = {1: 1.0, 2: 0.82, 3: 0.58, 0: 0.0}
 
 
-def source_tier(domain: str) -> int:
-    """1 (wire), 2 (quality press), 3 (aggregator), or 0 (not allowlisted). PURE."""
+def is_blocked(domain: str) -> bool:
+    """True for hard-blocklisted source domains (pure pick mills). PURE."""
     d = (domain or "").lower()
+    return any(s in d for s in BLOCKED_SOURCES)
+
+
+def source_tier(domain: str) -> int:
+    """1 (wire), 2 (quality press), 3 (aggregator), or 0 (not allowlisted / blocked). PURE."""
+    d = (domain or "").lower()
+    if is_blocked(d):
+        return 0
     if any(s in d for s in TIER1_SOURCES):
         return 1
     if any(s in d for s in TIER2_SOURCES):
@@ -128,6 +141,73 @@ def clickbait_penalty(title: str) -> float:
     if (title or "").count("?") >= 1 and len(low) < 70:
         pen += 0.05
     return min(pen, 0.45)
+
+
+# --------------------------------------------------------------------------- #
+# Low-value detection — HARD DROP (not just demote). A subtractive clickbait
+# penalty can't remove a fresh tier-1 syndicated column: tier(1.0) × (1−0.45) ×
+# recency ≈ 55, still high. These formats carry NO real, entity-taggable news —
+# the actual "picks" live untaggably in the body — so we drop them outright.
+# High-precision: only explicit recommendation / listicle / advice framing.
+# --------------------------------------------------------------------------- #
+# Stock-pick "roundup" / advertorial listicles (TipRanks / Zacks / Motley-Fool
+# style: "Top Wall Street analysts like these 3 dividend stocks", "5 stocks to
+# buy now", "where to invest $10,000").
+_ROUNDUP_RE = re.compile(
+    r"(?:"
+    r"\b(?:stock|stocks|etf|etfs|fund|funds|share|shares)\s+to\s+(?:buy|watch|sell|own|consider|avoid|hold|grab|short)\b"
+    r"|\bstock\s+picks?\b"
+    r"|\btop\s+wall\s+street\s+analysts?\b"
+    r"|\banalysts?\s+(?:like|love|favou?r|recommend|tout)\b"
+    r"|\b(?:buy|own|watch|grab|sell|short|scoop\s+up)\s+these\b"
+    r"|\bthese\s+\d{1,2}\s+(?:[\w-]+\s+){0,2}?(?:stock|stocks|etf|etfs|name|names|fund|funds|pick|picks|share|shares)\b"
+    r"|\bwhere\s+to\s+invest\b"
+    r"|\b\d{1,2}\s+(?:[\w-]+\s+){0,2}?(?:dividend|growth|value|ai|tech|chip|energy|high[-\s]?yield|blue[-\s]?chip|magnificent|meme|penny|quantum|nuclear|defen[cs]e|cybersecurity|biotech|reit|momentum|undervalued)\b[\w\s,-]*?\bstocks?\b"
+    r"|\b(?:stock|stocks|etf|etfs|fund|funds)\s+(?:for|to\s+buy\s+for)\s+(?:your\s+)?(?:portfolio|retirement|income|dividends?|passive\s+income|the\s+long[-\s]term|long[-\s]term|big\s+returns|solid\s+returns|steady\s+returns|\d{4})\b"
+    r"|\b(?:best|top|hottest|smartest|safest|cheapest|favou?rite|must-own|must-buy|top-rated)\s+(?:[\w-]+\s+){0,2}?dividend\s+stocks?\b"
+    r"|\bstocks?\s+(?:that\s+could|to)\s+(?:soar|surge|explode|double|triple|skyrocket|make\s+you)\b"
+    r")", re.I)
+
+# First-person personal-finance ADVICE columns (e.g. MarketWatch "Moneyist" /
+# retirement / tax Q&A: "I'm spending $170,000... Can I get tax breaks?"). These
+# are off-topic for a market dashboard. Conservative: a personal opener AND a "?".
+_ADVICE_OPENER_RE = re.compile(
+    r"^['\"‘“]?\s*(?:"
+    r"i['’]?m\b|i\s+(?:am|have|had|want|need|earn|make|made|inherited|owe|just|recently|turned|retired|plan)\b"
+    r"|my\s+(?:husband|wife|mother|father|mom|dad|son|daughter|sister|brother|siblings?|parents?|in-laws?|"
+    r"grand(?:mother|father|parents?)|partner|spouse|boss|company|employer|landlord|adult|stepson|stepdaughter|"
+    r"ex-(?:husband|wife)|aunt|uncle|cousin|widow|fianc|family)\b"
+    r"|we['’]?(?:re|ve)\b|we\s+(?:are|have|just|recently|want|need|plan)\b"
+    r")", re.I)
+
+# Bylines of stock-pick content mills — drop regardless of host (e.g. CNBC / Yahoo
+# re-publishing a TipRanks / Zacks column). Matched against the article author.
+_PICKMILL_BYLINES = (
+    "tipranks", "zacks", "validea", "motley fool", "insidermonkey",
+    "insider monkey", "simply wall st", "gurufocus", "stocknews",
+)
+
+
+def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
+    """True for headlines to DROP outright: stock-pick roundup/advertorial
+    listicles (picks buried untaggably in the body), first-person personal-finance
+    advice columns, and content syndicated from pick-mill bylines. High-precision —
+    only formats that carry no real, entity-taggable news. PURE.
+
+    Note: this is the ONLY reliable handle on syndicated junk that a trusted outlet
+    re-publishes (e.g. CNBC's TipRanks column has domain cnbc.com and NO byline in
+    its RSS), so the title pattern — not the source tier — has to catch it."""
+    t = (title or "").strip()
+    if not t:
+        return True
+    a = (author or "").lower()
+    if a and any(s in a for s in _PICKMILL_BYLINES):
+        return True
+    if _ROUNDUP_RE.search(t):
+        return True
+    if "?" in t and _ADVICE_OPENER_RE.match(t):
+        return True
+    return False
 
 
 # --------------------------------------------------------------------------- #
