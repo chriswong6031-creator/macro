@@ -22,6 +22,42 @@ def test_extract_intl_ticker_suffixes():
     assert si.extract_intl_ticker(None) is None
 
 
+def test_direct_items_filters_spam_and_french(monkeypatch):
+    """GlobeNewswire is a noisy general wire — drop law-firm investor-alert spam + French
+    duplicates before the classify/ticker gate."""
+    canned = [
+        {"title": "Acme Mining Corp announces plan of arrangement (TSX: ACM)"},
+        {"title": "ROSEN, LEADING COUNSEL, Encourages Foo Corp Investors With Losses to Contact"},
+        {"title": "Beta Inc DEADLINE ALERT: class action lawsuit reminder"},
+        {"title": "Société Dynacor nomme un nouveau chef de la direction"},
+    ]
+    monkeypatch.setattr("engine.news_rss._fetch", lambda url: b"<rss/>")
+    monkeypatch.setattr("engine.news_rss._parse", lambda raw, dom, from_google: list(canned))
+    titles = [o["title"] for o in si._direct_items("canada")]
+    assert any("Acme Mining" in t for t in titles)         # real PR kept
+    assert not any("ROSEN" in t for t in titles)            # law-firm spam dropped
+    assert not any("DEADLINE" in t for t in titles)         # class-action spam dropped
+    assert not any("Société" in t for t in titles)          # French duplicate dropped
+    assert si._direct_items("uk") == []                     # no direct feed configured for uk
+
+
+def test_canada_globenewswire_end_to_end(tmp_path, monkeypatch):
+    """A real-style GlobeNewswire CA press release (TSX-tagged, special-sits) flows all the
+    way to a situation — proving the mechanism works even though the live feed is sparse."""
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(si, "_cfg", lambda: {"enabled": True, "intl_uk": False, "intl_canada": True})
+    (tmp_path / "special_situations").mkdir()
+    monkeypatch.setattr("engine.news_rss.query", lambda q, **k: [])     # no google-news
+    monkeypatch.setattr("engine.news_rss._fetch", lambda url: b"<rss/>")
+    monkeypatch.setattr("engine.news_rss._parse", lambda raw, dom, from_google: [
+        {"title": "Acme Mining Corp announces plan of arrangement (TSX: ACM)", "url": "http://g",
+         "seendate": "2026-06-20", "summary": ""}])
+    df = si.fetch_intl_situations(window_days=5, per_query=10)
+    assert (df["ticker"] == "ACM.TO").any()
+    r = df[df["ticker"] == "ACM.TO"].iloc[0]
+    assert r["category"] == "Acquisitions" and r["market"] == "canada"
+
+
 def test_fetch_gated_off_is_noop(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "data_dir", lambda: tmp_path)
     monkeypatch.setattr(si, "_cfg", lambda: {"enabled": True, "intl_uk": False, "intl_canada": False})

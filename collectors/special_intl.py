@@ -44,6 +44,40 @@ MARKETS: dict[str, dict] = {
         "TSX normal course issuer bid", "Canada early warning report"]},
 }
 
+# Direct newswire RSS per market — better recall than Google-News aggregation. GlobeNewswire
+# Canada is a general PR wire (SEDAR+ direct is ToS/CAPTCHA-barred), and it is NOISY (law-firm
+# investor-alert spam, French duplicates, exploration PRs), so it is strictly gated downstream:
+# only items that classify_intl recognizes AND that resolve to a .TO ticker survive. The spam
+# + French filters here drop the obvious junk before that gate. Honest: low yield (~1/day) —
+# there is no clean free Canadian special-situations feed; this captures the occasional real one.
+DIRECT_FEEDS: dict[str, list[str]] = {
+    "canada": ["https://www.globenewswire.com/RssFeed/country/Canada/feedTitle/GlobeNewswire%20-%20Canada"],
+}
+_SPAM_RE = re.compile(
+    r"\bROSEN\b|\bDEADLINE\b|class action|law\s?firm|encourages\b.{0,40}\binvestors|"
+    r"reminds investors|investor alert|securities fraud|investigation on behalf|shareholder rights law",
+    re.I)
+# obvious French-language GlobeNewswire duplicates (we classify the English release)
+_FR_RE = re.compile(r"\b(nomme|annonce|société|résultats|conseil d['’]|réalise|acquisition de)\b", re.I)
+
+
+def _direct_items(market: str) -> list[dict]:
+    """Fetch the market's direct newswire RSS (GlobeNewswire), dropping law-firm spam +
+    French duplicates. Reuses news_rss's fetch/parse. Empty on outage."""
+    from engine import news_rss
+    out: list[dict] = []
+    for url in DIRECT_FEEDS.get(market, []):
+        try:
+            raw = news_rss._fetch(url)
+            items = news_rss._parse(raw, "globenewswire.com", from_google=False) if raw else []
+        except Exception:  # noqa: BLE001
+            continue
+        for it in items:
+            t = it.get("title") or ""
+            if t and not _SPAM_RE.search(t) and not _FR_RE.search(t):
+                out.append(it)
+    return out
+
 
 def extract_intl_ticker(text: str | None) -> str | None:
     """Suffixed ticker from an exchange-tagged headline ('(LSE: BARC)' -> 'BARC.L'); None
@@ -104,32 +138,38 @@ def fetch_intl_situations(window_days: int = 4, per_query: int = 30) -> pd.DataF
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     rows: list[dict] = []
     for m in markets:
+        # gather candidates from Google-News queries AND the direct newswire RSS (e.g.
+        # GlobeNewswire Canada), then apply the SAME strict gate to both.
+        items: list[dict] = []
         for q in MARKETS[m]["queries"]:
             try:
-                items = news_rss.query(q, window_days=window_days, min_tier=3)[:per_query]
+                items += news_rss.query(q, window_days=window_days, min_tier=3)[:per_query]
             except Exception as e:  # noqa: BLE001
                 log.warning("special_situations intl query failed (%s): %s", q, e)
+        try:
+            items += _direct_items(m)
+        except Exception as e:  # noqa: BLE001
+            log.warning("special_situations intl direct-feed failed (%s): %s", m, e)
+        for it in items:
+            title = it.get("title") or ""
+            # exchange-tagged ticker if present, else resolve from the company name (scoped
+            # to this market so a UK headline can't resolve to a US listing)
+            tkr = extract_intl_ticker(title) or _resolve_intl(title, m)
+            if not tkr:
                 continue
-            for it in items:
-                title = it.get("title") or ""
-                # exchange-tagged ticker if present, else resolve from the company name (scoped
-                # to this market so a UK headline can't resolve to a US listing)
-                tkr = extract_intl_ticker(title) or _resolve_intl(title, m)
-                if not tkr:
-                    continue
-                cat, stage = isi.classify_intl(f"{title} {it.get('summary','')}")
-                if not cat:
-                    continue
-                url = it.get("url") or ""
-                rows.append({
-                    "id": hashlib.sha1(url.encode("utf-8")).hexdigest()[:16],
-                    "ticker": tkr, "company": _company_of(it.get("title", ""), tkr),
-                    "category": cat, "stage": stage or "announced", "market": m,
-                    "country": isi.country_for(ticker=tkr),
-                    "date": (it.get("seendate") or "")[:10] or now[:10],
-                    "url": url, "summary": it.get("title"), "source": it.get("source"),
-                    "confidence": "low", "first_seen": now,
-                })
+            cat, stage = isi.classify_intl(f"{title} {it.get('summary','')}")
+            if not cat:
+                continue
+            url = it.get("url") or ""
+            rows.append({
+                "id": hashlib.sha1(url.encode("utf-8")).hexdigest()[:16],
+                "ticker": tkr, "company": _company_of(title, tkr),
+                "category": cat, "stage": stage or "announced", "market": m,
+                "country": isi.country_for(ticker=tkr),
+                "date": (it.get("seendate") or "")[:10] or now[:10],
+                "url": url, "summary": title, "source": it.get("source"),
+                "confidence": "low", "first_seen": now,
+            })
     new = pd.DataFrame(rows)
     if new.empty:
         return old if old is not None else new
