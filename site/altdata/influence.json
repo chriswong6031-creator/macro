@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-22T01:31:07.361989+00:00",
+  "generated_utc": "2026-06-22T03:37:25.716406+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,14 +749,13 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 8,
-      "alt_weighted": 3.05,
+      "alt_score": 7,
+      "alt_weighted": 2.7,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
         "github_momentum",
-        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -801,12 +800,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.15,
+      "alt_score": 2,
+      "alt_weighted": 0.75,
       "alt_channels": [
         "affiliation",
-        "cnbc_pick",
-        "special_situation"
+        "cnbc_pick"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -848,12 +846,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.2,
+      "alt_score": 4,
+      "alt_weighted": 1.85,
       "alt_channels": [
         "13f_add",
         "affiliation",
-        "hf_model_momentum",
         "material_8k",
         "special_situation"
       ],
@@ -998,12 +995,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.15,
+      "alt_score": 6,
+      "alt_weighted": 2.45,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
+        "github_momentum",
         "gov_contract",
         "patent_cluster"
       ],
@@ -1093,12 +1091,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 5,
-      "alt_weighted": 2.25,
+      "alt_score": 6,
+      "alt_weighted": 2.55,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
+        "github_momentum",
         "material_8k",
         "special_situation"
       ],
@@ -1409,27 +1408,6 @@
       "top_holder": null
     },
     {
-      "ticker": "DHR",
-      "actors": [
-        {
-          "actor": "Jim Cramer",
-          "kind": "influencer",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
-      "alt_channels": [
-        "affiliation",
-        "special_situation"
-      ],
-      "top_holder": null
-    },
-    {
       "ticker": "ABTC",
       "actors": [
         {
@@ -1637,6 +1615,26 @@
         {
           "actor": "Michael Burry",
           "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": null
+    },
+    {
+      "ticker": "DHR",
+      "actors": [
+        {
+          "actor": "Jim Cramer",
+          "kind": "influencer",
           "rel": "AFFILIATES_WITH",
           "provenance": "DISCLOSED",
           "qualitative": true

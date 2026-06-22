@@ -362,3 +362,5 @@
 {"date":"2026-06-22","kind":"ticker","subject":"NET","ticker":"NET","edge_score":0,"state":"CONFIRMED_UP"}
 {"date":"2026-06-22","kind":"ticker","subject":"IBM","ticker":"IBM","edge_score":0,"state":"CONFIRMED_UP"}
 {"date":"2026-06-22","kind":"ticker","subject":"PANW","ticker":"PANW","edge_score":0,"state":"CONFIRMED_UP"}
+{"date":"2026-06-22","kind":"ticker","subject":"HOOD","ticker":"HOOD","edge_score":15,"state":"CONFIRMED_UP"}
+{"date":"2026-06-22","kind":"ticker","subject":"CRM","ticker":"CRM","edge_score":13,"state":"POSITIVE_DIVERGENCE"}
