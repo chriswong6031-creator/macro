@@ -110,7 +110,7 @@ def test_accounting_warn_flags_leader():
 def test_high_conviction_when_all_aligned():
     # validation-gated wording: uncalibrated default reads 'high-confluence (context)',
     # never the over-confident 'high-conviction'; the entry claim is NOT in the verb.
-    p = ss.conviction_profile(_rec(), "US")
+    p = ss.conviction_profile(_rec(revision_z=2.0), "US")
     v = p["verdict"].lower()
     assert "leader" in v
     assert "high-confluence" in v and "high-conviction" not in v
@@ -118,14 +118,15 @@ def test_high_conviction_when_all_aligned():
     assert p["validation_status"] == "neutral_ic"
     assert p["score"] is not None and p["score"] >= 50
     # once the deep-PIT gate proves forward edge, the verb upgrades to 'high-conviction'
-    pv = ss.conviction_profile(_rec(), "US", ctx={"gate_go": True})
+    pv = ss.conviction_profile(_rec(revision_z=2.0), "US", ctx={"gate_go": True})
     assert "high-conviction" in pv["verdict"].lower()
     assert pv["validation_status"] == "positive_ic"
 
 
 def test_leader_poor_entry():
     # strong selection, bad entry (extended, near high, hot RSI) but NOT cycle-blocked
-    rec = _rec(alpha_entry="extended", tech={"off_52w_high_pct": -1.0, "rsi14": 70.0},
+    rec = _rec(alpha_entry="extended", revision_z=2.0,
+               tech={"off_52w_high_pct": -1.0, "rsi14": 70.0},
                ladder={"state": "RALLY ON", "label": "UPTREND", "dir": "up",
                        "eq_dir": "up", "entry": {"urgency": "hold"}})
     v = _verb(rec, "US")
@@ -188,13 +189,13 @@ def test_momentum_alone_is_weak_edge():
     z, present = ss._axis_selection(rec, "US")
     assert present == ["alpha"]
     assert z is not None and z < 1.0            # 0.10*3.0/0.5 = 0.6 — weak, ranks low
-    # whereas a strong literature/validated leg of the same magnitude dominates. v2.1: analyst
-    # REVISIONS now lead the non-insider legs (0.32) — SUE was down-weighted (0.18) because its
-    # cross-sectional edge collapsed on deep history, so it no longer dominates by the old margin.
-    z_rev, _ = ss._axis_selection({"revision_z": 3.0}, "US")   # 0.32*3/0.5 = 1.92
+    # whereas a strong literature/validated leg of the same magnitude dominates. v2.2: analyst
+    # REVISIONS lead the non-insider legs (0.30) — SUE is re-derived to a light CONFIRMER FLOOR
+    # (0.10) because its deep-panel IC is ~0, so it no longer outranks the momentum context leg.
+    z_rev, _ = ss._axis_selection({"revision_z": 3.0}, "US")   # 0.30*3/0.5 = 1.80
     assert z_rev > z + 0.5
-    z_sue, _ = ss._axis_selection({"sue": 3.0}, "US")          # 0.18*3/0.5 = 1.08 — still > momentum
-    assert z_sue > z
+    z_sue, _ = ss._axis_selection({"sue": 3.0}, "US")          # 0.10*3/0.5 = 0.60 — demoted to the floor
+    assert z_sue == pytest.approx(z)                           # SUE now == the momentum floor (IC ~0)
 
 
 def test_revision_feeds_edge():
@@ -204,9 +205,10 @@ def test_revision_feeds_edge():
 
 
 def test_high_edge_low_quality_is_not_neutral():
-    # strong event edge (SUE) + ok entry + WEAK quality must read 'leader, weak fundamentals'
-    # — never fall through to 'Neutral' (the score-vs-verdict coherence bug we fixed).
-    rec = {"sue": 3.0, "alpha": 1.4, "ladder": {"state": "BOTTOM WATCH", "entry": {"urgency": "now"}},
+    # strong analyst-REVISION edge + ok entry + WEAK quality must read 'leader, weak fundamentals'
+    # — never fall through to 'Neutral' (the score-vs-verdict coherence bug we fixed). Uses the
+    # revision leg, not SUE: SUE's deep-panel IC ~0 demoted it to a confirmer floor in v2.2.
+    rec = {"revision_z": 3.0, "alpha": 1.4, "ladder": {"state": "BOTTOM WATCH", "entry": {"urgency": "now"}},
            "tech": {"rsi14": 50, "off_52w_high_pct": -8},
            "factor": {"profitability": -1.5, "quality": -1.2, "value": -0.8, "low_vol": -0.9}}
     p = ss.conviction_profile(rec, "US")
@@ -255,7 +257,8 @@ def test_parabolic_gets_specific_dont_chase_verdict():
 
 def test_absent_entry_is_unknown_not_poor():
     # strong selection, NO entry legs at all -> 'entry unknown', never asserts 'poor entry'
-    p = ss.conviction_profile({"sue": 3.0, "ladder": {"state": "FRESH BUY",
+    # (analyst-revision leg drives selection; SUE's IC ~0 demoted it to a floor in v2.2.)
+    p = ss.conviction_profile({"revision_z": 3.0, "ladder": {"state": "FRESH BUY",
                               "entry": {"urgency": "zzz"}}}, "US")
     v = p["verdict"].lower()
     assert "unknown" in v and "poor entry" not in v
@@ -646,22 +649,18 @@ def test_quality_axis_is_durability_only_not_value_or_vol():
     assert qz == pytest.approx(0.75)          # mean(profitability, quality) only, not the 4-leg mean
 
 
-def test_anticipation_tilt_risk_shape():
-    fav = {"anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}}   # asym 2.0
-    adv = {"anticipation": {"horizons": {"medium": {"mfe_med": 4.0, "dd_avg": -8.0}}}}    # asym 0.5
-    thin = {"anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0, "thin": True}}}}
-    assert ss._anticipation_tilt(fav) == 0.25
-    assert ss._anticipation_tilt(adv) == -0.25
-    assert ss._anticipation_tilt(thin) is None    # too few analog cells -> don't trust the shape
-    assert ss._anticipation_tilt({}) is None      # no cone -> no tilt (direction is never bet)
-
-
-def test_anticipation_tilt_lifts_entry():
+def test_anticipation_cone_does_not_move_scored_entry():
+    # REVERT (de-overfit): the forward-cone risk SHAPE was pulled OUT of the SCORED entry axis — it
+    # routed an explicitly NO-GO-for-size / coin-flip-direction signal into the decision. A
+    # favourable OR adverse cone must NOT change the entry z; the cone lives only as a display note.
     base = {"ladder": {"state": "RALLY ON", "entry": {"urgency": "soon"}},
             "tech": {"off_52w_high_pct": -6.0, "rsi14": 55.0}}
     z0, _, _ = ss._axis_entry(base)
-    fav, present, _ = ss._axis_entry({**base, "anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}})
-    assert fav > z0 and "risk-shape" in present
+    z_fav, present_fav, _ = ss._axis_entry({**base, "anticipation": {"horizons": {"medium": {"mfe_med": 12.0, "dd_avg": -6.0}}}})
+    z_adv, _, _ = ss._axis_entry({**base, "anticipation": {"horizons": {"medium": {"mfe_med": 4.0, "dd_avg": -8.0}}}})
+    assert z_fav == pytest.approx(z0) and z_adv == pytest.approx(z0)
+    assert "risk-shape" not in present_fav
+    assert not hasattr(ss, "_anticipation_tilt")   # the scored tilt is fully removed
 
 
 def test_rank_note_fires_on_high_band_mid_selection():
