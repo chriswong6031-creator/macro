@@ -119,6 +119,8 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
             "market_concentration": ti.get("market_concentration") or {},
             "stock_base": stock_base, "back": "../baskets.html" if region == "us" else f"../baskets_{region}.html",
             "region": region,                          # for the cross-market narrative chip lookup
+            "bench_label": ti.get("bench_label", "S&P 500"),       # regional benchmark for the "vs <bench>" labels
+            "bench_label_zh": ti.get("bench_label_zh", "标普500"),
         }
         html = tmpl.render(detail_json=json.dumps(detail, separators=(",", ":"), default=str),
                            basket_name=b.get("name", bid), generated_utc=built,

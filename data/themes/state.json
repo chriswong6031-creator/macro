@@ -3,9 +3,9 @@
     "label": "deteriorating",
     "name": "AI Agents & Applications",
     "name_zh": "AI \u667a\u80fd\u4f53\u4e0e\u5e94\u7528",
-    "rank": 33,
+    "rank": 34,
     "reco": "avoid",
-    "score": 33
+    "score": 31
   },
   "ai_infra": {
     "label": "dominant",
@@ -35,7 +35,7 @@
     "label": "deteriorating",
     "name": "AI Software & Platforms",
     "name_zh": "AI \u8f6f\u4ef6\u4e0e\u5e73\u53f0",
-    "rank": 23,
+    "rank": 24,
     "reco": "avoid",
     "score": 50
   },
@@ -75,7 +75,7 @@
     "label": "neutral",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 9,
+    "rank": 10,
     "reco": "hold",
     "score": 70
   },
@@ -99,7 +99,7 @@
     "label": "deteriorating",
     "name": "US Energy Complex",
     "name_zh": "\u7f8e\u56fd\u80fd\u6e90\u7efc\u5408",
-    "rank": 34,
+    "rank": 33,
     "reco": "avoid",
     "score": 32
   },
@@ -115,9 +115,9 @@
     "label": "dominant",
     "name": "Industrial Distribution & Capital Goods",
     "name_zh": "\u5de5\u4e1a\u5206\u9500\u4e0e\u8d44\u672c\u54c1",
-    "rank": 10,
+    "rank": 9,
     "reco": "accumulate",
-    "score": 70
+    "score": 71
   },
   "insurance": {
     "label": "neutral",
@@ -171,9 +171,9 @@
     "label": "dominant",
     "name": "Nuclear & SMR Power",
     "name_zh": "\u6838\u7535\u4e0e\u5c0f\u578b\u6a21\u5757\u5316\u53cd\u5e94\u5806",
-    "rank": 11,
+    "rank": 12,
     "reco": "accumulate",
-    "score": 68
+    "score": 67
   },
   "obesity_glp1": {
     "label": "neutral",
@@ -187,9 +187,9 @@
     "label": "deteriorating",
     "name": "Payments & Fintech",
     "name_zh": "\u652f\u4ed8\u4e0e\u91d1\u878d\u79d1\u6280",
-    "rank": 24,
+    "rank": 23,
     "reco": "avoid",
-    "score": 50
+    "score": 52
   },
   "power_grid": {
     "label": "emerging",
@@ -203,17 +203,17 @@
     "label": "dominant",
     "name": "Quantum Computing",
     "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
-    "rank": 12,
+    "rank": 11,
     "reco": "accumulate",
     "score": 68
   },
   "regional_banks": {
-    "label": "dominant",
+    "label": "fading",
     "name": "Regional Banks",
     "name_zh": "\u533a\u57df\u94f6\u884c",
     "rank": 13,
-    "reco": "accumulate",
-    "score": 67
+    "reco": "trim",
+    "score": 66
   },
   "reshoring": {
     "label": "dominant",
@@ -237,7 +237,7 @@
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
     "rank": 19,
     "reco": "hold",
-    "score": 58
+    "score": 57
   },
   "semicap_equipment": {
     "label": "dominant",
@@ -245,7 +245,7 @@
     "name_zh": "\u534a\u5bfc\u4f53\u8bbe\u5907\uff08\u6676\u5706\u5382\u8bbe\u5907\uff09",
     "rank": 3,
     "reco": "hold",
-    "score": 77
+    "score": 76
   },
   "space_economy": {
     "label": "deteriorating",
