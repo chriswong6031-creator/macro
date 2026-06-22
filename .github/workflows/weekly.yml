@@ -71,6 +71,14 @@ jobs:
             fi
           }
           run_py "weekly collectors" scripts.collect --only cot,sentiment_naaim,sentiment_aaii,fundamentals,stock_fundamentals
+          # Phase-1+ survivorship de-bias, CIK long tail: lift the dead names that
+          # company_tickers.json/Polygon can't reach (acquired/renamed → dropped from the
+          # current ticker map) via the windowed EDGAR full-text crawl (efts.sec.gov +
+          # data.sec.gov submissions confirm). Resolve-only + drip-capped (~200 tickers
+          # /run, SEC-paced); resilient (efts 5xx retry next run). Runs FIRST so newly
+          # resolved CIKs feed the companyfacts pull below in the same run. Honest,
+          # partial yield by design — see data/edgar/_dead_name_coverage.json fts_funnel.
+          run_py "dead-name CIK crawl (EDGAR full-text)" scripts.build_dead_name_fundamentals --resolve-only --fts-max 200
           # Phase-1B survivorship de-bias: resolve dead S&P names -> CIK (needs
           # www.sec.gov/Polygon, reachable from CI; cached) + drip companyfacts into
           # data/edgar/dead_name_panel.parquet stamped with the true filed date.
