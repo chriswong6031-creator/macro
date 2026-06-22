@@ -31,8 +31,26 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 from engine.equity_factors import _closes  # noqa: E402
 from engine.signal_factory import LEGS, build_legs, inverse_correlation_weights  # noqa: E402
-from engine.validation import benjamini_hochberg, ic_summary, rank_ic, vif  # noqa: E402
+from engine.validation import benjamini_hochberg, ic_summary, rank_ic  # noqa: E402
 from lib import config  # noqa: E402
+
+
+def _vif_pairwise(df: pd.DataFrame) -> dict:
+    """VIF from a PAIRWISE-COMPLETE correlation matrix (pinv diagonal, like
+    engine.validation.vif) instead of listwise deletion. The two new filing-flow legs
+    cover far fewer names than the dense fundamental legs, so a single listwise sample
+    would (a) blank entirely when a panel is missing and (b) silently re-estimate the
+    fundamental legs' collinearity on the sparse 8-K-covered subset. Measuring each
+    pair on its own maximal common sample keeps the fundamental legs' VIF stable and
+    still flags any leg that is genuinely redundant. Legs with <30 obs are skipped."""
+    cols = [c for c in df.columns if pd.to_numeric(df[c], errors="coerce").notna().sum() >= 30]
+    if len(cols) < 2:
+        return {}
+    C = df[cols].corr(min_periods=30).to_numpy(float)
+    C = np.nan_to_num(C, nan=0.0)            # unestimable pairs → treat as uncorrelated
+    np.fill_diagonal(C, 1.0)
+    Ci = np.linalg.pinv(C)
+    return {c: round(float(Ci[i, i]), 2) for i, c in enumerate(cols)}
 
 try:
     from engine.trial_ledger import TrialLedger
@@ -68,6 +86,17 @@ def main() -> int:
         print("no fundamentals_panel.parquet — run collectors.edgar fetch_panel")
         return 1
     panel = pd.read_parquet(panel_p)
+    # Optional PIT filing panels for the two filing-flow legs. Missing → those legs
+    # come back all-NaN and simply drop out of the FDR grid (n<6), no error.
+    insider_p = config.data_dir() / "sec_insider" / "insider_panel.parquet"
+    eightk_p = config.data_dir() / "edgar" / "material_8k_events.parquet"
+    insider_panel = pd.read_parquet(
+        insider_p, columns=["ticker", "filing_date", "code", "rptownercik"]) \
+        if insider_p.exists() else None
+    eightk_panel = pd.read_parquet(eightk_p, columns=["ticker", "filing_date"]) \
+        if eightk_p.exists() else None
+    print(f"filing-flow panels: insider={'yes' if insider_panel is not None else 'MISSING'}, "
+          f"8-K={'yes' if eightk_panel is not None else 'MISSING'}")
     closes = _closes("broad")
     if closes.empty:
         print("no close caches — run breadth collectors first")
@@ -86,7 +115,7 @@ def main() -> int:
     pooled_z = []                                 # stacked cross-sectional z's for VIF / corr
     n_names = []
     for d in grid:
-        legs = build_legs(panel, d)
+        legs = build_legs(panel, d, insider_panel=insider_panel, eightk_panel=eightk_panel)
         if legs.empty:
             continue
         fr = fwd.loc[d] if d in fwd.index else None
@@ -116,7 +145,7 @@ def main() -> int:
         rows[lg]["survives_fdr"] = q["reject"]
 
     pooled = pd.concat(pooled_z, ignore_index=True) if pooled_z else pd.DataFrame(columns=LEGS)
-    vifs = vif(pooled) if not pooled.empty else {}
+    vifs = _vif_pairwise(pooled) if not pooled.empty else {}
     for lg in rows:
         rows[lg]["vif"] = round(vifs[lg], 2) if lg in vifs else None
 
@@ -131,7 +160,7 @@ def main() -> int:
         weights = inverse_correlation_weights(pooled[survivors], shrink=0.5)
         cic = []
         for d in grid:
-            legs = build_legs(panel, d)
+            legs = build_legs(panel, d, insider_panel=insider_panel, eightk_panel=eightk_panel)
             if legs.empty or d not in fwd.index:
                 continue
             z = legs[survivors].apply(_zscore)
