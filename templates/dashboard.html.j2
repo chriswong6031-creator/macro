@@ -187,6 +187,14 @@
   .acteta { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--g-cold);
             background: color-mix(in srgb, var(--g-cold) 16%, transparent);
             padding: 1px 7px; border-radius: 9px; }
+  /* unified board: narrative-basket vs GICS-sector items + honesty markers */
+  .actitem b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ai-bdg { font-size: 11px; flex: none; opacity: .9; cursor: help; }
+  .actitem.ai-theme b { font-weight: 800; flex: 1 1 auto; }   /* name fills; markers pushed right */
+  .ai-book { flex: none; margin-left: 6px; font-size: 9.5px; font-weight: 800; cursor: help;
+             color: var(--up); white-space: nowrap; }
+  .ai-val { flex: none; margin-left: 5px; font-size: 10.5px; font-weight: 800; color: var(--up); cursor: help; }
+  .ai-lens { flex: none; margin-left: 5px; font-size: 11px; color: var(--muted); cursor: help; }
   .notable { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
   .sm { font-size: 12px; margin: 4px 0; }
 
@@ -383,12 +391,14 @@
   .ocmp .oc-alt { color: var(--muted); font-weight: 700; }
 
   /* ---- standout-stock cards ------------------------------------------------- */
-  .nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  .nbgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
             gap: 10px; margin-top: 11px; }
   a.nbcard { background: var(--panel2); border: 1px solid var(--line); border-radius: 10px;
             padding: 9px 11px 10px; border-left: 3px solid var(--muted);
-            display: flex; flex-direction: column; gap: 4px;
+            display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow: hidden;
             transition: transform .12s, box-shadow .12s, border-color .12s; }
+  /* every flex/grid child may shrink below content width — kills horizontal bleed */
+  a.nbcard > * { min-width: 0; max-width: 100%; }
   a.nbcard:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,.22);
             border-color: var(--link); }
   .nbcard.nb-up { border-left-color: var(--up); }
@@ -400,7 +410,20 @@
            white-space: nowrap; flex: 1; }
   .nb-px { font-weight: 700; font-size: 13px; color: var(--text);
            font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .nb-sub { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+  .nb-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 10px;
+            color: var(--muted); min-width: 0; }
+  .nb-gics { color: var(--muted); opacity: .85; white-space: nowrap; overflow: hidden;
+             text-overflow: ellipsis; max-width: 100%; }
+  .nb-offh { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* one shared legend under the section header — replaces the identical per-card
+     trust-tier + percentile-rank caveat that used to repeat on all ~140 cards */
+  .nb-legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px 10px;
+               margin: 6px 0 2px; padding: 6px 11px; border-radius: 9px; font-size: 11px;
+               line-height: 1.45; color: var(--muted); background: var(--panel);
+               border: 1px solid var(--line); }
+  .nb-legend .lg-k { font-weight: 800; color: var(--ink); letter-spacing: .01em; }
+  .nb-legend b { font-weight: 700; color: var(--ink); }
+  .nb-legend .lg-sep { color: var(--line); }
   .nb-spark { width: 100%; height: 42px; border-radius: 5px; }
   .nbcard .nch { background: transparent; margin: 4px 0 2px; }
   .nb-bot { display: flex; align-items: center; gap: 6px; margin-top: 1px; font-size: 10px; }
@@ -474,9 +497,9 @@
                      background: color-mix(in srgb, var(--down) 10%, var(--panel)); }
   .nb-spot .sp-tag { overflow: hidden; text-overflow: ellipsis; }
   /* ---- unified Conviction Profile on each standout card ---------------- */
-  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; }
+  .nb-conv { display: flex; align-items: center; gap: 7px; margin: 5px 0 1px; min-width: 0; }
   .nb-cscore { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums;
-               min-width: 30px; text-align: center; padding: 1px 5px; border-radius: 8px;
+               min-width: 30px; flex: none; text-align: center; padding: 1px 5px; border-radius: 8px;
                border: 1px solid var(--line); color: var(--ink); }
   .nb-cscore.band-high { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--line));
                          background: color-mix(in srgb, var(--up) 12%, var(--panel)); }
@@ -484,7 +507,9 @@
                          border-color: color-mix(in srgb, var(--g-cold) 40%, var(--line)); }
   .nb-cscore.band-neutral { color: var(--muted); }
   .nb-cscore.band-low { color: var(--down); border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
-  .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--ink); }
+  .nb-verdict { font-size: 10.5px; font-weight: 700; line-height: 1.25; color: var(--ink);
+                flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+  .nb-val { flex: none; }
   .nb-axes { display: flex; gap: 4px; margin-top: 3px; }
   .nb-ax { flex: 1; }
   .nb-ax .axl { font-size: 8px; color: var(--muted); letter-spacing: .03em; }
@@ -2358,34 +2383,41 @@
   {% if action_board %}
   <div class="panel span12">
     <h2>⚡ {{ t('What to act on now', '当前可操作') }}
-      {{ help("Your at-a-glance starting point. Built from each sector's own price cycle (and standout individual stocks): what's a confirmed buy today, what's setting up to buy within a few days, what to take profits on, and what to leave alone. 'Days' are rough trajectory estimates, not promises. Click any name for the full breakdown.", "你的一眼总览起点。基于每个板块自身的价格周期（及表现突出的个股）：今日已确认的买入、几天内即将构筑的买入、需止盈的、以及该放手不管的。'天数'是粗略的轨迹估计，并非承诺。点击任意名称查看完整拆解。") }}
+      {{ help("Your at-a-glance starting point — now spanning BOTH 🧩 narrative baskets (Memory & Storage, Non-AI Software, …) and 🏛 GICS sectors, because 'Technology' blends generational winners (memory/semis) with names being obliterated (non-AI software). Baskets give the narrative resolution sectors can't. HONESTY: a basket on the BUY side is a leadership LENS (≈), descriptive — cross-sectional momentum rank-IC is ~0 on the clean multi-decade backtest, so it focuses attention, it is not a return forecast. A basket on the REDUCE side carries a VALIDATED mark (✓): it rides the absolute-trend / fading-deteriorating drawdown gate, the one backtested edge (it roughly halved drawdown over 27y). ★ = currently in the narrative-rotation model book. Sectors keep their price-cycle read. Click any name for the full breakdown.", "你的一眼总览起点 — 现同时覆盖🧩叙事篮子（内存与存储、非AI软件…）与🏛GICS板块，因为“科技”把世代赢家（内存/半导体）与被血洗的标的（非AI软件）混为一谈。篮子提供板块无法给出的叙事分辨。诚实说明：买入侧的篮子是领先度透镜（≈），描述性 — 横截面动量 rank-IC≈0（多年期干净回测），用于聚焦而非预测收益。减仓侧的篮子带已验证标记（✓）：依托绝对趋势／衰退-恶化回撤门槛，这是唯一经回测的优势（27年里大致将回撤减半）。★＝当前在叙事轮动模型组合中。板块保留其价格周期判读。点击任意名称查看完整拆解。") }}
     </h2>
+    {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
+       lane, 🏛 GICS sectors follow. Basket buys carry a leadership-LENS marker (≈, descriptive)
+       and basket reduces a VALIDATED marker (✓, the absolute-trend drawdown gate); ★ = in the
+       narrative-rotation model book. #}
+    {% macro themeitem(x) -%}
+    <a class="actitem ai-theme" href="{{ x.href }}"><span class="ai-bdg" title="Narrative basket — the narrative resolution (e.g. Memory & Storage), not the blurry GICS sector · 叙事篮子 — 比 GICS 板块更精细的叙事分辨">🧩</span><b><span class="l-en">{{ x.name }}</span><span class="l-zh">{{ x.name_zh or x.name }}</span></b>{% if x.book_wt %}<span class="ai-book" title="In the narrative-rotation model book at {{ '%.0f'|format(x.book_wt*100) }}% — clears the validated absolute-trend gate · 已在叙事轮动模型组合中，权重 {{ '%.0f'|format(x.book_wt*100) }}%，通过已验证的绝对趋势门槛">★{{ '%.0f'|format(x.book_wt*100) }}%</span>{% endif %}{% if x.validated %}<span class="ai-val" title="Validated risk side — rides the absolute-trend / fading-deteriorating drawdown gate, the one multi-decade-backtested edge · 已验证的风险侧 — 绝对趋势／衰退-恶化回撤门槛">✓</span>{% else %}<span class="ai-lens" title="Leadership LENS — descriptive (cross-sectional momentum rank-IC ≈ 0 on the clean backtest); a focus aid, not a return forecast · 领先度透镜 — 描述性（横截面动量 rank-IC≈0），聚焦工具而非收益预测">≈</span>{% endif %}</a>
+    {%- endmacro %}
     <div class="actiongrid">
       <div class="actcol act-buy">
         <div class="acth">🟢 {{ t('BUY ZONE — confirmed now', '买入区 — 已确认') }}</div>
         {% for x in action_board.buy_now %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% endif %}
         {% else %}<p class="muted sm">{{ t('None today — nothing has fully confirmed a fresh cycle low.', '今日无 — 尚无标的完全确认新的周期低点。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-soon">
         <div class="acth">🔵 {{ t('SETTING UP — buy soon', '构筑中 — 即将买入') }}</div>
         {% for x in action_board.buy_soon %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.get('days') is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.get('days') is not none %}<span class="acteta">~{{ x.days }}d</span>{% endif %}</a>{% endif %}
         {% else %}<p class="muted sm">{{ t('No imminent setups.', '暂无临近的构筑。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-trim">
         <div class="acth">🟠 {{ t('TAKE PROFITS / topping', '止盈／做顶') }}</div>
         {% for x in action_board.take_profits %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ x.ticker }}</span>{% if x.age_short %}<span class="actage">⏱ {{ t(x.age_short, x.age_short_zh) }}</span>{% endif %}{% if x.eq_badge %}<span class="eqmini eq-{{ x.eq_dir }}" title="{{ x.eq_tip }}">{{ x.eq_badge }}</span>{% endif %}<span class="acttag">{{ td(x.label) }}</span></a>{% endif %}
         {% else %}<p class="muted sm">{{ t('Nothing topping.', '无标的做顶。') }}</p>{% endfor %}
       </div>
       <div class="actcol act-hold">
         <div class="acth">⚪ {{ t('HOLD / avoid', '持有／回避') }}</div>
         {% for x in action_board.hold %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ t("hold — don't chase", '持有 — 勿追高') }}</span></a>{% endif %}
         {% endfor %}
         {% for x in action_board.avoid %}
-          <a class="actitem" href="sectors/{{ x.ticker }}.html"><b>{{ td(x.name) }}</b> <span class="muted">{{ t("wait", '等待') if x.tag == "WAIT" else t("avoid", '回避') }}</span></a>
+          {% if x.kind == 'theme' %}{{ themeitem(x) }}{% else %}<a class="actitem" href="{{ x.href }}"><span class="ai-bdg" title="GICS sector">🏛</span><b>{{ td(x.name) }}</b> <span class="muted">{{ t("wait", '等待') if x.tag == "WAIT" else t("avoid", '回避') }}</span></a>{% endif %}
         {% endfor %}
       </div>
     </div>
@@ -2399,6 +2431,13 @@
         {% if not _su %}<span class="muted" style="font-size:11.5px">{{ t('from each sector’s top-10 holdings · grouped by cycle entry, ranked by sector-neutral momentum (α)', '来自各板块前十大持仓 · 按周期入场分组，以行业中性动量（α）排序') }}
           {{ help("Every sector ETF's top-10 holdings are run through the SAME price-cycle engine as the sectors. A name earns a card only when its cycle signal is decisive — a confirmed buy (BUY ZONE), an imminent turn (BOTTOMING), or a sell (TOPPING). The cycle state GROUPS the cards (it places risk — a defined entry + exit); WITHIN each group they're ordered by the validated sector-neutral residual momentum (α — market + sector beta stripped). We Phase-0 tested blending the cycle timing INTO the rank (reports/setup-score-phase0.md, survivorship-clean S&P 500, 12y) and it did NOT improve forward returns — it diluted α — so the order rides α and the cycle/pullback is shown as risk-placement CONTEXT, not a return signal. A soft per-sector cap keeps one hot sector from crowding the board. The α / #rank / pullback line and the 👤 insider chip are context inputs, NOT standalone buy signals. Click any card for the full breakdown.", "每个板块 ETF 的前十大持仓都用与板块相同的价格周期引擎分析。只有当个股的周期信号具决定性时才会获得卡片 — 已确认买入（买入区）、即将转向（筑底）或卖出（做顶）。周期状态对卡片进行分组（它摆放风险 — 明确的入场与出场）；在每组内部，按已验证的行业中性残差动量（α — 已剥离大盘与行业 beta）排序。我们做了 Phase-0 检验，把周期择时混入排序（reports/setup-score-phase0.md，无幸存者偏差的标普500，12年），结果并未改善前瞻收益 — 反而稀释了 α — 因此排序以 α 为准，周期/回调作为风险摆位的情境展示，而非收益信号。软性的单一板块上限可避免强势板块挤占整版。卡片上的 α / #排名 / 回调一行以及 👤 内部人买入标记均为情境输入，并非独立买入信号。点击任意卡片查看完整拆解。") }}</span>{% endif %}
       </div>
+      {% if _su and _su.buy %}{% set _tt = (_su.buy[0].conviction or {}).trust_tier %}
+      <div class="nb-legend">
+        <span class="lg-k">{{ t('Reading the cards', '如何看卡片') }}</span>
+        <span><b>{{ t('Score', '评分') }}</b> = {{ t('within-board percentile RANK (today’s board), not an absolute 0–100 — the verdict is the absolute read.', '板内百分位排名（今日榜单），并非绝对 0–100 — 结论才是绝对读数。') }}</span>
+        {% if _tt %}<span class="lg-sep">·</span><span><b>{{ t('Edge basis', '优势来源') }}</b>: <span class="l-en">{{ _tt.en }}</span><span class="l-zh">{{ _tt.zh }}</span></span>{% endif %}
+      </div>
+      {% endif %}
       {% if market_gamma %}
       <div class="gamma-note gn-{{ market_gamma.regime }}">
         {% if market_gamma.regime == 'short' %}<span class="gn-ic">🌀</span>
@@ -2433,24 +2472,25 @@
             <span class="nb-nm">{{ n.name }}</span>
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
           </div>
-          <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+          {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
+             into e.g. "Memory & Storage ▲"); the GICS sector is demoted to a muted tag.
+             The basket chip carries its link in data-href (a nested <a> would shatter the
+             card anchor); theme.js navigates it. #}
           {% set sp = c.spotlight if c else none %}
           {% if sp and sp.dir and sp.dir != 'neutral' %}
             {% set _th = sp.theme or {} %}{% set _sc = sp.sector or {} %}
             {% set _en = (_th.name or _sc.name or _sc.etf)|e %}{% set _zh = (_th.name_zh or _th.name or _sc.name or _sc.etf)|e %}
             {% set _spcls = 'spot-up' if sp.dir == 'tailwind' else 'spot-dn' %}
-            {# data values are |e-escaped (the build Environment has autoescape off) so theme names
-               with & / < / " can't corrupt the attribute. L()/t() must never appear in an attr. #}
             {% set _sptip = ('Theme/sector spotlight tilt (×' ~ ('%.2f'|format(sp.mult)) ~ ') — a small narrative nudge to rank; never overrides extension or risk vetoes.' ~ ((' Theme: ' ~ _th.name ~ ((' (' ~ _th.reco_en ~ ')') if _th.reco_en else '') ~ '.') if _th.name else '') ~ ((' Sector: ' ~ (_sc.name or _sc.etf) ~ ' — ' ~ _sc.stage ~ (', extended/do not chase' if _sc.extended else '') ~ '.') if _sc.etf else ''))|e %}
-            {% if _th.slug %}
-            {# the whole card is an <a>; a nested <a> is invalid HTML and the parser
-               auto-closes the card anchor, shattering the card across grid cells. Use a
-               non-anchor chip that carries the theme link in data-href; theme.js navigates
-               it on click (stopPropagation so it beats the card's stock link). #}
-            <span class="nb-spot nb-spot-link {{ _spcls }}" data-href="basket/{{ _th.slug|e }}.html" role="link" tabindex="0" title="{{ _sptip }} Open the theme →"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></span>
-            {% else %}
-            <div class="nb-spot {{ _spcls }}" title="{{ _sptip }}"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></div>
-            {% endif %}
+          <div class="nb-sub">
+            {% if _th.slug %}<span class="nb-spot nb-spot-link {{ _spcls }}" data-href="basket/{{ _th.slug|e }}.html" role="link" tabindex="0" title="{{ _sptip }} Open the theme →"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></span>
+            {% else %}<span class="nb-spot {{ _spcls }}" title="{{ _sptip }}"><span>{{ '🔥' if sp.dir == 'tailwind' else '🧊' }}</span><span class="sp-tag l-en">{{ _en }}</span><span class="sp-tag l-zh">{{ _zh }}</span><span>{{ '▲' if sp.dir == 'tailwind' else '▼' }}</span></span>{% endif %}
+            {# only show the GICS tag when the chip is a THEME (different from the sector); when
+               the chip already IS the sector (no theme), don't repeat it #}
+            {% if _th.name %}<span class="nb-gics">{{ td(n.sector) }}</span>{% endif %}{% if n.get('off_high') is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}
+          </div>
+          {% else %}
+          <div class="nb-sub"><span>{{ td(n.sector) }}</span>{% if n.get('off_high') is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
           {% endif %}
           {{ n.spark_svg }}
           {% if c %}
@@ -2493,7 +2533,7 @@
             </div>
             {% endfor %}
           </div>
-          {% set _basis = (c.axes.selection.basis or [])[:3] %}
+          {% set _basis = (c.axes.selection.basis or [])[:2] %}
           {% if _basis %}<div class="nb-basis">{% for b in _basis %}<span class="nbb nbb-{{ b.tier }}">{{ b.label }} {{ '%+.1f'|format(b.z) }}</span>{% endfor %}</div>{% endif %}
           {# --- the two new VERIFIERS: dealer-gamma "Options check" + single-stock vol black hole --- #}
           {% set _gc = c.gex_confirm %}{% set _vs = c.vol_squeeze %}
@@ -2507,9 +2547,7 @@
           </div>
           {% endif %}
           <div class="nb-bot">
-            {% if n.label %}<span class="nb-state">{{ td(n.label) }}</span>{% endif %}
-            {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite) · 行业中性残差动量（z）— 轻量、随行情缩放的情境维度，并非排序关键（榜单按多因子确信度综合分排序）">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
-            {% if n.composite and n.composite.z is not none %}<span class="nb-comp {{ 'cmp-pos' if n.composite.z > 0.3 else ('cmp-neg' if n.composite.z < -0.3 else '') }}" title="Decorrelated composite (sector-neutral, equal-weight z of {{ n.composite.n_legs }} legs): {% for k,v in (n.composite.legs or {}).items() %}{{ k }} {{ '%+.1f'|format(v) }}{% if not loop.last %} · {% endif %}{% endfor %}. The Fundamental-Law lever — near-uncorrelated legs stack. A CROSS-SECTIONAL context score, edge only in aggregate, never a per-name verdict. A leak-free 2011–2025 test (reports/composite-validation-phase0.md) found it does NOT beat momentum alone net of cost — the fundamental legs dilute — so it stays context-only and never drives selection or sizing. · 去相关综合（行业中性、等权 z）— 近乎不相关的因子叠加。横截面情境分，仅在整体层面有效，非个股判断。经 2011–2025 无泄漏检验，其成本后并不优于单独动量（基本面维度稀释优势），故仅作情境，绝不驱动选股或仓位。">Σ {{ '%+.2f'|format(n.composite.z) }}</span>{% endif %}
+            {% if n.alpha is not none %}<span class="nb-az {{ 'az-up' if n.alpha > 0 else ('az-dn' if n.alpha < 0 else '') }}" title="Sector-neutral residual momentum (z) — a light, regime-scaled CONTEXT leg, NOT the rank key (the board ranks by the multi-factor Conviction composite). The decorrelated factor composite (Σ) is on the stock's own page. · 行业中性残差动量（z）— 轻量情境维度，并非排序关键；去相关因子综合（Σ）见个股页面。">α {{ '%+.2f'|format(n.alpha) }}</span>{% endif %}
             {% if n.sector_rank %}<span class="nb-rk">#{{ n.sector_rank }}/{{ n.sector_n }}</span>{% endif %}
             {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
             {% if n.demand %}{% set dyoy = (' ' + '%+.0f'|format(n.demand.yoy) + '%') if n.demand.yoy is not none else '' %}
@@ -2517,8 +2555,9 @@
               {% elif n.demand.div == 'consensus_at_risk' %}<span class="nb-dmnd dmnd-rk" title="Demand Desk: the independent forward-demand signal ({{ n.demand.chain }}{{ dyoy }} YoY) is SOFTENING while estimates still rise — the priced consensus may be ahead of the demand. Caution; display-only, not a sell signal · 需求台：独立前瞻需求信号在走弱而预期仍在上修——已被定价的共识可能领先于需求。需谨慎；仅供展示，非卖出信号。">🧭 {{ t('demand at risk', '需求承压') }}</span>{% endif %}{% endif %}
           </div>
           {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
-          {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-          <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
+          {# only NAME-SPECIFIC notes here (e.g. favourable risk-cone); the generic
+             percentile-rank caveat + edge-basis are hoisted to the one .nb-legend above. #}
+          {% if c.notes %}{% for nt in c.notes if nt.kind != 'rank' %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
           {% endif %}
         </a>
       {% endfor %}

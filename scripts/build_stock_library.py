@@ -641,9 +641,50 @@ def _spotlight_context() -> dict:
                 "name": row.get("name")}
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("spotlight sector stage table unavailable (%s)", e)
-    log.info("spotlight context: %d scored themes · %d sector stages",
-             len(theme_by_id), len(sector_by_etf))
-    return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf, "unmapped": set()}
+    alloc_by_id = _basket_alloc_map(theme_by_id)
+    log.info("spotlight context: %d scored themes · %d sector stages · %d basket alloc states",
+             len(theme_by_id), len(sector_by_etf), len(alloc_by_id))
+    return {"theme_by_id": theme_by_id, "sector_by_etf": sector_by_etf,
+            "alloc_by_id": alloc_by_id, "unmapped": set()}
+
+
+def _basket_alloc_map(theme_by_id: dict) -> dict:
+    """Per-basket ALLOCATION / absolute-trend-gate state, keyed by slug, for the VALIDATED
+    scored de-risk (engine.stock_score._basket_risk). Recomputed in-process via
+    engine.narrative_rotation so it never depends on allocation.json being on disk (the
+    rotation/allocation build runs AFTER this in the pipeline). Merges the theme-scoring
+    label/reco for context. Best-effort: {} if the rotation can't be built."""
+    out: dict[str, dict] = {}
+    try:
+        from engine import narrative_rotation as nr
+        rot = nr.compute_narrative_rotation("us") or {}
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket alloc map unavailable (%s)", e)
+        return out
+    book = {w.get("id"): w
+            for w in ((rot.get("allocation") or {}).get("weights") or [])}
+    for r in (rot.get("ranks") or []):
+        sid = r.get("id")
+        if not sid:
+            continue
+        gate = r.get("gate") or {}
+        dur = r.get("durability") or {}
+        cr = r.get("crowding") or {}
+        w = book.get(sid) or {}
+        th = theme_by_id.get(sid) or {}
+        out[sid] = {
+            "rank": r.get("rank"), "score": r.get("score"),
+            "eligible": bool(r.get("eligible")),
+            "above_trend": bool(gate.get("above_200dma")),
+            "ret_12m": gate.get("ret_12m"),
+            "durability_bar": dur.get("bar"),
+            "crowded": bool(w.get("crowded") if w else cr.get("crowded")),
+            "book_wt": w.get("weight"),
+            "label": th.get("label"), "reco": th.get("reco"),
+            "name": th.get("name") or r.get("name"), "name_zh": th.get("name_zh"),
+            "signal_grade": (th.get("signal_strength") or {}).get("grade"),
+        }
+    return out
 
 
 def _spotlight_for(sector: str | None, memberships: list[dict] | None,
@@ -1181,10 +1222,25 @@ def main() -> int:
         if ext_map.get(ticker):
             rec["ext"] = ext_map[ticker]            # re-arms the parabolic/stretched entry brake
         spot = _spotlight_for(sector, bsk_mem.get(ticker), spotlight_ctx)
+        # primary narrative basket = the spotlight theme (strongest tilt the name belongs to);
+        # attach its allocation/trend-gate state for the validated size de-risk + Mastermind.
+        _alloc_by_id = spotlight_ctx.get("alloc_by_id") or {}
+        _bslug = ((spot or {}).get("theme") or {}).get("slug")
+        if not _bslug and bsk_mem.get(ticker):
+            # spotlight neutral but the name IS in basket(s): attach its best-ranked (most
+            # in-favor) narrative so Mastermind + the de-blur still see it (de-risk stays inert
+            # unless that basket is itself below-trend / deteriorating).
+            _cands = [m.get("slug") for m in bsk_mem[ticker] if m.get("slug") in _alloc_by_id]
+            if _cands:
+                _bslug = min(_cands, key=lambda s: (_alloc_by_id[s].get("rank") or 999))
+        _balloc = _alloc_by_id.get(_bslug) if _bslug else None
+        if _balloc:
+            rec["basket_alloc"] = {**_balloc, "slug": _bslug}
         norm = stock_score.normalize_rec(
             rec, "US", sue=sue_z.get(ticker), sue_fresh_days=sue_fresh.get(ticker),
             insider_bps=ins_bps, revision_z=revision_z.get(ticker), basket=basket_tw.get(ticker),
-            spotlight=spot, lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
+            spotlight=spot, basket_alloc=rec.get("basket_alloc"),
+            lottery_max=lottery_map.get(ticker), earnings_days=_edays(ticker))
         prof = stock_score.conviction_profile(
             norm, "US", ctx={"as_of": alpha_asof, "gate_go": gate_go,
                              "regime": {"calm": calm}, "risk_overlay": risk_overlay})

@@ -1104,14 +1104,83 @@ def regime_stance(latest: dict, pb: dict | None) -> dict | None:
             "age_word": age_word, "n_warn": n_warn}
 
 
-def action_board(sector_timing: dict, notable: list[dict]) -> dict:
-    """Bucket sector + standout-stock cycle signals into an at-a-glance
-    'what to act on now' board for the front page."""
+def basket_action_items(site) -> dict:
+    """Narrative-basket action items for the UNIFIED 'what to act on now' board, so the
+    page acts on the narrative resolution (Memory/Storage vs Non-AI Software) and not just
+    the 11 blurry GICS sectors. Sourced from the live theme-scoring recos
+    (site/basketdata/baskets.json → theme_intel) and enriched with the allocation model's
+    absolute-trend gate + durability + model-book weight (site/allocationdata/allocation.json).
+
+    HONEST framing carried per item: the BUY side (enter/accumulate) is the descriptive
+    leadership LENS (cross-sectional rank-IC ~0 on the clean sector backtest); the REDUCE
+    side (trim/avoid) rides the VALIDATED absolute-trend / fading-deteriorating drawdown gate
+    (the one multi-decade-backtested edge). `validated` flags which is which. Each item is
+    badged kind='theme'. Graceful: empty buckets if the artifacts are absent."""
+    buckets = {"buy_now": [], "buy_soon": [], "take_profits": [], "hold": [], "avoid": []}
+    try:
+        ti = (json.loads((site / "basketdata" / "baskets.json").read_text())
+              .get("theme_intel") or {})
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket action: baskets.json unreadable (%s)", e)
+        return buckets
+    themes = ti.get("themes") or []
+    if not themes:
+        return buckets
+    alloc, book_wt = {}, {}
+    try:
+        aj = json.loads((site / "allocationdata" / "allocation.json").read_text())
+        alloc = {r["id"]: r for r in (aj.get("ranks") or [])}
+        book_wt = {w["id"]: w.get("weight")
+                   for w in ((aj.get("allocation") or {}).get("weights") or [])}
+    except Exception as e:  # noqa: BLE001 — enrichment only
+        log.warning("basket action: allocation.json unreadable (%s)", e)
+    # 'enter' (emerging, fresh) → SETTING UP; 'accumulate' (confirmed leader) → BUY ZONE.
+    reco_bucket = {"enter": "buy_soon", "accumulate": "buy_now",
+                   "hold": "hold", "trim": "take_profits", "avoid": "avoid"}
+    for th in themes:
+        reco = (th.get("reco") or "").lower()
+        bkt = reco_bucket.get(reco)
+        if not bkt:
+            continue
+        a = alloc.get(th.get("id")) or {}
+        gate = a.get("gate") or {}
+        buckets[bkt].append({
+            "kind": "theme",
+            "ticker": th.get("id"), "slug": th.get("id"),
+            "href": "basket/" + str(th.get("id")) + ".html",
+            "name": th.get("name"), "name_zh": th.get("name_zh"),
+            "label": th.get("reco_en") or reco.upper(),
+            "label_zh": th.get("reco_zh") or reco,
+            "score": th.get("score"),
+            "alloc_rank": a.get("rank"),
+            "above_trend": bool(gate.get("above_200dma")) if gate else None,
+            "eligible": a.get("eligible"),
+            "durability": (a.get("durability") or {}).get("bar"),
+            "book_wt": book_wt.get(th.get("id")),
+            "validated": reco in ("trim", "avoid"),   # the trend-gate / drawdown risk side
+            "signal_grade": (th.get("signal_strength") or {}).get("grade"),
+        })
+    buckets["buy_now"].sort(key=lambda x: -(x.get("score") or 0))   # leaders first
+    buckets["buy_soon"].sort(key=lambda x: -(x.get("score") or 0))
+    buckets["take_profits"].sort(key=lambda x: (x.get("score") or 0))  # weakest first
+    buckets["avoid"].sort(key=lambda x: (x.get("score") or 0))
+    for k in buckets:                                # cap so baskets don't crowd the board
+        buckets[k] = buckets[k][:8]
+    return buckets
+
+
+def action_board(sector_timing: dict, notable: list[dict],
+                 basket_items: dict | None = None) -> dict:
+    """Bucket sector + narrative-basket + standout-stock cycle signals into an at-a-glance
+    'what to act on now' board. Sectors and baskets are UNIFIED (each item carries
+    kind='sector'|'theme' + an href) so the board acts on narrative resolution, not just the
+    11 GICS sectors."""
     from engine.playbook import SECTOR_NAMES
     buy_now, buy_soon, take_profits, hold, avoid = [], [], [], [], []
     for fund, tm in sector_timing.items():
         e = tm.get("entry") or {}
         item = {"ticker": fund, "name": SECTOR_NAMES.get(fund, fund),
+                "kind": "sector", "href": "sectors/" + fund + ".html",
                 "label": tm["label"], "tag": e.get("tag", ""),
                 "text": e.get("text", ""), "days": e.get("days_hi"),
                 "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
@@ -1192,8 +1261,15 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
         else:
             overflow.append(n)
     notable_clean = (picked + overflow)[:CAP]
-    return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
-            "hold": hold, "avoid": avoid, "notable": notable_clean[:CAP]}
+    # UNIFY: narrative baskets lead each lane (the resolution the user acts on), GICS
+    # sectors follow. 'hold' carries themes then both sector hold + avoid lists.
+    bi = basket_items or {}
+    return {"buy_now": (bi.get("buy_now") or []) + buy_now,
+            "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
+            "take_profits": (bi.get("take_profits") or []) + take_profits,
+            "hold": (bi.get("hold") or []) + hold,
+            "avoid": (bi.get("avoid") or []) + avoid,
+            "notable": notable_clean[:CAP]}
 
 
 def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]:
@@ -2743,7 +2819,7 @@ def main() -> int:
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
-        action_board=action_board(sector_timing, notable),
+        action_board=action_board(sector_timing, notable, basket_action_items(site)),
         top_setups=top_setups,
         us_standouts=us_standouts,
         market_gamma=market_gamma,

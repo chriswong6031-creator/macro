@@ -444,6 +444,39 @@ _OOP_SIZE_MAX = 0.5       # max risk_total contribution from the out-of-play siz
 # still what the display chip + the out-of-play size trim read (those are deliberately legible).
 _SPOTLIGHT_LEG_GAIN = 0.4
 
+# VALIDATED scored de-risk from the name's primary NARRATIVE BASKET (allocation trend-gate).
+# The narrative-rotation backtest (27y, clean sectors) found the ONE repeatable edge is
+# DRAWDOWN control via the absolute-trend gate — momentum RANK is ~0 alpha. So a name whose
+# basket is BELOW its long trend (or fading/deteriorating) is SIZED DOWN; a crowded basket is
+# capped. Subtract-only: this NEVER re-ranks selection, only the suggested size (the honest
+# "lean into the trending narratives, de-risk the broken ones" the user asked for).
+_BASKET_RISK_MAX = 0.5    # max risk_total contribution from a below-trend / deteriorating basket
+
+
+def _basket_risk(rec: dict) -> tuple[float, dict | None]:
+    """(haircut in [0, _BASKET_RISK_MAX], bilingual caution|None) from rec['basket_alloc']."""
+    ba = rec.get("basket_alloc")
+    if not ba:
+        return 0.0, None
+    label = (ba.get("label") or "").lower()
+    below = (ba.get("above_trend") is False) or (ba.get("eligible") is False)
+    nm = ba.get("name") or "its narrative basket"
+    if below:
+        return _BASKET_RISK_MAX, {
+            "en": f"Narrative basket ({nm}) is below its long-term trend — validated drawdown "
+                  "gate: size down (the AI-buildout tape is rewarding leaders, not this one).",
+            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）已跌破长期趋势 — 已验证的回撤门槛：减小仓位。"}
+    if label in ("fading", "deteriorating"):
+        zh = "衰退" if label == "fading" else "恶化"
+        return _BASKET_RISK_MAX * 0.7, {
+            "en": f"Narrative basket ({nm}) is {label} — validated risk gate: trim / size down.",
+            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）正在{zh} — 已验证风险门槛：减仓。"}
+    if ba.get("crowded"):
+        return _BASKET_RISK_MAX * 0.4, {
+            "en": f"Narrative basket ({nm}) is crowded / extended — cap size, don't add aggressively.",
+            "zh": f"所属叙事篮子（{ba.get('name_zh') or nm}）拥挤／过度拉伸 — 控制仓位，勿激进加仓。"}
+    return 0.0, None
+
 
 def _eff_spotlight(rec: dict, *, blocked: bool = False) -> dict | None:
     """The spotlight tilt AS IT ENTERS THE SCORE: a positive theme/sector tailwind is
@@ -1118,7 +1151,12 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
                 if (sp_z is not None and sp_z < -_OOP_KNEE) else 0.0)
     if oop_risk > 0:
         idio_comps = {**(idio_comps or {}), "out_of_play": round(oop_risk, 2)}
-    risk_total = max(idio, stress * _aggressiveness(rec), event, oop_risk)
+    # VALIDATED narrative-basket trend-gate de-risk (subtract-only; never re-ranks selection):
+    # a name whose basket is below its long trend / fading / deteriorating is sized down.
+    basket_hc, basket_cau = _basket_risk(rec)
+    if basket_hc > 0:
+        idio_comps = {**(idio_comps or {}), "basket_trend": round(basket_hc, 2)}
+    risk_total = max(idio, stress * _aggressiveness(rec), event, oop_risk, basket_hc)
 
     # score: prefer the within-market percentile passed by the panel builder; else
     # the logistic skin (per-name fallback, flagged approximate).
@@ -1129,6 +1167,9 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
 
     vb = verdict(axes, rec, m, cycle_blocked=blocked, risk_stress=stress,
                  valuation=val, validated=bool(ctx.get("gate_go")))
+    if basket_cau:                       # surface the validated basket-trend de-risk as a caution
+        vb["cautions"].append(basket_cau["en"])
+        vb["cautions_zh"].append(basket_cau["zh"])
     band = _band(score)
 
     # --- honesty NOTES (AVGO/NVDA alignment): make the two places a user gets confused explicit.
@@ -1189,6 +1230,10 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "validation_status": "positive_ic" if ctx.get("gate_go") else "neutral_ic",
         "regime": _regime_tilt(m, calm),
         "spotlight": eff_sp,          # theme+sector narrative tilt (display chip + tailwind leg)
+        # primary NARRATIVE BASKET allocation/trend-gate state — de-blurs GICS for the card AND
+        # for Mastermind (it sees "Memory leadership, in book" vs "Non-AI Software, below-trend"),
+        # and drove the validated size de-risk above (idio_comps.basket_trend).
+        "basket_alloc": rec.get("basket_alloc"),
         "axes": axes,
         # the two new VERIFIERS, surfaced for the card chips (display; they also fed a small
         # bounded tilt into the entry axis above — never the selection rank).
@@ -1250,7 +1295,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
                   quality_context_z: float | None = None,
                   fund_priors_z: float | None = None,
                   sector_rs: dict | None = None, basket: dict | None = None,
-                  spotlight: dict | None = None,
+                  spotlight: dict | None = None, basket_alloc: dict | None = None,
                   asym: dict | None = None, ext: dict | None = None,
                   lottery_max: float | None = None,
                   earnings_days: float | None = None) -> dict:
@@ -1275,6 +1320,7 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
         "tech": record.get("tech") or {},
         "ext": ext if ext is not None else record.get("ext"),
         "sector_rs": sector_rs, "basket": basket, "spotlight": spotlight,
+        "basket_alloc": basket_alloc,      # primary-basket allocation/trend-gate state (validated de-risk)
         "factor": {"value": legs.get("value"), "profitability": legs.get("profitability"),
                    "quality": legs.get("quality"), "low_vol": legs.get("low_vol")} if legs else None,
         "quality_context_z": quality_context_z,
