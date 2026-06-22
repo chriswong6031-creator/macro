@@ -712,7 +712,7 @@ def main(alpha: dict | None = None) -> dict | None:
         # margin-financing crowding → the fragility idio-risk slot + a caution (contrarian leverage risk)
         _mc = margin_crowd.get(ticker)
         if _mc and _mc.get("crowded"):
-            rec["fragility"] = True
+            rec["fragility"] = {"flag": True, "source": "margin_financing"}
             rec["margin_crowd"] = _mc
         norm = stock_score.normalize_rec(
             rec, "CN", rev_z=rev_z_by.get(ticker), basket=basket_tw.get(ticker))
