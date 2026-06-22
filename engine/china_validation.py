@@ -6,7 +6,16 @@ whether the signal actually predicted forward returns, using the SAME institutio
 primitives the US/vector calibrators use (engine.validation — imported and called VERBATIM,
 never re-derived: rank_ic, ic_summary, newey_west_tstat, incremental_ic, benjamini_hochberg).
 
-Three signal families, each reconstructed from what is actually on disk today:
+Signal families, each reconstructed from what is actually on disk today:
+
+  * fundflow         — per-name 主力 (超大+大单) net inflow rate (GATED Tushare moneyflow_dc), a
+                      CROSS-SECTIONAL signal validated like valuation off the weekly-grid history in
+                      data/tushare/flow_hist.parquet (collectors/tushare_history backfills it from
+                      the paid history). sign_expected +1 (inflow → continuation). `accruing` when
+                      the token / history is absent.
+  * chips            — per-name 获利比例 win-rate (GATED Tushare cyq_perf), same cross-sectional path
+                      off data/tushare/chips_hist.parquet. sign_expected −1 (euphoric → contrarian).
+
 
   * valuation       — per-name P/E·P/B own-history percentile (cheap = low pctile). A
                       CROSS-SECTIONAL signal → daily cross-sectional rank-IC vs each name's
@@ -53,7 +62,12 @@ _TD_PER_YEAR = 252
 # (family -> expected SIGN of mean predictive IC / regression slope). A leg that validates
 # to the WRONG sign is actively misleading; signal_lab will zero its weight. A-share value /
 # leverage / sentiment all carry a contrarian prior (cheap or de-levered or fearful outperforms).
-_SIGN_EXPECTED = {"valuation": +1, "margin": -1, "news_sentiment": -1}
+_SIGN_EXPECTED = {"valuation": +1, "margin": -1, "news_sentiment": -1,
+                  "fundflow": +1, "chips": -1}
+# fundflow: 主力 net inflow → continuation (+1, the accumulation prior).
+# chips:    high 获利比例 win-rate → euphoric/profit-taking → contrarian fade (−1).
+# Both are PRIORS only — the harness measures the realized sign and signal_lab zeros a
+# proven wrong-sign leg regardless.
 
 
 # --------------------------------------------------------------------------- #
@@ -254,15 +268,38 @@ def _tier_for(t_hac, q_fdr, n_obs, proven) -> str:
 # --------------------------------------------------------------------------- #
 # per-family validators  (call engine.validation primitives VERBATIM)
 # --------------------------------------------------------------------------- #
-def _validate_valuation(V, panel, bench, horizons) -> dict:
-    """Cross-sectional rank-IC of own-history-cheapness vs forward CSI-300-relative return,
-    over the stored valuation snapshots, with an incremental-IC neutralization."""
+def _hist_cross_sections(name: str, col: str) -> dict:
+    """{asof(Timestamp): Series(ticker->signal)} from a data/tushare/<name>.parquet ({ticker,date,col})
+    accruing-history cache (collectors/tushare_history). Empty dict on miss / token-absent (no history)."""
+    out: dict = {}
     try:
-        xs = _valuation_cross_sections()
+        import pandas as pd
+        p = config.data_dir() / "tushare" / f"{name}.parquet"
+        if not p.exists():
+            return out
+        df = pd.read_parquet(p)
+        if df.empty or "date" not in df.columns or col not in df.columns or "ticker" not in df.columns:
+            return out
+        for dt, grp in df.groupby(df["date"].astype(str)):
+            ser = {str(t): float(v) for t, v in zip(grp["ticker"], grp[col])
+                   if isinstance(v, (int, float)) and v == v}
+            if len(ser) >= 10:
+                out[pd.Timestamp(dt)] = pd.Series(ser, dtype=float)
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_validation._hist_cross_sections(%s) failed (%s)", name, e)
+    return out
+
+
+def _validate_xs(V, family, xs, panel, bench, horizons, neutralize: bool = True) -> dict:
+    """Generic CROSS-SECTIONAL forward-return rank-IC over a {asof: Series(ticker->signal)} grid,
+    vs each name's forward CSI-300-relative return, with an optional incremental-IC neutralization
+    against {momentum_252, reversal_21, size}. Leak-guarded (a date is scored only once its forward
+    end is realized in the panel). Shared by valuation / fundflow / chips."""
+    try:
         if not xs:
-            return _accruing("valuation", "valuation cache empty")
+            return _accruing(family, f"{family} history empty")
         if panel is None or bench is None:
-            return _accruing("valuation", "price panel / bench missing")
+            return _accruing(family, "price panel / bench missing")
         by_h: dict = {}
         max_n = 0
         for h in horizons:
@@ -285,26 +322,27 @@ def _validate_valuation(V, panel, bench, horizons) -> dict:
                 ics.append(V.rank_ic(sig, row))
                 sig_by_date[asof] = sig
                 fwd_by_date[asof] = row
-                load = _factor_loadings(panel, idx[0])
-                if load is not None and len(load):
-                    load_by_date[asof] = load
+                if neutralize:
+                    load = _factor_loadings(panel, idx[0])
+                    if load is not None and len(load):
+                        load_by_date[asof] = load
             summ = V.ic_summary(ics, periods_per_year=12)
             n = summ.get("n", 0)
             max_n = max(max_n, n)
             block = {"mean_ic": summ.get("mean_ic"), "ic_ir": summ.get("ic_ir"),
                      "t_hac": summ.get("t_hac"), "p_hac": summ.get("p_hac"),
                      "hit": summ.get("hit"), "n": n}
-            if len(load_by_date) >= 6:
+            if neutralize and len(load_by_date) >= 6:
                 inc = V.incremental_ic(sig_by_date, fwd_by_date, load_by_date, periods_per_year=12)
                 block["incremental"] = {"surviving_frac": inc.get("surviving_frac"),
                                         "ic_delta": inc.get("ic_delta")}
             by_h[str(h)] = block
         if not by_h or max_n < 6:
-            return _accruing("valuation", f"only {max_n} cross-sections (< MIN_DATES 6)")
-        return _finalize("valuation", by_h, max_n, _MIN_PROVEN_N)
+            return _accruing(family, f"only {max_n} cross-sections (< MIN_DATES 6)")
+        return _finalize(family, by_h, max_n, _MIN_PROVEN_N)
     except Exception as e:  # noqa: BLE001
-        log.error("china_validation._validate_valuation failed (%s)", e)
-        return _accruing("valuation", "exception")
+        log.error("china_validation._validate_xs(%s) failed (%s)", family, e)
+        return _accruing(family, "exception")
 
 
 def _validate_timer(V, family, sig, panel, bench, horizons) -> dict:
@@ -385,10 +423,25 @@ def validate_all(root=None, horizons=(5, 10, 21, 63)) -> dict:
 
     families: dict = {}
     try:
-        families["valuation"] = _validate_valuation(V, panel, bench, horizons)
+        families["valuation"] = _validate_xs(V, "valuation", _valuation_cross_sections(),
+                                             panel, bench, horizons)
     except Exception as e:  # noqa: BLE001
         log.error("china_validation valuation family failed (%s)", e)
         families["valuation"] = _accruing("valuation", "exception")
+    # Tushare GATED cross-sectional legs (validate from the accruing/backfilled history; degrade to
+    # `accruing` when the token / history is absent — e.g. keyless CI before the secret is set).
+    try:
+        families["fundflow"] = _validate_xs(V, "fundflow", _hist_cross_sections("flow_hist", "flow"),
+                                            panel, bench, horizons)
+    except Exception as e:  # noqa: BLE001
+        log.error("china_validation fundflow family failed (%s)", e)
+        families["fundflow"] = _accruing("fundflow", "exception")
+    try:
+        families["chips"] = _validate_xs(V, "chips", _hist_cross_sections("chips_hist", "winner"),
+                                         panel, bench, horizons)
+    except Exception as e:  # noqa: BLE001
+        log.error("china_validation chips family failed (%s)", e)
+        families["chips"] = _accruing("chips", "exception")
     try:
         families["margin"] = _validate_timer(V, "margin", _margin_series(), panel, bench, horizons)
     except Exception as e:  # noqa: BLE001

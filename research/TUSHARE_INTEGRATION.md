@@ -61,12 +61,24 @@ over a date window (best-effort; degrades silently when the hourly budget is spe
 Every new premium feed lands **display/context-only**. Promotion to an earned, scored weight goes
 through `engine/china_validation` (forward-return rank-IC, HAC t, sign check) → only a `proven`,
 right-sign family earns weight via `china_signal_lab.leg_weights_for`; a proven wrong-sign family is
-zeroed. Fund-flow has no validation family yet, so it rides at its prior (context floor) until one
-is added — honest, not alpha.
+zeroed; an unproven family rides its prior (context floor).
 
-## Next (follow-ups, not in this PR)
+**`fundflow` + `chips` families are now live.** `collectors/tushare_history` backfills + accrues a
+compact weekly-grid per-name history (`data/tushare/{flow_hist,chips_hist}.parquet`, panel names
+only) so the cross-sectional rank-IC computes against ~1 year of real history immediately rather
+than waiting months. `china_validation` validates them like the valuation family (forward
+CSI-300-relative rank-IC + an incremental-IC neutralization vs momentum/reversal/size), and
+`_VAL_FAMILY` maps the `flow` convergence leg → `fundflow`.
 
-- Add a `fundflow` / `chips` / `report_rc` family to `china_validation` so the new legs can EARN
-  weight (or be zeroed).
+**First verdict (51 weekly cross-sections):** fund-flow has **no significant 21d cross-sectional
+edge** (IC ≈ −0.008, HAC t ≈ −0.8) — a slight short-horizon reversal (5d t≈−1.5) flipping to slight
+continuation by 63d (t≈+1.7), net-zero at 21d. So `flow` correctly **holds its 0.18 prior** (not
+proven → not boosted; |t| < 2 → not zeroed): measured context, not validated alpha. `chips`
+(win-rate) is likewise insignificant (IC +0.014, t 0.6). This is the honest machinery working — the
+moment fund-flow either proves out or proves wrong-sign on accruing data, its weight moves on its own.
+
+## Next (follow-ups)
+
 - Wire `moneyflow_ind_dc` (sector flow) into the divergence radar (sector-flow vs price pair).
-- Compute forecast-REVISION momentum from the `report_rc` raw history once it accrues.
+- Compute forecast-REVISION momentum from the `report_rc` raw history once it accrues (then add a
+  `report_rc` validation family).
