@@ -1976,10 +1976,18 @@ commodity_news:
 macro_news:
   enabled: true                   # MASTER SWITCH for the GDELT fetch + LLM brief
   lang: eng
-  window_days: 2                  # fetch the last N days of macro news
+  window_days: 4                  # fetch the last N days of macro news
   max_records: 200                # candidates pulled from GDELT before filtering
-  max_show: 20                    # headlines shown after filtering (raised 10 -> 20)
+  max_show: 18                    # headlines shown after filtering
+  min_importance_score: 34        # drops official/wire plumbing that is not macro-relevant
   min_request_interval_s: 6       # GDELT pacing
+  gdelt_attempts: 2
+  gdelt_timeout_s: 15
+  use_official_feeds: true        # BEA/BLS/Census/Fed/TreasuryDirect/SEC RSS bundle
+  use_official_pages: true        # Treasury/BEA/Census pages where RSS coverage is patchy
+  use_news_feeds: true            # stock-wire + market RSS (CNBC/MarketWatch/SA/Benzinga/WSJ/Yahoo/NPR)
+  news_window_days: 5
+  official_window_days: 45
   cache_dir: data/macro/news_cache
   cache_ttl_hours: 12
   catalysts_horizon_days: 14
@@ -2033,7 +2041,17 @@ china_news:
   tone_window: 90                 # engine: z-score window (trading days) for the policy-tone
   tone_smooth: 5                  # engine: rolling-mean smoothing of the sparse daily tone
   max_records: 80                 # Eastmoney flashes pulled before the macro-theme gate
-  max_show: 16                    # macro headlines shown after filtering (raised 12 -> 16; +tech/politics/markets)
+  max_show: 18                    # macro headlines shown after filtering
+  min_importance_score: 34        # keeps official/global-wire context but drops weak filler
+  use_official_pages: true        # PBoC/NBS/MOF/State Council/CSRC/SAFE/MOFCOM pages
+  use_news_feeds: true            # SCMP/Nikkei RSS direct media leg
+  use_news_pages: true            # Chinese-native pages (Yicai/STCN/CNStock/Sina/Eastmoney) + Caixin
+  use_wire_gdelt: true            # Reuters/FT/SCMP/Caixin-style global wire via GDELT
+  news_window_days: 7
+  wire_window_days: 5
+  wire_max_records: 180
+  wire_attempts: 2
+  wire_timeout_s: 12
   cache_dir: data/china_news/flash_cache
   cache_ttl_hours: 12
   # OPTIONAL AI brief — the only AI; off even if a key is present. Provider-agnostic
@@ -2136,6 +2154,24 @@ profile_translation:
   batch_size: 20                  # blurbs per request (short text; JSON-array contract, validated)
   max_chars: 600                  # truncate pathologically long blurbs before sending
   max_tokens: 4000                # response cap per batch
+
+# =============================================================================
+# News headline translation (engine/news_translate.py)
+# Build-time, cached Simplified-Chinese translation for sourced English headlines.
+# Static pages cannot safely call an API from the browser, so this runs only during
+# local renders / daily workflows and degrades to English when unkeyed or rate-limited.
+# =============================================================================
+news_translation:
+  enabled: true
+  provider: deepseek
+  model: deepseek-chat
+  base_url: https://api.deepseek.com/anthropic
+  api_key_env: DEEPSEEK_API_KEY
+  batch_size: 16
+  max_chars: 360
+  max_tokens: 3000
+  cache_dir: data/news_translation/cache
+
 # Catalyst tone — market/regime narrative DIGEST (LLM Tier A; engine/catalyst_tone.py).
 # LEAF · DEFAULT-OFF · CONTEXT-ONLY. Digests ONE public document (FOMC text, a
 # regulatory release, dislocation-day catalyst text) into a typed tone/guidance/
@@ -3357,7 +3393,7 @@ hk:
   # ADDS genuinely-liquid HSI / HSCEI / HSTECH constituents (cross-sectional reads
   # simply widen to whatever resolves). Every added ticker is a real, liquid .HK line.
   sectors:
-    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK","9999.HK","0285.HK","2382.HK","0241.HK","1347.HK","0268.HK","0772.HK","9698.HK","9626.HK","0780.HK","3888.HK","1833.HK"]}
+    "Internet & Tech":      {tv: "HKEX:700",  members: ["0700.HK","9988.HK","3690.HK","9618.HK","1810.HK","9888.HK","1024.HK","0992.HK","0981.HK","9999.HK","0285.HK","2382.HK","0241.HK","1347.HK","0268.HK","0772.HK","9698.HK","9626.HK","0780.HK","3888.HK","1833.HK","0100.HK"]}
     "Financials & Banks":   {tv: "HKEX:1398", members: ["1398.HK","0939.HK","3988.HK","0005.HK","2388.HK","3328.HK","1288.HK","3968.HK","1658.HK","0011.HK","2888.HK","6818.HK","0998.HK","1359.HK","3618.HK"]}
     "Insurance":            {tv: "HKEX:2318", members: ["2318.HK","1299.HK","2628.HK","2601.HK","0966.HK","1336.HK","6060.HK","2378.HK"]}
     "Energy":               {tv: "HKEX:883",  members: ["0883.HK","0857.HK","0386.HK","1088.HK","0934.HK","1898.HK","0902.HK","2883.HK","1816.HK","0135.HK","3800.HK"]}
@@ -3382,6 +3418,7 @@ hk:
     "1024.HK": Kuaishou
     "0992.HK": Lenovo
     "0981.HK": SMIC
+    "0100.HK": MiniMax
     "1398.HK": ICBC
     "0939.HK": China Construction Bank
     "3988.HK": Bank of China

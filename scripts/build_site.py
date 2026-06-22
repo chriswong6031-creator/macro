@@ -2881,6 +2881,12 @@ def main() -> int:
     out.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="macro"))
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 
+    # Dedicated macro news feed. Uses the same context-only news/catalyst/sentiment
+    # view model as the dashboard tab, but gives it a first-class reading surface.
+    out_news = site / "news.html"
+    out_news.write_text(env.get_template("news.html.j2").render(**vm))
+    log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
+
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
     out_st = site / "us_stocks.html"
     out_st.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))

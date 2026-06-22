@@ -27,10 +27,15 @@ guard, seendate=%Y%m%dT%H%M%SZ.
 """
 from __future__ import annotations
 
+import html
 import json
 import logging
 import re
+import xml.etree.ElementTree as ET
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
+from functools import lru_cache
+from urllib.parse import urljoin
 
 from lib import config
 
@@ -44,25 +49,205 @@ MACRO_THEMES: dict[str, list[str]] = {
     "monetary":  ["federal reserve", "the fed", "fed governor", "fed chair", "fed official",
                   "fed minutes", "fed meeting", "fomc", "rate cut", "rate hike",
                   "interest rate", "powell", "central bank", "monetary policy",
-                  "rate decision", "basis point", "dot plot"],
+                  "rate decision", "basis point", "dot plot", "beige book",
+                  "discount rate"],
     "inflation": ["inflation", "cpi", "ppi", "pce", "consumer price", "deflation",
-                  "price pressure", "core prices", "disinflation"],
+                  "price pressure", "core prices", "disinflation", "import prices",
+                  "export prices", "personal consumption expenditures"],
     "labor":     ["jobs report", "payroll", "nonfarm", "unemployment", "labor market",
-                  "jobless claims", "hiring", "layoff", "job openings", "wage growth"],
+                  "jobless claims", "hiring", "layoff", "job openings", "jolts",
+                  "employment cost", "eci", "wage growth", "initial claims"],
     "growth":    ["gdp", "recession", "economy", "economic", "growth", "slowdown",
                   "manufacturing", "ism ", "pmi", "soft landing", "hard landing",
-                  "contraction", "consumer spending", "retail sales"],
+                  "contraction", "consumer spending", "retail sales", "durable goods",
+                  "industrial production", "housing starts", "building permits",
+                  "new home sales", "construction spending", "factory orders",
+                  "economic indicators", "bea", "census"],
     "credit":    ["bond yield", "treasury yield", "treasury", "yields", "credit spread",
-                  "corporate bond", "yield curve", "default rate", "the dollar", "greenback"],
+                  "corporate bond", "yield curve", "default rate", "the dollar",
+                  "greenback", "financial conditions", "bank lending", "loan officer",
+                  "treasury auction", "treasury refunding", "term premium",
+                  "consumer credit"],
     "fiscal":    ["debt ceiling", "government shutdown", "fiscal", "tariff", "trade war",
-                  "trade deal", "sanction", "budget deal", "deficit", "stimulus", "spending bill"],
+                  "trade deal", "sanction", "budget deal", "deficit", "stimulus",
+                  "spending bill", "tax receipts", "tax cut", "treasury", "tic data",
+                  "foreign holdings", "ofac"],
+    "earnings":  ["earnings", "revenue", "profit", "eps", "quarterly results",
+                  "beats estimates", "misses estimates", "sales growth", "margin"],
+    "guidance":  ["guidance", "outlook", "forecast", "raises forecast", "cuts forecast",
+                  "warns", "preannounces", "annual forecast"],
+    "analyst":   ["upgrade", "downgrade", "price target", "analyst", "initiates",
+                  "reiterates", "rating", "overweight", "underweight"],
+    "deals":     ["acquisition", "merger", "buyout", "takeover", "stake", "activist",
+                  "spin off", "spin-off", "ipo", "secondary offering"],
+    "capital_return": ["buyback", "repurchase", "dividend", "special dividend",
+                       "shareholder return"],
+    "stocks":    ["shares of", "stock rises", "stock falls", "stock jumps", "stock slides",
+                  "stock surges", "stock drops", "premarket", "after hours",
+                  "fda approval", "antitrust", "lawsuit", "probe", "product launch"],
 }
 # theme display labels (EN, ZH)
 THEME_LABEL = {
     "monetary": ("Fed", "美联储"), "inflation": ("Inflation", "通胀"),
     "labor": ("Labor", "就业"), "growth": ("Growth", "增长"),
     "credit": ("Credit/Rates", "信用/利率"), "fiscal": ("Fiscal/Trade", "财政/贸易"),
+    "earnings": ("Earnings", "业绩"), "guidance": ("Guidance", "指引"),
+    "analyst": ("Analysts", "分析师"), "deals": ("Deals", "并购/IPO"),
+    "capital_return": ("Buybacks/Dividends", "回购/分红"), "stocks": ("Stocks", "个股"),
 }
+
+# Official/key-source feeds that carry first-party signals the broad GDELT wire can
+# miss or down-rank. Best-effort, cached, and still display-only.
+OFFICIAL_FEEDS = [
+    {"name": "BEA - News Releases", "url": "https://apps.bea.gov/rss/rss.xml", "theme": "growth", "tier": "official"},
+    {"name": "BLS - Latest Releases", "url": "https://www.bls.gov/feed/bls_latest.rss", "theme": "labor", "tier": "official"},
+    {"name": "BLS - Employment Situation", "url": "https://www.bls.gov/feed/empsit.rss", "theme": "labor", "tier": "official"},
+    {"name": "BLS - CPI", "url": "https://www.bls.gov/feed/cpi.rss", "theme": "inflation", "tier": "official"},
+    {"name": "BLS - PPI", "url": "https://www.bls.gov/feed/ppi.rss", "theme": "inflation", "tier": "official"},
+    {"name": "BLS - JOLTS", "url": "https://www.bls.gov/feed/jolts.rss", "theme": "labor", "tier": "official"},
+    {"name": "BLS - Employment Cost Index", "url": "https://www.bls.gov/feed/eci.rss", "theme": "labor", "tier": "official"},
+    {"name": "Census - Economic Indicators", "url": "https://www.census.gov/economic-indicators/indicator.xml", "theme": "growth", "tier": "official"},
+    {"name": "Federal Reserve - Monetary Policy", "url": "https://www.federalreserve.gov/feeds/press_monetary.xml", "theme": "monetary", "tier": "official"},
+    {"name": "Federal Reserve - All Press", "url": "https://www.federalreserve.gov/feeds/press_all.xml", "theme": "monetary", "tier": "official"},
+    {"name": "Federal Reserve - Speeches", "url": "https://www.federalreserve.gov/feeds/speeches.xml", "theme": "monetary", "tier": "official"},
+    {"name": "Federal Reserve - H.15 Rates", "url": "https://www.federalreserve.gov/feeds/h15.xml", "theme": "credit", "tier": "official"},
+    {"name": "Federal Reserve - H.8 Bank Credit", "url": "https://www.federalreserve.gov/feeds/h8.xml", "theme": "credit", "tier": "official"},
+    {"name": "Federal Reserve - Consumer Credit", "url": "https://www.federalreserve.gov/feeds/g19.xml", "theme": "credit", "tier": "official"},
+    {"name": "TreasuryDirect - Auction Results", "url": "https://www.treasurydirect.gov/TA_WS/securities/auctioned/rss", "theme": "credit", "tier": "official"},
+    {"name": "TreasuryDirect - Offering Announcements", "url": "https://www.treasurydirect.gov/TA_WS/securities/announced/rss", "theme": "credit", "tier": "official"},
+    {"name": "SEC - Press Releases", "url": "https://www.sec.gov/news/pressreleases.rss", "theme": "macro", "tier": "official"},
+    {"name": "SEC - Speeches & Statements", "url": "https://www.sec.gov/news/speeches-statements.rss", "theme": "macro", "tier": "official"},
+]
+
+OFFICIAL_PAGES = [
+    {"name": "Treasury - Press Releases", "url": "https://home.treasury.gov/news/press-releases", "theme": "fiscal", "tier": "official"},
+    {"name": "Treasury - TIC Releases", "url": "https://home.treasury.gov/data/tic-press-releases-by-topic", "theme": "fiscal", "tier": "official"},
+    {"name": "BEA - Current Releases", "url": "https://www.bea.gov/news/current-releases", "theme": "growth", "tier": "official"},
+    {"name": "Census - Economic Indicators", "url": "https://www.census.gov/economic-indicators/", "theme": "growth", "tier": "official"},
+]
+
+NEWS_FEEDS = [
+    {"name": "CNBC - Investing", "url": "https://www.cnbc.com/id/15839069/device/rss/rss.html", "domain": "cnbc.com", "theme": "stocks", "source": "news_rss", "tier": "stock_wire"},
+    {"name": "CNBC - Tech", "url": "https://www.cnbc.com/id/19854910/device/rss/rss.html", "domain": "cnbc.com", "theme": "stocks", "source": "news_rss", "tier": "stock_wire"},
+    {"name": "CNBC - Stock Blog", "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html", "domain": "cnbc.com", "theme": "stocks", "source": "news_rss", "tier": "stock_wire"},
+    {"name": "MarketWatch - MarketPulse", "url": "https://feeds.content.dowjones.io/public/rss/mw_marketpulse", "domain": "marketwatch.com", "theme": "stocks", "source": "news_rss", "tier": "stock_wire"},
+    {"name": "Seeking Alpha - Market Currents", "url": "https://seekingalpha.com/market_currents.xml", "domain": "seekingalpha.com", "theme": "stocks", "source": "news_rss", "tier": "stock_wire"},
+    {"name": "Benzinga", "url": "https://www.benzinga.com/feed", "domain": "benzinga.com", "theme": "stocks", "source": "news_rss", "tier": "stock_wire"},
+    {"name": "CNBC - Economy", "url": "https://www.cnbc.com/id/20910258/device/rss/rss.html", "domain": "cnbc.com", "theme": "macro", "source": "news_rss", "tier": "tier1"},
+    {"name": "CNBC - Finance", "url": "https://www.cnbc.com/id/10000664/device/rss/rss.html", "domain": "cnbc.com", "theme": "credit", "source": "news_rss", "tier": "tier1"},
+    {"name": "CNBC - Markets", "url": "https://www.cnbc.com/id/15839135/device/rss/rss.html", "domain": "cnbc.com", "theme": "macro", "source": "news_rss", "tier": "tier1"},
+    {"name": "MarketWatch - Top Stories", "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories", "domain": "marketwatch.com", "theme": "macro", "source": "news_rss", "tier": "tier1"},
+    {"name": "MarketWatch - Real-Time Headlines", "url": "https://feeds.content.dowjones.io/public/rss/mw_realtimeheadlines", "domain": "marketwatch.com", "theme": "macro", "source": "news_rss", "tier": "tier1"},
+    {"name": "WSJ - Markets", "url": "https://feeds.a.dj.com/rss/RSSMarketsMain.xml", "domain": "wsj.com", "theme": "macro", "source": "news_rss", "tier": "tier1"},
+    {"name": "WSJ - Business", "url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml", "domain": "wsj.com", "theme": "growth", "source": "news_rss", "tier": "tier1"},
+    {"name": "NPR - Business", "url": "https://feeds.npr.org/1006/rss.xml", "domain": "npr.org", "theme": "growth", "source": "news_rss", "tier": "tier1"},
+    {"name": "NPR - Economy", "url": "https://feeds.npr.org/1017/rss.xml", "domain": "npr.org", "theme": "growth", "source": "news_rss", "tier": "tier1"},
+    {"name": "Yahoo Finance - Top Stories", "url": "https://finance.yahoo.com/rss/topstories", "domain": "yahoo.com", "theme": "macro", "source": "news_rss", "tier": "quality"},
+]
+
+CHANNEL_KEYWORDS: dict[str, list[str]] = {
+    "rates": ["fed", "fomc", "powell", "rate", "yield", "treasury", "auction", "h15", "term premium"],
+    "inflation": ["inflation", "cpi", "pce", "ppi", "prices", "deflation"],
+    "labor": ["jobs", "payroll", "unemployment", "claims", "labor", "hiring", "layoff", "jolts", "eci", "wages"],
+    "growth": ["gdp", "ism", "pmi", "manufacturing", "services", "retail sales", "durable goods", "housing starts", "building permits", "construction", "recession", "slowdown", "growth"],
+    "credit": ["credit", "spread", "default", "bank", "liquidity", "financial stability", "lending", "loan officer", "consumer credit"],
+    "fiscal_trade": ["treasury", "fiscal", "deficit", "budget", "tariff", "trade", "sanction", "debt ceiling", "tic", "ofac"],
+    "equities": ["sec", "market structure", "securities", "buyback", "ipo", "disclosure"],
+    "single_stock": ["shares of", "stock rises", "stock falls", "stock jumps", "stock slides", "premarket", "after hours"],
+    "earnings": ["earnings", "revenue", "eps", "profit", "quarterly results", "margin", "sales growth"],
+    "guidance": ["guidance", "outlook", "forecast", "warns", "preannounces"],
+    "analyst": ["upgrade", "downgrade", "price target", "analyst", "rating", "initiates"],
+    "deals": ["acquisition", "merger", "buyout", "takeover", "stake", "activist", "ipo", "spin off", "spin-off"],
+    "capital_return": ["buyback", "repurchase", "dividend", "special dividend"],
+    "energy": ["oil", "energy", "gasoline", "crude", "spr"],
+    "consumer": ["consumer spending", "retail sales", "consumer credit", "personal income", "personal outlays"],
+    "housing": ["housing", "mortgage", "home sales", "building permits", "construction spending"],
+}
+
+TICKER_RULES: list[tuple[str, list[str]]] = [
+    ("SPY", ["s&p", "stock market", "equities", "wall street", "risk assets"]),
+    ("QQQ", ["nasdaq", "technology stocks", "growth stocks", "ai"]),
+    ("IWM", ["small-cap", "small cap", "russell"]),
+    ("TLT", ["long-term treasury", "long term treasury", "30-year", "30 year", "duration"]),
+    ("IEF", ["10-year", "10 year", "treasury yield", "intermediate treasury"]),
+    ("SHY", ["2-year", "2 year", "front-end", "front end"]),
+    ("TIP", ["breakeven", "real yield", "tips", "inflation expectations"]),
+    ("HYG", ["high yield", "junk bond", "credit spread"]),
+    ("LQD", ["investment-grade", "investment grade", "corporate bond"]),
+    ("KRE", ["regional bank", "regional banks", "bank stress"]),
+    ("UUP", ["dollar", "dxy", "greenback"]),
+    ("GLD", ["gold"]),
+    ("USO", ["oil", "crude", "gasoline", "energy"]),
+    ("XLF", ["bank", "banks", "financials", "lending"]),
+    ("XHB", ["housing", "homebuilder", "mortgage", "building permits", "home sales"]),
+    ("XRT", ["retail sales", "consumer spending"]),
+    ("XLY", ["consumer discretionary", "consumer spending"]),
+    ("XLP", ["consumer staples"]),
+    ("XLE", ["energy"]),
+    ("XLI", ["industrial", "manufacturing"]),
+    ("XLK", ["technology", "semiconductor", "chip"]),
+    ("DBA", ["food prices", "agricultural", "farm prices"]),
+]
+
+CURATED_COMPANY_TICKERS: list[tuple[str, list[str]]] = [
+    ("AAPL", ["apple"]),
+    ("MSFT", ["microsoft"]),
+    ("NVDA", ["nvidia"]),
+    ("AMZN", ["amazon"]),
+    ("GOOGL", ["alphabet", "google"]),
+    ("META", ["meta platforms", "meta"]),
+    ("TSLA", ["tesla"]),
+    ("AVGO", ["broadcom"]),
+    ("AMD", ["advanced micro devices", "amd"]),
+    ("INTC", ["intel"]),
+    ("MU", ["micron"]),
+    ("SMCI", ["super micro", "supermicro"]),
+    ("NFLX", ["netflix"]),
+    ("CRM", ["salesforce"]),
+    ("ORCL", ["oracle"]),
+    ("PLTR", ["palantir"]),
+    ("COIN", ["coinbase"]),
+    ("MSTR", ["microstrategy", "strategy"]),
+    ("JPM", ["jpmorgan", "jp morgan"]),
+    ("BAC", ["bank of america"]),
+    ("GS", ["goldman sachs"]),
+    ("MS", ["morgan stanley"]),
+    ("WMT", ["walmart"]),
+    ("COST", ["costco"]),
+    ("HD", ["home depot"]),
+    ("DIS", ["disney"]),
+    ("BA", ["boeing"]),
+    ("CAT", ["caterpillar"]),
+    ("XOM", ["exxon"]),
+    ("CVX", ["chevron"]),
+    ("LLY", ["eli lilly"]),
+    ("UNH", ["unitedhealth"]),
+    ("MRK", ["merck"]),
+    ("PFE", ["pfizer"]),
+]
+
+HIGH_IMPACT_TERMS = [
+    "fomc", "federal reserve", "powell", "rate cut", "rate hike", "interest rate",
+    "rate decision",
+    "cpi", "pce", "inflation", "jobs report", "payroll", "unemployment",
+    "gdp", "recession", "treasury auction", "debt ceiling", "shutdown",
+    "tariff", "sanction", "financial stability", "bank stress", "default",
+    "earnings", "guidance", "outlook", "upgrade", "downgrade", "price target",
+    "acquisition", "merger", "buyout", "buyback", "dividend", "fda approval",
+]
+MEDIUM_IMPACT_TERMS = [
+    "yield", "credit", "claims", "ism", "manufacturing", "services", "housing",
+    "consumer", "retail sales", "durable goods", "industrial production",
+    "trade", "budget", "auction", "beige book", "personal income",
+    "revenue", "eps", "profit", "analyst", "shares", "stock", "premarket",
+    "after hours", "stake", "activist", "ipo", "product launch",
+]
+
+REGULATORY_NOISE_TERMS = [
+    "administrative proceeding", "litigation", "settles charges", "charges against",
+    "enforcement action", "whistleblower", "fraud charges", "insider trading",
+    "comment period", "proposed rule", "final rule", "form ", "edgar", "token",
+]
 
 # reputable macro/financial outlets — the source allowlist (substring match on the
 # article domain, so finance.yahoo.com matches yahoo.com). Sourced from the shared
@@ -119,9 +304,219 @@ def classify_theme(title: str) -> str | None:
     or None if it matches no macro keyword (-> irrelevant, dropped). PURE."""
     low = " " + (title or "").lower() + " "
     for theme, kws in MACRO_THEMES.items():
-        if any(k in low for k in kws):
+        if any(_kw_in(low, k) for k in kws):
             return theme
     return None
+
+
+def _kw_in(low: str, term: str) -> bool:
+    t = (term or "").lower()
+    if not t:
+        return False
+    if re.fullmatch(r"[a-z0-9]{1,3}", t.strip()):
+        return re.search(rf"\b{re.escape(t.strip())}\b", low) is not None
+    return t in low
+
+
+@lru_cache(maxsize=1)
+def _company_aliases() -> list[tuple[str, list[str]]]:
+    aliases: dict[str, set[str]] = {tk: set(names) for tk, names in CURATED_COMPANY_TICKERS}
+    try:
+        stock_dir = config.ROOT / "site" / "stockdata"
+        for path in list(stock_dir.glob("*.json"))[:1800]:
+            tk = path.stem.upper()
+            if not re.fullmatch(r"[A-Z][A-Z0-9.]{0,5}", tk):
+                continue
+            try:
+                blob = json.loads(path.read_text()[:5000])
+            except Exception:  # noqa: BLE001
+                continue
+            name = str(blob.get("name") or "").strip()
+            if not name:
+                continue
+            base = re.sub(r"\b(inc|incorporated|corp|corporation|co|company|ltd|limited|plc|class a|class b|common stock)\b\.?", "", name, flags=re.I)
+            base = re.sub(r"\s+", " ", base).strip(" ,-")
+            if len(base) >= 4 and base.lower() not in {"the", "holdings", "group", "international"}:
+                aliases.setdefault(tk, set()).add(base.lower())
+    except Exception:  # noqa: BLE001
+        pass
+    return [(tk, sorted(names, key=len, reverse=True)[:4]) for tk, names in aliases.items()]
+
+
+@lru_cache(maxsize=1)
+def _valid_tickers() -> set[str]:
+    vals = {tk for tk, _ in CURATED_COMPANY_TICKERS}
+    vals.update(tk for tk, _ in TICKER_RULES)
+    try:
+        stock_dir = config.ROOT / "site" / "stockdata"
+        vals.update(p.stem.upper() for p in stock_dir.glob("*.json") if re.fullmatch(r"[A-Z][A-Z0-9.]{0,5}", p.stem.upper()))
+    except Exception:  # noqa: BLE001
+        pass
+    return vals
+
+
+def _channels(text: str) -> list[str]:
+    low = (text or "").lower()
+    return [ch for ch, kws in CHANNEL_KEYWORDS.items() if any(_kw_in(low, k) for k in kws)]
+
+
+def _ticker_hits(text: str) -> list[dict]:
+    low = (text or "").lower()
+    out: list[dict] = []
+    explicit = re.finditer(r"(?<![A-Za-z0-9])([$\(]?)([A-Z]{1,5})(?=[\).,;:]|\b)", text or "")
+    common_words = {"A", "I", "AI", "CEO", "CFO", "IPO", "ETF", "USA", "US", "FED"}
+    valid = _valid_tickers()
+    for m in explicit:
+        prefix, sym = m.group(1), m.group(2)
+        if sym in common_words:
+            continue
+        if len(sym) == 1 and prefix not in {"$", "("}:
+            continue
+        if sym in valid:
+            out.append({"ticker": sym, "reason": f"symbol {sym}"})
+    for tk, kws in TICKER_RULES:
+        hit = next((k for k in kws if _kw_in(low, k)), "")
+        if hit:
+            out.append({"ticker": tk, "reason": hit})
+    for tk, aliases in _company_aliases():
+        if any(_kw_in(low, name) for name in aliases):
+            hit = next(name for name in aliases if _kw_in(low, name))
+            out.append({"ticker": tk, "reason": hit})
+    dedup: list[dict] = []
+    seen: set[str] = set()
+    for hit in out:
+        if hit["ticker"] in seen:
+            continue
+        seen.add(hit["ticker"])
+        dedup.append(hit)
+    return dedup[:10]
+
+
+def _tickers(text: str) -> list[str]:
+    return [h["ticker"] for h in _ticker_hits(text)]
+
+
+def _source_weight(source_tier: str, source_name: str = "", domain: str = "") -> tuple[int, str]:
+    blob = f"{source_name} {domain}".lower()
+    if source_tier == "stock_wire":
+        return 22, "stock-focused news source"
+    if any(s in blob for s in ["bls", "bea", "census", "federal reserve"]):
+        return 10, "first-party macro release"
+    if "treasury" in blob:
+        return 8, "first-party Treasury source"
+    if "sec" in blob:
+        return 2, "SEC context"
+    if source_tier == "official":
+        return 8, "official source"
+    if source_tier == "tier1":
+        return 12, "tier-1 news source"
+    if source_tier == "quality":
+        return 4, "quality source"
+    return 0, ""
+
+
+def _sec_noise(title: str, source_name: str = "", domain: str = "") -> bool:
+    blob = f"{title} {source_name} {domain}".lower()
+    return ("sec" in blob or "sec.gov" in blob) and any(k in blob for k in REGULATORY_NOISE_TERMS)
+
+
+def _parse_dt(value: str) -> datetime | None:
+    if not value:
+        return None
+    raw = value.strip()
+    for fmt in ("%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            dt = datetime.strptime(raw.replace("Z", "+0000"), fmt)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _freshness_points(value: str) -> int:
+    dt = _parse_dt(value)
+    if not dt:
+        return 0
+    age_h = max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 3600)
+    if age_h <= 8:
+        return 7
+    if age_h <= 24:
+        return 5
+    if age_h <= 72:
+        return 3
+    if age_h <= 168:
+        return 1
+    return 0
+
+
+def _importance(title: str, theme: str, source_tier: str = "", source_name: str = "",
+                domain: str = "") -> tuple[int, str, list[str]]:
+    low = (title or "").lower()
+    score = 22
+    reasons: list[str] = []
+    hits_hi = [k for k in HIGH_IMPACT_TERMS if _kw_in(low, k)]
+    hits_med = [k for k in MEDIUM_IMPACT_TERMS if _kw_in(low, k)]
+    sw, source_reason = _source_weight(source_tier, source_name, domain)
+    if sw:
+        score += sw
+        reasons.append(source_reason)
+    if hits_hi:
+        score += min(40, 14 * len(hits_hi))
+        reasons.append("tier-1 macro term")
+    if hits_med:
+        score += min(18, 7 * len(hits_med))
+        reasons.append("market-sensitive term")
+    if theme in {"earnings", "guidance", "analyst", "deals", "capital_return", "stocks"}:
+        score += 16
+        reasons.append("stock catalyst theme")
+    elif theme in {"monetary", "inflation", "labor", "credit"}:
+        score += 8
+        reasons.append("dashboard core theme")
+    if theme == "macro" and not hits_hi and not hits_med and source_tier != "tier1":
+        score -= 10
+        reasons.append("low title-level macro specificity")
+    if _sec_noise(title, source_name, domain):
+        score -= 34
+        reasons.append("regulatory plumbing de-boost")
+    score = max(0, min(100, score))
+    band = "high" if score >= 72 else "medium" if score >= 48 else "low"
+    return score, band, reasons or ["context"]
+
+
+def enrich_headline(h: dict) -> dict:
+    title = h.get("title", "")
+    theme = h.get("theme") or classify_theme(title) or "macro"
+    source_tier = h.get("source_tier") or ("official" if h.get("source") == "official" else "tier1")
+    score, band, reasons = _importance(title, theme, source_tier, h.get("source_name", ""), h.get("domain", ""))
+    text = f"{title} {h.get('domain','')} {h.get('source_name','')}"
+    ticker_hits = _ticker_hits(text)
+    channels = _channels(text) or ([theme] if theme != "macro" else [])
+    stock_bonus = 10 if theme in {"earnings", "guidance", "analyst", "deals", "capital_return", "stocks"} else 0
+    ticker_bonus = min(10, 4 * len(ticker_hits))
+    intel = max(0, min(100, score + _freshness_points(h.get("seendate", "")) + stock_bonus + ticker_bonus + (4 if len(channels) >= 2 else 0)))
+    out = dict(h)
+    out.update({
+        "theme": theme,
+        "importance_score": score,
+        "intelligence_score": intel,
+        "importance": band,
+        "importance_reasons": reasons,
+        "channels": channels,
+        "tickers": [hit["ticker"] for hit in ticker_hits],
+        "ticker_reasons": {hit["ticker"]: hit["reason"] for hit in ticker_hits},
+        "related_tickers": ticker_hits,
+        "source_tier": source_tier,
+        "source_lang": h.get("source_lang", "en"),
+    })
+    return out
 
 
 def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict]:
@@ -133,28 +528,40 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict
     quality = [s.lower() for s in (cfg.get("sources") or _DEFAULT_SOURCES)]
     news = [s.lower() for s in _NEWS_SOURCES]
     top_n = int(cfg.get("max_show", 10))
+    min_score = int(cfg.get("min_importance_score", 34))
     kept: list[dict] = []
     seen: set[str] = set()
     for a in articles:
         dom = (a.get("domain") or "").lower()
+        official_ok = a.get("source_tier") == "official" or a.get("source") == "official"
+        stock_ok = a.get("source_tier") == "stock_wire"
         news_ok = any(s in dom for s in news)
         qual_ok = (not quality) or any(s in dom for s in quality)
-        theme = classify_theme(a.get("title", ""))
+        declared_theme = a.get("theme")
+        theme = declared_theme if declared_theme in MACRO_THEMES else classify_theme(a.get("title", ""))
         # Keep if it's a tier-1 news outlet (body already matched the macro query),
         # OR it clears the title macro-theme gate AND is from a quality source.
-        if not (news_ok or (theme is not None and qual_ok)):
+        if not (official_ok or stock_ok or news_ok or (theme is not None and qual_ok)):
             continue
         if theme is None:
             theme = "macro"          # reputable macro story w/o a keyword in title
         key = _norm_title(a.get("title", ""))[:60]
         if not key or key in seen:
             continue                                   # dedup
+        enriched = enrich_headline({"title": a.get("title", ""), "url": a.get("url", ""),
+                     "domain": dom, "seendate": a.get("seendate", ""), "theme": theme,
+                     "source": a.get("source", "gdelt"), "source_name": a.get("source_name", dom),
+                     "source_lang": a.get("source_lang", "en"),
+                     "source_tier": a.get("source_tier", "official" if official_ok else "stock_wire" if stock_ok else "tier1" if news_ok else "quality")})
+        if enriched.get("importance_score", 0) < min_score:
+            continue
         seen.add(key)
-        kept.append({"title": a.get("title", ""), "url": a.get("url", ""),
-                     "domain": dom, "seendate": a.get("seendate", ""), "theme": theme})
-    kept.sort(key=lambda h: h.get("seendate", ""), reverse=True)  # (4) newest first
-    # (5) source diversity — cap any one outlet so the scorecard reads as a cross-wire
-    # digest (Bloomberg + Reuters + FT + AP …), not a single verbose RSS feed.
+        kept.append(enriched)
+    kept.sort(key=lambda h: (
+        int(h.get("intelligence_score", h.get("importance_score", 0)) or 0),
+        int(h.get("importance_score", 0) or 0),
+        _parse_dt(h.get("seendate", "")) or datetime.min.replace(tzinfo=timezone.utc),
+    ), reverse=True)
     cap = int(cfg.get("max_per_domain", 4))
     if cap > 0:
         per: dict[str, int] = {}
@@ -169,6 +576,66 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict
     return kept[:top_n]
 
 
+def _synthesis(headlines: list[dict]) -> dict:
+    """Holistic feed texture for dashboards/Mastermind. Pure summary of already
+    filtered context headlines; never a scoring input."""
+    if not headlines:
+        return {
+            "high_impact_count": 0, "top_channels": [], "top_tickers": [],
+            "top_themes": [], "source_mix": [], "dominant_channel": "",
+            "read": "No high-signal macro tape passed the current filter.",
+        }
+    channels = Counter(c for h in headlines for c in (h.get("channels") or []))
+    tickers = Counter(t for h in headlines for t in (h.get("tickers") or []))
+    themes = Counter(h.get("theme", "macro") for h in headlines)
+    sources = Counter(h.get("source_tier", "unknown") for h in headlines)
+    high = sum(1 for h in headlines if h.get("importance") == "high")
+    dom_channel = channels.most_common(1)[0][0] if channels else ""
+    dom_theme = themes.most_common(1)[0][0] if themes else "macro"
+    read = f"{high} high-impact items; dominant channel {dom_channel or dom_theme}; source mix " \
+           + ", ".join(f"{k}:{v}" for k, v in sources.most_common(3))
+    return {
+        "high_impact_count": high,
+        "avg_importance": round(sum(float(h.get("importance_score", 0) or 0) for h in headlines) / len(headlines), 1),
+        "top_channels": [{"name": k, "count": v} for k, v in channels.most_common(6)],
+        "top_tickers": [{"ticker": k, "count": v} for k, v in tickers.most_common(8)],
+        "top_themes": [{"theme": k, "count": v} for k, v in themes.most_common(6)],
+        "source_mix": [{"tier": k, "count": v} for k, v in sources.most_common(5)],
+        "dominant_channel": dom_channel,
+        "dominant_theme": dom_theme,
+        "read": read,
+    }
+
+
+def _attach_translations(headlines: list[dict], cfg: dict | None = None) -> list[dict]:
+    if not headlines:
+        return headlines
+    try:
+        from engine import news_translate
+        titles = [h.get("title", "") for h in headlines]
+        summaries = [h.get("summary", "") for h in headlines]
+        title_zh = news_translate.translate_to_zh(titles)
+        summary_zh = news_translate.translate_to_zh([s for s in summaries if s])
+        si = 0
+        out = []
+        for h, tz, s in zip(headlines, title_zh, summaries, strict=False):
+            hh = dict(h)
+            if tz:
+                hh["title_zh"] = tz
+            elif hh.get("source_lang") == "zh":
+                hh["title_zh"] = hh.get("title", "")
+            if s:
+                sz = summary_zh[si] if si < len(summary_zh) else None
+                si += 1
+                if sz:
+                    hh["summary_zh"] = sz
+            out.append(hh)
+        return out
+    except Exception as e:  # noqa: BLE001
+        log.warning("macro news translation skipped: %s", e)
+        return headlines
+
+
 # --------------------------------------------------------------------------- #
 # GDELT fetch (free, keyless) — recent macro headlines
 # --------------------------------------------------------------------------- #
@@ -176,10 +643,12 @@ def _query(cfg: dict) -> str:
     # Strongest, shortest macro terms (GDELT caps query length). The query MATCHES
     # full article text, so the title-level theme gate in filter_headlines is the
     # precision step.
-    core = ['"federal reserve"', "fomc", "inflation", "cpi", '"interest rates"',
-            "recession", '"jobs report"', "payrolls", "gdp", '"treasury yield"',
-            "tariffs", '"debt ceiling"', '"jobless claims"', '"consumer confidence"',
-            "powell", '"rate cut"']
+    core = ['"federal reserve"', "fomc", "inflation", "cpi", "pce", "ppi",
+            '"interest rates"', "recession", '"jobs report"', "payrolls",
+            "jolts", "gdp", '"retail sales"', '"housing starts"',
+            '"durable goods"', '"treasury yield"', '"credit spread"',
+            '"treasury auction"', "tariffs", '"debt ceiling"', "sanctions",
+            '"jobless claims"', '"consumer confidence"', "powell", '"rate cut"']
     q = "(" + " OR ".join(core) + ")"
     # sourcecountry:US removes the flood of foreign local papers at source; the
     # reputable-source allowlist + title theme-gate then run in filter_headlines.
@@ -191,7 +660,235 @@ def _cache_path(cfg: dict, d: date):
     from pathlib import Path
     cdir = config.ROOT / cfg.get("cache_dir", "data/macro/news_cache")
     Path(cdir).mkdir(parents=True, exist_ok=True)
-    return Path(cdir) / f"macro_{d.isoformat()}.json"
+    return Path(cdir) / f"macro_v2_{d.isoformat()}.json"
+
+
+def _official_cache_path(cfg: dict, d: date):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("official_cache_dir", "data/macro/official_news_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"official_v3_{d.isoformat()}.json"
+
+
+def _news_cache_path(cfg: dict, d: date):
+    from pathlib import Path
+    cdir = config.ROOT / cfg.get("news_cache_dir", "data/macro/news_rss_cache")
+    Path(cdir).mkdir(parents=True, exist_ok=True)
+    return Path(cdir) / f"news_rss_v2_{d.isoformat()}.json"
+
+
+def _parse_rss_date(s: str) -> str:
+    if not s:
+        return ""
+    try:
+        from email.utils import parsedate_to_datetime
+        dt = parsedate_to_datetime(s)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).isoformat()
+    except Exception:  # noqa: BLE001
+        return s
+
+
+def _xml_text(el, name: str) -> str:
+    found = el.find(name)
+    if found is not None and found.text:
+        return html.unescape(found.text.strip())
+    for child in el:
+        if child.tag.split("}")[-1] == name and child.text:
+            return html.unescape(child.text.strip())
+    return ""
+
+
+def _parse_feed(xml_text: str, feed: dict) -> list[dict]:
+    root = ET.fromstring(xml_text)
+    items = root.findall(".//item")
+    if not items:  # Atom
+        items = root.findall(".//{http://www.w3.org/2005/Atom}entry")
+    out: list[dict] = []
+    for it in items[:25]:
+        title = _xml_text(it, "title")
+        link = _xml_text(it, "link")
+        if not link:
+            for child in it:
+                if child.tag.split("}")[-1] == "link":
+                    link = child.attrib.get("href", "")
+                    break
+        dt = _xml_text(it, "pubDate") or _xml_text(it, "updated") or _xml_text(it, "published")
+        if not title:
+            continue
+        iso_dt = _parse_rss_date(dt)
+        out.append({
+            "title": title,
+            "url": urljoin(feed["url"], link),
+            "domain": (feed.get("domain") or re.sub(r"^www\.", "", re.sub(r"^https?://", "", feed["url"]).split("/")[0])).lower(),
+            "seendate": iso_dt,
+            "theme": feed.get("theme") or classify_theme(title) or "macro",
+            "source": feed.get("source", "official"),
+            "source_name": feed.get("name", "Official feed"),
+            "source_tier": feed.get("tier", "official"),
+            "source_lang": feed.get("source_lang", "en"),
+        })
+    return out
+
+
+def _fetch_official_feeds(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    today = today or date.today()
+    cache = _official_cache_path(cfg, today)
+    ttl = cfg.get("official_cache_ttl_hours", cfg.get("cache_ttl_hours", 12)) * 3600
+    if cache.exists():
+        try:
+            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
+                blob = json.loads(cache.read_text())
+                return blob.get("articles", []), blob.get("degraded_reason")
+        except Exception:  # noqa: BLE001
+            pass
+    feeds = cfg.get("official_feeds") or OFFICIAL_FEEDS
+    articles: list[dict] = []
+    failures = 0
+    window_days = int(cfg.get("official_window_days", 45))
+    try:
+        import requests
+        for feed in feeds:
+            try:
+                r = requests.get(feed["url"], timeout=12,
+                                 headers={"User-Agent": "macro-dashboard/1.0 (research; contact local)"})
+                if r.status_code != 200:
+                    failures += 1
+                    continue
+                for item in _parse_feed(r.text, feed):
+                    dt = _parse_dt(item.get("seendate", ""))
+                    if dt and dt.date() < today - timedelta(days=window_days):
+                        continue
+                    articles.append(item)
+            except Exception:  # noqa: BLE001
+                failures += 1
+    except Exception:  # noqa: BLE001
+        failures = len(feeds)
+    page_articles, page_reason = _fetch_official_pages(cfg, today) if cfg.get("use_official_pages", True) else ([], None)
+    articles.extend(page_articles)
+    reason = "official_fetch_error" if failures == len(feeds) and not articles else page_reason
+    try:
+        cache.write_text(json.dumps({"articles": articles, "degraded_reason": reason}))
+    except Exception:  # noqa: BLE001
+        pass
+    return articles, reason
+
+
+def _fetch_news_feeds(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    """Direct reputable news RSS feeds. This keeps the US page useful when GDELT is
+    rate-limited, while still passing every item through the same macro filter."""
+    today = today or date.today()
+    cache = _news_cache_path(cfg, today)
+    ttl = cfg.get("news_cache_ttl_hours", cfg.get("cache_ttl_hours", 12)) * 3600
+    if cache.exists():
+        try:
+            if datetime.now(timezone.utc).timestamp() - cache.stat().st_mtime < ttl:
+                blob = json.loads(cache.read_text())
+                return blob.get("articles", []), blob.get("degraded_reason")
+        except Exception:  # noqa: BLE001
+            pass
+    feeds = cfg.get("news_feeds") or NEWS_FEEDS
+    articles: list[dict] = []
+    failures = 0
+    window_days = int(cfg.get("news_window_days", cfg.get("window_days", 4)))
+    try:
+        import requests
+        for feed in feeds:
+            try:
+                r = requests.get(feed["url"], timeout=10,
+                                 headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+                if r.status_code != 200:
+                    failures += 1
+                    continue
+                for item in _parse_feed(r.text, feed):
+                    dt = _parse_dt(item.get("seendate", ""))
+                    if dt and dt.date() < today - timedelta(days=window_days):
+                        continue
+                    articles.append(item)
+            except Exception:  # noqa: BLE001
+                failures += 1
+    except Exception:  # noqa: BLE001
+        failures = len(feeds)
+    reason = "news_rss_fetch_error" if failures == len(feeds) and not articles else None
+    try:
+        cache.write_text(json.dumps({"articles": articles, "degraded_reason": reason}))
+    except Exception:  # noqa: BLE001
+        pass
+    return articles, reason
+
+
+def _parse_page_date(text: str) -> str:
+    if not text:
+        return ""
+    m = re.search(r"(\d{1,2})/(\d{1,2})/(20\d{2})", text)
+    if m:
+        mo, da, y = [int(x) for x in m.groups()]
+        try:
+            return date(y, mo, da).isoformat()
+        except Exception:  # noqa: BLE001
+            pass
+    m = re.search(r"(20\d{2})[-/.](\d{1,2})[-/.](\d{1,2})", text)
+    if m:
+        y, mo, da = [int(x) for x in m.groups()]
+        try:
+            return date(y, mo, da).isoformat()
+        except Exception:  # noqa: BLE001
+            pass
+    return ""
+
+
+def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
+    """Scrape first-party macro release/press pages that do not expose a clean RSS
+    feed. Best effort and cached with the RSS bundle."""
+    today = today or date.today()
+    pages = cfg.get("official_pages") or OFFICIAL_PAGES
+    items: list[dict] = []
+    failures = 0
+    window_days = int(cfg.get("official_window_days", 45))
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        for page in pages:
+            try:
+                r = requests.get(page["url"], timeout=12,
+                                 headers={"User-Agent": "macro-dashboard/1.0 (research)"})
+                if r.status_code != 200:
+                    failures += 1
+                    continue
+                soup = BeautifulSoup(r.text, "html.parser")
+                for a in soup.find_all("a", href=True):
+                    title = " ".join(a.get_text(" ", strip=True).split())
+                    if len(title) < 8:
+                        continue
+                    if title.lower() in {"read more", "view", "rss feed icon", "subscribe to press releases"}:
+                        continue
+                    href = urljoin(page["url"], a["href"])
+                    nearby = " ".join([title, a.parent.get_text(" ", strip=True) if a.parent else ""])
+                    when = _parse_page_date(nearby)
+                    if when:
+                        try:
+                            if date.fromisoformat(when) < today - timedelta(days=window_days):
+                                continue
+                        except Exception:  # noqa: BLE001
+                            pass
+                    title_theme = classify_theme(title)
+                    if not title_theme and not when and page.get("name", "").startswith("Treasury"):
+                        continue
+                    theme = title_theme or page.get("theme") or "macro"
+                    items.append({
+                        "title": title, "url": href,
+                        "domain": re.sub(r"^www\.", "", re.sub(r"^https?://", "", page["url"]).split("/")[0]).lower(),
+                        "seendate": when, "theme": theme, "source": "official",
+                        "source_name": page.get("name", "Official page"),
+                        "source_tier": page.get("tier", "official"),
+                    })
+            except Exception:  # noqa: BLE001
+                failures += 1
+    except Exception:  # noqa: BLE001
+        failures = len(pages)
+    reason = "official_page_fetch_error" if failures == len(pages) and not items else None
+    return items, reason
 
 
 def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str | None]:
@@ -222,10 +919,12 @@ def _fetch_gdelt(cfg: dict, today: date | None = None) -> tuple[list[dict], str 
 
         import requests
         r = None
-        for attempt in range(3):
-            r = requests.get(GDELT_URL, params=params, timeout=30,
+        attempts = max(1, int(cfg.get("gdelt_attempts", 2)))
+        timeout_s = max(5, int(cfg.get("gdelt_timeout_s", 15)))
+        for attempt in range(attempts):
+            r = requests.get(GDELT_URL, params=params, timeout=timeout_s,
                              headers={"User-Agent": "macro-dashboard/1.0 (research)"})
-            if r.status_code == 429 and attempt < 2:
+            if r.status_code == 429 and attempt < attempts - 1:
                 time.sleep(max(6, cfg.get("min_request_interval_s", 6)) * (attempt + 1))
                 continue
             break
@@ -265,31 +964,22 @@ def macro_headlines(today: date | None = None) -> dict | None:
     flaky AND off-by-default (hence the empty scorecard). GDELT stays an optional
     supplement when `macro_news.enabled` is set. Never raises."""
     cfg = _cfg()
-    raw: list[dict] = []
-    src = "rss_wires"
-    try:
-        from engine import news_rss
-        raw = list(news_rss.macro_headlines())
-    except Exception as e:  # noqa: BLE001 — degrade, never raise
-        log.warning("macro rss fetch failed (%s)", e)
-
-    reason: str | None = None
-    if cfg.get("enabled", False):                       # optional GDELT supplement
-        g, reason = _fetch_gdelt(cfg, today)
-        raw += g
-        src = "rss_wires+gdelt"
-
-    # precision gate: topic-targeted query hits are macro by construction (always kept);
-    # broad section-feed items must clear the macro-theme keyword gate (drops the
-    # geopolitics / politics / sports the general feeds carry). GDELT items keep their
-    # existing handling in filter_headlines.
-    raw = [a for a in raw if a.get("origin") != "feed" or classify_theme(a.get("title", ""))]
-
-    kept = filter_headlines(raw, {**cfg, "max_show": cfg.get("max_show", 14)})
+    if not cfg.get("enabled", False):
+        return None
+    raw, reason = _fetch_gdelt(cfg, today)
+    official, official_reason = _fetch_official_feeds(cfg, today) if cfg.get("use_official_feeds", True) else ([], None)
+    news_rss, news_reason = _fetch_news_feeds(cfg, today) if cfg.get("use_news_feeds", True) else ([], None)
+    kept = _attach_translations(filter_headlines(official + news_rss + raw, cfg), cfg)
+    synth = _synthesis(kept)
     return {"schema": "macro_news.v1", "is_context_only": True,
-            "fetched_at": datetime.now(timezone.utc).isoformat(), "source": src,
-            "headlines": kept, "n_raw": len(raw), "n_kept": len(kept),
-            "degraded_reason": ("no_headlines" if not kept else None),
+            "fetched_at": datetime.now(timezone.utc).isoformat(), "source": "official_rss+news_rss+gdelt_doc_2.0",
+            "headlines": kept, "n_raw": len(raw) + len(official) + len(news_rss), "n_gdelt": len(raw),
+            "n_official": len(official), "n_news_rss": len(news_rss), "n_kept": len(kept),
+            "n_high_impact": synth.get("high_impact_count", 0),
+            "top_channels": synth.get("top_channels", []),
+            "top_tickers": synth.get("top_tickers", []),
+            "synthesis": synth,
+            "degraded_reason": (reason or official_reason or news_reason) if not kept else None,
             "disclaimer": DISCLAIMER_TEXT}
 
 
