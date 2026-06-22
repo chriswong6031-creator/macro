@@ -116,3 +116,17 @@ def test_basket_action_items_buckets_and_validates(tmp_path):
 def test_basket_action_items_graceful_without_files(tmp_path):
     b = __import__("scripts.build_site", fromlist=["x"]).basket_action_items(tmp_path)
     assert b == {"buy_now": [], "buy_soon": [], "take_profits": [], "hold": [], "avoid": []}
+
+
+# --- RFC-compliant JSON emit (no bare NaN/Inf reaches us_standouts.json) -----
+def test_json_safe_strips_non_finite():
+    import json
+    from scripts.build_stock_library import _json_safe
+    inf = float("inf")
+    blob = {"a": float("nan"), "b": 1.5, "c": [inf, -inf, 2.0],
+            "d": {"e": float("nan"), "f": "x"}, "g": None, "h": 3}
+    safe = _json_safe(blob)
+    assert safe == {"a": None, "b": 1.5, "c": [None, None, 2.0],
+                    "d": {"e": None, "f": "x"}, "g": None, "h": 3}
+    # strict (JS-style) JSON parse must accept it
+    json.loads(json.dumps(safe, allow_nan=False))

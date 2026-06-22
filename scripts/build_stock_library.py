@@ -14,6 +14,7 @@ Usage: python -m scripts.build_stock_library
 from __future__ import annotations
 
 import json
+import math
 import logging
 import os
 import sys
@@ -580,6 +581,21 @@ def _basket_tailwind_map() -> dict[str, dict]:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("basket tailwind map unavailable (%s)", e)
     return out
+
+
+def _json_safe(o):
+    """Recursively replace non-finite floats (NaN/Inf) with None so the emitted JSON is
+    RFC-compliant. Python's json writes a bare ``NaN`` token otherwise, which strict /
+    JS (JSON.parse) consumers reject; here a stray NaN (e.g. a name's factor_z) used to
+    leak into us_standouts.json. Pairs with allow_nan=False to also fail loudly if a
+    non-finite slips through a non-float path."""
+    if isinstance(o, float):
+        return o if math.isfinite(o) else None
+    if isinstance(o, dict):
+        return {k: _json_safe(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_json_safe(v) for v in o]
+    return o
 
 
 def _basket_membership_map() -> dict[str, list[dict]]:
@@ -1429,7 +1445,7 @@ def main() -> int:
         if disp_regime:                            # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime
         (site / "factordata" / "us_standouts.json").write_text(
-            json.dumps(wide, separators=(",", ":"), default=str))
+            json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
                  len(wide["buy"]), wide["rank_by"], eligible, len(cand))
         # forward shadow book — freeze the live score at build time so it can be graded on
