@@ -33,11 +33,13 @@ def build() -> dict | None:
     bt = ad.by_ticker()
     mm = ad.mastermind(bt)
     scorecard = lab.build_china_scorecard()
-    try:                                        # 券商金股 — GATED premium display panel ([] without token)
+    try:                                        # 券商金股 + 业绩预告 — GATED display panels ([]/{} without token)
         from engine import china_extras as _ce
         broker_gold = _ce.broker_gold()
+        guidance = _ce.forecast_guidance()
+        guidance_labels = {k: list(v) for k, v in _ce.GUIDANCE_LABELS.items()}
     except Exception:  # noqa: BLE001
-        broker_gold = []
+        broker_gold, guidance, guidance_labels = [], {}, {}
 
     site = _site_dir()
     site.mkdir(parents=True, exist_ok=True)
@@ -51,7 +53,8 @@ def build() -> dict | None:
     except Exception:  # noqa: BLE001
         crowd_labels = {}
     html = env.get_template("china_altdata.html.j2").render(
-        ad=bt, lab=scorecard, mm=mm, crowd_labels=crowd_labels, broker_gold=broker_gold)
+        ad=bt, lab=scorecard, mm=mm, crowd_labels=crowd_labels, broker_gold=broker_gold,
+        guidance=guidance, guidance_labels=guidance_labels)
     (site / "china_altdata.html").write_text(html)
     for a in ASSETS:
         src = config.ROOT / "templates" / a

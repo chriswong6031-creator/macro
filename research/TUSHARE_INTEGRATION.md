@@ -77,8 +77,20 @@ proven → not boosted; |t| < 2 → not zeroed): measured context, not validated
 (win-rate) is likewise insignificant (IC +0.014, t 0.6). This is the honest machinery working — the
 moment fund-flow either proves out or proves wrong-sign on accruing data, its weight moves on its own.
 
+**Sector flow → radar (done).** `engine/china_radar` adds per-sector pairs: each sector's own 东财
+net-flow (`moneyflow_ind_dc`) vs its price RS → POSITIVE/NEGATIVE divergence, gated, deadbanded,
+8 sector ETFs mapped to exact 东财 industry boards. Accrues in the radar ledger like every pair.
+
+**Earnings-guidance signal + family (done).** `collectors/tushare_forecast` scores each 业绩预告
+(type direction × guided net-profit Δ%) and accrues `forecast_hist.parquet`; a 📣 desk panel surfaces
+the top surprises; `china_validation` adds a `guidance` family (cross-sections keyed by ann_date).
+**Verdict:** a real ~3-month post-earnings drift — 63d IC +0.097, HAC t +2.83 (right sign,
+significant); 21d still weak (t 0.5, n 19), so honestly `tested`/accruing toward proven.
+
 ## Next (follow-ups)
 
-- Wire `moneyflow_ind_dc` (sector flow) into the divergence radar (sector-flow vs price pair).
-- Compute forecast-REVISION momentum from the `report_rc` raw history once it accrues (then add a
-  `report_rc` validation family).
+- Compute sell-side forecast-REVISION momentum from `report_rc` once its raw history accrues (now
+  throttled to ~2 calls/day on this tier → ~1 windowed call per nightly build), then add a
+  `report_rc` validation family.
+- Accrue a sector-flow history so the radar pair can use a smoothed multi-day flow (vs today's
+  single-day snapshot) and gain its own validation.

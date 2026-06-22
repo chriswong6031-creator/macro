@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-06-22T00:53:58.937790+00:00",
+  "generated_utc": "2026-06-22T01:09:37.161528+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -83,7 +83,7 @@
       "t_hac": -0.76,
       "mean_ic": -0.0082,
       "is_context_only": true,
-      "q_fdr": 0.534
+      "q_fdr": 0.6322
     },
     "chips": {
       "family": "chips",
@@ -146,7 +146,70 @@
       "t_hac": 0.622,
       "mean_ic": 0.0139,
       "is_context_only": true,
-      "q_fdr": 0.534
+      "q_fdr": 0.6322
+    },
+    "guidance": {
+      "family": "guidance",
+      "status": "tested",
+      "tier": "pending",
+      "proven": false,
+      "n_obs": 19,
+      "by_horizon": {
+        "5": {
+          "mean_ic": -0.0177,
+          "ic_ir": -0.063,
+          "t_hac": -0.639,
+          "p_hac": 0.523,
+          "hit": 0.421,
+          "n": 19,
+          "incremental": {
+            "surviving_frac": -4.514,
+            "ic_delta": 0.0976
+          }
+        },
+        "10": {
+          "mean_ic": 0.0031,
+          "ic_ir": 0.012,
+          "t_hac": 0.065,
+          "p_hac": 0.9481,
+          "hit": 0.579,
+          "n": 19,
+          "incremental": {
+            "surviving_frac": 19.258,
+            "ic_delta": 0.0566
+          }
+        },
+        "21": {
+          "mean_ic": 0.0188,
+          "ic_ir": 0.074,
+          "t_hac": 0.479,
+          "p_hac": 0.6322,
+          "hit": 0.526,
+          "n": 19,
+          "incremental": {
+            "surviving_frac": 4.399,
+            "ic_delta": 0.0639
+          }
+        },
+        "63": {
+          "mean_ic": 0.0967,
+          "ic_ir": 0.386,
+          "t_hac": 2.834,
+          "p_hac": 0.0046,
+          "hit": 0.625,
+          "n": 16,
+          "incremental": {
+            "surviving_frac": 0.022,
+            "ic_delta": -0.0946
+          }
+        }
+      },
+      "sign_expected": 1,
+      "sign_ok": true,
+      "t_hac": 0.479,
+      "mean_ic": 0.0188,
+      "is_context_only": true,
+      "q_fdr": 0.6322
     },
     "margin": {
       "family": "margin",
@@ -193,7 +256,7 @@
       "t_hac": 0.862,
       "mean_ic": 0.00387,
       "is_context_only": true,
-      "q_fdr": 0.534
+      "q_fdr": 0.6322
     },
     "news_sentiment": {
       "family": "news_sentiment",

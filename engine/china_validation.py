@@ -15,6 +15,9 @@ Signal families, each reconstructed from what is actually on disk today:
                       the token / history is absent.
   * chips            — per-name 获利比例 win-rate (GATED Tushare cyq_perf), same cross-sectional path
                       off data/tushare/chips_hist.parquet. sign_expected −1 (euphoric → contrarian).
+  * guidance         — 业绩预告 earnings-guidance surprise (GATED Tushare forecast), cross-sections
+                      keyed by ann_date off data/tushare/forecast_hist.parquet. sign_expected +1
+                      (positive guidance → post-announcement drift).
 
 
   * valuation       — per-name P/E·P/B own-history percentile (cheap = low pctile). A
@@ -63,10 +66,11 @@ _TD_PER_YEAR = 252
 # to the WRONG sign is actively misleading; signal_lab will zero its weight. A-share value /
 # leverage / sentiment all carry a contrarian prior (cheap or de-levered or fearful outperforms).
 _SIGN_EXPECTED = {"valuation": +1, "margin": -1, "news_sentiment": -1,
-                  "fundflow": +1, "chips": -1}
+                  "fundflow": +1, "chips": -1, "guidance": +1}
 # fundflow: 主力 net inflow → continuation (+1, the accumulation prior).
 # chips:    high 获利比例 win-rate → euphoric/profit-taking → contrarian fade (−1).
-# Both are PRIORS only — the harness measures the realized sign and signal_lab zeros a
+# guidance: positive 业绩预告 (预增/扭亏…) → positive forward return (+1, post-earnings drift).
+# All are PRIORS only — the harness measures the realized sign and signal_lab zeros a
 # proven wrong-sign leg regardless.
 
 
@@ -268,9 +272,9 @@ def _tier_for(t_hac, q_fdr, n_obs, proven) -> str:
 # --------------------------------------------------------------------------- #
 # per-family validators  (call engine.validation primitives VERBATIM)
 # --------------------------------------------------------------------------- #
-def _hist_cross_sections(name: str, col: str) -> dict:
-    """{asof(Timestamp): Series(ticker->signal)} from a data/tushare/<name>.parquet ({ticker,date,col})
-    accruing-history cache (collectors/tushare_history). Empty dict on miss / token-absent (no history)."""
+def _hist_cross_sections(name: str, col: str, date_col: str = "date") -> dict:
+    """{asof(Timestamp): Series(ticker->signal)} from a data/tushare/<name>.parquet ({ticker,date_col,col})
+    accruing-history cache. Empty dict on miss / token-absent (no history)."""
     out: dict = {}
     try:
         import pandas as pd
@@ -278,9 +282,9 @@ def _hist_cross_sections(name: str, col: str) -> dict:
         if not p.exists():
             return out
         df = pd.read_parquet(p)
-        if df.empty or "date" not in df.columns or col not in df.columns or "ticker" not in df.columns:
+        if df.empty or date_col not in df.columns or col not in df.columns or "ticker" not in df.columns:
             return out
-        for dt, grp in df.groupby(df["date"].astype(str)):
+        for dt, grp in df.groupby(df[date_col].astype(str)):
             ser = {str(t): float(v) for t, v in zip(grp["ticker"], grp[col])
                    if isinstance(v, (int, float)) and v == v}
             if len(ser) >= 10:
@@ -442,6 +446,13 @@ def validate_all(root=None, horizons=(5, 10, 21, 63)) -> dict:
     except Exception as e:  # noqa: BLE001
         log.error("china_validation chips family failed (%s)", e)
         families["chips"] = _accruing("chips", "exception")
+    try:                                          # 业绩预告 guidance surprise — cross-sections keyed by ann_date
+        families["guidance"] = _validate_xs(V, "guidance",
+                                            _hist_cross_sections("forecast_hist", "guidance_score", "ann_date"),
+                                            panel, bench, horizons)
+    except Exception as e:  # noqa: BLE001
+        log.error("china_validation guidance family failed (%s)", e)
+        families["guidance"] = _accruing("guidance", "exception")
     try:
         families["margin"] = _validate_timer(V, "margin", _margin_series(), panel, bench, horizons)
     except Exception as e:  # noqa: BLE001

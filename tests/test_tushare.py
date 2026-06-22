@@ -136,6 +136,70 @@ def test_flow_leg_zeroed_when_fundflow_proven_wrong_sign(monkeypatch):
     assert sum(w.values()) > 0.99      # renormalized over the surviving legs
 
 
+# ---- follow-up: sector-flow radar pair --------------------------------------- #
+def test_sector_flow_signal_deadband():
+    from engine import china_radar as cr
+    boards = {"银行": 5.0, "煤炭": -4.0, "半导体": 0.5}
+    assert cr._sector_flow_signal("银行", boards)["dir"] == 1
+    assert cr._sector_flow_signal("煤炭", boards)["dir"] == -1
+    assert cr._sector_flow_signal("半导体", boards)["dir"] == 0     # within ±1.0 deadband → silent
+    assert cr._sector_flow_signal("不存在", boards) is None
+    # the map points at boards that exist in the 东财 industry feed (exact names)
+    assert ("512800.SS", "Banks", "银行", "银行") in cr._SECTOR_FLOW_MAP
+
+
+def test_sector_flow_boards_reads_parquet(monkeypatch, tmp_path):
+    from engine import china_radar as cr
+    monkeypatch.setattr(cr, "store", cr.store)   # keep store; only patch the data dir via config
+    import lib.config as cfg
+    monkeypatch.setattr(cfg, "data_dir", lambda: tmp_path)
+    (tmp_path / "tushare").mkdir(parents=True)
+    pd.DataFrame([{"sector_code": "BK0001.DC", "name": "银行", "net_amount_rate": 5.0, "content_type": "行业"},
+                  {"sector_code": "BK0002.DC", "name": "天津板块", "net_amount_rate": 9.0, "content_type": "地域"}]
+                 ).to_parquet(tmp_path / "tushare" / "moneyflow_sector.parquet", index=False)
+    b = cr._sector_flow_boards()
+    assert b.get("银行") == 5.0 and "天津板块" not in b      # 行业 only (地域 excluded)
+
+
+# ---- follow-up: earnings-guidance signal + validation family ------------------ #
+def test_guidance_score_sign_and_magnitude():
+    from collectors import tushare_forecast as tf
+    assert tf._guidance_score("预增", 40, 60) == 1.0          # positive type, big Δ → +1
+    assert tf._guidance_score("预减", 40, 60) == -1.0         # sign from TYPE, magnitude from |Δ|
+    assert 0 < tf._guidance_score("略增", None, None) <= 0.5  # directional but no magnitude → base only
+    assert tf._guidance_score("其他", 10, 20) is None         # unmapped/neutral type
+
+
+def test_forecast_guidance_parser(monkeypatch, tmp_path):
+    from engine import china_extras as ce
+    monkeypatch.setattr(ce.config, "data_dir", lambda: tmp_path)
+    assert ce.forecast_guidance() == {}
+    d = tmp_path / "tushare"
+    d.mkdir(parents=True)
+    pd.DataFrame([
+        {"ticker": "600519.SS", "type": "预增", "p_change_min": 40.0, "p_change_max": 60.0,
+         "guidance_score": 1.0, "ann_date": "20260415"},
+        {"ticker": "000002.SZ", "type": "首亏", "p_change_min": -200.0, "p_change_max": -150.0,
+         "guidance_score": -1.0, "ann_date": "20260415"},
+    ]).to_parquet(d / "forecast.parquet", index=False)
+    g = ce.forecast_guidance()
+    assert g["up"][0]["ticker"] == "600519.SS" and g["down"][0]["ticker"] == "000002.SZ"
+    assert ce.GUIDANCE_LABELS["预增"][0] == "Sharp rise"
+    # sign-filtered: ▲up only positive, ▼down only negative, even on a tiny universe (no cross-contamination)
+    assert all(r["guidance_score"] > 0 for r in g["up"]) and all(r["guidance_score"] < 0 for r in g["down"])
+
+
+def test_guidance_family_in_validation(monkeypatch, tmp_path):
+    from engine import china_validation as cv
+    monkeypatch.setattr(cv.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(cv, "_panel", lambda: None)
+    monkeypatch.setattr(cv, "_bench_close", lambda: None)
+    out = cv.validate_all()
+    assert "guidance" in out["families"]
+    assert out["families"]["guidance"]["sign_expected"] == 1
+    assert cv._SIGN_EXPECTED["guidance"] == 1
+
+
 def test_crowding_prefers_tushare_valuation(monkeypatch, tmp_path):
     from engine import china_crowding as cc
     monkeypatch.setattr(cc.config, "data_dir", lambda: tmp_path)
