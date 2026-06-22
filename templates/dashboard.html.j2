@@ -922,7 +922,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -1150,6 +1150,17 @@
       </div>
     </details>
   </div>
+
+  {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
+     (aibrief.html). Replaces the old inline AI Master Brief panel. #}
+  <a class="panel span12 aibrief-card" href="aibrief.html">
+    <span class="abc-ic">🧠</span>
+    <span class="abc-mid">
+      <span class="abc-tit">{{ t('AI Daily Brief · cross-asset synthesis', 'AI 每日简报 · 跨资产综合') }}</span>
+      <span class="abc-sub muted sm">{{ t('AI reads every dashboard in one place — the regime, where signals conflict, the rotation thesis and what to watch next. Research context only, never a signal.', 'AI 在一处解读每个看板 — 周期、信号冲突、轮动假设与后续关注。仅供研究参考，绝非交易信号。') }}</span>
+    </span>
+    <span class="abc-go">→</span>
+  </a>
 
   <!-- ===================== EVENT-RISK WINDOW — non-directional catalyst flag (display-only) ===================== -->
   {% if event_risk and event_risk.show %}
@@ -1608,25 +1619,6 @@
   </div>
   {% endif %}{# /dislocation panel — only when active #}
   {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
-
-  {# AI Master Brief — cross-asset LLM synthesis (engine/master_brain.py). Client-
-     fetched from master_brief.json so it never depends on build order; hidden until
-     a usable brief loads. Research context only — never a signal. #}
-  <div class="panel span12" id="master-brief" style="display:none">
-    <style>
-      #master-brief .mb-sum{font-size:15px;font-weight:600;margin:0 0 10px}
-      #master-brief .mb-sec{margin:10px 0}
-      #master-brief .mb-h{font-weight:600;color:var(--link);margin:0 0 4px}
-      #master-brief .mb-list{margin:4px 0 0 18px;padding:0}
-      #master-brief .mb-list li{margin:3px 0}
-      #master-brief .mb-foot{margin-top:12px;color:var(--muted);font-size:12px}
-    </style>
-    <h2>🧠 {{ t('AI Master Brief · cross-asset synthesis', 'AI 主脑简报 · 跨资产综合') }}
-      {{ help('An AI-generated synthesis across all six dashboards (macro, China, HK, commodities, FX, Bitcoin). RESEARCH CONTEXT only — it reads the deterministic signals and narrates the cross-asset picture, flags where they conflict, and tests the liquidity-rotation thesis; it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying dashboards.', 'AI 跨六大看板（宏观、中国、香港、商品、外汇、比特币）的综合分析。仅供研究参考——它解读确定性信号、叙述跨资产全局、标注信号冲突并检验流动性轮动假设，绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各看板核实。') }}
-    </h2>
-    <div id="master-brief-body" class="muted sm"></div>
-  </div>
-  <script src="masterbrief.js"></script>
 
   {% if latest.conditions %}
   {% set C = latest.conditions %}

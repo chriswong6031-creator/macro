@@ -419,6 +419,20 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .nav-ctrls .ai-brief-link:active { transform: translateY(0); box-shadow: none; }
 .nav-ctrls .ai-brief-link.active { background: var(--link); border-color: var(--link); color: #fff; }
 
+/* AI Daily Brief entry card — the single in-page doorway to the cross-asset LLM
+   synthesis page (aibrief.html). Replaces the old inline AI Master Brief panel on the
+   macro / China / Hong Kong / Bitcoin dashboards. Rendered as a clickable .panel/.card. */
+.aibrief-card { display: flex; align-items: center; gap: 14px; text-decoration: none;
+  color: inherit; border-left: 3px solid var(--link); cursor: pointer;
+  transition: border-color .15s, transform .16s ease, box-shadow .18s ease; }
+.aibrief-card:hover { transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--link) 42%, transparent); }
+.aibrief-card .abc-ic { font-size: 30px; line-height: 1; flex: none; }
+.aibrief-card .abc-mid { flex: 1; min-width: 0; }
+.aibrief-card .abc-tit { display: block; font-size: 16px; font-weight: 700; }
+.aibrief-card .abc-sub { display: block; margin-top: 2px; }
+.aibrief-card .abc-go { font-size: 22px; font-weight: 700; color: var(--link); flex: none; }
+
 /* animated dark / light switch — slides on html[data-theme] */
 .theme-switch { width: 56px; height: 27px; border-radius: 999px; background: var(--panel2);
   border: 1px solid var(--line); position: relative; cursor: pointer; padding: 0; flex: none;

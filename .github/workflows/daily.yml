@@ -543,6 +543,14 @@ jobs:
         # briefs (master/china/btc) as toggle tabs. Pure render — order-independent;
         # resilient (returns 0). Replaces the retired deterministic daily_brief.
         run: python -m scripts.build_aibrief
+      - name: Mastermind snapshot page (build_mastermind)
+        # static page (site/mastermind.html) that renders a daily snapshot of the LOCAL
+        # Mastermind AI paper-trading desk. Pure chrome — the data (site/mastermind/
+        # mastermind_snapshot.json) is pushed out-of-band twice a day by the local
+        # Mastermind server (the cloud build can't reach localhost); mastermind.js fetches
+        # it client-side and degrades to "snapshot pending" when absent. Order-independent;
+        # resilient (returns 0).
+        run: python -m scripts.build_mastermind
       - name: AI Desk page (build_ai_desk_page)
         # static page (site/ai_desk.html) surfacing the accountable analyst desk
         # (site/ai_desk.json: falsifiable leans + dissent + falsifier + track record +
