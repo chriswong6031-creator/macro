@@ -1,0 +1,1415 @@
+{
+ "removals": [
+  {
+   "bid": "ai_software",
+   "ticker": "GOOGL",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Alphabet is the parent of Google \u2014 global search, YouTube, Android/Chrome, Google Cloud, and the Gemini AI model family plus Workspace AI \u2014 monetizing AI across consumer subscriptions, enterprise, and advertising.",
+   "confidence": 0.93,
+   "reason": "Removal requires BOTH price-action divergence AND poor thematic fit; GOOGL fails the thematic test decisively, so KEEP. Price action: the 1y leave-one-out corr is genuinely low (0.178, -4.13 MADs below the 0.588 median, cohort-rank 0.059), but this is an amplitude/idiosyncratic-event artifact, not a sign-flip. The full-history corr is normal (0.619), downside corr is POSITIVE (0.249), and weekly sign-agreement is 0.642 \u2014 comfortably ABOVE the ~0.55 removal threshold \u2014 so GOOGL still co-moves directionally. The decoupling is a +1.18 1y return GAP: GOOGL massively OUTPERFORMED the basket (~85-160% over the year) on the Sept-2025 DOJ antitrust relief rally (no structural breakup), the Gemini 3 launch, and Google Cloud re-acceleration (+63% YoY). That makes it a winner running ahead of the pack, the exact opposite of a name to cut. Thematic fit: GOOGL is the canonical AI-platform monetizer \u2014 Gemini consumer plans (record quarter), Gemini Enterprise (+40% QoQ paid MAU), Workspace AI, and AI-driven Cloud \u2014 which IS the basket thesis of monetizing AI rather than supplying it; the curator rationale (\"Gemini + Workspace AI distribution\") nails it. Its Communication Services / Interactive Media GICS tag does not make it a poor representative because the basket is theme-defined (already mixes sectors, e.g. META) not sector-defined. The rule explicitly says never remove a directionally-aligned outperformer/laggard, and GOOGL is thematically core.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination upholds KEEP. The metrics check out against reports/basket_coherence.json: GOOGL is genuinely the single most divergent ai_software member (y1 leave-one-out corr 0.178, the basket minimum, -4.13 MADs below the 0.588 median, cohort rank 0.059, is_min=True). The strongest overturn angle \u2014 recency \u2014 does show m6 sign-agreement dipping to 0.519 (just under the ~0.55 line). But removal requires BOTH price-action divergence AND poor thematic fit, and neither prong is truly satisfied. Prong (a): the divergence is pure AMPLITUDE, not direction. GOOGL's DOWNSIDE corr is POSITIVE and stable-to-rising (0.249 y1 / 0.274 m6 / 0.301 m3 \u2014 it sells off WITH the basket), and y1 sign-agreement is 0.642, well above threshold; the lone sub-0.55 m6 reading is a 126-day artifact during a period when GOOGL ran far ahead on idiosyncratic good news (+1.18 y1 return gap, ret 1.098 vs basket -0.082). That is a directionally-aligned OUTPERFORMER \u2014 the exact case the rule forbids cutting. Prong (b) fails decisively: the basket is theme-defined, not sector-defined (META is also Communication Services), and on the supplier-vs-monetizer axis GOOGL is a textbook AI monetizer \u2014 Gemini consumer subs, Gemini Enterprise paid seats, Workspace AI, AI-driven Cloud \u2014 i.e. selling AI access for revenue, which IS the thesis. It is not a wrong-sub-industry / inverse / wrong-driver skewer, so an equal-weight index including it does not misrepresent the theme. RELOCATE is wrong (no better-fitting basket for an AI-monetization name), and deliberate-leg=false is correct (the thesis does not name GOOGL as a designed inverse/dispersion leg). KEEP stands."
+  },
+  {
+   "bid": "ai_software",
+   "ticker": "META",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Operator of Facebook, Instagram, WhatsApp and Messenger; a digital-advertising platform (~98% of revenue) monetizing AI via ad-ranking/recommendation and generative ad tools, plus Reality Labs (VR/AR) and the open-weights Llama LLMs.",
+   "confidence": 0.88,
+   "reason": "Price action fails the divergence test on net: although corr_1y is the cohort's weakest (0.195, -3.96 MADs below the 0.588 median, rank 0.118), the longer-horizon corr_full sits at the basket median (0.582), weekly_sign_agreement_1y is 0.679 (well above the ~0.55 weakness floor), and the 1y return gap is only -0.141 \u2014 so META still co-moves DIRECTIONALLY with the basket most weeks; only its short-run daily beta has detached. Thematic fit fails the removal rule decisively: META is the parent of Facebook/Instagram/WhatsApp, an ad PLATFORM (~98% of revenue) whose bull case is monetizing AI via ad-ranking/recommendation models (GEM, Advantage+) and generative ad tooling \u2014 i.e. the exact 'apps and platforms trying to monetize AI rather than supply it / contested leg' the thesis describes; the curator rationale is accurate. It is not a different sub-industry, inverse, or supply-side chip name. The low 1y daily correlation is idiosyncratic, theme-INTERNAL dispersion: META re-rated lower on its 2026 AI capex guide ($125-145B, ~double 2025) outrunning monetization with no cloud offset (its worst earnings reaction in six reports) \u2014 which is precisely the AI-monetization debate this basket exists to express. Removal requires BOTH divergence AND poor thematic fit; META is a directionally-aligned, thematically-core laggard, an explicit KEEP.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "I tried to overturn this to REMOVE and could only strengthen prong (a), not prong (b) \u2014 so the KEEP stands. Adversarially, META's price-action divergence is actually WORSE than the verdict admitted: at 1y it is the cohort's weakest on weekly correlation (corr_w=0.324, rank #1 of 17, cohort median 0.691) AND on downside correlation (corr_dn=0.049, the single worst in the 17-name cohort, median 0.44 \u2014 near-zero downside co-movement), plus 2nd-weakest raw corr (0.195, -3.96 MADs, rank 0.118). The verdict leaned on sign agreement and underplayed that 3 of 4 divergence sub-criteria genuinely fail; only sign_w (0.679) clears the bar. So prong (a) PRICE-ACTION DIVERGENT is arguably met. But removal requires BOTH prongs, and prong (b) THEMATIC POOR-FIT fails decisively: META is the literal embodiment of the thesis \u2014 an ad platform (~98% ad revenue) MONETIZING AI via ad-ranking/recommendation (GEM, Advantage+) and generative ad tools, i.e. the 'contested monetization leg' the basket is built to express. It is not a different sub-industry, an inverse, or a supply-side chip name, so an equal-weight index including it does NOT misrepresent the theme. The rule's explicit tie-breaker \u2014 'never remove a directionally-aligned laggard' \u2014 applies: sign_w=0.679 (above the ~0.55 floor) and a small return gap (-0.141) show META still moves the same direction most weeks; the decoupling is low-beta (0.23) amplitude detachment driven by its 2026 AI capex guide outrunning monetization \u2014 theme-INTERNAL dispersion about the very AI-monetization debate this basket exists for, not a wrong-driver skewer. Directionally-aligned, thematically-core laggard = textbook KEEP, even with genuinely poor correlation metrics. Not RELOCATE (it belongs to no better theme; it is core here). Conclusion holds; only the verdict's understatement of the divergence severity should be corrected."
+  },
+  {
+   "bid": "defense",
+   "ticker": "TDG",
+   "initial": "RELOCATE",
+   "flag_deliberate": false,
+   "relocate_to": "Commercial Aerospace / Aftermarket (aircraft suppliers levered to air-traffic recovery and fleet aftermarket pricing \u2014 e.g. alongside HEI, HWM, BA, GE on the commercial-cycle side)",
+   "what_it_does": "TransDigm designs and supplies highly engineered, proprietary aircraft components, earning ~75% of EBITDA from the high-margin aftermarket (replacement parts), with revenue weighted toward the commercial-aerospace aftermarket and secondarily defense and commercial OEM.",
+   "confidence": 0.7,
+   "reason": "PRICE ACTION: TDG is the most divergent name in the basket on 1y correlation (corr_1y=0.329 vs median 0.552, -2.3 MADs below, cohort-rank 0.05), with weak weekly correlation (0.465) and near-zero downside correlation (0.093 \u2014 it does not co-crash with the defense primes) and a large -0.367 1y return gap. corr_full=0.644 shows it tracked the basket historically, so this is a RECENT decoupling. THEMATIC FIT: While TDG is in the Aerospace & Defense sub-industry and is in the ITA proxy, its PRIMARY return driver is the commercial-aerospace aftermarket pricing-power flywheel (~55% commercial-aftermarket-weighted; curator's own rationale 'aftermarket pricing-power compounder'), NOT the global defense budget cycle that is this basket's thesis. That is exactly why it decoupled: defense-budget beneficiaries ripped while TDG was dragged by commercial-OEM destocking/build-rate weakness. Different primary driver => an equal-weight defense-budget index including it misrepresents the theme. The one mitigant is weekly_sign_agreement=0.642 (>~0.55, so it is not inverse and still moves directionally most weeks), which is why this is RELOCATE to a commercial-aerospace/aftermarket basket rather than a hard REMOVE, and why confidence is moderate rather than high.",
+   "verify_agree": false,
+   "final": "KEEP",
+   "verify_reason": "The RELOCATE verdict does not survive the thesis-aware rule. Removal/relocation requires BOTH (a) price-action divergence AND (b) being a thematically poor representative. (a) is only half-met: TDG is divergent on LEVEL/DOWNSIDE correlation (corr_1y=0.329 cohort-min -2.3 MADs, corr_dn=0.093) but is DIRECTIONALLY ALIGNED (sign_w=0.642, well above ~0.55, not inverse) and HISTORICALLY CORE (corr_full=0.644 \u2014 a recent decoupling, not a structural mismatch). That is the textbook signature of a temporary laggard, which the rule says to KEEP and NEVER remove. (b) fails outright: TDG is the SAME sub-industry (Aerospace & Defense, in the ITA proxy, not a different sub-industry or inverse play), and critically the proposed RELOCATE target (\"Commercial Aerospace/Aftermarket alongside HEI, HWM, BA, GE\") is ILLUSORY \u2014 HEI, HWM, BA and GE are ALL already current members of this same Defense & Aerospace basket. The basket thesis explicitly scopes \"aircraft\" and the curator deliberately bundled commercial-aerospace/aftermarket names with the primes, so TDG's \"commercial-aftermarket pricing-power driver\" is a driver the basket BY DESIGN includes (HEI corr_dn 0.298, HWM 0.269, GE 0.262 are kept with the same driver). You cannot relocate a name to a cohort that already sits inside its own basket. TDG (flat ret1y ~0, sign 0.642, corr_full 0.644) is a directionally-aligned, same-sub-industry, historically-core laggard dragged temporarily by commercial-OEM destocking \u2014 KEEP."
+  },
+  {
+   "bid": "defense",
+   "ticker": "AXON",
+   "initial": "REMOVE",
+   "flag_deliberate": false,
+   "relocate_to": "Public Safety / Law-Enforcement Tech (or a defense-tech/autonomy software basket); does not belong in the prime-led ITA Defense & Aerospace basket",
+   "what_it_does": "Axon Enterprise makes TASER conducted-energy weapons, body/fleet cameras, and cloud-based digital-evidence and AI software, selling primarily to police and public-safety agencies (a SaaS-led public-safety platform), not to the military prime/defense-budget supply chain.",
+   "confidence": 0.7,
+   "reason": "PRICE ACTION (a) \u2014 divergent: corr_1y=0.333 vs basket median 0.552 (-2.26 MADs, cohort-rank 0.1, near the bottom), weekly_corr_1y=0.337 (weak), and critically downside_corr_1y=0.091 (essentially no co-movement when the basket falls). The 1y return gap of -0.856 reflects a give-back after AXON's huge SaaS-re-rate run (it historically +70%/3mo vs XAR +10%), confirming an independent return driver rather than shared budget-cycle beta. The only non-divergent metric is weekly_sign_agreement 0.604 (slightly above ~0.55), so it still drifts directionally with the tape \u2014 but that alone doesn't outweigh the near-zero downside correlation and bottom-decile rank. THEMATIC FIT (b) \u2014 poor representative: AXON is a public-safety / law-enforcement technology company (TASER conducted-energy devices, body/fleet cameras, cloud digital-evidence + AI SaaS), a DIFFERENT sub-industry whose PRIMARY return driver is U.S. state/local + federal POLICING budgets and a software ARR re-rate ($1.3B ARR, +39%), not the global DoD/allied military budget cycle, missiles/aircraft/space backlog that defines this basket (LMT, RTX, NOC, GD, etc.). The curator's own rationale (\"less-lethal + cloud \u2014 the defense-tech re-rate\") describes a SaaS multiple-expansion play, not budget-cycle backlog visibility. An equal-weight ITA-style defense index that includes it misrepresents the thesis. Not a deliberately-named inverse/supply-chain leg and not definitional, so both removal conditions are satisfied; it belongs in a public-safety/defense-tech-software theme instead.",
+   "verify_agree": true,
+   "final": "RELOCATE",
+   "verify_reason": "Adversarial re-examination could not overturn the removal. I tried two overturn paths and both fail. (1) \"Directionally-aligned laggard, KEEP\": AXON drifts directionally (Y1 sign_w 0.604 > ~0.55), but the laggard exemption applies when the wrong-driver test fails \u2014 as it does for TDG, the actual basket-min (Y1 corr 0.329 < AXON's 0.333, corr_dn 0.093 \u2248 AXON's 0.091), which is core because it sells into the same aircraft/DoD supply chain and its weak Y1 is transient noise (full-history corr 0.644, corr_dn 0.625; m3 corr recovered to 0.509). AXON is the opposite: its full-history corr is only 0.394 (far below TDG's 0.644) and its downside corr does NOT recover in any recent window (Y1 0.091 \u2192 m6 -0.058 \u2192 m3 -0.088). (2) \"Deliberate autonomy-entrant leg, KEEP(deliberate)\": the thesis names \"the new autonomy entrants,\" but those are MILITARY unmanned-systems/space names that sell to the armed forces (AVAV/KTOS/RKLB/ASTS, all of which sit mid-to-top of the cohort, corr 0.55\u20130.72). The curator's own AXON rationale \u2014 \"Less-lethal + cloud, the defense-tech re-rate\" \u2014 describes a TASER + digital-evidence SaaS multiple-expansion play, NOT an inverse/supply-chain/by-design-dispersion leg; there is no deliberate flag. So both removal conditions hold: (a) PRICE-ACTION DIVERGENT \u2014 Y1 corr 0.333 vs basket median 0.552 (-2.26 MADs, cohort-rank 0.1), weak weekly corr 0.337, near-zero/declining downside corr 0.091; AND (b) THEMATICALLY WRONG \u2014 different sub-industry (public-safety/law-enforcement tech), different customer (state/local + federal POLICING vs DoD/allied armed forces), and a different primary return driver (policing budgets + ARR re-rate vs missiles/aircraft/space backlog). Because it clearly belongs to a different theme, the correct verdict is RELOCATE to a Public Safety / Law-Enforcement Tech (or defense-tech-software/autonomy) basket, exactly as proposed. Data verified in reports/basket_coherence.json (basket key \"defense\", 20 members) and reports/basket_workflow_payload.json."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "NEE",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "NextEra Energy: a US power company pairing the large regulated Florida Power & Light utility with NextEra Energy Resources, the world's largest renewables/storage developer, plus nuclear and gas generation increasingly contracted to AI/data-center demand.",
+   "confidence": 0.9,
+   "reason": "FAILS the two-pronged removal test: it must be BOTH price-action divergent AND a poor thematic representative. (b) clearly fails \u2014 NEE is thematically core, not a poor representative: same sub-industry as basket peers DUK/SO/AEP/D (electric utilities + the world's largest renewables/storage developer via NextEra Energy Resources, ~33 GW backlog) with direct AI/data-center generation exposure (Google Duane Arnold nuclear PPA, 9.5 GW gas for TX/PA). It is the literal \"generation + grid + IPP/utility selling power to data centers\" thesis; curator rationale \"Renewables + regulated utility scale\" matches exactly. (a) is only partially met and points to LAGGARD, not decoupling: corr_1y=0.226 and weekly/downside corr (0.165/0.156) are weak, but corr_full=0.477 confirms longer-run co-movement and weekly_sign_agreement_1y=0.66 is well ABOVE the ~0.55 floor \u2014 it still moves directionally with the basket two-thirds of weeks. The low 1y corr and -0.226 return gap trace to a 2023-24 rate-sensitivity/leverage + IRA-repeal-overhang drawdown and a slower 2025-26 recovery cadence than the merchant-IPP rockets (CEG/VST/TLN), i.e. a temporary amplitude/timing lag within the same theme, not an inverse or different-driver play. The rule explicitly says: never remove a directionally-aligned, thematically-core laggard. KEEP.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination could not overturn KEEP. The removal rule requires BOTH price-action divergence AND poor thematic representation; prong (b) decisively fails and (a) is only partially met. (b): NEE (regulated electric utility Florida Power & Light + the world's largest renewables/storage developer NextEra Energy Resources, nuclear/gas increasingly contracted to data-center demand) is the literal \"generation + grid + utility selling power to data centers\" thesis \u2014 thematically core, not a wrong-driver skewer. The decisive evidence from reports/basket_coherence.json: NEE sits inside a tight 7-name regulated-utility sub-cluster (DUK -0.015, D 0.055, SO 0.076, PCG 0.144, AEP 0.211, NEE 0.226, SRE 0.295 y1 corr) that ALL lagged the merchant-IPP/equipment cluster (CEG 0.672, VST 0.659, NRG 0.674, GEV 0.628, ETN 0.687). This is a shared sub-industry/rate-sensitivity beta-bucket effect (regulated utilities lagging merchant-power rockets in 2023-25), not divergence unique to NEE. (a): the low y1 readings (corr 0.226, corr_w 0.165, corr_dn 0.156) are an amplitude/timing LAG, not decoupling \u2014 correlation recovers both longer-run (full corr 0.477) and recently (m6 0.352/m3 0.403), corr_dn never goes negative, and sign_w is 0.66-0.79 across every window, well ABOVE the ~0.55 floor (moves directionally with the basket 66-79% of weeks). NEE is not even the basket minimum (DUK is is_min=True; NEE ranks 0.261, 6 names off the bottom) \u2014 removing NEE would logically force removing the whole regulated-utility leg and gut half the stated thesis. The rule explicitly forbids removing a directionally-aligned, thematically-core laggard. KEEP confirmed. Source: /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-mendel-99638f/reports/basket_coherence.json."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "PCG",
+   "initial": "KEEP",
+   "flag_deliberate": true,
+   "relocate_to": "",
+   "what_it_does": "PG&E Corporation: California's largest regulated electric and natural-gas utility (Pacific Gas & Electric), serving ~16M people, owning Diablo Canyon nuclear and executing a multi-year grid buildout to serve surging AI/data-center demand.",
+   "confidence": 0.8,
+   "reason": "PRICE ACTION: PCG is a genuine divergence-flag case \u2014 corr_1y=0.144 (-5.1 MADs below the 0.628 cohort median, cohort-rank 0.17), downside_corr_1y=-0.11 (negative), weekly_corr_1y=0.186, and a 1y return gap of -24% vs the basket, with PCG down ~21-27% TTM while XLU/peers rose ~+7-17%. So criterion (a), price-action divergence, IS met. BUT the removal rule requires BOTH (a) AND (b), and (b) FAILS: PCG is not a different sub-industry, inverse, or different-driver name. It is a core regulated electric/gas utility (same bucket as DUK/SO/AEP/SRE/D) running a $73B grid-buildout plan to serve ~10GW of new AI/data-center load plus Diablo Canyon nuclear and wildfire grid-hardening \u2014 i.e. the literal basket thesis. The decoupling is IDIOSYNCRATIC wildfire/regulatory repricing (Jan-2025 CA fires, Sites Fire lawsuit, AB 1054 / SB 254 wildfire-fund prudency uncertainty; trades ~10x vs peers 15x+), not a thematic mismatch; its underlying growth driver is identical to peers. Weekly sign-agreement is 0.585 (above ~0.55), so it still co-moves DIRECTIONALLY. Per the rule, a thematically-core, directionally-aligned temporary laggard suffering a transient company-specific shock must be KEPT, never removed \u2014 but the size and unusualness of the divergence warrant flag_deliberate=true for human attention.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Verdict confirmed against reports/basket_coherence.json. Criterion (a) is met (PCG y1 corr=0.144, corr_w=0.186, corr_dn=-0.110, sign_w=0.585, MAD dev -5.10, cohort-rank 0.17), but the removal rule requires BOTH (a) AND (b), and the adversarial pass makes (b) UNwinnable. The seven lowest-correlation members of power_grid are exactly the seven core regulated electric/gas utilities \u2014 DUK (corr -0.015, MAD -6.78), D (0.055, -6.04), SO (0.076, -5.82), PCG (0.144, -5.10), NEE (0.226, -4.24), AEP (0.211, -4.39), SRE (0.295, -3.51) \u2014 while every equipment/IPP/nuclear name (GEV, ETN, VRT, PWR, CEG, VST, NRG, FIX) sits at corr>0.6. So the decoupling is a SUB-BUCKET phenomenon (rate-regulated utilities lagging the high-beta buildout winners), not a PCG-specific wrong-driver problem. PCG is mid-pack within its own sub-industry (less decoupled than the basket's own anchor utility DUK), it is the same sub-industry / same primary return driver / not an inverse, and its driver (~$73B grid capex, ~10GW data-center load, Diablo Canyon nuclear) IS the literal thesis. sign_w=0.585 is above the ~0.55 floor, so it is a directionally-aligned laggard \u2014 which the rule says never to remove. RELOCATE fails: no theme fits a grid-buildout utility better than power_grid. Removing PCG would force removing DUK/D/SO/NEE/AEP/SRE too, gutting the regulated-utility leg the thesis names explicitly. Only quibble: flag_deliberate=true is arguably over-specific to PCG given six siblings show equal/worse decoupling, but that refines the flag, not the verdict. KEEP stands."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "D",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Dominion Energy is a large regulated electric utility serving Virginia (incl. the world's largest data-center market, Loudoun County's Data Center Alley) plus the Carolinas, capturing AI/data-center load growth through rate-based generation and grid investment.",
+   "confidence": 0.86,
+   "reason": "Price action: corr_1y is very low (0.055, -6.04 MADs below median) BUT the broader picture is directionally aligned, not divergent \u2014 corr_full=0.427, weekly_corr_1y=+0.259, and decisively weekly_sign_agreement_1y=0.679 (well above the ~0.55 divergence floor), with a return gap of only -0.135 (a laggard, not an inverse). The depressed 1y magnitude correlation is explained by D-specific shocks that the rest of the basket does NOT share: CVOW offshore-wind cost overruns (~$112M unrecoverable charge, potential ~$1.5B cost-sharing exposure) and the Dec-2025 federal offshore-wind lease pause that dropped the stock 4-8% in a single session, plus a leverage/balance-sheet re-rating overhang (EPS +37%/yr but flat share price). Those are idiosyncratic event drivers, not a thematic decoupling. Thematic fit: D is the same sub-industry (regulated/integrated electric utility) as DUK, SO, AEP, SRE, NEE already in the basket, with the identical primary return driver the thesis names \u2014 data-center load growth in its footprint. It is in fact the purest regulated-utility expression of the AI-power thesis (serves Virginia's Data Center Alley, $64.7B capex plan driven by data-center demand). It fails removal prong (b) outright: it is thematically core, not a different sub-industry or inverse play. This is the textbook \"directionally-aligned thematic-core laggard\" KEEP case; removing it would not improve the equal-weight index's representation of the theme. Not flagged deliberate because it is a core long, not a by-design inverse/dispersion leg.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial attempt to overturn FAILS on both removal prongs. PRONG (a) price-action: D's low 1y magnitude correlation (corr_1y=0.055, -6.04 MADs, downside -0.127) is NOT a D-specific decoupling \u2014 it is a sub-industry property shared by its entire regulated-utility cohort. Sorting the basket by corr_1y, the bottom is an unbroken block of regulated utilities all kept: DUK (-0.015, is_min=True, MORE divergent than D), D (0.055), SO (0.076), PCG (0.144), AEP (0.211), NEE (0.226), SRE (0.295) \u2014 all 3.5-6.8 MADs below median. D sits in the MIDDLE of that block, not the extreme. Low-beta (0.04 1y / 0.43 full) rate-driven utilities simply don't track AI-narrative daily moves in magnitude, but D stays directionally aligned: corr_full=0.427, sign_w_full=0.661, weekly_sign_1y=0.679 (above the ~0.55 divergence floor), return gap only -0.135 (laggard, not inverse). PRONG (b) thematic fit: the full thesis EXPLICITLY names regulated utilities \u2014 \"rate-case and rate-of-return regulation is the governor.\" D's rationale (\"Regulated utility; data-center load in its footprint\") is the identical sub-industry and identical primary return driver as DUK/SO/AEP/NEE/SRE, all already in and kept. D is the purest regulated-utility expression of the AI-power thesis (Virginia Data Center Alley). It is thematically core/definitional, not a wrong-driver skewer. Removal requires BOTH prongs; (a) is only weakly met and (b) fails outright. The rule explicitly forbids removing a directionally-aligned laggard. RELOCATE also fails: no basket fits a regulated electric utility better than the one naming regulation as its governor. deliberate-leg=false is correct (core long, not a by-design inverse). Verdict stands: KEEP."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "DUK",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Duke Energy is a large regulated electric utility serving the Carolinas, Florida, Indiana, Ohio and Kentucky \u2014 a low-beta (~0.49) defensive dividend/bond-proxy whose earnings come from rate-base growth, now expanding generation and grid for Southeast data-center load.",
+   "confidence": 0.83,
+   "reason": "Fails the removal rule because removal requires BOTH price-action divergence AND poor thematic fit; DUK meets only the first. Price action: corr_1y=-0.015 (cohort-rank 0.043, -6.78 MADs below median), weak weekly_corr 0.242 and negative downside_corr -0.034, with a -0.359 1y return gap \u2014 it has decoupled from the basket's leaders over the past year. BUT thematic fit is CORE, not poor: the thesis is \"the electricity supply chain for AI + electrification: generation, grid equipment and the IPPs selling power to data centers... a multi-year demand-growth story.\" A regulated utility that has signed 7.6 GW of data-center electric-service agreements (2.7 GW in Q1 alone), a 7.8 GW late-stage pipeline, and a record $103B 5-yr capital plan explicitly for Southeast data-center/electrification load is the literal embodiment of that thesis \u2014 and the basket deliberately includes the regulated-utility sub-sleeve (NEE, D, SO, AEP, SRE). The 1y decorrelation is a return-DRIVER dispersion: DUK is a rate-base, rate-sensitive bond proxy capped at ~5-7% EPS growth, while the 1y basket return was driven by merchant/IPP and AI-equipment legs (CEG, VST, NRG, GEV, VRT) that carry merchant-price and order torque. It is a temporary regulated-utility LAGGARD, not an inverse or off-theme play: corr_full=0.44 and weekly_sign_agreement_1y=0.698 (well above the ~0.55 floor) show it still co-moves directionally. The rule says never remove a directionally-aligned laggard and KEEP a thematically core temporary laggard, so KEEP. Not flag_deliberate=true because the thesis names IPPs/equipment as the dispersion legs rather than explicitly designating regulated utilities as an inverse/by-design-dispersion sleeve.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "The adversarial attempt to overturn fails. Removal requires BOTH price-action divergence AND poor thematic fit; DUK only meets the first. (a) Price action IS divergent: corr_1y=-0.015 (rank 0.043, -6.78 MADs, is_min=true \u2014 the single most decorrelated member), corr_3y=0.065, downside_corr=-0.034, beta~0. But (b) thematic fit is CORE, not poor. The full thesis (truncated in the prompt) ends \"rate-case and rate-of-return regulation is the governor\" \u2014 DUK, a regulated electric utility expanding generation/grid for Southeast data-center load, is the literal mechanism the thesis names. The clincher is the cohort structure: the seven regulated utilities (DUK, D, SO, PCG, AEP, NEE, SRE) occupy the SEVEN LOWEST correlation ranks (0.043-0.304) while every merchant/IPP/equipment name (CEG, VST, NRG, GEV, VRT, ETN, PWR) sits at the top. The decorrelation is therefore a return-DRIVER dispersion by sub-sleeve (rate-base bond-proxies vs merchant-price/order-torque), not DUK being a lone wrong-sub-industry skewer \u2014 removing it as off-theme would logically require gutting the entire regulated sleeve the thesis explicitly anchors. DUK is the same sub-industry as five peers, so an equal-weight index including it does NOT misrepresent the theme. It remains directionally aligned: weekly_sign_agreement_1y=0.698 (well above the ~0.55 floor), corr_full=0.44, positive weekly corr 0.242. The rule forbids removing a directionally-aligned laggard, and RELOCATE doesn't apply (it is already in its correct power/grid theme). KEEP stands."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "SO",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Southern Company is a U.S. regulated electric and gas utility holding company (Georgia/Alabama/Mississippi Power, Southern Power, Southern Company Gas) and the only U.S. utility to bring new nuclear online (Vogtle 3 & 4), serving fast-growing data-center/AI electricity demand in the Southeast.",
+   "confidence": 0.9,
+   "reason": "Removal requires BOTH price-action divergence AND poor thematic fit; here only one is partially met. PRICE ACTION: corr_1y is genuinely low (0.076, -5.82 MADs below median, rank 0.13) and the 1y return gap is -0.39, but the corroborating co-movement metrics say \"laggard, still directionally aligned,\" not \"decoupled\": weekly_sign_agreement_1y=0.679 (well above the ~0.55 floor), corr_full=0.429, weekly_corr_1y=0.296 (positive). The low 1y corr/return gap is explained by SO being a low-beta regulated utility that badly lagged in 2025 (SO ~+9.6% vs XLU +18.9%, also trailing NEE) while the high-beta IPPs (VST/NRG/CEG/TLN) and grid-equipment names (GEV/VRT/ETN) ran hard \u2014 beta/dispersion, not a different theme. THEMATIC FIT: SO is core, not a poor representative \u2014 it is the regulated-utility/nuclear-generation leg of the exact thesis (Vogtle 3&4 are the only new U.S. nuclear, largest carbon-free producer; projecting ~6% annual load growth 2025-28 with data-center power +42% YoY; $81B capex plan to serve AI/data-center load). It sits naturally alongside DUK, AEP, NEE, D, SRE. Same sub-industry, same primary return driver, not an inverse play. The thesis-aware rule explicitly says never remove a directionally-aligned laggard, so this is a KEEP.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination of the coherence data fails to overturn the KEEP. REMOVE requires BOTH divergence AND poor thematic fit; neither prong holds cleanly. (a) Price action: corr_1y is genuinely low (0.076, -5.82 MADs, rank 0.13), but the corroborating co-movement metrics say \"laggard, still aligned,\" not \"decoupled\" \u2014 weekly sign-agreement 0.679 (well above the ~0.55 floor), weekly corr +0.296, downside corr +0.025 (positive, not negative), full-history corr 0.429 / sign_w 0.634. A true divergence needs weak/negative downside corr and sign-agreement near/under 0.55; both fail. (b) Thematic fit: SO is CORE, not a skewer \u2014 the regulated-utility/nuclear-generation leg of the exact thesis (\"generation... multi-year load-growth/rate-base story\"); Vogtle 3&4 is the only new US nuclear, ~6% data-center-driven load growth. Same sub-industry and same primary return driver as DUK/AEP/NEE/D/SRE, not an inverse play. The decisive adversarial finding actually reinforces KEEP: the low correlation is a SUB-COHORT effect, not an SO idiosyncrasy. All seven regulated low-beta utilities (DUK rank 0.04/dev -6.78, D rank 0.09/dev -6.04, SO rank 0.13, PCG/AEP/NEE/SRE next) cluster at the bottom, while the high-beta IPPs (VST/NRG/CEG/TLN) and grid-build names (PWR/FIX/ETN/EME) top the ranking \u2014 a textbook beta/dispersion split within one coherent theme. DUK and D rank BELOW SO; removing SO for low corr would require gutting the regulated-generation leg the thesis names. This is precisely the directionally-aligned laggard the rule says never to remove. Not a deliberate-inverse leg (thesis names it as a core long, not a hedge), so KEEP with deliberate-leg=false, not KEEP(deliberate)."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "AEP",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "American Electric Power is a regulated electric utility holding company that generates, transmits, and distributes electricity across 11 states, operating the largest electricity transmission network in the US.",
+   "confidence": 0.9,
+   "reason": "PRICE ACTION: corr_1y is low (0.211, -4.39 MADs below the 0.628 median, bottom-quintile rank 0.217) and downside_corr_1y is weak (0.12), but the dominant DIRECTIONAL measure is strong \u2014 weekly_sign_agreement_1y=0.736, far above the ~0.55 removal threshold, and corr_full=0.413 / weekly_corr_1y=0.346 are positive. AEP moves the same weekly direction as the basket ~3 of 4 weeks; it co-moves directionally and is merely a magnitude laggard (return gap -0.17). That gap is the documented 2024-25 split where non-regulated IPPs in this same basket (VST/CEG/NRG/TLN) returned ~54% on data-center demand while regulated electrics returned ~9% \u2014 AEP still rose ~27% over 52 weeks, outpacing XLU. THEMATIC FIT: AEP operates the LARGEST US electricity transmission system and is the canonical grid/transmission name for this exact thesis \u2014 28 GW of signed data-center load additions by 2030, a $78B capital plan with $30B in transmission, ~8.6% annual sales growth (AEP Texas data-center load 13\u219236 GW). Same regulated-electric sub-industry as core members DUK/SO/NEE/D/SRE; not a different sub-industry, not an inverse play. Removal requires BOTH price-action divergence AND thematic-poor-representation; neither holds. This is a directionally-aligned, thematically-core laggard \u2014 KEEP.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination CONFIRMS KEEP (deliberate-leg=false). I attempted to overturn using AEP's genuinely divergent magnitude metrics: corr_1y=0.211 (dev_mad -4.39, bottom-quintile rank 0.217), corr_dn=0.12, and over 3y corr=0.114 with corr_dn=-0.057 (negative), r2=0.045, beta=0.13. That establishes at most HALF of prong (a). But the removal rule requires BOTH (a) price-action divergence AND (b) thematically-poor representation, and the data defeats both the directional half of (a) and all of (b).\n\nProng (a) only half-met: the dominant DIRECTIONAL measure is strong. sign_w_y1=0.736 is the 4th-5th highest of all 23 members (above 18/23, basket median 0.679), far above the ~0.55 removal threshold; corr_w=0.346 and corr_full=0.413 are positive. AEP co-moves directionally ~3 of 4 weeks and is merely a magnitude laggard (ret_gap -0.17). The rule explicitly forbids removing a directionally-aligned laggard.\n\nProng (b) fails outright: the low correlation is a SUB-INDUSTRY property, not an AEP idiosyncrasy. Every regulated-electric the verdict names sits in the basket's low-corr tail with the same low-beta/low-downside fingerprint: DUK (corr -0.015, dev -6.78), D (0.055, -6.04), SO (0.076, -5.82), PCG (0.144, -5.10), NEE (0.226, -4.24), SRE (0.295, -3.51). AEP (0.211, dev -4.39) is the 3rd-BEST co-mover of the seven regulated names and beats DUK/SO/D outright. AEP is the canonical largest-US-transmission name, directly central to the grid/transmission leg of the thesis. Removing it while keeping DUK/SO/D (worse on every price metric) would be incoherent and would itself misrepresent the theme. Not a wrong-driver/wrong-sub-industry/inverse skewer -> cannot REMOVE; not deliberately named -> no flag. KEEP stands. Evidence: /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-mendel-99638f/reports/basket_coherence.json (baskets.power_grid.members)."
+  },
+  {
+   "bid": "power_grid",
+   "ticker": "SRE",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Sempra \u2014 regulated electric/gas utility holding company: SDG&E and SoCalGas in California, Oncor in Texas, plus Sempra Infrastructure LNG (Port Arthur and Pacific/Gulf Coast projects).",
+   "confidence": 0.8,
+   "reason": "PRICE ACTION: SRE is the most divergent member on level correlation \u2014 corr_1y=0.295 vs cohesion median 0.628 (-3.51 MADs below, cohort-rank 0.304), weak weekly_corr_1y=0.361 and very weak downside_corr_1y=0.174, with a -0.207 1y return gap. So prong (a) of the removal rule is satisfied. BUT prong (b) fails decisively: SRE (Sempra) is a regulated electric/gas utility holding company \u2014 Sempra California (SDG&E + SoCalGas), Sempra Texas (Oncor), and Sempra Infrastructure (Port Arthur / Pacific & Gulf LNG). Oncor is an explicit Texas grid-buildout play driven by electrification and data-center demand, and the LNG arm ties to power demand \u2014 exactly the curator's rationale and squarely the basket's generation/grid/IPP theme, same regulated-utility sub-industry as peers NEE, D, DUK, SO, AEP. The decoupling is IDIOSYNCRATIC, not thematic: a Q4 2024 earnings/revenue miss (-18.9% one-day, then -17% off the Nov-2024 high), a 2025 EPS guidance cut to $4.30-$4.70, California ROE/cost-of-capital regulatory pressure, and wildfire-liability fears. weekly_sign_agreement_1y=0.679 (well above ~0.55) and corr_full=0.523 confirm it still co-moves directionally and historically tracked the group. This is the textbook \"temporary, directionally-aligned laggard that is thematically core\" \u2014 the removal rule says never remove such a name, and requires BOTH prongs. KEEP.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "KEEP is correct and the data strengthens it. I tried to overturn it and could not. Thematic prong (b) fails decisively: SRE (Sempra) is a regulated electric/gas utility holding company (SDG&E, SoCalGas, Oncor Texas grid, Sempra Infrastructure LNG) \u2014 the SAME sub-industry and return driver as basket peers NEE, D, DUK, SO, AEP, and Oncor is a direct Texas grid-buildout/electrification/data-center play squarely on the generation/grid/IPP thesis. Not a different sub-industry, not a different driver, not an inverse play. The removal rule requires BOTH prongs, so KEEP regardless. On prong (a), the divergence framing is misleading: SRE's -3.51 MADs is measured vs the whole-basket cohesion median (0.628), which is set by the high-beta data-center/grid-equipment growth cluster \u2014 the wrong yardstick for a low-beta regulated utility. Judged against its true cohort (the 7 regulated utilities in the basket), SRE corr_1y=0.295 is the HIGHEST of all seven (NEE 0.226, AEP 0.211, PCG 0.144, SO 0.076, D 0.055, DUK -0.015), has the least-negative MAD (-3.51 vs D -6.04, DUK -6.78), and the highest downside_corr (0.174). SRE is the MOST coherent utility in the sleeve, not the most divergent \u2014 five peers would be more removable. Directional co-movement is intact (sign_agree 0.679 > 0.55, corr_full 0.523); the decoupling is idiosyncratic (CA ROE/cost-of-capital, wildfire liability, 2025 guidance reset) \u2014 a textbook directionally-aligned, thematically-core laggard the rule says never to remove. Not a deliberate inverse leg, so flag_deliberate=false is right."
+  },
+  {
+   "bid": "payments_fintech",
+   "ticker": "JKHY",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Jack Henry provides core-banking software, cloud processing, and payments processing (card, ACH, real-time payments, bill pay) to ~7,400 US community banks and credit unions, on a ~92% recurring-revenue subscription model.",
+   "confidence": 0.78,
+   "reason": "PRICE ACTION: JKHY is a weak co-mover but NOT cleanly divergent. corr_1y=0.348 is -2 MADs below the basket median (cohort-rank 0.15), but corr_full=0.47 and downside_corr_1y=0.357 are both POSITIVE (it still sells off with the basket), and weekly_sign_agreement_1y=0.642 sits well ABOVE the ~0.55 removal floor \u2014 they move the same direction ~64% of weeks. The -0.175 return gap marks it as a modest laggard, not a decoupler. THEMATIC FIT: JKHY is squarely a payment processor / financial-technology name in the same sub-industry as FIS, GPN, and FI (its direct peers). The thesis explicitly names \"payment processors,\" and JKHY's Payments segment (~37% of revenue, card processing the largest piece, plus ACH/RTP/bill-pay) is its fastest-growing engine; the curator rationale \"core banking + payments processing\" is accurate. It is NOT a different sector, not an inverse play, not definitionally misplaced. The decoupling driver is style, not theme: ~92% recurring SaaS revenue and >99% retention make JKHY a defensive \"safe-haven\" software name, so it lagged the high-beta consumer-spend / AI-stablecoin fintechs (AFRM, SOFI, HOOD) without inverting. Removal requires BOTH divergence AND poor thematic representation; here thematic fit holds and downside/sign-agreement co-movement persists, so the rule's \"never remove a directionally-aligned laggard\" applies.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination confirms KEEP; the data does not support overturning. Removal requires BOTH price-action divergence AND poor thematic representation, and JKHY satisfies neither cleanly. PRONG (a) FAILS: although JKHY is a weak co-mover (corr_1y=0.348, -2.0 MADs, cohort-rank 0.15, second-weakest after FUTU/WU), it is NOT a decoupler. Its downside correlation is POSITIVE at corr_dn_1y=0.357 (mid-pack \u2014 higher than KEEP members WU 0.226, FOUR 0.312, V 0.334, FI 0.336), full-history corr=0.47 (n=3133, positive), and weekly sign-agreement=0.642 sits well ABOVE the ~0.55 removal floor (~64% of weeks same direction). The rule defines divergence as weak/NEGATIVE downside corr and sign-agreement near/under 0.55 \u2014 JKHY clears both, so it is a directionally-aligned laggard, the exact case the rule says to never remove. PRONG (b) FAILS: the thesis explicitly names \"payment processors,\" and JKHY is in the same sub-industry as its named direct peers FIS, GPN, and FI; its Payments segment (~37% of revenue: card/ACH/RTP/bill-pay) is genuine payment processing. The decoupling driver is STYLE (~92% defensive recurring SaaS, >99% retention) not WRONG-THEME \u2014 it is not a different sub-industry, not an inverse play, not definitional misplacement, and no better-fitting basket exists, so RELOCATE is unwarranted. With one prong failing outright and the other only partially met, and the explicit \"never remove a directionally-aligned laggard\" clause controlling, the proposed KEEP (deliberate-leg=false) is correct."
+  },
+  {
+   "bid": "payments_fintech",
+   "ticker": "WU",
+   "initial": "KEEP",
+   "flag_deliberate": true,
+   "relocate_to": "",
+   "what_it_does": "Western Union is a cross-border consumer money-transfer/remittance company (cash and digital), operating in 200+ countries \u2014 money transmission, not card-network or merchant processing.",
+   "confidence": 0.7,
+   "reason": "PRICE ACTION: WU is the most decoupled member of the basket \u2014 corr_1y=0.303 vs median 0.574 (-2.4 MADs, cohort-rank 0.1), weekly_corr_1y=0.448, and a very weak downside_corr_1y=0.226, meaning it does not co-move with the cohort on drawdowns (WU is ~-20% on the year, hit a 52-week low ~$7.24, EPS missed badly in Q1 2026). Weekly sign-agreement of 0.66 is still above the ~0.55 floor, so it is directionally loose rather than fully inverse. THEMATIC FIT: by the strict test WU is a DIFFERENT sub-industry (cross-border cash remittance / money transmission, Diversified Financials) with a different driver (migrant remittance volumes) \u2014 not a card network or processor \u2014 and is effectively a disruption-victim play. BUT this is deliberate, not accidental: the basket thesis explicitly names the 'AI/stablecoin disruption overhang' and the curator rationale designates WU as the 'disruption gauge.' WU's very decoupling/decline IS the signal the thesis wants to track (it is the dis-intermediated incumbent, now launching its own USDPT stablecoin in defense). Per the rule, a member the thesis explicitly names as the inverse/disruption leg is KEPT with flag_deliberate=true; its price-action dispersion is by design.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial attempt to overturn FAILS. WU satisfies both raw removal conditions \u2014 it is price-action divergent (corr_1y=0.303, -2.4 MADs, cohort-rank 0.1, downside_corr=0.226, ~-20% on the year vs a flat basket) AND it is a genuinely different sub-industry/driver (cross-border cash remittance / money transmission, driven by migrant-remittance volumes, not a card network or merchant processor). That naive reading points to REMOVE. But the rule's explicit carve-out controls: KEEP with flag_deliberate=true when the thesis explicitly/deliberately names the member as an inverse/by-design-dispersion leg. I verified this is not fabricated \u2014 the source curator rationale in reports/wf_args.json reads verbatim \"Western Union \u2014 cross-border remittance; disruption gauge\", and the basket thesis itself names the \"AI/stablecoin disruption overhang on the processors\" as core. WU is the deliberately placed dis-intermediated-incumbent gauge; its decoupling/decline IS the signal the thesis tracks. Metrics confirm it is a loose deliberate leg (sign_agree 0.66 above the ~0.55 floor, corr still positive ~0.30), not a hard inverse skewer, which is the gentlest keep-case. Verdict KEEP (deliberate) is correct."
+  },
+  {
+   "bid": "payments_fintech",
+   "ticker": "FUTU",
+   "initial": "RELOCATE",
+   "flag_deliberate": false,
+   "relocate_to": "China Tech / ADRs basket (or a Capital Markets / Online Brokerage basket) \u2014 FUTU is a HK/China-listed online brokerage, not a payments name",
+   "what_it_does": "Futu Holdings is a Hong Kong-headquartered, Nasdaq-listed digital brokerage operating the Futubull and moomoo platforms, offering securities/derivatives trading, margin financing, and wealth management to retail investors in HK, mainland China (~13% of funded accounts), and the US.",
+   "confidence": 0.82,
+   "reason": "PRICE ACTION: FUTU is the least-coherent member of this basket \u2014 corr_1y=0.29 vs cohesion median 0.574 (-2.52 MADs, cohort-rank 0.05), corr_full=0.352, weekly_corr_1y=0.35, and downside_corr_1y just 0.217, so it does not co-move or co-crash with the rest of the basket. Its dominant 2026 move was an idiosyncratic ~28% plunge on a CSRC investigation and a ~RMB1.85B proposed penalty (May 22, 2026), a China-regulatory event with no link to the payments/fintech sector. The only non-weak metric is weekly_sign_agreement_1y=0.717, which reflects broad risk-on/off market beta rather than thematic co-movement, and the return gap (-0.066) is only a mild laggard. THEMATIC FIT: The basket thesis is card networks and payment processors (cash-to-card secular + consumer-spend cyclicality + AI/stablecoin overhang). FUTU is not a payments company at all \u2014 it is an online stock brokerage (Futubull/moomoo) whose primary return drivers are China/HK trading volumes and Chinese regulatory risk, a different sub-industry (capital markets/brokerage) with a different return engine. It is neither an inverse/supply-chain leg the thesis names nor a definitional member, so an equal-weight payments index that includes it misrepresents the theme. Both removal criteria are met; because it cleanly belongs to a China-tech / online-brokerage theme rather than nowhere, RELOCATE rather than REMOVE.",
+   "verify_agree": true,
+   "final": "RELOCATE",
+   "verify_reason": "I tried to overturn RELOCATE toward KEEP and the attempt fails on both prongs of the rule. (a) PRICE-ACTION DIVERGENT \u2014 confirmed and decisive: FUTU is the single least-coherent member, corr_1y=0.29 vs cohort_med 0.574 (-2.52 MADs, cohort rank 0.05, is_min=True), corr_w_1y=0.35, and the LOWEST downside/co-crash correlation in the entire 20-name basket (corr_dn_1y=0.217). R^2 is just 0.084, so it does not co-move or co-crash with the basket. (b) WRONG DRIVER \u2014 confirmed: FUTU is a HK/China online brokerage (Futubull/moomoo) whose return engine is China/HK trading volumes and Chinese regulatory risk. Its dominant 2026 move was an idiosyncratic ~28% plunge on a May 22, 2026 CSRC licensing investigation + proposed ~RMB1.85B penalty (verified) \u2014 a China-regulatory event with zero payments-sector linkage. The best KEEP counter-argument is that the basket already keeps non-card-network names including HOOD, an online brokerage of the same sub-industry; but that argument actually reinforces RELOCATE: HOOD co-moves at corr_1y=0.535 / corr_dn=0.42 (rank 0.45, ~median) because its driver is US consumer-fintech beta, whereas FUTU at corr_1y=0.29 / corr_dn=0.217 (rank 0.05) does not \u2014 proving the divergence is driver-specific, not merely 'brokerages don't belong.' The one non-weak metric, sign_w_1y=0.717 (above the ~0.55 floor), is broad risk-on/off market beta not thematic co-movement (corroborated by R^2~0.08 and bottom-of-cohort linear corr), and ret_gap of -0.066 means this is not a directionally-aligned laggard to KEEP. Both removal criteria are met; because FUTU cleanly belongs to a China-tech/ADR or capital-markets/online-brokerage basket rather than nowhere, RELOCATE (not REMOVE) is the correct verdict. I could not overturn it."
+  },
+  {
+   "bid": "travel",
+   "ticker": "LVS",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Las Vegas Sands is a pure-play Asian integrated-resort/casino operator \u2014 Marina Bay Sands in Singapore plus multiple Macau properties (Venetian, Londoner, Parisian); its return driver is Macau gaming revenue and the Singapore duopoly, with no US travel exposure.",
+   "confidence": 0.8,
+   "reason": "PRICE ACTION: 1y corr is genuinely the basket's weakest (corr_1y=0.30, -2.62 MADs below the 0.637 median, cohort-rank 0.1), driven by Macau/China-specific timing (softer China macro, normalized Macau visitation, VIP/margin pressure) that the broad US travel names don't share. BUT it still co-moves directionally and broadly: corr_full=0.62 (= basket cohesion), weekly_corr_1y=0.42 (moderate positive), downside_corr_1y=0.211 (positive \u2014 co-falls in stress), and weekly_sign_agreement_1y=0.566 sits ABOVE the ~0.55 floor. So prong (a) is only partially met \u2014 it's a divergent laggard, not an inverse/uncorrelated play. THEMATIC FIT (decisive, prong (b) fails): the thesis EXPLICITLY names 'gaming' as a leg ('airlines, cruises, lodging and gaming') and the basket deliberately holds a gaming cohort \u2014 LVS, MGM, WYNN, CZR, DKNG. LVS is the canonical Macau/Singapore integrated-resort name and the curator rationale ('Macau/Singapore gaming recovery') matches the thesis exactly. An equal-weight index including it does NOT misrepresent a theme that is defined to include gaming; removing the most prominent Macau gaming member while keeping MGM/WYNN would be incoherent. Removal requires BOTH prongs and prong (b) is not satisfied. This is the textbook 'temporary laggard that still co-moves directionally' KEEP case.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination of reports/basket_coherence.json + basket_workflow_payload.json confirms the verdict. The removal rule requires BOTH prongs; prong (b) decisively fails. PRONG (b) THEMATIC FIT: the thesis explicitly enumerates 'airlines, cruises, lodging and gaming,' and the basket deliberately holds a 5-name gaming cohort (LVS, MGM, WYNN, CZR, DKNG). LVS is the canonical Macau/Singapore integrated-resort name; curator rationale 'Macau/Singapore gaming recovery' matches the named gaming leg exactly. Its Macau/China return driver is a GEOGRAPHIC variant of gaming, not a different sub-industry, so an equal-weight index including it does not misrepresent a theme defined to include gaming. PRONG (a) is only PARTIAL: y1 corr=0.30 is the weakest after LYV (-2.62 MADs, rank 0.10) and y1 downside_corr=0.211 is genuinely low, BUT it co-moves directionally \u2014 corr_full=0.62 (=basket cohesion 0.64), y1 weekly_corr=0.42 (moderate positive), y1 downside_corr=0.211 positive (co-falls in stress), and y1 sign_agreement=0.566 sits above the ~0.55 floor. The whole gaming cohort is the basket's low-corr tail (CZR -1.56, DKNG -1.84, MGM/WYNN ~-0.55), so LVS is a degree apart, not a kind apart \u2014 a textbook directionally-aligned laggard driven by Macau/China-specific timing. The rule explicitly forbids removing a directionally-aligned laggard. deliberate-leg=false is correct: gaming is a CORE named leg, not a deliberate inverse/supply-chain/dispersion leg, so no flag_deliberate. RELOCATE is wrong \u2014 gaming belongs here and removing the most prominent Macau name while keeping MGM/WYNN/CZR/DKNG would be incoherent. No defensible path to overturn; KEEP stands."
+  },
+  {
+   "bid": "travel",
+   "ticker": "LYV",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Live Nation Entertainment is the world's largest live-entertainment company: concert promotion and venue operation plus Ticketmaster ticketing and event sponsorship/advertising.",
+   "confidence": 0.78,
+   "reason": "PRICE ACTION: LYV is the basket's weakest 1y co-mover (corr_1y=0.283, -2.76 MADs below the 0.637 median, cohort-rank 0.05) with very weak weekly (0.106) and downside (0.158) correlation. BUT it is NOT structurally divergent: weekly_sign_agreement_1y=0.623 is ABOVE the ~0.55 removal floor (it still moves the basket's direction most weeks), corr_full=0.663 is healthy, and the return gap (-0.154) is only a modest lag. The pattern is decoupling-with-residual-directional-alignment, i.e. an idiosyncratically-suppressed name, not a different exposure. The decoupling has a documented name-specific cause: the DOJ/states antitrust monopolization case (filed May 2024, March 2026 settlement requiring amphitheater divestitures + 15% fee cap, April 2026 jury monopoly verdict), a ~2-year forced-Ticketmaster-breakup overhang that compressed its multiple independent of the travel-demand cycle, even as experiential demand stayed resilient (119M tickets sold, raised 2026 outlook). THEMATIC FIT: LYV (concert promotion + venues + Ticketmaster) is the canonical 'experiences over goods' consumer-discretionary play \u2014 same sub-theme and same primary return driver (experiential consumer spend) as the rest of the basket, not a different sub-industry or inverse leg. Removal requires BOTH price-action divergence AND thematic mismatch; (b) clearly fails. The rule explicitly says to KEEP a thematically-core name that decoupled on an idiosyncratic catalyst while remaining directionally aligned.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination cannot overturn KEEP. The data and the antitrust catalyst both check out: LYV is the basket's weakest 1y co-mover (corr_1y=0.283, -2.76 MADs, cohort-rank 0.05, is_min=true) with near-zero weekly (0.106) and downside (0.158) correlation, so PRONG (a) price-action divergence is genuinely satisfied. But removal requires BOTH prongs, and PRONG (b) thematic mismatch fails decisively. (1) Same primary return driver: the thesis literally names the \"experiences over goods\" consumer trade, and live concerts/festivals/Ticketmaster is the canonical experiential-spend name \u2014 the purest expression of the stated driver, not a different one. (2) Not a disqualifying sub-industry: the thesis explicitly enumerates \"airlines, cruises, lodging AND GAMING,\" so the basket is already a multi-sub-industry experiences tent (LVS/MGM/WYNN/CZR/DKNG gaming sit right alongside airlines and cruises); live entertainment is adjacent discretionary-experience spend, already-represented in spirit. Tellingly, LVS (dev_mad -2.62) is essentially tied with LYV for weakest co-mover yet is unquestionably core \u2014 proving low short-window corr in THIS basket is a laggard signature, not a wrong-driver one. (3) Not inverse: full-sample corr=0.663, downside_corr_full=0.620, sign_full=0.710, y3 corr=0.468 \u2014 LYV co-moves healthily and falls WITH the basket over the full window; the decoupling is recent and window-specific. Web search confirms the documented idiosyncratic cause: DOJ/states monopolization case (filed May 2024, mid-trial DOJ settlement March 2026 with a $280M fund, April 15 2026 jury monopoly verdict on primary ticketing/amphitheaters, remedy pending) \u2014 a ~2-year Ticketmaster-breakup overhang that compressed the multiple independent of the travel-demand cycle. This is exactly the rule's named KEEP case: a thematically-core name idiosyncratically suppressed by a name-specific catalyst that still moves directionally with the basket (sign_agree 0.623 > the ~0.55 floor, ret_gap only -0.154). RELOCATE is unsupportable \u2014 no better-fitting basket exists; travel/experiences is LYV's natural home. Not a deliberate-inverse leg (sign agreement is positive; thesis does not name it as by-design dispersion), so KEEP with deliberate-leg=false stands."
+  },
+  {
+   "bid": "retail",
+   "ticker": "COST",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Costco (COST) is a membership-only warehouse-club retailer selling bulk groceries and general merchandise at thin margins, with most profit coming from recurring annual membership fees (renewal rates ~90%+).",
+   "confidence": 0.78,
+   "reason": "Price action is divergent on level: corr_1y=0.241 sits -1.8 MADs below the 0.483 cohesion median (cohort-rank 0.111, bottom decile), weekly_corr_1y=0.224 and downside_corr_1y=0.229 are both weak, and COST has outpaced the basket (1y return gap -0.186 in the basket's disfavor). BUT it fails the thematic prong of the removal rule, and weekly_sign_agreement_1y=0.642 is comfortably above the ~0.55 floor \u2014 it still moves directionally WITH the basket; corr_full=0.55 confirms a long-run co-mover that only recently decoupled. The decoupling is a stock-specific valuation re-rate (P/E ~36-40x in 2020-23 to ~50x, peaking ~62x in early 2025) as the market pays up for the recurring membership-fee earnings floor and 90%+ renewal rates, NOT a sub-industry or driver mismatch. Costco is the archetypal big-box value/warehouse-club name the thesis explicitly invokes (\"off-price and discounters win in a stretched consumer; trade-down gauge\") \u2014 it is thematically CORE, not a different theme or inverse play. The thesis-aware rule forbids removing a directionally-aligned member that is thematically definitional on level-correlation alone; this is the 'outperformer that still co-moves' KEEP case (its own quality re-rating, not theme drift). No better basket exists for it.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "I tried to overturn this and could not. COST clearly satisfies prong (a) price-action divergence (corr_1y=0.241, -1.8 MADs below the 0.483 cohesion median, bottom-decile rank 0.111; weekly_corr 0.224 and downside_corr 0.229 both weak). But the removal rule requires BOTH prongs, and prong (b) thematic-misfit decisively fails. Every adversarial angle collapses: (1) The membership-fee model is a monetization mechanism, not a different return driver \u2014 Costco is the archetypal warehouse-club discount big-box name, the textbook trade-down beneficiary the thesis explicitly invokes (\"off-price and discounters win in a stretched consumer; trade-down gauge\"). It is thematically DEFINITIONAL, not a different sub-industry or inverse play. (2) COST is NOT the basket's min (is_min=false); the actual outlier is BJ, another warehouse club (is_min=true, sign_w=0.472 below the ~0.55 floor), which shows the recent decoupling is club-segment/stock-specific, not COST being wrong-theme. (3) Weekly sign-agreement 0.642 is comfortably above the ~0.55 floor \u2014 it still moves directionally WITH the basket, and is higher than several kept core members (WMT 0.604, AZO 0.623, ULTA 0.642, DLTR 0.623, FIVE 0.623). Removing COST while keeping auto-parts names AZO/ORLY would be inconsistent. (4) corr_full=0.55 confirms a genuine long-run co-mover that only recently decoupled \u2014 the signature of a temporary laggard / stock-specific valuation re-rate (P/E re-rating to ~50-62x for the membership earnings floor), not theme drift. (5) No better basket exists; relocation is unwarranted. The rule explicitly states: never remove a directionally-aligned laggard, and KEEP if membership is definitional. This is the textbook 'outperformer/re-rater that still co-moves' KEEP case. Verdict stands."
+  },
+  {
+   "bid": "retail",
+   "ticker": "BJ",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "BJ's Wholesale Club is a regional membership-only warehouse club (East/Southeast US, ~218 clubs) selling bulk groceries and general merchandise plus gas, competing directly with Costco and Sam's Club \u2014 a classic value/trade-down retailer.",
+   "confidence": 0.83,
+   "reason": "PRICE ACTION: genuinely divergent over 1y \u2014 corr_1y=0.177 sits -2.27 MADs below the 0.483 cohort median (rank 0.056, near bottom), weekly_corr_1y=0.019 is ~nil, downside_corr_1y=0.104 is weak, weekly_sign_agreement_1y=0.472 is under the ~0.55 line, and the 1y return gap is -0.4. So prong (a) of the removal rule is satisfied. BUT THEMATIC FIT fails prong (b): BJ's is a membership-only warehouse club \u2014 the SAME sub-industry as Costco, which is already a basket member \u2014 and is the textbook 'value trade-down / consumer-health gauge' the thesis explicitly seeks. It is a near-perfect representative, not a poor one, not a different sub-industry, and not an inverse play. The decoupling is idiosyncratic execution noise, not a thematic break: in 2025 BJ's missed comp-sales/revenue estimates (flat comps, CEO flagging cautious members), lost relative share to Costco/Walmart, and took a sharp ~8.4% earnings-day selloff \u2014 i.e., it fell with the discretionary/retail group but harder. corr_full=0.342 confirms it historically co-moves and direction is still aligned. The removal rule requires BOTH prongs and forbids removing a directionally-aligned laggard; this is a core, near-definitional warehouse-club name that is merely a temporary laggard, so KEEP.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial overturn attempt FAILS. The data confirms prong (a) is satisfied \u2014 BJ is the single most divergent name in the 18-member retail basket (corr_1y=0.177, is_min=True, -2.27 MADs below the 0.483 median, rank 0.056; weekly_corr=0.019, downside_corr=0.104, sign_w=0.472<0.55; and it worsens short-term: m6 corr=0.13, m3 corr=-0.059). But the removal rule requires BOTH prongs, and prong (b) cannot be honestly satisfied: BJ's Wholesale Club is a membership warehouse club \u2014 the SAME sub-industry as COST, which is itself a confirmed basket member \u2014 and is the textbook trade-down/consumer-health gauge the thesis explicitly names. It is a near-definitional representative, not a wrong-sub-industry/wrong-driver/inverse skewer, so an equal-weight index including it does not misrepresent the theme. Directional alignment holds: corr is positive in every window except the noisy 63-day m3, corr_full=0.342, downside_corr stays positive, and the 1y return gap is a modest -0.4 (BJ -0.222 vs basket +0.178) \u2014 the signature of a temporary, idiosyncratic laggard (2025 comp miss / ~8% earnings-day selloff), not a thematic break. The rule explicitly forbids removing a directionally-aligned laggard. No basis for REMOVE (not a different theme, so not RELOCATE) and no deliberate-inverse flag applies. Verdict stands: KEEP, deliberate-leg=false."
+  },
+  {
+   "bid": "non_ai_tech",
+   "ticker": "IBM",
+   "initial": "RELOCATE",
+   "flag_deliberate": false,
+   "relocate_to": "A software / enterprise-IT-services & AI basket (e.g. enterprise software / hybrid-cloud & IT-services), not a hardware/semiconductor basket",
+   "what_it_does": "IBM is an enterprise IT company deriving most revenue from software (Red Hat hybrid cloud, automation, data/transaction processing) and consulting, plus zSystems mainframe infrastructure \u2014 a software/services and AI-platform business, not a chip or hardware maker.",
+   "confidence": 0.78,
+   "reason": "PRICE ACTION: IBM is the most divergent member by a wide margin \u2014 corr_1y=0.142 sits -1.88 MADs below the basket cohesion median (0.494) at cohort-rank 0.083 (near the bottom), with weak weekly_corr (0.149), weak DOWNSIDE corr (0.136), weekly sign-agreement only 0.566 (at the ~0.55 floor) and a large +return gap (-1.107). IBM rose ~35% in 2025 / ~64% trailing-year on software/AI-services momentum and the z17 mainframe refresh, while the basket's chip cohort (TXN/ADI/MCHP/ON/NXPI) lagged in the industrial/auto inventory downturn \u2014 so it is genuinely not co-moving with the basket trend, including on the downside. THEMATIC FIT: although the curator names 'enterprise IT,' the basket's stated and actual return driver is 'broad-line analog/MCU/power chips whose demand rides industrial, auto and datacenter capex' plus connectors/networking/PC hardware (APH, TEL, GLW, CSCO, HPQ, DELL). IBM is a fundamentally DIFFERENT sub-industry and return driver \u2014 ~45% high-margin recurring software (Red Hat hybrid cloud) + ~31% consulting + mainframes, explicitly NOT participating in the chip/AI-datacenter hardware cycle. It is the only pure software/services name in a hardware/semis cohort, so equal-weighting it misrepresents the theme. Meets both removal tests, and it clearly belongs to a software/enterprise-IT-services theme \u2014 hence RELOCATE rather than KEEP-as-laggard.",
+   "verify_agree": true,
+   "final": "RELOCATE",
+   "verify_reason": "The RELOCATE verdict survives adversarial re-examination. (a) PRICE-ACTION DIVERGENT is unambiguous and structural: in basket_coherence.json IBM is is_min=True with y1 corr=0.142 (rank 0.083, -1.88 MADs below the 0.494 cohesion median), the weakest weekly (0.149) and downside (0.136) corr in the basket, and sign_w 0.566 sitting at the ~0.55 floor. Critically the divergence is monotonically worsening across windows (full 0.475 -> y3 0.258 -> y1 0.142 -> m6 0.113 -> m3 0.070), so this is a name DECOUPLING, not a temporary laggard that still co-moves. sign_w ~0.566 and corr_dn 0.136 are barely above a coin flip, so the \"never remove a directionally-aligned laggard\" protection does not apply. (b) THEMATICALLY A POOR REPRESENTATIVE: IBM is ~45% recurring software (Red Hat) + ~31% consulting + mainframes -- a software/services/AI-platform return driver, a different sub-industry from the chip/connector/PC-hardware cohort (TXN/ADI/MCHP/ON/NXPI/APH/TEL/GLW/DELL/HPQ). The strongest OVERTURN argument -- that the thesis EXPLICITLY names \"enterprise IT\" -- fails two ways: (1) the thesis qualifies that demand \"rides industrial, auto and datacenter capex,\" a HARDWARE driver IBM does not ride, and the \"enterprise IT\" slot is genuinely filled by the co-moving CSCO/DELL/HPQ; (2) the KEEP-deliberate escape hatch requires the thesis to name the member as an inverse/supply-chain/by-design-dispersion leg, but it contains no such language (no \"inverse/hedge/supply-chain/dispersion\") -- so flag_deliberate=false is correct. CSCO is the decisive control: another non-chip legacy-IT name that nonetheless co-moves (corr_dn ~0.41 across windows), proving IBM diverges because it is software-driven, not merely because it is non-chip. Both removal tests are met and IBM clearly belongs to a software/enterprise-IT-services theme, so RELOCATE (not KEEP-as-laggard, not REMOVE-to-nowhere) is the right call."
+  },
+  {
+   "bid": "memory_storage",
+   "ticker": "NTAP",
+   "initial": "REMOVE",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "NetApp sells enterprise data-storage systems and management software (ONTAP, all-flash arrays, cloud storage services); it is a storage-systems integrator that BUYS DRAM/NAND as a component input rather than manufacturing memory.",
+   "confidence": 0.82,
+   "reason": "PRICE ACTION: NTAP is divergent on every metric vs the leave-one-out index \u2014 corr_1y=0.214 sits -12.62 MADs below the 0.738 cohesion median (cohort-rank 0.2), weekly_corr_1y=0.168 and downside_corr_1y=0.222 are both very weak, weekly_sign_agreement_1y=0.566 is right at the ~0.55 floor, and it trails the basket by -14.5% over 1y. THEMATIC FIT: it is a poor representative because its primary return driver is INVERSE to the basket's. The basket's other members (MU, WDC, STX, SNDK) are memory/NAND/HDD COMPONENT MAKERS whose margins expand as the AI-driven DRAM/NAND price cycle rises \u2014 that cycle IS the thesis. NetApp is a price TAKER of that same memory: the 2025-26 memory spike is an explicit margin HEADWIND for it (JPMorgan downgraded NTAP to Neutral citing ~200bps FY27 gross-margin deterioration from memory cost pressures). It is also a different sub-industry (Technology Hardware, Storage & Peripherals / systems-software) versus the semiconductor/storage-media manufacturers. So an equal-weight index including a memory price-taker misrepresents a memory-cycle theme. The thesis does not deliberately name an inverse/supply-chain leg, and NTAP does not cleanly map to a better-defined existing basket here, so REMOVE rather than RELOCATE or KEEP-with-flag.",
+   "verify_agree": true,
+   "final": "REMOVE",
+   "verify_reason": "Tried and failed to overturn. (a) PRICE-ACTION DIVERGENT is overwhelming and not a temporary-laggard artifact: NTAP is the basket MINIMUM (is_min=true) at corr_y1=0.214 vs cohesion median 0.738 (-12.62 MADs, cohort-rank 0.2), and the decoupling is MONOTONIC across windows \u2014 full corr 0.500, y1 0.214, m6 0.146, m3 0.203 \u2014 while every peer (MU/WDC/STX/SNDK) sits in a tight 0.69-0.83 band on every window. weekly_corr collapses (y1 0.168, m6 0.067) and sign-agreement falls to/under the floor (y1 0.566, m6 0.444 = sub-coin-flip), so it is NOT even reliably moving in the basket's direction \u2014 refuting the directionally-aligned-laggard KEEP. (b) THEMATIC POOR REP: peers are memory/NAND/HDD media MANUFACTURERS whose margins EXPAND on the DRAM/NAND price cycle that IS the thesis; NTAP is a storage-systems integrator that BUYS that memory as a component input \u2014 a price TAKER whose margins COMPRESS on the same spike (inverse primary driver) and a different sub-industry. KEEP exceptions fail: the thesis names enterprise HDD/SSD demand but does NOT deliberately name an inverse/price-taker/supply-chain leg, there is no deliberate flag, and omitted=[] for this basket; membership is not definitional (1 of 5). RELOCATE rejected: no clean existing storage-systems target basket. Both removal prongs met, no KEEP/RELOCATE exception applies \u2014 verdict stands."
+  },
+  {
+   "bid": "cybersecurity",
+   "ticker": "NSSC",
+   "initial": "REMOVE",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Napco Security Technologies manufactures physical/electronic security hardware \u2014 intrusion and fire alarm systems, cellular-radio communicators, door-locking and access-control products, credential readers, and video surveillance \u2014 plus recurring monthly service revenue from its alarm-communication platform sold via dealers/installers.",
+   "confidence": 0.9,
+   "reason": "PRICE ACTION: NSSC is the most decoupled member in the cohort \u2014 corr_1y=0.104 sits -4.19 MADs below the basket median (0.632) at cohort-rank 0.083 (bottom), weekly_corr_1y=-0.061 and downside_corr_1y=-0.05 are both NEGATIVE (no theme co-movement, including in drawdowns), and the 1y total-return gap vs basket is 0.211. The only non-failing metric, weekly sign-agreement 0.717, reflects broad market-beta direction, not basket co-movement. Its decline was idiosyncratic (distributor inventory destocking, weak equipment sales, a securities class action over alleged channel-stuffing/oversold demand), not the ransomware/breach software cycle. THEMATIC FIT: NSSC is a PHYSICAL/electronic security HARDWARE maker (alarm panels, fire/intrusion, door locks, access-control readers, video surveillance + recurring cellular-radio comms fees) \u2014 a different sub-industry and a different primary return driver than the basket's pure-play cybersecurity SOFTWARE (endpoint/firewall/identity/vuln/cloud-native: CRWD, PANW, ZS, OKTA, etc.). It is not a deliberate inverse/supply-chain leg, not definitional, and not a directionally-aligned laggard \u2014 an equal-weight CIBR-proxy index including it misrepresents the theme. Both removal conditions are met.",
+   "verify_agree": true,
+   "final": "REMOVE",
+   "verify_reason": "Confirmed from reports/basket_coherence.json: NSSC is the cybersecurity cohort minimum at corr_y1=0.104 (-4.19 MADs below median 0.632, rank 0.083), with NEGATIVE weekly (-0.061) and NEGATIVE downside (-0.05) correlation \u2014 no theme co-movement even in drawdowns, vs the other 11 members clustered at 0.55-0.80. Test (a) divergence is met decisively. The laggard guard does NOT apply: NSSC's ret_y1=0.324 EXCEEDS the basket's 0.114 (ret_gap=+0.211), so it rose independently rather than co-falling \u2014 it is not a directionally-aligned laggard. The sign_w=0.717 is market beta, not theme co-movement. Test (b) is met: the thesis says 'pure-play security SOFTWARE' (endpoint/firewall/identity/vuln/cloud-native) and names no inverse, supply-chain, or by-design leg; NSSC is physical/electronic security HARDWARE (alarm panels, fire/intrusion, door locks, access-control readers, cellular comms) \u2014 different sub-industry, different return driver (destocking/weak equipment sales/channel-stuffing suit, not the ransomware-software cycle). Not definitional. No relocate target exists (no physical-security/safety-hardware basket in the 34-basket universe). Every KEEP/RELOCATE exception fails; both removal conditions hold. Verdict stands as REMOVE."
+  },
+  {
+   "bid": "cybersecurity",
+   "ticker": "YOU",
+   "initial": "REMOVE",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "Clear Secure (YOU) sells biometric identity verification via the consumer subscription CLEAR Plus (skip airport/venue security lines using facial/fingerprint recognition) plus a CLEAR1 B2B identity-verification platform \u2014 a consumer-membership/travel business, not security software.",
+   "confidence": 0.93,
+   "reason": "PRICE ACTION: divergent on every axis \u2014 corr_1y=0.276 vs basket median 0.632 (-2.82 MADs below, cohort-rank 0.167, the worst-co-moving member), weekly_corr_1y=0.123 (very weak), downside_corr_1y=0.312 (weak), weekly_sign_agreement_1y=0.566 (right at the ~0.55 floor), and a huge 1y total-return gap of 1.069. It no longer tracks the leave-one-out cybersecurity index. THEMATIC FIT: poor representative \u2014 Clear Secure is a consumer-subscription biometric identity-verification/airport security-lane membership business (CLEAR Plus + CLEAR1 B2B), a different sub-industry from the basket's pure-play enterprise security software (endpoint/firewall/IAM/cloud-native), and a different primary return driver (member growth + travel/consumer spend, not ransomware/breach-driven enterprise security budgets). The thesis does not name it as a deliberate inverse/supply-chain leg; its inclusion is a keyword false-match on \"Secure.\" Both removal conditions met. No clean alternative thematic basket exists for a one-off consumer biometric/travel-identity play, so RELOCATE has no valid target.",
+   "verify_agree": true,
+   "final": "REMOVE",
+   "verify_reason": "Tried to overturn from every angle and each fails. (a) PRICE-ACTION DIVERGENT, persistently: corr_1y=0.276 (-2.82 MADs below basket median 0.632, cohort-rank 0.167, 2nd-worst co-mover), weekly_corr=0.123, downside_corr=0.312, weekly sign-agreement=0.566 (worst in basket, at the ~0.55 floor) \u2014 and the divergence holds across EVERY window (full corr 0.417, y3 0.293, y1 0.276), so it is structural, not a temporary dip. (b) WRONG-DRIVER POOR REPRESENTATIVE: Clear Secure is a consumer-subscription biometric travel-lane membership business (CLEAR Plus + CLEAR1 B2B), a different sub-industry and a different return driver (member/travel/consumer spend) from the basket's pure-play enterprise security software (endpoint/firewall/IAM/cloud-native, ransomware/breach-driven). DEFENSES REFUTED: (1) Not a deliberate leg \u2014 the full thesis (\"Pure-play security software... driven by ransomware/breach risk, AI-attack escalation, zero-trust adoption, platform consolidation\") names no inverse/supply-chain/dispersion leg and never mentions YOU; inclusion is a keyword false-match on 'Secure'/'identity'. (2) Not a directionally-aligned laggard \u2014 it is the OPPOSITE of a laggard: a massive OUTPERFORMER (y1 ret +1.133 vs basket +0.064, gap +1.069 to the UPSIDE; +1.282 over y3), so 'temporary laggard that still co-moves' is factually false. (3) Identity-overlap fails empirically: real enterprise-IAM member OKTA co-moves at 0.732 vs YOU's 0.276 \u2014 the nominal identity keyword does not produce a shared price driver. (4) No RELOCATE target \u2014 YOU belongs to no other basket and no consumer-biometric/travel-identity theme exists to receive it. Both removal conditions are independently met; REMOVE stands."
+  },
+  {
+   "bid": "robotics_automation",
+   "ticker": "ISRG",
+   "initial": "RELOCATE",
+   "flag_deliberate": false,
+   "relocate_to": "Surgical / Medical Robotics (or a Healthcare/MedTech Robotics basket) \u2014 ISRG is a Health Care Equipment surgical-robotics name, not an industrial-automation member",
+   "what_it_does": "Intuitive Surgical makes the da Vinci robotic-assisted minimally invasive surgical systems and recurring proprietary instruments/services (Health Care Equipment / surgical robotics).",
+   "confidence": 0.74,
+   "reason": "PRICE ACTION: ISRG is the basket's weakest co-mover \u2014 corr_1y=0.293 vs cohesion median 0.556 (-2.25 MADs, cohort-rank 0.222, bottom quartile), weekly_corr_1y=0.383, and downside_corr_1y=0.198 (near-zero, so it does not fall with the basket in drawdowns), with a -0.649 1y total-return gap (ISRG fell ~24% on procedure-growth deceleration / multiple re-rating while industrial automation peers rode factory-automation tailwinds). Only weekly_sign_agreement (0.623) and corr_full (0.564) keep it from being a total outlier, indicating it once belonged but has decoupled. THEMATIC FIT: ISRG is GICS Health Care Equipment (surgical/medical robotics, da Vinci, razor-and-blade instrument model) \u2014 a DIFFERENT sub-industry and a DIFFERENT primary return driver (surgical procedure volumes + medtech multiples) from the other 8 members (ROK/TER/CGNX/NOVT/TRMB/ZBRA/PTC/NDSN), which are industrial automation, machine vision and factory software geared to industrial productivity per the thesis. Both removal conditions are met (price-divergent AND a poor industrial representative), and it is not a directionally-aligned laggard worth keeping given near-zero downside correlation. The thesis mentions surgical robots but the name now misrepresents an equal-weight industrial-automation index; it has a clean home in a surgical/medical-robotics theme, so RELOCATE rather than REMOVE.",
+   "verify_agree": false,
+   "final": "KEEP",
+   "verify_reason": "Overturn RELOCATE -> KEEP. The verdict fails BOTH prongs of the thesis-aware rule. (a) Price action is NOT cleanly divergent: ISRG's weekly sign-agreement is 0.623 \u2014 ABOVE the rule's ~0.55 floor and 3rd-HIGHEST of the 9 members (it agrees on direction more than undisputed cores ROK 0.585 and TRMB 0.604); its weekly corr 0.383 sits essentially AT the basket median (0.388); and its full-history corr (0.564) / sign_w (0.719) are intact. Only y1 corr (0.293) and downside corr (0.198) are weak. That profile is a DIRECTIONALLY-ALIGNED LAGGARD (-0.649 1y return gap from procedure-growth de-rate), and the rule states 'never remove a directionally-aligned laggard.' Note PTC is the actual worst co-mover (corr 0.140, dev_mad -3.55, is_min=True) yet is on-thesis and not flagged \u2014 ISRG is being singled out on thematic grounds despite co-moving better than several core names. (b) Thematically, the FULL thesis (from site/allocation.html) explicitly enumerates 'machine vision, motion control, SURGICAL ROBOTS and factory software' \u2014 ISRG (da Vinci) is the canonical surgical-robot name and the ONLY member carrying that named pillar. The author deliberately scoped surgical robotics INTO the basket, so ISRG is thesis-named / near-definitional, not a wrong-driver skewer; relocating it would make the equal-weight index UNDER-represent its own stated thesis. Finally, RELOCATE is not actionable: there is NO medical-devices/surgical-robotics basket among the 34 baskets in this universe (closest health themes are managed_care, obesity_glp1, big_pharma), so the named destination doesn't exist. With the thesis explicitly naming the leg and price action showing directional alignment, the correct verdict is KEEP. Evidence files: /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-mendel-99638f/reports/basket_coherence.json, /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-mendel-99638f/config.yml (lines 497-499), /Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/thirsty-mendel-99638f/site/allocation.html (full thesis)."
+  },
+  {
+   "bid": "robotics_automation",
+   "ticker": "PTC",
+   "initial": "KEEP",
+   "flag_deliberate": false,
+   "relocate_to": "",
+   "what_it_does": "PTC Inc. is a Boston-based industrial software company selling CAD (Creo), PLM (Windchill), and IoT/AR (ThingWorx, now being divested to TPG) tools that digitize how manufacturers design, make, and service physical products.",
+   "confidence": 0.85,
+   "reason": "Fails the removal test because it is NOT a poor thematic representative: the thesis explicitly names \"factory software that drive industrial productivity,\" and PTC's CAD/PLM is precisely that factory-software leg (it is held in real robotics ETFs alongside these peers). On price action, the headline corr_1y=0.14 (-3.55 MADs, worst-ranked) is driven almost entirely by a severe RETURN-LEVEL lag (1y return gap -0.781; PTC ~-31% while hardware peers CGNX +48% / ROK positive ride a 2026 automation upcycle), not by directional decoupling \u2014 weekly_sign_agreement_1y=0.774 is well above the ~0.55 threshold and corr_full=0.589 sits above the basket cohesion median, the classic signature of a temporary laggard that still co-moves directionally. The recent divergence has clear company-specific causes (slowing SaaS/ARR net-new growth, TPG divestiture of its IoT businesses), not a thesis break. Removal requires BOTH price-action divergence AND poor thematic fit; PTC fails the thematic test and is at best ambiguous on price action, so KEEP the directionally-aligned core laggard.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Adversarial re-examination of reports/basket_coherence.json confirms KEEP; the verdict cannot be overturned. (a) PRICE-ACTION: divergence is real and severe \u2014 PTC is the basket's worst co-mover and the only is_min=true name (corr_y1=0.14 vs peer 0.43-0.64; -3.55 MADs; corr_m6=0.008; corr_m3=-0.117 negative; weekly corr_y1=0.258 well below the ~0.55 healthy band; downside corr_y1=0.242; beta compressing to ~0/negative). So on Pearson/beta/downside, part (a) is arguably met. (b) THEMATIC FIT: FAILS the removal test outright \u2014 the thesis explicitly names \"factory software that drive industrial productivity,\" and PTC's CAD (Creo)/PLM (Windchill) is precisely that factory-software leg, same sub-industry intent, same primary return driver (industrial/manufacturing capex cycle), not an inverse play, and it sits in real robotics/automation ETFs alongside these peers. The rule's AND-gate (price divergence AND poor thematic fit) is therefore not satisfied. Decisively, this is a DIRECTIONALLY-ALIGNED LAGGARD, not a decoupled skewer: weekly sign-agreement stays pinned at 0.768-0.786 across EVERY window (full/y3/y1/m6/m3) even as Pearson corr collapses \u2014 the classic signature of a temporary laggard whose MAGNITUDE/LEVEL broke (ret_gap_y1=-0.781, ~-31% vs hardware peers riding the automation upcycle) for company-specific reasons (SaaS/ARR slowdown, TPG IoT divestiture), while DIRECTION still tracks the theme ~77% of weeks. The rule explicitly says never remove a directionally-aligned laggard. RELOCATE is also rejected: no better-fitting basket exists for industrial PLM/CAD design software. Not a deliberate inverse/supply-chain leg, so deliberate-leg=false stands."
+  },
+  {
+   "bid": "obesity_glp1",
+   "ticker": "DVA",
+   "initial": "KEEP",
+   "flag_deliberate": true,
+   "relocate_to": "",
+   "what_it_does": "DaVita is the US outpatient dialysis duopoly operator (kidney-care/healthcare facilities services), treating ~295,000 end-stage renal disease patients at ~3,242 centers; revenue is ~two-thirds Medicare-reimbursed, not a drug maker.",
+   "confidence": 0.68,
+   "reason": "PRICE ACTION: DVA is strongly divergent from the GLP-1 basket \u2014 corr_1y 0.052 (median 0.301, -1.98 MADs below, cohort-rank 0.071), weekly_corr_1y -0.033, downside_corr_1y -0.042 (negative \u2014 it does not fall with the basket), weekly sign-agreement 0.453 (below ~0.55), return gap 0.323. The decoupling has a confirmed idiosyncratic cause: DVA traded on its own drivers in 2025-26 (April 2025 cyberattack, CMS reimbursement-rate decisions, flu-season treatment-volume softness, Medicare Advantage, debt), none of which are GLP-1 drivers; the original GLP-1 dialysis-demand fear was largely repudiated/deferred by the market. THEMATIC FIT: DVA is a healthcare-SERVICES dialysis operator, a different sub-industry from the pharma/biotech drug-makers that define this basket, with a different primary return driver. Normally divergent + different-sub-industry would warrant removal. HOWEVER the curator rationale EXPLICITLY frames DVA as \"the 'hurt' side \u2014 dialysis demand pressured by GLP-1 kidney benefit,\" i.e. a deliberate INVERSE / by-design-dispersion leg. Per the thesis-aware rule, a deliberately-named inverse leg is KEPT with flag_deliberate=true rather than removed. Confidence is moderate because the basket THESIS text itself reads as a pharma-makers theme and does not itself name an inverse leg \u2014 the inverse framing lives only in the curator rationale; a curator who wants a pure co-moving pharma basket could reasonably remove it.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "Could not overturn: DVA is genuinely price-action divergent (corr_1y=0.052, downside_corr=-0.042 negative, sign_w=0.453, -1.98 MADs, cohort-rank 0.071, is_min=true) and a different sub-industry (US dialysis-services operator, the only non-drug-maker), which on its own would warrant REMOVE \u2014 BUT the basket THESIS itself EXPLICITLY names the inverse leg ('...and the dialysis names the drugs threaten. A monitoring lens... not a buy list'), making DVA a deliberate by-design inverse leg that the thesis-aware rule KEEPS with flag_deliberate=true. The proposed verdict's claim that the thesis 'does not itself name an inverse leg' is factually wrong (the inverse framing is in BOTH the thesis and the curator rationale), so the verdict is correct and should in fact be HIGH confidence, not moderate."
+  },
+  {
+   "bid": "quantum_computing",
+   "ticker": "GOOGL",
+   "initial": "KEEP",
+   "flag_deliberate": true,
+   "relocate_to": "",
+   "what_it_does": "Alphabet (GOOGL) is a mega-cap whose revenue is driven by Google Search/YouTube advertising and Google Cloud AI infrastructure; its quantum program (the Willow superconducting chip, which demonstrated below-threshold error correction in Dec 2024) is a leading-edge but financially immaterial research line.",
+   "confidence": 0.78,
+   "reason": "Removal requires BOTH price-action divergence AND poor thematic fit; GOOGL fails the decisive half of the price-action test and is thematically core, so it KEEPS. PRICE ACTION: corr_1y=0.229 sits in the bottom decile (cohort-rank 0.111, -0.67 MADs below the 0.349 median), so it is a magnitude laggard \u2014 but the decoupling criteria are NOT met: downside_corr_1y=0.217 is positive, weekly_corr_1y=0.29 is positive, and weekly_sign_agreement_1y=0.679 is well above the ~0.55 floor. The large 1y_return_gap (0.782) is explained by the pure-plays' parabolic ~60x+ rally into Oct 2025 that a profitable ~$400B-revenue mega-cap structurally cannot match, not by inverse/decoupled behavior. The rule says never remove a directionally-aligned laggard. THEMATIC FIT: GOOGL is a genuine quantum-compute frontier player on the superconducting modality (same family as RGTI/IBM), and Willow is a marquee milestone matching the curator rationale. The basket deliberately pairs liquid pure-plays (IONQ/RGTI/QBTS/QUBT/QNT/INFQ) with a big-cap research bench (IBM/GOOGL/MSFT/NVDA/HON); GOOGL's inclusion is by-design two-tier composition, so flag_deliberate=true. It is a different return driver (ads/cloud) than the pure-plays, which is the only argument for removal, but that alone is insufficient given the positive directional co-movement and core thematic relevance.",
+   "verify_agree": true,
+   "final": "KEEP",
+   "verify_reason": "The attempt to overturn to REMOVE fails on both rule conditions. (a) PRICE-ACTION: GOOGL is NOT divergent in any window \u2014 corr is positive everywhere (corr_1y=0.229, full=0.342), downside corr is positive everywhere (corr_dn_1y=0.217), and weekly sign-agreement is 0.608-0.714, well above the ~0.55 floor. It is a directionally-aligned magnitude laggard (is_min=True, rank 0.111, -0.67 MADs), and the rule explicitly forbids removing a directionally-aligned laggard. The large 1y_return_gap (0.782) reflects the NISQ pure-plays' parabolic ~60x rally that a $2T mega-cap structurally cannot match, not inverse/decoupled behavior. (b) THEMATIC FIT: the untruncated thesis (recovered from reports/basket_workflow_payload.json) EXPLICITLY names GOOGL as a deliberate leg \u2014 'plus the deep-pocketed big-tech programs (IBM, GOOGL, MSFT)' \u2014 a by-design two-tier composition pairing liquid pure-plays with a big-tech research bench (Willow superconducting chip is the same modality family as RGTI/IBM). The only removal argument (ads/cloud is a different return driver) is insufficient alone, and IBM \u2014 an undisputed big-tech leg \u2014 has even weaker downside corr (0.141) and sign-agree (0.642) than GOOGL, so the divergence indictment is incoherent. Both REMOVE conditions are unmet; KEEP with deliberate-leg=true is correct."
+  },
+  {
+   "bid": "big_pharma",
+   "ticker": "ZTS",
+   "initial": "RELOCATE",
+   "flag_deliberate": false,
+   "relocate_to": "Animal Health / Pet Care (e.g., a dedicated animal-health basket alongside IDXX, ELAN; ETF proxy could anchor on the pet/animal-health theme rather than human big-pharma PPH)",
+   "what_it_does": "Zoetis is the world's largest animal health company, developing and selling veterinary medicines, vaccines, parasiticides, dermatology and pain treatments, and diagnostics for companion animals and livestock.",
+   "confidence": 0.82,
+   "reason": "PRICE ACTION (divergent): ZTS is the bottom of the basket on co-movement \u2014 corr_1y=0.298 vs basket median 0.523 (-1.9 MADs, cohort-rank 0.1), weekly_corr_1y=0.372, and downside_corr_1y=0.084 is effectively zero so it does NOT co-move in drawdowns (no thematic diversification value), alongside a -0.802 1y return gap. The only mitigant is weekly_sign_agreement_1y=0.774 (above the ~0.55 floor) and corr_full=0.505, showing it once tracked \u2014 but it has clearly decoupled over the review window, driven by company-specific Librela/Solensia mAb sales reversing (strong 2024 -> declining 2025), not any Big Pharma sector driver. THEMATIC FIT (poor representative): ZTS is an animal-health company (veterinary medicines, vaccines, parasiticides, dermatology, pet pain mAbs, diagnostics) with a fundamentally different primary return driver \u2014 no human patent-cliff exposure, not subject to US human drug-pricing/IRA dynamics, and not part of the large-cap human-drug M&A complex the thesis monitors. Though GICS labels it 'Pharmaceuticals,' it is a different sub-industry (pet/livestock health), so an equal-weight index including it misrepresents 'the large-cap drug complex.' The curator's own 'pharma-adjacent' note concedes adjacency, not core membership. Both removal prongs are met; it is wrong for THIS basket but clearly belongs to an Animal Health / Pet Care theme, hence RELOCATE rather than REMOVE.",
+   "verify_agree": true,
+   "final": "RELOCATE",
+   "verify_reason": "I tried hard to overturn RELOCATE under the same rule and could not. (1) KEEP-deliberate fails: the only thesis hook is the curator's own rationale \"Zoetis \u2014 animal health (pharma-adjacent quality compounder),\" which CONCEDES adjacency rather than naming ZTS as a deliberate inverse/supply-chain/by-design-dispersion leg; the thesis defines a HUMAN large-cap drug complex (patent-cliff, US drug-pricing/IRA, human-drug M&A) and explicitly only carves out GLP-1 leaders, never ZTS. (2) KEEP-laggard fails: this is not a directionally-aligned laggard but a name actively DECOUPLING. corr_1y=0.298 is worst-in-basket (-1.9 MADs, cohort-rank 0.1, is_min=true vs median 0.523); corr decays monotonically across windows (full 0.505\u2192y3 0.381\u2192y1 0.298\u2192m6 0.238\u2192m3 0.230) and downside corr collapses to effectively zero/negative (full 0.424\u2192y1 0.084\u2192m3 -0.08), i.e. NO drawdown co-movement / no thematic diversification value, alongside a -0.80 1y return gap. The lone mitigant is sign_w=0.774 (above the ~0.55 floor, basket-high), the signature of daily directional alignment \u2014 but coarse up/down agreement is easily met by any high-beta equity and cannot rescue a member whose actual correlation and downside-correlation are structurally vanishing. Both removal prongs are genuinely met: PRICE-ACTION DIVERGENT (a) and THEMATICALLY a poor representative \u2014 animal/pet/livestock health is a different sub-industry with a different primary return driver (Librela/Solensia mAb arc, no human patent cliff, no IRA pricing exposure, not in the human-drug M&A complex) so an equal-weight index including it misrepresents 'the large-cap drug complex' (b). Because it clearly belongs to a coherent Animal Health / Pet Care theme (IDXX, ELAN; pet/animal-health ETF proxy rather than human PPH), RELOCATE \u2014 not REMOVE \u2014 is correct, and the named target is appropriate."
+  }
+ ],
+ "additions": [
+  {
+   "bid": "mag7",
+   "candidates": [
+    {
+     "ticker": "AVGO",
+     "name": "Broadcom Inc.",
+     "why": "The de facto eighth member of the complex and the lead name in every 'Ten Titans' extension of the Mag 7. AI custom-silicon (XPU/ASIC) and networking leader whose ~$1.6-1.9T market cap surpassed Meta and Tesla in early 2026, driving the same AI-infrastructure index/breadth narrative as NVDA. Highest co-movement with the core, especially the semiconductor members.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ORCL",
+     "name": "Oracle Corporation",
+     "why": "Canonical third addition (with AVGO and NFLX) that pushed the 'Ten Titans' to ~39% of the S&P 500. Mega-cap enterprise-software/AI-cloud (OCI) name re-rated by the same hyperscaler AI-capex buildout as MSFT, AMZN and GOOGL, so it trades as part of the mega-cap AI leadership cohort.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "NFLX",
+     "name": "Netflix, Inc.",
+     "why": "The other standard 'Ten Titans' addition and a legacy FAANG mega-cap. As one of the largest Nasdaq-100 / S&P 500 constituents, its leadership is part of the same narrow mega-cap-growth tape; co-moves with the complex as a top-weight large-cap growth name, though its driver is subscriber/content rather than AI silicon.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "TSM",
+     "name": "Taiwan Semiconductor Manufacturing Co. (ADR)",
+     "why": "Liquid NYSE ADR (~$0.9-2T cap) that is the foundry anchoring the entire AI mega-cap chain, fabricating leading-edge chips for AAPL and NVDA. Its price action is tightly linked to NVDA/AAPL demand, giving high co-movement with the semiconductor and hardware core of the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PLTR",
+     "name": "Palantir Technologies Inc.",
+     "why": "~$300B AI-software mega-cap frequently grouped with the Mag 7 in AI-leadership lists; trades as a high-beta proxy for the same AI-spending theme that drives the complex, so it co-moves with the basket on risk-on/AI tape. Ranked last because higher idiosyncratic volatility and valuation make its co-movement looser than the core seven.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "ai_infra",
+   "candidates": [
+    {
+     "ticker": "ALAB",
+     "name": "Astera Labs Inc",
+     "why": "Pure-play AI connectivity semiconductor (PCIe/CXL retimers, smart cable modules, Scorpio fabric switches) used to wire GPUs together inside AI racks. Same data-center-capex return driver as core members MRVL/AVGO/ANET; ~$70B cap, liquid Nasdaq listing, >1y history (IPO Mar-2024). Tight co-mover with the basket's silicon/networking sleeve.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "CRDO",
+     "name": "Credo Technology Group Holding",
+     "why": "Pure-play high-speed connectivity (ZeroFlap Active Electrical Cables, SerDes, retimers, now silicon photonics via DustPhotonics) levered directly to AI data-center interconnect capex. Revenue +157% YoY. Same return driver and customer base (hyperscalers) as ANET/MRVL/AVGO; liquid, multi-year history. Strong co-movement with basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "AAOI",
+     "name": "Applied Optoelectronics Inc",
+     "why": "Pure-play optical transceiver maker (800G/1.6T) for AI data centers, the same optical-connectivity sub-industry as current members LITE/COHR/CIEN. ~$12-13B cap, liquid, long history. Price action tracks the optics sleeve closely (up ~370% YTD on the same hyperscaler order cycle).",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ONTO",
+     "name": "Onto Innovation Inc",
+     "why": "Semiconductor metrology/inspection and advanced-packaging lithography pure-play, directly levered to HBM and AI-chip advanced-packaging capex. Same semicap return driver as core members AMAT/LRCX/KLAC/TER. Liquid Nasdaq name with multi-year history; co-moves with the basket's equipment sleeve.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ETN",
+     "name": "Eaton Corporation plc",
+     "why": "Data-center electrical power infrastructure (medium-voltage switchgear, transformers, rack power) plus Boyd Thermal cooling, levered to data-center power/thermal capex like current member VRT. Large, highly liquid NYSE listing. More diversified than a pure-play so co-movement is strong but not perfect, yet it completes the basket's underrepresented power/electrical pillar.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "ai_software",
+   "candidates": [
+    {
+     "ticker": "TEAM",
+     "name": "Atlassian",
+     "why": "Pure application-layer collaboration/dev SaaS (Jira, Confluence) monetizing AI directly via per-seat Rovo and the Teamwork Collection bundle (past 1M seats in under 9 months). Same return driver as core members NOW/CRM/WDAY: re-rates on seat expansion, de-rates on AI-disruption fears. Large-cap (~$22B), Nasdaq ordinary shares, long history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HUBS",
+     "name": "HubSpot",
+     "why": "CRM/marketing-automation SaaS whose Breeze AI agents are a primary monetization motion (pay-per-result agent pricing, ~60% of credits consumed). Direct application-layer peer to CRM and INTU; same seat/usage-expansion vs AI-disruption narrative. ~$10B cap, NYSE ordinary shares, multi-year history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "GTLB",
+     "name": "GitLab",
+     "why": "DevSecOps platform monetizing AI (GitLab Duo) on a per-seat basis. Same contested app-layer/dev-tooling return driver as PANW/CRWD/DDOG and the broader basket; re-rates on AI seat attach, de-rates on coding-agent disruption fears. Nasdaq ordinary shares; smaller (~$3.3B) so slightly more idiosyncratic.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "MNDY",
+     "name": "Monday.com",
+     "why": "Work-management SaaS application layer with separately-priced AI agent products (monday AI / vibe) driving seat and product expansion. Pure-play app monetization of AI, same up/down driver as WDAY/NOW. Nasdaq ADS, >$1B cap, 4+ years trading history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "BRZE",
+     "name": "Braze",
+     "why": "Customer-engagement SaaS where AI Decisioning is the explicit monetization and re-rating driver (crossed $800M ARR). Application-layer marketing software, same thesis as CRM/ADBE/HUBS, though smaller and more marketing-cyclical, so co-movement is strong but slightly looser. Nasdaq ordinary shares.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "defense",
+   "candidates": [
+    {
+     "ticker": "DRS",
+     "name": "Leonardo DRS, Inc.",
+     "why": "Pure-play defense electronics/sensors prime (~$12.5B cap, ~80% DoD revenue) spanning advanced sensing, EW, network computing and power/propulsion. This is the single biggest gap in the basket, which has no dedicated sensors/EW name; same budget-cycle return driver as the primes (LMT/NOC/RTX) and an ITA-eligible defense name, so it co-moves tightly with the core.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "MRCY",
+     "name": "Mercury Systems, Inc.",
+     "why": "Pure-play defense processing/RF/EW subsystems (~$4.6B cap) supplying radar, electronic warfare, sensors and secure processing content embedded in prime platforms. Levered to the same procurement/backlog cycle as the basket's primes and Leonardo DRS; mirrors the electronics-content driver inside missiles and aircraft, so price action tracks the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "KRMN",
+     "name": "Karman Holdings Inc.",
+     "why": "Direct missiles/hypersonics/space-launch subsystems pure-play (~$8-9B cap) - payload protection, interstage and propulsion systems across tactical missiles, strategic missile defense, hypersonics and launch. Matches the thesis's exact 'missiles, space' language and the missile-cycle driver shared with RTX/LMT/RKLB; IPO Feb 2025 gives ~1.3y of liquid NYSE history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "LOAR",
+     "name": "Loar Holdings Inc.",
+     "why": "Proprietary aerospace & defense components consolidator (~$6B cap) running the same sole-source, high-margin niche-parts flywheel as existing members TDG and HEI, with growing defense exposure (airframe, flight controls, ice protection, restraints). Co-moves with the basket's components sleeve, though a heavier commercial-aero mix slightly dilutes pure defense-budget beta.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "CRS",
+     "name": "Carpenter Technology Corporation",
+     "why": "Specialty alloys and titanium for jet-engine hot sections and defense/space (~2% ITA holding) - the materials input that feeds GE Aerospace and HWM. Same engine-build and defense-budget cycle as the basket, so it tracks the aero/defense supply chain, but specialty-metals commodity beta makes the link looser than the electronics/missile pure-plays above.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "power_grid",
+   "candidates": [
+    {
+     "ticker": "POWL",
+     "name": "Powell Industries",
+     "why": "Pure-play manufacturer of medium/low-voltage switchgear, motor-control centers, bus duct and E-houses that take power off the grid into AI/data-center campuses. Same electrical-equipment return driver as core members ETN and HUBB, with ~45% YoY revenue growth and a ~$1.3B backlog driven by data-center/utility capex. ~$11B mkt cap, NYSE, multi-year history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "NVT",
+     "name": "nVent Electric",
+     "why": "Electrical connections, enclosures, protection and high-density power distribution plus data-center liquid cooling (>2GW deployed) - the protection/connection layer of AI power buildout. Q1 2026 sales +53% YoY on broad data-center demand. Same grid-equipment/data-center-power driver as ETN, VRT and HUBB; ~$25B cap, NYSE, ample history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "MYRG",
+     "name": "MYR Group",
+     "why": "Pure-play electric transmission & distribution and C&I electrical infrastructure contractor - a direct peer of core member PWR (Quanta) and adjacent to EME/FIX. Record Q1 2026 with 20% revenue growth and record backlog from grid capex, data-center load and electrification. ~$3-4B cap, Nasdaq, long history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ATKR",
+     "name": "Atkore",
+     "why": "Manufacturer of electrical conduit, cable, raceway and installation accessories used to build power systems for data centers, utilities and grid electrification. Same electrification capex driver as the equipment sleeve (HUBB/ETN), though more commodity-priced/cyclical so co-movement is slightly looser. ~$2.7B cap, NYSE, multi-year history.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "ETR",
+     "name": "Entergy",
+     "why": "Regulated utility with one of the largest data-center load pipelines (7-12 GW incl. the $27B Meta Hyperion build), driving a ~14% annual rate-base CAGR. Co-moves with the basket's regulated-utility sleeve (D, DUK, SO, AEP, NEE). Marked medium because the regulated-utility bucket is already well represented and these names are lower-beta than the equipment sleeve. ~$51B cap, NYSE.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "reshoring",
+   "candidates": [
+    {
+     "ticker": "HUBB",
+     "name": "Hubbell Incorporated",
+     "why": "Pure-play electrical/utility-grid equipment maker (transmission, substation, distribution, grid controls, connectors). Same electrification sub-industry and return driver as ETN/EMR/AME, and a direct reshoring + US grid-capex beneficiary (NSI Industries acquisition, US production). ~$25B cap, S&P 500, highly liquid; tracks the industrial electrification cohort closely.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "NVT",
+     "name": "nVent Electric plc",
+     "why": "Pure-play electrical connection, enclosure, protection and thermal-management products. Explicitly levered to reshoring capex, grid hardening and data-center power buildout (40% capex increase for capacity expansion). Same electrical-equipment sub-industry as ETN/IR; liquid mid/large cap with multi-year US-listed history, tight peer co-movement.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HRI",
+     "name": "Herc Holdings Inc.",
+     "why": "Equipment-rental layer named directly in the thesis. Third-largest North American rental company (post H&E acquisition), direct peer to current member URI, levered to factory construction and reshoring megaprojects. ~$5B cap, liquid, multi-year history; co-moves with the rental/construction-capex driver.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "RRX",
+     "name": "Regal Rexnord Corporation",
+     "why": "Automation, motion control, electric motors and power-transmission products serving factory automation, robotics, aerospace/defense and data centers. Same automation/machinery return driver as ROK/EMR/PH, with reshoring-driven order surges (Automation & Motion Control orders +34%). ~$10B cap, NYSE-listed, liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "VRT",
+     "name": "Vertiv Holdings Co",
+     "why": "Power and thermal-management equipment for critical digital and industrial infrastructure - the equipment layer of the power/automation capex super-cycle. High-beta industrial named among top reshoring/electrification beneficiaries; very large, very liquid NYSE name that co-moves with the industrial-capex cohort, though somewhat more data-center-skewed.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "regional_banks",
+   "candidates": [
+    {
+     "ticker": "FCNCA",
+     "name": "First Citizens BancShares, Inc.",
+     "why": "~$24B super-regional lender (Raleigh NC; ~$236B assets across NC/SC/CA), the largest US regional bank not yet in the basket. Pure-play commercial/CRE lender on NYSE, same yield-curve / deposit-competition / CRE-credit drivers as MTB/USB/PNC. Acquired the SVB franchise, so it carries the exact regional-bank tail-risk and re-rate-on-rate-cuts dynamic in the thesis. Tight co-movement with KRE core.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "BPOP",
+     "name": "Popular, Inc.",
+     "why": "~$9.7B Puerto Rico/US mainland regional bank and the #1-weighted holding in KRE. Classic deposit-funded regional lender exposed to the yield curve, CRE and deposit competition. Nasdaq-listed ordinary shares, very liquid, long trading history. Same sub-industry and return driver as CFG/HBAN/RF.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "UMBF",
+     "name": "UMB Financial Corporation",
+     "why": "~$10B Midwest super-regional (Kansas City) and a top-5 KRE holding. Commercial bank with CRE and C&I lending, deposit-competition exposure, and yield-curve sensitivity identical to core members like FITB/KEY. Nasdaq, liquid, multi-decade history. Recently scaled via the Heartland acquisition.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "SSB",
+     "name": "SouthState Corporation",
+     "why": "~$9.5B Southeast super-regional (Florida/Carolinas/Southeast), expanded into Texas/Colorado via the Independent Bank Group merger. Pure-play CRE/commercial lender on NYSE with the same steepening / rate-cut re-rate and CRE-credit tail risk as the basket. Liquid, long history. Clean fit alongside CFR/WTFC.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "COLB",
+     "name": "Columbia Banking System, Inc.",
+     "why": "~$8.4B West Coast regional (Umpqua Bank, ~$66B assets, ~$54B deposits) and a top-15 KRE holding. Deposit-funded commercial/CRE lender with the same yield-curve and deposit-competition return drivers as WAL/EWBC. Nasdaq ordinary shares, liquid, long trading history. High co-movement with the regional-bank complex.",
+     "expected_comovement": "high"
+    }
+   ]
+  },
+  {
+   "bid": "managed_care",
+   "candidates": [
+    {
+     "ticker": "CLOV",
+     "name": "Clover Health Investments, Corp.",
+     "why": "Pure-play Medicare Advantage insurer (PPO/HMO plans for Medicare-eligible seniors), risk-bearing with direct medical-loss-ratio exposure and full sensitivity to CMS Medicare Advantage rate notices and Star ratings \u2014 the exact policy-and-utilization driver of the basket. ~$2.6B market cap, NASDAQ-listed since 2021, liquid. Same MA cost-trend cycle as HUM/UNH/ALHC, so it co-moves tightly with the basket's MA-levered names.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "AGL",
+     "name": "agilon health, inc.",
+     "why": "Globally capitated Medicare Advantage value-based care operator that bears full medical-cost risk on its ~426k MA members, so earnings whipsaw on the same MLR cycle and MA rate notices as the core insurers. NYSE-listed since 2021, ~$1.7B market cap, liquid. Trades as a high-beta proxy for the same Medicare-utilization return driver, similar to ALHC already in the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ASTH",
+     "name": "Astrana Health, Inc.",
+     "why": "Risk-bearing, capitated value-based care provider receiving fixed per-member payments and assuming medical-cost risk, heavily Medicare/MA-weighted \u2014 same capitated-utilization driver as ALHC and the managed-care insurers. NASDAQ-listed, ~$1.9B market cap, multi-year history, liquid. Slightly more IPA/delivery exposure than a pure insurer, so co-movement is strong but a notch below CLOV/AGL.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "housing",
+   "candidates": [
+    {
+     "ticker": "MTH",
+     "name": "Meritage Homes Corporation",
+     "why": "Top-5 US public homebuilder, pure-play entry-level/first-move-up builder, highly mortgage-rate sensitive (relies on rate buydowns to move inventory). Direct peer of the core builders already in the basket (DHI/LEN/PHM/KBH/TOL), so it tracks the same new-home-sales/rate driver. ~$4.8B cap, NYSE, deep history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "IBP",
+     "name": "Installed Building Products, Inc.",
+     "why": "Chief rival to BLD (TopBuild, already in basket): insulation/building-products installer with primary focus on residential new construction, making it highly sensitive to housing starts. Same installer-distributor return driver as BLD. ~$5.6B cap, NYSE, liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "CVCO",
+     "name": "Cavco Industries, Inc.",
+     "why": "Factory-built/manufactured housing pure-play, geared directly to the structural under-supply and affordability theme (rate-cut/affordability beneficiary). Same housing-demand driver as the site-built builders, though the manufactured-housing sub-segment behaves somewhat distinctly. ~$4.6B cap, Nasdaq, long history.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "CSL",
+     "name": "Carlisle Companies Incorporated",
+     "why": "Building-products manufacturer (roofing, insulation, waterproofing) overlapping the core OC/MAS exposure and an XHB holding. Residential/re-roof demand ties it to the housing cycle, though a meaningful commercial mix dampens pure housing beta. ~$13.6B cap, NYSE, very liquid.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "WMS",
+     "name": "Advanced Drainage Systems, Inc.",
+     "why": "Water-management/stormwater building-products manufacturer with residential and broader construction exposure, an XHB constituent that complements the building-products sleeve. Infrastructure/ag/commercial mix dilutes housing sensitivity, so co-movement is moderate. ~$10.7B cap, NYSE, liquid.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "payments_fintech",
+   "candidates": [
+    {
+     "ticker": "MQ",
+     "name": "Marqeta, Inc.",
+     "why": "Pure-play modern card-issuing and transaction-processing platform (Nasdaq, US-domiciled, ~$1.6B cap, multi-year history). Sits squarely in the payment-processor sub-industry alongside FI/GPN/FOUR/TOST and is directly exposed to the AI/stablecoin disruption overhang on processors central to the thesis. Take-rate + consumer-spend driver makes price action track the core processor cluster.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "FLYW",
+     "name": "Flywire Corporation",
+     "why": "Pure-play payment-enablement / vertical processor (Nasdaq, ~$2B cap, still independent, no pending acquisition). Same secular cash-to-card and take-rate return driver as the processor members; competes in the digital-payments processing complex, so it co-moves with the basket's processor leg.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "DLO",
+     "name": "dLocal Limited",
+     "why": "Cross-border, emerging-markets payment processor (Nasdaq ADR, ~$3.9B cap, liquid). High-growth pure-play processing with a take-rate model identical to the basket's processor thesis. EM beta adds some dispersion but it trades as a fintech/processor name alongside the group.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "STNE",
+     "name": "StoneCo Ltd.",
+     "why": "Brazilian merchant acquirer/payment processor (Nasdaq ADR, ~$2.6B cap) \u2014 a direct analog to GPN/FOUR with merchant acquiring plus consumer-spend cyclicality, the exact return driver in the thesis. Brazil macro/FX adds idiosyncratic risk, hence medium rather than high co-movement.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "EVTC",
+     "name": "EVERTEC, Inc.",
+     "why": "Pure-play transaction/payment processor and merchant acquirer concentrated in Latin America (NYSE, dividend-paying, liquid). Same processor sub-industry and cash-to-card secular driver as FI/GPN; LatAm geographic tilt gives it medium rather than high correlation to the US-centric core.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "energy_complex",
+   "candidates": [
+    {
+     "ticker": "MPLX",
+     "name": "MPLX LP",
+     "why": "Large-cap (~$54B) growth-MLP midstream sponsored by Marathon Petroleum: gathering/processing of natural gas & NGLs plus crude/products logistics. Directly captures the thesis's midstream + data-center natural-gas demand angle and is a close peer to existing WMB/KMI/OKE/TRGP, so it co-moves on the same fee-based midstream / natgas-throughput driver.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "EXE",
+     "name": "Expand Energy Corporation",
+     "why": "Largest US natural gas producer (~$23B), pure-play E&P in the Marcellus and Haynesville (Chesapeake + Southwestern merger). Fills the gas-producer gap alongside EQT and DVN; price action driven by US gas prices and capital discipline, the same return driver as the basket's E&P core.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PR",
+     "name": "Permian Resources Corporation",
+     "why": "Second-largest Permian Basin pure-play E&P (~$17B), ~450k net acres in the Delaware Basin producing crude and liquids-rich gas. A crude-price + capital-discipline trade that co-moves tightly with existing Permian E&Ps FANG, EOG, DVN and OXY.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PAA",
+     "name": "Plains All American Pipeline LP",
+     "why": "Crude-oil-focused midstream (~$13B) handling ~8 MMbbl/d of crude and NGL via pipelines, terminals and storage across key US basins. Adds crude-logistics breadth to the midstream sleeve and co-moves with WMB/KMI on fee-based throughput and crude volumes.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "DINO",
+     "name": "HF Sinclair Corporation",
+     "why": "Independent US refiner (~$11B) with mid-continent/Rockies refining plus marketing, lubricants and midstream. Rounds out the refining sleeve alongside MPC/PSX/VLO with a different regional footprint; co-moves on crack spreads and refined-product margins.",
+     "expected_comovement": "high"
+    }
+   ]
+  },
+  {
+   "bid": "defensives",
+   "candidates": [
+    {
+     "ticker": "SO",
+     "name": "Southern Company",
+     "why": "Large-cap regulated electric/gas utility, the #2 XLU holding. Classic low-beta (~0.38) defensive ballast with a 20+ year dividend record \u2014 exactly the risk-off-leader, risk-on-lagger profile in the thesis. The basket names XLU as a proxy yet holds zero utilities, so a pure regulated utility is the largest theme gap. Highly liquid (>$80B mkt cap).",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "DUK",
+     "name": "Duke Energy",
+     "why": "One of the largest US fully regulated electric utilities, top-5 XLU holding, beta ~0.38, multi-decade stable dividend. A textbook defensive cash-flow / low-beta ballast name that leads in risk-off \u2014 fills the utilities side of the XLP+XLU mandate alongside SO. Deeply liquid (>$80B).",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "NEE",
+     "name": "NextEra Energy",
+     "why": "World's largest utility (~$200B), the #1 XLU holding, regulated FPL core plus contracted renewables, 32 consecutive years of dividend growth. Lower-beta defensive utility that co-moves with the risk-off ballast theme. Adds the marquee utility weight the staples-only basket currently lacks.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "AEP",
+     "name": "American Electric Power",
+     "why": "Top-5 XLU constituent, one of the largest US transmission/regulated electric utilities. Low-beta regulated cash flows and steady dividend make it a defensive ballast that leads in risk-off and lags in risk-on \u2014 same return driver as SO/DUK, broadening the utility leg.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "KHC",
+     "name": "Kraft Heinz",
+     "why": "Large-cap packaged-food staple (brand/scale moat, daily-use consumer goods) explicitly described as a classic defensive consumer name that rises when growth stocks sell off. Same sub-industry and return driver as current members GIS, MDLZ and KMB, so it co-moves with the staples core. Liquid, >$30B, multi-year history.",
+     "expected_comovement": "high"
+    }
+   ]
+  },
+  {
+   "bid": "travel",
+   "candidates": [
+    {
+     "ticker": "VIK",
+     "name": "Viking Holdings Ltd",
+     "why": "Large-cap (~$42B) pure-play premium cruise operator, the same sub-industry and return driver as core members RCL, CCL and NCLH. High operating leverage to discretionary travel demand and advance bookings, so it tracks the cruise sleeve tightly. NYSE-listed, ~2y history since May 2024 IPO, highly liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ALK",
+     "name": "Alaska Air Group, Inc.",
+     "why": "Major US network airline (~$5.5B), the identical return driver to existing airline members DAL, UAL, LUV and AAL and a core JETS (basket ETF proxy) constituent. Same fuel/demand/operating-leverage cyclicality, so it co-moves with the airline sleeve. Nasdaq-listed, deep history and liquidity.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ALGT",
+     "name": "Allegiant Travel Company",
+     "why": "Leisure-focused US ultra-low-cost carrier (~$1.8B) whose entire model is vacation/experiences travel to leisure destinations, fitting the airline sub-industry alongside LUV/AAL and the 'experiences over goods' thesis. Nasdaq-listed, long history, liquid. Co-moves with the airline group.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HGV",
+     "name": "Hilton Grand Vacations Inc.",
+     "why": "Pure-play timeshare/vacation-ownership operator (~$3B), a direct experiences-over-goods consumer play and the natural complement to the lodging sleeve (MAR, HLT, H). Highly cyclical, discretionary-demand sensitive. NYSE-listed since 2017 spin-off, liquid. Co-moves with lodging/leisure but carries some idiosyncratic consumer-credit sensitivity.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "BYD",
+     "name": "Boyd Gaming Corporation",
+     "why": "Geographically diversified regional US casino operator (~$6.5B), same gaming/resorts sub-industry as core members MGM, CZR, WYNN and LVS. Discretionary leisure-spend driver with high operating leverage, so it tracks the gaming sleeve. NYSE-listed, deep history and liquidity.",
+     "expected_comovement": "high"
+    }
+   ]
+  },
+  {
+   "bid": "retail",
+   "candidates": [
+    {
+     "ticker": "OLLI",
+     "name": "Ollie's Bargain Outlet Holdings",
+     "why": "Pure-play closeout/extreme-value retailer (America's #1 closeout chain, ~645 stores) buying excess/closeout inventory and selling at deep discounts. Quintessential trade-down/value retailer that wins in a stretched consumer, directly on this basket's off-price/discount thesis alongside TJX/ROST/BURL/DG/DLTR. ~$5B+ cap, NASDAQ, ample history; even absorbed Big Lots leases. Tightest thematic fit.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ASO",
+     "name": "Academy Sports + Outdoors",
+     "why": "Big-box sporting-goods and outdoor retailer, a direct head-to-head peer of current member DKS (Dick's). Value-tilted discretionary big-box format that tracks the same consumer-health/discretionary-spend driver as the basket's big-box sleeve. ~$3.3B cap, NASDAQ, >1y history, liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PSMT",
+     "name": "PriceSmart",
+     "why": "Pure-play warehouse membership-club operator (Central/South America/Caribbean) running the same Costco/BJ's club model: membership fees, treasure-hunt value, trade-down resilience. Same return driver as current members COST and BJ, just a different geography. ~$3B+ cap, NASDAQ, long history, liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "AAP",
+     "name": "Advance Auto Parts",
+     "why": "Pure-play automotive aftermarket parts retailer, a direct peer of current members AZO (AutoZone) and ORLY (O'Reilly). Auto-parts retail is a classic non-discretionary/value sleeve in this basket; AAP shares the same end-market and return driver. ~$3.7B cap, NYSE, deep trading history. Same sub-industry as the auto sleeve.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "GPC",
+     "name": "Genuine Parts Company",
+     "why": "Operates NAPA Auto Parts (auto-parts retail/distribution), overlapping with AZO/ORLY auto sleeve. Medium rather than high co-movement because ~40% of sales are the Motion industrial-distribution segment and ~80% of NAPA end-sales are professional/B2B (a planned 2027 NAPA/Motion split), so it is a hybrid distributor, not a pure consumer trade-down retailer. ~$15B cap, NYSE, very liquid.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "crypto",
+   "candidates": [
+    {
+     "ticker": "BMNR",
+     "name": "BitMine Immersion Technologies",
+     "why": "World's #1 Ethereum treasury company (~5.5M ETH, ~$10B crypto holdings) and the equity treasury proxy for ETH the same way MSTR is for BTC. NYSE-listed, large-cap (~$9.2B market cap) and one of the most actively traded crypto names after a 2025 uplisting. Directly fills the ETH leg of the thesis: it is the leveraged equity expression of spot-ETH (complements ETHA) and trades as pure crypto-asset beta, NOT a miner that pivoted to AI/HPC. Marketed and traded explicitly as the ETH counterpart to MSTR.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "XXI",
+     "name": "Twenty One Capital",
+     "why": "Pure-play Bitcoin treasury company (Tether/iFinex/SoftBank/Jack Mallers backed) whose sole mandate is to maximize bitcoin-per-share via capital-markets activity, with ~43,500 BTC (~$2.7B) and essentially no non-crypto operating business. NYSE-listed (~$1.9B market cap, ~1.4M avg daily volume), beta ~1.77 with only ~0.10 correlation to SPY, so its price action is driven almost entirely by BTC. A second clean BTC-treasury proxy in the same sub-industry/return driver as MSTR; no AI/HPC pivot.",
+     "expected_comovement": "high"
+    }
+   ]
+  },
+  {
+   "bid": "ai_neoclouds",
+   "candidates": [
+    {
+     "ticker": "KEEL",
+     "name": "Keel Infrastructure Corp.",
+     "why": "Formerly Bitfarms (BITF), redomiciled to the US as a Delaware/NYC company and now Nasdaq-listed. A pure-play AI/HPC datacenter infrastructure developer (2.2 GW pipeline, ~$3.8B mkt cap, $458M convert raised for the AI buildout) executing the exact ex-bitcoin-miner-to-HPC conversion thesis of CORZ/IREN/WULF/CIFR. Same power-site-to-AI return driver, so it co-moves tightly with the core.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "WYFI",
+     "name": "WhiteFiber, Inc.",
+     "why": "Nasdaq-listed neocloud pure-play (IPO Aug 2025, >1y history, ~$1.5B mkt cap) operating cloud GPU services plus HPC colocation for AI/ML customers \u2014 directly analogous to CRWV/NBIS/APLD. Renting Nvidia capacity to AI labs is its core business and return driver, so it tracks the basket's GPU-cloud leg.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HIVE",
+     "name": "HIVE Digital Technologies Ltd.",
+     "why": "Nasdaq-listed (~$1.2B mkt cap) ex-crypto miner converting ~38,000 Nvidia GPUs into an on-demand GPU AI cloud (BUZZ HPC; $220M Bell/Cohere GB200 deal, scaling toward ~$140M HPC ARR). Same dual-engine hashrate+HPC model as WULF/CIFR/IREN, driving high co-movement with the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "BTBT",
+     "name": "Bit Digital, Inc.",
+     "why": "Nasdaq-listed ex-bitcoin miner pivoting to AI/HPC via majority-owned WhiteFiber (cloud GPU + colocation, $1.1B+ backlog). Fits the neocloud/HPC-hosting thesis and trades with the cohort, but co-movement is moderated by a large ETH treasury/staking sleeve that dilutes the pure HPC return driver.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "SLNH",
+     "name": "Soluna Holdings, Inc.",
+     "why": "Nasdaq-listed renewable-powered datacenter operator pivoting bitcoin-hosting sites into AI/HPC compute (Dorothy/Kati campuses, 4.3 GW pipeline) \u2014 same power-to-AI conversion driver as the basket. Co-movement is real but moderated by its micro-cap size (~$210M) and lower liquidity versus the >$1B core names.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "non_ai_software",
+   "candidates": [
+    {
+     "ticker": "VEEV",
+     "name": "Veeva Systems",
+     "why": "Pure-play vertical SaaS for life sciences (~$42B cap, Nasdaq). Subscription is ~84% of revenue with NRR consistently >120%, the textbook seat-expansion/durable-subscription profile of the basket core (CRM/NOW/WDAY). Application-software return driver co-moves tightly with IGV; not an AI- or cyber-pure name.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "MNDY",
+     "name": "monday.com",
+     "why": "Seat-based work-management/collaboration SaaS (~$3.7-4B cap, Nasdaq), a direct peer of current member TEAM and of Asana. Growth ~24% YoY driven by seat growth and net expansion; pure subscription model. Same application-SaaS return driver as the basket, so price action co-moves with IGV.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "KVYO",
+     "name": "Klaviyo",
+     "why": "Pure-play marketing-automation/CRM SaaS (~$4.4B cap, NYSE) adjacent to current member HUBS. ~32% revenue growth, dollar-based NRR ~110%, recurring subscription economics. Application SaaS exposed to the same seat/expansion driver; co-moves with the software basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "BRZE",
+     "name": "Braze",
+     "why": "Pure-play customer-engagement SaaS (~$2.8B cap, Nasdaq), HUBS/KVYO-adjacent. Subscription is ~93% of revenue with dollar-based NRR ~108-110% and ~30% growth. Durable subscription/expansion economics make it co-move with the application-software basket rather than tangentially.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "DT",
+     "name": "Dynatrace",
+     "why": "Observability/monitoring SaaS (~$9.6B cap, NYSE), adjacent to current member DDOG. Subscription is ~96% of revenue, NRR ~110%, ARR ~$1.9B. Infrastructure-SaaS return driver overlaps the basket; some AI-observability positioning but value rests on subscription/NRR, so medium-to-high co-movement.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "non_ai_tech",
+   "candidates": [
+    {
+     "ticker": "STM",
+     "name": "STMicroelectronics N.V.",
+     "why": "NYSE-listed ADR, ~$70B cap, very liquid. Broad-line analog, MCU, power and discrete chips (Analog/MEMS, Power & Discrete, Embedded Processing segments) for automotive and industrial end markets. A direct sub-industry peer of the basket's analog/MCU/power core (TXN, ADI, MCHP, ON, NXPI), so its price action should co-move tightly with them as it shares the same auto/industrial/datacenter capex demand driver.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HPE",
+     "name": "Hewlett Packard Enterprise Company",
+     "why": "NYSE, ~$63B cap, highly liquid. Diversified legacy enterprise IT: servers, hybrid cloud and networking (now including Juniper), the same enterprise-IT/networking return driver as basket members CSCO, IBM, DELL and HPQ. Demand rides enterprise and datacenter capex, matching the thesis.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "APTV",
+     "name": "Aptiv PLC",
+     "why": "NYSE, ~$13.5B cap, liquid. Engineered Components and Electrical Distribution Systems make it a connectors/interconnect and signal-power-data distribution peer of basket members APH (Amphenol) and TEL (TE Connectivity). Same connector/interconnect sub-industry with auto and industrial capex as the return driver, so it co-moves with the connector sleeve.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "VSH",
+     "name": "Vishay Intertechnology, Inc.",
+     "why": "NYSE, ~$7.4B cap. Discrete semiconductors (MOSFETs, diodes, optoelectronics) plus passive components (resistors, inductors, capacitors) whose demand rides industrial, automotive and datacenter capex. Same broad analog/discrete/component return driver as ON and MCHP, giving strong co-movement with the hardware-component portion of the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "STX",
+     "name": "Seagate Technology Holdings plc",
+     "why": "Nasdaq, large-cap and very liquid. Enterprise/datacenter storage hardware (HDD duopoly with WDC) whose demand rides datacenter and enterprise capex, fitting the legacy-tech-hardware sleeve alongside DELL and HPQ. Slightly more cyclical and capex-sensitive than the analog core, hence medium rather than high co-movement.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "ai_semiconductors",
+   "candidates": [
+    {
+     "ticker": "MU",
+     "name": "Micron Technology, Inc.",
+     "why": "Pure-play memory maker and the dominant US HBM (high-bandwidth memory) supplier \u2014 the single most supply-constrained complement bolted onto every AI GPU/ASIC; HBM sold out through 2026. A top-3 SMH constituent (~7.8% weight), so it co-moves tightly with the AI-compute cohort already in the basket (NVDA/AMD/AVGO). Large cap (~$200B), deeply liquid, multi-decade history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "COHR",
+     "name": "Coherent Corp.",
+     "why": "Pure-play AI data-center optics/transceiver leader (~25% transceiver share, 800G/1.6T ramping fast, AI orders booked through 2028, $2B NVIDIA equity investment). The optical interconnect that lashes accelerators together is the direct extension of the CRDO/ALAB 'connect the GPUs' return driver; +300% over the past year, moving in lockstep with the AI-networking names. ~$60B cap, NYSE, liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "LITE",
+     "name": "Lumentum Holdings Inc.",
+     "why": "The other half of NVIDIA's $4B optics bet ($2B stake); only volume supplier of 200G-per-lane EMLs, the critical laser for next-gen 1.6T pluggable transceivers. Same AI-interconnect driver as COHR and CRDO, so it co-moves with the basket's networking/connectivity cohort. Large cap, Nasdaq, highly liquid, long history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "RMBS",
+     "name": "Rambus Inc.",
+     "why": "Pure-play memory-interface IP/chips \u2014 HBM4/HBM4E and DDR5 controllers that sit inside NVIDIA and AMD accelerators. Same 'IP and connectivity inside the accelerator' return driver as ARM and ALAB; revenue scales directly with AI-accelerator and HBM volume. ~$16B cap, Nasdaq, liquid, long trading history.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "LSCC",
+     "name": "Lattice Semiconductor Corporation",
+     "why": "Pure-play low-power FPGA maker increasingly positioned for AI-infrastructure/server platform management and edge AI; an established SMH-adjacent semiconductor name that tracks the broader AI-chip cycle. Somewhat more diversified across industrial/auto/comms than the core members, so co-movement is solid but less tight than the optics/memory adds. ~$5-7B cap, Nasdaq, liquid.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "semicap_equipment",
+   "candidates": [
+    {
+     "ticker": "CAMT",
+     "name": "Camtek Ltd.",
+     "why": "Nasdaq-listed pure-play semiconductor inspection & metrology equipment maker (~$8B cap), the same process-control sub-industry as current members KLAC, ONTO and NVMI. Heavy AI/advanced-packaging/HBM tool demand drives the identical WFE up-cycle, so it co-moves tightly with the basket's core.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "VECO",
+     "name": "Veeco Instruments Inc.",
+     "why": "Nasdaq pure-play WFE process-equipment vendor (~$5B cap): laser annealing, ion-beam deposition/etch, MOCVD, ALD and advanced-packaging lithography. Front-end deposition/etch tools place it squarely with AMAT/LRCX. (Note: announced all-stock merger with member ACLS closing 2H26, so some exposure overlap, but trades as a distinct liquid stock today.)",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "ACMR",
+     "name": "ACM Research, Inc.",
+     "why": "Nasdaq pure-play front-end WFE supplier of single-wafer wet-clean and electroplating tools (~$5B cap), a direct deposition/clean process-equipment peer to AMAT/LRCX. Driven by the same WFE capex cycle. China-concentrated revenue adds some idiosyncratic/geopolitical risk, hence medium rather than high.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "KLIC",
+     "name": "Kulicke & Soffa Industries, Inc.",
+     "why": "Nasdaq pure-play semiconductor assembly/packaging equipment maker (~$5-6B cap), levered to AI/HBM advanced packaging (TCB for CoWoS). Co-moves with the semicap cycle and SMH, but back-end (vs. front-end WFE) gives it a somewhat different return driver, so medium.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "memory_storage",
+   "candidates": [
+    {
+     "ticker": "SIMO",
+     "name": "Silicon Motion Technology",
+     "why": "Nasdaq-listed ADR (~$10.4B cap, since 2005). Pure-play designer of NAND flash/SSD controllers for enterprise, data-center and client SSDs \u2014 the same AI NAND/SSD supply cycle that drives SNDK and WDC. Up ~290% over the past year in lockstep with the memory complex; NAND supply tightness through 2027 is a direct controller-demand tailwind. Cleanest co-mover of the candidates.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PENG",
+     "name": "Penguin Solutions",
+     "why": "Nasdaq-listed (~$3.4B cap, formerly SGH/SMART Global). Integrated Memory segment (specialty DRAM/Flash modules for AI servers, enterprise, edge) is ~50% of sales and grew 63% YoY in Q2 FY26 \u2014 a specialty memory-module pure-play riding the same DRAM/HBM AI-memory cycle as the core members.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "P",
+     "name": "Everpure (formerly Pure Storage)",
+     "why": "NYSE-listed (~$22-24B cap); ticker changed PSTG to P on Apr 17, 2026. Enterprise all-flash storage arrays (DirectFlash) with a recent top-four hyperscaler design win \u2014 same enterprise-SSD/storage AI-data-buildout return driver as NTAP and WDC already in the basket. A storage-systems name rather than a memory chipmaker, so co-movement is solid but a notch below the chip pure-plays.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "data_center_power",
+   "candidates": [
+    {
+     "ticker": "MOD",
+     "name": "Modine Manufacturing Company",
+     "why": "NYSE pure-play thermal-management OEM (~$15B cap) that has transformed into a data-center cooling company. Its Airedale line supplies air and liquid cooling to hyperscalers (reserved >$4B of capacity for 2027-2029). Same cooling-hardware sub-industry and AI-buildout return driver as core members VRT and NVT, so it tracks the basket closely.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "VICR",
+     "name": "Vicor Corporation",
+     "why": "Nasdaq power-conversion module maker (~$14-15B cap) whose 48V/Vertical Power Delivery DC-DC converters move megawatts the last millimeters into GPU racks. This is the same power-conversion return driver as core member AEIS (Advanced Energy) and squarely inside the picks-and-shovels power-delivery thesis.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "FIX",
+     "name": "Comfort Systems USA, Inc.",
+     "why": "NYSE mechanical/electrical specialist (~$69B cap) that builds the prefab cooling and electrical power skids dropped into AI data centers; FY25 revenue +30% with backlog ~doubling on data-center demand. Power-and-cooling AI-buildout driver overlaps the basket, though it is a contractor rather than an equipment OEM.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "EME",
+     "name": "EMCOR Group, Inc.",
+     "why": "NYSE electrical/mechanical contractor (~$41B cap), the larger peer to FIX, delivering data-center electrical infrastructure, HVAC, chillers and power distribution build-out. Tied to the same AI data-center power-and-cooling capex wave as the basket; co-moves but is a services contractor, not a hardware OEM.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "cybersecurity",
+   "candidates": [
+    {
+     "ticker": "CHKP",
+     "name": "Check Point Software Technologies Ltd.",
+     "why": "Pure-play network/firewall security vendor (Quantum firewalls, Maestro hyperscale, Harmony endpoint, CloudGuard cloud-native), the same network-firewall sub-industry as FTNT and PANW. Large-cap (~$12-14B), Nasdaq ordinary shares, decades of trading history, deep liquidity. Driven by the same enterprise breach/ransomware-defense spend cycle, so it co-moves directly with the core network-security members of the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "SAIL",
+     "name": "SailPoint, Inc.",
+     "why": "Pure-play identity security/identity governance and administration (IGA) covering employee, non-employee and machine identities, the same identity/access return driver as OKTA. Re-IPO'd Feb 2025 at a ~$12.8B valuation (~$6.7B now), >1y trading history, ~$1B+ ARR growing ~24% YoY. Enterprise zero-trust/identity demand makes it a direct identity-segment peer that should co-move with the basket's identity names.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "VRNS",
+     "name": "Varonis Systems, Inc.",
+     "why": "Pure-play data security platform (DSPM, data detection & response, data access intelligence, cloud/SaaS data protection) - the cloud-native data-protection corner of the thesis adjacent to QLYS/TENB exposure management. ~$3.9B mkt cap, Nasdaq, ample liquidity, completed its SaaS transition. Demand is breach/exposure-driven enterprise security spend, so it tracks the basket's growth security-software names.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "RPD",
+     "name": "Rapid7, Inc.",
+     "why": "Pure-play vulnerability/exposure management plus threat detection & response (Nexpose, InsightVM, Metasploit, Command Platform), a direct head-to-head peer of QLYS and TENB already in the basket - same vuln-management sub-industry and return driver. Caveat: market cap has collapsed to ~$450M (below the ~$1B preference) so it is now a small/lower-liquidity name, but thematic purity is very high and it would co-move with the vuln-management leg.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "nuclear_power",
+   "candidates": [
+    {
+     "ticker": "XE",
+     "name": "X-Energy, Inc.",
+     "why": "Pure-play SMR developer (Xe-100 HTGR) that IPO'd on Nasdaq in April 2026 raising ~$1.1B net; ~$6B market cap, backed by Amazon/Dow/Centrica with an 11+ GWe / 144-reactor pipeline explicitly tied to AI-datacenter/carbon-free baseload demand. Same SMR-developer return driver as OKLO/SMR/NNE, so it co-moves directly with the basket's developer leg.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "LEU",
+     "name": "Centrus Energy Corp.",
+     "why": "Only US-based commercial uranium enrichment company and the sole NRC-approved producer of HALEU, the fuel that powers next-gen SMRs/microreactors (signed a HALEU LOI with basket member OKLO for its 1.2 GW Ohio campus). ~$4B cap, liquid, multi-year DOE backlog. Direct fuel-supply leg of the exact same AI-power nuclear thesis; trades as a high-beta nuclear pure-play alongside the developers/utilities.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "CCJ",
+     "name": "Cameco Corporation",
+     "why": "World's largest publicly-traded uranium producer with integrated mining, milling and fuel services; ~$45-50B cap, the most liquid pure uranium-fuel name on the NYSE. Fuel supply is the upstream driver of the entire nuclear/SMR theme, so CCJ co-moves strongly with the reactor and utility names on nuclear demand and uranium-price sentiment.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "IMSR",
+     "name": "Terrestrial Energy Inc.",
+     "why": "Pure-play Gen-IV SMR developer commercializing its Integral Molten Salt Reactor; US-listed on Nasdaq (late-2025 SPAC merger, ~$298M cash). Direct peer to OKLO/SMR/NNE in the same pre-revenue SMR-developer bucket, so it tracks the basket's developer leg. Smaller (~$0.8-0.9B cap) and only ~6mo of history, hence slightly below the size/liquidity preference.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "LTBR",
+     "name": "Lightbridge Corporation",
+     "why": "Pure-play advanced nuclear-fuel-technology developer (helically-twisted metallic zirconium-uranium fuel for existing reactors and future SMRs). US-listed on Nasdaq; a clean nuclear-theme pure-play that moves with the SMR/nuclear complex. Lower conviction as a 5th name: small (~$0.3-0.4B cap), more volatile and earlier-stage, so co-movement is solid but noisier than the larger names.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "robotics_automation",
+   "candidates": [
+    {
+     "ticker": "SYM",
+     "name": "Symbotic Inc.",
+     "why": "Pure-play AI-powered warehouse and fulfillment automation robotics (autonomous bots + software for distribution centers). Sits squarely in the factory/warehouse-automation and industrial-productivity return driver shared by ROK, ZBRA and PTC. Nasdaq-listed, multi-billion mkt cap, liquid (~1.5-2M+ shares/day), multi-year history. Strong thematic co-movement with the automation/robotics complex.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "EMR",
+     "name": "Emerson Electric Co.",
+     "why": "Major industrial automation and process-control company (intelligent devices, control systems, automation software incl. AspenTech) and the canonical peer to current member ROK. ~$80B+ cap, NYSE, highly liquid. Same industrial-productivity/automation return driver; very high co-movement with the basket. Slightly broader (process automation) than a strict robotics pure-play, hence not a perfect single-vertical match.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PH",
+     "name": "Parker-Hannifin Corp.",
+     "why": "Leader in motion and control technologies (servo, actuation, hydraulics, precision motion) - the same motion-control return driver as NOVT and ROK. Large, liquid NYSE name with long history. Co-moves with the industrial-automation cycle, though aerospace/diversified segments make it somewhat less of a clean pure-play, so medium-high.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "ALNT",
+     "name": "Allient Inc.",
+     "why": "Pure-play precision and specialty motion-control supplier (brushless servo motors, servo drives/amplifiers, motion controllers, positioning systems) explicitly serving industrial automation and robotics - the same motion-control sub-industry as NOVT and CGNX-adjacent automation. Nasdaq-listed, ~$1.5B cap with multi-year history. Smaller and more cyclical, so medium co-movement.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "STXS",
+     "name": "Stereotaxis Inc.",
+     "why": "Pure-play surgical robotics company (Genesis/GenesisX robotic magnetic navigation for endovascular intervention) - the same surgical-robotics sub-industry as current member ISRG. NYSE-listed with multi-year history. Co-moves with the robotics/surgical-robotics theme, but small cap (~$200-300M) and thinner liquidity below the ~$1B preference make co-movement medium rather than high.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "obesity_glp1",
+   "candidates": [
+    {
+     "ticker": "KLRA",
+     "name": "Kailera Therapeutics",
+     "why": "Dedicated next-gen obesity GLP-1 pure-play, the cleanest new fit for the thesis. ~$2.6B cap, actively traded on Nasdaq. Lead asset ribupatide (KAI-9531) is a once-weekly injectable GLP-1/GIP dual agonist in the global Phase III KaiNETIC program, with an oral ribupatide tablet, oral small-molecule GLP-1 (KAI-7535) and a GLP-1/GIP/glucagon tri-agonist (KAI-4729) behind it (Hengrui-licensed ex-China). Pure incretin/obesity return driver in the same sub-industry as VKTX/GPCR/ALT, so it should co-move tightly with the basket. Caveat: IPO'd April 2026 (~2 months history, <1y) and pre-revenue clinical binary, but it is the marquee dedicated obesity pure-play to add.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "MBX",
+     "name": "MBX Biosciences",
+     "why": "Clinical-stage metabolic/endocrine peptide pure-play (~$1.5B cap, Nasdaq, >1y history) with genuine incretin obesity assets: MBX 4291 (GLP-1/GIP co-agonist prodrug, once-monthly potential, ~7% weight loss at 8 weeks in early Phase 1) and MBX 5765, a multi-agonist amycretin-style prodrug (GLP-1/GIP/glucagon + DACRA). Sits in the same metabolic-peptide return driver as the basket's clinical pure-plays. Comovement is only medium, not high, because its lead value driver today is canvuparatide for hypoparathyroidism (Phase 3) plus post-bariatric hypoglycemia, so its price is only partially tethered to obesity/GLP-1 sentiment.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "quantum_computing",
+   "candidates": [
+    {
+     "ticker": "XNDU",
+     "name": "Xanadu Quantum Technologies",
+     "why": "First pure-play PHOTONIC quantum-computing company to go public (Crane Harbour SPAC, listed Nasdaq+TSX March 2026). Develops photonic quantum hardware (X-series) plus the PennyLane software stack. ~$4B mkt cap, liquid (~4M avg shares/day). Direct same-architecture peer to current member QUBT and a textbook fit for the quantum-compute frontier thesis (the photonic sub-industry) \u2014 its milestone-driven, high-beta price action tracks the IONQ/RGTI/QBTS/QUBT pure-play cohort closely.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HQ",
+     "name": "Horizon Quantum Holdings",
+     "why": "Quantum-computing SOFTWARE pure-play (compilers / IDE 'Triple Alpha' that turns classical C/C++ into quantum circuits); Nasdaq debut March 2026 via dMY Squared SPAC. ~$1.65B mkt cap, very liquid (~8.7M avg shares/day) and a top holding of the basket's QTUM proxy. Same quantum-compute return driver as the core members \u2014 it rallied 63% on the same sector momentum that moves IONQ/RGTI \u2014 so it co-moves strongly even though it is the software (not hardware) layer.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "BTQ",
+     "name": "BTQ Technologies",
+     "why": "Full-stack NEUTRAL-ATOM quantum-computing pure-play (exercised option to acquire neutral-atom firm QPerfect) plus post-quantum security; Nasdaq-listed and a top-10 QTUM holding. Same neutral-atom sub-industry as current member INFQ. Smaller (~$0.5-0.8B mkt cap, below the ~$1B bar) and higher-beta, but a genuine quantum-compute pure-play whose price tracks the speculative quantum cohort.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "uranium_miners",
+   "candidates": [
+    {
+     "ticker": "ISOU",
+     "name": "IsoEnergy Ltd.",
+     "why": "Tier-1 Athabasca Basin uranium developer (Larocque East / Hurricane deposit, world's highest-grade indicated U3O8 resource) plus US ISR assets in Utah and now Australia (Toro/Wiluna). Same sub-industry and return driver as current developers NXE and DNN. Pure-play uranium, no diversified revenue. Liquid US line on NYSE American (ticker ISOU) since May 2025, so >1y of US trading history; ~$575M+ market cap (modestly below the ~$1B preference but the most liquid thesis-pure US-listed developer not already in the basket). Its price is driven by the spot/term uranium price and development-stage re-rating, so it co-moves tightly with the URNM/basket core rather than being inverse or tangential. It is itself a URNM constituent (TSX:ISO / NYSE-A:ISOU). Fills the one clear gap in the developer sleeve.",
+     "expected_comovement": "high"
+    }
+   ]
+  },
+  {
+   "bid": "critical_minerals",
+   "candidates": [
+    {
+     "ticker": "METC",
+     "name": "Ramaco Resources",
+     "why": "US-listed (Nasdaq) primary rare-earth & critical-minerals developer at its Brook Mine, Wyoming (scandium, gallium, germanium, heavy REEs incl. dysprosium/terbium). Direct ex-China onshoring play with DOE/NETL agreements, a national critical-minerals stockpile initiative, and ~$1B cap with long liquid trading history. Same rare-earth/critical-minerals return driver as MP/USAR/UUUU, so it co-moves tightly with REMX. Not in current or excluded lists.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "NVX",
+     "name": "NOVONIX",
+     "why": "US-listed (Nasdaq) ADR producing battery-grade synthetic graphite anode material in North America, the leading ex-China alternative for a USGS critical mineral (graphite, ~China >60% control). Directly levered to the 2026 160%+ US tariffs on Chinese anode graphite and DOE 48C credits, the same onshoring/anti-China policy driver powering the basket. Adds the graphite sub-segment currently unrepresented; co-moves with the critical-minerals/battery-materials supply-chain complex.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "SLI",
+     "name": "Standard Lithium",
+     "why": "US-listed (NYSE American) near-commercial domestic lithium-brine developer on the Smackover Formation (Arkansas/Texas), ~$0.83B cap with multi-year liquid history. Same lithium return driver as existing members ALB/SGML/LAC, and the domestic Smackover angle is central to the US onshoring thesis. Co-movement is medium because the lithium sleeve already has three names, but it deepens the domestic-lithium representation.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "space_economy",
+   "candidates": [
+    {
+     "ticker": "VOYG",
+     "name": "Voyager Technologies",
+     "why": "Pure-play space and defense company (NYSE, IPO June 2025, ~1y history, ~$2.2-2.5B mkt cap). Three segments: Space Solutions, Defense & National Security, and majority-owned Starlab commercial space station; acquired lunar-lander Astrobotic. Same in-space-infrastructure/defense-contract return driver as LUNR, RDW and KRMN, so it co-moves tightly with the basket's lunar/in-space cluster. Fills the commercial space station gap not covered by any current member.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "SATL",
+     "name": "Satellogic",
+     "why": "Vertically integrated Earth-observation pure-play (Nasdaq, ~$1.4B mkt cap, multi-year trading history), designing/building/operating its own EO satellite constellation and selling geospatial data/analytics. Direct sub-industry peer to PL and BKSY (same EO-imagery/defense-and-commercial-data return driver), so it tracks the basket's Earth-observation leg rather than being tangential.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "YSS",
+     "name": "York Space Systems",
+     "why": "Space/defense prime and small-satellite/spacecraft manufacturer (NYSE, ~$4.2B mkt cap) serving SDA/national-security constellation programs. Same satellite-manufacturing return driver as MDA and RDW, so it co-moves with the basket's hardware leg. CAVEAT: only IPO'd Jan 2026 (<1y trading history) and faces an active Wolfpack short-seller report and securities-fraud probes, raising idiosyncratic/headline risk vs. pure thematic beta.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "SPIR",
+     "name": "Spire Global",
+     "why": "Space-based data pure-play (NYSE, multi-year history) operating its own constellation for weather, maritime (AIS) and aircraft (ADS-B) tracking plus RF sensing, sold as subscription data/analytics. Same EO/space-data return driver as PL and BKSY, so it co-moves with the data-services leg. CAVEAT: sub-$1B market cap (~$700M), so smaller/less liquid than the basket's >$1B core preference.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "ai_agents",
+   "candidates": [
+    {
+     "ticker": "PATH",
+     "name": "UiPath, Inc.",
+     "why": "Pure-play enterprise agentic automation/orchestration platform (Agent Builder, Agentic Orchestration) sitting at the same application/agent layer as the core PLTR/NOW/CRM platform members. NYSE-listed, ~$7B mkt cap, ARR ~$1.9B, hit first GAAP profitability FY2026, ~17% growth, agentic AI is the central narrative. Trades as a direct enterprise-agentic-platform comp, so its price action co-moves tightly with the basket's enterprise core.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "PEGA",
+     "name": "Pegasystems Inc.",
+     "why": "Pure-play enterprise software whose Blueprint AI + BOAT workflow engine positions it as a 'System of Coordination for AI' that discovers and executes agentic workflows (integrates Claude/Gemini/OpenAI agents). Directly analogous to NOW/CRM agentic-platform core; Pega Cloud ACV +29% YoY. Same enterprise agentic-orchestration return driver, so high co-movement with the platform sleeve.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "KVYO",
+     "name": "Klaviyo, Inc.",
+     "why": "Self-described 'autonomous B2C CRM' shipping AI agents (Composer campaign-generation agent, Customer Agent with Custom Skills) \u2014 an AI-levered application directly analogous to CRM, fitting the thesis's 'AI-native or AI-levered apps' leg. NYSE, ~$5B cap, ~23-28% growth, 110% NRR. Co-moves with the AI-SaaS application sleeve.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "TEM",
+     "name": "Tempus AI, Inc.",
+     "why": "AI-native applications company (Data & Applications segment +40%, AI-enabled Next/Lens platforms) applying models to healthcare to generate revenue \u2014 the same AI-native-app return driver as SOUN/DUOL. Nasdaq, ~$7.7B cap, 25-36% growth. Healthcare vertical makes it slightly less of a perfect platform comp, but it trades within the AI-native application cohort.",
+     "expected_comovement": "medium"
+    },
+    {
+     "ticker": "INOD",
+     "name": "Innodata Inc.",
+     "why": "AI data-engineering pure-play (training-data refinement, model fine-tuning, AI workflows) that trades as a high-beta AI-application/AI-native name; ~$3B cap, ~54% revenue growth, blowout 2026 earnings, Strong Buy. Sits in the enablement-of-apps layer rather than an end app, but its pure-AI-beta profile co-moves with the basket's smaller AI-native members like SOUN.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "insurance",
+   "candidates": [
+    {
+     "ticker": "BRO",
+     "name": "Brown & Brown, Inc.",
+     "why": "Pure-play insurance broker (Retail and Specialty Distribution), the direct mid/large-cap peer to existing members MMC, AON and AJG. Earns commissions on rate-on-line and benefits from the same hard-vs-soft underwriting cycle; ~$20-22B cap, NYSE, decades of trading history. Co-moves tightly with the broker leg of the basket.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "WRB",
+     "name": "W. R. Berkley Corporation",
+     "why": "Among the largest US commercial-lines P&C and specialty/E&S writers with a reinsurance segment, a direct underwriting-cycle peer to CB, TRV and ACGL. Reserve adequacy and float investment income are core drivers, exactly the basket thesis; ~$25B cap, NYSE, long history. High co-movement.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "WTW",
+     "name": "Willis Towers Watson Public Limited Company",
+     "why": "Global insurance broker and risk-and-broking advisory firm, the fourth major broker alongside basket members MMC, AON and AJG. Same commission/rate-on-line return driver and underwriting-cycle sensitivity; large-cap, Nasdaq-listed, long history. High co-movement with the brokerage leg.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "EG",
+     "name": "Everest Group, Ltd.",
+     "why": "Major global reinsurer plus primary P&C/specialty insurer, directly exposed to reinsurance pricing, rate-on-line and reserve adequacy across the hard-vs-soft cycle, the same driver as reinsurance/specialty member ACGL. ~$13B cap, NYSE, long history. High co-movement.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "KNSL",
+     "name": "Kinsale Capital Group, Inc.",
+     "why": "Pure-play excess & surplus (E&S) specialty P&C insurer, a high-purity hard-market and underwriting-cycle play whose growth and combined ratio track the same dynamics the basket monitors. ~$7B cap, NYSE, multi-year history. Co-moves with the specialty/P&C leg though smaller and higher-beta.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "big_pharma",
+   "candidates": [
+    {
+     "ticker": "LLY",
+     "name": "Eli Lilly and Company",
+     "why": "Largest pharma in the world by market cap and the #1 holding in the PPH proxy (~22.7%). Pure-play branded drug maker (GLP-1/obesity, oncology, immunology) whose price action is driven by pipeline progress, patent-cliff and drug-pricing dynamics identical to the core members. Glaring omission from the current basket; NYSE ordinary, deeply liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "AMGN",
+     "name": "Amgen Inc.",
+     "why": "World's largest pure-play biotech and a top PPH constituent. Direct peer to the existing big-biotech members (GILD, BIIB, REGN, VRTX) with the same branded-pipeline/patent-cliff/M&A return driver. Nasdaq-listed, large-cap, highly liquid.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "AZN",
+     "name": "AstraZeneca PLC",
+     "why": "Top-5 global pharma by market cap and a PPH member; oncology/cardiovascular/respiratory branded portfolio. As of Feb 2026 its ordinary shares list DIRECTLY on the NYSE (replacing the former Nasdaq ADR), giving deep US liquidity. Same pipeline/pricing/M&A driver as the core complex.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "NVO",
+     "name": "Novo Nordisk A/S (ADR)",
+     "why": "GLP-1/obesity-diabetes leader and a top PPH holding; direct head-to-head peer of Eli Lilly. Liquid NYSE ADR with multi-year US trading history. Branded-drug pipeline progress and pricing dynamics make it co-move tightly with the large-cap drug complex.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "GSK",
+     "name": "GSK plc",
+     "why": "Large-cap branded pharma (vaccines, HIV, respiratory, oncology) and a PPH constituent. Listed directly on the NYSE (not just an ADR), liquid and >$1B cap. Shares the patent-cliff/pipeline/drug-pricing return driver of the core members, so it co-moves with the basket.",
+     "expected_comovement": "medium"
+    }
+   ]
+  },
+  {
+   "bid": "industrial_distribution",
+   "candidates": [
+    {
+     "ticker": "WCC",
+     "name": "WESCO International, Inc.",
+     "why": "Large NYSE B2B distributor of electrical, communications and industrial/MRO products and supply-chain solutions \u2014 the same industrial-distribution volume/pricing return driver as core members GWW, FAST and MSM. ~$18B mkt cap, highly liquid, multi-year history, and broadly cited alongside Grainger/Fastenal as a peer industrial distributor, so it co-moves directly with the basket on the industrial restock/MRO cycle.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "HRI",
+     "name": "Herc Holdings Inc.",
+     "why": "Pure-play North American equipment-rental company (Herc Rentals), the 3rd-largest rental operator after the H&E acquisition. Direct analog to current member URI: the same fleet-utilization, rental-rate and short-cycle construction/industrial capex driver. NYSE-listed since the 2016 spin-off, multi-billion mkt cap and liquid, so its price action tracks the rental-utilization lens of the thesis.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "DXPE",
+     "name": "DXP Enterprises, Inc.",
+     "why": "NASDAQ pure-play distributor of MRO products and rotating equipment (bearings, power transmission, fluid power, metalworking, fasteners, pumps) \u2014 the same sub-industry and return driver as core members AIT and MSM. ~$2.2-2.7B mkt cap with ample trading history; revenue is dominated by short-cycle MRO/industrial-supply volumes, giving high co-movement with the basket's restock cycle.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "FERG",
+     "name": "Ferguson Enterprises Inc.",
+     "why": "Large NYSE distributor of plumbing, HVAC, waterworks and industrial/MRO products \u2014 repeatedly named alongside Grainger and Watsco as a leading US distributor. Same distribution volume/pricing return driver as current member WSO (HVAC/distribution); very liquid, large-cap. Mix skews construction/residential more than pure factory MRO, so co-movement with the industrial-restock core is strong but slightly less tight than the pure MRO names.",
+     "expected_comovement": "high"
+    },
+    {
+     "ticker": "GPC",
+     "name": "Genuine Parts Company",
+     "why": "Owns Motion (Motion Industries), a leading US distributor of bearings, power transmission and industrial MRO products \u2014 the direct analog to current member AIT and to the basket's distribution thesis. NYSE large-cap, very liquid, long history. However ~60% of GPC sales are aftermarket auto parts rather than industrial MRO, which dilutes the pure industrial-distribution signal, so expected co-movement is medium rather than high.",
+     "expected_comovement": "medium"
+    }
+   ]
+  }
+ ]
+}

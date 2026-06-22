@@ -1,0 +1,166 @@
+[
+ {
+  "bid": "regional_banks",
+  "ticker": "FCNCA"
+ },
+ {
+  "bid": "regional_banks",
+  "ticker": "BPOP"
+ },
+ {
+  "bid": "regional_banks",
+  "ticker": "UMBF"
+ },
+ {
+  "bid": "regional_banks",
+  "ticker": "SSB"
+ },
+ {
+  "bid": "regional_banks",
+  "ticker": "COLB"
+ },
+ {
+  "bid": "insurance",
+  "ticker": "BRO"
+ },
+ {
+  "bid": "insurance",
+  "ticker": "WRB"
+ },
+ {
+  "bid": "insurance",
+  "ticker": "WTW"
+ },
+ {
+  "bid": "insurance",
+  "ticker": "EG"
+ },
+ {
+  "bid": "insurance",
+  "ticker": "KNSL"
+ },
+ {
+  "bid": "travel",
+  "ticker": "VIK"
+ },
+ {
+  "bid": "travel",
+  "ticker": "ALK"
+ },
+ {
+  "bid": "travel",
+  "ticker": "BYD"
+ },
+ {
+  "bid": "travel",
+  "ticker": "ALGT"
+ },
+ {
+  "bid": "retail",
+  "ticker": "OLLI"
+ },
+ {
+  "bid": "retail",
+  "ticker": "ASO"
+ },
+ {
+  "bid": "retail",
+  "ticker": "PSMT"
+ },
+ {
+  "bid": "energy_complex",
+  "ticker": "MPLX"
+ },
+ {
+  "bid": "energy_complex",
+  "ticker": "PAA"
+ },
+ {
+  "bid": "energy_complex",
+  "ticker": "PR"
+ },
+ {
+  "bid": "energy_complex",
+  "ticker": "DINO"
+ },
+ {
+  "bid": "housing",
+  "ticker": "MTH"
+ },
+ {
+  "bid": "housing",
+  "ticker": "IBP"
+ },
+ {
+  "bid": "housing",
+  "ticker": "CVCO"
+ },
+ {
+  "bid": "semicap_equipment",
+  "ticker": "CAMT"
+ },
+ {
+  "bid": "semicap_equipment",
+  "ticker": "VECO"
+ },
+ {
+  "bid": "semicap_equipment",
+  "ticker": "ACMR"
+ },
+ {
+  "bid": "semicap_equipment",
+  "ticker": "KLIC"
+ },
+ {
+  "bid": "defense",
+  "ticker": "DRS"
+ },
+ {
+  "bid": "defense",
+  "ticker": "MRCY"
+ },
+ {
+  "bid": "payments_fintech",
+  "ticker": "MQ"
+ },
+ {
+  "bid": "payments_fintech",
+  "ticker": "FLYW"
+ },
+ {
+  "bid": "space_economy",
+  "ticker": "VOYG"
+ },
+ {
+  "bid": "space_economy",
+  "ticker": "SATL"
+ },
+ {
+  "bid": "non_ai_tech",
+  "ticker": "STM"
+ },
+ {
+  "bid": "non_ai_tech",
+  "ticker": "HPE"
+ },
+ {
+  "bid": "non_ai_tech",
+  "ticker": "APTV"
+ },
+ {
+  "bid": "industrial_distribution",
+  "ticker": "WCC"
+ },
+ {
+  "bid": "industrial_distribution",
+  "ticker": "FERG"
+ },
+ {
+  "bid": "industrial_distribution",
+  "ticker": "DXPE"
+ },
+ {
+  "bid": "robotics_automation",
+  "ticker": "SYM"
+ }
+]
