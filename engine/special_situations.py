@@ -551,9 +551,13 @@ def _closes_panel() -> pd.DataFrame:
         p = config.data_dir() / g / "_closes_cache.parquet"
         if p.exists():
             frames.append(pd.read_parquet(p))
-    btp = config.data_dir() / GROUP / "bt_prices.parquet"
-    if btp.exists():
-        frames.append(pd.read_parquet(btp))
+    for f in ("bt_prices.parquet", "arb_prices.parquet"):   # backtest + deal-target backfills
+        p = config.data_dir() / GROUP / f
+        if p.exists():
+            try:
+                frames.append(pd.read_parquet(p))
+            except Exception:  # noqa: BLE001
+                pass
     for sub, fn in (("canada_search", "closes.parquet"), ("intl_search", "closes.parquet"),
                     ("hk_search", "closes_deep.parquet")):
         p = config.data_dir() / sub / fn
@@ -598,7 +602,6 @@ def _enrich_arb(sits: list[dict]) -> int:
         return 0
     if panel.empty:
         return 0
-    last = panel.iloc[-1]
     n = 0
     for s in sits:
         if s.get("category") not in arb.ARB_CATEGORIES:
@@ -612,7 +615,13 @@ def _enrich_arb(sits: list[dict]) -> int:
         col = next((c for c in (raw, raw.split(".")[0]) if c and c in panel.columns), None)
         if not col:
             continue
-        lp = last.get(col)
+        # last VALID close, not panel.iloc[-1]: the panel concatenates sub-panels with
+        # different date ranges, so the global last row is NaN for any ticker that doesn't
+        # trade on that exact date (this is why the risk_arb book was empty).
+        valid = panel[col].dropna()
+        if valid.empty:
+            continue
+        lp = float(valid.iloc[-1])
         when = s.get("date_filed") or s.get("date")
         unaff = _price_before(panel[col], when, 30)
         m = arb.arb_metrics(terms["price_per_share"], lp,

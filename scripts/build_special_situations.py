@@ -120,6 +120,8 @@ def build(refresh: bool = True) -> str:
             col.enrich_summaries(limit=int(ss.get("summary_per_build", 200)))  # P1.3 LLM summary (gated; no-op w/o key)
             colnews.fetch_news_situations()                      # P2.1 newswire form-absent categories (gated)
             colintl.fetch_intl_situations()                      # Phase 4 UK/Canada intl lanes (gated per market)
+            from collectors import special_prices as colpx
+            colpx.fetch_arb_prices()                             # P1.2 price ADR/OTC deal targets (best-effort)
         except Exception as e:  # noqa: BLE001 — desk degrades to last-known on a fetch outage
             log.warning("special_situations refresh failed (rendering last-known): %s", e)
 
