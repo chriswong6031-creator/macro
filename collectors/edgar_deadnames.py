@@ -19,6 +19,20 @@ THE FIX, two independent halves.
      `_KNOWN_DEAD_CIK` seed of high-confidence M&A/renames resolves a verified
      core immediately AND guards against ticker-reuse mis-resolution (e.g. the old
      `ABX`/Barrick symbol now points at an unrelated filer).
+     1b. The long tail (`resolve_via_fulltext`). company_tickers.json only carries
+     names STILL trading under their symbol; the ~half that delisted/renamed fall
+     out of it. The literal "formerNames crawl" the roadmap imagined is a dead end
+     here: the SEC submissions doc carries `tickers` (CURRENT only — empty for every
+     acquired name) and `formerNames` (former *names*, never former *tickers*), and
+     the dead universe is bare tickers with no company name to match a former name
+     against. What DOES work is EDGAR full-text search (efts.sec.gov — an SEC host
+     distinct from the 403-prone www.sec.gov), which indexes the cover-page trading
+     symbol of every annual report since 2001: a phrase search WINDOWED to the dead
+     name's S&P membership era (the ticker-reuse guard) and gated by a doc-count
+     DOMINANCE threshold returns the filer that actually traded under it, CONFIRMED
+     against its data.sec.gov submissions doc. Honest, measured yield is partial —
+     pre-2001 delistings are out of range and the conservative gate forgoes many
+     real-but-ambiguous names because a wrong CIK is worse than none.
   2. PULL    fundamentals per resolved CIK (`build_dead_panel`) from the
      companyfacts API on data.sec.gov — keyless, reachable everywhere, and it
      carries the TRUE SEC `filed` timestamp. We stamp `asof_date = filed` (the
@@ -227,6 +241,276 @@ def resolve_dead_ciks(dead_tickers: list[str], force: bool = False,
     n_res = sum(1 for v in cache.values() if v.get("cik"))
     log.info("dead-name CIK: %d/%d resolved (+%d this run)", n_res, len(cache), resolved_now)
     return cache
+
+
+# --------------------------------------------------------------------------- #
+# Half 1b — EDGAR full-text crawl for the still-`unresolved` long tail
+#
+# WHY NOT a literal formerNames reverse-index. The SEC submissions doc
+# (data.sec.gov/submissions/CIK*.json) carries `tickers` (CURRENT only — verified
+# empty for every acquired/delisted name: ATVI/AET/FLIR all return []) and
+# `formerNames` (former *names*, never former *tickers*). The dead universe is bare
+# tickers with NO company name (sp1500_pit_membership has ticker/start/end only),
+# so there is nothing to match a former *name* against and no former-*ticker* field
+# to match a ticker against — a blind enumerate-and-reverse-index crawl cannot
+# bridge a bare dead ticker.
+#
+# WHAT WORKS. EDGAR full-text search (efts.sec.gov) indexes the cover-page trading
+# symbol of every 10-K/20-F/40-F since 2001. A phrase search for the dead ticker,
+# WINDOWED to that ticker's S&P membership era (a later reuse of the symbol files in
+# a different era → excluded) and gated by a doc-count DOMINANCE threshold (a wrong
+# CIK is worse than none), surfaces the filer that actually traded under it as the
+# dominant entity bucket. Each hit is CONFIRMED against its data.sec.gov submissions
+# doc — the "pull the submissions doc" step — which rejects (i) a still-listed entity
+# under a DIFFERENT symbol (APPS→'Cyber Apps World'), (ii) an entity still filing
+# years past the index exit, and (iii) an acquired filer whose name does not
+# corroborate the symbol as an in-order subsequence (ANDV is not a subsequence of
+# 'American National Insurance'), and records `formerNames` for the audit trail.
+# Tagged method="edgar_fts".
+#
+# Honest yield. Names still listed under their symbol are already resolved by
+# company_tickers.json and never reach this leg; the net-new population is the
+# acquired/renamed tail, of which a measured ~1-in-5 clears the conservative
+# dominance+confirmation gate. Pre-2001 delistings (~144 names) are out of EDGAR FTS
+# range; `Q`-suffix bankruptcy symbols (LEHMQ…) filed under the pre-bankruptcy
+# symbol and miss. Partial by design — every accept is logged with its evidence and
+# broken out by method so a consumer can exclude it for a maximally-pure panel.
+# --------------------------------------------------------------------------- #
+EFTS_URL = "https://efts.sec.gov/LATEST/search-index"
+SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{:010d}.json"
+EFTS_MIN_DATE = "2001-01-01"        # EDGAR full-text search coverage floor
+FTS_FORMS = "10-K,20-F,40-F"        # annual reports carry the cover-page trading symbol
+FTS_MIN_DOCS = 4                    # the dominant entity must have >= this many hits...
+FTS_DOMINANCE = 2.5                 # ...and >= this multiple of the runner-up entity
+FTS_RECENCY_GRACE_DAYS = 365 * 3    # latest annual filing must be within this of the index exit
+FTS_REFRESH_DAYS = 45               # re-attempt a soft-miss / transient error after this long
+FTS_PACE_S = 0.15                   # SEC fair-access pacing (efts is rate-limited)
+_CIK_IN_KEY = re.compile(r"\(CIK\s*(\d{10})\)")
+
+
+def _fts_cache_path():
+    p = config.data_dir() / "edgar" / "_dead_name_fts.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+def _load_fts_cache() -> dict:
+    p = _fts_cache_path()
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:  # noqa: BLE001
+            return {}
+    return {}
+
+
+def _efts_search(ticker: str, startdt: str, enddt: str | None,
+                 forms: str = FTS_FORMS) -> dict | None:
+    """EDGAR full-text search for an exact ticker phrase, date-windowed. Returns the
+    parsed response, or None on any TRANSIENT failure (5xx/timeout) so the caller
+    retries on a later run rather than caching a false miss; a real empty result
+    comes back as a well-formed zero-hit payload."""
+    import requests
+    params = {"q": f'"{ticker}"', "forms": forms}
+    if startdt:
+        params["startdt"] = startdt
+    if enddt:
+        params["enddt"] = enddt
+    for attempt in range(3):
+        try:
+            r = requests.get(EFTS_URL, params=params, headers=_headers(), timeout=40)
+            if r.status_code == 404:
+                return {"hits": {"total": {"value": 0}}, "aggregations": {}}
+            r.raise_for_status()
+            return r.json()
+        except Exception as e:  # noqa: BLE001 — tolerate per-ticker failure (efts 5xx are common)
+            if attempt == 2:
+                log.debug("efts GET failed %s: %s", ticker, e)
+                return None
+            time.sleep(1.0 * (attempt + 1))
+    return None
+
+
+def _entity_buckets(data: dict | None) -> list[tuple[int, str, int]]:
+    """[(cik, display_name, doc_count)] for the FULL result set (the entity_filter
+    aggregation is complete — not just the first hits page), sorted doc_count-desc."""
+    buckets = (((data or {}).get("aggregations") or {}).get("entity_filter") or {}).get("buckets") or []
+    out: list[tuple[int, str, int]] = []
+    for b in buckets:
+        m = _CIK_IN_KEY.search(str(b.get("key", "")))
+        if m:
+            out.append((int(m.group(1)), str(b.get("key", "")), int(b.get("doc_count", 0))))
+    out.sort(key=lambda x: -x[2])
+    return out
+
+
+def _dominant_cik(buckets: list[tuple[int, str, int]]) -> tuple[int | None, dict]:
+    """The single filer that dominates the result set, or (None, meta) when no entity
+    clears the threshold (ambiguous → resolve nothing). meta carries the evidence."""
+    if not buckets:
+        return None, {"top_docs": 0, "runner_docs": 0, "n_entities": 0}
+    cik, name, top = buckets[0]
+    runner = buckets[1][2] if len(buckets) > 1 else 0
+    meta = {"top_docs": top, "runner_docs": runner, "top_name": name, "n_entities": len(buckets)}
+    if top >= FTS_MIN_DOCS and (runner == 0 or top >= FTS_DOMINANCE * runner):
+        return cik, meta
+    return None, meta
+
+
+def _ticker_in_name(ticker: str, names: list) -> bool:
+    """True if the dead ticker's alphanumerics appear IN ORDER within any of the
+    entity's current/former names — a cheap corroboration that the symbol plausibly
+    derives from the company (ATW⊂A·T·Woods, XLNX⊂Xi·L·i·NX, SPLS⊂S·ta·PL·e·S). It
+    defeats coincidental cover-page string hits to an UNRELATED filer: 'ANDV' is not
+    a subsequence of 'American National Insurance' (no D), so Andeavor's symbol can
+    no longer mis-resolve onto that filer."""
+    tk = re.sub(r"[^A-Z0-9]", "", ticker.upper())
+    if not tk:
+        return False
+    for nm in names:
+        s = re.sub(r"[^A-Z0-9]", "", str(nm).upper())
+        i = 0
+        for ch in s:
+            if i < len(tk) and ch == tk[i]:
+                i += 1
+        if i == len(tk):
+            return True
+    return False
+
+
+def _confirm_filer(cik: int, ticker: str, member_end: str | None) -> tuple[bool, dict]:
+    """Confirm an FTS-dominant CIK actually traded under `ticker`, via its
+    data.sec.gov submissions doc. Rejects, in order: (a) a LIVE entity currently
+    listed under a DIFFERENT symbol (a cover-page name coincidence, e.g. APPS→'Cyber
+    Apps World'); (b) an entity still filing annual reports years past the dead name's
+    index exit (not the delisted company); (c) an acquired/delisted filer whose name
+    does NOT corroborate the symbol (the ticker isn't an in-order subsequence of any
+    current/former name — kills coincidental string hits like ANDV→'American National
+    Insurance'). An unreachable submissions doc is NOT accepted — precision over
+    recall. Returns (accept, evidence)."""
+    sub = _get_json(SUBMISSIONS_URL.format(cik))
+    time.sleep(FTS_PACE_S)
+    if not sub:
+        return False, {"confirm": "unreachable"}
+    cur = [str(t).upper() for t in (sub.get("tickers") or [])]
+    ev = {"confirm_name": sub.get("name", ""),
+          "former_names": [f.get("name") for f in (sub.get("formerNames") or [])],
+          "current_tickers": cur}
+    if cur and ticker.upper() not in cur:
+        ev["confirm"] = "reject_live_mismatch"
+        return False, ev
+    rec = (sub.get("filings") or {}).get("recent") or {}
+    annual = [d for f, d in zip(rec.get("form", []), rec.get("filingDate", []))
+              if f in ANNUAL_FORMS]
+    last = max(annual) if annual else None
+    if last and member_end:
+        try:
+            cutoff = (pd.to_datetime(member_end) +
+                      pd.Timedelta(days=FTS_RECENCY_GRACE_DAYS)).strftime("%Y-%m-%d")
+            if last > cutoff:
+                ev["confirm"], ev["last_annual"] = "reject_still_active", last
+                return False, ev
+        except Exception:  # noqa: BLE001
+            pass
+    # name corroboration — required for an acquired/delisted filer (empty current
+    # tickers); a still-current symbol (ticker in cur) is already self-corroborating.
+    if ticker.upper() not in cur and not _ticker_in_name(ticker, [ev["confirm_name"], *ev["former_names"]]):
+        ev["confirm"] = "reject_no_name_corroboration"
+        return False, ev
+    ev["confirm"] = "accept"
+    return True, ev
+
+
+def _dead_windows() -> dict[str, tuple[str, str | None]]:
+    """{dead ticker: (startdt, enddt)} — the S&P membership era per dead-only ticker
+    (union of stints), clamped to the EDGAR FTS coverage floor and padded one year
+    past the index exit (the final annual report files after the delisting)."""
+    m = pd.read_parquet(config.data_dir() / "breadth" / "sp1500_pit_membership.parquet")
+    dead = set(m[m["end_date"].notna()]["ticker"]) - set(m[m["end_date"].isna()]["ticker"])
+    dm = m[m["ticker"].isin(dead)]
+    g = dm.groupby("ticker").agg(start=("start_date", "min"), end=("end_date", "max"))
+    floor = pd.Timestamp(EFTS_MIN_DATE)
+    out: dict[str, tuple[str, str | None]] = {}
+    for t, row in g.iterrows():
+        start = max(pd.Timestamp(row["start"]), floor) if pd.notna(row["start"]) else floor
+        end = (pd.Timestamp(row["end"]) + pd.Timedelta(days=365)) if pd.notna(row["end"]) else None
+        out[str(t)] = (start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d") if end is not None else None)
+    return out
+
+
+def _fts_stale(rec: dict | None) -> bool:
+    """Due for a (re)attempt if never tried, or a soft-miss / transient error older
+    than FTS_REFRESH_DAYS. A `resolved` or definitive `out_of_range` is never retried."""
+    if rec is None:
+        return True
+    if rec.get("status") in ("resolved", "out_of_range"):
+        return False
+    ts = rec.get("attempted_utc")
+    if not ts:
+        return True
+    try:
+        return (datetime.now(timezone.utc) - pd.to_datetime(ts)).days > FTS_REFRESH_DAYS
+    except Exception:  # noqa: BLE001
+        return True
+
+
+def resolve_via_fulltext(tickers: list[str] | None = None, max_new: int = 150,
+                         force: bool = False, forms: str = FTS_FORMS) -> dict:
+    """Lift still-`unresolved` dead tickers -> CIK via the windowed EDGAR full-text
+    crawl (see the section header). Resumable (per-ticker attempt cache in
+    `_dead_name_fts.json`), drip-capped (`max_new`), SEC-paced, and resilient
+    (transient efts/submissions failures retry on a later run). NEVER overwrites an
+    existing CIK (seed / company_tickers / polygon precedence is preserved) and NEVER
+    accepts an unconfirmed hit. Writes accepts into dead_name_cik.json as
+    method="edgar_fts". Returns the FTS attempt cache."""
+    cik_cache = _load_cik_cache()
+    fts = _load_fts_cache()
+    windows = _dead_windows()
+    universe = tickers if tickers is not None else list(windows)
+    # only the genuinely-unresolved tail (seed / company_tickers / polygon already won)
+    unresolved = [t for t in universe if not (cik_cache.get(t) or {}).get("cik") and t in windows]
+
+    def _prio(t: str):
+        rec = fts.get(t)
+        if rec is None:
+            return (0, "")                         # never attempted — first
+        return (1, rec.get("attempted_utc", ""))   # then the stalest retry
+    todo = sorted([t for t in unresolved if force or _fts_stale(fts.get(t))], key=_prio)[:max_new]
+    log.info("dead-name FTS crawl: %d unresolved, attempting %d (cap %d)",
+             len(unresolved), len(todo), max_new)
+
+    now = datetime.now(timezone.utc).isoformat()
+    n_res = 0
+    for t in todo:
+        start, end = windows[t]
+        if end is not None and end < EFTS_MIN_DATE:
+            fts[t] = {"status": "out_of_range", "attempted_utc": now,
+                      "note": "delisted before EDGAR full-text coverage (2001)"}
+            continue
+        data = _efts_search(t, start, end, forms)
+        time.sleep(FTS_PACE_S)
+        if data is None:
+            fts[t] = {"status": "error", "attempted_utc": now}     # transient — retry later
+            continue
+        total = (((data.get("hits") or {}).get("total") or {}).get("value")) or 0
+        cik, meta = _dominant_cik(_entity_buckets(data))
+        if cik is None:
+            fts[t] = {"status": "no_dominant", "attempted_utc": now, "total": total, **meta}
+            continue
+        ok, ev = _confirm_filer(cik, t, end)
+        if not ok:
+            fts[t] = {"status": ev.get("confirm", "rejected"), "attempted_utc": now,
+                      "candidate_cik": cik, "total": total, **meta, **ev}
+            continue
+        fts[t] = {"status": "resolved", "attempted_utc": now, "cik": int(cik),
+                  "total": total, **meta, **ev}
+        if not (cik_cache.get(t) or {}).get("cik"):     # never clobber a higher-precedence hit
+            cik_cache[t] = {"cik": int(cik), "method": "edgar_fts"}
+            n_res += 1
+    _fts_cache_path().write_text(json.dumps(fts, indent=0, sort_keys=True))
+    _cik_cache_path().write_text(json.dumps(cik_cache, indent=0, sort_keys=True))
+    log.info("dead-name FTS crawl: +%d resolved this run (method=edgar_fts)", n_res)
+    return fts
 
 
 # --------------------------------------------------------------------------- #
@@ -461,6 +745,13 @@ def coverage(dead_universe: list[str] | None = None) -> dict:
     for v in cache.values():
         if v.get("cik"):
             by_method[v.get("method", "?")] = by_method.get(v.get("method", "?"), 0) + 1
+    # full-text crawl funnel — the honest record of what the long-tail leg could and
+    # could NOT resolve (no_dominant / reject_* / out_of_range / error), so a reader
+    # sees exactly how partial the bridge is rather than only the accepts.
+    fts_funnel: dict[str, int] = {}
+    for v in _load_fts_cache().values():
+        s = v.get("status", "?")
+        fts_funnel[s] = fts_funnel.get(s, 0) + 1
     dead_p = _dead_panel_path()
     with_funda = set()
     if dead_p.exists():
@@ -474,6 +765,7 @@ def coverage(dead_universe: list[str] | None = None) -> dict:
         "n_with_fundamentals": len(with_funda & set(dead_universe)),
         "coverage_frac": round(len(with_funda & set(dead_universe)) / n, 4) if n else 0.0,
         "resolved_by_method": by_method,
+        "fts_funnel": fts_funnel,
         "note": "OPTIMISTIC de-bias bound — dead-name PRICES are still ~absent "
                 "(yfinance survivor-only), so factor ICs over the merged panel are "
                 "fundamentals-de-biased but price-join-limited. Stamp on every output.",

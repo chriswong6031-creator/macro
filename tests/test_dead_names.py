@@ -233,3 +233,229 @@ def test_resolve_records_unresolved(monkeypatch, tmp_path):
     # persisted
     cache = json.loads((tmp_path / "edgar" / "dead_name_cik.json").read_text())
     assert "ZZZZ_NOPE" in cache
+
+
+# --------------------------------------------------------------------------- #
+# Half 1b — EDGAR full-text crawl (windowed · dominance-gated · submissions-confirmed)
+#
+# The SEC submissions doc carries NO former-ticker field (verified: acquired names
+# return tickers=[]), so a bare dead ticker can only be bridged through EDGAR
+# full-text search of the cover-page symbol. These tests pin the load-bearing
+# guards — all NETWORK-FREE (the efts + submissions fetchers are monkeypatched):
+#   * DOMINANCE — an ambiguous result resolves NOTHING (a wrong CIK is worse than none).
+#   * REUSE / NAME-COINCIDENCE — a live entity under a DIFFERENT current symbol is
+#     rejected by the submissions confirmation, even at high dominance.
+#   * PRECEDENCE — seed / company_tickers / polygon are never clobbered.
+#   * RESUMABILITY — drip cap honored; fresh attempts not re-queried.
+# --------------------------------------------------------------------------- #
+def _efts_payload(buckets):
+    """Build an efts-shaped response from [(cik, name, doc_count)]: the entity_filter
+    aggregation embeds the CIK in each bucket key exactly as EDGAR FTS does."""
+    return {"hits": {"total": {"value": sum(b[2] for b in buckets)}},
+            "aggregations": {"entity_filter": {"buckets": [
+                {"key": f"{nm}  (CIK {cik:010d})", "doc_count": docs}
+                for cik, nm, docs in buckets]}}}
+
+
+def _write_membership(tmp_path, dead_windows, live=("LIVE",)):
+    """sp1500_pit_membership.parquet with the given dead stints + a live (never-exited)
+    name so dead_universe()/_dead_windows() exclude currently-listed symbols."""
+    (tmp_path / "breadth").mkdir(parents=True, exist_ok=True)
+    rows = [{"ticker": t, "start_date": pd.Timestamp(s), "end_date": pd.Timestamp(e),
+             "src": "sp500"} for t, (s, e) in dead_windows.items()]
+    rows += [{"ticker": t, "start_date": pd.Timestamp("2010-01-01"),
+              "end_date": pd.NaT, "src": "sp500"} for t in live]
+    pd.DataFrame(rows).to_parquet(tmp_path / "breadth" / "sp1500_pit_membership.parquet")
+
+
+def _boom(*a, **k):
+    raise AssertionError("fetcher called when it should not have been")
+
+
+def test_entity_buckets_parses_cik_and_sorts():
+    data = _efts_payload([(111, "SMALL CO", 2), (743988, "XILINX INC", 41)])
+    bk = dn._entity_buckets(data)
+    assert bk[0] == (743988, "XILINX INC  (CIK 0000743988)", 41)   # doc_count-desc
+    assert bk[1][0] == 111
+    # a bucket whose key has no CIK token is skipped, not crashed
+    assert dn._entity_buckets(
+        {"aggregations": {"entity_filter": {"buckets": [{"key": "NO CIK", "doc_count": 9}]}}}) == []
+    assert dn._entity_buckets(None) == []
+
+
+def test_dominant_cik_threshold():
+    assert dn._dominant_cik([(7, "A", 41), (8, "B", 2)])[0] == 7      # clear dominator
+    assert dn._dominant_cik([(7, "A", 3), (8, "B", 0)])[0] is None    # below MIN_DOCS
+    assert dn._dominant_cik([(7, "A", 20), (8, "B", 12)])[0] is None  # runner too close (<2.5x)
+    assert dn._dominant_cik([(7, "A", 6)])[0] == 7                    # sole entity, enough docs
+    assert dn._dominant_cik([])[0] is None
+
+
+def test_dead_windows_clamps_to_fts_floor(monkeypatch, tmp_path):
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"OLD": ("1996-01-02", "2010-06-01")})
+    w = dn._dead_windows()
+    assert w["OLD"][0] == dn.EFTS_MIN_DATE              # start clamped to 2001
+    assert w["OLD"][1] == "2011-06-01"                  # end padded +1y past index exit
+    assert "LIVE" not in w                              # currently-listed names excluded
+
+
+def test_fts_accepts_acquired_empty_ticker(monkeypatch, tmp_path):
+    """Atwood-shaped: acquired filer (current tickers EMPTY), dominant in-window, last
+    10-K within the grace window, symbol corroborated by the name (ATW⊂ATWOOD) →
+    accepted, written as method=edgar_fts."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"ATW": ("2012-01-01", "2017-06-01")})
+    monkeypatch.setattr(dn, "_efts_search",
+                        lambda t, s, e, *a, **k: _efts_payload([(8411, "ATWOOD OCEANICS INC", 18),
+                                                                (999, "OTHER CO", 5)]))
+    monkeypatch.setattr(dn, "_get_json", lambda url, *a, **k: {
+        "name": "ATWOOD OCEANICS INC", "tickers": [], "formerNames": [],
+        "filings": {"recent": {"form": ["10-K"], "filingDate": ["2017-11-20"]}}})
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["ATW"]["status"] == "resolved" and fts["ATW"]["cik"] == 8411
+    cik = json.loads((tmp_path / "edgar" / "dead_name_cik.json").read_text())
+    assert cik["ATW"] == {"cik": 8411, "method": "edgar_fts"}
+
+
+def test_ticker_in_name_subsequence():
+    assert dn._ticker_in_name("ATW", ["ATWOOD OCEANICS INC"])      # A·T·Wood
+    assert dn._ticker_in_name("SPLS", ["STAPLES INC"])             # S·ta·P·L·e·S
+    assert dn._ticker_in_name("XLNX", ["XILINX INC"])
+    assert dn._ticker_in_name("BCR", ["BARD C R INC /NJ/"])
+    assert not dn._ticker_in_name("ANDV", ["AMERICAN NATIONAL INSURANCE CO"])  # no D → reject
+    assert dn._ticker_in_name("WTW", ["WERNER CO", "WILLIS TOWERS WATSON"])    # matches a FORMER name
+    assert not dn._ticker_in_name("ZZ9", ["NOTHING HERE"])
+
+
+def test_fts_rejects_coincidence_without_name_corroboration(monkeypatch, tmp_path):
+    """ANDV→'American National Insurance': acquired filer (empty current tickers, so
+    the live-mismatch guard can't fire) coincidentally dense in the string 'ANDV',
+    but the symbol is NOT a subsequence of its name → rejected. NEVER mis-resolve."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"ANDV": ("2007-01-01", "2018-10-01")})
+    monkeypatch.setattr(dn, "_efts_search",
+                        lambda *a, **k: _efts_payload([(904163, "AMERICAN NATIONAL INSURANCE CO", 10),
+                                                       (5, "X", 1)]))
+    monkeypatch.setattr(dn, "_get_json", lambda url, *a, **k: {
+        "name": "AMERICAN NATIONAL INSURANCE CO", "tickers": [], "formerNames": [],
+        "filings": {"recent": {"form": ["10-K"], "filingDate": ["2019-03-01"]}}})
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["ANDV"]["status"] == "reject_no_name_corroboration"
+    cik = json.loads((tmp_path / "edgar" / "dead_name_cik.json").read_text())
+    assert cik.get("ANDV", {}).get("cik") is None
+
+
+def test_fts_rejects_live_name_coincidence(monkeypatch, tmp_path):
+    """APPS→'Cyber Apps World': a phrase hit on the word in the name, but the entity
+    is LIVE under a different current symbol → rejected by submissions confirm even
+    though it clears dominance. NEVER mis-resolve."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"APPS": ("2019-01-01", "2021-01-01")})
+    monkeypatch.setattr(dn, "_efts_search",
+                        lambda *a, **k: _efts_payload([(1230524, "Cyber Apps World", 20),
+                                                       (5, "OTHER", 8)]))
+    monkeypatch.setattr(dn, "_get_json", lambda url, *a, **k: {
+        "name": "Cyber Apps World", "tickers": ["CYAP"], "formerNames": [],
+        "filings": {"recent": {"form": ["10-K"], "filingDate": ["2021-05-01"]}}})
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["APPS"]["status"] == "reject_live_mismatch"
+    cik = json.loads((tmp_path / "edgar" / "dead_name_cik.json").read_text())
+    assert cik.get("APPS", {}).get("cik") is None      # not written
+
+
+def test_fts_rejects_still_active(monkeypatch, tmp_path):
+    """A dominant CIK whose latest annual report is years past the index exit is not
+    the delisted company → rejected (recency guard)."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"GONE": ("2010-01-01", "2014-01-01")})
+    monkeypatch.setattr(dn, "_efts_search",
+                        lambda *a, **k: _efts_payload([(321, "STILL FILING INC", 30), (9, "X", 4)]))
+    monkeypatch.setattr(dn, "_get_json", lambda url, *a, **k: {
+        "name": "STILL FILING INC", "tickers": [], "formerNames": [],
+        "filings": {"recent": {"form": ["10-K"], "filingDate": ["2024-02-01"]}}})
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["GONE"]["status"] == "reject_still_active"
+
+
+def test_fts_no_dominant_leaves_unresolved_without_confirming(monkeypatch, tmp_path):
+    """Ambiguous result → no submissions fetch, nothing written."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"AMB": ("2007-01-01", "2015-01-01")})
+    monkeypatch.setattr(dn, "_efts_search",
+                        lambda *a, **k: _efts_payload([(1, "A", 17), (2, "B", 14)]))  # 17 < 2.5*14
+    monkeypatch.setattr(dn, "_get_json", _boom)        # confirmation must NOT run
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["AMB"]["status"] == "no_dominant"
+    assert not (tmp_path / "edgar" / "dead_name_cik.json").exists() or \
+        json.loads((tmp_path / "edgar" / "dead_name_cik.json").read_text()).get("AMB", {}).get("cik") is None
+
+
+def test_fts_out_of_range_never_queries(monkeypatch, tmp_path):
+    """Pre-2001 delistings are out of EDGAR FTS range → marked, never queried."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"PRE": ("1996-01-01", "1999-06-01")})
+    monkeypatch.setattr(dn, "_efts_search", _boom)
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["PRE"]["status"] == "out_of_range"
+
+
+def test_fts_transient_error_retries_next_run(monkeypatch, tmp_path):
+    """A None from efts (5xx/timeout) caches status=error and is re-attempted on the
+    next run — never frozen as a false miss."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"FLAKY": ("2012-01-01", "2018-01-01")})
+    monkeypatch.setattr(dn, "_efts_search", lambda *a, **k: None)
+    monkeypatch.setattr(dn, "_get_json", _boom)
+    fts = dn.resolve_via_fulltext(max_new=10)
+    assert fts["FLAKY"]["status"] == "error"
+    assert dn._fts_stale(fts["FLAKY"]) is False        # fresh error not retried THIS run...
+    fts["FLAKY"]["attempted_utc"] = "2000-01-01T00:00:00+00:00"
+    assert dn._fts_stale(fts["FLAKY"]) is True          # ...but a stale one is
+
+
+def test_fts_drip_cap_and_resume(monkeypatch, tmp_path):
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {f"D{i}": ("2015-01-01", "2019-01-01") for i in range(5)})
+    calls = {"n": 0}
+
+    def counted(*a, **k):
+        calls["n"] += 1
+        return _efts_payload([(1, "A", 1)])            # below MIN → no_dominant
+
+    monkeypatch.setattr(dn, "_efts_search", counted)
+    dn.resolve_via_fulltext(max_new=2)
+    assert calls["n"] == 2                              # cap honored
+    dn.resolve_via_fulltext(max_new=2)                 # fresh no_dominant skipped → next batch
+    assert calls["n"] == 4
+
+
+def test_fts_never_clobbers_resolved(monkeypatch, tmp_path):
+    """A ticker already resolved (seed) is not even queried, let alone overwritten."""
+    _redirect(monkeypatch, tmp_path)
+    _write_membership(tmp_path, {"SEEDED": ("2015-01-01", "2019-01-01")})
+    (tmp_path / "edgar").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "edgar" / "dead_name_cik.json").write_text(
+        json.dumps({"SEEDED": {"cik": 42, "method": "seed"}}))
+    monkeypatch.setattr(dn, "_efts_search", _boom)
+    dn.resolve_via_fulltext(max_new=10)
+    cik = json.loads((tmp_path / "edgar" / "dead_name_cik.json").read_text())
+    assert cik["SEEDED"] == {"cik": 42, "method": "seed"}
+
+
+def test_coverage_reports_fts_funnel(monkeypatch, tmp_path):
+    _redirect(monkeypatch, tmp_path)
+    (tmp_path / "breadth").mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"ticker": ["DEAD1", "DEAD2"],
+                  "start_date": pd.to_datetime(["2010-01-01"] * 2),
+                  "end_date": pd.to_datetime(["2020-01-01", "2020-01-01"]),
+                  "src": ["sp500"] * 2}).to_parquet(
+        tmp_path / "breadth" / "sp1500_pit_membership.parquet")
+    (tmp_path / "edgar" / "dead_name_cik.json").write_text(json.dumps({
+        "DEAD1": {"cik": 1, "method": "edgar_fts"}}))
+    (tmp_path / "edgar" / "_dead_name_fts.json").write_text(json.dumps({
+        "DEAD1": {"status": "resolved", "cik": 1},
+        "DEAD2": {"status": "no_dominant"}}))
+    cov = dn.coverage()
+    assert cov["resolved_by_method"] == {"edgar_fts": 1}
+    assert cov["fts_funnel"] == {"resolved": 1, "no_dominant": 1}
