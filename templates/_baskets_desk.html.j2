@@ -130,6 +130,12 @@
   .anrow .rn { font-weight:650; white-space:nowrap; }
   .anwhy { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
+  /* vol-regime sizing transparency chip (honest drawdown-control read; hidden when calm) */
+  .rs-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:4px 0 10px; }
+  .rs-head { display:flex; align-items:baseline; gap:8px; }
+  .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
+  .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
+  .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
 </style>
 <div class="nav-ctrls" style="justify-content:flex-end;margin:4px 0 0">
     <div class="bell" id="theme-bell">
@@ -143,6 +149,7 @@
     <p class="sub">{{ t(
       'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
       '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+    <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
 

@@ -133,6 +133,30 @@ function renderActNow(){
     <div class="ancol"><h4 class="anh red">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted sm">(${red.length})</span></h4>${red.length?red.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('none','无')}</div>`}</div>
   </div>`;
 }
+// Honest TRANSPARENCY chip: WHY basket gross is trimmed (live vol-regime sizing overlay).
+// Subtract-only — shows NOTHING when calm. Deliberately a drawdown-control read, NOT a
+// performance claim (backtest PR #428: the drawdown value is mechanical vol-targeting; the
+// regime layer adds no measured edge — so the decomposition leads with vol-target + says so).
+function renderRegimeSizing(){
+  const host=document.getElementById('regime-sizing-chip'); if(!host) return;
+  const rs=THEME&&THEME.regime_sizing;
+  if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0){ host.innerHTML=''; return; }   // inert when calm
+  const pct=Math.round((rs.gross_scalar||1)*100);
+  const mech=Math.round((rs.mech_scalar||1)*100), reg=Math.round((rs.regime_caution||1)*100), sc=Math.round((rs.scored_cut||1)*100);
+  let decomp=`${L('vol-target','波动率目标')} ${mech}%`;
+  if(reg<100) decomp+=` × ${L('regime','状态')} ${reg}%`;
+  if(sc<100) decomp+=` × ${L('scored','评分')} ${sc}%`;
+  decomp+=` = ${pct}%`;
+  const demoted=(THEME.themes||[]).filter(t=>t&&t.regime_demoted).length;
+  const sev=((rs.regime_caution||1)<1)?'var(--down)':'var(--warn)';
+  const regLbl={'backwardation-stress':L('backwardation stress','现货溢价倒挂压力'),'warning':L('fragility building','脆弱性上升')}[rs.regime];
+  host.innerHTML=`<div class="rs-chip" style="border-left:3px solid ${sev}">
+    <div class="rs-head"><span class="rs-ic">⚠</span>
+      <span class="rs-main">${L('Vol-regime is trimming basket gross to','波动率状态正将篮子总仓位缩减至')} <b>${pct}%</b>${regLbl?' — '+regLbl:''}</span></div>
+    <div class="rs-decomp muted sm">${decomp}${demoted?` · ${demoted} ${L('theme(s) stood down to hold','个主题被下调为持有')}`:''}</div>
+    <div class="rs-note muted xs">${L('Drawdown-control sizing — mechanical vol-targeting is the validated lever; the regime layer is a subtract-only risk read. NOT a return forecast, never lifts a score or rank.','回撤控制仓位 — 机械波动率目标是经验证的杠杆；状态层为仅做减法的风险读数。并非收益预测，绝不抬高评分或排名。')}</div>
+  </div>`;
+}
 function renderConcentration(){
   const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }
   const mc=THEME.market_concentration||{};
@@ -250,6 +274,6 @@ function renderBell(){
   document.addEventListener('click',e=>{ if(!wrap.contains(e.target)) menu.classList.remove('open'); });
 }
 
-function deskBoot(){ try{ renderActNow(); }catch(e){} try{ renderMacroCtx(); }catch(e){}
+function deskBoot(){ try{ renderActNow(); }catch(e){} try{ renderRegimeSizing(); }catch(e){} try{ renderMacroCtx(); }catch(e){}
   try{ renderThemeDesk(); }catch(e){} try{ renderConcentration(); }catch(e){}
   try{ renderRotation(); }catch(e){} try{ renderScorecards(); }catch(e){} try{ renderBell(); }catch(e){} }
