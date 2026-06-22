@@ -342,6 +342,12 @@
   .anrow .rn { font-weight:650; white-space:nowrap; }
   .anwhy { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
+  /* vol-regime sizing transparency chip (honest drawdown-control read; hidden when calm) */
+  .rs-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:4px 0 10px; }
+  .rs-head { display:flex; align-items:baseline; gap:8px; }
+  .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
+  .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
+  .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
 </style>
 <div class="nav-ctrls" style="justify-content:flex-end;margin:4px 0 0">
     <div class="bell" id="theme-bell">
@@ -353,6 +359,7 @@
     <h2><span class="idx">★</span>✅ <span class="l-en">What to act on now</span><span class="l-zh">现在该做什么</span>
       <span class="sect-tag"><span class="l-en">buy / add · reduce / avoid</span><span class="l-zh">买入加仓 · 减仓回避</span></span></h2>
     <p class="sub"><span class="l-en">The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.</span><span class="l-zh">可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。</span></p>
+    <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
 
@@ -423,7 +430,7 @@
 
   <footer>
     <span class="l-en">Read-only analytics for informational purposes only — not investment advice. Equal-weighted, point-in-time dated membership, buy-and-hold between changes, over the FREE canada_search S&amp;P/TSX Composite price cache (~5y), benchmarked to the S&amp;P/TSX Composite. Membership was curated with knowledge of the period, so the series is HINDSIGHT-curated and descriptive — not an out-of-sample backtest and not a buy list. See LIMITATIONS.md.</span><span class="l-zh">仅供参考的只读分析 — 非投资建议。等权重、按时点日期管理成分、调整间买入持有，基于免费的 china_search 大市值 A 股价格缓存（约 5 年），以标普/多伦多综合指数为基准。成分在已知该期间表现下整理，故为事后选取的描述性序列 — 并非样本外回测，也非买入清单。参见 LIMITATIONS.md。</span>
-    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-06-22 01:24 UTC</span>.
+    <span class="l-en">Generated</span><span class="l-zh">生成于</span> <span id="gen">2026-06-22 03:30 UTC</span>.
   </footer>
 
 <script src="lightweight-charts.js"></script>

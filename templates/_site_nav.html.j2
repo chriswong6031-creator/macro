@@ -1,0 +1,30 @@
+{# Shared full navigation chrome for standalone pages.
+
+   Optional page variables:
+   - nav_prefix: "../" for pages rendered one directory below site root.
+   - nav_search_lib: region-specific library, e.g. "chinastockdata/index.json".
+   - nav_search_target: matching analyzer, e.g. "china_lookup.html".
+   - nav_search_placeholder_en/nav_search_placeholder_zh: optional placeholder copy.
+#}
+{% set NP = nav_prefix if (nav_prefix is defined and nav_prefix) else '' %}
+<nav class="site-nav">
+  {% include "_navlinks.html.j2" %}
+  <div class="nav-search"{% if nav_search_lib is defined and nav_search_lib %} data-lib="{{ nav_search_lib }}"{% endif %}{% if nav_search_target is defined and nav_search_target %} data-target="{{ nav_search_target }}"{% endif %}>
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="{{ nav_search_placeholder_en | default('Search any stock, ETF, commodity or crypto…') }}"
+      data-ph-zh="{{ nav_search_placeholder_zh | default('搜索任意股票、ETF、商品或加密货币…') }}">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="{{ NP }}mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>

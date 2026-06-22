@@ -49,14 +49,15 @@
 </style>
 </head>
 <body>
+  {% set nav_search_lib = 'canadastockdata/index.json' %}
+  {% set nav_search_target = 'canada_stock.html' %}
+  {% set nav_search_placeholder_en = 'Search any TSX stock, sector ETF, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意 TSX 股票、板块 ETF 或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>{{ t('Canada regime history', '加拿大周期历史') }}</h1>
       <span class="muted">{{ t('data through', '数据截至') }} {{ latest.date }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="canada.html">{{ t('← Back to Canada dashboard', '← 返回加拿大仪表盘') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
   </div>
 

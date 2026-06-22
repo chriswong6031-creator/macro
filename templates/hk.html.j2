@@ -415,7 +415,7 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -751,6 +751,17 @@
     </div>
     {% if latest.confirming %}<p class="note" style="margin:14px 0 0;padding-top:11px;border-top:1px solid var(--hair);text-transform:none">{{ t('Confirming', '确认') }}: {{ latest.confirming|join(', ') }}{% if latest.contradicting %} · {{ t('Contradicting', '矛盾') }}: {{ latest.contradicting|join(', ') }}{% endif %}</p>{% endif %}
   </div>
+
+  {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
+     (aibrief.html). Replaces the old inline AI Master Brief panel. #}
+  <a class="panel span12 aibrief-card" href="aibrief.html">
+    <span class="abc-ic">🧠</span>
+    <span class="abc-mid">
+      <span class="abc-tit">{{ t('AI Daily Brief · China & cross-asset synthesis', 'AI 每日简报 · 中国与跨资产综合') }}</span>
+      <span class="abc-sub muted sm">{{ t('AI reads the Hong Kong & China dashboards in one place — regime, where signals conflict, the policy/liquidity thesis and what to watch. Research context only, never a signal.', 'AI 在一处解读中港看板 — 周期、信号冲突、政策／流动性假设与后续关注。仅供研究参考，绝非交易信号。') }}</span>
+    </span>
+    <span class="abc-go">→</span>
+  </a>
 
   <!-- ===================== MAJOR HK INDICES — HEALTH & MOMENTUM (merged) ===================== -->
   {% if index_health or benchmark %}
@@ -1156,17 +1167,6 @@
       <a href="hk_stocks.html" style="color:var(--link);font-weight:600">{{ t('HK Stock Desk', '港股研判台') }}</a>.</p>
   </div>
   {% endif %}
-
-  <!-- ===================== AI MASTER BRIEF (China & HK synthesis) ===================== -->
-  {# Client-fetched from china_brief.json (engine/master_brain.py covers China + HK);
-     hidden until a usable brief loads. Research context only — never a signal. #}
-  <div class="panel span12 ai-brief" id="hk-brief" data-brief-src="china_brief.json" style="display:none">
-    <h2>🧠 {{ t('AI Master Brief · China & HK synthesis', 'AI 主脑简报 · 中港综合') }}
-      {{ help('An AI-generated synthesis of the Hong-Kong & China dashboards, with US macro, the dollar, global liquidity and commodities as backdrop. RESEARCH CONTEXT only — it narrates the regime, flags where signals conflict and tests the policy/liquidity thesis; it never feeds a score, signal or allocation. Can be wrong or overconfident — verify against the underlying panels.', 'AI 对中港看板的综合分析，以美国宏观、美元、全球流动性与商品为背景。仅供研究参考 — 它解读周期、标注信号冲突并检验政策／流动性假设，绝不参与任何评分、信号或仓位。可能出错或过度自信，请对照各底层面板核实。') }}
-    </h2>
-    <div data-brief-body class="muted sm"></div>
-  </div>
-  <script src="aibrief.js"></script>
 
   {% endif %}{# /mode != stocks — macro group 1 (hero, index health, global risk overlay) #}
 

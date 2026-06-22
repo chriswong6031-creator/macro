@@ -17,3 +17,4 @@
 {"ts": "2026-06-21T15:04:20.144408+00:00", "family": "signal_factory", "config_hash": "59fe8753f2a3fa59", "config": {"leg": "deleveraging", "horizon": 63}, "source": "grid", "info_cutoff": null, "note": null}
 {"ts": "2026-06-21T15:50:22.228773+00:00", "family": "china_validation", "kind": "declared_budget", "n": 12, "reason": "china signal \u00d7 horizon predictive grid", "config_hash": "9007d9acefe3b235"}
 {"ts": "2026-06-22T00:34:59.551444+00:00", "family": "china_validation", "kind": "declared_budget", "n": 20, "reason": "china signal \u00d7 horizon predictive grid", "config_hash": "93e04e72be5d8418"}
+{"ts": "2026-06-22T02:36:20.835163+00:00", "family": "china_validation", "kind": "declared_budget", "n": 24, "reason": "china signal \u00d7 horizon predictive grid", "config_hash": "6c3ae3dd2571bd0f"}

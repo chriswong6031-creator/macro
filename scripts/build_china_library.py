@@ -111,6 +111,26 @@ def tv_symbol(ticker: str) -> str:
     return ticker
 
 
+def _safe(ticker: str) -> str:
+    return ticker.replace("=", "_").replace("^", "_")
+
+
+def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
+    """Write search manifest rows only when the matching detail JSON exists."""
+    verified, missing = [], []
+    for row in index:
+        t = row.get("t")
+        if t and (outdir / f"{_safe(t)}.json").exists():
+            verified.append(row)
+        elif t:
+            missing.append(t)
+    if missing:
+        log.warning("china library: dropped %d index rows without detail JSON (%s%s)",
+                    len(missing), ", ".join(missing[:8]), "..." if len(missing) > 8 else "")
+    (outdir / "index.json").write_text(json.dumps(verified))
+    return verified
+
+
 def current_liquidity() -> str | None:
     """The live China net-liquidity regime ("expanding"/"contracting"/"neutral")
     the engine last classified (china_regime/latest.json `liquidity_overlay`).
@@ -712,7 +732,13 @@ def main(alpha: dict | None = None) -> dict | None:
         # margin-financing crowding → the fragility idio-risk slot + a caution (contrarian leverage risk)
         _mc = margin_crowd.get(ticker)
         if _mc and _mc.get("crowded"):
-            rec["fragility"] = True
+            rec["fragility"] = {
+                "flag": True,
+                "risk": _mc.get("risk"),
+                "band": _mc.get("band"),
+                "chg_pct": _mc.get("chg_pct"),
+                "pct_mcap": _mc.get("pct_mcap"),
+            }
             rec["margin_crowd"] = _mc
         norm = stock_score.normalize_rec(
             rec, "CN", rev_z=rev_z_by.get(ticker), basket=basket_tw.get(ticker))
@@ -754,7 +780,7 @@ def main(alpha: dict | None = None) -> dict | None:
             "spark_svg": _spark_svg(
                 list(close.dropna().tail(64).values),
                 color=("var(--up)" if _dir == "up" else "var(--down)" if _dir == "down" else "var(--muted)"))}
-        safe = ticker.replace("=", "_").replace("^", "_")
+        safe = _safe(ticker)
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("alpha", {}).get("alpha") is not None:
@@ -805,7 +831,7 @@ def main(alpha: dict | None = None) -> dict | None:
             patch["positioning"] = marg[ticker]
         if not patch:
             continue
-        safe = ticker.replace("=", "_").replace("^", "_")
+        safe = _safe(ticker)
         fp = outdir / f"{safe}.json"
         if not fp.exists():
             continue
@@ -822,7 +848,7 @@ def main(alpha: dict | None = None) -> dict | None:
             idx["f"] = 1
     log.info("china context attached: fund %d · consensus %d · earnings %d · val_pct %d · margin %d",
              len(fmap), len(cons), len(earn), len(vpct), len(marg))
-    (outdir / "index.json").write_text(json.dumps(index))
+    index = _write_verified_index(outdir, index)
     # Bespoke chart OHLC (close-only area series) read by china_lookup.html's chart.js —
     # pure serialisation of china_search closes; never break the library over the garnish.
     try:
