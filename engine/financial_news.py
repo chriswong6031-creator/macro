@@ -115,6 +115,13 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
     if not title:
         return None
     domain = (domain or _domain_of(url)).lower().lstrip("www.")
+    # Hard drops applied to EVERY source (incl. ticker-tagged provider feeds):
+    # blocklisted pick mills (TipRanks) and low-value formats — stock-pick roundup
+    # listicles whose picks live untaggably in the body, and personal-finance advice
+    # columns. These otherwise outrank real reporting (a fresh tier-1 syndicated
+    # column scores ~86). Provider items have no byline here, so title+domain decide.
+    if nc.is_blocked(domain) or nc.is_low_value(title, domain):
+        return None
     tier = nc.source_tier(domain)
     if tier == 0:
         if provider in ("polygon", "finnhub", "quiver"):

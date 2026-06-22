@@ -145,6 +145,42 @@ def test_collect_never_raises_on_fetch_failure(monkeypatch):
     assert R.collect("macro", queries=["x"]) == []          # degrades to empty, no raise
 
 
+# --------------------------------------------------------------------------- #
+# author/byline extraction + source-level junk filter (is_low_value/is_blocked)
+# --------------------------------------------------------------------------- #
+def test_parse_extracts_author():
+    raw = _rss("<item><title>Real reporting</title><link>https://x.com/a</link>"
+               "<pubDate>Mon, 16 Jun 2025 12:00:00 GMT</pubDate>"
+               "<author>Jane Reporter</author></item>")
+    arts = R._parse(raw, "reuters.com", from_google=False)
+    assert len(arts) == 1   # kept (clean title + non-pickmill byline)
+
+
+def test_parse_drops_roundup_listicle():
+    # The exact #1-story format — picks buried in the body, untaggable, no real news.
+    raw = _rss(_item("Top Wall Street analysts like these 3 dividend stocks for solid returns"))
+    assert R._parse(raw, "cnbc.com", from_google=False) == []
+
+
+def test_parse_drops_pickmill_byline_on_trusted_domain():
+    # CNBC/Yahoo re-running a TipRanks column — clean-ish title, junk byline → drop.
+    raw = _rss("<item><title>Three companies with strong fundamentals</title>"
+               "<link>https://x.com/a</link><pubDate>Mon, 16 Jun 2025 12:00:00 GMT</pubDate>"
+               "<author>TipRanks.com Staff</author></item>")
+    assert R._parse(raw, "cnbc.com", from_google=False) == []
+
+
+def test_parse_drops_blocklisted_domain():
+    raw = _rss(_item("A perfectly normal market headline"))
+    assert R._parse(raw, "tipranks.com", from_google=False) == []
+
+
+def test_parse_keeps_real_news():
+    raw = _rss(_item("Fed holds rates as inflation cools"))
+    arts = R._parse(raw, "reuters.com", from_google=False)
+    assert len(arts) == 1 and arts[0]["domain"] == "reuters.com"
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     import inspect

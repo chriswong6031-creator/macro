@@ -280,6 +280,78 @@ def test_tickers_to_groups_sorted_output():
     assert grp["sectors"] == sorted(grp["sectors"])
 
 
+# --------------------------------------------------------------------------- #
+# blocklist (is_blocked) + tier interaction
+# --------------------------------------------------------------------------- #
+def test_is_blocked_tipranks():
+    assert nc.is_blocked("tipranks.com") is True
+    assert nc.is_blocked("www.tipranks.com") is True
+    assert nc.is_blocked("smartreads.tipranks.com") is True
+
+
+def test_is_blocked_others_false():
+    assert nc.is_blocked("cnbc.com") is False
+    assert nc.is_blocked("reuters.com") is False
+    assert nc.is_blocked("") is False
+
+
+def test_blocked_domain_is_tier0():
+    # TipRanks was tier-3; the blocklist now forces it to tier-0 (dropped).
+    assert nc.source_tier("tipranks.com") == 0
+    # And quality_score returns 0 for a blocked domain regardless of freshness.
+    assert nc.quality_score("Some headline", "tipranks.com", _NOW.isoformat(), now=_NOW) == 0
+
+
+# --------------------------------------------------------------------------- #
+# low-value detection (is_low_value) — HARD DROP
+# --------------------------------------------------------------------------- #
+def test_is_low_value_stock_pick_roundups():
+    # The exact CNBC-hosted TipRanks columns that surfaced as the #1 story.
+    assert nc.is_low_value(
+        "Top Wall Street analysts like these 3 dividend stocks for solid returns") is True
+    assert nc.is_low_value(
+        "Top Wall Street analysts are confident about the growth prospects of these 3 stocks") is True
+    # General advertorial listicle formats.
+    for t in ["5 stocks to buy now", "7 AI stocks that could soar in 2026",
+              "The best dividend stocks for retirement", "Where to invest $10,000 right now",
+              "2 growth stocks to buy hand over fist", "Analysts love these 3 chip stocks",
+              "Stock picks: our favorites for the second half"]:
+        assert nc.is_low_value(t) is True, t
+
+
+def test_is_low_value_personal_finance_advice():
+    assert nc.is_low_value(
+        "I'm spending $170,000 to upgrade my home for my aging parents. Can I get tax breaks?") is True
+    assert nc.is_low_value(
+        "My mother was co-owner of my grandmother's bank account. Should she share the money?") is True
+    # First-person opener WITHOUT a question is NOT dropped (could be real commentary).
+    assert nc.is_low_value("I'm a CEO and here's why I'm bullish on AI") is False
+
+
+def test_is_low_value_pickmill_byline():
+    # A trusted outlet (no junk title) re-running a pick-mill column → drop on byline.
+    assert nc.is_low_value("Three great companies", author="TipRanks.com Staff") is True
+    assert nc.is_low_value("Three great companies", author="Zacks Equity Research") is True
+    assert nc.is_low_value("Three great companies", author="Jane Reporter") is False
+
+
+def test_is_low_value_keeps_real_news():
+    for t in ["Brent crude slips as Qatar, Pakistan announce 60-day roadmap",
+              "Micron's earnings are a must-watch market event",
+              "Wells Fargo new S&P 500 target sends investors clear signal",
+              "Nvidia stock rises after earnings beat estimates",
+              "Fed holds rates as inflation cools",
+              "Tech stocks rally as Treasury yields fall",
+              "Wall Street analysts raise their S&P 500 price targets",
+              "Magnificent Seven stocks slide as megacap rally stalls"]:
+        assert nc.is_low_value(t) is False, t
+
+
+def test_is_low_value_empty():
+    assert nc.is_low_value("") is True
+    assert nc.is_low_value(None) is True
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:

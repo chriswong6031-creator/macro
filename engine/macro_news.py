@@ -142,6 +142,7 @@ NEWS_FEEDS = [
     {"name": "WSJ - Business", "url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml", "domain": "wsj.com", "theme": "growth", "source": "news_rss", "tier": "tier1"},
     {"name": "NPR - Business", "url": "https://feeds.npr.org/1006/rss.xml", "domain": "npr.org", "theme": "growth", "source": "news_rss", "tier": "tier1"},
     {"name": "NPR - Economy", "url": "https://feeds.npr.org/1017/rss.xml", "domain": "npr.org", "theme": "growth", "source": "news_rss", "tier": "tier1"},
+    {"name": "The Economist - Finance & Economics", "url": "https://www.economist.com/finance-and-economics/rss.xml", "domain": "economist.com", "theme": "macro", "source": "news_rss", "tier": "tier1"},
     {"name": "Yahoo Finance - Top Stories", "url": "https://finance.yahoo.com/rss/topstories", "domain": "yahoo.com", "theme": "macro", "source": "news_rss", "tier": "quality"},
 ]
 
@@ -533,6 +534,10 @@ def filter_headlines(articles: list[dict], cfg: dict | None = None) -> list[dict
     seen: set[str] = set()
     for a in articles:
         dom = (a.get("domain") or "").lower()
+        # Hard drop: blocklisted pick mills + low-value formats (stock-pick roundup
+        # listicles / personal-finance advice columns) before any source/theme gate.
+        if _nc.is_blocked(dom) or _nc.is_low_value(a.get("title", ""), dom):
+            continue
         official_ok = a.get("source_tier") == "official" or a.get("source") == "official"
         stock_ok = a.get("source_tier") == "stock_wire"
         news_ok = any(s in dom for s in news)

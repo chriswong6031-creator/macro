@@ -53,6 +53,10 @@ DIRECT_FEEDS: list[tuple[str, str, str]] = [
     ("https://www.cnbc.com/id/15839069/device/rss/rss.html", "cnbc.com", "market"),
     ("https://moxie.foxbusiness.com/google-publisher/markets.xml", "foxbusiness.com", "market"),
     ("http://feeds.marketwatch.com/marketwatch/topstories/", "marketwatch.com", "market"),
+    # Axios is all-topic (politics-heavy); its financial coverage is kept by the
+    # market-title gate downstream. The Economist's finance feed is finance-only.
+    ("https://www.axios.com/feeds/feed.rss", "axios.com", "market"),
+    ("https://www.economist.com/finance-and-economics/rss.xml", "economist.com", "market"),
     # macro / economy
     ("https://feeds.bloomberg.com/economics/news.rss", "bloomberg.com", "macro"),
     ("https://www.cnbc.com/id/20910258/device/rss/rss.html", "cnbc.com", "macro"),
@@ -70,6 +74,15 @@ GOOGLE_MACRO_QUERIES = [
 GOOGLE_MARKET_QUERIES = [
     "S&P 500 stock market today", "Wall Street stocks rally selloff",
     "stock market earnings results", "Nasdaq Dow Jones today",
+    # Source-pinned wires whose own RSS is dead (Reuters) or not section-split (Axios)
+    # — guarantee a baseline of their coverage. These return the outlet's GENERAL feed,
+    # so _google_news tags them origin="feed" → gated on market relevance downstream
+    # (drops their sports/world/caption items, keeps the market reporting). AP is NOT
+    # source-pinned: its general wire is crime/world-heavy and the market gate's "drug"
+    # (pharma) keyword lets narcotics stories through — AP still arrives, on-topic, via
+    # the topic queries above (and via GDELT in the macro feed).
+    'site:reuters.com (stocks OR "Wall Street" OR markets OR earnings OR "S&P 500" OR Fed OR economy)',
+    'site:axios.com (markets OR business OR stocks OR economy OR Fed)',
 ]
 
 _GNEWS = ("https://news.google.com/rss/search?q={q}+when:{d}d&hl=en-US&gl=US&ceid=US:en")
@@ -145,6 +158,13 @@ def _parse(raw: bytes, source_domain: str | None, from_google: bool) -> list[dic
         seendate = _to_iso(date_el.text if date_el is not None else "")
         desc_el = _child(it, "description", "summary", "content")
         summary = _clean(desc_el.text if desc_el is not None else "")
+        # Author/byline (dc:creator | author | creator). Atom nests <author><name>;
+        # used to drop pick-mill columns (TipRanks/Zacks) a trusted outlet re-runs.
+        auth_el = _child(it, "creator", "author")
+        author = _clean(auth_el.text if auth_el is not None else "")
+        if not author and auth_el is not None:
+            name_el = _child(auth_el, "name")
+            author = _clean(name_el.text if name_el is not None else "")
 
         if from_google:
             # title carries " - Source"; the <source> element holds the real outlet.
@@ -161,6 +181,10 @@ def _parse(raw: bytes, source_domain: str | None, from_google: bool) -> list[dic
             source = domain
         if not title or not url:
             continue
+        # Drop pick-mill / advertorial / advice junk at the source so it never reaches
+        # any feed, count or per-ticker index (the only place a byline is available).
+        if nc.is_blocked(domain) or nc.is_low_value(title, domain, author):
+            continue
         out.append({"title": title, "url": url, "domain": domain,
                     "source": source, "seendate": seendate, "summary": summary})
     return out
@@ -176,11 +200,17 @@ def _google_news(query: str, window_days: int = 2, min_tier: int = 2) -> list[di
     if not raw:
         return []
     items = _parse(raw, None, from_google=True)
+    # A topic query ("US jobs report") is relevant by construction. A SOURCE-pinned
+    # query ("site:reuters.com …") is NOT: Google returns that outlet's general
+    # coverage (sports/world/photo captions leak in), so its results must clear the
+    # same relevance gate as a broad section feed — hence origin="feed".
+    pinned = query.lower().lstrip().startswith("site:")
+    origin = "feed" if pinned else "query"
     kept = []
     for a in items:
         t = nc.source_tier(a["domain"])
         if 0 < t <= min_tier:
-            a["origin"] = "query"        # topic-targeted → relevant by construction
+            a["origin"] = origin
             kept.append(a)
     return kept
 
