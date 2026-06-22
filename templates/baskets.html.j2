@@ -234,6 +234,12 @@
   .anrow .rn { font-weight:650; white-space:nowrap; }
   .anwhy { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ansc { font-variant-numeric:tabular-nums; font-weight:700; }
+  /* vol-regime sizing transparency chip (honest drawdown-control read; hidden when calm) */
+  .rs-chip { background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:9px 12px; margin:4px 0 10px; }
+  .rs-head { display:flex; align-items:baseline; gap:8px; }
+  .rs-ic { font-size:14px; } .rs-main { font-size:13px; } .rs-main b { font-variant-numeric:tabular-nums; }
+  .rs-decomp { margin-top:3px; font-variant-numeric:tabular-nums; }
+  .rs-note { margin-top:4px; font-style:italic; line-height:1.45; }
 </style>
 </head>
 <body>
@@ -282,6 +288,7 @@
     <p class="sub">{{ t(
       'The executional shortlist — themes with a clean entry to buy or add right now, and themes to reduce or avoid. Click any theme to see the specific stocks to act on. If nothing has a clean entry, the right move is patience.',
       '可执行清单 — 当前具备干净入场点、值得买入或加仓的主题，以及应减仓或回避的主题。点击任一主题可查看应操作的具体个股。若无干净入场点，最佳操作是耐心等待。') }}</p>
+    <div id="regime-sizing-chip"></div>
     <div id="actnow"></div>
   </section>
 
@@ -789,6 +796,31 @@ function renderActNow(){
     <div class="ancol"><h4 class="anh red">🔻 ${L('Reduce / avoid','减仓 / 回避')} <span class="muted sm">(${red.length})</span></h4>${red.length?red.map(row).join(''):`<div class="muted sm" style="padding:10px 2px">${L('none','无')}</div>`}</div>
   </div>`;
 }
+// Honest TRANSPARENCY chip: shows WHY basket gross is trimmed (the live vol-regime sizing
+// overlay). Subtract-only — shows NOTHING when calm (no "100% — calm" noise). Deliberately a
+// drawdown-control transparency read, NOT a performance claim: the backtest (PR #428) found the
+// drawdown value is mechanical vol-targeting; the regime layer adds no measured edge, so the
+// decomposition leads with vol-target and the note says so. Never implies the overlay lifts returns.
+function renderRegimeSizing(){
+  const host=document.getElementById('regime-sizing-chip'); if(!host) return;
+  const rs=THEME&&THEME.regime_sizing;
+  if(!rs||!rs.active||(rs.gross_scalar||1)>=1.0){ host.innerHTML=''; return; }   // inert when calm
+  const pct=Math.round((rs.gross_scalar||1)*100);
+  const mech=Math.round((rs.mech_scalar||1)*100), reg=Math.round((rs.regime_caution||1)*100), sc=Math.round((rs.scored_cut||1)*100);
+  let decomp=`${L('vol-target','波动率目标')} ${mech}%`;
+  if(reg<100) decomp+=` × ${L('regime','状态')} ${reg}%`;
+  if(sc<100) decomp+=` × ${L('scored','评分')} ${sc}%`;
+  decomp+=` = ${pct}%`;
+  const demoted=(THEME.themes||[]).filter(t=>t&&t.regime_demoted).length;
+  const sev=((rs.regime_caution||1)<1)?'var(--down)':'var(--warn)';
+  const regLbl={'backwardation-stress':L('backwardation stress','现货溢价倒挂压力'),'warning':L('fragility building','脆弱性上升')}[rs.regime];
+  host.innerHTML=`<div class="rs-chip" style="border-left:3px solid ${sev}">
+    <div class="rs-head"><span class="rs-ic">⚠</span>
+      <span class="rs-main">${L('Vol-regime is trimming basket gross to','波动率状态正将篮子总仓位缩减至')} <b>${pct}%</b>${regLbl?' — '+regLbl:''}</span></div>
+    <div class="rs-decomp muted sm">${decomp}${demoted?` · ${demoted} ${L('theme(s) stood down to hold','个主题被下调为持有')}`:''}</div>
+    <div class="rs-note muted xs">${L('Drawdown-control sizing — mechanical vol-targeting is the validated lever; the regime layer is a subtract-only risk read. NOT a return forecast, never lifts a score or rank.','回撤控制仓位 — 机械波动率目标是经验证的杠杆；状态层为仅做减法的风险读数。并非收益预测，绝不抬高评分或排名。')}</div>
+  </div>`;
+}
 function renderConcentration(){
   const sec=document.getElementById('concentration-section'); if(!THEME){ if(sec) sec.style.display='none'; return; }
   const mc=THEME.market_concentration||{};
@@ -908,7 +940,7 @@ function renderBell(){
 
 function boot(){
   document.getElementById('asof').textContent=BASKETS.as_of||'—';
-  renderActNow(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
+  renderActNow(); renderRegimeSizing(); renderMacroCtx(); renderThemeDesk(); renderConcentration(); renderRotation(); renderScorecards(); renderBell();
   renderStory();
   renderTabs(document.getElementById('btbl-mode'), TBL_MODES, btblMode, v=>{ btblMode=v; localStorage.setItem('fw-btbl-mode',v); renderBTable(); });
   renderTabs(document.getElementById('chart-modes'), [['rel','vs S&P 500'],['abs','Absolute']], chartMode, v=>{ chartMode=v; renderChart(); });
