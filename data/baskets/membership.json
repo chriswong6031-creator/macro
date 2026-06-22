@@ -3668,6 +3668,299 @@
           "note": "Seeded AI Agents & Applications — 6 equal-weight members isolating the agentic/app monetization layer from infra-heavy ai_software. Still-private AI names (Lambda, Crusoe, Databricks) noted as watchlist."
         }
       ]
+    },
+    "insurance": {
+      "name": "Insurance & Brokers",
+      "name_zh": "保险与经纪",
+      "theme": "P&C / life insurers, reinsurers and insurance brokers — the underwriting-cycle + rate-on-line + float-investment-income narrative (distinct from health insurers in Managed Care).",
+      "category": "Financials",
+      "parent": "Financials",
+      "etf_proxy": "KIE",
+      "etf_proxy_note": "loose — SPDR insurance",
+      "weighting": "equal",
+      "created": "2026-06-21",
+      "curated": "2026-06-21",
+      "tags": [
+        "insurance",
+        "pnc",
+        "life",
+        "brokers",
+        "reinsurance",
+        "underwriting-cycle"
+      ],
+      "thesis": "Tracks the hard-vs-soft underwriting cycle, rate-on-line, reserve adequacy and float investment income across P&C, life and brokers — a monitoring lens on the insurance cycle, not a buy list.",
+      "members": [
+        {
+          "ticker": "PGR",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Progressive — auto P&C share-gainer; pricing/combined-ratio bellwether"
+        },
+        {
+          "ticker": "CB",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Chubb — global P&C/commercial; hard-market underwriter"
+        },
+        {
+          "ticker": "TRV",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Travelers — commercial + personal P&C"
+        },
+        {
+          "ticker": "ALL",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Allstate — personal auto/home P&C"
+        },
+        {
+          "ticker": "AIG",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "AIG — global commercial P&C"
+        },
+        {
+          "ticker": "MET",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "MetLife — group benefits + life"
+        },
+        {
+          "ticker": "PRU",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Prudential — life + annuities/asset mgmt"
+        },
+        {
+          "ticker": "AFL",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Aflac — supplemental health/life (US+Japan)"
+        },
+        {
+          "ticker": "HIG",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "The Hartford — commercial P&C + group benefits"
+        },
+        {
+          "ticker": "CINF",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Cincinnati Financial — regional commercial P&C"
+        },
+        {
+          "ticker": "ACGL",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Arch Capital — specialty insurance + reinsurance + mortgage"
+        },
+        {
+          "ticker": "MMC",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Marsh & McLennan — #1 insurance broker + consulting"
+        },
+        {
+          "ticker": "AON",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Aon — global insurance/reinsurance broker"
+        },
+        {
+          "ticker": "AJG",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Arthur J. Gallagher — mid-market insurance broker roll-up"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-06-21",
+          "action": "create",
+          "note": "Seeded Insurance & Brokers — 14 liquid P&C/life/broker names to cover the Financials standout cluster (insurers) the AI/tech-skewed basket set was missing."
+        }
+      ]
+    },
+    "big_pharma": {
+      "name": "Big Pharma",
+      "name_zh": "大型药企",
+      "theme": "Large-cap branded pharma & big-biotech — pipeline/patent-cliff, pricing and M&A narrative (GLP-1 leaders LLY/AMGN sit in their own basket).",
+      "category": "Healthcare",
+      "parent": "Healthcare",
+      "etf_proxy": "PPH",
+      "etf_proxy_note": "loose — VanEck pharma",
+      "weighting": "equal",
+      "created": "2026-06-21",
+      "curated": "2026-06-21",
+      "tags": [
+        "pharma",
+        "biotech",
+        "branded-drugs",
+        "pipeline",
+        "patent-cliff"
+      ],
+      "thesis": "Tracks branded-pharma/big-biotech pipeline progress, patent-cliff exposure, drug pricing and M&A — a monitoring lens on the large-cap drug complex, not a buy list. Excludes the GLP-1/obesity leaders (own basket).",
+      "members": [
+        {
+          "ticker": "JNJ",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Johnson & Johnson — diversified pharma + medtech"
+        },
+        {
+          "ticker": "MRK",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Merck — Keytruda-anchored oncology; post-cliff pipeline question"
+        },
+        {
+          "ticker": "PFE",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Pfizer — post-COVID revenue reset + oncology buildout"
+        },
+        {
+          "ticker": "BMY",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Bristol-Myers Squibb — Eliquis/Opdivo cliff vs new launches"
+        },
+        {
+          "ticker": "ABBV",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "AbbVie — Humira cliff navigated by Skyrizi/Rinvoq"
+        },
+        {
+          "ticker": "GILD",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Gilead — HIV franchise + oncology (Trodelvy)"
+        },
+        {
+          "ticker": "VRTX",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Vertex — CF monopoly + pain/CASGEVY diversification"
+        },
+        {
+          "ticker": "BIIB",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Biogen — Alzheimer (Leqembi) optionality"
+        },
+        {
+          "ticker": "REGN",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Regeneron — Eylea/Dupixent franchises"
+        },
+        {
+          "ticker": "ZTS",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Zoetis — animal health (pharma-adjacent quality compounder)"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-06-21",
+          "action": "create",
+          "note": "Seeded Big Pharma — 10 large-cap branded-pharma/biotech names to cover the Healthcare standout cluster (ex-GLP-1) the basket set was missing."
+        }
+      ]
+    },
+    "industrial_distribution": {
+      "name": "Industrial Distribution & Capital Goods",
+      "name_zh": "工业分销与资本品",
+      "theme": "MRO/industrial distributors, equipment rental and short-cycle capital-goods/tooling — the restock + nonresidential-construction + pricing-power narrative.",
+      "category": "Industrials",
+      "parent": "Industrials",
+      "etf_proxy": "XLI",
+      "etf_proxy_note": "loose — broad industrials",
+      "weighting": "equal",
+      "created": "2026-06-21",
+      "curated": "2026-06-21",
+      "tags": [
+        "distribution",
+        "mro",
+        "rental",
+        "capital-goods",
+        "tooling",
+        "short-cycle"
+      ],
+      "thesis": "Tracks MRO/industrial-distributor volumes & pricing, equipment-rental fleet utilization and short-cycle tooling demand — a monitoring lens on the industrial restock/capex pulse, not a buy list.",
+      "members": [
+        {
+          "ticker": "GWW",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "W.W. Grainger — #1 MRO distributor; pricing-power compounder"
+        },
+        {
+          "ticker": "FAST",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Fastenal — fastener/MRO distribution + onsite vending"
+        },
+        {
+          "ticker": "WSO",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Watsco — HVAC/R distribution"
+        },
+        {
+          "ticker": "AIT",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Applied Industrial — bearings/power-transmission distribution"
+        },
+        {
+          "ticker": "MSM",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "MSC Industrial — metalworking/MRO distribution"
+        },
+        {
+          "ticker": "POOL",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Pool Corp — pool-equipment distribution"
+        },
+        {
+          "ticker": "URI",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "United Rentals — #1 equipment rental fleet"
+        },
+        {
+          "ticker": "KMT",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Kennametal — cutting tools / short-cycle metalworking"
+        },
+        {
+          "ticker": "GGG",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Graco — fluid-handling equipment"
+        },
+        {
+          "ticker": "NDSN",
+          "added": "2023-01-03",
+          "removed": null,
+          "rationale": "Nordson — precision dispensing equipment"
+        }
+      ],
+      "changelog": [
+        {
+          "date": "2026-06-21",
+          "action": "create",
+          "note": "Seeded Industrial Distribution & Capital Goods — 10 MRO-distributor / rental / tooling names to cover the Industrials standout cluster the basket set was missing."
+        }
+      ]
     }
   },
   "construction": "Equal-weighted, monthly-rebalanced, buy-and-hold between rebalances; dated membership changes take effect same-day.",
