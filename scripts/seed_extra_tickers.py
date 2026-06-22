@@ -37,6 +37,11 @@ def main() -> int:
             except Exception as e:  # noqa: BLE001
                 print(f"  {t:6s} err {str(e)[:50]} (attempt {attempt})")
             time.sleep(2 + attempt * 2)
+        if frame is None:                      # Yahoo refused it — try Stooq's free CSV
+            from lib.stooq import stooq_daily
+            frame = stooq_daily(t)
+            if frame is not None:
+                print(f"  {t:6s} via Stooq")
         if frame is None:
             bad.append(t); continue
         store.upsert("yahoo", t, frame, outlier_col=None)
