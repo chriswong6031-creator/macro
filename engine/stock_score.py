@@ -78,14 +78,17 @@ _SEL_KIND = {
 # leg that actually survives FDR. Revision is literature-strong; residual momentum is light,
 # regime-scaled context. None is a standalone alpha -> this is a DISPLAY/confluence composite,
 # never a validated sizer. Renormalized over whichever legs are present per name.
-# v2.1 (AVGO/NVDA alignment): SUE down-weighted 0.30->0.18 and analyst REVISIONS up 0.20->0.32.
-# SUE's cross-sectional edge COLLAPSED on deep PIT history (reports/sue-deep-history-phase0.md,
-# IC .039->.0006) yet at 0.30 weight a slightly-negative SUE rank actively CANCELLED a strong
-# revision signal (AVGO: revision z +1.14 dragged to selection 0.24 by SUE z -0.22). Analyst
-# revisions are literature-strong and locally accruing, so they now lead the non-insider legs.
-# Insider (the lone borderline FDR survivor) keeps the top weight; momentum stays a light,
-# regime-scaled context leg. Sums to 1.0; renormalized over whichever legs are present.
-_EDGE_W = {"insider": 0.40, "sue": 0.18, "revision": 0.32, "mom": 0.10}
+# v2.2 (de-anchored from the AVGO/NVDA two-name calibration): the prior v2.1 reweight set SUE 0.18
+# / revision 0.32 by rebuilding until two NAMED tickers cleared a target band — a single-name fit.
+# Re-derived here from the IC EVIDENCE ALONE: SUE's cross-sectional edge is ~ZERO on deep PIT
+# history (reports/sue-deep-history-phase0.md, IC .039->.0005, HAC t 0.06, L/S Sharpe ~0) and the
+# repo's own verdict DEMOTES SUE scored->display/confirmer. So SUE drops to a light CONFIRMER FLOOR
+# (0.10, not scored alpha), and the freed weight goes to INSIDER (the lone borderline FDR survivor),
+# which takes the clear top weight (0.50). Analyst REVISIONS stay a strong co-lead at their prior
+# level (0.30 — deliberately NOT raised, since raising them would just re-boost the same two names);
+# momentum stays the light, regime-scaled context leg (0.10). Calibrated to the IC hierarchy, not to
+# any ticker's score. Sums to 1.0; renormalized over whichever legs are present.
+_EDGE_W = {"insider": 0.50, "sue": 0.10, "revision": 0.30, "mom": 0.10}
 
 # REGIME-CONDITIONAL momentum weight (research/STOCK_CONVICTION_V2 §3 + the regime audit in
 # scripts/conviction_v2_regime.py). The deep+PIT S&P panel (2008-2026, 63d) shows residual
@@ -721,28 +724,6 @@ def _gex_confirm_tilt(gc: dict | None) -> float | None:
     return None
 
 
-def _anticipation_tilt(rec: dict) -> float | None:
-    """Forward-cone RISK SHAPE as a bounded entry tilt (the AVGO/NVDA alignment fix). The
-    anticipation engine measures an upside/downside cone; its DIRECTION (p_up) is ~a coin-flip
-    so we never bet on it — but the ASYMMETRY (median favourable excursion vs average drawdown)
-    is a genuine risk-reward read. A favourable shape (mfe >> |dd|) is a small constructive nudge,
-    an adverse one a small trim. This mirrors the Mastermind 'asymmetry' lens so the two systems
-    treat the cone the same way, and it surfaces the 'high upside / low downside' the dashboard
-    score previously ignored. Display-derived risk shape, not a validated direction signal."""
-    h = ((rec.get("anticipation") or {}).get("horizons") or {}).get("medium") or {}
-    if h.get("thin"):                       # too few analog cells -> don't trust the shape
-        return None
-    mfe, dd = _f(h.get("mfe_med")), _f(h.get("dd_avg"))
-    if mfe is None or dd is None or dd == 0:
-        return None
-    asym = mfe / abs(dd)
-    if asym >= 1.6:
-        return 0.25
-    if asym <= 0.8:
-        return -0.25
-    return None
-
-
 def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     """Entry/timing axis + whether the cycle/extension BLOCKS a buy (caps the axis).
 
@@ -783,9 +764,10 @@ def _axis_entry(rec: dict) -> tuple[float | None, list[str], bool]:
     gq = _gex_confirm_tilt(rec.get("gex_confirm"))
     if gq is not None:
         conf += gq; present.append("options")
-    aq = _anticipation_tilt(rec)
-    if aq is not None:
-        conf += aq; present.append("risk-shape")
+    # NOTE: the forward-cone risk SHAPE (anticipation asymmetry) is deliberately NOT a scored entry
+    # confirmer. It was added under the AVGO/NVDA alignment work but routes an explicitly "NO-GO for
+    # size" / coin-flip-direction signal into the decision; it now lives ONLY as a display-only
+    # honesty note in conviction_profile (surfacing a favourable cone without moving the score).
     conf = float(np.clip(conf, -_ENTRY_CONFIRM_CAP, _ENTRY_CONFIRM_CAP))
 
     hard: list[float] = []
