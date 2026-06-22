@@ -1007,6 +1007,16 @@ breadth:
   lookback_days_live: 1100        # ~3y: 200DMA/NH-NL plus cycle analysis for stock search
   ma_windows: [50, 200]
   nhnl_window: 252
+  # Repair known-bad Wikipedia symbols before they reach the universe. The list is
+  # community-edited and intermittently ships a plausible-but-wrong ticker —
+  # vandalism (Marsh & McLennan as the non-existent "MRSH") or a stale pre-rename
+  # ticker (Fiserv as "FISV", renamed "FI" in 2023). Map bad -> real current
+  # ticker; pricing is best-effort (an unpriceable repaired symbol is skipped, no
+  # worse than the garbage it replaced, and it builds once the feed serves it).
+  # Extend as the "constituents churn" / "dropping non-ticker row" log surfaces more.
+  ticker_fixups:
+    MRSH: MMC     # Marsh & McLennan — page vandalised to a non-existent symbol
+    FISV: FI      # Fiserv — page shows the pre-2023 ticker
 
 # Small-cap participation, computed exactly like S&P 500 breadth but over the
 # S&P SmallCap 600 — a free, well-defined small-cap universe (Wikipedia, same

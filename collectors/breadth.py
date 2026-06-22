@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import io
 import logging
+import re
 import time
 
 import pandas as pd
@@ -25,6 +26,11 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# A real US listing symbol: a letter, then up to 5 more letters/digits/dashes
+# (class shares like BRK-B after the .->- swap). Anything else in the Symbol
+# column is vandalism / footnote junk and must not enter the universe.
+_TICKER_RE = re.compile(r"^[A-Z][A-Z0-9-]{0,5}$")
 
 
 class BreadthAdapter(Adapter):
@@ -44,9 +50,42 @@ class BreadthAdapter(Adapter):
             if "Symbol" in t.columns:
                 t = t.rename(columns={"Symbol": "symbol", "Security": "name",
                                       "GICS Sector": "sector"})
-                t["symbol"] = t["symbol"].str.replace(".", "-", regex=False)  # BRK.B -> BRK-B
-                return t[["symbol", "name", "sector"]]
+                return self._repair(t[["symbol", "name", "sector"]])
         raise ValueError("constituents table not found on Wikipedia page")
+
+    def _repair(self, members: pd.DataFrame) -> pd.DataFrame:
+        """Clean a freshly-scraped constituents table before it becomes the universe.
+
+        Wikipedia is community-edited and intermittently ships a *plausible-looking*
+        but wrong symbol — vandalism (Marsh & McLennan shown as the non-existent
+        "MRSH") or a stale pre-rename ticker (Fiserv as "FISV", renamed "FI" in
+        2023) — plus the occasional non-ticker junk cell. Left unrepaired those
+        silently drop the real name from the searchable universe and can mint a
+        bogus page for the garbage symbol. This normalises symbols, drops
+        non-ticker junk, and applies the config ``ticker_fixups`` repair map
+        (bad -> real current ticker). Pure + logged; never raises."""
+        df = members.copy()
+        df["symbol"] = (df["symbol"].astype(str).str.strip().str.upper()
+                        .str.replace(".", "-", regex=False))         # BRK.B -> BRK-B
+        # drop non-ticker junk (vandalism, footnote artefacts) before it poisons ratios
+        ok = df["symbol"].str.match(_TICKER_RE)
+        if not ok.all():
+            log.warning("%s constituents: dropping %d non-ticker row(s): %s",
+                        self.name, int((~ok).sum()), df.loc[~ok, "symbol"].tolist()[:10])
+            df = df[ok]
+        # repair known-bad symbols (vandalism / stale renames) -> the real ticker
+        fixups = {str(k).strip().upper(): str(v).strip().upper()
+                  for k, v in (self.cfg.get("ticker_fixups") or {}).items()}
+        if fixups:
+            hit = df["symbol"].isin(fixups)
+            if hit.any():
+                log.info("%s constituents: repaired %d Wikipedia ticker(s): %s",
+                         self.name, int(hit.sum()),
+                         {s: fixups[s] for s in sorted(df.loc[hit, "symbol"].unique())})
+                df["symbol"] = df["symbol"].map(lambda s: fixups.get(s, s))
+        # a repair can collide with an already-correct row -> keep one
+        df = df.drop_duplicates(subset="symbol", keep="first").reset_index(drop=True)
+        return df[["symbol", "name", "sector"]]
 
     def _download_closes(self, tickers: list[str], period: str) -> pd.DataFrame:
         bs = self.ycfg["batch_size"]
@@ -125,8 +164,22 @@ class BreadthAdapter(Adapter):
                     w[w.index >= cutoff_e].to_parquet(ep)
             except Exception as e:  # noqa: BLE001
                 log.warning("breadth OHLCV extras cache failed (%s) — volume signals close-only", e)
-        # constituents list is reference data, not a time series — written directly
-        members.set_index("symbol").to_parquet(self.cache_path.parent / "constituents.parquet")
+        # constituents list is reference data, not a time series — written directly.
+        # Log membership churn vs the prior committed list so a vandalised / partial
+        # scrape that silently drops real members is visible in the run output.
+        cpath = self.cache_path.parent / "constituents.parquet"
+        try:
+            if cpath.exists():
+                prior = set(pd.read_parquet(cpath).index)
+                new = set(members["symbol"])
+                added, dropped = new - prior, prior - new
+                if added or dropped:
+                    log.info("%s constituents churn: +%d -%d (added %s; dropped %s)",
+                             self.name, len(added), len(dropped),
+                             sorted(added)[:8], sorted(dropped)[:8])
+        except Exception as e:  # noqa: BLE001 — observability only, never fatal
+            log.warning("%s constituents churn log failed (%s)", self.name, e)
+        members.set_index("symbol").to_parquet(cpath)
 
         return {"breadth": self.compute(closes)}
 
