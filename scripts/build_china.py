@@ -61,6 +61,15 @@ def _chart_html(fig: go.Figure) -> str:
     return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
 
 
+def _load_json(path: Path) -> dict | None:
+    try:
+        if path.exists():
+            return json.loads(path.read_text())
+    except Exception as e:  # noqa: BLE001 — persisted artifacts are fallback-only
+        log.warning("fallback JSON unreadable (%s): %s", path, e)
+    return None
+
+
 def _chart_regime(px: pd.Series, hist: pd.DataFrame, days: int = 3650) -> str:
     cut = px.index.max() - pd.Timedelta(days=days)
     s = px.loc[cut:].dropna()
@@ -743,6 +752,18 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.error("china scoreboard build failed (%s); skipping", e)
             vm["scoreboard"] = None
+
+        factordata = site / "factordata"
+        if not (vm.get("setups") or {}).get("buy"):
+            fallback = _load_json(factordata / "china_standouts.json")
+            if fallback and fallback.get("buy"):
+                vm["setups"] = fallback
+                log.info("using persisted china_standouts.json fallback (%d buy)", len(fallback["buy"]))
+        if not ((vm.get("scoreboard") or {}).get("modes")):
+            fallback = _load_json(factordata / "china_scoreboard.json")
+            if fallback and fallback.get("modes"):
+                vm["scoreboard"] = fallback
+                log.info("using persisted china_scoreboard.json fallback")
 
         env = Environment(loader=FileSystemLoader(
             str(Path(__file__).resolve().parent.parent / "templates")), autoescape=False)
