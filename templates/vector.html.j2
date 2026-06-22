@@ -249,7 +249,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 <nav class="site-nav" style="max-width:1180px;margin:0 auto 16px;padding:0 20px">
   {% include "_navlinks.html.j2" %}
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
     <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
     <div class="lang-toggle" role="group" aria-label="Language">
       <span class="pill"></span>
@@ -760,23 +760,16 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     <div class="conv-defer" style="color:{{ gcolor }}">↳ {{ t('Defers to','服从') }} <b>{{ t(grade, grade_zh) }}</b> — {{ t('the near-term texture under that bigger-picture call','大局判断之下的近端纹理') }}</div>
   {% endmacro %}
 
-  {# AI Master Brief — Bitcoin-focused LLM synthesis (engine/master_brain.py, btc
-     lens). Client-fetched from btc_brief.json so it never depends on build order;
-     hidden until a usable brief loads. Research context only — never a signal. #}
-  <div class="section-title">🧠 {{ t('AI Master Brief · Bitcoin synthesis', 'AI 主脑简报 · 比特币综合') }}</div>
-  <div class="card ai-brief" id="btc-brief" data-brief-src="btc_brief.json" style="display:none">
-    <style>
-      #btc-brief .mb-sum{font-size:15px;font-weight:600;color:var(--ink);margin:0 0 10px}
-      #btc-brief .mb-sec{margin:12px 0}
-      #btc-brief .mb-h{font-weight:700;color:var(--blue);margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
-      #btc-brief .mb-list{margin:4px 0 0 18px;padding:0}
-      #btc-brief .mb-list li{margin:4px 0}
-      #btc-brief .mb-foot{margin-top:14px;color:var(--muted);font-size:12px}
-      #btc-brief [data-brief-body]{color:var(--text);font-size:14px;line-height:1.5}
-    </style>
-    <div class="sub" style="margin-bottom:10px">{{ t('AI synthesis across the vector\'s layers — cycle, valuation, leverage, on-chain, ETF flows and the macro-liquidity backdrop. Research context only; never a signal — verify against the panels below.', 'AI 对各层信号的综合 — 周期、估值、杠杆、链上、ETF 资金流与宏观流动性背景。仅供研究参考，绝非信号 — 请对照下方面板核实。') }}</div>
-    <div data-brief-body></div>
-  </div>
+  {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
+     (aibrief.html). Replaces the old inline AI Master Brief (Bitcoin) card. #}
+  <a class="card aibrief-card" href="aibrief.html">
+    <span class="abc-ic">🧠</span>
+    <span class="abc-mid">
+      <span class="abc-tit">{{ t('AI Daily Brief · Bitcoin & cross-asset synthesis', 'AI 每日简报 · 比特币与跨资产综合') }}</span>
+      <span class="abc-sub muted sm">{{ t('AI reads the Bitcoin vector and the macro-liquidity backdrop in one place — cycle, valuation, leverage, on-chain and ETF flows, and what to watch. Research context only, never a signal.', 'AI 在一处解读比特币向量与宏观流动性背景 — 周期、估值、杠杆、链上与 ETF 资金流，及后续关注。仅供研究参考，绝非交易信号。') }}</span>
+    </span>
+    <span class="abc-go">→</span>
+  </a>
 
   <!-- ===================== MID & SHORT TERM (side by side, same format) ===================== -->
   <div class="section-title">{{ t('Mid term & Short term · near-term drawdown risk', '中期与短期 · 近端回撤风险') }}</div>
@@ -1446,7 +1439,6 @@ window.__CHART_SWAP__ = {
 <script src="theme.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="vector_timemachine.js"></script>
-<script src="aibrief.js"></script>
 <!-- interactive Risk-Index-vs-Strategy backtest chart (bespoke Lightweight Charts v5) -->
 <script src="lightweight-charts-v5.js"></script>
 <script src="vector_chart.js"></script>
