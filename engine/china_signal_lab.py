@@ -25,7 +25,10 @@ _PRIORS = {
 }
 # registry/leg key -> china_validation family (only these have a reconstructable-history harness)
 _VAL_FAMILY = {"value": "valuation", "valuation": "valuation", "margin": "margin",
-               "margin_detail": "margin", "news": "news_sentiment"}
+               "margin_detail": "margin", "news": "news_sentiment",
+               # GATED Tushare legs: the `flow` convergence leg now EARNS/zeroes its weight from
+               # the fundflow forward-IC family; winner_rate maps to chips for when it's scored.
+               "flow": "fundflow", "winner_rate": "chips"}
 
 
 def load_validation() -> dict:

@@ -79,6 +79,63 @@ def test_broker_gold_and_chips_parsers(monkeypatch, tmp_path):
     assert ce.chips()["600519.SS"]["winner_rate"] == 88.0
 
 
+def test_history_collector_noop_without_token(monkeypatch):
+    monkeypatch.delenv("TUSHARE_TOKEN", raising=False)
+    from collectors import tushare_history as th
+    assert th.refresh() == 0
+    # _flow_value sums 超大单 + 大单 rates (the live-leg definition), falls back to net rate
+    class R:  # noqa: D401 — tiny stand-in for an itertuples row
+        buy_elg_amount_rate, buy_lg_amount_rate, net_amount_rate = 3.0, 2.0, 9.0
+    assert th._flow_value(R()) == 5.0
+    class R2:
+        buy_elg_amount_rate = buy_lg_amount_rate = None
+        net_amount_rate = 7.0
+    assert th._flow_value(R2()) == 7.0
+
+
+# ---- validation families for the new gated legs ---------------------------- #
+def test_validation_has_fundflow_chips_sign_priors():
+    from engine import china_validation as cv
+    assert cv._SIGN_EXPECTED["fundflow"] == 1     # inflow → continuation
+    assert cv._SIGN_EXPECTED["chips"] == -1       # euphoric win-rate → contrarian
+
+
+def test_hist_cross_sections_reads_parquet(monkeypatch, tmp_path):
+    from engine import china_validation as cv
+    monkeypatch.setattr(cv.config, "data_dir", lambda: tmp_path)
+    assert cv._hist_cross_sections("flow_hist", "flow") == {}     # absent → {}
+    d = tmp_path / "tushare"
+    d.mkdir(parents=True)
+    rows = [{"ticker": f"{600000+i}.SS", "date": dt, "flow": float(i - 6)}
+            for dt in ("20250106", "20250113") for i in range(12)]
+    pd.DataFrame(rows).to_parquet(d / "flow_hist.parquet", index=False)
+    xs = cv._hist_cross_sections("flow_hist", "flow")
+    assert len(xs) == 2 and all(len(s) == 12 for s in xs.values())
+
+
+def test_validate_all_includes_new_families(monkeypatch, tmp_path):
+    """fundflow + chips appear in the scorecard, degrading to `accruing` with no history."""
+    from engine import china_validation as cv
+    monkeypatch.setattr(cv.config, "data_dir", lambda: tmp_path)
+    monkeypatch.setattr(cv, "_panel", lambda: None)       # no price panel → families go accruing
+    monkeypatch.setattr(cv, "_bench_close", lambda: None)
+    out = cv.validate_all()
+    fams = out.get("families", {})
+    assert "fundflow" in fams and "chips" in fams
+    assert fams["fundflow"]["status"] == "accruing" and fams["fundflow"]["sign_expected"] == 1
+
+
+def test_flow_leg_zeroed_when_fundflow_proven_wrong_sign(monkeypatch):
+    """The whole point: a proven wrong-sign fundflow family drops the `flow` convergence weight to 0."""
+    from engine import china_signal_lab as sl
+    assert sl._VAL_FAMILY["flow"] == "fundflow"
+    monkeypatch.setattr(sl, "load_validation", lambda: {
+        "fundflow": {"mean_ic": -0.04, "t_hac": -3.5, "n_obs": 300, "sign_ok": False, "proven": False}})
+    w = sl.leg_weights_for("altdata")
+    assert w.get("flow", 0) == 0.0
+    assert sum(w.values()) > 0.99      # renormalized over the surviving legs
+
+
 def test_crowding_prefers_tushare_valuation(monkeypatch, tmp_path):
     from engine import china_crowding as cc
     monkeypatch.setattr(cc.config, "data_dir", lambda: tmp_path)
