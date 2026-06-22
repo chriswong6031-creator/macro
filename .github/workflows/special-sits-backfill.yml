@@ -6,8 +6,12 @@ name: special-sits-backfill
 on:
   workflow_dispatch:
     inputs:
-      classify_limit: { description: "LLM category-verify calls this run", default: "1500" }
-      summary_limit:  { description: "LLM summary calls this run",         default: "1000" }
+      # defaults sized to finish inside timeout-minutes (180): measured ~13 LLM calls/min, so
+      # classify+summary <= ~1500 leaves margin for the doc fetches. A run that overruns the
+      # timeout is KILLED before the commit step -> all enrichment lost (no mid-run checkpoint),
+      # so keep the cron defaults conservative; raise them on a manual dispatch if needed.
+      classify_limit: { description: "LLM category-verify calls this run", default: "1000" }
+      summary_limit:  { description: "LLM summary calls this run",         default: "500" }
       text_limit:     { description: "keyword pre-filter doc fetches",      default: "6000" }
       filer_limit:    { description: "13D cover-page fetches",              default: "3000" }
   schedule:
@@ -42,8 +46,8 @@ jobs:
       - name: enrich backlog (bounded by the inputs; LLM lanes no-op without a key)
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          SS_CLASSIFY_LIMIT: ${{ github.event.inputs.classify_limit || '1500' }}
-          SS_SUMMARY_LIMIT: ${{ github.event.inputs.summary_limit || '1000' }}
+          SS_CLASSIFY_LIMIT: ${{ github.event.inputs.classify_limit || '1000' }}
+          SS_SUMMARY_LIMIT: ${{ github.event.inputs.summary_limit || '500' }}
           SS_TEXT_LIMIT: ${{ github.event.inputs.text_limit || '6000' }}
           SS_FILER_LIMIT: ${{ github.event.inputs.filer_limit || '3000' }}
         run: python -m scripts.special_sits_backfill
