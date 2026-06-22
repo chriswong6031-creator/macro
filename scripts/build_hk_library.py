@@ -209,6 +209,26 @@ def chart_series(close: pd.Series, n: int = 504) -> dict:
             "c": [round(float(v), 3) for v in c.values]}
 
 
+def _safe(ticker: str) -> str:
+    return ticker.replace("=", "_").replace("^", "_")
+
+
+def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
+    """Write search manifest rows only when the matching detail JSON exists."""
+    verified, missing = [], []
+    for row in index:
+        t = row.get("t")
+        if t and (outdir / f"{_safe(t)}.json").exists():
+            verified.append(row)
+        elif t:
+            missing.append(t)
+    if missing:
+        log.warning("hk library: dropped %d index rows without detail JSON (%s%s)",
+                    len(missing), ", ".join(missing[:8]), "..." if len(missing) > 8 else "")
+    (outdir / "index.json").write_text(json.dumps(verified))
+    return verified
+
+
 def current_liquidity() -> str | None:
     """The live HK DUAL-liquidity regime ("expanding"/"contracting"/"neutral") the HK
     engine last classified (hk_regime/latest.json `liquidity_overlay` — PBoC M2 +
@@ -267,19 +287,25 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
     hy = hk["yahoo"]
     names = hk.get("names", {})
 
-    # curated constituents from the breadth close cache (~3y window) + their sector
+    # Curated constituents + their sector. Prefer the deep HK search close panel when
+    # available; the breadth cache can be shallow for newly added/late-refreshed names,
+    # which made valid HK tickers show up as "not in library".
     cache = config.data_dir() / "hk_breadth" / "_closes_cache.parquet"
     cons = config.data_dir() / "hk_breadth" / "constituents.parquet"
-    if cache.exists() and cons.exists():
-        closes = pd.read_parquet(cache)
+    deep = config.data_dir() / "hk_search" / "closes_deep.parquet"
+    if cons.exists() and (cache.exists() or deep.exists()):
+        closes = pd.read_parquet(cache) if cache.exists() else pd.DataFrame()
+        deep_closes = pd.read_parquet(deep) if deep.exists() else pd.DataFrame()
         meta = pd.read_parquet(cons)
-        for t in closes.columns:
+        tickers = list(dict.fromkeys([*deep_closes.columns, *closes.columns]))
+        for t in tickers:
             if t in seen or t not in meta.index:
                 continue
             nm = str(meta.loc[t, "name"])
             if nm == t:  # parquet name is just the ticker — use the config display name
                 nm = names.get(t, t)
-            out.append((t, closes[t], None, nm, str(meta.loc[t, "sector"])))
+            series = deep_closes[t] if t in deep_closes.columns else closes[t]
+            out.append((t, series, None, nm, str(meta.loc[t, "sector"])))
             seen.add(t)
     else:
         log.warning("hk breadth close cache missing — library covers indices/ETFs only")
@@ -779,7 +805,7 @@ def main(betas: dict | None = None) -> dict | None:
                     rec["anticipation"] = _ant
             except Exception:  # noqa: BLE001 — additive cone, never fatal
                 pass
-        safe = ticker.replace("=", "_").replace("^", "_")
+        safe = _safe(ticker)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("global_beta", {}).get("beta") is not None:
@@ -794,7 +820,7 @@ def main(betas: dict | None = None) -> dict | None:
         from engine import hk_fundamentals
         fmap = hk_fundamentals.build_all(price_by)
         for ticker, fund in fmap.items():
-            safe = ticker.replace("=", "_").replace("^", "_")
+            safe = _safe(ticker)
             fp = outdir / f"{safe}.json"
             if not fp.exists():
                 continue
@@ -821,7 +847,7 @@ def main(betas: dict | None = None) -> dict | None:
         from engine import hk_ah
         ah = hk_ah.ah_by_ticker()
         for ticker, blk in ah.items():
-            safe = ticker.replace("=", "_").replace("^", "_")
+            safe = _safe(ticker)
             fp = outdir / f"{safe}.json"
             if not fp.exists():
                 continue
@@ -849,7 +875,7 @@ def main(betas: dict | None = None) -> dict | None:
             fp.write_text(json.dumps(rec, default=str))
         except Exception:  # noqa: BLE001 — never fatal
             continue
-    (outdir / "index.json").write_text(json.dumps(index))
+    index = _write_verified_index(outdir, index)
     cal = config.data_dir() / "hk_regime" / "ladder_calibration.json"
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
