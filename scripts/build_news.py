@@ -1,6 +1,6 @@
-"""Build the Research → News page (site/news.html) + JSON side-artifacts.
+"""Build the Research → News JSON side-artifacts under site/news/.
 
-Aggregates every news feed in the suite into one bilingual page:
+Aggregates every news feed in the suite (LLM-enriching the headlines in place):
   • Macro news, sentiment & catalysts        (engine.macro_news + event_calendar)
   • Financial / sector / Mag-7 / basket news  (engine.financial_news)
   • China macro / markets / tech / politics    (engine.china_news)
@@ -10,6 +10,13 @@ An OPTIONAL Claude-Haiku / DeepSeek pass (engine.news_llm) adds one-line summari
 and an "importance" re-rank on top of the deterministic quality score — it never
 adds or removes a headline, and feeds NO score.
 
+The PAGE itself — site/news.html — is rendered by scripts/build_site.py from the
+shared macro view-model (it carries `latest`/`ndi`/`event_strip`/`prediction_markets`/
+`narrative_regime`, which this standalone script does not). build_news runs AFTER
+build_site and owns ONLY the JSON side-artifacts below; it deliberately does NOT
+render news.html (doing so would crash on the missing `latest` and, if "fixed",
+would clobber build_site's richer page with a lean one).
+
 Side-artifacts written under site/news/:
   • financial.json   — the full sectioned financial feed
   • by_ticker.json   — compact per-ticker news flow (stock pages + Mastermind lens)
@@ -17,7 +24,8 @@ Side-artifacts written under site/news/:
 
 Run:   python -m scripts.build_news
 Fast:  feeds are disk-cached (12 h TTL); re-runs are ~instant.
-Standalone & degrade-safe — any feed that fails is simply omitted; the page builds.
+Standalone & degrade-safe — any feed that fails is simply omitted; the artifacts
+that do have data are still written (each write is independently guarded).
 """
 from __future__ import annotations
 
@@ -28,8 +36,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-
-from jinja2 import Environment, FileSystemLoader  # noqa: E402
 
 from lib import config  # noqa: E402
 from engine import news_common as nc  # noqa: E402
@@ -92,8 +98,8 @@ def build(write: bool = True) -> dict:
     vm: dict = {"built": now.isoformat(), "built_date": now.date().isoformat(),
                 "llm_provider": ""}
 
-    # ---- macro news + catalysts + (optional) brief --------------------------
-    macro = macro_brief = None
+    # ---- macro news + catalysts ---------------------------------------------
+    macro = None
     macro_catalysts: list = []
     macro_disc = macro_disc_zh = ""
     try:
@@ -153,50 +159,45 @@ def build(write: bool = True) -> dict:
         sections.append(china["news"]["headlines"])
     vm["llm_provider"] = _enrich([s for s in sections if s])
 
-    # macro AI brief (the legacy gated narrator) — independent of news_llm
-    try:
-        from engine import macro_news as mn
-        if macro and macro.get("headlines"):
-            macro_brief = mn.macro_brief(macro["headlines"])
-    except Exception as e:  # noqa: BLE001
-        log.debug("macro brief skipped (%s)", e)
-    vm["macro_brief"] = macro_brief
-
     vm["sector_etfs"] = nc.SECTOR_ETFS
     vm["mag7_order"] = nc.MAG7
 
     if not write:
         return vm
 
-    # ---- render -------------------------------------------------------------
-    env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
-    html = env.get_template("news.html.j2").render(**vm, mode="news")
-    site = config.ROOT / cfg["storage"]["site_dir"]
-    site.mkdir(parents=True, exist_ok=True)
-    (site / "news.html").write_text(html)
-
     # ---- side-artifacts -----------------------------------------------------
+    # site/news.html is rendered by scripts/build_site.py (the full, rich page from
+    # the shared macro view-model). build_news runs AFTER build_site and writes ONLY
+    # the JSON side-artifacts below — it must NOT render news.html. Each write is
+    # independently guarded so one bad feed can never block the rest.
+    site = config.ROOT / cfg["storage"]["site_dir"]
     outdir = site / "news"
     outdir.mkdir(parents=True, exist_ok=True)
+
+    def _write(name: str, payload) -> None:
+        try:
+            (outdir / name).write_text(json.dumps(payload, default=str))
+        except Exception as e:  # noqa: BLE001 — one artifact must never block the others
+            log.warning("news artifact %s failed (%s)", name, e)
+
     if fin:
-        (outdir / "financial.json").write_text(json.dumps(fin, default=str))
+        _write("financial.json", fin)
         try:
             from engine import financial_news as fnews
             bt = fnews.mastermind_by_ticker(fin)
-            (outdir / "by_ticker.json").write_text(json.dumps(
-                {"schema": "news_flow.v1", "is_context_only": True,
-                 "asof": vm["built_date"], "tickers": bt}, default=str))
+            _write("by_ticker.json", {"schema": "news_flow.v1", "is_context_only": True,
+                                      "asof": vm["built_date"], "tickers": bt})
             log.info("news by_ticker: %d tickers", len(bt))
         except Exception as e:  # noqa: BLE001
             log.warning("by_ticker artifact failed (%s)", e)
     if macro:
-        (outdir / "macro.json").write_text(json.dumps(macro, default=str))
+        _write("macro.json", macro)
     if china:
-        (outdir / "china.json").write_text(json.dumps(china, default=str))
+        _write("china.json", china)
     if narrative:
-        (outdir / "narrative.json").write_text(json.dumps(narrative, default=str))
+        _write("narrative.json", narrative)
 
-    log.info("built site/news.html (llm=%s)", vm["llm_provider"] or "off")
+    log.info("built site/news/*.json (llm=%s)", vm["llm_provider"] or "off")
     return vm
 
 
