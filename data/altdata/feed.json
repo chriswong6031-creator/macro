@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-22T06:11:11.610077+00:00",
+  "generated_utc": "2026-06-22T08:18:12.660728+00:00",
   "as_of": "2026-06-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4460,9 +4460,27 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 108,
+      "rows": 110,
       "last_seen": "2026-06-22",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/CMB.TECH+and+Fortescue+Sign+Charter+Agreement+for+Up+to+12+Ammonia-Capable+Vessels",
+          "time": "2026-06-22 06:30:24",
+          "headline": "CMB.TECH and Fortescue Sign Charter Agreement for Up to 12 Ammonia-Capable Vessels",
+          "category": "press_release_summary",
+          "summary": "<p>CMB.TECH and Fortescue signed an agreement to charter ammonia-capable vessels, advancing decarbonization in shipping.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>CMB.TECH NV and Fortescue have signed a \u2026",
+          "image": "https://www.quiverquant.com/images/cmbt_rect_new.png",
+          "_first_seen": "2026-06-22T06:50:12.722666+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Roundtable+Launches+Real-Time+USDC+Payment+Infrastructure+for+Publishers+with+Coinbase+Support",
+          "time": "2026-06-22 05:10:19",
+          "headline": "Roundtable Launches Real-Time USDC Payment Infrastructure for Publishers with Coinbase Support",
+          "category": "press_release_summary",
+          "summary": "<p>Roundtable enables professional publishers to receive real-time ad revenue payments in USDC through its new blockchain infrastructure.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>Roundtable (RTB Digital\u2026",
+          "image": "https://www.quiverquant.com/images/rtb_rect_new.png",
+          "_first_seen": "2026-06-22T06:50:12.722666+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/DoubleVerify+Expands+DV+Authentic+AdVantage+to+Meta+and+TikTok",
           "time": "2026-06-22 04:10:21",
@@ -4662,30 +4680,12 @@
           "_first_seen": "2026-06-21T15:27:37.626670+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Infleqtion+Stock+%28INFQ%29+Opinions+on+Quantum+Sector+Momentum",
+          "url": "https://www.quiverquant.com/news/Take-Two+Interactive+Stock+%28TTWO%29+Opinions+on+GTA+VI+Preorder+Hype",
           "time": "2026-06-21 14:03:25",
-          "headline": "Infleqtion Stock (INFQ) Opinions on Quantum Sector Momentum",
+          "headline": "Take-Two Interactive Stock (TTWO) Opinions on GTA VI Preorder Hype",
           "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Quantum TA Update:</strong> Market observers on social media have been closely tracking Infleqtion's price action this week, noting a consolidation phase around the $13 level \u2026",
-          "image": "https://www.quiverquant.com/images/infq_rect_new.png",
-          "_first_seen": "2026-06-21T15:27:37.626670+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Rocket+Lab+Stock+%28RKLB%29+Opinions+on+Recent+Space+Force+Mission+Success+and+Nasdaq+Inclusion",
-          "time": "2026-06-21 14:03:25",
-          "headline": "Rocket Lab Stock (RKLB) Opinions on Recent Space Force Mission Success and Nasdaq Inclusion",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Space Force Mission:</strong> Social media has lit up over Rocket Lab's rapid-response launch for the U.S. Space Force, completed with just 24 hours' notice from New Zealand. \u2026",
-          "image": "https://www.quiverquant.com/images/rklb_rect_new.png",
-          "_first_seen": "2026-06-21T15:27:37.626670+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Rigetti+Computing+Stock+%28RGTI%29+Opinions+on+Quantum+Computing+Sector+Growth",
-          "time": "2026-06-21 14:03:25",
-          "headline": "Rigetti Computing Stock (RGTI) Opinions on Quantum Computing Sector Growth",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Quantum sector momentum:</strong> Social media chatter around Rigetti Computing has intensified amid broader enthusiasm for quantum stocks in the evolving technology landscape\u2026",
-          "image": "https://www.quiverquant.com/images/rgti_rect_new.png",
+          "summary": "<p><strong style=\"color: rgb(218,48,46);\">GTA VI Preorder Buzz:</strong> Social media chatter around Take-Two Interactive has intensified with anticipation building for Grand Theft Auto VI preorders slated to begin sh\u2026",
+          "image": "https://www.quiverquant.com/images/ttwo_rect_new.png",
           "_first_seen": "2026-06-21T15:27:37.626670+00:00"
         }
       ]
@@ -15285,11 +15285,11 @@
       },
       {
         "ticker": "CAE",
-        "category": "Strategic Reviews",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Strategic Reviews"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "CTOR",
@@ -24932,14 +24932,6 @@
         "detail": "M&A / Divestitures"
       },
       {
-        "ticker": "KOS",
-        "category": "M&A / Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "M&A / Divestitures"
-      },
-      {
         "ticker": "JYEU",
         "category": "M&A / Divestitures",
         "confidence": "high",
@@ -27484,14 +27476,6 @@
         "detail": "Restructuring"
       },
       {
-        "ticker": "CRGY",
-        "category": "Restructuring",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Restructuring"
-      },
-      {
         "ticker": "DKR",
         "category": "Restructuring",
         "confidence": "high",
@@ -27892,14 +27876,6 @@
         "detail": "Activist Campaigns"
       },
       {
-        "ticker": "SRI",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": null,
-        "detail": "Activist Campaigns"
-      },
-      {
         "ticker": "5970",
         "category": "Activist Campaigns",
         "confidence": "high",
@@ -27946,14 +27922,6 @@
         "activist": false,
         "filer": null,
         "detail": "M&A / Divestitures"
-      },
-      {
-        "ticker": "RNA",
-        "category": "Spin-Offs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Spin-Offs"
       },
       {
         "ticker": "AZTA",
@@ -34068,6 +34036,62 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "PTACU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "NVACW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "SIG",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "SENS",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "SVACW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "TWOD",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "VRRM",
+        "category": "Strategic Reviews",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
+      },
+      {
         "ticker": "ATYR",
         "category": "Delistings",
         "confidence": "high",
@@ -35044,14 +35068,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "SUNB",
-        "category": "Spin-Offs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Spin-Offs"
-      },
-      {
         "ticker": "FTV",
         "category": "Delistings",
         "confidence": "high",
@@ -35236,6 +35252,22 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "HBCYF",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "TETUF",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "CYTOF",
         "category": "Delistings",
         "confidence": "high",
@@ -35300,6 +35332,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "AERTW",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "HCWB",
         "category": "Delistings",
         "confidence": "high",
@@ -35332,6 +35372,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ATRA",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "BZFDW",
         "category": "Delistings",
         "confidence": "high",
@@ -35354,6 +35402,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "RSKD",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "RBOTW",
@@ -35516,14 +35572,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "HBCYF",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "CYPH",
         "category": "Delistings",
         "confidence": "high",
@@ -35564,6 +35612,14 @@
         "detail": "Issuer Tenders"
       },
       {
+        "ticker": "TDBCP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "OSRHW",
         "category": "Delistings",
         "confidence": "high",
@@ -35584,7 +35640,7 @@
         "category": "Activist Campaigns",
         "confidence": "high",
         "activist": true,
-        "filer": null,
+        "filer": "Saba Capital Management, L.P.",
         "detail": "Activist Campaigns"
       },
       {
@@ -35628,14 +35684,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "ATRA",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "CJMB",
         "category": "Delistings",
         "confidence": "high",
@@ -35677,14 +35725,6 @@
       },
       {
         "ticker": "AZTR",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "NVACW",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -35818,14 +35858,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "TETUF",
-        "category": "SPACs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "SPACs"
       },
       {
         "ticker": "RMBI",
@@ -36060,6 +36092,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "BNS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "CTSO",
         "category": "Delistings",
         "confidence": "high",
@@ -36093,14 +36133,6 @@
       },
       {
         "ticker": "AEON",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "AERTW",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -36170,6 +36202,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "SAIHW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "GNE",
@@ -36250,6 +36290,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "TORO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "TCRT",
@@ -36476,6 +36524,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "WSKEF",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "AREC",
         "category": "Delistings",
         "confidence": "high",
@@ -36612,6 +36668,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "AACG",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "MBGL",
         "category": "Spin-Offs",
         "confidence": "high",
@@ -36708,6 +36772,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "TKPHF",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "BNCWW",
         "category": "Delistings",
         "confidence": "high",
@@ -36746,6 +36818,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "BNT",
+        "category": "Going-Private",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Going-Private"
       },
       {
         "ticker": "BRUNW",
@@ -36932,6 +37012,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "PLRZ",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "ASPCR",
         "category": "Delistings",
         "confidence": "high",
@@ -37018,6 +37106,78 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "XOSWW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "BRPSF",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "MYND",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "ORLA",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "PHTCF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SKK",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "TRIB",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "CCU",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "AASP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "REFR",
@@ -37249,6 +37409,12 @@
         "hot": true
       },
       {
+        "ticker": "FIX",
+        "bull_ratio": 0.83,
+        "articles": 41,
+        "hot": true
+      },
+      {
         "ticker": "HWM",
         "bull_ratio": 0.83,
         "articles": 24,
@@ -37258,12 +37424,6 @@
         "ticker": "TDY",
         "bull_ratio": 0.83,
         "articles": 54,
-        "hot": true
-      },
-      {
-        "ticker": "FIX",
-        "bull_ratio": 0.82,
-        "articles": 40,
         "hot": true
       },
       {
@@ -37468,8 +37628,8 @@
     "github": [
       {
         "ticker": "NET",
-        "stars": 14591,
-        "wow_pct": 0.05,
+        "stars": 14595,
+        "wow_pct": 0.08,
         "hot": true
       },
       {
@@ -37480,45 +37640,45 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77102,
-        "wow_pct": 0.03,
+        "stars": 77103,
+        "wow_pct": 0.04,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186619,
+        "stars": 186624,
+        "wow_pct": 0.02,
+        "hot": true
+      },
+      {
+        "ticker": "NVDA",
+        "stars": 17445,
         "wow_pct": 0.02,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 195811,
+        "stars": 195814,
         "wow_pct": 0.01,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "IBM",
         "stars": 7510,
         "wow_pct": 0.01,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "MDB",
         "stars": 28384,
         "wow_pct": 0.01,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "META",
-        "stars": 245995,
+        "stars": 245996,
         "wow_pct": 0.01,
-        "hot": true
-      },
-      {
-        "ticker": "NVDA",
-        "stars": 17444,
-        "wow_pct": 0.01,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "AMD",
@@ -39001,6 +39161,20 @@
     ],
     "news": [
       {
+        "headline": "CMB.TECH and Fortescue Sign Charter Agreement for Up to 12 Ammonia-Capable Vessels",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-22 06:30:24",
+        "url": "https://www.quiverquant.com/news/CMB.TECH+and+Fortescue+Sign+Charter+Agreement+for+Up+to+12+Ammonia-Capable+Vessels"
+      },
+      {
+        "headline": "Roundtable Launches Real-Time USDC Payment Infrastructure for Publishers with Coinbase Support",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-22 05:10:19",
+        "url": "https://www.quiverquant.com/news/Roundtable+Launches+Real-Time+USDC+Payment+Infrastructure+for+Publishers+with+Coinbase+Support"
+      },
+      {
         "headline": "DoubleVerify Expands DV Authentic AdVantage to Meta and TikTok",
         "ticker": null,
         "category": "press_release_summary",
@@ -39125,20 +39299,6 @@
         "category": "discussion_automated",
         "time": "2026-06-21 17:33:05",
         "url": "https://www.quiverquant.com/news/Micron+Technology+Stock+%28MU%29+Opinions+on+Upcoming+Earnings+and+AI+Demand"
-      },
-      {
-        "headline": "Taiwan Semiconductor Stock (TSM) Opinions on AI-Driven Revenue Growth",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-21 17:33:05",
-        "url": "https://www.quiverquant.com/news/Taiwan+Semiconductor+Stock+%28TSM%29+Opinions+on+AI-Driven+Revenue+Growth"
-      },
-      {
-        "headline": "Airship AI Holdings Stock (AISP) Opinions on Potential Short Squeeze",
-        "ticker": null,
-        "category": "discussion_automated",
-        "time": "2026-06-21 17:33:05",
-        "url": "https://www.quiverquant.com/news/Airship+AI+Holdings+Stock+%28AISP%29+Opinions+on+Potential+Short+Squeeze"
       }
     ],
     "wsb": [
@@ -40995,20 +41155,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 github_momentum: +0.01% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
-      },
-      {
-        "ticker": "GOOGL",
-        "score": 5,
-        "weighted_score": 2.05,
-        "channel_list": [
-          "13f_add",
-          "app_demand",
-          "github_momentum",
-          "material_8k",
-          "special_situation"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,570,054 reviews \u00b7 github_momentum: +0.01% stars \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.292 \u00b7 github_momentum: +0.02% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "MSFT",
@@ -41046,6 +41193,18 @@
           "news_sentiment"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $138,080,150 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.84 bullish news (50 art)"
+      },
+      {
+        "ticker": "GOOGL",
+        "score": 4,
+        "weighted_score": 1.75,
+        "channel_list": [
+          "13f_add",
+          "app_demand",
+          "material_8k",
+          "special_situation"
+        ],
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,570,054 reviews \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MRK",

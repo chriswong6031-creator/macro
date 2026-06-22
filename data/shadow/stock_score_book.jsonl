@@ -159,3 +159,7 @@
 {"date": "2026-06-18", "ticker": "BURL", "score": 90.0, "percentile": 90.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-18", "ticker": "VRRM", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-18", "ticker": "CG", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-18", "ticker": "SFM", "score": 86.0, "percentile": 86.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-18", "ticker": "NI", "score": 86.0, "percentile": 86.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-18", "ticker": "IRT", "score": 97.0, "percentile": 97.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-18", "ticker": "LEN", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
