@@ -186,6 +186,8 @@ def _falsifiers(rec: dict, conv: dict) -> list[dict]:
                     "severity": "med", "payload": {"ext_pctile": pct}})
 
     frag = rec.get("fragility") or {}
+    if frag and not isinstance(frag, dict):
+        frag = {"flag": bool(frag)}
     if frag.get("flag") or frag.get("rs_pctile") is not None:
         rs = _num(frag.get("rs_pctile")); dtc_cover = _num(frag.get("days_to_cover"))
         bits = []

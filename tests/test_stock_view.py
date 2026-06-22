@@ -153,3 +153,10 @@ def test_cn_valuation_tone_is_neutral():
     ev = sv.build_view(rec, "CN")["evidence"].get("valuation")
     if ev:
         assert ev["tone"] == "neutral"
+
+
+def test_legacy_bool_fragility_does_not_crash():
+    """Older China records used a boolean fragility flag; view rendering stays tolerant."""
+    rec = _profiled("CN", rev_z=0.8, fragility=True)
+    flips = sv.build_view(rec, "CN")["falsifiers"]
+    assert any("fragile" in f["en"].lower() for f in flips)
