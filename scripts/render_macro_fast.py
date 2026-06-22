@@ -49,6 +49,9 @@ def main() -> int:
         out = site / name
         out.write_text(tmpl.render(**vm, mode=mode))
         print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
+    out = site / "news.html"
+    out.write_text(env.get_template("news.html.j2").render(**vm))
+    print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
     return 0
 
 

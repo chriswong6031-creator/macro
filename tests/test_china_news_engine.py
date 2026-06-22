@@ -21,6 +21,9 @@ def test_classify_theme() -> None:
     assert cn.classify_theme("社融数据大超市场预期") == "credit"
     assert cn.classify_theme("国常会部署稳增长一揽子政策") == "policy"
     assert cn.classify_theme("北向资金大幅净流入A股") == "markets"
+    assert cn.classify_theme("China economy slows as retail sales miss forecasts") == "growth"
+    assert cn.classify_theme("PBOC keeps loan prime rate steady") == "monetary"
+    assert cn.classify_theme("Chinese stocks rally as CSI 300 breaks higher") == "markets"
     assert cn.classify_theme("某流量明星演唱会门票售罄") is None   # non-macro -> dropped
 
 
@@ -39,6 +42,85 @@ def test_filter_flashes_gate_dedup_recency_topn() -> None:
     assert kept[0]["theme"] == "inflation" and any(h["theme"] == "monetary" for h in kept)
 
     assert len(cn.filter_flashes(items, {"max_show": 1})) == 1   # top-N cap
+
+
+def test_enriched_flashes_importance_channels_and_tickers() -> None:
+    items = [{
+        "title": "人民银行发布金融统计报告 社融和贷款增长",
+        "summary": "信贷扩张支撑银行板块",
+        "time": "2026-06-12",
+        "url": "https://example.com",
+        "source": "official",
+        "source_name": "PBoC",
+        "source_tier": "official",
+    }]
+    h = cn.filter_flashes(items, {"max_show": 5})[0]
+    assert h["importance"] == "high"
+    assert h["importance_score"] >= 70
+    assert "pboc_liquidity" in h["channels"]
+    assert "credit_impulse" in h["channels"]
+    assert "512800.SS" in h["tickers"]
+    assert h["related_tickers"]
+
+
+def test_english_wire_headline_gets_market_tags() -> None:
+    items = [{
+        "title": "Chinese stocks rally as PBOC liquidity and yuan support lift CSI 300",
+        "summary": "",
+        "time": "2026-06-20T12:00:00+00:00",
+        "url": "https://example.com",
+        "source": "gdelt",
+        "source_name": "reuters.com",
+        "source_tier": "wire",
+    }]
+    h = cn.filter_flashes(items, {"max_show": 5})[0]
+    assert h["theme"] in {"monetary", "markets"}
+    assert "pboc_liquidity" in h["channels"]
+    assert "yuan" in h["channels"]
+    assert "510300.SS" in h["tickers"]
+    assert "CNY" in h["tickers"]
+    assert "sourcelang:eng" in cn._gdelt_query({})
+
+
+def test_china_synthesis_summarizes_channels_and_tickers() -> None:
+    heads = cn.filter_flashes([{
+        "title": "Chinese stocks rally as PBOC liquidity and yuan support lift CSI 300",
+        "summary": "",
+        "time": "2026-06-20T12:00:00+00:00",
+        "url": "https://example.com",
+        "source": "gdelt",
+        "source_name": "reuters.com",
+        "source_tier": "wire",
+    }], {"max_show": 5})
+    syn = cn._synthesis(heads)
+    assert syn["high_impact_count"] >= 0
+    assert syn["top_channels"]
+    assert syn["top_tickers"]
+
+
+def test_chinese_native_story_carries_zh_title_and_priority() -> None:
+    items = [{
+        "title": "上市公司密集启动增持回购 A股市场情绪回暖",
+        "summary": "",
+        "time": "2026-06-20T12:00:00+00:00",
+        "url": "https://example.com/cn",
+        "source": "cn_news_page",
+        "source_name": "证券时报",
+        "source_tier": "china_native",
+        "source_lang": "zh",
+    }, {
+        "title": "Chinese stocks rally as PBOC liquidity lifts CSI 300",
+        "summary": "",
+        "time": "2026-06-20T13:00:00+00:00",
+        "url": "https://example.com/en",
+        "source": "news_rss",
+        "source_name": "SCMP - China Economy",
+        "source_tier": "global_wire",
+        "source_lang": "en",
+    }]
+    kept = cn.filter_flashes(items, {"max_show": 5})
+    assert kept[0]["source_tier"] == "china_native"
+    assert kept[0]["title_zh"] == kept[0]["title"]
 
 
 def test_tone_band_thresholds() -> None:
@@ -77,6 +159,10 @@ if __name__ == "__main__":
     tests = [
         test_classify_theme,
         test_filter_flashes_gate_dedup_recency_topn,
+        test_enriched_flashes_importance_channels_and_tickers,
+        test_english_wire_headline_gets_market_tags,
+        test_china_synthesis_summarizes_channels_and_tickers,
+        test_chinese_native_story_carries_zh_title_and_priority,
         test_tone_band_thresholds,
         test_tone_stats_numeric,
         test_row_to_item_column_drift,

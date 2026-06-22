@@ -782,6 +782,15 @@ def main() -> int:
                 (site / a).write_text(src.read_text())
         log.info("wrote %s/china.html (%d KB, %d sectors)", site, len(html) // 1024, len(vm["sectors"]))
 
+        # Dedicated China news intelligence feed. Same display-only payload as the
+        # China dashboard section, expanded into a searchable/filtered news surface.
+        try:
+            news_html = env.get_template("china_news.html.j2").render(**vm, mode="macro")
+            (site / "china_news.html").write_text(news_html)
+            log.info("wrote %s/china_news.html (%d KB)", site, len(news_html) // 1024)
+        except Exception as e:  # noqa: BLE001 — additive, never fatal
+            log.error("china news page render failed (%s); skipping", e)
+
         # A-share Stock Dashboard — same VM, the "looking for stocks" half.
         html_st = tmpl.render(**vm, mode="stocks")
         (site / "china_stocks.html").write_text(html_st)

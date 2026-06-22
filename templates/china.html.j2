@@ -838,17 +838,26 @@
     #china-news .cn-b-supportive{background:#1f4733;color:#a0ffc4}
     #china-news .cn-b-cautious{background:#4f2422;color:#ff9c9c}
     #china-news .cn-b-steady,#china-news .cn-b-building,#china-news .cn-b-unknown{background:var(--line);color:var(--muted)}
-    #china-news .cn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;margin:8px 0 6px}
-    #china-news .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px;font-weight:700}
-    #china-news .cn-item{display:block;padding:7px 0;border-bottom:1px solid var(--panel2);color:var(--text);font-size:13px;line-height:1.45}
-    #china-news a.cn-item:hover{color:var(--up)}
-    #china-news .cn-theme{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:1px 6px;border-radius:5px;background:var(--line);color:var(--muted);margin-right:7px;vertical-align:1px}
-    #china-news .cn-when{color:var(--muted);font-size:11px;margin-left:6px;white-space:nowrap}
+    #china-news .cn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.55;margin:8px 0 6px}
+    #china-news .section-title{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:12px 0 6px;font-weight:700}
+    #china-news .cn-item{display:block;padding:9px 8px;margin:0 -8px;border-bottom:1px solid var(--line);border-radius:7px;color:var(--text);font-size:14.5px;line-height:1.5;transition:background .12s ease}
+    #china-news a.cn-item:hover{background:var(--panel2)}
+    #china-news .cn-title{font-weight:500}
+    #china-news a.cn-item:hover .cn-title{color:var(--up)}
+    #china-news .cn-theme{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:5px;background:var(--line);color:var(--muted);margin-right:8px;vertical-align:1px}
+    #china-news .cn-when{color:var(--muted);font-size:11.5px;margin-left:6px;white-space:nowrap}
+    #china-news .cn-intel{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 0 0}
+    #china-news .cn-pill{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--muted)}
+    #china-news .cn-pill b{color:var(--text)}
+    #china-news .cn-imp-high{color:var(--up);border-color:color-mix(in srgb,var(--up) 48%,var(--line))}
+    #china-news .cn-imp-medium{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 48%,var(--line))}
+    #china-news .cn-tk{color:var(--link);border-color:color-mix(in srgb,var(--link) 42%,var(--line))}
     #china-news .cn-disc{font-size:11px;color:var(--muted);margin:10px 0 0;text-transform:none;line-height:1.5}
   </style>
+  {% set CNS = (CN.news.synthesis if CN.news and CN.news.synthesis else {}) %}
   <div class="panel span12" id="china-news">
     <h2>📰 {{ t('Macro news & official policy tone', '宏观新闻与官方政策基调') }}
-      {{ help("Two keyless, display-only legs. (1) Official policy tone — a z-score of a crude keyword proxy on the daily CCTV 新闻联播 (Xinwen Lianbo) broadcast: does official language lean supportive/pro-growth or cautious/risk-tilted? Read RELATIVE (z vs a trailing window), never as an absolute sentiment. (2) Filtered Eastmoney 全球财经快讯 flash headlines — kept only when they match a China macro theme (PBoC / inflation / growth / credit / fiscal / policy / markets), each tagged, deduped, newest-first. No per-headline AI. Nothing here feeds any score, signal, regime or allocation, and the mechanical model never sees it.", "两条无需密钥、仅展示的分腿。（1）官方政策基调 —— 对每日央视《新闻联播》文本的粗略关键词代理做 z 标准化：官方措辞偏积极/稳增长，还是偏谨慎/防风险？按相对值（相对滚动窗口的 z）解读，而非绝对情绪。（2）已筛选的东方财富《全球财经快讯》头条 —— 仅保留命中中国宏观主题（央行/物价/增长/信用/财政/政策/市场）的条目，逐条标注、去重、最新优先。无逐条新闻 AI。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。") }}
+      {{ help("Three keyless, display-only legs. (1) Official policy tone — a z-score of a crude keyword proxy on the daily CCTV 新闻联播 (Xinwen Lianbo) broadcast: does official language lean supportive/pro-growth or cautious/risk-tilted? Read RELATIVE (z vs a trailing window), never as an absolute sentiment. (2) Official policy/release pages plus global wire via GDELT. (3) Eastmoney 全球财经快讯. Headlines are theme-gated, deduped, scored for macro importance/channel/ticker relevance, then intelligence-ranked. No per-headline AI. Nothing here feeds any score, signal, regime or allocation, and the mechanical model never sees it.", "三条无需密钥、仅展示的分腿。（1）官方政策基调 —— 对每日央视《新闻联播》文本的粗略关键词代理做 z 标准化：官方措辞偏积极/稳增长，还是偏谨慎/防风险？按相对值（相对滚动窗口的 z）解读，而非绝对情绪。（2）官方政策/发布页面与 GDELT 全球新闻线。（3）东方财富《全球财经快讯》。头条经主题筛选、去重，并按宏观重要性、传导通道与相关标的打分后排序。无逐条新闻 AI。这里没有任何内容会进入任何评分、信号、区制或配置，机械模型也从不读取它们。") }}
     </h2>
     {% if CN.tone %}
     <div class="cn-tone">
@@ -860,11 +869,13 @@
     {% if CN.brief and CN.brief.text %}
     <div class="cn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ CN.brief.text }}</div>
     {% endif %}
-    <div class="section-title">{{ t('Filtered macro flashes', '已筛选的宏观快讯') }}{% if CN.news and CN.news.n_raw %} <span class="muted">({{ CN.news.n_kept }}/{{ CN.news.n_raw }})</span>{% endif %} <span class="muted" style="text-transform:none">· {{ t('Eastmoney 全球财经快讯', '东方财富 全球财经快讯') }}</span></div>
+    <div class="section-title">{{ t('China news intelligence', '中国新闻情报流') }}{% if CN.news and CN.news.n_raw %} <span class="muted">({{ CN.news.n_kept }}/{{ CN.news.n_raw }} · {{ CN.news.n_official or 0 }} official · {{ CN.news.n_news_rss or 0 }} RSS · {{ CN.news.n_wire or 0 }} GDELT · {{ CN.news.n_high_impact or 0 }} high)</span>{% endif %}{% if CNS.dominant_channel %} <span class="muted">· {{ CNS.dominant_channel }}</span>{% endif %} <span class="muted" style="text-transform:none">· <a href="china_news.html">{{ t('open full feed →', '打开完整新闻流 →') }}</a></span></div>
     {% if CN.news and CN.news.headlines %}
       {% for h in CN.news.headlines %}
       {% set tl = CN.theme_label.get(h.theme, [h.theme, h.theme]) %}
-      {% if h.url %}<a class="cn-item" href="{{ h.url }}" target="_blank" rel="noopener">{% else %}<span class="cn-item">{% endif %}<span class="cn-theme">{{ t(tl[0], tl[1]) }}</span>{{ h.title }}{% if h.time %}<span class="cn-when">{{ h.time }}</span>{% endif %}{% if h.url %}</a>{% else %}</span>{% endif %}
+      {% if h.url %}<a class="cn-item" href="{{ h.url }}" target="_blank" rel="noopener">{% else %}<span class="cn-item">{% endif %}<span class="cn-theme">{{ t(tl[0], tl[1]) }}</span><span class="cn-title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>{% if h.time %}<span class="cn-when">{{ h.time }}</span>{% endif %}
+        <span class="cn-intel"><span class="cn-pill cn-imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100 · {{ h.importance }}</span>{% if h.source_name %}<span class="cn-pill">{{ h.source_name }}{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>{% endif %}{% for c in h.channels[:4] %}<span class="cn-pill">{{ c }}</span>{% endfor %}{% for tk in h.tickers[:5] %}<span class="cn-pill cn-tk">{{ tk }}</span>{% endfor %}</span>
+      {% if h.url %}</a>{% else %}</span>{% endif %}
       {% endfor %}
     {% else %}
       <p class="note" style="text-transform:none">{{ t('No macro flashes right now — the flash fetch is off (default) or temporarily unavailable.', '暂无宏观快讯 —— 快讯抓取已关闭（默认）或暂不可用。') }}</p>

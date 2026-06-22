@@ -41,7 +41,7 @@ def test_filter_headlines_pipeline():
     kept = mn.filter_headlines(arts, {"max_show": 10})
     assert len(kept) == 3                                                # junk + aggregator-noise + dup removed
     assert {h["theme"] for h in kept} == {"inflation", "labor", "macro"}
-    assert kept[0]["domain"] == "reuters.com"                            # newest first
+    assert kept[0]["importance_score"] >= kept[-1]["importance_score"]    # intelligence-ranked, not newest-first
     assert all("theme" in h and h["url"] is not None for h in kept)
 
 
@@ -53,6 +53,89 @@ def test_filter_respects_custom_sources_and_cap():
     ]
     kept = mn.filter_headlines(arts, {"sources": ["example-blog.com"], "max_show": 2})
     assert len(kept) == 2                                                # allowlisted + capped
+
+
+def test_enriched_headline_importance_channels_and_tickers():
+    arts = [{
+        "title": "Federal Reserve rate decision lifts Treasury yields and bank stocks",
+        "domain": "federalreserve.gov",
+        "source": "official",
+        "source_name": "Federal Reserve",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    h = kept[0]
+    assert h["importance"] == "high"
+    assert h["importance_score"] >= 70
+    assert "rates" in h["channels"]
+    assert "IEF" in h["tickers"] or "XLF" in h["tickers"]
+    assert h["related_tickers"]
+    assert h["source_tier"] == "official"
+
+
+def test_sec_regulatory_noise_is_deboosted():
+    arts = [{
+        "title": "SEC announces administrative proceeding and settles charges against issuer",
+        "domain": "sec.gov",
+        "source": "official",
+        "source_name": "SEC - Press Releases",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }, {
+        "title": "CPI inflation report lifts Treasury yields",
+        "domain": "bls.gov",
+        "source": "official",
+        "source_name": "BLS - CPI",
+        "source_tier": "official",
+        "seendate": "2026-06-18T09:00:00+00:00",
+        "url": "https://example.com/cpi",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    assert [h["source_name"] for h in kept] == ["BLS - CPI"]
+
+
+def test_macro_synthesis_summarizes_channels_and_tickers():
+    heads = mn.filter_headlines([{
+        "title": "Federal Reserve rate decision lifts Treasury yields and bank stocks",
+        "domain": "federalreserve.gov",
+        "source": "official",
+        "source_name": "Federal Reserve",
+        "source_tier": "official",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com",
+    }], {"max_show": 5})
+    syn = mn._synthesis(heads)
+    assert syn["high_impact_count"] == 1
+    assert syn["top_channels"]
+    assert syn["top_tickers"]
+
+
+def test_stock_wire_qualitative_news_outranks_macro_prints():
+    arts = [{
+        "title": "Micron earnings are a must-watch event as profit growth accelerates",
+        "domain": "marketwatch.com",
+        "source": "news_rss",
+        "source_name": "MarketWatch - Top Stories",
+        "source_tier": "stock_wire",
+        "theme": "earnings",
+        "seendate": "2026-06-18T09:00:00+00:00",
+        "url": "https://example.com/mu",
+    }, {
+        "title": "CPI for all items rises 0.5% in May",
+        "domain": "bls.gov",
+        "source": "official",
+        "source_name": "BLS - CPI",
+        "source_tier": "official",
+        "theme": "inflation",
+        "seendate": "2026-06-18T10:00:00+00:00",
+        "url": "https://example.com/cpi",
+    }]
+    kept = mn.filter_headlines(arts, {"max_show": 5})
+    assert kept[0]["theme"] == "earnings"
+    assert "MU" in kept[0]["tickers"]
 
 
 def test_upcoming_catalysts_shape():
