@@ -1125,6 +1125,91 @@ stock_search:
     # DXYZ (Destiny Tech100) is a closed-end fund whose top holding is SpaceX —
     # kept alongside the now-public SPCX as a diversified pre-IPO/space proxy.
     - DXYZ   # Destiny Tech100 (holds SpaceX)
+    # ---- Off-index BASKET members (added 2026-06-21) ---------------------------
+    # Thematic small/mid-caps + foreign listings that curated baskets reference but
+    # the S&P-1500 pipeline never built, so their members rendered "thin / not in
+    # library" and stock.html#<T> 404'd. All are liquid US lines > $100M mcap
+    # (smallest enCore ~$320M). A handful (MMC, HEI, LNG, FI, DKNG, POOL) ARE
+    # economically S&P 500 but don't resolve through the Wikipedia constituents
+    # table (garbled/aliased ticker, e.g. Marsh shows as "MRSH"), so they ride the
+    # extras hook here too. universe()'s `seen` set dedups, so this is a no-op for
+    # any name the index already resolves.
+    # Uranium & nuclear fuel cycle
+    - CCJ    # Cameco
+    - UEC    # Uranium Energy
+    - UUUU   # Energy Fuels
+    - NXE    # NexGen Energy
+    - DNN    # Denison Mines
+    - URG    # Ur-Energy
+    - EU     # enCore Energy
+    - UROY   # Uranium Royalty
+    - LEU    # Centrus Energy
+    - ASPI   # ASP Isotopes
+    - NNE    # NANO Nuclear Energy
+    # Quantum computing
+    - IONQ   # IonQ
+    - QBTS   # D-Wave Quantum
+    - QUBT   # Quantum Computing Inc.
+    - RGTI   # Rigetti Computing
+    - QNT    # Quantinuum
+    - INFQ   # Infleqtion
+    # AI neoclouds / bitcoin-miner compute
+    - APLD   # Applied Digital
+    - BTDR   # Bitdeer Technologies
+    - CIFR   # Cipher Mining
+    - CORZ   # Core Scientific
+    - HUT    # Hut 8
+    - WULF   # TeraWulf
+    # Space economy
+    - BKSY   # BlackSky Technology
+    - FLY    # Firefly Aerospace
+    - KRMN   # Karman Holdings
+    - MDA    # MDA Space
+    - PL     # Planet Labs
+    - RDW    # Redwire
+    # Critical minerals / rare earth / antimony
+    - ALM    # Almonty Industries
+    - CRML   # Critical Metals
+    - LAC    # Lithium Americas
+    - NB     # NioCorp Developments
+    - PPTA   # Perpetua Resources
+    - SGML   # Sigma Lithium
+    - UAMY   # United States Antimony
+    - USAR   # USA Rare Earth
+    # Obesity / GLP-1 & biotech
+    - ALT    # Altimmune
+    - AZN    # AstraZeneca (ADR)
+    - GPCR   # Structure Therapeutics
+    - NVO    # Novo Nordisk (ADR)
+    - RHHBY  # Roche Holding (ADR)
+    - SRRK   # Scholar Rock
+    - VKTX   # Viking Therapeutics
+    # Semiconductors (off-index / foreign)
+    - CBRS   # Cerebras Systems
+    - CRDO   # Credo Technology
+    - NVMI   # Nova
+    # Software / cyber / AI apps
+    - HUBS   # HubSpot
+    - MDB    # MongoDB
+    - PCOR   # Procore Technologies
+    - SNOW   # Snowflake
+    - TEAM   # Atlassian
+    - TENB   # Tenable
+    - ZS     # Zscaler
+    - NET    # Cloudflare
+    - SOUN   # SoundHound AI
+    # Fintech / payments
+    - FI     # Fiserv
+    - UPST   # Upstart
+    # Index names that don't resolve through the constituents pipeline
+    - MMC    # Marsh & McLennan
+    - HEI    # HEICO
+    - LNG    # Cheniere Energy
+    - DKNG   # DraftKings
+    - POOL   # Pool Corp
+    - OSCR   # Oscar Health
+    # Crypto ETF basket member (fund, not a company — bare "ETF / macro" label)
+    - ETHA   # iShares Ethereum Trust ETF
   # ticker -> {name, sector} for the single-stock extras above. build_stock_library
   # reads this so the search index shows the company + its GICS sector instead of
   # "<ticker> / ETF / macro". A ticker present in extra_tickers but missing here
@@ -1205,6 +1290,71 @@ stock_search:
     IREN: {name: "IREN (Iris Energy)", sector: "Information Technology"}
     SPCX: {name: "SpaceX", sector: "Industrials"}
     DXYZ: {name: "Destiny Tech100 (holds SpaceX)", sector: "Financials"}
+    # ---- Off-index basket members (added 2026-06-21) ----
+    CCJ:   {name: "Cameco", sector: "Energy"}
+    UEC:   {name: "Uranium Energy", sector: "Energy"}
+    UUUU:  {name: "Energy Fuels", sector: "Energy"}
+    NXE:   {name: "NexGen Energy", sector: "Energy"}
+    DNN:   {name: "Denison Mines", sector: "Energy"}
+    URG:   {name: "Ur-Energy", sector: "Energy"}
+    EU:    {name: "enCore Energy", sector: "Energy"}
+    UROY:  {name: "Uranium Royalty", sector: "Energy"}
+    LEU:   {name: "Centrus Energy", sector: "Energy"}
+    ASPI:  {name: "ASP Isotopes", sector: "Materials"}
+    NNE:   {name: "NANO Nuclear Energy", sector: "Industrials"}
+    IONQ:  {name: "IonQ", sector: "Information Technology"}
+    QBTS:  {name: "D-Wave Quantum", sector: "Information Technology"}
+    QUBT:  {name: "Quantum Computing Inc.", sector: "Information Technology"}
+    RGTI:  {name: "Rigetti Computing", sector: "Information Technology"}
+    QNT:   {name: "Quantinuum", sector: "Information Technology"}
+    INFQ:  {name: "Infleqtion", sector: "Information Technology"}
+    APLD:  {name: "Applied Digital", sector: "Information Technology"}
+    BTDR:  {name: "Bitdeer Technologies (ADR)", sector: "Information Technology"}
+    CIFR:  {name: "Cipher Mining", sector: "Information Technology"}
+    CORZ:  {name: "Core Scientific", sector: "Information Technology"}
+    HUT:   {name: "Hut 8", sector: "Information Technology"}
+    WULF:  {name: "TeraWulf", sector: "Information Technology"}
+    BKSY:  {name: "BlackSky Technology", sector: "Industrials"}
+    FLY:   {name: "Firefly Aerospace", sector: "Industrials"}
+    KRMN:  {name: "Karman Holdings", sector: "Industrials"}
+    MDA:   {name: "MDA Space", sector: "Industrials"}
+    PL:    {name: "Planet Labs", sector: "Industrials"}
+    RDW:   {name: "Redwire", sector: "Industrials"}
+    ALM:   {name: "Almonty Industries", sector: "Materials"}
+    CRML:  {name: "Critical Metals", sector: "Materials"}
+    LAC:   {name: "Lithium Americas", sector: "Materials"}
+    NB:    {name: "NioCorp Developments", sector: "Materials"}
+    PPTA:  {name: "Perpetua Resources", sector: "Materials"}
+    SGML:  {name: "Sigma Lithium", sector: "Materials"}
+    UAMY:  {name: "United States Antimony", sector: "Materials"}
+    USAR:  {name: "USA Rare Earth", sector: "Materials"}
+    ALT:   {name: "Altimmune", sector: "Health Care"}
+    AZN:   {name: "AstraZeneca (ADR)", sector: "Health Care"}
+    GPCR:  {name: "Structure Therapeutics", sector: "Health Care"}
+    NVO:   {name: "Novo Nordisk (ADR)", sector: "Health Care"}
+    RHHBY: {name: "Roche Holding (ADR)", sector: "Health Care"}
+    SRRK:  {name: "Scholar Rock", sector: "Health Care"}
+    VKTX:  {name: "Viking Therapeutics", sector: "Health Care"}
+    CBRS:  {name: "Cerebras Systems", sector: "Information Technology"}
+    CRDO:  {name: "Credo Technology", sector: "Information Technology"}
+    NVMI:  {name: "Nova", sector: "Information Technology"}
+    HUBS:  {name: "HubSpot", sector: "Information Technology"}
+    MDB:   {name: "MongoDB", sector: "Information Technology"}
+    PCOR:  {name: "Procore Technologies", sector: "Information Technology"}
+    SNOW:  {name: "Snowflake", sector: "Information Technology"}
+    TEAM:  {name: "Atlassian", sector: "Information Technology"}
+    TENB:  {name: "Tenable", sector: "Information Technology"}
+    ZS:    {name: "Zscaler", sector: "Information Technology"}
+    NET:   {name: "Cloudflare", sector: "Information Technology"}
+    SOUN:  {name: "SoundHound AI", sector: "Information Technology"}
+    FI:    {name: "Fiserv", sector: "Financials"}
+    UPST:  {name: "Upstart Holdings", sector: "Financials"}
+    MMC:   {name: "Marsh & McLennan", sector: "Financials"}
+    HEI:   {name: "HEICO", sector: "Industrials"}
+    LNG:   {name: "Cheniere Energy", sector: "Energy"}
+    DKNG:  {name: "DraftKings", sector: "Consumer Discretionary"}
+    POOL:  {name: "Pool Corp", sector: "Consumer Discretionary"}
+    OSCR:  {name: "Oscar Health", sector: "Health Care"}
 
 watchlist:
   enabled: true                   # client-side holdings watchlist page (needs stock_search)
