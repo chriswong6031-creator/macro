@@ -49,16 +49,17 @@
 </style>
 </head>
 <body>
+  {% set nav_prefix = '../' %}
+  {% set nav_search_lib = 'canadastockdata/index.json' %}
+  {% set nav_search_target = 'canada_stock.html' %}
+  {% set nav_search_placeholder_en = 'Search any TSX stock, sector ETF, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意 TSX 股票、板块 ETF 或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>{{ td(s.name) }} <span class="muted">({{ s.fund }})</span></h1>
       <span class="lad {{ 'up' if s.ladder.dir=='up' else ('down' if s.ladder.dir=='down' else 'flat') }}">{{ td(s.ladder.label) }}</span>
       {% if s.ladder.eq_badge %}<span class="eqbadge eq-{{ s.ladder.eq_dir }}">{{ t('Entry','入场') }} {{ s.ladder.eq_badge }} <span class="eqg">{{ td(s.ladder.eq_grade) }}</span></span>{{ help(s.ladder.eq_tip, s.ladder.eq_tip_zh) }}{% endif %}
-      <span style="flex:1"></span>
-      <a class="navbtn" href="../canada.html">{{ t('← Canada', '← 加拿大') }}</a>
-      <a class="navbtn" href="../canada_stock.html">{{ t('🔎 Search', '🔎 搜索') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     {% set e = s.ladder.entry %}
     <div class="entrybar urg-{{ e.urgency }}">

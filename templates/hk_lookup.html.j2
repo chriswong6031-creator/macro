@@ -164,6 +164,11 @@
 </style>
 </head>
 <body>
+  {% set nav_search_lib = 'hkstockdata/index.json' %}
+  {% set nav_search_target = 'hk_lookup.html' %}
+  {% set nav_search_placeholder_en = 'Search any HK stock, sector, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意港股、板块或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>🔎 {{ t('HK analyzer', '港股分析') }}</h1>
@@ -171,10 +176,6 @@
         <input id="q" placeholder="Search any HK stock / sector / index… (e.g. 0700, Tencent, Banks)" autocomplete="off">
         <div id="sugg"></div>
       </div>
-      <a class="navbtn" href="hk.html">{{ t('← Hong Kong', '← 香港') }}</a>
-      <a class="navbtn" href="index.html">{{ t('🏠 Home', '🏠 首页') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     <p class="muted" style="margin:8px 0 0">{{ t('Every name gets the same treatment as the sector board:
       cycle position (daily + weekly), three-timeframe momentum visuals, a clear entry/exit call, and the

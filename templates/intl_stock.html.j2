@@ -154,6 +154,11 @@
 </style>
 </head>
 <body>
+  {% set nav_search_lib = 'intlstockdata/index.json' %}
+  {% set nav_search_target = 'intl_stock.html' %}
+  {% set nav_search_placeholder_en = 'Search any JP / KR / TW / UK / EU stock…' %}
+  {% set nav_search_placeholder_zh = '搜索任意日 / 韩 / 台 / 英 / 欧股票…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>🔎 {{ t('International analyzer', '国际个股分析') }}</h1>
@@ -161,10 +166,6 @@
         <input id="q" placeholder="Search any JP / KR / TW / UK / EU stock… (e.g. Toyota, Samsung, TSMC, Shell, ASML)" autocomplete="off">
         <div id="sugg"></div>
       </div>
-      <a class="navbtn" href="intl_stocks.html">{{ t('← International', '← 国际') }}</a>
-      <a class="navbtn" href="index.html">{{ t('🏠 Home', '🏠 首页') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     <p class="muted" style="margin:8px 0 0">{{ t('Every name gets the same treatment as the sector board:
       cycle position (daily + weekly), three-timeframe momentum, a clear entry/exit call, sector-neutral

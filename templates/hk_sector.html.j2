@@ -43,15 +43,16 @@
 </style>
 </head>
 <body>
+  {% set nav_prefix = '../' %}
+  {% set nav_search_lib = 'hkstockdata/index.json' %}
+  {% set nav_search_target = 'hk_lookup.html' %}
+  {% set nav_search_placeholder_en = 'Search any HK stock, sector, or index…' %}
+  {% set nav_search_placeholder_zh = '搜索任意港股、板块或指数…' %}
+  {% include "_site_nav.html.j2" %}
   <div class="panel">
     <div class="topline">
       <h1>{{ td(s.name) }}</h1>
       <span class="lad {{ 'up' if s.ladder.dir=='up' else ('down' if s.ladder.dir=='down' else 'flat') }}">{{ td(s.ladder.label) }}</span>
-      <span style="flex:1"></span>
-      <a class="navbtn" href="../hk.html">{{ t('← Hong Kong', '← 香港') }}</a>
-      <a class="navbtn" href="../hk_lookup.html">{{ t('🔎 Search', '🔎 搜索') }}</a>
-      <button class="lang-btn">中文</button>
-      <button class="theme-btn">☀️ {{ t('Light', '浅色') }}</button>
     </div>
     {% set e = s.ladder.entry %}
     <div class="entrybar urg-{{ e.urgency }}">
