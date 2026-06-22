@@ -109,6 +109,32 @@
   </table>
   {% endif %}
 
+  {% if guidance and (guidance.up or guidance.down) %}
+  <h2 class="sec">📣 {{ t('Earnings-guidance surprises', '业绩预告') }} <span style="font-size:12px;color:var(--muted)">{{ t('Tushare premium · validated as the guidance family', 'Tushare 付费 · 已作为 guidance 家族验证') }}</span></h2>
+  <p style="font-size:12px;color:var(--muted)">{{ t('Company 业绩预告 direction × guided net-profit change. The forward-IC harness finds a real ~3-month post-announcement drift (right sign), accruing toward proven — display + measured, never scored here.', '公司业绩预告方向×预告净利润变动。前瞻IC检验发现真实的约3个月公告后漂移（符号正确），正向已验证累积——展示与测量，此处不评分。') }}</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+  {% for col, items, cls in [('▲ '+t('Positive', '正面'), guidance.up, 'r-pos'), ('▼ '+t('Negative', '负面'), guidance.down, 'r-neg')] %}
+    {% if items %}
+    <div>
+      <table class="data">
+        <thead><tr><th colspan="2" class="{{ cls }}">{{ col|safe }}</th><th class="num">{{ t('Guided Δ%', '预告变动%') }}</th><th class="num">{{ t('Score', '评分') }}</th></tr></thead>
+        <tbody>
+        {% for r in items %}
+          <tr>
+            <td>{{ r.ticker }}</td>
+            <td>{% set gl = guidance_labels.get(r.type) or [r.type, r.type] %}{{ bl(gl[0], gl[1]) }}</td>
+            <td class="num">{% if r.p_change_min is not none and r.p_change_max is not none %}{{ '%+.0f'|format(r.p_change_min) }}…{{ '%+.0f'|format(r.p_change_max) }}{% else %}·{% endif %}</td>
+            <td class="num conv {{ cls }}">{{ '%+.2f'|format(r.guidance_score) }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+  {% endfor %}
+  </div>
+  {% endif %}
+
   {% if ad and ad.crowding_flags %}
   <h2 class="sec">⚠️ {{ t('Leverage-crowding flags', '杠杆拥挤标记') }}</h2>
   <p style="font-size:12px;color:var(--muted)">{{ t('Names whose 20-day financing balance jumped most — leverage building (cuts both ways).', '20日融资余额跳升最多的名单——杠杆在累积（双刃剑）。') }}</p>

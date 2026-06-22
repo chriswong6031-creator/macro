@@ -182,6 +182,56 @@ def _sig_southbound():
         return None
 
 
+def _sector_flow_boards():
+    """{board_name: net_amount_rate} for 东财 INDUSTRY boards (GATED Tushare moneyflow_ind_dc snapshot).
+    {} when the token / cache is absent. Sector net-flow rate (% of turnover) for the latest day."""
+    out: dict = {}
+    try:
+        import pandas as pd
+        from lib import config
+        p = config.data_dir() / "tushare" / "moneyflow_sector.parquet"
+        if not p.exists():
+            return out
+        df = pd.read_parquet(p)
+        ind = df[df.get("content_type") == "行业"] if "content_type" in df.columns else df
+        for _, r in ind.iterrows():
+            nm = str(r.get("name") or "")
+            v = r.get("net_amount_rate")
+            if nm and v is not None and v == v:
+                out[nm] = float(v)
+    except Exception as e:  # noqa: BLE001
+        log.debug("china_radar sector-flow boards failed (%s)", e)
+    return out
+
+
+def _sector_flow_signal(board: str, boards: dict):
+    """signal-A from a sector's own 东财 net-flow rate (daily). Deadbanded so a small move stays
+    silent. None when the board is absent."""
+    rate = boards.get(board)
+    if rate is None:
+        return None
+    d = 1 if rate > 1.0 else (-1 if rate < -1.0 else 0)
+    return {"value": round(rate, 2), "dir": d, "strength": round(min(1.0, abs(rate) / 3.0), 2),
+            "detail_en": f"Sector net-flow {rate:+.1f}% (东财 board, daily)",
+            "detail_zh": f"板块净流入 {rate:+.1f}%（东财行业板块，当日）"}
+
+
+# Sector ETF → 东财 industry board (exact name) for the sector-flow radar pairs. Reuses the radar's
+# existing sector ETFs so the price-RS leg is identical.
+_SECTOR_FLOW_MAP = [
+    ("512800.SS", "Banks", "银行", "银行"),
+    ("512200.SS", "Real estate", "房地产", "房地产"),
+    ("512880.SS", "Brokers", "券商", "证券Ⅱ"),
+    ("512400.SS", "Nonferrous metals", "有色金属", "有色金属"),
+    ("515030.SS", "New-energy vehicle", "新能源车", "锂电池"),
+    ("512760.SS", "Semiconductors", "半导体", "半导体"),
+    ("512660.SS", "Defense", "国防军工", "国防军工"),
+    ("515220.SS", "Coal", "煤炭", "煤炭"),
+]
+_SECTOR_FLOW_THESIS = ("Sector smart-money net-flow tends to lead the sector's price when it "
+                       "diverges from current relative strength.")
+
+
 # (signal_key, signal_fn, signal_en, signal_zh, [(etf, sector_en, sector_zh)...], thesis)
 _PAIRS = [
     ("credit_impulse", _sig_credit_impulse, "Credit impulse (TSF)", "信用脉冲(社融)",
@@ -276,6 +326,50 @@ def _candidates(etf, sign, conv_map, n=3):
         return []
 
 
+def _build_row(cv, key, sen, szh, etf, sec_en, sec_zh, sig, thesis,
+               by_pair, by_signal, conv_map) -> dict:
+    """One radar row: signal-A direction vs the sector ETF's price RS → divergence verdict,
+    conviction-scored (strength × ledger reliability) with falsifiable hypothesis + candidates.
+    Shared by the macro/policy/flow pairs AND the per-sector sector-flow pairs. PURE-ish (reads
+    price + ledger + convergence)."""
+    rs_pct, rs_z = _price_rs(etf)
+    sign, strength = _divergence(sig, rs_pct, rs_z)
+    pair = f"{key}->{etf}"
+    if sign == "positive":
+        hyp_en = f"If {sen} is leading, {sec_en} should outperform CSI 300 over ~3 months."
+        hyp_zh = f"若{szh}领先，{sec_zh}未来约3个月应跑赢沪深300。"
+    elif sign == "negative":
+        hyp_en = f"If {sen} is fading, {sec_en}'s lead over CSI 300 should fade over ~3 months."
+        hyp_zh = f"若{szh}转弱，{sec_zh}相对沪深300的领先应在约3个月内消退。"
+    else:
+        hyp_en = hyp_zh = ""
+    # reliability: per-pair, fall back to per-signal, else unproven
+    rel = by_pair.get(pair) or by_signal.get(key) or {}
+    n_res = rel.get("n_resolved", 0)
+    hr = rel.get("hit_rate")
+    basis = ("pair" if pair in by_pair else ("signal_key" if key in by_signal else "unproven"))
+    if n_res >= 3 and hr is not None:
+        # proven-good rewarded up to 1.5×; proven-BAD (hr→0) collapses toward 0,
+        # so a demonstrably-falsified signal drops out of Moderate+ (not floored at 0.5×)
+        rel_factor = max(0.15, min(1.5, 1.5 * hr))
+    else:
+        rel_factor = 1.0
+        basis = "unproven"
+    conviction100 = cv.to_100(strength * rel_factor) if sign != "in_line" else 0
+    return {
+        "pair": pair, "signal_key": key,
+        "signal_en": sen, "signal_zh": szh,
+        "sector": sec_en, "sector_etf": etf, "sector_en": sec_en, "sector_zh": sec_zh,
+        "sign": sign, "strength": strength, "conviction100": conviction100,
+        "signal_value": sig.get("value"), "signal_dir": sig.get("dir"),
+        "signal_detail_en": sig.get("detail_en"), "signal_detail_zh": sig.get("detail_zh"),
+        "price_rs": rs_pct, "price_rs_z": rs_z,
+        "reliability": {"hit_rate": hr, "n_resolved": int(n_res), "basis": basis},
+        "candidates": _candidates(etf, sign, conv_map) if sign != "in_line" else [],
+        "thesis": thesis, "hypothesis_en": hyp_en, "hypothesis_zh": hyp_zh,
+    }
+
+
 def scan(asof: date | str | None = None) -> dict | None:
     """Run all radar pairs → divergence verdicts + falsifiable hypotheses, conviction-scored
     (strength × ledger reliability) with per-name candidates. Never raises."""
@@ -293,42 +387,18 @@ def scan(asof: date | str | None = None) -> dict | None:
             if sig is None:
                 continue
             for etf, sec_en, sec_zh in targets:
-                rs_pct, rs_z = _price_rs(etf)
-                sign, strength = _divergence(sig, rs_pct, rs_z)
-                pair = f"{key}->{etf}"
-                if sign == "positive":
-                    hyp_en = f"If {sen} is leading, {sec_en} should outperform CSI 300 over ~3 months."
-                    hyp_zh = f"若{szh}领先，{sec_zh}未来约3个月应跑赢沪深300。"
-                elif sign == "negative":
-                    hyp_en = f"If {sen} is fading, {sec_en}'s lead over CSI 300 should fade over ~3 months."
-                    hyp_zh = f"若{szh}转弱，{sec_zh}相对沪深300的领先应在约3个月内消退。"
-                else:
-                    hyp_en = hyp_zh = ""
-                # reliability: per-pair, fall back to per-signal, else unproven
-                rel = by_pair.get(pair) or by_signal.get(key) or {}
-                n_res = rel.get("n_resolved", 0)
-                hr = rel.get("hit_rate")
-                basis = ("pair" if pair in by_pair else ("signal_key" if key in by_signal else "unproven"))
-                if n_res >= 3 and hr is not None:
-                    # proven-good rewarded up to 1.5×; proven-BAD (hr→0) collapses toward 0,
-                    # so a demonstrably-falsified signal drops out of Moderate+ (not floored at 0.5×)
-                    rel_factor = max(0.15, min(1.5, 1.5 * hr))
-                else:
-                    rel_factor = 1.0
-                    basis = "unproven"
-                conviction100 = cv.to_100(strength * rel_factor) if sign != "in_line" else 0
-                rows.append({
-                    "pair": pair, "signal_key": key,
-                    "signal_en": sen, "signal_zh": szh,
-                    "sector": sec_en, "sector_etf": etf, "sector_en": sec_en, "sector_zh": sec_zh,
-                    "sign": sign, "strength": strength, "conviction100": conviction100,
-                    "signal_value": sig.get("value"), "signal_dir": sig.get("dir"),
-                    "signal_detail_en": sig.get("detail_en"), "signal_detail_zh": sig.get("detail_zh"),
-                    "price_rs": rs_pct, "price_rs_z": rs_z,
-                    "reliability": {"hit_rate": hr, "n_resolved": int(n_res), "basis": basis},
-                    "candidates": _candidates(etf, sign, conv_map) if sign != "in_line" else [],
-                    "thesis": thesis, "hypothesis_en": hyp_en, "hypothesis_zh": hyp_zh,
-                })
+                rows.append(_build_row(cv, key, sen, szh, etf, sec_en, sec_zh, sig, thesis,
+                                       by_pair, by_signal, conv_map))
+        # sector-flow pairs (GATED Tushare): each sector's OWN 东财 net-flow vs its price RS.
+        # Absent without a token / cache → simply no sector-flow rows.
+        boards = _sector_flow_boards()
+        for etf, sec_en, sec_zh, board in _SECTOR_FLOW_MAP:
+            sig = _sector_flow_signal(board, boards)
+            if sig is None:
+                continue
+            rows.append(_build_row(cv, "sector_flow", "Sector net-flow", "板块净流入",
+                                   etf, sec_en, sec_zh, sig, _SECTOR_FLOW_THESIS,
+                                   by_pair, by_signal, conv_map))
         if not rows:
             return None
         active = [r for r in rows if r["sign"] != "in_line"]

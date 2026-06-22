@@ -365,6 +365,44 @@ def chips() -> dict[str, dict]:
     return out
 
 
+# 业绩预告 type → bilingual label (for the display panel; never put these in a title= attr)
+GUIDANCE_LABELS: dict[str, tuple[str, str]] = {
+    "预增": ("Sharp rise", "预增"), "略增": ("Slight rise", "略增"),
+    "扭亏": ("Turn to profit", "扭亏"), "续盈": ("Stays profitable", "续盈"),
+    "预盈": ("Expected profit", "预盈"), "减亏": ("Loss narrowing", "减亏"),
+    "预减": ("Sharp fall", "预减"), "略减": ("Slight fall", "略减"),
+    "首亏": ("First loss", "首亏"), "续亏": ("Stays in loss", "续亏"),
+    "预亏": ("Expected loss", "预亏"), "增亏": ("Loss widening", "增亏"),
+}
+
+
+def forecast_guidance(top_n: int = 16) -> dict:
+    """业绩预告 (collectors/tushare_forecast, GATED): the strongest positive + negative earnings-guidance
+    surprises (type direction × guided net-profit %-change). {} when the Tushare token is absent.
+    DISPLAY-ONLY — validated as the `guidance` family in china_validation, never scored here."""
+    df = _read_table("tushare", "forecast")
+    if df is None or df.empty or "guidance_score" not in df.columns:
+        return {}
+    rows: list[dict] = []
+    for r in df.itertuples():
+        t = str(getattr(r, "ticker", "") or "")
+        gs = _num(getattr(r, "guidance_score", None))
+        if not t or gs is None:
+            continue
+        rows.append({"ticker": t, "type": str(getattr(r, "type", "") or ""),
+                     "p_change_min": _num(getattr(r, "p_change_min", None)),
+                     "p_change_max": _num(getattr(r, "p_change_max", None)),
+                     "guidance_score": round(gs, 3), "ann_date": str(getattr(r, "ann_date", "") or "")})
+    if not rows:
+        return {}
+    rows.sort(key=lambda x: x["guidance_score"], reverse=True)
+    # sign-FILTER (not rank-slice) so the ▲Positive / ▼Negative columns can never cross-contaminate
+    # when the scored universe is small (< 2·top_n); guidance_score is strictly signed (None for neutral).
+    up = [r for r in rows if r["guidance_score"] > 0][:top_n]
+    down = [r for r in rows if r["guidance_score"] < 0][-top_n:][::-1]
+    return {"up": up, "down": down}
+
+
 def zt_pool() -> dict[str, dict]:
     """涨停板 (collectors/china_zt_pool): limit-up momentum tier + seal quality + froth."""
     df = _read_table("china_zt_pool", "pool")
