@@ -61,10 +61,11 @@ def test_macro_leg_uses_prior_and_sector_rs():
     val, why = ts._macro_leg("mag7", mc)
     assert val > 0.3
     assert any("sector" in w.lower() for w in why)        # the live-RS confirmer fired
-    # an unknown basket with no prior and no proxy → neutral, no crash
+    # an unknown basket with no prior and no proxy → leg UNAVAILABLE (None), so the caller
+    # renormalises it OUT of the composite instead of scoring a dead 0 (the non-US macro-drag fix)
     val2, _ = ts._macro_leg("does_not_exist", {"state": mc["state"], "sector_rs": {},
                                                "display": mc["display"]})
-    assert val2 == 0.0
+    assert val2 is None
 
 
 def test_crowding_penalty_rises_with_extension_and_narrow():
@@ -110,6 +111,40 @@ def test_label_emerging_then_enter_unless_macro_headwind():
     assert label == "emerging"
     assert ts._reco(label, 0.1, 0.2, _fp(0.6, 0.5)) == "enter"      # macro ok → ENTER
     assert ts._reco(label, -0.5, 0.2, _fp(0.6, 0.5)) == "hold"      # macro against → HOLD
+
+
+# ---- non-US region-aware gates (China/HK/Canada fix) ----------------------------
+def _fp_nonus(rs=1.0, ext=0.5, long_sign=1, accel=0.6):
+    # a non-US fingerprint carries the price-only proxies (ext_abs + long_sign); a region
+    # LEADER sits at rs_pctile ~1.0 but only a parabolic ext_abs should disqualify it.
+    return {"accel_z": accel, "rs_pctile": rs, "ext_abs": ext, "long_sign": long_sign}
+
+
+def test_non_us_leader_buyable_when_not_parabolic():
+    # A dominant region-leader at rs_pctile 1.0 (which used to force HOLD) but only mildly
+    # stretched (ext_abs < EXT_HI) and above its 200d trend → ACCUMULATE, and crowding does
+    # NOT veto the verb (house rule: crowding down-sizes, never fades the leader).
+    fp = _fp_nonus(rs=1.0, ext=0.6, long_sign=1)
+    assert ts._reco("dominant", 0.0, 0.9, fp) == "accumulate"       # high crowd_pen 0.9, still buy
+    # a PARABOLIC leader (ext_abs ≥ EXT_HI) → HOLD, don't chase the blow-off
+    assert ts._reco("dominant", 0.0, 0.2, _fp_nonus(rs=1.0, ext=ts.EXT_HI + 0.1)) == "hold"
+
+
+def test_non_us_drawdown_gate_uses_200dma_proxy():
+    # the validated drawdown-control gate is no longer BLIND abroad: a below-200d-trend theme
+    # (long_sign -1) cannot ENTER/ACCUMULATE even if it labels emerging/dominant.
+    assert ts._reco("emerging", 0.1, 0.2, _fp_nonus(long_sign=-1)) == "hold"
+    assert ts._reco("emerging", 0.1, 0.2, _fp_nonus(long_sign=1, ext=-0.5)) == "enter"
+    assert ts._reco("dominant", 0.0, 0.2, _fp_nonus(long_sign=-1, ext=0.5)) == "hold"
+
+
+def test_non_us_macro_leg_renormalises_out_not_dead_zero():
+    # with no China macro prior the leg is None → excluded from the composite (vs a forced 0.0
+    # that would drag the score toward 50); _extended prefers ext_abs over rs_pctile abroad.
+    assert ts._macro_leg("cn_rare_earth", {"state": {"growth": 0, "rates": 0, "inflation": 0,
+                         "riskon": 0}, "sector_rs": {}, "display": {}})[0] is None
+    assert ts._extended({"ext_abs": 0.5, "rs_pctile": 1.0}) is False    # ext_abs wins abroad
+    assert ts._extended({"ext_abs": ts.EXT_HI + 0.1, "rs_pctile": 0.0}) is True
 
 
 def test_ret_rel_is_basket_minus_bench():

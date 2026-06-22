@@ -155,6 +155,8 @@
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
                min-width:30px; text-align:center; padding:1px 5px; border-radius:8px;
                border:1px solid var(--line); color:var(--text); }
+  .nb-crank { font-size:7.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+              opacity:.7; margin-right:3px; vertical-align:1px; }
   .nb-cscore.band-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 45%,var(--line));
                          background:color-mix(in srgb,var(--up) 12%,var(--panel)); }
   .nb-cscore.band-constructive { color:var(--g-cold);
@@ -1096,7 +1098,7 @@
         {% set c = n.conviction %}
         {% if c %}
         <div class="nb-conv">
-          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
+          {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank">{{ t('rank','排名') }}</span>{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
         <div class="nb-axes">

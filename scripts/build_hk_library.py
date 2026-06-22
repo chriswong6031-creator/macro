@@ -661,7 +661,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
                     e["entry_signal"] = es
             except Exception as ex:  # noqa: BLE001 — additive, never fatal
                 log.debug("hk entry-signal for %s failed (%s)", t, ex)
-    stock_score.attach_panel_scores(profiles)        # within-market percentile display score
+    stock_score.attach_panel_scores(profiles, "HK")  # within-market percentile display score (rank-framed)
     # patch the (now percentile-scored) conviction + HK-native legs back into each per-stock
     # JSON so hk_lookup.html renders the identical hero + flow/value chips.
     for e in enriched:

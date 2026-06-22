@@ -93,13 +93,22 @@ def _standouts_per_theme(region: str, site) -> dict:
     return out
 
 
+# region -> the per-market basketdata dir holding the already-built theme desk (act_now lives in
+# theme_intel). The desk now scores CN/HK/CA too (engine.theme_scoring region-aware), so the
+# allocation page's buy/reduce shortlist is no longer US-only.
+_BASKETDATA = {"us": "basketdata", "china": "chinabasketdata",
+               "hk": "hkbasketdata", "canada": "canadabasketdata"}
+
+
 def _theme_act_now(region: str, site) -> dict | None:
-    """The theme-level WHAT-TO-ACT-ON-NOW (buy/add vs reduce/avoid) from the baskets desk —
-    US only (theme_intel is US). Read from the already-built basketdata/baskets.json."""
-    if region != "us":
+    """The theme-level WHAT-TO-ACT-ON-NOW (buy/add vs reduce/avoid) from the baskets desk.
+    Region-aware: reads the region's own already-built <region>basketdata/baskets.json. Returns
+    None on shortfall — additive."""
+    sub = _BASKETDATA.get(region)
+    if not sub:
         return None
     try:
-        p = site / "basketdata" / "baskets.json"
+        p = site / sub / "baskets.json"
         ti = (json.loads(p.read_text()).get("theme_intel") or {}) if p.exists() else {}
         return ti.get("act_now")
     except Exception:  # noqa: BLE001

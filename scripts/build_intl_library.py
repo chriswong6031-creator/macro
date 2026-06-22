@@ -301,7 +301,7 @@ def main(alpha: dict | None = None) -> dict | None:
         built += 1
 
     # within-market percentile display score (mutates each conviction in place), then write
-    stock_score.attach_panel_scores(profiles)
+    stock_score.attach_panel_scores(profiles, "INTL")
     for safe, rec in to_write:
         rec["view"] = stock_view.build_view(rec, "INTL")
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))

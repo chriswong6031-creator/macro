@@ -1060,14 +1060,26 @@ _BANDS = [(80, "high", "High conviction", "高确信"),
           (40, "neutral", "Neutral", "中性"),
           (0, "low", "Low", "偏弱")]
 
+# NON-US single-stock score is a WITHIN-MARKET percentile RANK (score_percentiles), so the band
+# word must read as a RANK, never absolute conviction — otherwise the card shows "96/100 High
+# conviction" next to an independently-derived "Neutral — no clear edge" verdict (the A-share
+# complaint). Same band KEYS (so the CSS colour is unchanged), rank-framed WORDS. US keeps its
+# absolute words (it has the name-rank lane + the rank honesty-note below).
+_BANDS_RANK = [(80, "high", "Top rank", "板内领先"),
+               (60, "constructive", "Upper rank", "板内偏上"),
+               (40, "neutral", "Mid-pack", "板内居中"),
+               (0, "low", "Lower rank", "板内偏弱")]
 
-def _band(score: int | None) -> dict:
+
+def _band(score: int | None, market: str = "US") -> dict:
     if score is None:
         return {"band": "na", "en": "—", "zh": "—"}
-    for lo, key, en, zh in _BANDS:
+    bands = _BANDS if (market or "US").upper() == "US" else _BANDS_RANK
+    for lo, key, en, zh in bands:
         if score >= lo:
             return {"band": key, "en": en, "zh": zh}
-    return {"band": "low", "en": "Low", "zh": "偏弱"}
+    lo, key, en, zh = bands[-1]
+    return {"band": "low", "en": en, "zh": zh}
 
 
 def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> dict:
@@ -1170,7 +1182,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     if basket_cau:                       # surface the validated basket-trend de-risk as a caution
         vb["cautions"].append(basket_cau["en"])
         vb["cautions_zh"].append(basket_cau["zh"])
-    band = _band(score)
+    band = _band(score, m)
 
     # --- honesty NOTES (AVGO/NVDA alignment): make the two places a user gets confused explicit.
     notes: list[dict] = []
@@ -1179,7 +1191,7 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     # selection z hasn't cleared the absolute bar — the NVDA 97-vs-"Constructive" case), say so, so
     # "97" is never misread as an absolute 97/100 conviction.
     if band["band"] in ("high", "constructive") and _tier(sel_z) not in ("high",) \
-            and not blocked and score is not None:
+            and score is not None:
         notes.append({
             "kind": "rank",
             "en": "Score is a within-board percentile RANK (top of today's board), not an absolute "
@@ -1343,11 +1355,12 @@ def normalize_rec(record: dict, market: str, *, rs_z: float | None = None,
     }
 
 
-def attach_panel_scores(profiles: dict[str, dict]) -> None:
+def attach_panel_scores(profiles: dict[str, dict], market: str = "US") -> None:
     """Given {ticker: conviction_block} for ONE market, set each block's display
     ``score`` to the within-market cross-sectional percentile of its ``composite_z``
     (the honest, comparable-within-market skin) and refresh the band. Mutates in
-    place. Blocks with no composite keep their per-name logistic fallback."""
+    place. Blocks with no composite keep their per-name logistic fallback. ``market``
+    selects the band wording — non-US gets rank-framed words (the score IS a rank)."""
     zs = {t: b.get("composite_z") for t, b in profiles.items()
           if b.get("composite_z") is not None}
     if len(zs) < 5:
@@ -1357,5 +1370,5 @@ def attach_panel_scores(profiles: dict[str, dict]) -> None:
     for t, p in pct.items():
         blk = profiles[t]
         blk["score"] = int(p)
-        bnd = _band(int(p))
+        bnd = _band(int(p), market)
         blk["band"], blk["band_en"], blk["band_zh"] = bnd["band"], bnd["en"], bnd["zh"]
