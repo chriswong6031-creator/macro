@@ -1,7 +1,7 @@
 {
   "schema": "ss_backtest_priors.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-21 17:56 UTC",
+  "generated_at": "2026-06-22 02:08 UTC",
   "n_situations": 1789,
   "entry": "first close after digest date",
   "by_category": {
