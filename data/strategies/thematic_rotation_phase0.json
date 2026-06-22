@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-06-22T02:49:11.430204+00:00",
+  "generated_at": "2026-06-22T05:24:09.762509+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -114,7 +114,7 @@
       "years": 27.5
     },
     "baskets": {
-      "n_assets": 31,
+      "n_assets": 34,
       "span": [
         "2023-05-31",
         "2026-06-30"
@@ -122,12 +122,12 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.5762,
-          "sharpe": 1.96,
-          "max_dd": -0.1537,
-          "calmar": 3.75,
+          "cagr": 0.5357,
+          "sharpe": 1.97,
+          "max_dd": -0.1395,
+          "calmar": 3.84,
           "n_months": 37,
-          "dsr": 0.952
+          "dsr": 0.953
         },
         "top3_mom12_rel": {
           "cagr": 1.3385,
@@ -164,56 +164,56 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.117,
-          "ic_t_hac": 2.959,
-          "hit": 0.64,
+          "mean_ic": 0.1099,
+          "ic_t_hac": 2.845,
+          "hit": 0.6,
           "n_steps": 25
         },
         "3m": {
-          "mean_ic": 0.1995,
-          "ic_t_hac": 3.107,
-          "hit": 0.75,
+          "mean_ic": 0.2012,
+          "ic_t_hac": 3.057,
+          "hit": 0.625,
           "n_steps": 8
         }
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0385,
-          "std": 0.1287,
-          "sharpe": 1.04,
-          "p05": -0.1421,
-          "n": 714
+          "mean": 0.0356,
+          "std": 0.1247,
+          "sharpe": 0.99,
+          "p05": -0.1354,
+          "n": 775
         },
         "below_trend": {
-          "mean": 0.0455,
-          "std": 0.12,
+          "mean": 0.0433,
+          "std": 0.1147,
           "sharpe": 1.31,
-          "p05": -0.1098,
-          "n": 433
+          "p05": -0.1062,
+          "n": 483
         },
-        "mean_diff_t": -0.93,
-        "mean_diff_p": 0.352
+        "mean_diff_t": -1.12,
+        "mean_diff_p": 0.2609
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
-            "mean_fwd_maxdd": -0.0946,
-            "p05_fwd_maxdd": -0.2886,
-            "n": 11870
+            "mean_fwd_maxdd": -0.0903,
+            "p05_fwd_maxdd": -0.2807,
+            "n": 13103
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.0943,
-            "p05_fwd_maxdd": -0.3015,
-            "n": 2603
+            "mean_fwd_maxdd": -0.0921,
+            "p05_fwd_maxdd": -0.2971,
+            "n": 2772
           },
           "parabolic": {
-            "mean_fwd_maxdd": -0.104,
-            "p05_fwd_maxdd": -0.3271,
-            "n": 872
+            "mean_fwd_maxdd": -0.0992,
+            "p05_fwd_maxdd": -0.3174,
+            "n": 955
           }
         },
-        "spearman_ez_vs_fwd_maxdd": 0.039
+        "spearman_ez_vs_fwd_maxdd": 0.021
       },
       "warning": "HINDSIGHT-curated membership + only ~3y + ~15 names -> severely underpowered and survivorship-biased. Context only, never a validation."
     }

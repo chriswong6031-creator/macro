@@ -101,8 +101,10 @@
 
 </head>
 <body>
+
+
 <nav class="site-nav">
-    
+  
 
 
     <div class="nav-links">
@@ -111,6 +113,7 @@
       <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
+        <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
         <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
@@ -126,6 +129,7 @@
       <a class="nav-link" href="china.html">🇨🇳 <span class="l-en">China</span><span class="l-zh">中国</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="china.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">A-share regime · sectors · flows</span><span class="l-zh">A股周期 · 板块 · 资金</span></span></a>
+        <a href="china_news.html">📰 <span class="l-en">China News Feed</span><span class="l-zh">中国新闻流</span><span class="d"><span class="l-en">Policy tone · official sources · market tags</span><span class="l-zh">政策基调 · 官方来源 · 市场标签</span></span></a>
         <a href="china_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · alpha · setups</span><span class="l-zh">精选 · 阿尔法 · 布局</span></span></a>
         <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs CSI 300</span><span class="l-zh">等权主题篮子 vs 沪深300</span></span></a>
         <a href="allocation_china.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
@@ -206,11 +210,12 @@
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
-      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+      placeholder="Search any stock, ETF, commodity or crypto…"
+      data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link" href="aibrief.html">🧠 <span class="l-en">AI Daily Brief</span><span class="l-zh">AI每日简报</span></a>
+    <a class="ai-brief-link" href="mastermind.html">🤖 <span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
     </button>
@@ -241,7 +246,7 @@
     <span><span class="rk"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
       <span class="neu"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span></span>
     <span><span class="rk"><span class="l-en">Fear↔Euphoria</span><span class="l-zh">恐惧↔亢奋</span></span> <span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
-    <span><span class="rk">RORO</span> +0.13</span>
+    <span><span class="rk">RORO</span> +0.12</span>
     <span class="mut" style="font-size:11px"><span class="l-en">soft overlay — context, not a score leg</span><span class="l-zh">软性叠加——背景，非评分腿</span></span>
   </div>
   
@@ -258,9 +263,9 @@
       
       <li><span class="kind"><span class="l-en">radar</span><span class="l-zh">雷达</span></span><span class="l-en">Nonferrous metals divergence (positive)</span><span class="l-zh">有色金属 背离（正向）</span> — <span class="mut"><span class="l-en">radar Mfg PMI → Nonferrous metals · 3 China headlines · 12 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 制造业PMI → 有色金属 · 该主题 3 条头条 · 12 只成员吸筹 · 萌芽（领先于人群）</span></span></li>
       
-      <li><span class="kind"><span class="l-en">radar</span><span class="l-zh">雷达</span></span><span class="l-en">Brokers divergence (positive)</span><span class="l-zh">券商 背离（正向）</span> — <span class="mut"><span class="l-en">radar PBoC easing → Brokers · 14 China headlines · 3 alt-data members accumulating · policy tailwind · early (leading the crowd)</span><span class="l-zh">雷达 央行宽松 → 券商 · 该主题 14 条头条 · 3 只成员吸筹 · 政策顺风 · 早期（领先于人群）</span></span></li>
-      
       <li><span class="kind"><span class="l-en">chain</span><span class="l-zh">链条</span></span><span class="l-en">PBoC easing → liquidity → brokers/property → breadth (forming)</span><span class="l-zh">央行宽松 → 流动性 → 券商/地产 → 市场宽度（形成中）</span> — <span class="mut"><span class="l-en">2/5 legs of the easing-reflation path align.</span><span class="l-zh">宽松再通胀路径 2/5 段一致。</span></span></li>
+      
+      <li><span class="kind"><span class="l-en">radar</span><span class="l-zh">雷达</span></span><span class="l-en">Brokers divergence (positive)</span><span class="l-zh">券商 背离（正向）</span> — <span class="mut"><span class="l-en">radar PBoC easing → Brokers · 14 China headlines · 3 alt-data members accumulating · policy tailwind · early (leading the crowd)</span><span class="l-zh">雷达 央行宽松 → 券商 · 该主题 14 条头条 · 3 只成员吸筹 · 政策顺风 · 早期（领先于人群）</span></span></li>
       
     </ol>
     
@@ -280,9 +285,9 @@
       
       <tr>
         <td><b><span class="l-en">Nonferrous metals</span><span class="l-zh">有色金属</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">20.2</span></td>
+        <td><span class="cc">18.1</span></td>
         <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑1</span></td>
-        <td><span class="cc">42.9</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
+        <td><span class="cc">40.8</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
         <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:74%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">altdata</span><span class="surf">news</span></td>
         <td><span class="l-en">radar Mfg PMI → Nonferrous metals · 3 China headlines · 12 alt-data members accumulating · emerging (leading the crowd)</span><span class="l-zh">雷达 制造业PMI → 有色金属 · 该主题 3 条头条 · 12 只成员吸筹 · 萌芽（领先于人群）</span><br><span class="mut" style="font-size:11px">盛和资源 (600392.SS) · 江西铜业 (600362.SS) · 金力永磁 (300748.SZ)</span></td>
@@ -291,9 +296,9 @@
       
       <tr>
         <td><b><span class="l-en">Real estate</span><span class="l-zh">房地产</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">15.3</span></td>
+        <td><span class="cc">15.8</span></td>
         <td><span class="bandpill b-high"><span class="l-en">Emerging</span><span class="l-zh">萌芽</span></span> <span class="sgn-pos">↑1</span></td>
-        <td><span class="cc">23.0</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><span class="cc">23.6</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
         <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:84%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">policy</span></td>
         <td><span class="l-en">radar PBoC easing → Real estate · policy tailwind · emerging (leading the crowd)</span><span class="l-zh">雷达 央行宽松 → 房地产 · 政策顺风 · 萌芽（领先于人群）</span></td>
@@ -302,9 +307,9 @@
       
       <tr>
         <td><b><span class="l-en">Brokers</span><span class="l-zh">券商</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">14.7</span></td>
+        <td><span class="cc">10.5</span></td>
         <td><span class="bandpill b-elevated"><span class="l-en">Early</span><span class="l-zh">早期</span></span> <span class="sgn-pos">↑1</span></td>
-        <td><span class="cc">41.7</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
+        <td><span class="cc">36.0</span> <span class="bandpill b-moderate"><span class="l-en">Moderate</span><span class="l-zh">中性</span></span></td>
         <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:63%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">altdata</span><span class="surf">news</span><span class="surf">policy</span></td>
         <td><span class="l-en">radar PBoC easing → Brokers · 14 China headlines · 3 alt-data members accumulating · policy tailwind · early (leading the crowd)</span><span class="l-zh">雷达 央行宽松 → 券商 · 该主题 14 条头条 · 3 只成员吸筹 · 政策顺风 · 早期（领先于人群）</span><br><span class="mut" style="font-size:11px">000166.SZ (000166.SZ) · 招商证券 (600999.SS) · 中信建投 (601066.SS)</span></td>
@@ -313,9 +318,9 @@
       
       <tr>
         <td><b><span class="l-en">New-energy vehicle</span><span class="l-zh">新能源车</span></b> <span class="sgn-pos">▲</span></td>
-        <td><span class="cc">10.7</span></td>
+        <td><span class="cc">8.5</span></td>
         <td><span class="bandpill b-elevated"><span class="l-en">Early</span><span class="l-zh">早期</span></span></td>
-        <td><span class="cc">27.4</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
+        <td><span class="cc">24.8</span> <span class="bandpill b-low"><span class="l-en">Low</span><span class="l-zh">偏弱</span></span></td>
         <td><div class="strength" style="width:64px" title="relative room vs crowd — not a % upside forecast"><i style="width:63%"></i></div></td>
         <td><span class="surf">radar</span><span class="surf">news</span></td>
         <td><span class="l-en">radar Mfg PMI → New-energy vehicle · 5 China headlines · 2 alt-data members accumulating · early</span><span class="l-zh">雷达 制造业PMI → 新能源车 · 该主题 5 条头条 · 2 只成员吸筹 · 早期</span><br><span class="mut" style="font-size:11px">比亚迪 (002594.SZ) · 格林美 (002340.SZ)</span></td>
@@ -405,14 +410,14 @@
   • Media sentiment cautious / risk-tilted lean — z -2.06 over 10d.
   • Nonferrous metals divergence (positive) — radar Mfg PMI → Nonferrous metals · 3 China headlines · 12 alt-data members accumulating · emerging (leading the crowd)
 STACKED READS:
-  • Nonferrous metals (positive) cc=42.9 [radar+altdata+news]
-  • Real estate (positive) cc=23.0 [radar+policy]
-  • Brokers (positive) cc=41.7 [radar+altdata+news+policy]
+  • Nonferrous metals (positive) cc=40.8 [radar+altdata+news]
+  • Real estate (positive) cc=23.6 [radar+policy]
+  • Brokers (positive) cc=36.0 [radar+altdata+news+policy]
 News: media sentiment cautious (z -2.06), 196 events/7d
   baskets: Brokers(14), Robotics(8), Semiconductors(7), Banks(6)
 PBoC: stance neutral; LPR1Y 3.0 / 5Y 3.5; RRR 9.0 — Easing in progress — stance not yet flipped
 Alt-data accumulation: 002297.SZ(002297.SZ), 688665.SS(688665.SS), 002579.SZ(002579.SZ), 688662.SS(688662.SS)
-Radar divergences: Mfg PMI→Nonferrous metals positive; PBoC easing→Brokers positive; Mfg PMI→New-energy vehicle positive; PBoC easing→Real estate positive (ledger: unproven)</div></details>
+Radar divergences: Mfg PMI→Nonferrous metals positive; PBoC easing→Real estate positive; PBoC easing→Brokers positive; Mfg PMI→New-energy vehicle positive (ledger: unproven)</div></details>
 
   <!-- G. SURFACE CARDS -->
   <h2 class="sec">🗂️ <span class="l-en">Surfaces</span><span class="l-zh">情报面板</span></h2>
@@ -434,7 +439,7 @@ Radar divergences: Mfg PMI→Nonferrous metals positive; PBoC easing→Brokers p
     <a class="scard" href="china_altdata.html">
       <div class="ic">🛰️</div><div class="nm"><span class="l-en">Alternative Data</span><span class="l-zh">另类数据</span></div>
       <div class="v">10</div>
-      <div class="s"><span class="l-en">convergence watchlist</span><span class="l-zh">共振自选</span> · 3310 <span class="l-en">full-coverage</span><span class="l-zh">三源齐全</span></div>
+      <div class="s"><span class="l-en">convergence watchlist</span><span class="l-zh">共振自选</span> · 3311 <span class="l-en">full-coverage</span><span class="l-zh">三源齐全</span></div>
       <div class="age">2026-06-22</div>
       <div class="go"><span class="l-en">Open alt-data desk →</span><span class="l-zh">打开另类数据台 →</span></div>
     </a>

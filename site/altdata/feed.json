@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-22T03:37:16.709484+00:00",
+  "generated_utc": "2026-06-22T06:11:11.610077+00:00",
   "as_of": "2026-06-22",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4101,22 +4101,22 @@
       "emoji": "\ud83d\udcb8",
       "label_en": "Corporate donors",
       "label_zh": "\u4f01\u4e1a\u6350\u8d60",
-      "rows": 756,
+      "rows": 757,
       "last_seen": "2026-06-21",
       "recent": [
         {
-          "BioGuideID": "E000300",
-          "CandidateName": "EVANS, TIMOTHY GABRIEL JOSEPH",
+          "BioGuideID": "T000486",
+          "CandidateName": "TORRES, RITCHIE JOHN",
           "CompanyCMTENM": "VERIZON COMMUNICATIONS, INC. POLITICAL ACTION COMMITTEE (VERIZON PAC)",
           "TransactionDate": "2026-04-29",
           "TransactionAmount": "2000",
           "Ticker": "VZ",
-          "CommitteeName": "ELECTGABEEVANS.COM",
+          "CommitteeName": "TORRES FOR CONGRESS",
           "Cycle": "2026",
           "TransactionType": "24K",
           "CompanyCMTEID": "C00186288",
           "Uploaded": "2026-06-21 23:33:43.262284",
-          "_first_seen": "2026-06-22T02:14:11.895867+00:00"
+          "_first_seen": "2026-06-22T04:44:56.718339+00:00"
         },
         {
           "BioGuideID": null,
@@ -4460,9 +4460,18 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 107,
+      "rows": 108,
       "last_seen": "2026-06-22",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/DoubleVerify+Expands+DV+Authentic+AdVantage+to+Meta+and+TikTok",
+          "time": "2026-06-22 04:10:21",
+          "headline": "DoubleVerify Expands DV Authentic AdVantage to Meta and TikTok",
+          "category": "press_release_summary",
+          "summary": "<p>DoubleVerify expands DV Authentic AdVantage\u2122 to Meta and TikTok, enhancing media quality and campaign performance through AI-driven solutions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>DoubleVerify an\u2026",
+          "image": "https://www.quiverquant.com/images/dv_rect_new.png",
+          "_first_seen": "2026-06-22T04:44:56.986522+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Getty+Images+Announces+Display+Agreement+with+OpenAI+to+Bring+Licensed+Visual+Content+to+ChatGPT",
           "time": "2026-06-22 00:10:24",
@@ -4677,15 +4686,6 @@
           "category": "discussion_automated",
           "summary": "<p><strong style=\"color: rgb(218,48,46);\">Quantum sector momentum:</strong> Social media chatter around Rigetti Computing has intensified amid broader enthusiasm for quantum stocks in the evolving technology landscape\u2026",
           "image": "https://www.quiverquant.com/images/rgti_rect_new.png",
-          "_first_seen": "2026-06-21T15:27:37.626670+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Broadcom+Stock+%28AVGO%29+Opinions+on+Recent+Price+Correction+and+AI+Developments",
-          "time": "2026-06-21 14:03:25",
-          "headline": "Broadcom Stock (AVGO) Opinions on Recent Price Correction and AI Developments",
-          "category": "discussion_automated",
-          "summary": "<p><strong style=\"color: rgb(218,48,46);\">Market Correction:</strong> Social media commentary focused on Broadcom's recent slide into bear market territory after a steep drop from its all-time high. Observers pointed \u2026",
-          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
           "_first_seen": "2026-06-21T15:27:37.626670+00:00"
         }
       ]
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 16846,
+      "rows": 17446,
       "last_seen": "2026-06-22",
       "recent": [
         {
-          "ticker": "DAL",
-          "owner_name": "MetLife Investment Management, LLC",
+          "ticker": "BSX",
+          "owner_name": "BRADLEY FOSTER & SARGENT INC/CT",
           "owner_title": "Institution",
-          "shares": "151820",
+          "shares": "627470",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "PARNASSUS INVESTMENTS, LLC",
+          "ticker": "AON",
+          "owner_name": "TEACHER RETIREMENT SYSTEM OF TEXAS",
           "owner_title": "Institution",
-          "shares": "7887228",
+          "shares": "180893",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "AVIVA PLC",
+          "ticker": "AON",
+          "owner_name": "CITIGROUP INC",
           "owner_title": "Institution",
-          "shares": "8349689",
+          "shares": "222425",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "TD ASSET MANAGEMENT INC",
+          "ticker": "AON",
+          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
           "owner_title": "Institution",
-          "shares": "8275670",
+          "shares": "222169",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "BANK OF NOVA SCOTIA",
+          "ticker": "AON",
+          "owner_name": "ALLIANCEBERNSTEIN L.P.",
           "owner_title": "Institution",
-          "shares": "8248355",
+          "shares": "218495",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "PRUDENTIAL FINANCIAL INC",
+          "ticker": "AON",
+          "owner_name": "RAYMOND JAMES & ASSOCIATES",
           "owner_title": "Institution",
-          "shares": "8226360",
+          "shares": "215322",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "FAYEZ SAROFIM & CO",
+          "ticker": "AON",
+          "owner_name": "WEITZ INVESTMENT MANAGEMENT, INC.",
           "owner_title": "Institution",
-          "shares": "8084635",
+          "shares": "213860",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "ProShare Advisors LLC",
+          "ticker": "AON",
+          "owner_name": "EMINENCE CAPITAL, LP",
           "owner_title": "Institution",
-          "shares": "8030900",
+          "shares": "182145",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
-          "owner_title": "Institution",
-          "shares": "7964931",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
-          "owner_title": "Institution",
-          "shares": "7863287",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "WINDACRE PARTNERSHIP LLC",
-          "owner_title": "Institution",
-          "shares": "7185100",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "CITADEL ADVISORS LLC",
-          "owner_title": "Institution",
-          "shares": "7692857",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "CANADA LIFE ASSURANCE Co",
-          "owner_title": "Institution",
-          "shares": "7657087",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "ALTAROCK PARTNERS LP",
-          "owner_title": "Institution",
-          "shares": "7567946",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "APG Asset Management N.V.",
-          "owner_title": "Institution",
-          "shares": "7547056",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "DnB Asset Management AS",
-          "owner_title": "Institution",
-          "shares": "7450247",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "SANDS CAPITAL MANAGEMENT, LLC",
-          "owner_title": "Institution",
-          "shares": "7440012",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Korea Investment CORP",
-          "owner_title": "Institution",
-          "shares": "7350766",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "1832 Asset Management L.P.",
-          "owner_title": "Institution",
-          "shares": "8349910",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "STIFEL FINANCIAL CORP",
-          "owner_title": "Institution",
-          "shares": "8394669",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Robeco Institutional Asset Management B.V.",
-          "owner_title": "Institution",
-          "shares": "8429660",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMZN",
+          "ticker": "AON",
           "owner_name": "STATE BOARD OF ADMINISTRATION OF FLORIDA RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "8502697",
+          "shares": "181412",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "VOYA INVESTMENT MANAGEMENT LLC",
+          "ticker": "AON",
+          "owner_name": "NICHOLAS COMPANY, INC.",
           "owner_title": "Institution",
-          "shares": "10011341",
+          "shares": "181227",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "BERKSHIRE HATHAWAY INC",
-          "owner_title": "Institution",
-          "shares": "10000000",
+          "ticker": "AON",
+          "owner_name": "Andersen Eric",
+          "owner_title": "President",
+          "shares": "177033",
           "_collected": "2026-06-22"
         },
         {
-          "ticker": "AMZN",
-          "owner_name": "CIBC Private Wealth Group LLC",
+          "ticker": "AON",
+          "owner_name": "Quantinno Capital Management LP",
           "owner_title": "Institution",
-          "shares": "9945180",
+          "shares": "225807",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "Ninety One North America, Inc.",
+          "owner_title": "Institution",
+          "shares": "175559",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "STOREBRAND ASSET MANAGEMENT AS",
+          "owner_title": "Institution",
+          "shares": "174682",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "NOMURA ASSET MANAGEMENT CO LTD",
+          "owner_title": "Institution",
+          "shares": "167846",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "MACKENZIE FINANCIAL CORP",
+          "owner_title": "Institution",
+          "shares": "166498",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "Davies Christa",
+          "owner_title": "Chief Financial Officer",
+          "shares": "161705",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "HEALTHCARE OF ONTARIO PENSION PLAN TRUST FUND",
+          "owner_title": "Institution",
+          "shares": "159373",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "Aberdeen Group plc",
+          "owner_title": "Institution",
+          "shares": "158598",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "GFI Investment Counsel Ltd.",
+          "owner_title": "Institution",
+          "shares": "157437",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "Ensign Peak Advisors, Inc",
+          "owner_title": "Institution",
+          "shares": "223178",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "Verition Fund Management LLC",
+          "owner_title": "Institution",
+          "shares": "228209",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "HSBC HOLDINGS PLC",
+          "owner_title": "Institution",
+          "shares": "354158",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "BNP Paribas Asset Management Holding S.A.",
+          "owner_title": "Institution",
+          "shares": "291337",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "owner_name": "NATIXIS ADVISORS, LLC",
+          "owner_title": "Institution",
+          "shares": "341937",
           "_collected": "2026-06-22"
         }
       ]
@@ -5655,26 +5655,186 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 768,
+      "rows": 809,
       "last_seen": "2026-06-22",
       "recent": [
         {
-          "ticker": "DAL",
-          "name": "Peter W. Carter",
-          "role": "Executive Vice President - Chief External Affairs Officer",
+          "ticker": "BSX",
+          "name": "Jeffrey B. Mirviss",
+          "role": "Executive Vice President and President, Peripheral Interventions",
           "year": "2022",
-          "total_comp": "3953030.0",
-          "salary": "550000.0",
+          "total_comp": "3562244.0",
+          "salary": "631986.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AON",
+          "name": "Gregory C. Case",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "26205390.0",
+          "salary": "1500000.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "David M. Reese",
+          "role": "Executive Vice President, CTO",
+          "year": "2022",
+          "total_comp": "7333124.0",
+          "salary": "1158846.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Murdo Gordon",
+          "role": "Executive Vice President, Global Commercial Operations",
+          "year": "2022",
+          "total_comp": "7717226.0",
+          "salary": "1103277.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Robert A. Bradway",
+          "role": "CEO",
+          "year": "2022",
+          "total_comp": "21399733.0",
+          "salary": "1722300.0",
+          "bonus": "0.0",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Peter H. Griffith",
+          "role": "Executive Vice President and CFO",
+          "year": "2023",
+          "total_comp": "7569298.0",
+          "salary": "1083762.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "David M. Reese",
+          "role": "Executive Vice President and CTO",
+          "year": "2023",
+          "total_comp": "7902655.0",
+          "salary": "1212823.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Murdo Gordon",
+          "role": "Executive Vice President, Global Commercial Operations",
+          "year": "2023",
+          "total_comp": "8242811.0",
+          "salary": "1144623.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "James E. Bradner",
+          "role": "Executive Vice President, Research and Development",
+          "year": "2023",
+          "total_comp": "14914381.0",
+          "salary": "1214331.0",
+          "bonus": "1021429.0",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Robert A. Bradway",
+          "role": "CEO and President",
+          "year": "2023",
+          "total_comp": "22643650.0",
+          "salary": "1786977.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Peter H. Griffith",
+          "role": "Executive Vice President and CFO",
+          "year": "2024",
+          "total_comp": "7806811.0",
+          "salary": "1133633.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "David M. Reese",
+          "role": "Executive Vice President and CTO",
+          "year": "2024",
+          "total_comp": "8126822.0",
+          "salary": "1268615.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Murdo Gordon",
+          "role": "Executive Vice President, Global Commercial Operations",
+          "year": "2024",
+          "total_comp": "8473500.0",
+          "salary": "1197268.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "James E. Bradner",
+          "role": "Executive Vice President, Research and Development",
+          "year": "2024",
+          "total_comp": "14914381.0",
+          "salary": "1214331.0",
+          "bonus": "1021429.0",
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Robert A. Bradway",
+          "role": "CEO and President",
+          "year": "2024",
+          "total_comp": "24428495.0",
+          "salary": "1869242.0",
           "bonus": null,
           "_collected": "2026-06-22"
         },
         {
           "ticker": "AME",
-          "name": "David A. Zapico",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "14538544.0",
-          "salary": "1360000.0",
+          "name": "Tony J. Ciampitti",
+          "role": "President - Electronic Instruments",
+          "year": "2022",
+          "total_comp": "2271206.0",
+          "salary": "535613.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AME",
+          "name": "Thomas C. Marecic",
+          "role": "President - Electronic Instruments",
+          "year": "2022",
+          "total_comp": "2287532.0",
+          "salary": "535613.0",
+          "bonus": null,
+          "_collected": "2026-06-22"
+        },
+        {
+          "ticker": "AME",
+          "name": "John W. Hardin",
+          "role": "President - Electronic Instruments",
+          "year": "2022",
+          "total_comp": "2424691.0",
+          "salary": "620110.0",
           "bonus": null,
           "_collected": "2026-06-22"
         },
@@ -5746,166 +5906,6 @@
           "total_comp": "2561903.0",
           "salary": "645534.0",
           "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "William J. Burke",
-          "role": "Former Executive Vice President- Chief Financial Officer",
-          "year": "2023",
-          "total_comp": "4425325.0",
-          "salary": "704238.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Dalip M. Puri",
-          "role": "Executive Vice President- Chief Financial Officer",
-          "year": "2023",
-          "total_comp": null,
-          "salary": null,
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Thomas C. Marecic",
-          "role": "President - Electronic Instruments",
-          "year": "2022",
-          "total_comp": "2287532.0",
-          "salary": "535613.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "William J. Burke",
-          "role": "Former Executive Vice President- Chief Financial Officer",
-          "year": "2024",
-          "total_comp": "835073.0",
-          "salary": "322776.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Ronald J. Oscher",
-          "role": "COO",
-          "year": "2024",
-          "total_comp": "2068393.0",
-          "salary": "582663.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Thomas C. Marecic",
-          "role": "President - Electronic Instruments",
-          "year": "2024",
-          "total_comp": "2073776.0",
-          "salary": "582104.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Tony J. Ciampitti",
-          "role": "President - Electronic Instruments",
-          "year": "2024",
-          "total_comp": "2110984.0",
-          "salary": "582663.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "John W. Hardin",
-          "role": "President",
-          "year": "2024",
-          "total_comp": "2415255.0",
-          "salary": "672001.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Dalip M. Puri",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "3072774.0",
-          "salary": "572646.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "David A. Zapico",
-          "role": "CEO",
-          "year": "2024",
-          "total_comp": "14625659.0",
-          "salary": "1400000.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Ronald J. Oscher",
-          "role": "COO",
-          "year": "2025",
-          "total_comp": "2505193.0",
-          "salary": "597958.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "John W. Hardin",
-          "role": "President - Electronic Instruments",
-          "year": "2022",
-          "total_comp": "2424691.0",
-          "salary": "620110.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AME",
-          "name": "Tony J. Ciampitti",
-          "role": "President - Electronic Instruments",
-          "year": "2022",
-          "total_comp": "2271206.0",
-          "salary": "535613.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AON",
-          "name": "Christa Davies",
-          "role": "CFO",
-          "year": "2023",
-          "total_comp": "31632818.0",
-          "salary": "1250000.0",
-          "bonus": null,
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AMGN",
-          "name": "Robert A. Bradway",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "21399733.0",
-          "salary": "1722300.0",
-          "bonus": "0.0",
-          "_collected": "2026-06-22"
-        },
-        {
-          "ticker": "AON",
-          "name": "Edmund Reese",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "6721701.0",
-          "salary": "500000.0",
-          "bonus": "1300000.0",
           "_collected": "2026-06-22"
         }
       ]
@@ -6466,6 +6466,11 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "ACGL",
+        "count": 5,
+        "items": "1.01, 2.03, 5.02, 7.01, 8.01"
+      },
+      {
         "ticker": "QBTS",
         "count": 5,
         "items": "7.01"
@@ -6536,6 +6541,11 @@
         "items": "7.01, 8.01"
       },
       {
+        "ticker": "KMT",
+        "count": 3,
+        "items": "1.01, 2.03, 8.01"
+      },
+      {
         "ticker": "NEE",
         "count": 3,
         "items": "8.01"
@@ -6574,16 +6584,6 @@
         "ticker": "CIEN",
         "count": 2,
         "items": "1.01, 2.03, 8.01"
-      },
-      {
-        "ticker": "CLX",
-        "count": 2,
-        "items": "5.02, 7.01"
-      },
-      {
-        "ticker": "CRM",
-        "count": 2,
-        "items": "5.02"
       }
     ],
     "special_situations": [
@@ -16373,11 +16373,11 @@
       },
       {
         "ticker": "JACK",
-        "category": "Activist Campaigns",
+        "category": "Capital Returns",
         "confidence": "high",
-        "activist": true,
+        "activist": false,
         "filer": null,
-        "detail": "Activist Campaigns"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "KBR",
@@ -17437,11 +17437,11 @@
       },
       {
         "ticker": "FONR",
-        "category": "Delistings",
+        "category": "Going-Private",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Going-Private"
       },
       {
         "ticker": "163730",
@@ -18629,11 +18629,11 @@
       },
       {
         "ticker": "CMU",
-        "category": "Delistings",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "7173",
@@ -20429,11 +20429,11 @@
       },
       {
         "ticker": "CXH",
-        "category": "Delistings",
+        "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "TFG",
@@ -22085,11 +22085,11 @@
       },
       {
         "ticker": "WIX",
-        "category": "Issuer Tenders",
+        "category": "Restructuring",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Issuer Tenders"
+        "detail": "Restructuring"
       },
       {
         "ticker": "ALDE",
@@ -22709,11 +22709,11 @@
       },
       {
         "ticker": "DMRC",
-        "category": "Restructuring",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Restructuring"
+        "detail": "Other"
       },
       {
         "ticker": "TIL",
@@ -23901,14 +23901,6 @@
       },
       {
         "ticker": "ARDX",
-        "category": "M&A / Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "M&A / Divestitures"
-      },
-      {
-        "ticker": "BLND",
         "category": "M&A / Divestitures",
         "confidence": "high",
         "activist": false,
@@ -26252,6 +26244,14 @@
         "detail": "Restructuring"
       },
       {
+        "ticker": "VTAK",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
         "ticker": "CHRY",
         "category": "Restructuring",
         "confidence": "high",
@@ -26981,14 +26981,6 @@
       },
       {
         "ticker": "ROHLTD",
-        "category": "M&A / Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "M&A / Divestitures"
-      },
-      {
-        "ticker": "CRM",
         "category": "M&A / Divestitures",
         "confidence": "high",
         "activist": false,
@@ -28021,11 +28013,11 @@
       },
       {
         "ticker": "CMCO",
-        "category": "M&A / Divestitures",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "M&A / Divestitures"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "CMA",
@@ -28610,14 +28602,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "ATHM",
-        "category": "Other Situations",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other Situations"
       },
       {
         "ticker": "BSHI",
@@ -31844,6 +31828,14 @@
         "detail": "Litigation Outcomes"
       },
       {
+        "ticker": "CTHH",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "FTAIN",
         "category": "Delistings",
         "confidence": "high",
@@ -32388,7 +32380,7 @@
         "detail": "Other"
       },
       {
-        "ticker": "AXIA-P",
+        "ticker": "AXIA-PC",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
@@ -32404,7 +32396,7 @@
         "detail": "Other"
       },
       {
-        "ticker": "BTZRF",
+        "ticker": "AIBZ",
         "category": "Other",
         "confidence": "high",
         "activist": false,
@@ -32620,12 +32612,28 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "HONIV",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
         "ticker": "HCTI",
         "category": "Other",
         "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "HONAV",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
       },
       {
         "ticker": "IIPR-PA",
@@ -32660,7 +32668,7 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "NEE-PV",
+        "ticker": "NEE-PS",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -32834,14 +32842,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "JMG",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
       },
       {
         "ticker": "GLPGF",
@@ -33388,7 +33388,7 @@
         "detail": "Other"
       },
       {
-        "ticker": "UVIX",
+        "ticker": "SVIX",
         "category": "Other",
         "confidence": "high",
         "activist": false,
@@ -33724,14 +33724,6 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "KPLTW",
-        "category": "Acquisitions",
-        "confidence": "medium",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "OMER",
         "category": "Issuer Tenders",
         "confidence": "high",
@@ -33812,7 +33804,7 @@
         "detail": "Other"
       },
       {
-        "ticker": "YICC",
+        "ticker": "YICCU",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
@@ -33916,6 +33908,126 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "EH",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ERIXF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "GNTOF",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "NCT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "FMFC",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "MTLS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "MWC",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "PUKPF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "YRD",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ZTOEF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ARLP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BHM",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "CERS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "CELC",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ZONE",
+        "category": "Strategic Reviews",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Strategic Reviews"
+      },
+      {
         "ticker": "HUBB",
         "category": "Acquisitions",
         "confidence": "high",
@@ -33924,12 +34036,36 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "KEYYU",
-        "category": "SPACs",
+        "ticker": "INCY",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "SPACs"
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "AVO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "NPACU",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "OCFC",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "ATYR",
@@ -34028,7 +34164,7 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "TRNTF",
+        "ticker": "TACPF",
         "category": "Capital Returns",
         "confidence": "medium",
         "activist": false,
@@ -34196,7 +34332,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "SMCI",
+        "ticker": "SMCIP",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
@@ -34324,7 +34460,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "CGCTU",
+        "ticker": "FACWW",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
@@ -34346,6 +34482,14 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "KEYYU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "CUBWW",
@@ -34580,7 +34724,7 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "SPKLW",
+        "ticker": "SPKLU",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
@@ -34964,14 +35108,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "RONE",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "AMPGR",
         "category": "Delistings",
         "confidence": "high",
@@ -35052,7 +35188,7 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "MS-PP",
+        "ticker": "MS-PA",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -35276,6 +35412,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "DSX-WT",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": null,
+        "detail": "Activist Campaigns"
+      },
+      {
         "ticker": "AACBU",
         "category": "Delistings",
         "confidence": "high",
@@ -35452,12 +35596,52 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "HTT",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
+      },
+      {
+        "ticker": "ETS",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "GREEL",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "VYNE",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ATRA",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "CJMB",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
       },
       {
         "ticker": "CCEL",
@@ -35469,6 +35653,14 @@
       },
       {
         "ticker": "CXAIW",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "IXHL",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -35548,14 +35740,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "IXHL",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
         "ticker": "CALC",
         "category": "Delistings",
         "confidence": "high",
@@ -35586,14 +35770,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "DSX-WT",
-        "category": "Activist Campaigns",
-        "confidence": "high",
-        "activist": true,
-        "filer": null,
-        "detail": "Activist Campaigns"
       },
       {
         "ticker": "ERNAW",
@@ -35644,7 +35820,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "TETWF",
+        "ticker": "TETUF",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
@@ -35693,14 +35869,6 @@
       },
       {
         "ticker": "BTAFF",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "GREEL",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -35813,14 +35981,6 @@
       },
       {
         "ticker": "GNLN",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "SKILW",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -36045,14 +36205,6 @@
       },
       {
         "ticker": "AMODW",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "CJMB",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -36308,7 +36460,7 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "NXPLW",
+        "ticker": "NXPL",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -36325,14 +36477,6 @@
       },
       {
         "ticker": "AREC",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "ETS",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -36381,14 +36525,6 @@
       },
       {
         "ticker": "FHN-PF",
-        "category": "Delistings",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Delistings"
-      },
-      {
-        "ticker": "ATRA",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
@@ -36620,14 +36756,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "BSTR",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "GLW",
         "category": "Delistings",
         "confidence": "high",
@@ -36794,14 +36922,6 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
-      },
-      {
-        "ticker": "HTT",
-        "category": "Issuer Tenders",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Issuer Tenders"
       },
       {
         "ticker": "GECCI",
@@ -37360,13 +37480,19 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77086,
-        "wow_pct": 0.01,
+        "stars": 77102,
+        "wow_pct": 0.03,
+        "hot": true
+      },
+      {
+        "ticker": "MSFT",
+        "stars": 186619,
+        "wow_pct": 0.02,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 195797,
+        "stars": 195811,
         "wow_pct": 0.01,
         "hot": true
       },
@@ -37383,14 +37509,14 @@
         "hot": true
       },
       {
-        "ticker": "MSFT",
-        "stars": 186600,
+        "ticker": "META",
+        "stars": 245995,
         "wow_pct": 0.01,
         "hot": true
       },
       {
         "ticker": "NVDA",
-        "stars": 17443,
+        "stars": 17444,
         "wow_pct": 0.01,
         "hot": true
       },
@@ -37414,13 +37540,7 @@
       },
       {
         "ticker": "GTLB",
-        "stars": 24454,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "META",
-        "stars": 245989,
+        "stars": 24455,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -38855,16 +38975,16 @@
         "politicians": 13
       },
       {
+        "ticker": "VZ",
+        "total_usd": 42500.0,
+        "donations": 24,
+        "politicians": 20
+      },
+      {
         "ticker": "SAIC",
         "total_usd": 42000.0,
         "donations": 13,
         "politicians": 8
-      },
-      {
-        "ticker": "VZ",
-        "total_usd": 40500.0,
-        "donations": 23,
-        "politicians": 19
       },
       {
         "ticker": "LNG",
@@ -38880,6 +39000,13 @@
       }
     ],
     "news": [
+      {
+        "headline": "DoubleVerify Expands DV Authentic AdVantage to Meta and TikTok",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-22 04:10:21",
+        "url": "https://www.quiverquant.com/news/DoubleVerify+Expands+DV+Authentic+AdVantage+to+Meta+and+TikTok"
+      },
       {
         "headline": "Getty Images Announces Display Agreement with OpenAI to Bring Licensed Visual Content to ChatGPT",
         "ticker": null,
@@ -39012,13 +39139,6 @@
         "category": "discussion_automated",
         "time": "2026-06-21 17:33:05",
         "url": "https://www.quiverquant.com/news/Airship+AI+Holdings+Stock+%28AISP%29+Opinions+on+Potential+Short+Squeeze"
-      },
-      {
-        "headline": "Press Release: Al Green shares Politico article on Van Hollen, AIPAC and crypto spending",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-21 16:20:27",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Al+Green+shares+Politico+article+on+Van+Hollen%2C+AIPAC+and+crypto+spending"
       }
     ],
     "wsb": [
@@ -40901,7 +41021,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,648,784 reviews \u00b7 github_momentum: +0.01% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,648,784 reviews \u00b7 github_momentum: +0.02% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
       },
       {
         "ticker": "BIIB",
@@ -41058,17 +41178,6 @@
         "why": "material_8k: 3 material 8-Ks (items 8.01) \u00b7 news_sentiment: 0.76 bullish news (50 art) \u00b7 special_situation: Acquisitions"
       },
       {
-        "ticker": "SMCI",
-        "score": 3,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "material_8k",
-          "retail_buzz",
-          "special_situation"
-        ],
-        "why": "material_8k: 3 material 8-Ks (items 1.01, 7.01, 8.01) \u00b7 retail_buzz: 373 WSB mentions \u00b7 special_situation: Capital Returns"
-      },
-      {
         "ticker": "ETN",
         "score": 3,
         "weighted_score": 1.1,
@@ -41139,6 +41248,16 @@
           "gov_contract"
         ],
         "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $40,884,749 awarded"
+      },
+      {
+        "ticker": "KNOP",
+        "score": 2,
+        "weighted_score": 1.0,
+        "channel_list": [
+          "insider_buy",
+          "special_situation"
+        ],
+        "why": "insider_buy: $25,000,000 net insider buy \u00b7 special_situation: Other"
       }
     ]
   }

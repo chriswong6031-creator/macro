@@ -19,9 +19,9 @@
   ],
   "held": [
     "ca_base_metals",
+    "ca_banks",
     "ca_uranium",
-    "ca_silver_royalty",
-    "ca_banks"
+    "ca_silver_royalty"
   ],
   "leader": "ca_base_metals",
   "names": {

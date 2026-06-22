@@ -364,3 +364,9 @@
 {"date":"2026-06-22","kind":"ticker","subject":"PANW","ticker":"PANW","edge_score":0,"state":"CONFIRMED_UP"}
 {"date":"2026-06-22","kind":"ticker","subject":"HOOD","ticker":"HOOD","edge_score":15,"state":"CONFIRMED_UP"}
 {"date":"2026-06-22","kind":"ticker","subject":"CRM","ticker":"CRM","edge_score":13,"state":"POSITIVE_DIVERGENCE"}
+{"date":"2026-06-22","kind":"basket","subject":"big_pharma","ticker":"PPH","edge_score":20,"state":"CONFIRMED_DOWN"}
+{"date":"2026-06-22","kind":"ticker","subject":"VRTX","ticker":"VRTX","edge_score":18,"state":"NEGATIVE_DIVERGENCE"}
+{"date":"2026-06-22","kind":"ticker","subject":"BMY","ticker":"BMY","edge_score":12,"state":"CONFIRMED_DOWN"}
+{"date":"2026-06-22","kind":"ticker","subject":"REGN","ticker":"REGN","edge_score":12,"state":"CONFIRMED_DOWN"}
+{"date":"2026-06-22","kind":"ticker","subject":"GILD","ticker":"GILD","edge_score":12,"state":"CONFIRMED_DOWN"}
+{"date":"2026-06-22","kind":"ticker","subject":"ABBV","ticker":"ABBV","edge_score":11,"state":"NEGATIVE_DIVERGENCE"}
