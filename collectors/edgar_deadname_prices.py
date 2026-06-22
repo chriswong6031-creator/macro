@@ -16,10 +16,13 @@ no-ops gracefully where every source is blocked. NOTHING depends on it (the pape
 HONEST RESIDUAL BIAS (stamped on the coverage artifact): the names free sources DO
 serve skew to ACQUISITIONS (the price ran up to a deal and stopped — a realized
 winner), while the BANKRUPTCY tail (price → 0) is under-served. So recovered
-dead-name prices still carry a mild UP bias vs the true dead universe; a −100%
-bankruptcy imputation would need a delisting-reason feed (Ch.11 8-Ks) we don't yet
-wire. The price_coverage ratio + this caveat make the residual explicit rather than
-silent.
+dead-name prices carry a mild UP bias vs the true dead universe. That bias is now
+PARTLY corrected: `collectors/edgar_delisting` reads the Ch.11 8-Ks (Item 1.03) to
+flag bankruptcy delistings and imputes a −100% terminal close (source=
+"imputed_bankruptcy") for the flagged names that have a price anchor, and
+`price_coverage` reports the delisting-reason split + softens this caveat once the
+imputation has run. The residual that remains (bankruptcy names with no recovered
+price anchor; un-classified acquisition skew) stays explicit rather than silent.
 """
 from __future__ import annotations
 
@@ -205,7 +208,8 @@ def dead_name_closes() -> pd.DataFrame:
 
 
 def price_coverage() -> dict:
-    """Honest dead-name PRICE coverage + the residual-bias caveat. Writes
+    """Honest dead-name PRICE coverage + the delisting-reason breakdown + the
+    residual-bias caveat (softened once bankruptcies are imputed). Writes
     data/edgar/_dead_name_price_coverage.json."""
     universe = dead_universe()
     cache = _load_cik_cache()
@@ -213,24 +217,49 @@ def price_coverage() -> dict:
     p = _prices_path()
     with_px = set()
     by_source: dict[str, int] = {}
+    n_imputed_bk = 0
     if p.exists():
         df = pd.read_parquet(p, columns=["ticker", "source"])
         with_px = set(df["ticker"])
         for src, n in df.drop_duplicates("ticker")["source"].value_counts().items():
             by_source[str(src)] = int(n)
+        n_imputed_bk = int(df[df["source"] == "imputed_bankruptcy"]["ticker"].nunique())
     n = len(universe)
+
+    # delisting-reason split (acquisition / bankruptcy / unknown) from the Ch.11 8-K
+    # feed (collectors/edgar_delisting). Late import avoids a module-load cycle.
+    try:
+        from collectors.edgar_delisting import delisting_breakdown
+        reasons = delisting_breakdown(universe)
+    except Exception:  # noqa: BLE001
+        reasons = {"bankruptcy": 0, "acquisition": 0, "unknown": 0, "n_classified": 0}
+
+    if n_imputed_bk:
+        residual = (
+            f"Acquisition skew is now PARTLY corrected: {n_imputed_bk} bankruptcy "
+            "delistings (8-K Item 1.03) carry an imputed −100% terminal close "
+            "(source=imputed_bankruptcy), so the price→0 tail is no longer a silent "
+            "survivorship gap. RESIDUAL: bankruptcy names with no recovered price "
+            "anchor can't be imputed (no from-price), and the recovered set still "
+            "skews to ACQUISITIONS for names not yet reason-classified.")
+    else:
+        residual = (
+            "Recovered names skew to ACQUISITIONS (price ran to a deal and stopped); "
+            "the BANKRUPTCY tail (price→0) is under-served by free sources, so "
+            "recovered prices keep a mild UP bias. Run collectors/edgar_delisting to "
+            "impute −100% terminals from a delisting-reason feed (Ch.11 8-Ks, Item 1.03).")
+
     out = {
-        "schema": "dead_name_price_coverage.v1",
+        "schema": "dead_name_price_coverage.v2",
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "n_dead_universe": n,
         "n_cik_resolved": len(resolved & set(universe)),
         "n_with_prices": len(with_px & set(universe)),
         "price_coverage_frac": round(len(with_px & set(universe)) / n, 4) if n else 0.0,
         "by_source": by_source,
-        "residual_bias": "Recovered names skew to ACQUISITIONS (price ran to a deal and "
-                         "stopped); the BANKRUPTCY tail (price→0) is under-served by free "
-                         "sources, so recovered prices keep a mild UP bias. A −100% "
-                         "bankruptcy imputation needs a delisting-reason feed (not wired).",
+        "delisting_reason": reasons,
+        "n_imputed_bankruptcies": n_imputed_bk,
+        "residual_bias": residual,
         "note": "yfinance ~0 on delisted; Stooq/Polygon are IP-gated → this accrues in CI.",
     }
     (config.data_dir() / "edgar" / "_dead_name_price_coverage.json").write_text(json.dumps(out, indent=1))

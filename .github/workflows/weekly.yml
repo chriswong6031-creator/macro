@@ -88,6 +88,12 @@ jobs:
           # reachable from CI; yfinance ~0) so the merged panel can compute dead-name
           # forward returns. Resilient + drip-capped; nothing depends on it.
           run_py "dead-name prices (de-bias)" scripts.build_dead_name_prices --max-new 150
+          # Phase-1A+ bankruptcy tail: classify each dead CIK acquisition/bankruptcy/
+          # unknown from its 8-K Item 1.03 (data.sec.gov, reachable everywhere) and
+          # impute a −100% terminal close for flagged bankruptcies that have a price
+          # anchor, so the leak-free backtest realizes the wipe instead of a survivorship
+          # gap. Resilient + drip-capped; softens the price-coverage residual-bias caveat.
+          run_py "dead-name bankruptcy imputation (8-K 1.03)" scripts.build_dead_name_delisting --max-new 200
           # De-biased factor IC scorecard over the survivor+dead MERGED universe ->
           # data/edgar/ic_scorecard_debiased.json. Self-gating (equals the survivor
           # scorecard until dead-name prices accrue); never clobbers ic_scorecard.json.
