@@ -361,3 +361,5 @@
 {"date": "2026-06-22", "ticker": "VRRM", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-22", "ticker": "LEN", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-22", "ticker": "CG", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-22", "ticker": "FAST", "score": 97.0, "percentile": 97.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-22", "ticker": "WYNN", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}

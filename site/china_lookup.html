@@ -179,12 +179,22 @@
   .help.edge-right .tip { left:auto; right:0; transform:none; }
   .help.edge-left .tip { left:0; right:auto; transform:none; }
   .tip b { color:var(--text); }
+  /* ===================== HYBRID PAGE POLISH (Refined base + Fintech finish) =====================
+     Mirrors the US analyzer: soft cards, sentence-case headings, tabular numerics. */
+  #result .panel { border-radius:16px; padding:18px 20px; box-shadow:0 1px 0 rgba(255,255,255,.025);
+                   margin-bottom:16px; font-variant-numeric:tabular-nums; }
+  h2 { font-size:15px; text-transform:none; letter-spacing:0; font-weight:650; color:var(--text);
+       margin:0 0 13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; line-height:1.3; }
+  #r_summary { display:none; }
+  #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
+  #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
+  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
 /* _stock_decision.css.j2 — styling for the shared stockview.js decision-first layout.
    Included inside each analyzer's <style> block. Theme-var routed; directional tones use
    --up/--down (which intentionally swap under html[data-lang="zh"] red=up), while caution /
    conflict / falsifier colors are pinned to --warn so their meaning never inverts. */
 
-/* ---- Layer 1: the one verdict band ---- */
+/* ---- Layer 1: the decision band ---- */
 .sv-decision { margin: 10px 0 6px; }
 .sv-verdict-band {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
@@ -192,6 +202,44 @@
   background: var(--panel2); border: 1px solid var(--line);
 }
 .sv-state-conflict .sv-verdict-band { border-color: var(--warn); }
+
+/* ---- Two-lane decision: THE NAME (what) · ACT NOW (when/how much) ---- */
+.sv-verdict-grid {
+  display: grid; grid-template-columns: minmax(150px, 0.8fr) 1.2fr; gap: 12px;
+}
+.sv-lane {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-state-conflict .sv-lane-act { border-color: var(--warn); }
+.sv-lane-name {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+}
+.sv-lane-h {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin-bottom: 2px;
+}
+.sv-lane-name .sv-lane-h { align-self: center; }
+.sv-rank-note {
+  font-size: 11px; color: var(--muted); cursor: help;
+  border-bottom: 1px dotted var(--line);
+}
+/* the ACT-NOW verb — the one buy-frame instruction, color = meaning (pinned). */
+.sv-action {
+  display: inline-block; font-size: 22px; font-weight: 800; line-height: 1;
+  padding: 6px 14px; border-radius: 10px; letter-spacing: .02em; margin-bottom: 2px;
+}
+.sv-act-go { color: #fff; background: var(--up); }
+.sv-act-wait { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); border: 1px solid var(--warn); }
+.sv-act-avoid { color: #fff; background: var(--down); }
+.sv-act-screen { color: var(--text); background: var(--panel); border: 1px solid var(--line); }
+.sv-act-why { margin-top: 4px; }
+/* the BRIDGE — reconciles a strong rank with a "don't buy now" action. */
+.sv-bridge {
+  margin: 10px 0 2px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  border: 1px solid var(--warn);
+}
 .sv-gauge {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-width: 96px; padding: 6px 12px; border-radius: 10px; color: #fff;
@@ -306,10 +354,49 @@
 .sv-deep > summary:hover { color: var(--text); }
 
 @media (max-width: 560px) {
+  .sv-verdict-grid { grid-template-columns: 1fr; }
+  .sv-lane-name { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; text-align: left; }
   .sv-fingerprint { grid-template-columns: repeat(2, 1fr); }
   .sv-honesty { grid-template-columns: 1fr; }
-  .sv-headline { font-size: 16px; }
+  .sv-headline { font-size: 17px; }
+  .sv-score { font-size: 32px; }
+  .sv-action { font-size: 22px; }
 }
+
+/* ===========================================================================
+   HYBRID POLISH — Refined base + Fintech finish. Big hero numbers, soft
+   borderless inner blocks, per-section accent rails. Shared by all 5 markets.
+   =========================================================================== */
+.sv-verdict-grid { gap: 16px; grid-template-columns: minmax(165px, .78fr) 1.22fr; align-items: stretch; }
+.sv-lane { border: none; background: var(--panel2); border-radius: 14px; padding: 16px; }
+.sv-lane-name { justify-content: center; gap: 7px; }
+.sv-state-conflict .sv-lane-act { border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.sv-gauge { min-width: 118px; padding: 12px 16px; border-radius: 14px; }
+.sv-band-word { font-size: 14px; }
+.sv-score { font-size: 38px; letter-spacing: -.015em; margin-top: 3px; }
+.sv-score small { font-size: 13px; }
+.sv-action { font-size: 26px; padding: 9px 18px; border-radius: 13px; margin-bottom: 0; }
+.sv-act-why { margin-top: 10px; }
+.sv-headline { font-size: 19px; font-weight: 700; }
+.sv-bridge { border-radius: 13px; padding: 10px 14px; font-weight: 650; }
+.sv-trust { align-self: center; }
+.sv-rank-note { border-bottom: 1px dotted var(--muted); }
+/* evidence + country cards: borderless, softer */
+.sv-evidence .sv-dim { border-radius: 11px; }
+.sv-card { border: none; border-radius: 13px; padding: 12px 14px; }
+/* section group headers: sentence-case, larger, with a per-domain accent rail */
+.sv-group { border-top: none; }
+.sv-group > summary {
+  font-size: 13.5px; text-transform: none; letter-spacing: 0; font-weight: 650;
+  color: var(--text); padding: 13px 14px; margin: 6px 0 0;
+  border-left: 3px solid var(--muted); border-radius: 0;
+  background: color-mix(in srgb, var(--panel2) 60%, transparent);
+}
+.sv-group > summary:hover { background: var(--panel2); }
+#result > details:nth-of-type(1) > summary { border-left-color: #8b5cf6; }
+#result > details:nth-of-type(2) > summary { border-left-color: var(--up); }
+#result > details:nth-of-type(3) > summary { border-left-color: var(--link); }
+#result > details:nth-of-type(4) > summary { border-left-color: var(--muted); }
 </style>
 </head>
 <body>
@@ -450,11 +537,6 @@
         <div id="sugg"></div>
       </div>
     </div>
-    <p class="muted" style="margin:8px 0 0"><span class="l-en">Every name gets the same treatment as the sector board:
-      cycle position (daily + weekly), three-timeframe momentum visuals, a clear entry/exit call, and the
-      signal's measured track record. Library refreshes nightly; covers the curated A-share large-caps,
-      the sector ETFs and the broad indices.</span><span class="l-zh">每个标的都享有与板块面板相同的分析：周期位置（日线＋周线）、三周期动量视觉图、明确的进出场判断，
-      以及该信号的实测历史表现。标的库每晚刷新，覆盖精选的 A 股大盘股、板块 ETF 与宽基指数。</span></p>
   </div>
 
   <div id="result">
@@ -956,11 +1038,13 @@
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
     if (cal) {
+      var _curCal = (d.ladder && d.ladder.state) || null;
       Object.keys(cal).forEach(function (s) {
+        if (!DISP[s]) return;
         var v = cal[s];
         var dipMed = v.dd_med_pct != null ? v.dd_med_pct + '%' : '—';
         var dipBad = v.dd_p10_pct != null ? v.dd_p10_pct + '%' : '—';
-        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' +
+        var _cur = (s === _curCal); cs += '<tr class="' + (_cur ? 'cal-cur' : '') + '"><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span>' + (_cur ? ' <span class="cal-here">▸ ' + (lang() === 'zh' ? '当前状态' : 'you are here') + '</span>' : '') + '</td><td>' +
               v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
               (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td>' +
               '<td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';
@@ -1010,7 +1094,7 @@
     else if (r.left + r.width / 2 - half < 0) h.classList.add('edge-left');
   });
 </script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-23 02:28 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
+<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-06-23 06:08 UTC UTC · <span class="l-en">charts by TradingView · curated A-share universe, not exhaustive</span><span class="l-zh">图表由 TradingView 提供 · 精选 A 股范围，非全市场</span></p>
 <footer class="site-footer">
   <span class="made"><span class="l-en">Made with ❤️ in Canada</span><span class="l-zh">用 ❤️ 在加拿大制作</span></span>
   <span class="dev"><span class="l-en">Developed by</span><span class="l-zh">开发者</span> Chris Wong</span>
