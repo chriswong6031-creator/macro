@@ -109,7 +109,7 @@ jobs:
     needs: collect
     if: always()            # a scraper failure must still produce a dashboard from cached data
     runs-on: ubuntu-latest
-    timeout-minutes: 120    # was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 120m gives real headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). Real speedup follow-up: parallelise the regional dashboard builders.
+    timeout-minutes: 120    # was 70 — observed the job hitting exactly 70m on a congested runner and getting CANCELLED at the special-situations step (~step 30 of 50), AFTER it had successfully rebuilt every page (china/gex/vol-regime/etc.) but BEFORE the "commit engine outputs" step (50). Because pages.yml deploys the COMMITTED main tree, a skipped commit means the fresh build never lands and the live site serves a stale dashboard (missing nav links, new heroes, new JSON) until a run happens to finish under the cap. 120m gives real headroom to always reach the commit. residual-alpha measured ~1s (never the bottleneck the old comment guessed). DONE: the ~22 regional/desk builders between build_site and the hub now run as parallel independent clusters (the "regional + desk builders (parallelised)" step) instead of serially — band wall-clock dropped from ~75m to ~its longest single cluster (special-situations' ~28m EDGAR sweep, now the long pole). Next lever if more is needed: speed up that EDGAR sweep.
     steps:
       - uses: actions/checkout@v4
         with:
@@ -209,158 +209,104 @@ jobs:
           run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
           exit 0
-      - name: build china a-share dashboard
-        # after build_site, before build_vector (which writes the landing hub last):
-        # writes china.html + china_regime/latest.json so the hub picks up the China
-        # card. Self-sufficient; returns 0 on any error (can't break the macro/vector site).
-        run: python -m scripts.build_china
-      - name: build hong kong / hang seng dashboard
-        # after build_site/build_china, before build_vector (which writes the hub
-        # last): writes hk.html + hk_regime/latest.json so the hub picks up the
-        # Hong Kong card. Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_hk
-      - name: build commodity vector dashboard
-        # after build_site/build_china, before build_vector (which writes the hub
-        # last): writes commodities.html + commodity/latest.json so the hub picks up
-        # the Commodity card. Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_commodities
-      - name: build strategic reserves dashboard
-        # after build_commodities, before build_vector (which writes the hub last):
-        # writes spr.html + spr/latest.json (hub card). Reads the live EIA SPR series +
-        # JODI national crude stocks + curated reserve table. Returns 0 on any error.
-        run: python -m scripts.build_spr
-      - name: build forex vector dashboard
-        # after build_commodities, before build_vector (which writes the hub last):
-        # writes forex.html + forex/latest.json so the hub picks up the Forex card.
-        # Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_forex
-      - name: build bonds & bond-health dashboard
-        # after build_site/build_forex, before build_vector (which writes the hub
-        # last): writes bonds.html + bonds/latest.json (hub card) + bonds/
-        # bond_health.json (the cross-asset AI signal vector). Reuses the macro
-        # feature frame + conditions layer; returns 0 on any engine error.
-        run: python -m scripts.build_bonds
-      - name: discovery leaderboard (build_discovery)
-        # after build_site (reads site/factordata/alpha.json) and build_forex,
-        # before build_vector (which writes the hub last): writes the discovery
-        # leaderboard. Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_discovery
-      - name: GEX magnets board (build_gex_board)
-        # after build_site; live Cboe chains -> site/gex.html. Self-sufficient (returns 0 on engine error).
-        run: python -m scripts.build_gex_board
-      - name: index vol-regime (build_vol_regime)
-        # after build_gex_board: reads the long vol series (VIX/VIX3M/MOVE/SKEW/VVIX/VX curve,
-        # collected in the collect job) -> site/vol/regime.json (Options Desk "market weather"
-        # + macro pages) + site/vol/mastermind.json (vol_regime.context.v1 lens for the bot).
-        # SCORED only where data/vol_regime/gate.json marks a leg earned; else display/context.
-        # Additive + graceful: returns 0 on any error, never breaks the site.
-        run: python -m scripts.build_vol_regime
-      - name: options flow desk (build_options_flow)
-        # after build_gex_board: pulls the OPRA minute-aggregate flat file (massive.com S3) +
-        # the polygon_gex snapshot greeks -> MEASURED dealer positioning + flow -> site/flow/*.json
-        # (the gex page lazy-loads these) + site/flow/mastermind.json. Needs the MASSIVE_S3
-        # flat-file secrets; no-ops gracefully without them. Self-sufficient; returns 0 on error.
+      - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
+        # The ~22 builders between build_site and the landing hub split into mutually
+        # INDEPENDENT clusters (each internally ordered by its own data deps). They used
+        # to run strictly serially (~75 min of wall-clock); here each cluster runs in the
+        # background and we barrier (`wait`) before build_vector, which reads every
+        # cluster's latest.json. That collapses the band to ~its longest single cluster
+        # (special-situations' EDGAR sweep, ~28 min) instead of the serial sum. Every
+        # builder stays individually resilient via brun(): a non-zero exit is annotated
+        # (::error::) and appended to the run summary with its traceback, but NEVER aborts
+        # the job — so the site still deploys and one broken builder can't 404 the
+        # dashboard. Each builder owns its OWN scratch files ($ART/<slug>.{log,rc,sec}) so
+        # the parallel subshells never write the same file; output is replayed GROUPED + in
+        # a stable order AFTER the barrier (never interleaved) and per-builder wall-times go
+        # to the step summary. Builders read build_site's output (spine, above) + the
+        # collect job's data; the only cross-builder reads are kept INSIDE one cluster
+        # (news after baskets; crossasset/transmission after commodity/forex/bonds;
+        # policy_watch after policy_intent). special_situations stays IN this job (not a
+        # sibling job like factor_series) because it writes a PAGE + hub card that must be
+        # in THIS run's deploy artifact — it is event-driven, so a one-run lag is wrong.
         env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
+          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           MASSIVE_S3_ENDPOINT: ${{ secrets.MASSIVE_S3_ENDPOINT }}
           MASSIVE_S3_ACCESS_KEY_ID: ${{ secrets.MASSIVE_S3_ACCESS_KEY_ID }}
           MASSIVE_S3_SECRET_ACCESS_KEY: ${{ secrets.MASSIVE_S3_SECRET_ACCESS_KEY }}
           MASSIVE_S3_BUCKET: ${{ secrets.MASSIVE_S3_BUCKET }}
-        run: python -m scripts.build_options_flow || true
-      - name: single-name IV skew (build_options_skew)
-        # after build_gex_board: reads the per-strike polygon_gex chain snapshot ->
-        # accrues 25Δ-put-over-50Δ-call skew per name into data/options_skew/snapshots.parquet
-        # (the apparatus a return-predictor validation needs) + site/options_skew/latest.json.
-        # DISPLAY-ONLY: the gate (data/options_skew/validation_gate.json) stays closed until the
-        # panel is wide/long enough. Additive + graceful; returns 0 on error.
-        run: python -m scripts.build_options_skew || true
-      - name: factor seasonality (build_seasonality)
-        # after build_site, before build_vector: reads data/french/factors.parquet
-        # (Ken French monthly factors, collected in the collect job) and writes
-        # seasonality.html + factordata/factor_seasonality.json. Standalone; returns 0
-        # on any error (can't break the macro/vector site).
-        run: python -m scripts.build_seasonality
-      - name: thematic baskets (build_baskets)
-        # after build_site, before build_vector: reads data/baskets/membership.json +
-        # the price caches + SPY and writes baskets.html + basketdata/baskets.json.
-        # Standalone; returns 0 on any error.
-        run: python -m scripts.build_baskets
-      - name: methodology page (build_methodology)
-        # after build_site/build_factor_series/build_baskets: documents the construction +
-        # injects a few live stats from the JSONs. Standalone; returns 0 on any error.
-        run: python -m scripts.build_methodology || echo "methodology skipped (additive)"
-      - name: research reports section (build_reports)
-        # registry-driven static blog/article section -> site/reports.html + one page per
-        # report (templates/report_*.html.j2). Depends on no live JSON; additive, returns 0.
-        run: python -m scripts.build_reports || echo "reports skipped (additive)"
-      - name: news suite (build_news)
-        # after build_site/build_baskets: macro + financial/sector/Mag-7/basket + China +
-        # narrative news -> site/news.html + site/news/*.json (incl by_ticker.json for the
-        # Mastermind bot). Polygon/Finnhub ticker-tagged corpus + keyless GDELT; optional
-        # Haiku/DeepSeek summaries. Every feed degrades to empty on a missing key; never aborts.
-        env:
-          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
-          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
-          FINNHUB_KEY: ${{ secrets.FINNHUB_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: |
           set +e
-          python -m scripts.build_news > /tmp/news.log 2>&1; rc=$?
-          tail -n 25 /tmp/news.log
-          [ "$rc" -ne 0 ] && echo "::warning title=build_news::rc=$rc (non-fatal)"
+          ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
+          # brun <slug> <label> <module> [args…] — run one builder resiliently into its
+          # OWN scratch files (never shared across the parallel subshells), recording the
+          # exit code + wall-seconds. Output (incl. stderr) is buffered, replayed later.
+          brun() {
+            local slug="$1" label="$2" mod="$3"; shift 3
+            local t0 t1 rc
+            t0=$(date +%s)
+            { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
+            t1=$(date +%s)
+            echo "$rc"          > "$ART/$slug.rc"
+            echo "$((t1 - t0))" > "$ART/$slug.sec"
+          }
+          # --- clusters: each internally ORDERED by its data deps; clusters mutually independent ---
+          cl_markets() {
+            brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
+            brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
+            brun forex        "build forex vector (build_forex)"                   scripts.build_forex
+            brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
+            brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
+            brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
+            brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
+          }
+          cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; }
+          cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
+          cl_gex() {
+            brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
+            brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
+            brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+            brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
+          }
+          cl_baskets() {
+            brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
+            brun news        "news suite (build_news)"                 scripts.build_news
+            brun methodology "methodology page (build_methodology)"    scripts.build_methodology
+          }
+          cl_special() { brun special "special situations desk (build_special_situations)" scripts.build_special_situations; }
+          cl_misc() {
+            brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
+            brun reports       "research reports section (build_reports)"     scripts.build_reports
+            brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
+            brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
+            brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
+          }
+          # launch every cluster concurrently, then barrier before the hub (build_vector, below)
+          cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_special & cl_misc &
+          wait
+          # --- replay each builder's output GROUPED + in a stable order (post-barrier, so
+          #     nothing interleaves), surface failures as annotations, summarise wall-times ---
+          ORDER="china hk commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch special index_changes"
+          echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
+          for slug in $ORDER; do
+            [ -f "$ART/$slug.log" ] || continue
+            label=$(head -n1 "$ART/$slug.log")
+            rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
+            sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
+            echo "::group::$label  [${sec}s, rc=$rc]"
+            tail -n +2 "$ART/$slug.log"
+            echo "::endgroup::"
+            echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
+              echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
           exit 0
-      - name: policy intent desk (LLM realpolitik leans + scorer; gated, resilient)
-        # BEFORE build_policy_watch so the page picks up site/policy_intent.json. Reads
-        # data/policy/intel.json + latest.json -> dated falsifiable leans (proxy vs SPY)
-        # in data/policy_intent/theses.jsonl, then scores past-due leans. NO-OP unless
-        # config policy_intent_desk.enabled AND DEEPSEEK_API_KEY are set. Never aborts.
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: |
-          set +e
-          python -m engine.policy_intent_desk > /tmp/pid.log 2>&1; rc=$?
-          cat /tmp/pid.log
-          [ "$rc" -ne 0 ] && echo "::warning title=policy_intent_desk::rc=$rc (non-fatal)"
-          exit 0
-      - name: fed & policy watch (build_policy_watch)
-        # realpolitik Fed + Administration intel page -> site/policy_watch.html from the
-        # curated data/policy/intel.json substrate (falsifiable prediction ledger + rotation
-        # map) + the intent-desk output. Display/context-only; additive, returns 0 on any error.
-        run: python -m scripts.build_policy_watch || echo "policy watch skipped (additive)"
-      - name: cross-asset vector (build_crossasset)
-        # after the commodity/forex/bonds pages, before build_vector (hub last):
-        # TSMOM trend + intermarket ratios + correlation regime over keyless
-        # price stores -> site/crossasset.html + data/crossasset/latest.json.
-        # Self-sufficient; returns 0 on any engine error.
-        run: python -m scripts.build_crossasset
-      - name: rate & inflation transmission (build_transmission)
-        # after build_site (engine.run already wrote the latest.json block) and the
-        # cross-asset/bonds pages: recomputes the display-only transmission read and
-        # renders site/transmission.html + data/transmission/latest.json. Reads the
-        # MEASURED coefficient matrix (data/transmission/calibration.json, refreshed
-        # weekly by calibrate_rate_inflation). Self-sufficient; returns 0 on any error.
-        run: python -m scripts.build_transmission
-      - name: special situations desk (build_special_situations)
-        # event-driven Special Situations desk (DISPLAY-ONLY, SCORED=False). Sweeps
-        # the EDGAR daily-index for new corporate-event filings, classifies them
-        # deterministically (+ a cached text lane for 8-K M&A/strategic-review),
-        # applies the $100M floor, and renders site/special_situations.html +
-        # data/regime/special_situations_latest.json (hub card). Runs before
-        # build_vector (which writes the landing hub last). Self-sufficient; the
-        # build degrades to last-known on any SEC fetch outage and returns 0.
-        # DEEPSEEK_API_KEY enables the gated 88-word summary lane for EDGAR-only
-        # situations (config special_situations.llm_brief); absent -> no-op.
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: python -m scripts.build_special_situations
-      - name: S&P index changes (build_index_changes)
-        # polls the keyless S&P DJI press RSS for constituent-change announcements +
-        # accumulates them in git-tracked data/sp_index_changes/changes.parquet, then emits
-        # site/index_changes/latest.json: freshly-announced PURE additions as a dated catalyst.
-        # DISPLAY-ONLY (the pre-effective run-up is a net-of-cost mirage for the typical name —
-        # see engine/index_changes). Additive + graceful; returns 0 on a press-feed outage.
-        run: python -m scripts.build_index_changes || true
       - name: build bitcoin vector + landing hub
         # installs the landing hub at index.html (rendered from stored engine
         # state, so ordering vs build_site no longer matters — build_site writes

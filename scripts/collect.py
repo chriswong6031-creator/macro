@@ -13,6 +13,7 @@ import argparse
 import logging
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from datetime import datetime, timezone
 
@@ -23,6 +24,59 @@ from lib import store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 log = logging.getLogger("collect")
+
+
+# Pure-REST collectors that are SAFE to run CONCURRENTLY. Verified by the collector
+# audit: no akshare (segfaults under threads) and no yfinance (self-parallelizes and
+# gets Yahoo-banned under an outer pool). The VALUE is the upstream HOST GROUP — members
+# of the same group share one upstream host, so they run SERIALLY within the group (SEC
+# fair-access <10 req/s across *.sec.gov; a single Quiver API host with no internal rate
+# limit; CFTC); distinct groups run in PARALLEL. Each adapter writes its OWN per-source
+# parquet and run_adapter only READS the shared status (written once, at the end), so the
+# concurrency is write-safe. Everything NOT listed here stays in the serial loop —
+# akshare china/hk, yfinance *_prices/*_universe/breadth, the crypto pullers, and
+# canada_macro (multi-host incl. sandbox-unreachable FRED).
+_QUIVER_KEYS = (
+    "quiver_congress", "quiver_senate", "quiver_house", "quiver_lobbying",
+    "quiver_govcontracts", "quiver_offexchange", "quiver_insiders", "quiver_flights",
+    "quiver_patents", "quiver_wsb", "quiver_twitter", "quiver_sec13f",
+    "quiver_sec13f_changes", "quiver_cnbc", "quiver_spacs", "quiver_trump",
+    "quiver_corpdonors", "quiver_news", "quiver_congressholdings", "quiver_bills",
+    "quiver_appratings", "quiver_watchlist",
+)
+_CONCURRENT_HOSTS: dict[str, str] = {
+    # SEC EDGAR — fair-access <10 req/s shared across data.sec.gov / www.sec.gov / efts.sec.gov
+    "edgar_8k": "sec", "edgar_13f": "sec", "edgar_trumpflow": "sec",
+    "beneficial_ownership": "sec",
+    # Quiver — single API host (api.quiverquant.com), no internal pacing
+    **{k: "quiver" for k in _QUIVER_KEYS},
+    # CFTC — publicreporting.cftc.gov / www.cftc.gov
+    "cot": "cftc",
+    # fully-independent distinct hosts — each its own group (runs fully in parallel)
+    "worldbank": "worldbank", "eia": "eia", "usaspending": "usaspending",
+    "prediction_markets": "polymarket", "treasury_auctions": "treasurydirect",
+    "jodi": "jodi", "french": "french", "frbsf_sentiment": "frbsf",
+    "bis": "bis", "uncertainty_indices": "uncertainty",
+}
+
+
+def _run_one(key: str, cls, full_history: bool):
+    """Run a single adapter through the circuit-breaker runner. Returns (result, secs)
+    or None if the adapter couldn't even be constructed. Pure per-source work — no
+    shared mutable state — so it is safe to call from a worker thread."""
+    log.info("=== running %s ===", key)
+    try:
+        adapter = cls()
+    except Exception as e:  # noqa: BLE001
+        log.error("init %s failed: %s", key, e)
+        return None
+    t0 = time.perf_counter()
+    res = run_adapter(adapter, full_history=full_history)
+    dt = time.perf_counter() - t0
+    res.source = key
+    log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
+             res.last_date, dt, f" err={res.error}" if res.error else "")
+    return res, round(dt, 1)
 
 
 def all_adapters() -> dict:
@@ -185,29 +239,53 @@ def main() -> int:
 
     results = []
     timings: dict[str, float] = {}
-    for key, cls in registry.items():
-        log.info("=== running %s ===", key)
-        try:
-            adapter = cls()
-        except Exception as e:  # noqa: BLE001
-            log.error("init %s failed: %s", key, e)
+
+    # SERIAL phase — everything that is NOT a proven-independent pure-REST source stays
+    # here, in registry order, exactly as before: the akshare adapters (segfault under
+    # threads), the yfinance pullers (*_prices/*_universe/breadth — already parallelise
+    # internally; an outer pool stacks Yahoo concurrency into throttle/ban territory),
+    # and canada_macro (multi-host). store.upsert writes ONE parquet per source, so the
+    # only thing that must stay single-writer is same-file writes — which can't happen
+    # across distinct sources. Runs first so config/imports are warm before the pool.
+    serial_keys = [k for k in registry if k not in _CONCURRENT_HOSTS]
+    for key in serial_keys:
+        out = _run_one(key, registry[key], args.full_history)
+        if out is None:
             continue
-        t0 = time.perf_counter()
-        res = run_adapter(adapter, full_history=args.full_history)
-        dt = time.perf_counter() - t0
-        timings[key] = round(dt, 1)
-        res.source = key
+        res, dt = out
         results.append(res)
-        log.info("%s -> %s (%d rows, last %s) [%.1fs]%s", key, res.status, res.rows,
-                 res.last_date, dt, f" err={res.error}" if res.error else "")
+        timings[key] = dt
+
+    # CONCURRENT phase — pure-REST sources grouped by upstream HOST (see _CONCURRENT_HOSTS).
+    # ONE task per host-group runs its members SERIALLY (shared host / rate ceiling: SEC
+    # <10 req/s, the single Quiver API host, CFTC); the GROUPS run in PARALLEL (distinct
+    # hosts). One-task-per-group means no locks are needed and no host is ever hit
+    # concurrently. Wall-clock collapses from the serial sum of these sources to the
+    # slowest single host-group (the Quiver chain). This is the "thread only the
+    # proven-heavy, proven-independent sources" cut the serial loop's note called for.
+    concurrent_keys = [k for k in registry if k in _CONCURRENT_HOSTS]
+    if concurrent_keys:
+        groups: dict[str, list[str]] = {}
+        for k in concurrent_keys:
+            groups.setdefault(_CONCURRENT_HOSTS[k], []).append(k)
+
+        def _run_group(keys: list[str]) -> list:
+            out = []
+            for k in keys:                       # serial WITHIN a host group
+                r = _run_one(k, registry[k], args.full_history)
+                if r is not None:
+                    out.append(r)
+            return out
+
+        log.info("collect: running %d REST sources across %d host-groups in parallel",
+                 len(concurrent_keys), len(groups))
+        with ThreadPoolExecutor(max_workers=min(len(groups), 16)) as ex:
+            for grp_results in ex.map(_run_group, list(groups.values())):
+                for res, dt in grp_results:
+                    results.append(res)
+                    timings[res.source] = dt
 
     # Per-adapter wall-clock: the EVIDENCE for safely targeting the next collect cut.
-    # The top-level loop stays SERIAL on purpose — 14 akshare adapters segfault under
-    # threads (see akshare notes) and the yfinance pullers (china/hk_prices, *_universe)
-    # already parallelise internally via threads=True / their own ThreadPoolExecutor, so
-    # an outer pool would stack Yahoo concurrency into throttle/ban territory while
-    # store.upsert writes parquet non-atomically. So MEASURE first, then thread only the
-    # proven-heavy, proven-independent sources (or raise the existing internal pools).
     if timings:
         slow = sorted(timings.items(), key=lambda kv: kv[1], reverse=True)
         log.info("collect timing total %.0fs · slowest: %s", sum(timings.values()),

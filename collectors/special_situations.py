@@ -28,7 +28,9 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -74,18 +76,40 @@ def _eight_k_items() -> set[str]:
     return set(_cfg().get("eight_k_items", ["1.01", "1.02", "1.03", "2.01", "3.01", "5.02", "8.01"]))
 
 
+# Thread-safe global pacing gate. Dispatches SEC requests no faster than ~1 per
+# _MIN_INTERVAL across ALL threads, so the filing-text enrich loops can run
+# CONCURRENTLY (latency overlaps) while the AGGREGATE stays under SEC's 10 req/s
+# fair-access ceiling. This replaces the old per-request post-success sleep, which
+# serialized network latency and made enrich_text/enrich_filers (~up to 1750 serial
+# filing-text fetches per build) the engine job's long pole.
+_RATE_LOCK = threading.Lock()
+_NEXT_SLOT = [0.0]                        # monotonic time of the next allowed dispatch
+_MIN_INTERVAL = 0.12                      # ~8.3 req/s, comfortably under the SEC ceiling
+
+
+def _rate_gate() -> None:
+    with _RATE_LOCK:
+        now = time.monotonic()
+        slot = _NEXT_SLOT[0] if _NEXT_SLOT[0] > now else now
+        _NEXT_SLOT[0] = slot + _MIN_INTERVAL
+        wait = slot - now
+    if wait > 0:
+        time.sleep(wait)
+
+
 def _get(url: str, *, as_json: bool, retries: int | None = None):
     """GET with SEC fair-access pacing + retry/backoff. Returns text|json|None.
-    404 (e.g. weekend/holiday daily index) short-circuits to None."""
+    404 (e.g. weekend/holiday daily index) short-circuits to None. The pacing gate
+    is thread-safe, so concurrent callers stay collectively under the SEC ceiling."""
     import requests
     retries = retries if retries is not None else _cfg().get("retries", 3)
     for attempt in range(retries):
         try:
+            _rate_gate()                 # global <10 req/s SEC pacing (safe under threads)
             r = requests.get(url, headers=_headers(), timeout=30)
             if r.status_code == 404:
                 return None
             r.raise_for_status()
-            time.sleep(0.12)              # <10 req/s SEC fair-access ceiling
             return r.json() if as_json else r.text
         except Exception as e:  # noqa: BLE001 — tolerate per-request failure
             if attempt == retries - 1:
@@ -405,11 +429,20 @@ def enrich_text(limit: int | None = None,
     if limit:
         cand = cand.head(limit)
 
+    def _one(r) -> tuple[str, tuple[str, str]]:
+        try:
+            txt = _fetch_filing_text(str(r.cik), str(r.accession))
+            cat, stage = sse.classify_text(txt) if txt else (None, None)
+            return r.id, (cat or "", stage or "")
+        except Exception:  # noqa: BLE001 — one bad filing must not abort the batch
+            return r.id, ("", "")
+    rows = [r for _, r in cand.iterrows()]
+    workers = max(1, int(_cfg().get("fetch_workers", 8)))
     updates: dict[str, tuple[str, str]] = {}
-    for _, r in cand.iterrows():
-        txt = _fetch_filing_text(str(r.cik), str(r.accession))
-        cat, stage = sse.classify_text(txt) if txt else (None, None)
-        updates[r.id] = (cat or "", stage or "")
+    if rows:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for rid, val in ex.map(_one, rows):
+                updates[rid] = val
     if updates:
         df.loc[df.id.isin(updates), "text_category"] = df.loc[df.id.isin(updates), "id"].map(lambda i: updates[i][0])
         df.loc[df.id.isin(updates), "text_stage"] = df.loc[df.id.isin(updates), "id"].map(lambda i: updates[i][1])
@@ -435,11 +468,20 @@ def enrich_filers(limit: int | None = None) -> pd.DataFrame:
     cand = cand.sort_values("date_filed", ascending=False)
     if limit:
         cand = cand.head(limit)
+    def _one(r) -> tuple[str, str]:
+        try:
+            txt = _fetch_filing_text(str(r.cik), str(r.accession))
+            name = activist.extract_reporting_person(txt) if txt else None
+            return r.id, (name or "")     # "" = tried, no name (won't re-fetch)
+        except Exception:  # noqa: BLE001 — one bad filing must not abort the batch
+            return r.id, ""
+    rows = [r for _, r in cand.iterrows()]
+    workers = max(1, int(_cfg().get("fetch_workers", 8)))
     updates: dict[str, str] = {}
-    for _, r in cand.iterrows():
-        txt = _fetch_filing_text(str(r.cik), str(r.accession))
-        name = activist.extract_reporting_person(txt) if txt else None
-        updates[r.id] = name or ""        # "" = tried, no name (won't re-fetch)
+    if rows:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for rid, val in ex.map(_one, rows):
+                updates[rid] = val
     if updates:
         df.loc[df.id.isin(updates), "filer"] = df.loc[df.id.isin(updates), "id"].map(updates)
         df.to_parquet(_events_path(), index=False)
