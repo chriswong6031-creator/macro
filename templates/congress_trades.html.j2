@@ -1,0 +1,157 @@
+{% extends "report_base.html.j2" %}
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+{% macro money(v) -%}
+{% if v is none or v != v %}—{% else %}${{ '{:,.0f}'.format(v|float) }}{% endif %}
+{%- endmacro %}
+{% macro bar(v) -%}
+{% if v is none %}<span class="mut2">—</span>{% else %}<span class="cg-score"><span class="cg-bar {{ 'hi' if v>=66 else ('mid' if v>=40 else 'lo') }}"><i style="width:{{ v }}%"></i></span><span class="cg-num">{{ v|round|int }}</span></span>{% endif %}
+{%- endmacro %}
+{% macro num(v) -%}
+{% if v is none %}<span class="mut2" title="no engine coverage">—</span>{% else %}<span class="cg-num">{{ v|round|int }}</span>{% endif %}
+{%- endmacro %}
+{% macro amt(r) -%}
+{% if r.amount_low is not none and r.amount_high is not none and r.amount_low != r.amount_high %}{{ money(r.amount_low) }}–{{ money(r.amount_high) }}{% else %}{{ money(r.amount_mid) }}{% endif %}
+{%- endmacro %}
+
+{% block title %}{{ t('Congressional Trades', '国会交易') }} — {{ t('Macro Dashboard', '宏观仪表盘') }}{% endblock %}
+
+{% block base_css %}
+  .cg-hero { margin:26px auto 10px; max-width:1060px; }
+  .cg-hero h1 { font-size:26px; margin:6px 0 4px; }
+  .cg-sub { color:var(--muted); font-size:13px; max-width:820px; }
+  .cg-meta { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 4px; }
+  .cg-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:1060px; margin:16px auto 4px; }
+  @media (max-width:680px){ .cg-stats { grid-template-columns:repeat(2,1fr); } }
+  .cg-stat { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .cg-stat .k { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+  .cg-stat .v { font-size:24px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:6px; }
+  .cg-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin:16px auto; max-width:1060px; }
+  .cg-card h2 { font-size:15px; margin:0 0 4px; display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+  .cg-card .h-note { font-size:12px; color:var(--muted); font-weight:400; }
+  table.ad { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.ad th { text-align:left; color:var(--muted); font-weight:600; border-bottom:1px solid var(--line); padding:6px 8px; white-space:nowrap; }
+  table.ad td { padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.ad tr:last-child td { border-bottom:none; }
+  .tk { font-weight:700; font-variant-numeric:tabular-nums; }
+  .num, td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .mut2 { color:var(--muted); }
+  .cg-score { display:inline-flex; align-items:center; gap:7px; min-width:96px; }
+  .cg-bar { position:relative; flex:1; min-width:54px; height:7px; border-radius:4px; background:var(--panel2); overflow:hidden; }
+  .cg-bar i { position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:var(--link); }
+  .cg-bar.hi i { background:#1f9a55; } .cg-bar.mid i { background:#5b8def; } .cg-bar.lo i { background:var(--muted); }
+  html[data-theme="dark"] .cg-bar.hi i { background:#3fc07e; }
+  .cg-num { font-variant-numeric:tabular-nums; font-weight:700; }
+  .cg-flag { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10px; font-weight:700; letter-spacing:.02em; white-space:nowrap; }
+  .cg-flag.act  { background:#1f9a5522; color:#1f9a55; } html[data-theme="dark"] .cg-flag.act { color:#3fc07e; }
+  .cg-flag.wait { background:#e0973a22; color:#c77a1f; } html[data-theme="dark"] .cg-flag.wait { color:#e0973a; }
+  .cg-flag.imp  { background:#5b8def22; color:#5b8def; }
+  .cg-flag.bip  { background:var(--panel2); color:var(--text); border:1px solid var(--line); }
+  .cg-mem { display:inline-block; font-size:10.5px; color:var(--muted); padding:0 5px; border:1px solid var(--line); border-radius:5px; margin:1px 2px 1px 0; white-space:nowrap; }
+  .cg-mem.D { border-color:#5b8def88; } .cg-mem.R { border-color:#d23f3f88; }
+  .side-chip { display:inline-block; padding:1px 7px; border-radius:5px; font-size:10.5px; font-weight:700; }
+  .side-chip.buy  { background:#1f9a5522; color:#1f9a55; } html[data-theme="dark"] .side-chip.buy { color:#3fc07e; }
+  .side-chip.sell { background:#d23f3f22; color:#d23f3f; } html[data-theme="dark"] .side-chip.sell { color:#ef6a6a; }
+  .feedlink { font-size:11.5px; }
+{% endblock %}
+
+{% block content %}
+<section class="cg-hero">
+  <p class="eyebrow">🏛️ {{ t('Politician-Disclosed Trades Desk', '政界披露交易台') }}</p>
+  <h1>{{ t('Congressional Trades', '国会交易') }}</h1>
+  <p class="cg-sub">{{ t(
+     'Every member of the U.S. House and Senate must disclose their stock trades (the STOCK Act). We pull those filings from Quiver Quantitative and turn them into a copy-signal watchlist: a ticker joins the moment a member discloses a trade in it and stays ~6 months from its latest disclosure before falling off. Names disclosed by more — and bipartisan — members rank as more important. Each name is then scored on the politician cluster, the engine technical read, and a sector/theme buyable-zone gate. The cluster generates the idea; the engine confirms it — a heavily-bought name that is extended or rolling over is high-interest but not "act now." Display / research only.',
+     '美国国会参众两院议员必须披露其股票交易（STOCK 法案）。我们从 Quiver Quantitative 获取这些申报，转化为可跟单的观察清单：一旦有议员披露某标的交易，它即进入清单，并从最近一次披露起保留约 6 个月后移出。被更多议员（尤其两党共同）披露的名字更重要。随后按政界集群、引擎技术面与板块/主题可买区间评分。集群产生想法，引擎负责确认——被大量买入但已过度拉升或走弱的名字关注度高，但并非"现在就买"。仅供展示/研究。') }}</p>
+  <div class="cg-meta">
+    <span class="chip tag-event">Quiver Quantitative</span>
+    <span class="chip">{{ t('As of', '截至') }} {{ summary.as_of }}</span>
+    <span class="chip">{{ t('Window', '窗口') }} {{ window_days }}d</span>
+    <span class="chip">{{ '{:,}'.format(summary.n_total) }} {{ t('disclosures tracked', '累计披露') }}</span>
+    <a class="chip feedlink" href="altdata/feed.json">🧠 {{ t('Brain feed (JSON)', '大脑数据流 (JSON)') }}</a>
+  </div>
+</section>
+
+<div class="cg-stats">
+  <div class="cg-stat"><div class="k">{{ t('Watchlist', '观察标的') }}</div><div class="v">{{ summary.n_tickers }}</div></div>
+  <div class="cg-stat"><div class="k">{{ t('Important', '重点') }}</div><div class="v">{{ summary.n_important }}</div></div>
+  <div class="cg-stat"><div class="k">{{ t('Bipartisan', '两党') }}</div><div class="v">{{ summary.n_bipartisan }}</div></div>
+  <div class="cg-stat"><div class="k">{{ t('Act-now', '现在可买') }}</div><div class="v">{{ summary.n_act_now }}</div></div>
+</div>
+
+{# ---------------- the scored watchlist ---------------- #}
+<div class="cg-card">
+  <h2>🎯 {{ t('Watchlist — ranked copy candidates', '观察清单 — 跟单候选排名') }}
+      <span class="h-note">— {{ t('composite = ', '综合分 = ') }}{{ (weights.cluster*100)|round|int }}% {{ t('cluster','集群') }} · {{ (weights.technical*100)|round|int }}% {{ t('technical','技术面') }} · {{ (weights.zone*100)|round|int }}% {{ t('zone','区间') }}</span></h2>
+  {% if items %}
+  <table class="ad"><thead><tr>
+    <th>#</th>
+    <th>{{ t('Ticker','标的') }}</th>
+    <th class="num">{{ t('Composite','综合分') }}</th>
+    <th class="num">{{ t('Cluster','集群') }}</th>
+    <th class="num">{{ t('Tech','技术') }}</th>
+    <th class="num">{{ t('Zone','区间') }}</th>
+    <th class="num">{{ t('Net','净') }}</th>
+    <th>{{ t('Members','议员') }}</th>
+    <th>{{ t('Flags','标记') }}</th>
+    <th>{{ t('Engine read','引擎研判') }}</th>
+  </tr></thead><tbody>
+  {% for it in items %}
+    <tr>
+      <td class="mut2">{{ loop.index }}</td>
+      <td><span class="tk">{{ it.ticker }}</span>{% if it.name %}<div class="mut2" style="font-size:10.5px">{{ it.name[:26] }}</div>{% endif %}</td>
+      <td>{{ bar(it.composite) }}</td>
+      <td class="num">{{ num(it.cluster_score) }}</td>
+      <td class="num">{{ num(it.technical_score) }}</td>
+      <td class="num">{{ num(it.zone_score) }}</td>
+      <td class="num"><span class="r-pos">{{ it.n_buys }}B</span>{% if it.n_sells %} / <span class="r-neg">{{ it.n_sells }}S</span>{% endif %}</td>
+      <td><b class="cg-num">{{ it.n_distinct_members }}</b>
+          {% for m in it.member_detail[:3] %}<span class="cg-mem {{ m.party }}" title="{{ m.chamber }} · {{ m.n }} disclosure(s) · {{ money(m.notional) }}">{{ m.representative }}{% if m.last_side=='buy' %} ▲{% elif m.last_side=='sell' %} ▼{% endif %}</span>{% endfor %}{% if it.member_detail|length > 3 %}<span class="mut2" style="font-size:10.5px">+{{ it.member_detail|length - 3 }}</span>{% endif %}</td>
+      <td>
+        {% if it.act_now %}<span class="cg-flag act">{{ t('act now','现在') }}</span>
+        {% elif it.blocked or it.downtrend %}<span class="cg-flag wait">{{ t('wait','等待') }}</span>
+        {% elif it.extended %}<span class="cg-flag wait">{{ t('wait','等待') }}</span>{% endif %}
+        {% if it.important %}<span class="cg-flag imp">{{ t('important','重点') }}</span>{% endif %}
+        {% if it.bipartisan %}<span class="cg-flag bip">{{ t('bipartisan','两党') }}</span>{% endif %}
+      </td>
+      <td class="mut2" style="font-size:11.5px">{{ it.timing or '—' }}{% if not it.covered %} <span style="font-size:10px">({{ t('no engine coverage','无引擎覆盖') }})</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody></table>
+  <p class="mut2" style="font-size:11px;margin-top:9px">{{ t(
+    'Cluster = distinct members · recency-weighted net-buy · disclosed size · freshness (bipartisan bonus). Technical & Zone are read from each name\'s own conviction + sector/theme signals; a hard engine veto (cycle-blocked / parabolic) floors the technical score and removes "act now". Showing the top ' ~ n_shown ~ ' of ' ~ summary.n_tickers ~ ' in-window names.',
+    '集群 = 不同议员数 · 时间加权净买入 · 披露规模 · 新鲜度（两党加成）。技术面与区间取自各标的自身的信念与板块/主题信号；引擎硬否决（周期受阻/抛物线拉升）会压低技术分并取消"现在可买"。显示窗口内前 ' ~ n_shown ~ ' 个（共 ' ~ summary.n_tickers ~ ' 个）。') }}</p>
+  {% else %}<p class="mut2">{{ t('No congressional disclosures in the current window.', '当前窗口无国会披露。') }}</p>{% endif %}
+</div>
+
+{# ---------------- the raw disclosure feed ---------------- #}
+<div class="cg-card">
+  <h2>🗳️ {{ t('Recent disclosures', '最新披露') }}
+      <span class="h-note">— {{ t('newest filings first; ExcessReturn = the trade vs SPY since', '最新申报在前；超额收益 = 该交易自买卖日起相对标普') }}</span></h2>
+  {% if feed %}
+  <table class="ad"><thead><tr>
+    <th>{{ t('Disclosed','披露日') }}</th>
+    <th>{{ t('Member','议员') }}</th>
+    <th>{{ t('Chamber','议院') }}</th>
+    <th>{{ t('Side','方向') }}</th>
+    <th>{{ t('Ticker','标的') }}</th>
+    <th class="num">{{ t('Amount','金额') }}</th>
+    <th class="num">{{ t('vs SPY','相对标普') }}</th>
+    <th>{{ t('Traded','交易日') }}</th>
+  </tr></thead><tbody>
+  {% for r in feed %}
+    <tr>
+      <td class="num mut2">{{ r.report_date or '—' }}</td>
+      <td>{{ r.representative or '—' }}{% if r.party in ('D','R') %} <span class="cg-mem {{ r.party }}">{{ r.party }}</span>{% endif %}</td>
+      <td class="mut2">{{ r.chamber }}</td>
+      <td><span class="side-chip {{ r.side }}">{{ r.side|upper }}</span></td>
+      <td><span class="tk">{{ r.ticker }}</span>{% if r.name %} <span class="mut2" style="font-size:10.5px">{{ r.name[:22] }}</span>{% endif %}</td>
+      <td class="num">{{ amt(r) }}</td>
+      <td class="num {{ 'r-pos' if (r.excess_return or 0) > 0 else ('r-neg' if (r.excess_return or 0) < 0 else '') }}">{% if r.excess_return is not none %}{{ '%+.1f'|format(r.excess_return) }}%{% else %}—{% endif %}</td>
+      <td class="num mut2">{{ r.transaction_date or '—' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody></table>
+  {% else %}<p class="mut2">{{ t('No disclosures yet.', '暂无披露。') }}</p>{% endif %}
+</div>
+{% endblock %}

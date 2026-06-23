@@ -190,6 +190,10 @@ jobs:
           # collect job's committed data/quiver/* (no API key needed here); returns 0 on error.
           run_py "alternative data desk (build_alt_data)" scripts.build_alt_data
           run_py "macro dashboard + US stocks (build_site)" scripts.build_site
+          # Congressional / politician disclosed-trades desk — AFTER build_alt_data (refreshes
+          # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
+          # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
+          run_py "congressional trades desk (build_congress)" scripts.build_congress
           exit 0
       - name: build china a-share dashboard
         # after build_site, before build_vector (which writes the landing hub last):
