@@ -180,6 +180,49 @@ _ADVICE_OPENER_RE = re.compile(
     r"|we['’]?(?:re|ve)\b|we\s+(?:are|have|just|recently|want|need|plan)\b"
     r")", re.I)
 
+# Content-free CALENDAR / PREVIEW / MOVERS-LIST / MARKET-WRAP roundups — a second,
+# distinct low-value class from the stock-pick advertorials above. These name a
+# LIST or TIME-WINDOW of events ("Here are the major earnings before the open
+# Monday", "Stocks making the biggest moves premarket", "What to watch this week",
+# "Stock market today: live updates") without stating a single fact, so they clear
+# every keyword/source gate yet waste a slot. High-precision: each branch matches a
+# STRUCTURAL roundup frame, never a noun a real single-event story uses — "Nvidia
+# earnings beat estimates", "Micron's earnings are a must-watch event" are untouched.
+_PREVIEW_RE = re.compile(
+    r"(?:"
+    # calendar / before-the-bell earnings previews (the reported case)
+    r"\b(?:earnings|results|reports?|numbers)\s+(?:before|after)\s+the\s+(?:open|bell|close)\b"
+    r"|\b(?:earnings|economic|ipo|data)\s+calendar\b"
+    r"|\bearnings\s+(?:preview|roundup|recap|on\s+(?:deck|tap))\b"
+    # movers / watch lists (stock-pick 'stocks to watch' already handled above)
+    r"|\b(?:stocks?|shares?|names)\s+making\s+the\s+biggest\s+moves?\b"
+    r"|\b(?:biggest|top|notable|midday|midmorning|pre[-\s]?market|after[-\s]?hours?)\s+(?:movers|gainers|losers)\b"
+    r"|\btrending\s+(?:tickers?|stocks?)\b"
+    r"|\bstocks?\s+on\s+the\s+move\b"
+    # week/day-ahead & 'things to watch/know' previews ("3 big things to watch in
+    # the stock market this coming week"). 'things to watch' allows adjectives
+    # between the count and the noun, so it catches "N big things to watch" too.
+    r"|\b(?:the\s+)?(?:week|day)\s+ahead\b"
+    r"|\bwhat\s+to\s+(?:watch|know|expect)\b"
+    r"|\bthings?\s+to\s+(?:watch|know|consider)\b"
+    r"|\bto\s+watch\s+(?:this|next|the\s+coming|coming)\s+week\b"
+    r"|\bto\s+watch\s+(?:this\s+week|today|next\s+week|tomorrow|on\s+\w+day)\b"
+    r"|\bto\s+watch\b[^.]{0,40}\b(?:this|next|the\s+coming|coming)\s+week\b"
+    # SEO 'price prediction' spam ("PancakeSwap (CAKE) Price Prediction: 2025, 2026,
+    # 2030") — a multi-year forecast advertorial, distinct from a real analyst
+    # 'price target'. Always content-free; never legitimate single-event news.
+    r"|\bprice\s+predictions?\b"
+    r"|\bprice\s+(?:target|forecast)\s+(?:for\s+)?20[2-9]\d\s*[,/&-]\s*20[2-9]\d\b"
+    # market wraps / live blogs (a single headline of a rolling roundup)
+    r"|\b(?:market|markets|stock\s+market|wall\s+street|wall\s+st\.?)\s+wrap\b"
+    r"|\b(?:closing|opening)\s+bell\b"
+    r"|\blive\s+(?:updates?|blog|coverage)\b"
+    r"|\bmarket\s+(?:recap|roundup|snapshot)\b"
+    # enumeration intro scoped to a list-noun ("Here are the [adj] earnings/movers…")
+    r"|^\s*here(?:'s| is| are)\s+(?:the\s+|a\s+|some\s+|several\s+|\d+\s+)?(?:[\w'’-]+\s+){0,2}"
+    r"(?:earnings|stocks?|names|companies|movers|winners|losers|gainers|sectors?)\b"
+    r")", re.I)
+
 # Bylines of stock-pick content mills — drop regardless of host (e.g. CNBC / Yahoo
 # re-publishing a TipRanks / Zacks column). Matched against the article author.
 _PICKMILL_BYLINES = (
@@ -190,7 +233,8 @@ _PICKMILL_BYLINES = (
 
 def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
     """True for headlines to DROP outright: stock-pick roundup/advertorial
-    listicles (picks buried untaggably in the body), first-person personal-finance
+    listicles (picks buried untaggably in the body), content-free calendar /
+    preview / movers-list / market-wrap roundups, first-person personal-finance
     advice columns, and content syndicated from pick-mill bylines. High-precision —
     only formats that carry no real, entity-taggable news. PURE.
 
@@ -203,7 +247,7 @@ def is_low_value(title: str, domain: str = "", author: str = "") -> bool:
     a = (author or "").lower()
     if a and any(s in a for s in _PICKMILL_BYLINES):
         return True
-    if _ROUNDUP_RE.search(t):
+    if _ROUNDUP_RE.search(t) or _PREVIEW_RE.search(t):
         return True
     if "?" in t and _ADVICE_OPENER_RE.match(t):
         return True

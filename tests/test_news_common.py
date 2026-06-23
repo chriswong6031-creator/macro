@@ -319,6 +319,57 @@ def test_is_low_value_stock_pick_roundups():
         assert nc.is_low_value(t) is True, t
 
 
+def test_is_low_value_preview_calendar_movers_roundups():
+    # The exact Seeking Alpha / CNBC content-free roundups that surface as top
+    # stories: calendar previews, movers lists, week-ahead previews, market wraps.
+    for t in [
+        "Here are the major earnings before the open Monday",          # reported case
+        "Major earnings before the open: Nike, FedEx and more",
+        "Stocks making the biggest moves premarket: Nvidia, Tesla and more",
+        "Stocks making the biggest moves midday",
+        "Biggest movers: tech leads, energy lags",
+        "Notable premarket gainers and losers",
+        "Earnings calendar: Micron, Nike and more on deck",
+        "Economic calendar: key data this week",
+        "Earnings preview: what to expect from Nvidia",
+        "What to watch in the stock market this week",
+        "5 things to know before the stock market opens Monday",
+        "The week ahead: CPI and a busy earnings calendar",
+        "Wall Street wrap: stocks end mixed",
+        "Stock market today: Live updates",
+        "Trending tickers: GME, AMC in focus",
+        "Stocks to watch on Tuesday",                                  # caught by _ROUNDUP_RE
+        "Here are the day's biggest winners and losers",
+        # 'things to watch' previews — adjectives between the count and the noun
+        "Here are 3 big things to watch in the stock market this coming week",
+        "5 things to watch in markets this week",
+        "Things to know before the opening bell",
+        # crypto/asset 'price prediction' SEO spam (multi-year forecast advertorials)
+        "PancakeSwap (CAKE) Price Prediction: 2025, 2026, 2030",
+        "Arweave (AR) Price Prediction: 2025, 2026, 2030",
+        "Toncoin (TON) Price Prediction 2025, 2026, 2027-2030",
+        "Myro (MYRO) Price Prediction: 2025, 2026, 2030",
+    ]:
+        assert nc.is_low_value(t) is True, t
+
+
+def test_is_low_value_preview_keeps_real_single_event_news():
+    # Real single-fact stories that LOOK adjacent to the roundup frames must survive.
+    for t in [
+        "Micron's earnings are a must-watch market event",            # must-watch != what-to-watch
+        "Nvidia stock rises after earnings beat estimates",           # 'after earnings' != 'earnings after the bell'
+        "Here's how much the Iran war cost — and how its effects will linger",  # explanatory feature, no list-noun
+        "Nvidia earnings due after the bell Wednesday",               # single-name preview, informative
+        "Analysts raise Nvidia price target to $200 after earnings",   # price TARGET (real) != price PREDICTION (spam)
+        "Investors watch the Fed as inflation cools this week",        # 'watch' but not 'things/what to watch'
+        "Fed holds rates as inflation cools",
+        "Tech stocks rally as Treasury yields fall",
+        "Stocks close higher as Powell signals patience",
+        "Apple unveils new AI features at its developer conference",
+    ]:
+        assert nc.is_low_value(t) is False, t
+
+
 def test_is_low_value_personal_finance_advice():
     assert nc.is_low_value(
         "I'm spending $170,000 to upgrade my home for my aging parents. Can I get tax breaks?") is True
