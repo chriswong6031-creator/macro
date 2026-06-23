@@ -159,6 +159,10 @@
   table { border-collapse:collapse; width:100%; font-size:13px; }
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
+  /* trust-the-state: flag the row matching the live cycle state */
+  #r_cal tr.cal-cur td { background:color-mix(in srgb, var(--warn) 13%, transparent); }
+  #r_cal tr.cal-cur td:first-child { box-shadow:inset 3px 0 var(--warn); font-weight:700; }
+  .cal-here { color:var(--warn); font-size:11px; font-weight:700; margin-left:8px; white-space:nowrap; }
   #result { display:none; }
   #stock-brief { border-left:3px solid var(--link); }
   #stock-brief h2 { color:var(--link); }
@@ -409,18 +413,22 @@
   .aq-foot { color:var(--muted); font-size:11px; margin:9px 0 0; font-style:italic; }
   @media (max-width:560px){ .aq-read{ grid-template-columns:14px 1fr; }
     .aq-read .aqk{ font-weight:700; } .aq-read .aqd{ grid-column:1 / -1; padding-left:23px; } }
+
+  /* ===================== HYBRID PAGE POLISH (Refined base + Fintech finish) =====================
+     Soft cards, cleaner sentence-case headings, tabular numerics. Section-specific card
+     rebuilds layer on top of this base. */
+  #result .panel { border-radius:16px; padding:18px 20px; box-shadow:0 1px 0 rgba(255,255,255,.025);
+                   margin-bottom:16px; font-variant-numeric:tabular-nums; }
+  h2 { font-size:15px; text-transform:none; letter-spacing:0; font-weight:650; color:var(--text);
+       margin:0 0 13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; line-height:1.3; }
+  /* the daily/weekly summary line duplicates the decision gloss + timing line — drop it */
+  #r_summary { display:none; }
 {% include "_stock_decision.css.j2" %}
 </style>
 </head>
 <body>
 {% include "_site_nav.html.j2" %}
-  <div class="panel">
-    <div class="topline">
-      <h1>🔎 {{ t('Stock analyzer', '个股分析') }}</h1>
-    </div>
-    <p class="muted" style="margin:8px 0 0">{{ t('Search any stock, ETF, commodity or crypto in the bar above to analyze it — the same treatment as the sector pages: cycle position (daily + weekly), three-timeframe momentum, a clear entry/exit call, and the measured track record.',
-      '在上方搜索栏输入任意股票、ETF、大宗商品或加密货币即可分析 — 与板块页面相同：周期位置（日线＋周线）、三周期动量、明确的进出场判断，以及实测历史表现。') }}</p>
-  </div>
+  <p id="intro-prompt" class="muted" style="margin:4px 2px 14px;font-size:13.5px">🔎 {{ t('Search any stock, ETF, commodity or crypto in the bar above.', '在上方搜索任意股票、ETF、大宗商品或加密货币。') }}</p>
 
   <div id="result">
     <div class="panel">
@@ -604,6 +612,8 @@
       <h2>{{ t('Momentum across timeframes', '跨周期动量') }}</h2>
       <div id="r_mtf"></div>
     </div>
+    </details>
+    <!-- Trust-the-state: standalone, always-open panel at the page bottom (per revamp) -->
     <div class="panel" id="panel_cal">
       <h2>{{ t('How much to trust the state — measured 2000→2026', '这个状态有多可信 — 实测 2000→2026') }}{{ help(
         'Stocks drift up over a month from
@@ -623,7 +633,6 @@
         周期实测 — 加密货币的尾部更肥，故请将其视为风险下限。）') }}</h2>
       <table id="r_cal"></table>
     </div>
-    </details>
     <p class="muted sv-method" style="font-size:11.5px;margin:14px 2px 0">{{ t(
       'How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.',
       '如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅为研究性背景展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。') }}</p>
@@ -1812,11 +1821,18 @@
     var cs = '<tr><th>' + L('th_state') + '</th><th>' + L('th_n') + '</th><th>' + L('th_up') +
              '</th><th>' + L('th_avg') + '</th><th>' + L('th_dipm') + '</th><th>' + L('th_dipb') + '</th></tr>';
     if (cal) {
+      // Current cycle state (raw internal key, e.g. 'TOP WATCH') — used to flag "you are here".
+      var curState = (d.ladder && d.ladder.state) || null;
+      var curLabel = (curState && DISP[curState]) ? disp(curState) : null;
       Object.keys(cal).forEach(function (s) {
+        if (!DISP[s]) return;   // canonical display states only — drop raw research sub-buckets
         var v = cal[s];
         var dipMed = v.dd_med_pct != null ? v.dd_med_pct + '%' : '—';
         var dipBad = v.dd_p10_pct != null ? v.dd_p10_pct + '%' : '—';
-        cs += '<tr><td><span class="state st-' + s.replace(/ /g, '_') + '">' + disp(s) + '</span></td><td>' +
+        var isCur = (s === curState) || (curLabel && disp(s) === curLabel);
+        var here = isCur ? ' <span class="cal-here">▸ ' + (lang() === 'zh' ? '当前状态' : 'you are here') + '</span>' : '';
+        cs += '<tr class="cal-row' + (isCur ? ' cal-cur' : '') + '"><td><span class="state st-' +
+              s.replace(/ /g, '_') + '">' + disp(s) + '</span>' + here + '</td><td>' +
               v.n + '</td><td>' + v.hit_pct + '%</td><td class="' +
               (v.avg_fwd_pct > 0 ? 'pos' : 'neg') + '">' + v.avg_fwd_pct + '%</td>' +
               '<td class="neg">' + dipMed + '</td><td class="neg">' + dipBad + '</td></tr>';

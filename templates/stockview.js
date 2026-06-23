@@ -30,16 +30,10 @@
   function set(id, html) { var e = el(id); if (e) { e.innerHTML = html; e.style.display = html ? '' : 'none'; } }
   function toneClass(t) { return 'sv-t-' + (t || 'neutral'); }
 
-  // ---- Layer 1a: the ONE verdict band ----------------------------------------
+  // ---- Layer 1a: the decision band — TWO lanes: the NAME (what) · ACT NOW (when) ----
   function renderDecision(view) {
     var d = view.decision || {};
     if (!d.headline) return '';
-    var band = d.band || 'neutral';
-    var score = (d.score == null) ? '' : d.score;
-    var gauge = '<div class="sv-gauge sv-band-' + esc(band) + '">' +
-      '<span class="sv-band-word">' + B(d.band_en || '', d.band_zh || '') + '</span>' +
-      (score !== '' ? '<span class="sv-score">' + esc(score) + '<small>/100</small></span>' : '') +
-      '</div>';
 
     var trust = d.trust || {};
     // a SHORT badge word (full explanation in the tooltip) so it never reads as a paragraph
@@ -82,11 +76,48 @@
     var rg = d.regime;
     var regime = (rg && rg.en) ? '<div class="sv-regime ' + esc(rg.css || '') + '">' + B(rg.en, rg.zh) + '</div>' : '';
 
-    return '<div class="sv-decision sv-state-' + esc(d.state || 'ok') + '">' +
-      '<div class="sv-verdict-band">' + gauge +
-        '<div class="sv-verdict-text">' + headline + gloss + '</div>' +
+    // close-only fallback (no conviction → no rank lane, no buy-frame action):
+    // render the legacy single-lane block off the ladder spine.
+    if (!d.action) {
+      return '<div class="sv-decision sv-state-' + esc(d.state || 'ok') + '">' +
+        '<div class="sv-verdict-band">' +
+          '<div class="sv-verdict-text">' + headline + gloss + '</div>' + trustChip +
+        '</div>' + timing + sizeLine + regime + '</div>';
+    }
+
+    // ---- TWO-LANE layout: separate "is this a good name?" from "buy it now?" ----
+    var band = d.band || 'neutral';
+    var score = (d.score == null) ? '' : d.score;
+    var nameLane =
+      '<div class="sv-lane sv-lane-name">' +
+        '<div class="sv-lane-h">' + B('The name', '个股') + '</div>' +
+        '<div class="sv-gauge sv-band-' + esc(band) + '">' +
+          '<span class="sv-band-word">' + B(d.name_label || d.band_en || '', d.name_label_zh || d.band_zh || '') + '</span>' +
+          (score !== '' ? '<span class="sv-score">' + esc(score) + '<small>/100</small></span>' : '') +
+        '</div>' +
+        (d.rank_note ? '<div class="sv-rank-note" title="' +
+          esc('Percentile RANK within today’s board, not a 0-100 buy score.') + '">' +
+          B(d.rank_note, d.rank_note_zh) + '</div>' : '') +
         trustChip +
-      '</div>' + timing + sizeLine + regime + '</div>';
+      '</div>';
+
+    var act = d.action || {};
+    var actLane =
+      '<div class="sv-lane sv-lane-act">' +
+        '<div class="sv-lane-h">' + B('Act now?', '现在操作？') + '</div>' +
+        '<div class="sv-action sv-act-' + esc(act.tone || 'wait') + '">' + B(act.verb, act.verb_zh) + '</div>' +
+        '<div class="sv-act-why">' + headline + gloss + '</div>' +
+        timing + sizeLine +
+      '</div>';
+
+    // the BRIDGE: one line reconciling a strong rank with a "don't buy now" action.
+    var bridge = (d.state === 'conflict' && d.conflict_note)
+      ? '<div class="sv-bridge">⚠ ' + B(d.conflict_note, d.conflict_note_zh) + '</div>'
+      : '';
+
+    return '<div class="sv-decision sv-state-' + esc(d.state || 'ok') + '">' +
+      '<div class="sv-verdict-grid">' + nameLane + actLane + '</div>' +
+      bridge + regime + '</div>';
   }
 
   // ---- Layer 1b: 4-axis fingerprint ------------------------------------------
@@ -112,14 +143,9 @@
     var d = view.decision || {};
     var why = d.why || [];
     var flips = view.falsifiers || [];
-    if (!why.length && !flips.length && d.state !== 'conflict') return '';
-
-    var conflict = '';
-    if (d.state === 'conflict') {
-      var pills = (d.conflict_pillars || []).map(function (p) { return B(p.en, p.zh); }).join(', ');
-      conflict = '<div class="sv-conflict">⚠ ' + B('Conflict', '信号冲突') +
-        (pills ? ': <span class="sv-conflict-p">' + pills + '</span>' : '') + '</div>';
-    }
+    if (!why.length && !flips.length) return '';
+    // the conflict is now reconciled inline as the decision BRIDGE (renderDecision),
+    // so it never renders twice — here we only show the why / what-would-flip columns.
 
     var bulls = why.length
       ? '<ul class="sv-list">' + why.map(function (w) { return '<li>' + B(w.en, w.zh) + '</li>'; }).join('') + '</ul>'
@@ -130,7 +156,7 @@
         }).join('') + '</ul>'
       : '<p class="sv-empty">' + B('No active red flags', '暂无风险信号') + '</p>';
 
-    return conflict + '<div class="sv-honesty">' +
+    return '<div class="sv-honesty">' +
       '<div class="sv-col sv-why"><div class="sv-col-h">' + B('Why it could work', '看多理由') + '</div>' + bulls + '</div>' +
       '<div class="sv-col sv-flip"><div class="sv-col-h">' + B('What would flip this', '何为反转信号') + '</div>' + bears + '</div>' +
       '</div>';

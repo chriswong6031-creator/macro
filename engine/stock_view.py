@@ -240,12 +240,77 @@ def _tier(z: float | None) -> str:
     return "flat"
 
 
+# The NAME lane (the "what"): the band word reframed so the 0-100 score reads as a
+# RANK of name strength, never as a buy-conviction. (The headline verb is the "when".)
+_NAME_LABEL = {
+    "high":         ("Strong name", "强势个股"),
+    "constructive": ("Solid name", "稳健个股"),
+    "neutral":      ("Average name", "中等个股"),
+    "low":          ("Weak name", "偏弱个股"),
+    "na":           ("—", "—"),
+}
+
+
+_AVOID_STATES = {"DECLINE", "ROLLING OVER"}
+
+
+def _action(conv: dict, rec: dict) -> dict:
+    """The ACT-NOW lane (the "when / how much"): one buy-frame verb derived from the
+    size + cycle block + band + trust tier. Decoupled from the NAME rank so a strong
+    name in a bad tape reads 'Strong name (rank) · WAIT (act)' instead of a green
+    'High conviction' badge fighting a 0% size."""
+    size = conv.get("size") or {}
+    pct = _num(size.get("pct"))
+    bucket = size.get("bucket")
+    band = conv.get("band")
+    blocked = bool(conv.get("cycle_blocked"))
+    has_edge = _tier(_g(conv, "axes", "selection", "z")) in ("high", "mid")
+    trust = conv.get("trust_tier") or {}
+    tier = trust.get("tier") if isinstance(trust, dict) else trust
+    no_buy = tier in ("screen",)                          # HK: never a buy verb
+    entry = _g(rec, "ladder", "entry", default={}) or {}
+    # AVOID (vs a mere WAIT) needs an edge-less name AND a hard-down read: weak band, an
+    # explicit avoid tag, or a downtrend cycle — a neutral-band downtrend isn't a 'wait'.
+    hard_down = band in ("low", "na") or (not has_edge and (
+        entry.get("tag") == "AVOID" or entry.get("urgency") in ("avoid", "exit")
+        or _g(rec, "ladder", "state") in _AVOID_STATES))
+
+    def _a(en, zh, tone):
+        return {"verb": en, "verb_zh": zh, "tone": tone}
+
+    if bucket == "avoid" or pct == 0 or pct is None:
+        if has_edge and blocked:                          # the NVDA case
+            return _a("WAIT", "等待", "wait")
+        if hard_down:
+            return _a("AVOID", "回避", "avoid")
+        return _a("WAIT", "等待", "wait")
+    if no_buy:
+        return _a("WATCH", "观察", "screen")
+    if hard_down:
+        return _a("AVOID", "回避", "avoid")
+    return _a("BUY", "买入", "go")
+
+
+def _conflict_note(state: str, pillars: list[dict]) -> tuple[str | None, str | None]:
+    """The one-line BRIDGE that reconciles the two lanes: why a top-ranked name is
+    not a buy right now. Renders only in the conflict state."""
+    if state != "conflict":
+        return None, None
+    pe = ", ".join(p["en"] for p in pillars) or "the tape"
+    pz = "、".join(p["zh"] for p in pillars) or "盘面"
+    return (f"Top board rank, but {pe} blocks a buy now — the rank measures the name, "
+            "not the moment.",
+            f"板内排名靠前，但{pz}阻碍当前买入——排名衡量个股，而非买入时机。")
+
+
 def _decision(rec: dict, conv: dict, falsifiers: list[dict]) -> dict:
     lad = rec.get("ladder") or {}
     entry = lad.get("entry") or {}
     size = conv.get("size") or {}
     gloss_en, gloss_zh = _gloss(conv.get("verdict"))
     state, conflict_pillars = _conflict(conv, falsifiers)
+    name_en, name_zh = _NAME_LABEL.get(conv.get("band") or "na", _NAME_LABEL["na"])
+    cn_en, cn_zh = _conflict_note(state, conflict_pillars)
 
     timing = {
         "state": lad.get("state"),
@@ -264,10 +329,16 @@ def _decision(rec: dict, conv: dict, falsifiers: list[dict]) -> dict:
         "gloss": gloss_en, "gloss_zh": gloss_zh,
         "band": conv.get("band"), "band_en": conv.get("band_en"),
         "band_zh": conv.get("band_zh"), "score": conv.get("score"),
+        # NAME lane (the "what") — the score reframed as a board RANK of name strength.
+        "name_label": name_en, "name_label_zh": name_zh,
+        "rank_note": "board rank", "rank_note_zh": "板内排名",
+        # ACT-NOW lane (the "when / how much") — one buy-frame verb, decoupled from rank.
+        "action": _action(conv, rec),
         "trust": conv.get("trust_tier"), "regime": conv.get("regime"),
         "size": size, "timing": timing,
         "why": _why(conv),
         "state": state, "conflict_pillars": conflict_pillars,
+        "conflict_note": cn_en, "conflict_note_zh": cn_zh,
     }
 
 
@@ -747,6 +818,10 @@ def build_view(rec: dict, market: str) -> dict:
             "headline_zh": entry.get("tag_zh"),
             "gloss": "", "gloss_zh": "",
             "band": "na", "band_en": "—", "band_zh": "—", "score": None,
+            # no conviction block → no rank lane and no buy-frame action; JS renders
+            # the single-lane (ladder-spine) layout when these are absent.
+            "name_label": None, "name_label_zh": None,
+            "rank_note": None, "rank_note_zh": None, "action": None,
             "trust": None, "regime": None, "size": {},
             "timing": {"state": lad.get("state"),
                        "state_label": lad.get("label") or lad.get("state"),
@@ -754,6 +829,7 @@ def build_view(rec: dict, market: str) -> dict:
                        "urgency": entry.get("urgency"),
                        "text": entry.get("text"), "text_zh": entry.get("text_zh")},
             "why": [], "state": "neutral", "conflict_pillars": [],
+            "conflict_note": None, "conflict_note_zh": None,
         }
         fingerprint = {"axes": []}
 

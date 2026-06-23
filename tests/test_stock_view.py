@@ -109,6 +109,50 @@ def test_close_only_fallback_does_not_crash():
     assert v["decision"]["headline"]
     assert v["fingerprint"]["axes"] == []
     assert v["evidence"] == {}
+    # no conviction → no rank lane / no buy-frame action: JS renders the single-lane spine.
+    assert v["decision"]["action"] is None
+    assert v["decision"]["name_label"] is None
+
+
+# ---------------------------------------------------------------------------
+# Two-lane decision: separate the NAME rank (the "what") from the ACT-NOW verb
+# (the "when/how much") so a strong name in a bad tape never wears a buy badge.
+# ---------------------------------------------------------------------------
+def test_decision_has_name_lane_and_action():
+    """Every conviction-bearing decision carries the rank lane + a single act-now verb."""
+    d = sv.build_view(_profiled("US", alpha=1.4), "US")["decision"]
+    assert d["name_label"] and d["name_label_zh"]
+    assert d["rank_note"] == "board rank"
+    assert d["action"] and d["action"]["verb"] in ("BUY", "WAIT", "AVOID", "WATCH")
+    assert d["action"]["tone"] in ("go", "wait", "avoid", "screen")
+
+
+def test_strong_name_blocked_is_wait_with_bridge():
+    """The NVDA case: high selection + cycle block → action WAIT (not a buy badge),
+    state conflict, and a one-line bridge reconciling the two lanes."""
+    rec = _profiled("US", alpha=2.6,
+                    ladder={"state": "TOP WATCH", "label": "Nearing a high",
+                            "entry": {"tag": "DON'T CHASE", "urgency": "caution"}})
+    d = sv.build_view(rec, "US")["decision"]
+    assert d["action"]["verb"] == "WAIT" and d["action"]["tone"] == "wait"
+    assert d["size"].get("pct") == 0
+    assert d["state"] == "conflict"
+    assert d["conflict_note"] and "rank" in d["conflict_note"].lower()
+    # the name lane still reports a name word — the rank is NOT suppressed, just relabelled
+    assert d["name_label"]
+
+
+def test_weak_name_action_is_avoid():
+    rec = _profiled("US", alpha=-2.0,
+                    ladder={"state": "DECLINE", "label": "Downtrend",
+                            "entry": {"tag": "AVOID", "urgency": "avoid"}})
+    assert sv.build_view(rec, "US")["decision"]["action"]["verb"] == "AVOID"
+
+
+def test_hk_action_is_never_buy():
+    """HK has no selection alpha (trust 'screen') → the act verb is WATCH, never BUY."""
+    rec = _profiled("HK", rs_z=2.0, hk_edge_lead="bnrs")
+    assert sv.build_view(rec, "HK")["decision"]["action"]["verb"] != "BUY"
 
 
 def test_country_slot_cards_activate_on_fields():
