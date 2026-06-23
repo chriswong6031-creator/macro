@@ -84,20 +84,35 @@
   .sb-table .sarrow { font-size:9px; opacity:.32; margin-left:3px; font-weight:700; }
   .sb-table th.sorted .sarrow { opacity:.9; color:var(--link); }
   /* ---- standout-stock cards (ported from the US dashboard) ------------------- */
-  .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; margin-top:11px; }
+  .nbgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:10px; margin-top:11px; }
   a.nbcard { background:var(--panel2,var(--panel)); border:1px solid var(--line); border-radius:10px;
              padding:9px 11px 10px; border-left:3px solid var(--muted); display:flex;
-             flex-direction:column; gap:4px; transition:transform .12s, box-shadow .12s, border-color .12s; }
+             flex-direction:column; gap:4px; min-width:0; overflow:hidden;
+             transition:transform .12s, box-shadow .12s, border-color .12s; }
+  /* every flex child may shrink below its content width AND never exceed the card —
+     this is what stops a long verdict / chip row from blowing the card (and with it
+     the whole auto-fill grid) hundreds of px wide. The single most important rule here. */
+  a.nbcard > * { min-width:0; max-width:100%; }
   a.nbcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.22); border-color:var(--link); }
+  /* one shared legend under the header — replaces the trust-tier caveat that used to
+     repeat verbatim on every one of the ~110 cards (de-cram, ported from US) */
+  .nb-legend { display:flex; flex-wrap:wrap; align-items:baseline; gap:5px 10px;
+               margin:8px 0 2px; padding:6px 11px; border-radius:9px; font-size:11px;
+               line-height:1.45; color:var(--muted); background:var(--panel); border:1px solid var(--line); }
+  .nb-legend .lg-k { font-weight:800; color:var(--text); letter-spacing:.01em; }
+  .nb-legend b { font-weight:700; color:var(--text); }
+  .nb-legend .lg-sep { color:var(--line); }
   .nbcard.nb-up { border-left-color:var(--up); } .nbcard.nb-down { border-left-color:var(--down); }
   .nbcard.nb-caution { border-left-color:var(--warn); }
   .nb-top { display:flex; align-items:baseline; gap:6px; }
   .nb-tk { font-weight:800; font-size:14px; color:var(--text); }
   .nb-nm { font-size:10px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0; }
   .nb-px { font-weight:700; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .nb-sub { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
+  .nb-sub { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:10px; color:var(--muted); min-width:0; }
+  .nb-sub > span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+  .nb-sub .nb-offh { margin-left:auto; white-space:nowrap; font-variant-numeric:tabular-nums; }
   .nbcard .nch { background:transparent; margin:4px 0 2px; width:100%; height:42px; border-radius:5px; }
-  .nb-bot { display:flex; align-items:center; gap:6px; margin-top:1px; }
+  .nb-bot { display:flex; align-items:center; flex-wrap:wrap; gap:5px 6px; margin-top:1px; }
   .nb-state { font-size:10px; font-weight:800; letter-spacing:.02em; padding:1px 7px; border-radius:8px; }
   .nb-up .nb-state { color:var(--up); background:color-mix(in srgb,var(--up) 15%,var(--panel)); }
   .nb-down .nb-state { color:var(--down); background:color-mix(in srgb,var(--down) 15%,var(--panel)); }
@@ -151,9 +166,9 @@
              background:var(--line); overflow:hidden; }
   .nbe-bf { display:block; height:100%; background:var(--g-cold); }
   /* ---- unified Conviction Profile on each standout card (ported from the US dashboard) ---- */
-  .nb-conv { display:flex; align-items:center; gap:7px; margin:5px 0 1px; }
+  .nb-conv { display:flex; align-items:center; gap:7px; margin:5px 0 1px; min-width:0; }
   .nb-cscore { font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
-               min-width:30px; text-align:center; padding:1px 5px; border-radius:8px;
+               min-width:30px; flex:none; text-align:center; padding:1px 5px; border-radius:8px;
                border:1px solid var(--line); color:var(--text); }
   .nb-crank { font-size:7.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
               opacity:.7; margin-right:3px; vertical-align:1px; }
@@ -163,7 +178,8 @@
                          border-color:color-mix(in srgb,var(--g-cold) 40%,var(--line)); }
   .nb-cscore.band-neutral { color:var(--muted); }
   .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
-  .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text); }
+  .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text);
+                flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
   .nb-axes { display:flex; gap:4px; margin-top:3px; }
   .nb-ax { flex:1; }
   .nb-ax .axl { font-size:8px; color:var(--muted); letter-spacing:.03em; }
@@ -173,7 +189,7 @@
   .nb-cau { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
   .nb-cau span { font-size:8.5px; font-weight:700; padding:0 4px; border-radius:6px;
                  color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,var(--panel)); }
-  .nb-tier { font-size:9px; color:var(--muted); margin-top:3px; letter-spacing:.02em; }
+  /* (.nb-tier removed — the trust tier is now shown once in the shared .nb-legend) */
   /* volatility black hole + honesty notes (China overhaul) */
   .nb-vf { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
   .nb-vchip { font-size:8.5px; font-weight:800; padding:0 5px; border-radius:6px; border:1px solid var(--line);
@@ -1084,6 +1100,16 @@
       (z {{ '%+.1f'|format(q.qvix_z) }}{% if q.level is not none %}, {{ q.level }}{% endif %}) — <span class="l-en">{{ q.en }}</span><span class="l-zh">{{ q.zh }}</span>
       {{ help("The GEX-analog for A-shares (no single-stock options): the China VIX (QVIX, from 50/300-ETF options) vol-regime. CRITICAL — the US 'high VIX = fear' reading is INVERTED here: China has a positive return-volatility correlation, so a high QVIX level often accompanies a speculative rally. We gate on the QVIX z-score vs its own 60-day (the rate of change), not the level. A panic SPIKE is the crash-risk regime (taxes a chase + vetoes a high-conviction verb); a suppressed regime is a coiled, constructive vol environment. Market-wide context, not a per-stock signal.", "A 股的 GEX 类比（无个股期权）：中国波动率指数（QVIX，源自 50/300ETF 期权）的波动区制。关键 —— 美式“高 VIX=恐慌”在此相反：中国收益-波动正相关，高 QVIX 水平常伴随投机性上涨。我们以 QVIX 相对自身 60 日的 z 分数（变化率）而非水平来判定。恐慌飙升是崩盘风险区制（对追高征税并否决高确信结论）；受抑区制则是蓄势、有利的波动环境。全市场背景，而非个股信号。") }}
     </div>{% endif %}
+    {# ONE shared legend — the score's meaning, the two-gauge model, and the edge basis
+       (trust tier) explained once here instead of repeated on every card below. #}
+    {% set _tt = (setups.buy[0].conviction or {}).trust_tier %}
+    <div class="nb-legend">
+      <span class="lg-k">{{ t('Reading the cards', '如何看卡片') }}</span>
+      <span><b>{{ t('Score', '评分') }}</b> = {{ t('within-market percentile rank (a display skin, not a probability) — the verdict is the absolute read', '市场内百分位排名（展示，非概率）— 结论才是绝对读数') }}</span>
+      <span class="lg-sep">·</span>
+      <span><b>{{ t('Two gauges', '两个量表') }}</b>: {{ t('Conviction (is it worth owning) + a separate Entry gauge (when & at what price)', '确信度（是否值得持有）＋ 独立的入场量表（何时、以何价）') }}</span>
+      {% if _tt %}<span class="lg-sep">·</span><span><b>{{ t('Edge basis', '优势来源') }}</b>: <span class="l-en">{{ _tt.en }}</span><span class="l-zh">{{ _tt.zh }}</span></span>{% endif %}
+    </div>
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -1093,7 +1119,7 @@
           <span class="nb-nm">{{ nm(n.name) }}</span>
           {% if n.price is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="cn">{{ '%.2f'|format(n.price) }}</span>{% endif %}
         </div>
-        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
+        <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span class="nb-offh">{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
         {% set c = n.conviction %}
         {% if c %}
@@ -1101,21 +1127,12 @@
           {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Within-A-share RANK — cross-sectional percentile of the conviction composite (display, not a probability). The number is a RANK; the verdict beside it is the absolute act-now call, so a top-ranked name can still read 'wait'. · A股板内排名 — 确信度合成的横截面百分位（展示，非概率）。数字为排名；旁边的结论才是当下的绝对判断，故排名靠前也可能显示“观望”。"><span class="nb-crank">{{ t('rank','排名') }}</span>{{ c.score }}</span>{% endif %}
           <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
         </div>
-        <div class="nb-axes">
-          {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
-          {% set a = c.axes[ax] %}
-          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
-            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
-            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
-          </div>
-          {% endfor %}
-        </div>
         {% set es = n.entry_signal %}
         {% if es %}
         {# ENTRY-timing gauge (gauge 2): buy now / wait for the pullback / extended, with the
            actual buy-zone price + cycle position. The WHEN/AT-WHAT-PRICE the conviction score
            must never be mistaken for. Market-agnostic (reads the cycle/ladder + vol). #}
-        <div class="nb-entry nbe-{{ es.status }}" title="{{ t('ENTRY timing (gauge 2) — when & at what price to buy', '入场择时（量表2）— 何时、以何价买入') }}. {{ es.action }}">
+        <div class="nb-entry nbe-{{ es.status }}" title="ENTRY timing (gauge 2) — when &amp; at what price to buy · 入场择时（量表2）— 何时、以何价买入. {{ es.action }}">
           <div class="nbe-head">
             <span class="nbe-dot a{{ es.act_level }}"></span>
             <span class="nbe-status"><span class="l-en">{{ es.headline }}</span><span class="l-zh">{{ es.headline_zh }}</span></span>
@@ -1136,11 +1153,22 @@
           {% endif %}
         </div>
         {% endif %}
+        {# the four transparent axes sit UNDER both gauges, so score/verdict + entry timing
+           read as one decision block and the supporting detail follows below #}
+        <div class="nb-axes">
+          {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
+          {% set a = c.axes[ax] %}
+          <div class="nb-ax{{ ' ax-na' if a.pct is none else '' }}" title="{{ lbl }}{% if a.pct is not none %} {{ a.pct }}/100{% else %} — no data{% endif %}">
+            <div class="axl">{{ t(lbl, lbl_zh) }}</div>
+            <div class="axt"><div class="axf" style="width:{{ a.pct if a.pct is not none else 0 }}%"></div></div>
+          </div>
+          {% endfor %}
+        </div>
         {% endif %}
         <div class="nb-bot">
           <span class="nb-state">{{ td(n.label or n.state) }}</span>
           {% if n.confluence %}<span class="nb-conf" title="In BOTH validated screens — a deep-dip reversal candidate that is ALSO a low-vol defensive name (a structurally safer rebound). · 同时进入两条已验证筛选 —— 既是深跌反转候选又是低波防御股（结构上更稳健的反弹）。">🛡🔄 {{ t('safer rebound', '稳健反弹') }}</span>{% endif %}
-          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="{{ t('Vol-managed size — bet MORE on calm names, LESS on volatile ones', '波动率管理仓位 — 平静标的加注、波动标的减注') }}. ×{{ _rs.size_mult }} {{ t('of the conviction-base size', '相对确信度基准仓位') }} ({{ t('forecast vol', '预测波动') }} {{ _rs.vol_ann_pct }}% · {{ t('inverse-vol', '逆波动') }} ×{{ _rs.inv_vol_mult }} · {{ t('regime', '区制') }} ×{{ _rs.regime_gross }}). {{ t('The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry)', '已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么（确信度）与何时买入（入场）') }}.">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
+          {% set _rs = n.risk_sizing %}{% if _rs and _rs.size_mult is not none %}<span class="nb-size {{ 'sz-up' if _rs.size_mult >= 1.1 else ('sz-dn' if _rs.size_mult <= 0.9 else '') }}" title="Vol-managed size — bet MORE on calm names, LESS on volatile ones. ×{{ _rs.size_mult }} of the conviction-base size (forecast vol {{ _rs.vol_ann_pct }}% · inverse-vol ×{{ _rs.inv_vol_mult }} · regime ×{{ _rs.regime_gross }}). The validated +0.1-0.15 Sharpe lever — HOW MUCH to own, separate from WHAT (conviction) and WHEN (entry). · 波动率管理仓位 — 平静标的加注、波动标的减注。×{{ _rs.size_mult }} 相对确信度基准仓位（预测波动 {{ _rs.vol_ann_pct }}% · 逆波动 ×{{ _rs.inv_vol_mult }} · 区制 ×{{ _rs.regime_gross }}）。已验证的 +0.1-0.15 夏普杠杆 — 持仓多少，独立于持有什么与何时买入。">⚖ {{ '%.2f'|format(_rs.size_mult) }}×</span>{% endif %}
         </div>
         {% if n.alpha is not none or n.alpha_entry %}
         <div class="nb-alpha">
@@ -1161,7 +1189,7 @@
         </div>{% endif %}
         {% if c.cautions %}<div class="nb-cau">{% for cau in c.cautions %}<span class="l-en">⚠ {{ cau }}</span><span class="l-zh">⚠ {{ c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau }}</span>{% endfor %}</div>{% endif %}
         {% if c.notes %}{% for nt in c.notes %}<div class="nb-note nb-note-{{ nt.kind }}"><span class="l-en">ℹ {{ nt.en }}</span><span class="l-zh">ℹ {{ nt.zh }}</span></div>{% endfor %}{% endif %}
-        <div class="nb-tier"><span class="l-en">{{ c.trust_tier.en }}</span><span class="l-zh">{{ c.trust_tier.zh }}</span></div>
+        {# trust tier hoisted to the one .nb-legend above the grid — no longer repeated per card #}
         {% endif %}
       </a>
     {% endfor %}
