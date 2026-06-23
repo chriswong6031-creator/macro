@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "china",
-  "generated_at": "2026-06-23T06:10:50.749858+00:00",
+  "generated_at": "2026-06-23T11:38:39.182878+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -13,61 +13,61 @@
       "contaminated": false,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.0369,
+          "cagr": 0.0359,
           "sharpe": 0.27,
           "max_dd": -0.3733,
           "calmar": 0.1,
           "n_months": 102,
-          "dsr": 0.223,
+          "dsr": 0.219,
           "worst_decile_ret": -0.0647
         },
         "top3_mom12_rel": {
-          "cagr": 0.0422,
-          "sharpe": 0.29,
-          "max_dd": -0.4245,
-          "calmar": 0.1,
+          "cagr": 0.0405,
+          "sharpe": 0.28,
+          "max_dd": -0.4275,
+          "calmar": 0.09,
           "n_months": 90,
-          "dsr": 0.213,
+          "dsr": 0.208,
           "worst_decile_ret": -0.05
         },
         "top3_mom6_rel": {
-          "cagr": 0.0452,
-          "sharpe": 0.3,
+          "cagr": 0.044,
+          "sharpe": 0.29,
           "max_dd": -0.6617,
           "calmar": 0.07,
           "n_months": 92,
-          "dsr": 0.227,
+          "dsr": 0.223,
           "worst_decile_ret": -0.0554
         },
         "top3_mom12_dual": {
-          "cagr": -0.0297,
-          "sharpe": 0.01,
-          "max_dd": -0.6384,
+          "cagr": -0.0313,
+          "sharpe": -0.0,
+          "max_dd": -0.6402,
           "calmar": -0.05,
           "n_months": 90,
-          "dsr": 0.059,
+          "dsr": 0.057,
           "worst_decile_ret": -0.0409
         },
         "top4_mom12_dual": {
-          "cagr": 0.0071,
+          "cagr": 0.0054,
           "sharpe": 0.14,
           "max_dd": -0.5135,
           "calmar": 0.01,
           "n_months": 90,
-          "dsr": 0.118,
+          "dsr": 0.115,
           "worst_decile_ret": -0.0222
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0228,
-          "ic_t_hac": 0.696,
+          "mean_ic": 0.0224,
+          "ic_t_hac": 0.682,
           "hit": 0.511,
           "n_steps": 90
         },
         "3m": {
-          "mean_ic": 0.0736,
-          "ic_t_hac": 1.207,
+          "mean_ic": 0.0722,
+          "ic_t_hac": 1.188,
           "hit": 0.7,
           "n_steps": 30
         }
@@ -76,19 +76,19 @@
         "above_trend": {
           "mean": 0.005,
           "std": 0.0931,
-          "sharpe": 0.19,
+          "sharpe": 0.18,
           "p05": -0.1158,
           "n": 632
         },
         "below_trend": {
-          "mean": 0.0061,
-          "std": 0.1094,
+          "mean": 0.006,
+          "std": 0.1095,
           "sharpe": 0.19,
-          "p05": -0.1209,
+          "p05": -0.1216,
           "n": 781
         },
         "mean_diff_t": -0.19,
-        "mean_diff_p": 0.8491
+        "mean_diff_p": 0.8514
       },
       "extension_drawdown": {
         "fwd_days": 63,

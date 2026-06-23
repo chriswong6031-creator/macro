@@ -264,8 +264,194 @@
     {
       "rule": "gex_flip_cross",
       "severity": "warn",
-      "message": "GEX: net GEX changed sign (net -10bn, spot vs flip -11.0%)",
-      "message_zh": "GEX\uff1anet GEX changed sign\uff08\u51c0 -10bn\uff0c\u73b0\u4ef7\u76f8\u5bf9\u7ffb\u8f6c\u70b9 -11.0%\uff09"
+      "message": "GEX: net GEX changed sign (net -57bn, spot vs flip -11.0%)",
+      "message_zh": "GEX\uff1anet GEX changed sign\uff08\u51c0 -57bn\uff0c\u73b0\u4ef7\u76f8\u5bf9\u7ffb\u8f6c\u70b9 -11.0%\uff09"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "warn",
+      "message": "XLC: GOOGL weight +2.98pp beyond price (\u2248+$673M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle NEARING A LOW\u00b7GET READY",
+      "message_zh": "XLC\uff1aGOOGL \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +2.98pp\uff08\u2248+$673M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "warn",
+      "message": "XLC: GOOG weight +2.41pp beyond price (\u2248+$543M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle NEARING A LOW\u00b7GET READY",
+      "message_zh": "XLC\uff1aGOOG \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +2.41pp\uff08\u2248+$543M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "warn",
+      "message": "XLK: AVGO weight +0.85pp beyond price (\u2248+$1.1B est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle UPTREND\u00b7HOLD",
+      "message_zh": "XLK\uff1aAVGO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.85pp\uff08\u2248+$1.1B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "warn",
+      "message": "XLP: PEP weight +0.39pp beyond price (\u2248+$52M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle NEARING A LOW\u00b7GET READY",
+      "message_zh": "XLP\uff1aPEP \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.39pp\uff08\u2248+$52M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "warn",
+      "message": "XLE: WMB weight +0.27pp beyond price (\u2248+$98M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle UPTREND\u00b7HOLD",
+      "message_zh": "XLE\uff1aWMB \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.27pp\uff08\u2248+$98M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
+    },
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKK: manager cut ROKU by -71% of position (2026-06-15..2026-06-23, flow-normalized)",
+      "message_zh": "ARKK\uff1a\u7ecf\u7406 cut ROKU \u4ed3\u4f4d -71%\uff082026-06-15..2026-06-23\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+    },
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKK: manager added NTLA by +97% of position (2026-06-15..2026-06-23, flow-normalized)",
+      "message_zh": "ARKK\uff1a\u7ecf\u7406 added NTLA \u4ed3\u4f4d +97%\uff082026-06-15..2026-06-23\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+    },
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKW: manager cut BIDU by -68% of position (2026-06-15..2026-06-23, flow-normalized)",
+      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut BIDU \u4ed3\u4f4d -68%\uff082026-06-15..2026-06-23\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+    },
+    {
+      "rule": "holdings_active_change",
+      "severity": "info",
+      "message": "ARKW: manager cut ROKU by -42% of position (2026-06-15..2026-06-23, flow-normalized)",
+      "message_zh": "ARKW\uff1a\u7ecf\u7406 cut ROKU \u4ed3\u4f4d -42%\uff082026-06-15..2026-06-23\uff0c\u5df2\u6309\u8d44\u91d1\u6d41\u6807\u51c6\u5316\uff09"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLC: META weight +6.44pp beyond price (\u2248+$1.5B est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle DOWNTREND\u00b7AVOID",
+      "message_zh": "XLC\uff1aMETA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +6.44pp\uff08\u2248+$1.5B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLY: AMZN weight -2.78pp beyond price (\u2248-$610M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A LOW\u00b7GET READY",
+      "message_zh": "XLY\uff1aAMZN \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -2.78pp\uff08\u2248-$610M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: MU weight -2.77pp beyond price (\u2248-$3.5B est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aMU \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -2.77pp\uff08\u2248-$3.5B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: NVDA weight +2.31pp beyond price (\u2248+$2.9B est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aNVDA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +2.31pp\uff08\u2248+$2.9B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: AAPL weight +2.04pp beyond price (\u2248+$2.5B est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aAAPL \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +2.04pp\uff08\u2248+$2.5B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: MSFT weight +1.27pp beyond price (\u2248+$1.6B est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle DOWNTREND\u00b7AVOID",
+      "message_zh": "XLK\uff1aMSFT \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +1.27pp\uff08\u2248+$1.6B \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLB: LIN weight -0.73pp beyond price (\u2248-$61M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle UPTREND\u00b7HOLD",
+      "message_zh": "XLB\uff1aLIN \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.73pp\uff08\u2248-$61M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLE: XOM weight +0.73pp beyond price (\u2248+$265M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle DOWNTREND\u00b7AVOID",
+      "message_zh": "XLE\uff1aXOM \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.73pp\uff08\u2248+$265M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLC: TTWO weight -0.60pp beyond price (\u2248-$136M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
+      "message_zh": "XLC\uff1aTTWO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.60pp\uff08\u2248-$136M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLP: MDLZ weight -0.59pp beyond price (\u2248-$80M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A LOW\u00b7GET READY",
+      "message_zh": "XLP\uff1aMDLZ \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.59pp\uff08\u2248-$80M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: AMD weight -0.58pp beyond price (\u2248-$726M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aAMD \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.58pp\uff08\u2248-$726M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLY: MCD weight +0.54pp beyond price (\u2248+$118M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle DOWNTREND\u00b7AVOID",
+      "message_zh": "XLY\uff1aMCD \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.54pp\uff08\u2248+$118M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f DOWNTREND\u00b7AVOID"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLRE: O weight +0.42pp beyond price (\u2248+$34M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle TOPPING\u00b7SELL SETUP",
+      "message_zh": "XLRE\uff1aO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.42pp\uff08\u2248+$34M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f TOPPING\u00b7SELL SETUP"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLB: NEM weight -0.41pp beyond price (\u2248-$34M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle UPTREND\u00b7HOLD",
+      "message_zh": "XLB\uff1aNEM \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.41pp\uff08\u2248-$34M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f UPTREND\u00b7HOLD"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: INTC weight -0.40pp beyond price (\u2248-$500M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aINTC \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.40pp\uff08\u2248-$500M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLP: MO weight -0.36pp beyond price (\u2248-$49M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A LOW\u00b7GET READY",
+      "message_zh": "XLP\uff1aMO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.36pp\uff08\u2248-$49M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A LOW\u00b7GET READY"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLB: MLM weight +0.34pp beyond price (\u2248+$28M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22",
+      "message_zh": "XLB\uff1aMLM \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.34pp\uff08\u2248+$28M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: AMAT weight -0.33pp beyond price (\u2248-$411M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aAMAT \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.33pp\uff08\u2248-$411M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: LRCX weight -0.32pp beyond price (\u2248-$400M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aLRCX \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.32pp\uff08\u2248-$400M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLK: CSCO weight -0.31pp beyond price (\u2248-$388M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle NEARING A HIGH\u00b7TAKE PROFITS",
+      "message_zh": "XLK\uff1aCSCO \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.31pp\uff08\u2248-$388M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f NEARING A HIGH\u00b7TAKE PROFITS"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLY: TSLA weight -0.28pp beyond price (\u2248-$62M est. rebalance flow) (trimming), 2026-06-17..2026-06-22 \u2014 cycle BOTTOMING\u00b7BUY SETUP",
+      "message_zh": "XLY\uff1aTSLA \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 -0.28pp\uff08\u2248-$62M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u51cf\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f BOTTOMING\u00b7BUY SETUP"
+    },
+    {
+      "rule": "sector_holdings_accumulation",
+      "severity": "info",
+      "message": "XLRE: DLR weight +0.27pp beyond price (\u2248+$22M est. rebalance flow) (accumulating), 2026-06-17..2026-06-22 \u2014 cycle UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY",
+      "message_zh": "XLRE\uff1aDLR \u6743\u91cd\u8f83\u4ef7\u683c\u591a\u53d8\u52a8 +0.27pp\uff08\u2248+$22M \u4f30\u7b97\u518d\u5e73\u8861\u8d44\u91d1\u6d41\uff09\uff08\u589e\u6301\uff09\uff0c2026-06-17..2026-06-22 \u2014 \u5468\u671f UNCONFIRMED TURN\u00b7HIGH-RISK \u00b7 NIMBLE ONLY"
     }
   ],
   "conditions": {
@@ -415,19 +601,14 @@
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
     "tone_score": 0.0,
-    "guidance_direction": "on_hold",
+    "guidance_direction": "unknown",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "high",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "guidance_direction",
-        "quote_span": "The Committee decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -486,10 +667,10 @@
       "Commodities",
       "Dollar"
     ],
-    "absorption_ratio": 0.433,
+    "absorption_ratio": 0.434,
     "absorption_pctile_5y": 0.93,
     "absorption_floor": 0.167,
-    "mean_abs_corr": 0.33,
+    "mean_abs_corr": 0.331,
     "pc1_loadings": {
       "US": 0.54,
       "Crypto": 0.35,
@@ -522,29 +703,29 @@
       {
         "a": "US",
         "b": "Crypto",
-        "corr": 0.5
+        "corr": 0.51
       }
     ],
     "corr_matrix": {
       "US": {
         "US": 1.0,
-        "Crypto": 0.5,
+        "Crypto": 0.51,
         "China": 0.22,
         "HK": 0.21,
         "Commodities": 0.63,
         "Dollar": 0.58
       },
       "Crypto": {
-        "US": 0.5,
+        "US": 0.51,
         "Crypto": 1.0,
-        "China": -0.08,
+        "China": -0.09,
         "HK": -0.11,
-        "Commodities": 0.32,
+        "Commodities": 0.33,
         "Dollar": 0.4
       },
       "China": {
         "US": 0.22,
-        "Crypto": -0.08,
+        "Crypto": -0.09,
         "China": 1.0,
         "HK": 0.66,
         "Commodities": 0.36,
@@ -560,7 +741,7 @@
       },
       "Commodities": {
         "US": 0.63,
-        "Crypto": 0.32,
+        "Crypto": 0.33,
         "China": 0.36,
         "HK": 0.34,
         "Commodities": 1.0,
@@ -664,8 +845,8 @@
         "label": "Crypto liquidity",
         "label_zh": "\u52a0\u5bc6\u6d41\u52a8\u6027",
         "family": "crypto",
-        "projection": -0.25,
-        "strength": 0.25,
+        "projection": -0.32,
+        "strength": 0.32,
         "direction": "crypto liquidity draining \u2014 BTC/ETH lead down"
       },
       {
@@ -691,8 +872,8 @@
         "label": "Liquidity impulse",
         "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
         "family": "liquidity",
-        "projection": 0.07,
-        "strength": 0.07,
+        "projection": 0.06,
+        "strength": 0.06,
         "direction": "net liquidity expanding \u2014 broad risk-on tailwind"
       },
       {
@@ -732,15 +913,15 @@
         },
         "risk_contrib": {
           "US": 0.124,
-          "Crypto": 0.381,
+          "Crypto": 0.38,
           "China": 0.087,
-          "HK": 0.098,
-          "Commodities": 0.278,
+          "HK": 0.099,
+          "Commodities": 0.279,
           "Dollar": 0.031
         },
         "port_vol_ann": 0.133,
         "diversification_ratio": 1.64,
-        "max_risk_contrib": 0.381
+        "max_risk_contrib": 0.38
       },
       "inverse_vol": {
         "scheme": "inverse_vol",
@@ -767,10 +948,10 @@
       "erc": {
         "scheme": "erc",
         "weights": {
-          "US": 0.147,
-          "Crypto": 0.067,
-          "China": 0.159,
-          "HK": 0.135,
+          "US": 0.146,
+          "Crypto": 0.068,
+          "China": 0.16,
+          "HK": 0.134,
           "Commodities": 0.066,
           "Dollar": 0.426
         },
@@ -929,28 +1110,28 @@
   },
   "fed_path": {
     "asof": "2026-06-22",
-    "built": "2026-06-23T05:52:39.176929+00:00",
+    "built": "2026-06-23T11:23:53.898515+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": null,
+      "m1": 3.63,
       "m3": 3.75,
-      "m6": 3.96,
-      "m12": null
+      "m6": 3.95,
+      "m12": 4.09
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ \u8054\u90a6\u57fa\u91d1\u671f\u8d27",
-    "implied_bp_12m": null,
-    "implied_cuts_12m": null,
+    "implied_bp_12m": 46,
+    "implied_cuts_12m": -2,
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
       "m3": 3.83,
-      "m6": 4.02,
-      "m12": 4.15
+      "m6": 4.01,
+      "m12": 4.13
     },
     "dots": [
       {
@@ -970,38 +1151,38 @@
       "horizon_label": "end-2026",
       "horizon_months": 6,
       "fed_dot": 3.8,
-      "market": 3.96,
-      "gap_bp": 17,
+      "market": 3.95,
+      "gap_bp": 15,
       "lean_en": "market more hawkish than the Fed",
       "lean_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e"
     },
     "ntfs": 0.76,
     "curve_tp_adj": 0.27,
     "rate_exp_proxy": 0.56,
-    "headline_en": "Policy set at 3.63%",
-    "headline_zh": "\u653f\u7b56\u5229\u7387\u8bbe\u5b9a\u4e8e 3.63%",
-    "read_en": "At end-2026 the market implies 3.96% vs the Fed's 3.80% median dot (+17bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.76pp).",
-    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.96% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+17\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.76\u4e2a\u767e\u5206\u70b9\uff09\u3002",
+    "headline_en": "Market prices ~2 hikes over the next 12m (funds 3.63% \u2192 4.09%)",
+    "headline_zh": "\u5e02\u573a\u4e3a\u672a\u676512\u4e2a\u6708\u5b9a\u4ef7\u7ea6\u52a0\u606f2\u6b21\uff08\u57fa\u91d1\u5229\u7387 3.63% \u2192 4.09%\uff09",
+    "read_en": "At end-2026 the market implies 3.95% vs the Fed's 3.80% median dot (+15bp \u2014 market more hawkish than the Fed). The near-term forward spread is positive \u2014 no cuts priced near-term (+0.76pp).",
+    "read_zh": "\u5728end-2026\uff0c\u5e02\u573a\u9690\u542b 3.95% \u5bf9\u6bd4\u7f8e\u8054\u50a8 3.80% \u7684\u4e2d\u4f4d\u70b9\uff08+15\u57fa\u70b9 \u2014 \u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff09\u3002\u8fd1\u7aef\u8fdc\u671f\u5229\u5dee\u4e3a\u6b63\u2014\u2014\u8fd1\u7aef\u672a\u4e3a\u964d\u606f\u5b9a\u4ef7\uff08+0.76\u4e2a\u767e\u5206\u70b9\uff09\u3002",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE \u2014 it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
     "note_zh": "\u4ec5\u4f9b\u5c55\u793a / LLM \u4e0a\u4e0b\u6587\u3002\u9690\u542b\u8def\u5f84\u662f\u5e02\u573a\u4ef7\u683c\uff08\u671f\u8d27\u9690\u542b\u7684\u57fa\u91d1\u5229\u7387\uff09\uff0c\u5e76\u975e\u9884\u6d4b\u4f18\u52bf\uff0c\u4e14\u91cd\u65b0\u5b9a\u4ef7\u662f\u88ab\u52a8\u7684\u2014\u2014\u5b83\u5728\u6570\u636e\u548c\u7f8e\u8054\u50a8\u4e4b\u540e\u53d8\u52a8\uff0c\u5e76\u4e0d\u9886\u5148\u3002\u4ece\u4e0d\u8bc4\u5206\uff0c\u4ece\u4e0d\u4f5c\u4e3a MRS \u9879\u3002ZQ/SR3=\u65e0\u9700\u5bc6\u94a5\u7684 CME \u671f\u8d27\uff1b\u70b9\u9635\u56fe=FRED FEDTARMD\uff08FOMC SEP \u4e2d\u4f4d\u6570\uff09\u3002\u8bf7\u6ce8\u660e CME/FRED\u3002"
   },
   "fed_stance": {
-    "stance": "neutral",
-    "label_en": "Neutral / on-hold",
-    "label_zh": "\u4e2d\u6027 / \u6309\u5175",
-    "color": "muted",
-    "implied_cuts_12m": null,
-    "guidance": "on_hold",
-    "market_vs_fed_bp": 17.0,
+    "stance": "hawkish",
+    "label_en": "Hawkish",
+    "label_zh": "\u9e70\u6d3e",
+    "color": "down",
+    "implied_cuts_12m": -2.0,
+    "guidance": "unknown",
+    "market_vs_fed_bp": 15.0,
     "market_vs_fed_en": "market more hawkish than the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e",
     "drivers_en": [
-      "statement guidance on-hold",
-      "market more hawkish than the Fed (+17bp)"
+      "market prices ~2.0 hike(s) over 12m",
+      "market more hawkish than the Fed (+15bp)"
     ],
     "drivers_zh": [
-      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
-      "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+17bp\uff09"
+      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea62.0\u6b21\u52a0\u606f",
+      "\u5e02\u573a\u6bd4\u7f8e\u8054\u50a8\u66f4\u9e70\u6d3e\uff08+15bp\uff09"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -3051,8 +3232,8 @@
       "bonds": "late",
       "bonds_en": "late-cycle",
       "bonds_zh": "\u5468\u671f\u665a\u6bb5",
-      "fx_regime": "Global reflation",
-      "fx_regime_zh": "\u5168\u7403\u518d\u901a\u80c0"
+      "fx_regime": "US growth premium",
+      "fx_regime_zh": "\u7f8e\u56fd\u589e\u957f\u6ea2\u4ef7"
     },
     "n_legs": 2,
     "n_agree": 2,
@@ -3063,7 +3244,7 @@
       "cycle": {
         "equity": "late",
         "bonds": "late",
-        "fx_regime": "Global reflation"
+        "fx_regime": "US growth premium"
       },
       "leading_caution_votes": 0,
       "fx_risk": "risk-on",
@@ -4518,14 +4699,14 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4147.1,
+        "price": 4145.4,
         "above50": false,
         "above200": false,
         "pct_vs_50dma": -7.9,
-        "pct_vs_200dma": -6.8,
+        "pct_vs_200dma": -6.9,
         "rsi14": 36.0,
         "macd_pos": false,
-        "off_52w_high_pct": -22.0,
+        "off_52w_high_pct": -22.1,
         "season_this": "Jun: -0.8% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.8%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
         "mom_60d_pct": -10.8
@@ -4533,47 +4714,47 @@
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 73.67,
+        "price": 73.82,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -20.3,
-        "pct_vs_200dma": -0.4,
+        "pct_vs_50dma": -20.1,
+        "pct_vs_200dma": -0.2,
         "rsi14": 29.0,
         "macd_pos": false,
-        "off_52w_high_pct": -34.8,
+        "off_52w_high_pct": -34.6,
         "season_this": "Jun: +2.3% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.3%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -27.3
+        "mom_60d_pct": -27.2
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.26,
+        "price": 6.19,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -0.0,
-        "pct_vs_200dma": 11.4,
-        "rsi14": 45.0,
+        "pct_vs_50dma": -1.1,
+        "pct_vs_200dma": 10.3,
+        "rsi14": 43.0,
         "macd_pos": false,
-        "off_52w_high_pct": -5.9,
-        "season_this": "Jun: -0.5% avg, up 54% of years (n=26)",
-        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.5%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 12.0
+        "off_52w_high_pct": -6.9,
+        "season_this": "Jun: -0.6% avg, up 54% of years (n=26)",
+        "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
+        "mom_60d_pct": 10.9
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 101.08,
+        "price": 101.17,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 1.9,
+        "pct_vs_50dma": 2.0,
         "pct_vs_200dma": 2.4,
-        "rsi14": 73.0,
+        "rsi14": 74.0,
         "macd_pos": true,
         "off_52w_high_pct": 0.0,
         "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 1.1
+        "mom_60d_pct": 1.2
       }
     ],
     "evidence": {

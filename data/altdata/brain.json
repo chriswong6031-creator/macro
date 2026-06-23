@@ -2,7 +2,7 @@
   "schema": "altdata_brain.v1",
   "is_context_only": false,
   "actionable": true,
-  "generated_at": "2026-06-23T06:47:14.209466+00:00",
+  "generated_at": "2026-06-23T12:09:46.534221+00:00",
   "state_asof": "2026-06-23",
   "model": "claude-opus-4-8",
   "regime_read": null,
