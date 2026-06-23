@@ -109,5 +109,20 @@
       "Oil (WTI)"
     ],
     "unstable": []
+  },
+  "regime_radar": {
+    "as_of": "2026-06-23",
+    "dominant": "intervention_risk",
+    "active": [
+      "intervention_risk"
+    ],
+    "intensity": {
+      "carry_unwind": 17.1,
+      "dollar_wrecking_ball": 31.4,
+      "em_crisis_capital_flight": 0,
+      "haven_flight_risk_off": 17.0,
+      "reflation_risk_on": 0,
+      "intervention_risk": 22.4
+    }
   }
 }

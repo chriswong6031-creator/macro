@@ -455,6 +455,134 @@ def test_forex_link_reads_and_degrades():
 
 
 from engine import forex_inputs  # noqa: E402  (used by the calibration test)
+from engine import forex_regime as RG  # noqa: E402
+
+
+# --------------------------------------------------------------------------- #
+# FX Stress & Regime Radar (engine/forex_regime.py)
+# --------------------------------------------------------------------------- #
+def test_regime_z_causal_excludes_t():
+    """_z_causal moments are shift(1)-ed: a spike at the LAST bar cannot change z at
+    any earlier bar (strictly leak-free)."""
+    idx = _idx(420)
+    rng = np.random.default_rng(0)
+    g = pd.Series(rng.normal(0, 1, len(idx)), index=idx)
+    z1 = RG._z_causal(g, 252, 60)
+    g2 = g.copy()
+    g2.iloc[-1] += 50.0
+    z2 = RG._z_causal(g2, 252, 60)
+    a, b = z1.iloc[:-1], z2.iloc[:-1]
+    m = a.notna() & b.notna()
+    assert m.any() and np.allclose(a[m].values, b[m].values)
+
+
+def test_regime_forward_label_leak_free():
+    """_fwd_drawdown looks only into (t, t+N]; the current bar is excluded and the last
+    N bars have no realized window (-> NaN via _mask_tail)."""
+    idx = _idx(100)
+    s = pd.Series(np.ones(len(idx)), index=idx)
+    s.iloc[60] = 0.5                                  # a one-day -50% dip at t=60
+    dd = RG._fwd_drawdown(s, 5)
+    assert dd.iloc[59] < -0.4                         # window t60..t64 sees the dip
+    assert dd.iloc[55] < -0.4                         # window t56..t60 sees the dip
+    assert dd.iloc[54] > -0.4                         # window t55..t59 excludes t60
+    assert dd.iloc[60] > -0.4                         # the dip is the CURRENT denominator, not a forward drawdown
+    y = RG._mask_tail(dd <= -0.4, s, 5)
+    assert pd.isna(y.iloc[-1]) and pd.isna(y.iloc[-4])  # last N bars unrealized
+    assert y.iloc[59] == 1.0 and y.iloc[54] == 0.0
+
+
+def test_regime_probability_wilson_neff_semantics():
+    """n_eff == n_raw/N; Wilson CI brackets p_cond within [0,1]; conditioning on high
+    intensity lifts the rate vs the unconditional base (by construction)."""
+    idx = _idx(2200)
+    rng = np.random.default_rng(1)
+    inten = pd.Series(rng.uniform(0, 1, len(idx)), index=idx)
+    y = (rng.uniform(0, 1, len(idx)) < inten * 0.5).astype(float)
+    y.iloc[-10:] = np.nan
+    inten.iloc[-1] = 0.3                              # moderate -> large conditional set, status ok
+    p = RG.scenario_probability(inten, y, 10, n_min=9)
+    assert p["status"] == "ok"
+    assert abs(p["n_eff"] - round(p["n_raw"] / 10, 1)) < 0.11
+    assert 0 <= p["wilson_lo"] <= p["p_cond"] <= p["wilson_hi"] <= 1
+    assert 0 <= p["base_rate"] <= 1
+    assert p["p_cond"] >= p["base_rate"] - 0.03      # positive (or ~0) lift by construction
+    assert isinstance(p["ci_separated"], bool)
+
+
+def test_regime_probability_suppression_statuses():
+    """n_raw<=2 -> 'unprecedented'; all-NaN intensity -> 'building'; the % is suppressed."""
+    idx = _idx(2200)
+    rng = np.random.default_rng(2)
+    inten = pd.Series(rng.uniform(0, 1, len(idx)), index=idx)
+    y = pd.Series((rng.uniform(0, 1, len(idx)) < 0.1).astype(float), index=idx)
+    y.iloc[-20:] = np.nan
+    inten.iloc[-1] = 5.0                              # above all history -> n_raw<=2
+    p = RG.scenario_probability(inten, y, 20)
+    assert p["status"] == "unprecedented" and p["p_cond"] is None
+    p2 = RG.scenario_probability(pd.Series(np.nan, index=idx), y, 20)
+    assert p2["status"] == "building"
+
+
+def test_regime_wilson_bounds():
+    lo, hi = RG._wilson(0.5, 20)
+    assert 0 <= lo < 0.5 < hi <= 1
+    nan_lo, _ = RG._wilson(0.5, 0)                    # n<=0 -> NaN, never crashes
+    assert nan_lo != nan_lo
+
+
+def test_regime_never_scored_isolation():
+    """The radar is display-only: the scored engines must not import forex_regime."""
+    import inspect
+    from engine import forex_conviction, forex_scorecards
+    for mod in (forex_conviction, forex_scorecards):
+        assert "forex_regime" not in inspect.getsource(mod)
+
+
+def test_regime_end_to_end_real_store():
+    """Full radar on the real store (skips if empty): bounded intensities, valid
+    probability statuses, the active gate matches min_legs, and dol<300 -> {}."""
+    cfg = config.load()["forex"]
+    inputs = forex_inputs.load_all(cfg)
+    if not inputs:
+        return
+    res = FS.compute_all(inputs, cfg)
+    dol = res.get("_dollar")
+    if dol is None or dol.empty:
+        return
+    drivers = dict(next(iter(inputs.values()))["drivers"])
+    reg = RG.fx_stress_regime(res, dol, drivers, cfg)
+    assert reg and len(reg["scenarios"]) >= 5
+    for s in reg["scenarios"]:
+        assert 0 <= s["intensity_today"] <= 100
+        assert s["active"] == (s["n_fired"] >= s["min_legs"])    # gate is exactly min_legs
+        assert s["prob"]["status"] in ("ok", "insufficient", "unprecedented", "building")
+        if s["prob"]["status"] == "ok":
+            assert s["prob"]["n_eff"] == round(s["prob"]["n_raw"] / s["prob"]["N"], 1)
+        for leg in s["fired_legs"]:
+            assert leg["value"] is None or -1 <= leg["value"] <= 1
+    kin = RG.fx_kinematics_table(res, drivers, cfg)
+    assert kin and len(kin["rows"]) >= 5
+    assert all(r["vel_z"] is None or np.isfinite(r["vel_z"]) for r in kin["rows"])
+    assert RG.fx_stress_regime(res, dol.iloc[:50], drivers, cfg) == {}   # too few rows -> {}
+
+
+def test_regime_missing_drivers_degrades():
+    """Dropping MOVE / EM_OAS / EEM / VIX / SPY still returns scenarios (legs
+    renormalize over the present ones); never raises."""
+    cfg = config.load()["forex"]
+    inputs = forex_inputs.load_all(cfg)
+    if not inputs:
+        return
+    res = FS.compute_all(inputs, cfg)
+    dol = res.get("_dollar")
+    if dol is None or dol.empty:
+        return
+    drivers = dict(next(iter(inputs.values()))["drivers"])
+    for k in ("move", "em_oas", "eem", "vix", "spy"):
+        drivers.pop(k, None)
+    reg = RG.fx_stress_regime(res, dol, drivers, cfg)
+    assert reg and reg["scenarios"]
 
 
 if __name__ == "__main__":
@@ -472,7 +600,11 @@ if __name__ == "__main__":
                test_strength_meter_zero_sum_and_usd, test_transmission_known_inverse,
                test_transmission_flipping_flag, test_scorecards_finite_and_maxdd_nonpositive,
                test_dollar_desk_assembles_gracefully, test_haven_basket_is_carry_mirror,
-               test_calibrate_dollar_reer_leg, test_forex_link_reads_and_degrades]:
+               test_calibrate_dollar_reer_leg, test_forex_link_reads_and_degrades,
+               test_regime_z_causal_excludes_t, test_regime_forward_label_leak_free,
+               test_regime_probability_wilson_neff_semantics, test_regime_probability_suppression_statuses,
+               test_regime_wilson_bounds, test_regime_never_scored_isolation,
+               test_regime_end_to_end_real_store, test_regime_missing_drivers_degrades]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all forex engine tests passed")
