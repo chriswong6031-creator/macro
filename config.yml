@@ -2435,6 +2435,34 @@ narrative_brain:
   rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
 
 # =============================================================================
+# White House Watch — primary-source policy monitor + Claude-Opus alert desk
+# (engine/whitehouse_feed.py + engine/whitehouse_brain.py + scripts/build_whitehouse.py).
+# LEAF · CONTEXT-ONLY · DEGRADE-NEVER-RAISE. The hourly `whitehouse-sentinel` workflow
+# polls the White House RSS feeds; each NEW announcement is judged by the Opus brain for
+# market significance. An activated alert drives the site-wide ticker banner
+# (site/wh_banner.json → templates/wh_banner.js) and a report on site/whitehouse.html
+# (implications · sector head/tailwinds · the names most exposed). Nothing here feeds a
+# score, size or allocation. AUTH order: Claude-Code OAuth (Opus) → ANTHROPIC_API_KEY
+# (Opus) → DeepSeek reasoning (so CI still runs without the subscription token).
+# =============================================================================
+whitehouse:
+  enabled: true                   # MASTER SWITCH — no-op anyway without a provider
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # the "Opus brain via the CLI" (Bearer + oauth beta)
+  api_key_env: ANTHROPIC_API_KEY             # direct-API fallback
+  deepseek_key_env: DEEPSEEK_API_KEY         # last-resort reasoning fallback (CI without the token)
+  deepseek_base_url: https://api.deepseek.com/anthropic
+  opus_model: claude-opus-4-8     # the significance + report model
+  deepseek_model: deepseek-v4-pro
+  provider_order: [oauth, anthropic, deepseek]
+  max_tokens: 4000
+  min_importance: 60              # importance floor (0-100) below which NO banner activates
+  max_banner_days: 7             # hard ceiling on how long a banner stays live
+  max_tickers: 8                 # cap named beneficiaries per alert (honesty over breadth)
+  max_sectors: 6
+  max_new_per_run: 6             # cap brain calls per sentinel run (cost guard)
+  max_banner_alerts: 6           # cap LIVE banners on the scrolling ticker (readability)
+
+# =============================================================================
 # Alt-Data Brain — Claude-Opus convergence analyst for the Signal Intelligence desk
 # (engine/altdata_brain.py). Reads the deterministic weighted-convergence substrate +
 # the influence graph as an EVIDENCE PACK and emits an ACTIONABLE scored axis (action /
