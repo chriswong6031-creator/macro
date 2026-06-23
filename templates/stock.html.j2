@@ -482,6 +482,19 @@
   #panel_earn .earn-fwd-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
   #panel_earn .earn-fwd-row { display:flex; flex-wrap:wrap; gap:8px; font-size:13px; align-items:center; }
   #panel_earn .earn-fwd-row .dot { color:var(--muted); }
+  /* GEX — vol "hole" strip */
+  #panel_gex .gex-hole { margin:8px 0 2px; font-size:12.5px; color:var(--text);
+    background:var(--panel2); border-radius:10px; padding:8px 12px; }
+  #panel_gex .gex-hole b { color:var(--warn); }
+  /* Super-investors — fund grade + per-row as-of + holders trend sparkline */
+  #panel_smartmoney .sm-grade { display:inline-block; font-size:10px; font-weight:800; padding:0 5px; border-radius:5px; vertical-align:middle; }
+  #panel_smartmoney .sm-gA { color:var(--up); background:color-mix(in srgb,var(--up) 16%,transparent); }
+  #panel_smartmoney .sm-gB { color:var(--warn); background:color-mix(in srgb,var(--warn) 16%,transparent); }
+  #panel_smartmoney .sm-gC, #panel_smartmoney .sm-gD, #panel_smartmoney .sm-gF { color:var(--muted); background:var(--panel2); }
+  #panel_smartmoney .sm-asof { font-size:11px; color:var(--muted); }
+  #panel_smartmoney .sm-trend { display:flex; align-items:center; gap:8px; font-size:12.5px; margin:0 0 11px; flex-wrap:wrap; }
+  #panel_smartmoney .sm-spark { width:66px; height:18px; flex:none; }
+  #panel_smartmoney .sm-spark polyline { fill:none; stroke:var(--link); stroke-width:1.5; }
 {% include "_stock_decision.css.j2" %}
 </style>
 </head>
@@ -643,7 +656,7 @@
     </div>
 
     <div class="panel" id="panel_flow" style="display:none">
-      <h2>🐳 {{ t('Institutional flow — funds buying / selling this', '机构资金流 — 哪些基金在买卖它') }}
+      <h2>🐳 {{ t('Thematic-fund flow — curated ETF baskets', '主题基金流 — 精选ETF篮子') }}
         {{ help("Which curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK) have been accumulating or trimming this stock, with mechanical creation/redemption flow and price moves stripped out. Conviction = the percentage POINTS of the fund's weight the manager actually committed. A real add from a sector specialist is a meaningful vote of confidence; pair it with the analyst & filings panels above. From the 🐳 Real fund moves board.",
           "哪些精选的主题／行业基金（SPDR 板块、Global X）与主动管理基金（ARK）一直在增持或减持该股，已剔除机械性的申购／赎回资金流与价格变动。信念 = 经理人实际投入的基金权重百分点。来自板块专业基金的真实增持是有意义的信心投票；请与上方的分析师与申报面板结合参考。数据来自 🐳 基金真实动作 看板。") }}</h2>
       <div id="r_flow"></div>
@@ -1688,13 +1701,24 @@
       gchip(lz('regime', '体制'), '<span class="' + rc + '">' + reg + '</span>'),
       gchip(lz('net GEX', '净GEX'), '<span class="' + ((g.net_gex_bn || 0) >= 0 ? 'pos' : 'neg') + '">' + (g.net_gex_bn >= 0 ? '+' : '') + gx(g.net_gex_bn, 2) + ' $bn</span>'),
       gchip(lz('gamma flip', 'Gamma翻转'), gx(g.gamma_flip, 2) + (g.dist_to_flip_pct != null ? ' <span class="muted">(' + (g.dist_to_flip_pct >= 0 ? '+' : '') + gx(g.dist_to_flip_pct, 1) + '%)</span>' : '')),
-      gchip(lz('magnets', '磁吸'), '↑ ' + gx(g.magnet_up, 2) + ' · ↓ ' + gx(g.magnet_down, 2)),
+      gchip(lz('walls', '墙位'), (g.call_wall != null || g.put_wall != null)
+        ? '<span class="pos">↑ ' + gx(g.call_wall, 0) + '</span> · <span class="neg">↓ ' + gx(g.put_wall, 0) + '</span>' : LF('na')),
       gchip('IV30', g.iv30 != null ? gx(g.iv30 * 100, 1) + '%' : LF('na')),
-      gchip(lz('put/call OI', '认沽/认购OI'), gx(g.put_call_oi_ratio, 2))
+      gchip(lz('25Δ skew', '25Δ偏斜'), g.rr_25d != null
+        ? '<span class="' + (g.rr_25d > 0 ? 'pos' : 'neg') + '">' + (g.rr_25d > 0 ? '+' : '') + gx(g.rr_25d, 1) + '</span>'
+        : (g.put_call_oi_ratio != null ? gx(g.put_call_oi_ratio, 2) : LF('na')))
     ];
+    // vol "hole" — price pinned between the call/put walls (mean-revert zone)
+    var hole = '';
+    if (g.vol_hole && g.vol_hole.state === 'IN_HOLE' && g.vol_hole.lower != null) {
+      var vh = g.vol_hole;
+      hole = '<div class="gex-hole">⊟ ' + lz('Pinned in a vol “hole” between walls', '被夹在波动“空洞”墙位之间') +
+        ' <b>' + Math.round(vh.lower) + '</b>–<b>' + Math.round(vh.upper) + '</b>' +
+        (vh.compression ? ' <span class="muted">· ' + esc(vh.compression) + '</span>' : '') + '</div>';
+    }
     var conf = (g.tier === 'thin_chain' || (g.top_oi_share != null && g.top_oi_share > 0.35))
       ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-laggard">' + lz('sign-assumption: low confidence', '符号假设：低置信') + '</span></div>' : '';
-    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + conf +
+    el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + hole + conf +
       '<p class="srcline">' + lz('Dealer-gamma LEVELS from Cboe delayed chains — daily, not live flow. A vol-regime + levels map (long-gamma → pins/mean-reverts; short-gamma → trends/amplifies), NOT directional and NOT in this stock’s score. The dealer long-call/short-put sign is an assumption — fragile for single names.',
         '来自 Cboe 延迟期权链的做市商Gamma价位 — 每日、非实时流动。波动率体制+价位地图，无方向性且不计入本股评分。做市商符号为假设，对个股脆弱。') + '</p>';
     show('panel_gex', true);
@@ -1759,12 +1783,24 @@
       var pct = (h.pct_portfolio == null) ? '—' : Number(h.pct_portfolio).toFixed(1) + '%';
       var chg = (h.shares_change_pct == null) ? (h.action === 'new' ? lz('new', '新') : '—')
         : (h.shares_change_pct >= 0 ? '+' : '') + Number(h.shares_change_pct).toFixed(0) + '%';
-      return '<tr><td><b>' + h.fund + '</b> <span class="muted">' + (h.fund_name || '') + '</span></td>' +
-        '<td' + col + '>' + dir + '</td>' +
+      var grade = h.fund_grade ? ' <span class="sm-grade sm-g' + esc(h.fund_grade) + '" title="' + lz('backtest fund-quality grade', '回测基金质量评级') + '">' + esc(h.fund_grade) + '</span>' : '';
+      var asof = h.period_end ? ' <span class="sm-asof">· ' + esc(h.period_end) + '</span>' : '';
+      return '<tr><td><b>' + h.fund + '</b>' + grade + ' <span class="muted">' + (h.fund_name || '') + '</span></td>' +
+        '<td' + col + '>' + dir + asof + '</td>' +
         '<td' + R + '><b>' + pct + '</b></td>' +
         '<td class="muted"' + R + '>' + chg + '</td></tr>';
     }).join('');
-    el('r_smartmoney').innerHTML = head + vipline + '<table>' + th + rows + '</table>' +
+    var trendLine = '';
+    if (s.trend && s.trend.holders_series && s.trend.holders_series.length >= 2) {
+      var tr = s.trend, hs = tr.holders_series, mx = Math.max.apply(null, hs), mn = Math.min.apply(null, hs), TW = 66, TH = 18;
+      var tpts = hs.map(function (v, i) { var x = (i / (hs.length - 1)) * TW; var y = mx === mn ? TH / 2 : TH - 2 - ((v - mn) / (mx - mn)) * (TH - 4); return x.toFixed(0) + ',' + y.toFixed(0); }).join(' ');
+      var tdir = tr.direction === 'accumulating' ? 'pos' : tr.direction === 'distributing' ? 'neg' : 'muted';
+      trendLine = '<div class="sm-trend"><svg viewBox="0 0 ' + TW + ' ' + TH + '" class="sm-spark" preserveAspectRatio="none"><polyline points="' + tpts + '"/></svg>' +
+        '<b class="' + tdir + '">' + lz(tr.direction || '', tr.direction === 'accumulating' ? '增持中' : tr.direction === 'distributing' ? '减持中' : '') + '</b> ' +
+        '<span class="muted">' + (tr.value_change_pct != null ? (tr.value_change_pct > 0 ? '+' : '') + Math.round(tr.value_change_pct) + '% $ · ' : '') +
+        tr.holders_first + '→' + tr.holders_last + ' ' + lz('holders', '持有人') + ' / ' + tr.n_quarters + 'Q</span></div>';
+    }
+    el('r_smartmoney').innerHTML = head + vipline + trendLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
         '13F-HR holdings are filed quarterly with a ~45-day lag — a stale, partial picture of long-only US equity stakes ≥ $100M, with no shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines may be missing. Context on who holds this, NOT a buy list or a real-time signal.',
         '13F-HR 持仓为季度申报，约有 45 天滞后 —— 仅为美股多头持仓（≥1亿美元）的陈旧且不完整快照，不含空头、期权细节或非美持仓。CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。') + '</p>';
