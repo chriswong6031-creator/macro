@@ -674,6 +674,20 @@ def test_rank_note_fires_on_high_band_mid_selection():
     assert p["notes"] and any(n["kind"] == "rank" for n in p["notes"])
 
 
+def test_rank_note_fires_when_high_rank_but_buy_blocked():
+    # the NVDA "95 / wait for a base" case: a top-of-board RANK with STRONG selection (high sel_z)
+    # but the buy is BLOCKED by cycle/extension. The rank-honesty note must STILL fire (it used to be
+    # suppressed for high-sel-z names — exactly the ones that most look like a 95/100 buy).
+    rec = {"revision_z": 3.0,                       # strong selection -> high sel_z + (with ctx) high band
+           "ladder": {"state": "TOP WATCH", "entry": {"urgency": "hold"}},
+           "tech": {"off_52w_high_pct": -2.0, "rsi14": 72.0}}
+    p = ss.conviction_profile(rec, "US", ctx={"score_pct": 95})
+    assert p["band"] == "high" and ss._tier(p["axes"]["selection"]["z"]) == "high"
+    assert p["axes"]["entry"]["blocked"] is True
+    rank = [n for n in (p["notes"] or []) if n["kind"] == "rank"]
+    assert rank and "BLOCKS a buy" in rank[0]["en"]
+
+
 def test_anticipation_note_fires_on_favorable_cone_muted_score():
     # the AVGO case: favourable forward cone but a muted conviction score -> surface the asymmetry.
     rec = {"alpha": 0.3,
