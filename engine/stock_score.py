@@ -1168,17 +1168,22 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
 
     # --- honesty NOTES (AVGO/NVDA alignment): make the two places a user gets confused explicit.
     notes: list[dict] = []
-    # (1) the SCORE is a within-board PERCENTILE rank; the VERDICT is an absolute-tier read. When a
-    # name ranks top-of-board (band high/constructive) but the verb isn't "high-conviction" (its
-    # selection z hasn't cleared the absolute bar — the NVDA 97-vs-"Constructive" case), say so, so
-    # "97" is never misread as an absolute 97/100 conviction.
-    if band["band"] in ("high", "constructive") and _tier(sel_z) not in ("high",) \
-            and score is not None:
+    # (1) the SCORE is a within-board PERCENTILE rank; the VERDICT is an absolute-tier read. Fire a
+    # caveat when a top-of-board rank could be misread as an absolute-conviction BUY — EITHER its
+    # selection z hasn't cleared the absolute bar (the 97-vs-"Constructive" case) OR the buy is
+    # outright BLOCKED by cycle/extension (a high-ranked leader on the wrong tape — "wait for a
+    # base", e.g. NVDA 95 / "wait for a base"). The blocked case is the one that previously slipped
+    # through: the note was SUPPRESSED for high-selection-z names, i.e. exactly the strongest names
+    # that most look like a 95/100 buy while the engine is actually saying wait.
+    if band["band"] in ("high", "constructive") and score is not None \
+            and (_tier(sel_z) not in ("high",) or blocked):
         notes.append({
             "kind": "rank",
             "en": "Score is a within-board percentile RANK (top of today's board), not an absolute "
-                  "0-100 conviction — the verdict reflects the absolute read.",
-            "zh": "评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数。"})
+                  "0-100 conviction — the verdict reflects the absolute read"
+                  + (", which here BLOCKS a buy (wait for a base)." if blocked else "."),
+            "zh": "评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数"
+                  + ("，此处结论为暂不买入（等待筑底）。" if blocked else "。")})
     # (2) the forward risk-cone is favourable but the conviction score is muted — surface the
     # 'high upside / low downside' the factor axes don't capture (the AVGO complaint).
     _ah = ((rec.get("anticipation") or {}).get("horizons") or {}).get("medium") or {}
