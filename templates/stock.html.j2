@@ -470,6 +470,18 @@
   #r_multiyear .fc-v { fill:var(--muted); font-size:9px; text-anchor:middle; }
   #r_multiyear .fc-x { fill:var(--muted); font-size:9px; text-anchor:middle; }
   @media (max-width:620px){ #r_multiyear .fc-grid { grid-template-columns:1fr; } }
+  /* Factor fingerprint — standout headline */
+  #panel_fac .fac-standout { font-size:13.5px; margin:0 0 13px; line-height:1.55; }
+  #panel_fac .fac-standout .fs-lbl { color:var(--muted); font-weight:600; }
+  #panel_fac .fac-standout .dot { color:var(--muted); margin:0 2px; }
+  /* Earnings — event bar + beat streak + forward revisions */
+  #panel_earn .earnhdr { font-size:13px; margin-bottom:8px; }
+  #panel_earn .earndays { font-weight:700; color:var(--up); }
+  #panel_earn .earn-chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:8px 0; font-size:13px; }
+  #panel_earn .earn-fwd { margin-top:10px; background:var(--panel2); border-radius:11px; padding:11px 13px; }
+  #panel_earn .earn-fwd-h { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+  #panel_earn .earn-fwd-row { display:flex; flex-wrap:wrap; gap:8px; font-size:13px; align-items:center; }
+  #panel_earn .earn-fwd-row .dot { color:var(--muted); }
 {% include "_stock_decision.css.j2" %}
 </style>
 </head>
@@ -597,6 +609,7 @@
       <h2>🧬 {{ t('Factor fingerprint', '因子指纹') }}
         {{ help('Where this name sits on the canonical smart-beta factors versus the S&P 1500 cross-section (winsorized z-scores; 0 = average, +2 = top of the pack, bars right of centre = attractive). These are RELATIVE RANKS lagged to the latest filing — context, not a validated alpha and not a quality verdict.',
           '该标的在标普1500横截面上各经典smart-beta因子的位置（缩尾z分数；0＝平均，+2＝领先，条形位于中线右侧＝有吸引力）。这些是滞后至最新财报的相对排名——仅供参考，并非已验证的超额收益或质量结论。') }}</h2>
+      <div id="r_fac_standout" class="fac-standout"></div>
       <div class="facwrap">
         <div id="r_radar" class="radarbox"></div>
         <div id="r_zbars" class="zbars"></div>
@@ -1172,44 +1185,35 @@
     } else show('panel_aq', false);
 
     if (d.earnings) {
-      var ev = d.earnings, eh = '';
+      var ev = d.earnings, eh = '', rv2 = d.revisions || {};
+      // EVENT BAR — countdown to the next report, or fall back to the last reported quarter.
       if (ev.next_date) {
         var days = Math.ceil((new Date(ev.next_date + 'T00:00:00') - new Date()) / 86400000);
-        var when = days < 0 ? lz('reported','已公布') : days === 0 ? lz('today','今天')
-                 : (lz('in','还有') + ' ' + days + lz('d','天'));
+        var when = days < 0 ? lz('reported','已公布') : days === 0 ? lz('today','今天') : (lz('in','还有') + ' ' + days + lz('d','天'));
         var tm = ev.next_time ? ' · ' + ev.next_time : '';
         var est = ev.eps_forecast != null ? ' · ' + lz('est EPS','预期EPS') + ' $' + ev.eps_forecast : '';
-        eh += '<div class="earnhdr"><span class="earndays">' + when + '</span> <span class="muted">' +
-              lz('next earnings','下次财报') + ' ' + ev.next_date + tm + est + '</span></div>';
+        eh += '<div class="earnhdr"><span class="earndays">' + when + '</span> <span class="muted">' + lz('next earnings','下次财报') + ' ' + ev.next_date + tm + est + '</span></div>';
+      } else if (ev.surprises && ev.surprises.length) {
+        eh += '<div class="earnhdr"><span class="muted">' + lz('Next date TBD · last reported','下次待定 · 最近一期') + ' ' + esc(ev.surprises[0].qtr || '') + '</span></div>';
       }
+      // BEAT STREAK (+ optional SUE)
       if (ev.summary) {
-        var su = ev.summary, bc = (su.beats >= Math.ceil(su.total*0.75)) ? 'var(--up)'
-                : (su.beats <= Math.floor(su.total*0.25)) ? 'var(--down)' : 'var(--muted)';
+        var su = ev.summary, bc = (su.beats >= Math.ceil(su.total*0.75)) ? 'var(--up)' : (su.beats <= Math.floor(su.total*0.25)) ? 'var(--down)' : 'var(--muted)';
         var strk = su.streak >= 2 ? ' · ' + su.streak + lz('-streak','连') : '';
-        eh += '<div style="margin:6px 0"><span class="hchip" style="color:'+bc+';background:color-mix(in srgb,'+bc+' 14%,transparent)">' +
-              lz('beat','超预期') + ' ' + su.beats + '/' + su.total + strk + '</span> <span class="muted">' +
-              lz('avg surprise','平均超预期') + ' ' + (su.avg_surprise > 0 ? '+' : '') + su.avg_surprise + '%</span></div>';
+        eh += '<div class="earn-chips"><span class="hchip" style="color:'+bc+';background:color-mix(in srgb,'+bc+' 14%,transparent)">' + lz('beat','超预期') + ' ' + su.beats + '/' + su.total + strk + '</span> <span class="muted">' + lz('avg surprise','平均超预期') + ' ' + (su.avg_surprise > 0 ? '+' : '') + su.avg_surprise + '%</span>';
+        if (ev.sue_z != null) { var sz = ev.sue_z, sc3 = sz>=0.5?'var(--up)':sz<=-0.5?'var(--down)':'var(--muted)';
+          eh += ' <span class="hchip" title="'+esc(LF('suehelp'))+'" style="color:'+sc3+';background:color-mix(in srgb,'+sc3+' 14%,transparent)">'+lz('SUE','SUE')+' '+(sz>0?'+':'')+sz.toFixed(2)+'</span>'; }
+        eh += '</div>';
       }
-      if (ev.sue_z != null) {
-        // SUE earnings-momentum z — the validated post-earnings-drift leg (factors.json
-        // table 'sue'; survives the leak-free FDR scorecard). title via LF() not the t()
-        // macro — a span pair would break the attribute.
-        var sz = ev.sue_z;
-        var sc = sz >= 0.5 ? 'var(--up)' : sz <= -0.5 ? 'var(--down)' : 'var(--muted)';
-        eh += '<div style="margin:6px 0"><span class="hchip" title="' + esc(LF('suehelp')) +
-              '" style="color:'+sc+';background:color-mix(in srgb,'+sc+' 14%,transparent)">' +
-              lz('earnings momentum (SUE)','盈利动量 (SUE)') + ' ' + (sz > 0 ? '+' : '') + sz.toFixed(2) +
-              '</span> <span class="muted">' + LF('suevs') + '</span></div>';
-      }
-      if (ev.surprises && ev.surprises.length) {
-        var er = ev.surprises.map(function (s) {
-          var sp = s.surprise_pct;
-          return '<tr><td>' + (s.qtr || '') + '</td><td>' + (s.eps != null ? '$'+s.eps : '—') +
-                 '</td><td>' + (s.consensus != null ? '$'+s.consensus : '—') + '</td><td class="' +
-                 (sp > 0 ? 'pos' : sp < 0 ? 'neg' : '') + '">' + (sp != null ? (sp>0?'+':'')+sp+'%' : '—') + '</td></tr>';
-        }).join('');
-        eh += '<table class="earntbl"><tr><th>' + lz('quarter','季度') + '</th><th>' + lz('actual','实际') +
-              '</th><th>' + lz('est','预期') + '</th><th>' + lz('surprise','超预期') + '</th></tr>' + er + '</table>';
+      // FORWARD REVISIONS — where consensus is heading (the actionable, forward-looking part).
+      if (rv2 && (rv2.n_analysts != null || rv2.est_chg_30d != null)) {
+        var _esg = function(n,suf){ if(n==null)return ''; var c=n>0?'pos':n<0?'neg':'muted'; return '<b class="'+c+'">'+(n>0?'+':'')+(Math.round(n*10)/10)+(suf||'')+'</b>'; };
+        var fr = [];
+        if (rv2.n_analysts != null) fr.push('<span>' + Math.round(rv2.n_analysts) + ' ' + lz('analysts','分析师') + '</span>');
+        if (rv2.net_up_30d != null) fr.push('<span>' + lz('net upgrades','净上调') + ' ' + _esg(rv2.net_up_30d) + ' <span class="muted">(30d)</span></span>');
+        if (rv2.est_chg_30d != null) fr.push('<span>' + lz('est drift','预期漂移') + ' ' + _esg(rv2.est_chg_30d,'%') + ' <span class="muted">(30d)</span></span>');
+        if (rv2.est_chg_90d != null) fr.push('<span>' + _esg(rv2.est_chg_90d,'%') + ' <span class="muted">(90d)</span></span>');
+        eh += '<div class="earn-fwd"><div class="earn-fwd-h">' + lz('Where estimates are heading','预期走向') + '</div><div class="earn-fwd-row">' + fr.join(' <span class="dot">·</span> ') + '</div></div>';
       }
       if (eh) { el('r_earn').innerHTML = eh; show('panel_earn', true); }
       else show('panel_earn', false);          // no data → hide, don't show a "coming soon" stub
@@ -1223,6 +1227,24 @@
         if (z != null) zb.push(zbar(lz(ZL[k][0], ZL[k][1]), z));
       });
       el('r_zbars').innerHTML = zb.join('');
+      // STANDOUT: name the most extreme factor tilts by percentile vs the S&P 1500 cross-section.
+      function _phi(z){ var t=1/(1+0.2316419*Math.abs(z)), dd=0.3989423*Math.exp(-z*z/2),
+        pp=dd*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); return z>0?1-pp:pp; }
+      function _pw(z){ return 'P'+Math.max(1,Math.min(99,Math.round(_phi(z)*100))); }
+      var _legs = fac.legs || {};
+      var _ext = Object.keys(ZL).filter(function(k){return _legs[k]!=null;})
+        .map(function(k){return {k:k, z:_legs[k]};})
+        .sort(function(a,b){return Math.abs(b.z)-Math.abs(a.z);})
+        .filter(function(o){return Math.abs(o.z)>=1.5;}).slice(0,3);
+      if (_ext.length) {
+        var _parts = _ext.map(function(o){
+          var cls = o.z>0 ? 'pos' : 'neg';
+          return '<b class="'+cls+'">'+lz(ZL[o.k][0],ZL[o.k][1])+' '+_pw(o.z)+'</b>';
+        });
+        el('r_fac_standout').innerHTML = '<span class="fs-lbl">'+lz('Stands out','突出之处')+':</span> '+_parts.join(' <span class="dot">·</span> ');
+      } else {
+        el('r_fac_standout').innerHTML = '<span class="muted">'+lz('No extreme factor tilt — a balanced profile vs the index.','无极端因子倾斜——相对指数画像均衡。')+'</span>';
+      }
       var sc = fac.fundamental_score;
       el('r_fac_score').innerHTML = (sc == null) ? ''
         : (LF('scorelab') + ': <b>' + (sc > 0 ? '+' : '') + sc + '</b> / ±100 — ' + LF('compos') +
