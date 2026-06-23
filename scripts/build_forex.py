@@ -507,6 +507,20 @@ def main() -> int:
     # Each degrades to {} on any failure (the page renders without the section).
     from engine import forex_dollar, forex_transmission, forex_scorecards
     drivers = next(iter(inputs.values()))["drivers"] if inputs else {}
+    # fold any radar-only drivers (e.g. the MOVE bond-vol index) into the shared dict
+    rcfg = cfg.get("regime", {})
+    if rcfg.get("enabled") and rcfg.get("add_drivers"):
+        for nm, spec in rcfg["add_drivers"].items():
+            if nm in drivers:
+                continue
+            try:
+                df = store.read(spec[0], spec[1])
+                if df is not None and not df.empty:
+                    s = pd.to_numeric(df.iloc[:, 0], errors="coerce")
+                    s.index = pd.to_datetime(s.index)
+                    drivers[nm] = s[~s.index.duplicated(keep="last")].sort_index().dropna().rename(nm)
+            except Exception as e:  # noqa: BLE001
+                log.warning("regime driver %s load failed (%s)", nm, e)
     try:
         desk = forex_dollar.dollar_desk(dol, drivers, _extra_inputs(), cfg)
         # attach the calibrated REER-value verdict to the valuation leg (display-only
@@ -543,6 +557,22 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("scorecards failed (%s)", e)
         scorecards = []
+
+    # NEW — FX Stress & Regime Radar: read the JOINT currency configuration (velocity +
+    # level) into named scenarios + an empirical conditional base rate. Display-only;
+    # each call degrades to {} so the page renders without the section on any failure.
+    from engine import forex_regime
+    try:
+        regime = forex_regime.fx_stress_regime(results, dol, drivers, cfg) if rcfg.get("enabled") else {}
+    except Exception as e:  # noqa: BLE001 — radar must never break the page
+        log.warning("forex_regime stress failed (%s)", e)
+        regime = {}
+    try:
+        kinematics = forex_regime.fx_kinematics_table(results, drivers, cfg) if rcfg.get("enabled") else {}
+    except Exception as e:  # noqa: BLE001
+        log.warning("forex_regime kinematics failed (%s)", e)
+        kinematics = {}
+
     real_rate_chart = chart_real_rate(drivers)
 
     # daily alert timeline (deterministic, recomputed each build; no intraday for FX)
@@ -568,6 +598,7 @@ def main() -> int:
         C=C, as_of=as_of, built=built, cal_span=cal_span,
         dollar=dollar, desk=desk, real_rate_chart=real_rate_chart,
         transmission=transmission, strength=strength, scorecards=scorecards,
+        regime=regime, kinematics=kinematics,
         pairs=pairs, sections=sections, carry_table=ctable, cot_ok=cot_ok,
         timeline=timeline, timeline_days=acfg["timeline_days"], n_alerts=len(recent_events))
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -586,7 +617,16 @@ def main() -> int:
               # NEW — the deepened dollar read, so the dollar feeds the rest of the
               # site (cross_asset_confirm / master_brain / hub card / signal archive).
               "dollar_desk": _desk_latest(desk),
-              "transmission": _transmission_latest(transmission)}
+              "transmission": _transmission_latest(transmission),
+              # NEW — compact FX stress-radar STATE (named scenarios + live intensity).
+              # Deliberately NO probabilities here (display-only; never a downstream
+              # signal). Under "regime_radar" so it can't collide with the top-level
+              # "regime" dollar-smile string above.
+              "regime_radar": ({"as_of": regime.get("as_of"), "dominant": regime.get("dominant"),
+                                "active": [s["key"] for s in regime.get("scenarios", []) if s.get("active")],
+                                "intensity": {s["key"]: round(s.get("intensity_today") or 0, 1)
+                                              for s in regime.get("scenarios", [])}}
+                               if regime else {})}
     (outdir / "latest.json").write_text(json.dumps(latest, indent=2, default=str))
     return 0
 
