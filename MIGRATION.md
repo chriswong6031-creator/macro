@@ -21,9 +21,11 @@ engine rewrite, no `live.yml` (deliberately rejected — see the arch doc).
 | `worker/quotes.worker.js` (+ `worker/DEPLOY.md`) — Cloudflare quote proxy | ✅ on `main`, **not deployed** |
 | `live:` config block (`config.yml`) | ✅ on `main`, `quotes_worker_url: ""` (dormant) |
 | `scripts/check_live_worker.py` (verifier) | ✅ on `main` |
-| **A scheduler that runs `build_live_overlay.py` intraday** | ❌ **missing** — this is the gap |
-| **Worker deployed + `LIVE_QUOTES_WORKER_URL` set** | ❌ **missing** |
-| **A host for Mastermind (with auth)** | ❌ **missing** |
+| **A scheduler that runs `build_live_overlay.py` intraday** | ❌ **missing** — the gap; addressed by the HK-VPS cron in §4 |
+| `scripts/quotes_server.py` — same-origin, China-reachable quote service (Worker alt) | ✅ **added on this branch** (tested) |
+| Cloudflare Worker deployed + `LIVE_QUOTES_WORKER_URL` set | ❌ infra step (or use the quotes server instead) |
+| Mastermind auth (`app/auth.py`, password gate over UI + API + SSE) | ✅ **added** (committed in the Mastermind repo) |
+| **A host for Mastermind + the fast loop** | ❌ infra — the HK VPS (§4–§5) |
 
 ### Why signals are frozen today
 The static site is rebuilt once/day by `daily.yml` (22:40 UTC). The nightly batch is
@@ -154,12 +156,22 @@ Cloudflare + `workers.dev`). China users get live prices via the HK origin in Ph
    ```
    Then `sudo certbot --nginx -d dash.example.com` for HTTPS. The HK origin is
    reachable from mainland China without ICP.
-6. **China-reachable live prices:** point `live.js` at a same-origin `/quotes`
-   endpoint instead of Cloudflare. Either (a) reverse-proxy the Worker logic via a
-   tiny FastAPI route on this box, or (b) accept that overlay.json (refreshed every
-   2 min) already carries prices and let `live.js` use the overlay fallback path
-   (it already does when no Worker URL is set). For China, leave
-   `LIVE_QUOTES_WORKER_URL` **unset** so the browser uses the same-origin overlay.
+6. **China-reachable live prices** — run the same-origin quote micro-service
+   (`scripts/quotes_server.py`, shipped on this branch) instead of relying on the
+   Cloudflare Worker (which the GFW blocks). It mirrors the Worker's wire contract
+   exactly and reuses `engine.live_quotes`, so `live.js` is unchanged:
+   ```cron
+   # behind nginx; restart via systemd in practice
+   @reboot  cd ~/macro && .venv/bin/python -m scripts.quotes_server --host 127.0.0.1 --port 8787
+   ```
+   ```nginx
+   location /quotes { proxy_pass http://127.0.0.1:8787; }
+   ```
+   Then set `config.yml → live.quotes_worker_url` (or the repo var
+   `LIVE_QUOTES_WORKER_URL`) to **your HK origin** (e.g. `https://dash.example.com`)
+   — `live.js` polls `<origin>/quotes` with no Cloudflare dependency. Verify with
+   `python scripts/check_live_worker.py`. (Add a `POLYGON_API_KEY` to this service's
+   env for US real-time; otherwise it serves free Yahoo quotes.)
 
 **Result:** signals visibly update during market hours, served from a China-reachable
 origin, no commit churn.
@@ -168,9 +180,13 @@ origin, no commit churn.
 
 ## 5. Phase 3 — host Mastermind (PRIVATE, auth required)
 
-> ⚠️ **Mastermind currently has NO authentication** (`uvicorn app.main:app`, no login
-> middleware). It manages paper portfolios and an LLM brain that spends tokens. It
-> **must not** go on a public IP unprotected.
+> ✅ **Auth has been added** — `app/auth.py` (shipped) gates the whole app (UI +
+> every `/api` + the SSE stream) behind a single password with an HMAC-signed
+> session cookie. It is **opt-in**: set `MASTERMIND_PASSWORD` to turn it on (unset =
+> disabled, fine for localhost-only). Set it before exposing the box. A bearer token
+> (`MASTERMIND_AUTH_TOKEN`) is available for the snapshot-push / uptime clients.
+> Even so, prefer keeping Mastermind **off the public internet** (localhost + the
+> options below); the password is defence-in-depth, not an invitation to expose it.
 
 1. **Co-locate** with the macro checkout. Mastermind reads the engine + `data/` via
    `vendor/macro`. Locally that's a symlink; on the box point it at `~/macro`:
@@ -181,8 +197,9 @@ origin, no commit churn.
    ```
    (Mastermind has no git remote today — `rsync` it up or add a private remote.)
 2. **Env:** `CLAUDE_CODE_OAUTH_TOKEN` (or `ANTHROPIC_API_KEY` + `BOT_LLM_BACKEND=api`),
-   `QUIVER_USER`/`QUIVER_PASS`. For the `cli` backend, install the `claude` CLI on the
-   box. State is ~10 MB of JSON + `data/scheduler.sqlite` — persist `~/mastermind/data/`.
+   `QUIVER_USER`/`QUIVER_PASS`, and **`MASTERMIND_PASSWORD`** (turns on the auth gate —
+   see `.env.example`). For the `cli` backend, install the `claude` CLI on the box.
+   State is ~10 MB of JSON + `data/scheduler.sqlite` — persist `~/mastermind/data/`.
 3. **Run** under systemd, bound to **localhost** (not 0.0.0.0):
    ```ini
    # /etc/systemd/system/mastermind.service
@@ -198,10 +215,12 @@ origin, no commit churn.
    Its in-process APScheduler already fires the daily books + market-hours fills + the
    snapshot push (which keeps publishing the read-only Mastermind panel to the public
    site).
-4. **Add auth** (pick one):
+4. **Auth** — the **app-level password gate is built in** (`app/auth.py`): set
+   `MASTERMIND_PASSWORD` and it's on. For defence-in-depth add a network gate too:
    - **Tailscale** (simplest for solo use): join the box to your tailnet, reach
      Mastermind at its tailnet IP. Nothing public.
-   - **nginx Basic-Auth** on a separate vhost proxying `127.0.0.1:8000` over HTTPS.
+   - **nginx + HTTPS** vhost proxying `127.0.0.1:8000` (set `MASTERMIND_COOKIE_SECURE=1`
+     so the session cookie is marked Secure behind TLS termination).
    - **Cloudflare Access** in front (non-China admin use is fine).
    The public never gets the controls — only the read-only snapshot it already pushes.
 
