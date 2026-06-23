@@ -526,14 +526,8 @@
       <div id="sv-decision"></div>
       <div id="sv-fingerprint"></div>
       <div id="sv-honesty"></div>
-      <!-- legacy heroes — populated only as a FALLBACK if stockview.js fails to load -->
-      <div id="r_glance" class="glance" style="display:none"></div>
-      <div id="r_conviction" class="conv" style="display:none"></div>
-      <div id="r_verdict" class="verdict" style="display:none"></div>
-      <div id="r_sigstrip" class="sigstrip" style="display:none"></div>
-      <div id="r_macrosens" class="macro-sens" style="display:none"></div>
+      <!-- alt-data convergence — a live deep-context panel (not a fallback) -->
       <div id="r_altdata" class="macro-sens" style="display:none"></div>
-      <div id="r_dtcontra" class="dt-contra" style="display:none"></div>
       <!-- ===== Cycle & timing detail (deep layer, collapsed) ===== -->
       <details class="sv-deep"><summary>{{ t('Cycle &amp; timing detail', '周期与时机详情') }}</summary>
         <div id="r_bc" class="bcbox" style="display:none"></div>
@@ -909,31 +903,7 @@
   // Macro sensitivity chip (engine/stock_macro_sensitivity.py) — rate-beta tier +
   // duration bucket + live-regime head/tailwind + inflation label. Display-only, never
   // scored; every render carries the mandatory single-name-noise caveat.
-  function renderMacroSens(d) {
-    var box = el('r_macrosens'), ms = d.macro_sensitivity;
-    if (!box) return;
-    if (!ms) { box.style.display = 'none'; return; }
-    box.className = 'macro-sens' + (ms.regime ? ' ms-' + ms.regime : '');
-    var ttl = lang() === 'zh' ? '宏观敏感性' : 'Macro sensitivity';
-    var chips = [];
-    chips.push('<span class="ms-chip ms-' + ms.duration + '">' +
-      lz(ms.duration_label.en, ms.duration_label.zh) + '</span>');
-    var betaTxt = (ms.rate_beta >= 0 ? '+' : '') + ms.rate_beta.toFixed(2) +
-      (ms.rate_beta_se != null ? ' ± ' + ms.rate_beta_se.toFixed(2) : '');
-    chips.push('<span class="ms-chip ms-tier-' + ms.tier + '">' +
-      (lang() === 'zh' ? '利率beta' : 'Rate β') + ' <b>' + betaTxt + '</b> · ' +
-      lz(ms.tier_label.en, ms.tier_label.zh) + '</span>');
-    chips.push('<span class="ms-chip ms-' + ms.inflation + '">' +
-      lz(ms.inflation_label.en, ms.inflation_label.zh) + '</span>');
-    box.innerHTML =
-      '<div class="ms-head"><span class="ms-ttl">' + ttl + '</span>' +
-        esc(lz(ms.headline.en, ms.headline.zh)) + '</div>' +
-      '<div class="ms-chips">' + chips.join('') + '</div>' +
-      '<div class="muted" style="font-size:12px;margin-top:5px">' +
-        esc(lz(ms.detail.en, ms.detail.zh)) + '</div>' +
-      '<div class="ms-cav">' + esc(lz(ms.caveat.en, ms.caveat.zh)) + '</div>';
-    box.style.display = 'block';
-  }
+
 
   // Alt-data convergence chip (engine/altdata_signals.chip) — politician / insider /
   // government-contract / Trump flow lit on this name. Display-only, never scored.
@@ -963,24 +933,7 @@
   // survived the phase-0 gate, both INVERSE of his usual framing: a high composite =
   // extended/fade (decile Spearman −0.88), and rising "whale accumulation" precedes
   // under-performance. Display-only, never scored; validated stats live in the caveat.
-  function renderDtContra(d) {
-    var box = el('r_dtcontra'), dc = d.dt_contra;
-    if (!box) return;
-    if (!dc) { box.style.display = 'none'; return; }
-    box.className = 'dt-contra' + (dc.state !== 'neutral' ? ' dtc-' + dc.state : '');
-    var ttl = lang() === 'zh' ? 'DannyTrades 逆向' : 'DannyTrades contrarian';
-    var chips = (dc.chips || []).map(function (c) {
-      return '<span class="dtc-chip ' + c.cls + '">' + esc(lz(c.label.en, c.label.zh)) + '</span>';
-    }).join('');
-    box.innerHTML =
-      '<div class="dtc-head"><span class="dtc-ttl">' + ttl + '</span>' +
-        esc(lz(dc.headline.en, dc.headline.zh)) + '</div>' +
-      '<div class="dtc-chips">' + chips + '</div>' +
-      '<div class="muted" style="font-size:12px;margin-top:5px">' +
-        esc(lz(dc.detail.en, dc.detail.zh)) + '</div>' +
-      '<div class="dtc-cav">' + esc(lz(dc.caveat.en, dc.caveat.zh)) + '</div>';
-    box.style.display = 'block';
-  }
+
 
   // Demand Context (Phase 0) — the L0/L1/L2 framing. Trailing (delivered) ·
   // Consensus (already priced) · Independent observable (variant — not yet measured).
@@ -1355,13 +1308,7 @@
     if (dd) return lang() === 'zh' ? (dd.action_zh || dd.action) : dd.action;
     return lz(l.action, l.action_zh); }
 
-  function renderVerdict(d) {
-    var e = d.ladder.entry || {}, v = el('r_verdict');
-    v.className = 'verdict urg-' + (e.urgency || 'hold');
-    v.innerHTML = '<span class="v-act">' + esc(ladderAction(d.ladder)) + '</span>' +
-      '<span class="v-tag">' + esc(lz(e.tag, e.tag_zh)) + '</span>' +
-      '<span class="v-text">' + esc(lz(e.text, e.text_zh)) + '</span>';
-  }
+
 
   // unified Conviction Profile hero — renders the SAME block as the standout card,
   // so the dashboard and this page can never structurally disagree. The cycle ladder
@@ -1369,145 +1316,13 @@
   // long-term quality read and is shown as context (the cycle caps the verdict).
   var CAX_LABELS = { selection: ['Selection', '选股'], entry: ['Entry', '入场'],
                      tailwind: ['Tailwind', '顺风'], quality: ['Quality', '质量'] };
-  function renderConviction(d) {
-    var box = el('r_conviction'), c = d.conviction;
-    if (!box) return;
-    if (!c) { box.style.display = 'none'; return; }
-    var tt = c.trust_tier || {};
-    var ax = ['selection', 'entry', 'tailwind', 'quality'].map(function (k) {
-      var a = (c.axes && c.axes[k]) || {}, lab = CAX_LABELS[k], pct = a.pct;
-      return '<div class="cax' + (pct == null ? ' cax-na' : '') + '"><span class="caxl">' +
-        lz(lab[0], lab[1]) + '</span><span class="caxbar"><span class="caxf" style="width:' +
-        (pct == null ? 0 : pct) + '%"></span></span><span class="caxv">' +
-        (pct == null ? '—' : pct) + '</span></div>';
-    }).join('');
-    var cau = (c.cautions || []).map(function (x, i) {
-      return '<span class="ccau">⚠ ' + esc(lz(x, (c.cautions_zh || [])[i] || x)) + '</span>'; }).join('');
-    // EDGE basis — which legs are firing + how strong, each tagged validated / literature /
-    // context / screen, so a user (and the AI layer) sees WHY the edge score is what it is.
-    var TIER_C = { validated: 'var(--up)', literature: 'var(--g-cold)',
-                   context: 'var(--muted)', screen: 'var(--warn)' };
-    var bl = (c.axes && c.axes.selection && c.axes.selection.basis) || [];
-    var basis = bl.map(function (b) {
-      var col = TIER_C[b.tier] || 'var(--muted)';
-      // earnings-surprise recency (display only — the SUE leg is scored flat): show how many
-      // days ago the filing landed, so a fresh beat reads as fresh without re-weighting it.
-      var fr = (b.fresh_days != null) ? ' <span class="cv-fresh">· ' + b.fresh_days + 'd</span>' : '';
-      return '<span class="cv-bchip" style="color:' + col + ';border-color:color-mix(in srgb,' +
-        col + ' 35%,var(--line))" title="' + esc(b.tier) + (b.fresh_days != null ? ' · filed ' + b.fresh_days + 'd ago' : '') + '">' +
-        esc(lz(b.label, b.label_zh)) + ' ' + (b.z >= 0 ? '+' : '') + b.z + fr + '</span>';
-    }).join('');
-    // regime tilt banner — which way the live tape is currently weighting the edge
-    // (calm/risk-on up-weights trend momentum; stress lets the earnings edge lead). The
-    // validated regime-conditional weighting (research/STOCK_CONVICTION_V2 §3).
-    var rg = c.regime;
-    var rgbar = rg ? '<div class="cv-regime ' + esc(rg.css || '') + '"><span class="cv-rgdot"></span>' +
-      esc(lz(rg.en, rg.zh)) + '</div>' : '';
-    // SUGGESTED POSITION SIZE (T5) — risk-budgeting guide scaled by 1/risk, NOT an alpha bet.
-    var SZ = { full: ['var(--up)', 'Full size', '足额仓位'],
-               'three-quarter': ['var(--g-cold)', '¾ size', '3/4 仓位'],
-               half: ['var(--muted)', '½ size', '半仓'],
-               quarter: ['var(--warn)', '¼ size', '1/4 仓位'],
-               avoid: ['var(--down)', 'Avoid — not a buy', '回避 — 非买入'] };
-    var sz = c.size, szbar = '';
-    if (sz && SZ[sz.bucket]) {
-      var sc = SZ[sz.bucket], rk = (c.risk && c.risk.components) ? Object.keys(c.risk.components)
-        .filter(function (k) { return c.risk.components[k] >= 0.4; }) : [];
-      szbar = '<div class="cv-size" style="color:' + sc[0] + '"><span class="cv-szk">' +
-        lz('Suggested size', '建议仓位') + '</span><span class="cv-szv">' + esc(lz(sc[1], sc[2])) +
-        (sz.pct != null && sz.bucket !== 'avoid' ? ' · ' + sz.pct + '%' : '') + '</span>' +
-        // when the cycle/timing read holds the size below what risk alone allows, say so —
-        // otherwise a HALF SIZE entry beside a "Full size" budget reads as a contradiction.
-        (sz.capped_by_entry ? '<span class="cv-szt">' + lz('held to entry conviction', '按入场信心封顶') + '</span>' :
-          rk.length ? '<span class="cv-szt">' + lz('risk: ', '风险: ') + rk.join(', ') + '</span>' :
-          (sz.tier === 'context' ? '<span class="cv-szt">' + lz('risk-budget guide', '风险预算参考') + '</span>' : '')) +
-        '</div>';
-    }
-    // ENTRY-timing gauge (gauge 2) — the WHEN/AT-WHAT-PRICE, kept distinct from the
-    // OWN-IT conviction score so a high score is never mistaken for a buy-now.
-    var es = d.entry_signal, esbar = '';
-    if (es) {
-      var bz = es.buy_zone, zoneTxt = '';
-      if (bz && bz.high != null) {
-        zoneTxt = '$' + bz.low.toFixed(2) + (bz.high !== bz.low ? '–$' + bz.high.toFixed(2) : '') +
-          (bz.pct_from_spot != null ? ' (' + (bz.pct_from_spot >= 0 ? '+' : '') + bz.pct_from_spot + '%)' : '');
-      }
-      var ec = es.cycle_pos || {}, etim = es.timing || {};
-      var win = (etim.opens_in_days_lo != null && es.status !== 'buy_now' && es.status !== 'partial')
-        ? (' · ' + lz('window', '窗口') + ' ~' + etim.opens_in_days_lo +
-           (etim.opens_in_days_hi && etim.opens_in_days_hi !== etim.opens_in_days_lo ? '–' + etim.opens_in_days_hi : '') + 'd') : '';
-      esbar = '<div class="cv-entry nbe-' + es.status + '">' +
-        '<div class="cv-ehead"><span class="nbe-dot a' + es.act_level + '"></span>' +
-        esc(lz(es.headline, es.headline_zh)) + '</div>' +
-        (zoneTxt ? '<div class="cv-ezone"><span>' + lz('Buy zone', '买入区') + '</span> <b>' + zoneTxt + '</b>' +
-          (es.chase_above != null ? ' · ' + lz("don't chase >", '勿追高 >') + ' $' + es.chase_above.toFixed(2) : '') +
-          (es.stop != null ? ' · ' + lz('stop', '止损') + ' $' + es.stop.toFixed(2) : '') + '</div>' : '') +
-        (ec.dc_day != null ? '<div class="cv-ecyc">' + lz('cycle day', '周期第') + ' ' + ec.dc_day + '/' +
-          ec.dc_band[0] + '–' + ec.dc_band[1] + ' · ' + (ec.pct_through || 0) + '%' + win + '</div>' : '') +
-        (es.action ? '<div class="cv-etext muted">' + esc(lz(es.action, es.action_zh)) + '</div>' : '') +
-        '</div>';
-    }
-    var valchip = c.valuation_band ? ('<span class="cv-val val-' + c.valuation_band + '" title="' +
-      esc(c.valuation_note || '') + '">' + esc(c.valuation_band) + '</span>') : '';
-    // PULLBACK BUY-ZONE (display-only) — turns "Extended — don't chase" into a concrete level:
-    // the rising 50d / out-of-chase line for a timeable leader, or a "reset is X% lower, not a
-    // pullback" read for a blow-off. Self-gated server-side (present only in don't-chase territory).
-    var pz = d.pullback_zone, pzbar = '';
-    if (pz && pz.levels && pz.levels.length) {
-      var isChase = pz.stance === 'chase';
-      var lv = pz.levels.map(function (x) {
-        return '<span class="pz-lvl"><b>$' + Number(x.price).toFixed(2) + '</b>' +
-          '<span class="pz-pull">' + (x.pull_pct >= 0 ? '+' : '') + x.pull_pct + '%</span>' +
-          '<em>' + esc(lz(x.label_en, x.label_zh)) + '</em></span>';
-      }).join('');
-      pzbar = '<div class="pz ' + (isChase ? 'pz-chase' : 'pz-acc') + '">' +
-        '<div class="pz-h"><span>' + (isChase ? '🚩' : '🎯') + '</span>' +
-        esc(lz(isChase ? 'No dip-buy here — regime reset, not a pullback'
-                       : 'Buy-zone — let the leader come to you',
-               isChase ? '此处勿逢低 — 状态重置而非回调' : '买入区 — 等领涨股回来')) + '</div>' +
-        '<div class="pz-head">' + esc(lz(pz.headline_en, pz.headline_zh)) + '</div>' +
-        '<div class="pz-lvls">' + lv + '</div></div>';
-    }
-    box.innerHTML =
-      '<div class="cv-head">' +
-        (c.score != null ? '<span class="cv-score band-' + c.band + '">' + c.score + '</span>' : '') +
-        '<div class="cv-vtext"><div class="cv-verdict">' + esc(lz(c.verdict, c.verdict_zh)) + valchip + '</div>' +
-        '<div class="cv-tier">' + esc(lz(tt.en, tt.zh)) + '</div></div></div>' +
-        esbar +
-      (basis ? '<div class="cv-basis"><span class="cv-blab">' + lz('edge basis', '优势构成') +
-        '</span>' + basis + '</div>' : '') +
-      rgbar + szbar + pzbar +
-      '<div class="cv-axes">' + ax + '</div>' +
-      (cau ? '<div class="cv-cau">' + cau + '</div>' : '') +
-      '<div class="cv-note">' + lz(
-        'Conviction blends a calibrated short-term timing read (the cycle below) with an uncalibrated long-term quality read — context, not a probability. The cycle state caps the verdict: a downtrend never reads “Buy”.',
-        '确信度融合了已校准的短期择时读数（下方周期）与未校准的长期质量读数——作为情境，而非概率。周期状态会封顶结论：下行趋势永不显示“买入”。') + '</div>';
-    box.style.display = '';
-  }
+
 
   function sigchip(cls, k, val, sub) {
     return '<div class="sigchip ' + cls + '"><span class="sc-k">' + k + '</span>' +
       '<span class="sc-v">' + val + '</span>' + (sub ? '<span class="sc-s">' + sub + '</span>' : '') + '</div>';
   }
-  function renderSignalStrip(d) {
-    var tech = d.tech || {}, m = (d.mtf && d.mtf.D) || {}, cy = d.cycle || {}, c = [];
-    var ab = tech.above200;
-    c.push(sigchip(ab ? 'up' : 'down', lz('Trend', '趋势'), (ab ? '▲' : '▼') + ' 200d',
-      tech.pct_vs_200dma != null ? (tech.pct_vs_200dma > 0 ? '+' : '') + tech.pct_vs_200dma + '%' : ''));
-    var mp = m.macd_pos, arr = m.macd_cross_up ? ' ↑' : m.macd_cross_dn ? ' ↓' : '';
-    c.push(sigchip(mp ? 'up' : 'down', lz('Momentum', '动量'), 'MACD ' + (mp ? '＋' : '－') + arr, lz('daily', '日线')));
-    // RSI / Stoch extremes are context (caution), not a directional call — colour
-    // them amber so the meaning doesn't invert under the zh red=up swap
-    var r = tech.rsi14, rc = (r != null && (r >= 70 || r <= 30)) ? 'warn' : 'neutral';
-    c.push(sigchip(rc, 'RSI', r != null ? Math.round(r) : '—',
-      (r != null && r >= 70) ? lz('overbought', '超买') : (r != null && r <= 30) ? lz('oversold', '超卖') : lz('neutral', '中性')));
-    var sv = m.stoch, sc = (sv != null && (sv >= 80 || sv <= 20)) ? 'warn' : 'neutral';
-    c.push(sigchip(sc, 'Stoch', sv != null ? Math.round(sv) : '—', lz('StochRSI', '随机RSI')));
-    var dd = cy.dc_day, band = cy.dc_band, due = (dd != null && band && dd >= band[0]);
-    c.push(sigchip(due ? 'warn' : 'neutral', lz('Cycle', '周期'), lz('Day', '第') + ' ' + (dd != null ? dd : '—'),
-      band ? lz('of', '/') + ' ' + band[0] + '–' + band[1] : ''));
-    el('r_sigstrip').innerHTML = c.join('');
-  }
+
 
   var afCtl;  // floating-popover controller (assigned below); lets render() close it
   var AF_FILTERS = [['all', 'All', '全部'], ['signal', 'Signal', '信号'], ['trend', 'Trend', '趋势'],
@@ -1619,9 +1434,6 @@
       document.getElementById('r_name').textContent = t;
       document.getElementById('r_state').textContent = L('notlib');
       document.getElementById('r_state').className = 'state';
-      document.getElementById('r_verdict').innerHTML = '';
-      document.getElementById('r_sigstrip').innerHTML = '';
-      document.getElementById('r_conviction').style.display = 'none';   // never show a prior ticker's profile
       document.getElementById('r_afbtn').style.display = 'none';
       if (afCtl) afCtl.close();
       document.getElementById('r_points').innerHTML = '';
@@ -1719,8 +1531,8 @@
     var conf = (g.tier === 'thin_chain' || (g.top_oi_share != null && g.top_oi_share > 0.35))
       ? '<div style="margin:6px 0 2px"><span class="alpha-entry ae-laggard">' + lz('sign-assumption: low confidence', '符号假设：低置信') + '</span></div>' : '';
     el('r_gex').innerHTML = '<div class="glance">' + chips.join('') + '</div>' + hole + conf +
-      '<p class="srcline">' + lz('Dealer-gamma LEVELS from Cboe delayed chains — daily, not live flow. A vol-regime + levels map (long-gamma → pins/mean-reverts; short-gamma → trends/amplifies), NOT directional and NOT in this stock’s score. The dealer long-call/short-put sign is an assumption — fragile for single names.',
-        '来自 Cboe 延迟期权链的做市商Gamma价位 — 每日、非实时流动。波动率体制+价位地图，无方向性且不计入本股评分。做市商符号为假设，对个股脆弱。') + '</p>';
+      '<p class="srcline">' + lz('Cboe delayed chains (daily, not live flow) — a vol-regime + levels map, never directional and not in this stock’s score.',
+        'Cboe 延迟期权链（每日、非实时）— 波动率体制+价位地图，无方向性，不计入本股评分。') + '</p>';
     show('panel_gex', true);
   }
 
@@ -1802,8 +1614,8 @@
     }
     el('r_smartmoney').innerHTML = head + vipline + trendLine + '<table>' + th + rows + '</table>' +
       '<p class="srcline">' + lz(
-        '13F-HR holdings are filed quarterly with a ~45-day lag — a stale, partial picture of long-only US equity stakes ≥ $100M, with no shorts, options detail, or non-US positions. CUSIPs are name-matched to tickers, so some lines may be missing. Context on who holds this, NOT a buy list or a real-time signal.',
-        '13F-HR 持仓为季度申报，约有 45 天滞后 —— 仅为美股多头持仓（≥1亿美元）的陈旧且不完整快照，不含空头、期权细节或非美持仓。CUSIP 通过名称匹配到代码，部分行可能缺失。仅作为「谁持有它」的背景，而非买入清单或实时信号。') + '</p>';
+        '13F filed quarterly, ~45-day lag — long-only US stakes ≥ $100M only (no shorts/options/non-US). Context on who holds it, not a real-time signal.',
+        '13F 季度申报、约45天滞后 —— 仅美股多头持仓（≥1亿美元，不含空头／期权／非美）。仅作「谁持有」背景，非实时信号。') + '</p>';
     show('panel_smartmoney', true);
   }
 
@@ -1824,11 +1636,9 @@
     // and dt-contra heroes with ONE decision band + fingerprint + honesty row + evidence
     // lanes. Falls back to the legacy heroes only if stockview.js failed to load.
     if (!(window.SV && d.view && window.SV.mount(d))) {
-      renderConviction(d);
-      renderVerdict(d);
-      renderSignalStrip(d);
-      renderMacroSens(d);
-      renderDtContra(d);
+      var _sd = document.getElementById('sv-decision');
+      if (_sd) _sd.innerHTML = '<div class="panel"><p class="muted">' +
+        lz('Could not render the analysis — please refresh.', '无法渲染分析——请刷新页面。') + '</p></div>';
     }
     renderAlertFeed(d);
 
@@ -1982,8 +1792,6 @@
     st.className = 'state';
     document.getElementById('r_asof').textContent = L('asof') + ' ' + d.asof;
     document.getElementById('r_summary').textContent = '';
-    document.getElementById('r_verdict').innerHTML = '';
-    document.getElementById('r_sigstrip').innerHTML = '';
     document.getElementById('r_points').innerHTML = '';
     document.getElementById('r_flags').textContent = '';
     document.getElementById('r_why').textContent = '';
