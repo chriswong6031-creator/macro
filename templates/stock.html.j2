@@ -423,6 +423,53 @@
        margin:0 0 13px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; line-height:1.3; }
   /* the daily/weekly summary line duplicates the decision gloss + timing line — drop it */
   #r_summary { display:none; }
+  /* Demand context — verdict + two-tile comparator (market-priced vs independent) */
+  #r_demand .dc-verdict { display:flex; align-items:baseline; gap:10px; font-size:17px; font-weight:700;
+    padding:10px 14px; border-radius:12px; margin-bottom:12px; }
+  #r_demand .dc-vq { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .dcv-up { color:var(--up); background:color-mix(in srgb,var(--up) 12%,transparent); }
+  .dcv-risk { color:var(--down); background:color-mix(in srgb,var(--down) 12%,transparent); }
+  .dcv-mut { color:var(--warn); background:color-mix(in srgb,var(--warn) 13%,transparent); }
+  #r_demand .dc-cmp { display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:stretch; }
+  #r_demand .dc-cmp-solo { grid-template-columns:1fr; }
+  #r_demand .dc-tile { background:var(--panel2); border-radius:12px; padding:13px 15px; }
+  #r_demand .dc-tt { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
+  #r_demand .dc-big { font-size:28px; font-weight:800; line-height:1; }
+  #r_demand .dc-big small { display:block; font-size:11px; font-weight:500; color:var(--muted); margin-top:4px; }
+  #r_demand .dc-rows { margin-top:11px; display:flex; flex-direction:column; gap:6px; }
+  #r_demand .dc-rows > div { display:flex; justify-content:space-between; font-size:13px; }
+  #r_demand .dc-rows span { color:var(--muted); }
+  #r_demand .dc-mid { display:flex; align-items:center; }
+  #r_demand .dc-div { font-size:11px; font-weight:800; letter-spacing:.07em; writing-mode:vertical-rl;
+    transform:rotate(180deg); border-radius:7px; padding:9px 4px; }
+  .dcd-up { color:var(--up); border:1px solid color-mix(in srgb,var(--up) 40%,transparent); }
+  .dcd-risk { color:var(--down); border:1px solid color-mix(in srgb,var(--down) 40%,transparent); }
+  .dcd-mut { color:var(--warn); border:1px solid color-mix(in srgb,var(--warn) 40%,transparent); }
+  #r_demand .dc-capex { margin-top:11px; font-size:12.5px; color:var(--muted); }
+  #r_demand .dc-capex b { color:var(--up); }
+  #r_demand .dc-arr { color:var(--muted); font-style:normal; margin:0 3px; }
+  #r_demand .dc-hz { margin-top:7px; font-size:11.5px; color:var(--muted); }
+  #r_demand .dc-tags { margin-top:9px; display:flex; gap:5px; flex-wrap:wrap; }
+  #r_demand .dc-tag { font-size:11px; color:var(--muted); background:var(--panel); border:1px solid var(--line);
+    padding:2px 8px; border-radius:6px; }
+  #r_demand .dc-foot { margin:12px 0 0; font-size:12px; color:var(--muted); line-height:1.55; }
+  @media (max-width:620px){ #r_demand .dc-cmp { grid-template-columns:1fr; }
+    #r_demand .dc-mid { justify-content:center; } #r_demand .dc-div { writing-mode:horizontal-tb; transform:none; } }
+  /* Financials & growth — revenue combo chart + quarterly EPS-surprise bars */
+  #r_multiyear .fc-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:4px; }
+  #r_multiyear .fc-box { background:var(--panel2); border-radius:12px; padding:12px 14px; }
+  #r_multiyear .fc-lbl { display:flex; justify-content:space-between; font-size:12px; margin-bottom:8px; }
+  #r_multiyear .fc-lbl span:first-child { color:var(--muted); }
+  #r_multiyear .fc-svg { width:100%; height:108px; display:block; }
+  #r_multiyear .fc-bars rect { fill:color-mix(in srgb,var(--link) 52%,transparent); }
+  #r_multiyear .fc-line { fill:none; stroke:var(--up); stroke-width:2; }
+  #r_multiyear .fc-pts circle { fill:var(--up); }
+  #r_multiyear .fc-ax { stroke:var(--line); }
+  #r_multiyear .sp-pos { fill:color-mix(in srgb,var(--up) 55%,transparent); }
+  #r_multiyear .sp-neg { fill:color-mix(in srgb,var(--down) 55%,transparent); }
+  #r_multiyear .fc-v { fill:var(--muted); font-size:9px; text-anchor:middle; }
+  #r_multiyear .fc-x { fill:var(--muted); font-size:9px; text-anchor:middle; }
+  @media (max-width:620px){ #r_multiyear .fc-grid { grid-template-columns:1fr; } }
 {% include "_stock_decision.css.j2" %}
 </style>
 </head>
@@ -917,104 +964,104 @@
   // memory demand-desk-divergence.
   function renderDemandContext(d) {
     var box = el('r_demand'); if (!box) return;
-    var prof = d.profile, val = d.valuation, fin = d.financials, an = d.analyst, ev = d.earnings || {}, rv = d.revisions;
+    var val = d.valuation, fin = d.financials, an = d.analyst, ev = d.earnings || {}, rv = d.revisions || {};
     var dch = d.demand_chain;
-    var isEquity = !!(prof || val || fin || d.factors);
-    // Show for equities, OR for any name carrying a demand-chain signal even without
-    // full SEC fundamentals (recent AI IPOs / foreign filers — exactly where the
-    // forward-demand read matters most). Hide only when there's nothing to say.
+    var isEquity = !!(d.profile || val || fin || d.factors);
     if (!isEquity && !(dch && dch.headline)) { show('panel_demand', false); return; }
-    var r1 = function (n) { return n == null ? null : (Math.round(n * 10) / 10); };
-    function sg(n, suf) {            // signed, rounded, colour-classed chip value
-      if (n == null) return null;
+    function sgB(n, suf) {
+      if (n == null) return '<b class="muted">—</b>';
       var c = n > 0 ? 'pos' : n < 0 ? 'neg' : 'muted';
-      return '<span class="' + c + '">' + (n > 0 ? '+' : '') + (Math.round(n * 10) / 10) + (suf || '') + '</span>';
+      return '<b class="' + c + '">' + (n > 0 ? '+' : '') + (Math.round(n * 10) / 10) + (suf || '') + '</b>';
     }
-    function chip(lab, v, cls) {
-      return v == null ? '' : '<span class="dc-chip' + (cls ? ' ' + cls : '') + '"><span class="dc-ck">' +
-        lab + '</span><span class="dc-cv">' + v + '</span></span>';
+    var fpe = (val && val.forward_pe != null) ? val.forward_pe : (an && an.forward_pe != null ? an.forward_pe : null);
+    // market-bought (consensus) tile rows
+    var mrows = [];
+    if (rv.net_up_30d != null) mrows.push('<div><span>' + lz('Upgrades 30d', '30天上调') + '</span>' + sgB(rv.net_up_30d) + '</div>');
+    if (rv.est_chg_30d != null) mrows.push('<div><span>' + lz('Est. drift 30d', '预期漂移30天') + '</span>' + sgB(rv.est_chg_30d, '%') + '</div>');
+    if (ev.summary && ev.summary.total) mrows.push('<div><span>' + lz('Beat rate', '超预期率') + '</span><b>' + ev.summary.beats + '/' + ev.summary.total + '</b></div>');
+    if (rv.n_analysts != null) mrows.push('<div><span>' + lz('Analysts', '分析师') + '</span><b>' + Math.round(rv.n_analysts) + '</b></div>');
+    var mtile = '<div class="dc-tile"><div class="dc-tt">' + lz('What the market has bought', '市场已买入的') + '</div>' +
+      (fpe != null ? '<div class="dc-big">' + fpe.toFixed(1) + '×<small>' + lz('forward P/E', '前瞻市盈率') + '</small></div>'
+                   : '<div class="dc-big muted">—<small>' + lz('no forward P/E', '无前瞻市盈') + '</small></div>') +
+      '<div class="dc-rows">' + mrows.join('') + '</div></div>';
+
+    if (!(dch && dch.headline)) {
+      // No management-independent chain for this name -> show only the priced side + an honest note.
+      box.innerHTML = '<div class="dc-cmp dc-cmp-solo">' + mtile + '</div>' +
+        '<p class="dc-foot">' + lz('Only the consensus (already-priced) view is available — no management-independent forward-demand read yet, so this can\'t say the rally is under-priced.',
+          '仅有共识（已计入价格）视角——尚无不依赖管理层的前瞻需求读数，故无法判断涨势是否被低估。') + '</p>';
+      show('panel_demand', true); return;
     }
-    // L1 — Trailing (delivered): demand that already converted to financials
-    var t1 = [];
-    if (fin) {
-      t1.push(chip(lz('Revenue growth','营收增长'), sg(fin.rev_growth, '%')));
-      t1.push(chip(lz('Net income growth','净利润增长'), sg(fin.ni_growth, '%')));
-      t1.push(chip(lz('Net margin','净利率'), fin.net_margin == null ? null : r1(fin.net_margin) + '%'));
-      t1.push(chip(lz('ROE','净资产收益率'), fin.roe == null ? null : r1(fin.roe) + '%'));
-    }
-    t1 = t1.filter(Boolean);
-    if (!t1.length) t1 = ['<span class="dc-na">' + lz('no SEC filing data yet','暂无SEC财报数据') + '</span>'];
-    // L2 — Consensus (already in the price): the forward view the market has bought
-    var t2 = [], fpe = (val && val.forward_pe != null) ? val.forward_pe : (an && an.forward_pe != null ? an.forward_pe : null);
-    t2.push(chip(lz('Forward P/E','前瞻市盈率'), fpe == null ? null : fpe.toFixed(1) + '×', 'dc-priced'));
-    t2.push(chip(lz('Next-Q est. EPS','下季预期EPS'), ev.eps_forecast == null ? null : '$' + ev.eps_forecast + (ev.next_date ? ' · ' + esc(ev.next_date) : ''), 'dc-priced'));
-    if (rv) {
-      t2.push(chip(lz('Net upgrades 30d','30天净上调'), sg(rv.net_up_30d), 'dc-priced'));
-      t2.push(chip(lz('Revision breadth','评级调整广度'), rv.breadth == null ? null : sg(Math.round(rv.breadth * 100) / 100), 'dc-priced'));
-      t2.push(chip(lz('Est. drift 30d','预期漂移30天'), sg(rv.est_chg_30d, '%'), 'dc-priced'));
-      t2.push(chip(lz('Est. drift 90d','预期漂移90天'), sg(rv.est_chg_90d, '%'), 'dc-priced'));
-      t2.push(chip(lz('Analysts','分析师数'), rv.n_analysts == null ? null : Math.round(rv.n_analysts), 'dc-priced'));
-    }
-    t2.push(chip(lz('SUE (earnings momentum)','SUE 盈利动量'), ev.sue_z == null ? null : sg(Math.round(ev.sue_z * 100) / 100), 'dc-priced'));
-    t2.push(chip(lz('Beat rate','超预期率'), (ev.summary && ev.summary.total) ? (ev.summary.beats + '/' + ev.summary.total) : null, 'dc-priced'));
-    t2 = t2.filter(Boolean);
-    if (!t2.length) t2 = ['<span class="dc-na">' + lz('no consensus / estimate data for this name','该标的暂无共识／预期数据') + '</span>'];
-    // L3 — Independent observable (variant?): the customer-capex demand chain
-    // (engine/demand_chain) for AI-infra names (Phase 1); honest placeholder
-    // otherwise. The whole point: a MANAGEMENT-INDEPENDENT forward-demand read.
-    var t3;
-    if (dch && dch.headline) {
-      var DIVMAP = {
-        ahead_of_consensus: { cls:'dc-div-up',   en:'AHEAD OF CONSENSUS', zh:'领先共识' },
-        consensus_at_risk:  { cls:'dc-div-risk', en:'CONSENSUS AT RISK',  zh:'共识承压' },
-        aligned:            { cls:'dc-div-mut',  en:'IN THE PRICE',       zh:'已计入价格' },
-        signal_only:        { cls:'dc-div-mut',  en:'SIGNAL ONLY',        zh:'仅信号' } };
-      var dm = DIVMAP[dch.divergence] || DIVMAP.signal_only;
-      var ser = (dch.series || []).slice(-3).map(function (p) {
-        return '<span class="dc-chip">FY' + (p[0] % 100) + ' <span class="dc-cv">$' + p[1] + 'B</span></span>';
-      }).join('<span class="dc-arrow">→</span>');
-      // accountability line (leading chains only): this divergence call is logged to
-      // a falsifiable ledger (engine/demand_ledger) and scored forward vs SPY.
-      var led = dch.ledger, ledLine = '';
-      if (led) {
-        if (led.scored > 0) {
-          ledLine = '<div class="dc-ledger">📒 ' + lz('Variant calls scored so far: ','已评分的变体判断：') +
-            led.hits + '/' + led.scored + lz(' hit','命中') +
-            (led.hit_rate != null ? ' (' + Math.round(led.hit_rate * 100) + '%)' : '') +
-            (led.open ? ' · ' + led.open + lz(' open','个未结') : '') + '</div>';
-        } else {
-          ledLine = '<div class="dc-ledger">📒 ' + lz('Being scored forward vs SPY — ','正在对 SPY 前向评分——') +
-            (led.open || 0) + lz(' open variant call(s)','个未结变体判断') +
-            (led.since ? ' ' + lz('since ','自 ') + led.since : '') + '</div>';
-        }
-      }
-      t3 = '<div><span class="dc-badge ' + dm.cls + '">' + lz(dm.en, dm.zh) + '</span></div>' +
-        '<div class="dc-chainhead">' + esc(lz(dch.headline.en, dch.headline.zh)) + '</div>' +
-        '<div class="dc-vals" style="margin:7px 0">' + ser + '</div>' +
-        '<div class="dc-chainread">' + esc(lz(dch.read.en, dch.read.zh)) + '</div>' +
-        ledLine +
-        '<div class="dc-cav">' + esc(lz(dch.caveat.en, dch.caveat.zh)) + '</div>';
-    } else {
-      t3 = '<span class="dc-na">' + lz(
-        'Not yet measured for this name. This is where a management-independent read on forward demand — bookings / backlog &amp; RPO, customer-capex (e.g. hyperscaler → semis), hiring &amp; web-traffic — is flagged ONLY where it diverges from the consensus above. Live now for the AI-infrastructure chain; expanding from there.',
-        '该标的尚未度量。此处放置不依赖管理层口径的前瞻需求读数——订单/在手订单与RPO、客户资本开支（如云厂商→半导体）、招聘与网站流量——且仅在其与上方共识背离时标记。AI 基础设施链已上线，后续扩展。') + '</span>';
-    }
-    var row = function (cls, n, lab, sub, body) {
-      return '<div class="dc-row ' + cls + '"><div class="dc-rl"><span class="dc-rn">' + n + '</span>' +
-        '<span class="dc-lab">' + lab + '</span><span class="dc-sub">' + sub + '</span></div>' +
-        '<div class="dc-vals">' + body + '</div></div>';
+
+    var VMAP = {
+      ahead_of_consensus: { v: lz('Possibly under-priced', '可能被低估'), cls: 'dcv-up', div: lz('DIVERGE', '背离'), dcls: 'dcd-up' },
+      consensus_at_risk:  { v: lz('Price at risk', '价格承压'),           cls: 'dcv-risk', div: lz('DIVERGE', '背离'), dcls: 'dcd-risk' },
+      aligned:            { v: lz('Already in the price', '已计入价格'), cls: 'dcv-mut', div: lz('AGREE', '一致'),  dcls: 'dcd-mut' },
+      signal_only:        { v: lz('Can\'t tell yet', '尚难判断'),          cls: 'dcv-mut', div: lz('?', '?'),        dcls: 'dcd-mut' }
     };
-    var foot = dch && dch.headline ? lz(
-      'Row 3 is an INDEPENDENT customer-demand read (the spenders\' own filings, not this company\'s guidance). Where it diverges from row 2 is where the rally may be mis-priced; where they agree, the demand is already in the price.',
-      '第3行是独立的客户需求读数（来自买方自身财报，而非本公司指引）。它与第2行背离之处，正是涨势可能被错误定价之处；二者一致时，需求已计入价格。') : lz(
-      'Rows 1–2 are backward-looking truth and already-priced consensus. Until row 3 is populated, this panel can only tell you what is already in the price — not that the rally is under-priced.',
-      '第1–2行是滞后的事实与已被定价的共识。在第3行填充之前，本面板只能告诉你价格里已包含什么——而非涨势是否被低估。');
+    var vm = VMAP[dch.divergence] || VMAP.signal_only;
+    var ser = (dch.series || []).slice(-3).map(function (pt) { return 'FY' + (pt[0] % 100) + ' <b>$' + pt[1] + 'B</b>'; }).join(' <i class="dc-arr">→</i> ');
+    var hz = dch.horizon_d ? '<div class="dc-hz">' + lz('leads ~' + Math.max(1, Math.round(dch.horizon_d / 63)) + ' qtrs', '领先约' + Math.max(1, Math.round(dch.horizon_d / 63)) + '季') + '</div>' : '';
+    var tags = (dch.spenders || []).slice(0, 5).map(function (t) { return '<span class="dc-tag">' + esc(t) + '</span>'; }).join('');
+    var itile = '<div class="dc-tile"><div class="dc-tt">' + lz('Independent demand read', '独立需求读数') + '</div>' +
+      '<div class="dc-big pos">' + (dch.yoy_pct > 0 ? '+' : '') + Math.round(dch.yoy_pct) + '%<small>' + esc(lz('customer capex YoY', '客户资本开支同比')) + '</small></div>' +
+      '<div class="dc-capex">' + ser + '</div>' + hz + '<div class="dc-tags">' + tags + '</div></div>';
+
+    var cav = '<span class="help">?<span class="tip"><span class="l-en">' + esc(dch.caveat.en) + '</span><span class="l-zh">' + esc(dch.caveat.zh || dch.caveat.en) + '</span></span></span>';
     box.innerHTML =
-      row('dc-l1', '1', lz('Trailing','历史'), lz('demand already delivered — backward-looking','已兑现的需求——本质滞后'), t1.join('')) +
-      row('dc-l2', '2', lz('Consensus','共识'), lz('already in the price — agreeing is exposure, not edge','已计入价格——认同只是敞口而非优势'), t2.join('')) +
-      row('dc-l3', '3', lz('Independent observable','独立观测'), lz('the only layer that can say a rally is MIS-priced','唯一能判断涨势被错误定价的层次'), t3) +
-      '<p class="dc-foot">' + foot + '</p>';
+      '<div class="dc-verdict ' + vm.cls + '"><span class="dc-vq">' + lz('Is the rally priced?', '涨势是否已被定价？') + '</span>' + vm.v + '</div>' +
+      '<div class="dc-cmp">' + mtile +
+        '<div class="dc-mid"><span class="dc-div ' + vm.dcls + '">' + vm.div + '</span></div>' + itile + '</div>' +
+      '<p class="dc-foot">' + esc(lz(dch.read.en, dch.read.zh)) + ' ' + cav + '</p>';
     show('panel_demand', true);
+  }
+
+  // Revenue combo (annual bars + YoY% line) + quarterly EPS-surprise bars. The diluted-EPS
+  // series is deliberately NOT charted: it is as-reported, not split-adjusted across years.
+  function finCharts(my, surprises) {
+    var W = 320, H = 108, pad = 6;
+    var yrs = my.years, rev = (my.revenue || []).map(function (v) { return v == null ? null : v / 1e9; });
+    var n = yrs.length, gap = (W - 2 * pad) / n, bw = gap * 0.58;
+    var maxR = Math.max.apply(null, rev.filter(function (x) { return x != null; })) || 1;
+    var bars = '', yoy = [];
+    for (var i = 0; i < n; i++) {
+      var x = pad + gap * i + gap * 0.21, h = rev[i] != null ? (rev[i] / maxR) * (H - 22) : 0;
+      bars += '<rect x="' + x.toFixed(1) + '" y="' + (H - 16 - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="2"/>';
+      yoy.push((i > 0 && rev[i] != null && rev[i - 1]) ? (rev[i] / rev[i - 1] - 1) * 100 : null);
+    }
+    var yv = yoy.filter(function (x) { return x != null; });
+    var ymin = Math.min.apply(null, yv), ymax = Math.max.apply(null, yv), pts = [];
+    for (var j = 0; j < n; j++) {
+      if (yoy[j] == null) { pts.push(null); continue; }
+      var lx = pad + gap * j + gap * 0.5;
+      var ly = ymax === ymin ? (H - 16) / 2 : (H - 20) - ((yoy[j] - ymin) / (ymax - ymin)) * (H - 36);
+      pts.push(lx.toFixed(1) + ',' + ly.toFixed(1));
+    }
+    var dots = pts.filter(Boolean).map(function (pp) { var c = pp.split(','); return '<circle cx="' + c[0] + '" cy="' + c[1] + '" r="2.4"/>'; }).join('');
+    var xl = yrs.map(function (y, k) { return '<text x="' + (pad + gap * k + gap * 0.5).toFixed(1) + '" y="' + (H - 3) + '" class="fc-x">FY' + (y % 100) + '</text>'; }).join('');
+    var revBox = '<div class="fc-box"><div class="fc-lbl"><span>' + lz('Revenue ($B)', '营收（十亿）') + '</span>' +
+      (my.rev_cagr != null ? '<span class="pos">' + (my.rev_cagr > 0 ? '+' : '') + Math.round(my.rev_cagr) + '%/yr</span>' : '') + '</div>' +
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" class="fc-svg" preserveAspectRatio="none"><g class="fc-bars">' + bars + '</g>' +
+      '<polyline class="fc-line" points="' + pts.filter(Boolean).join(' ') + '"/><g class="fc-pts">' + dots + '</g>' +
+      '<text x="' + (pad + gap * (n - 1) + gap * 0.5).toFixed(1) + '" y="10" class="fc-v">$' + Math.round(rev[n - 1]) + 'B</text>' + xl + '</svg></div>';
+
+    var epsBox = '';
+    if (surprises && surprises.length) {
+      var sv = surprises.slice().reverse(), m = sv.length, sgap = (W - 2 * pad) / m, sbw = sgap * 0.5;
+      var maxS = Math.max.apply(null, sv.map(function (s2) { return Math.abs(s2.surprise_pct || 0); })) || 1, sb = '', sl = '', sx = '';
+      for (var k = 0; k < m; k++) {
+        var s3 = sv[k], bx = pad + sgap * k + sgap * 0.25, hh = (Math.abs(s3.surprise_pct || 0) / maxS) * (H - 30), pos = (s3.surprise_pct || 0) >= 0;
+        sb += '<rect class="' + (pos ? 'sp-pos' : 'sp-neg') + '" x="' + bx.toFixed(1) + '" y="' + (H - 16 - hh).toFixed(1) + '" width="' + sbw.toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="2"/>';
+        sl += '<text x="' + (bx + sbw / 2).toFixed(1) + '" y="' + (H - 19 - hh).toFixed(1) + '" class="fc-v">' + (pos ? '+' : '') + s3.surprise_pct + '%</text>';
+        sx += '<text x="' + (bx + sbw / 2).toFixed(1) + '" y="' + (H - 3) + '" class="fc-x">' + esc((s3.qtr || '').split(' ')[0]) + '</text>';
+      }
+      var tr = '';
+      if (m >= 4) { var e0 = (sv[0].surprise_pct + sv[1].surprise_pct) / 2, e1 = (sv[m - 1].surprise_pct + sv[m - 2].surprise_pct) / 2;
+        tr = e1 > e0 + 0.5 ? lz('beats accelerating', '超预期扩大') : e1 < e0 - 0.5 ? lz('beats shrinking', '超预期收窄') : lz('beats steady', '超预期平稳'); }
+      epsBox = '<div class="fc-box"><div class="fc-lbl"><span>' + lz('EPS surprise', 'EPS超预期') + '</span><span class="pos">' + tr + '</span></div>' +
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" class="fc-svg" preserveAspectRatio="none"><line x1="0" y1="' + (H - 16) + '" x2="' + W + '" y2="' + (H - 16) + '" class="fc-ax"/><g>' + sb + '</g>' + sl + sx + '</svg></div>';
+    }
+    return '<div class="fc-grid">' + revBox + epsBox + '</div>';
   }
 
   function renderFundamentals(d) {
@@ -1078,16 +1125,8 @@
       // multi-year trend (SEC companyfacts) — sparklines + CAGR; falls back to the
       // single-year rows below when companyfacts hasn't been collected for this name
       var my = fin.multiyear;
-      if (my && my.years && my.years.length >= 2) {
-        var yspan = ' <span class="muted">(FY' + my.years[0] + '–' + my.years[my.years.length-1] + ')</span>';
-        var mrows = [
-          myRow(lz('Revenue','营收'), my.revenue, fmtNum, my.rev_cagr),
-          myRow(lz('Net margin','净利率'), my.net_margin, function (x){ return x.toFixed(1)+'%'; }, null),
-          myRow(lz('Diluted EPS','摊薄EPS'), my.eps, function (x){ return '$'+x.toFixed(2); }, my.eps_cagr),
-          myRow(lz('Free cash flow','自由现金流'), my.fcf, fmtNum, null)
-        ].join('');
-        el('r_multiyear').innerHTML = '<div class="myhdr">' + lz('Multi-year trend','多年趋势') + yspan + '</div>' + mrows;
-      } else { el('r_multiyear').innerHTML = ''; }
+      el('r_multiyear').innerHTML = (my && my.years && my.years.length >= 2)
+        ? finCharts(my, (d.earnings || {}).surprises) : '';
 
       el('r_finrows').innerHTML = FROWS.map(function (r) {
         return finrow(lz(r.en, r.zh), r.get(fin), r.fmt, r.chg ? r.chg(fin) : null, r.spark ? r.spark(fin) : null);
