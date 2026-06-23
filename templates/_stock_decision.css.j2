@@ -3,7 +3,7 @@
    --up/--down (which intentionally swap under html[data-lang="zh"] red=up), while caution /
    conflict / falsifier colors are pinned to --warn so their meaning never inverts. */
 
-/* ---- Layer 1: the one verdict band ---- */
+/* ---- Layer 1: the decision band ---- */
 .sv-decision { margin: 10px 0 6px; }
 .sv-verdict-band {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
@@ -11,6 +11,44 @@
   background: var(--panel2); border: 1px solid var(--line);
 }
 .sv-state-conflict .sv-verdict-band { border-color: var(--warn); }
+
+/* ---- Two-lane decision: THE NAME (what) · ACT NOW (when/how much) ---- */
+.sv-verdict-grid {
+  display: grid; grid-template-columns: minmax(150px, 0.8fr) 1.2fr; gap: 12px;
+}
+.sv-lane {
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.sv-state-conflict .sv-lane-act { border-color: var(--warn); }
+.sv-lane-name {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+}
+.sv-lane-h {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); margin-bottom: 2px;
+}
+.sv-lane-name .sv-lane-h { align-self: center; }
+.sv-rank-note {
+  font-size: 11px; color: var(--muted); cursor: help;
+  border-bottom: 1px dotted var(--line);
+}
+/* the ACT-NOW verb — the one buy-frame instruction, color = meaning (pinned). */
+.sv-action {
+  display: inline-block; font-size: 22px; font-weight: 800; line-height: 1;
+  padding: 6px 14px; border-radius: 10px; letter-spacing: .02em; margin-bottom: 2px;
+}
+.sv-act-go { color: #fff; background: var(--up); }
+.sv-act-wait { color: var(--warn); background: color-mix(in srgb, var(--warn) 16%, var(--panel)); border: 1px solid var(--warn); }
+.sv-act-avoid { color: #fff; background: var(--down); }
+.sv-act-screen { color: var(--text); background: var(--panel); border: 1px solid var(--line); }
+.sv-act-why { margin-top: 4px; }
+/* the BRIDGE — reconciles a strong rank with a "don't buy now" action. */
+.sv-bridge {
+  margin: 10px 0 2px; padding: 8px 12px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--panel));
+  border: 1px solid var(--warn);
+}
 .sv-gauge {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   min-width: 96px; padding: 6px 12px; border-radius: 10px; color: #fff;
@@ -125,7 +163,46 @@
 .sv-deep > summary:hover { color: var(--text); }
 
 @media (max-width: 560px) {
+  .sv-verdict-grid { grid-template-columns: 1fr; }
+  .sv-lane-name { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; text-align: left; }
   .sv-fingerprint { grid-template-columns: repeat(2, 1fr); }
   .sv-honesty { grid-template-columns: 1fr; }
-  .sv-headline { font-size: 16px; }
+  .sv-headline { font-size: 17px; }
+  .sv-score { font-size: 32px; }
+  .sv-action { font-size: 22px; }
 }
+
+/* ===========================================================================
+   HYBRID POLISH — Refined base + Fintech finish. Big hero numbers, soft
+   borderless inner blocks, per-section accent rails. Shared by all 5 markets.
+   =========================================================================== */
+.sv-verdict-grid { gap: 16px; grid-template-columns: minmax(165px, .78fr) 1.22fr; align-items: stretch; }
+.sv-lane { border: none; background: var(--panel2); border-radius: 14px; padding: 16px; }
+.sv-lane-name { justify-content: center; gap: 7px; }
+.sv-state-conflict .sv-lane-act { border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--line)); }
+.sv-gauge { min-width: 118px; padding: 12px 16px; border-radius: 14px; }
+.sv-band-word { font-size: 14px; }
+.sv-score { font-size: 38px; letter-spacing: -.015em; margin-top: 3px; }
+.sv-score small { font-size: 13px; }
+.sv-action { font-size: 26px; padding: 9px 18px; border-radius: 13px; margin-bottom: 0; }
+.sv-act-why { margin-top: 10px; }
+.sv-headline { font-size: 19px; font-weight: 700; }
+.sv-bridge { border-radius: 13px; padding: 10px 14px; font-weight: 650; }
+.sv-trust { align-self: center; }
+.sv-rank-note { border-bottom: 1px dotted var(--muted); }
+/* evidence + country cards: borderless, softer */
+.sv-evidence .sv-dim { border-radius: 11px; }
+.sv-card { border: none; border-radius: 13px; padding: 12px 14px; }
+/* section group headers: sentence-case, larger, with a per-domain accent rail */
+.sv-group { border-top: none; }
+.sv-group > summary {
+  font-size: 13.5px; text-transform: none; letter-spacing: 0; font-weight: 650;
+  color: var(--text); padding: 13px 14px; margin: 6px 0 0;
+  border-left: 3px solid var(--muted); border-radius: 0;
+  background: color-mix(in srgb, var(--panel2) 60%, transparent);
+}
+.sv-group > summary:hover { background: var(--panel2); }
+#result > details:nth-of-type(1) > summary { border-left-color: #8b5cf6; }
+#result > details:nth-of-type(2) > summary { border-left-color: var(--up); }
+#result > details:nth-of-type(3) > summary { border-left-color: var(--link); }
+#result > details:nth-of-type(4) > summary { border-left-color: var(--muted); }

@@ -1172,8 +1172,11 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
     # name ranks top-of-board (band high/constructive) but the verb isn't "high-conviction" (its
     # selection z hasn't cleared the absolute bar — the NVDA 97-vs-"Constructive" case), say so, so
     # "97" is never misread as an absolute 97/100 conviction.
-    if band["band"] in ("high", "constructive") and _tier(sel_z) not in ("high",) \
-            and score is not None:
+    # Fires when a top-of-board RANK is NOT a clean high-conviction buy: either the selection
+    # z hasn't cleared the absolute bar (NVDA-97-vs-Constructive), OR the cycle blocks a buy
+    # (a high-selection name in a bad tape — the exact case this used to exclude).
+    if band["band"] in ("high", "constructive") and score is not None \
+            and (_tier(sel_z) not in ("high",) or blocked):
         notes.append({
             "kind": "rank",
             "en": "Score is a within-board percentile RANK (top of today's board), not an absolute "
