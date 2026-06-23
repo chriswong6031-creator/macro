@@ -878,7 +878,12 @@ def _fetch_official_pages(cfg: dict, today: date | None = None) -> tuple[list[di
                         except Exception:  # noqa: BLE001
                             pass
                     title_theme = classify_theme(title)
-                    if not title_theme and not when and page.get("name", "").startswith("Treasury"):
+                    # A real release on a Treasury list/press page always carries a
+                    # date. A date-less anchor is nav / section chrome ("Internal
+                    # Revenue Service (IRS)", "Revenue Proposals" from the Green Book
+                    # sidebar) — drop it even when a stray keyword ("revenue" ->
+                    # earnings) hands it a theme.
+                    if not when and page.get("name", "").startswith("Treasury"):
                         continue
                     theme = title_theme or page.get("theme") or "macro"
                     items.append({

@@ -340,6 +340,15 @@ def test_is_low_value_preview_calendar_movers_roundups():
         "Trending tickers: GME, AMC in focus",
         "Stocks to watch on Tuesday",                                  # caught by _ROUNDUP_RE
         "Here are the day's biggest winners and losers",
+        # 'things to watch' previews — adjectives between the count and the noun
+        "Here are 3 big things to watch in the stock market this coming week",
+        "5 things to watch in markets this week",
+        "Things to know before the opening bell",
+        # crypto/asset 'price prediction' SEO spam (multi-year forecast advertorials)
+        "PancakeSwap (CAKE) Price Prediction: 2025, 2026, 2030",
+        "Arweave (AR) Price Prediction: 2025, 2026, 2030",
+        "Toncoin (TON) Price Prediction 2025, 2026, 2027-2030",
+        "Myro (MYRO) Price Prediction: 2025, 2026, 2030",
     ]:
         assert nc.is_low_value(t) is True, t
 
@@ -351,6 +360,8 @@ def test_is_low_value_preview_keeps_real_single_event_news():
         "Nvidia stock rises after earnings beat estimates",           # 'after earnings' != 'earnings after the bell'
         "Here's how much the Iran war cost — and how its effects will linger",  # explanatory feature, no list-noun
         "Nvidia earnings due after the bell Wednesday",               # single-name preview, informative
+        "Analysts raise Nvidia price target to $200 after earnings",   # price TARGET (real) != price PREDICTION (spam)
+        "Investors watch the Fed as inflation cools this week",        # 'watch' but not 'things/what to watch'
         "Fed holds rates as inflation cools",
         "Tech stocks rally as Treasury yields fall",
         "Stocks close higher as Powell signals patience",

@@ -199,11 +199,20 @@ _PREVIEW_RE = re.compile(
     r"|\b(?:biggest|top|notable|midday|midmorning|pre[-\s]?market|after[-\s]?hours?)\s+(?:movers|gainers|losers)\b"
     r"|\btrending\s+(?:tickers?|stocks?)\b"
     r"|\bstocks?\s+on\s+the\s+move\b"
-    # week/day-ahead & 'things to know' previews
+    # week/day-ahead & 'things to watch/know' previews ("3 big things to watch in
+    # the stock market this coming week"). 'things to watch' allows adjectives
+    # between the count and the noun, so it catches "N big things to watch" too.
     r"|\b(?:the\s+)?(?:week|day)\s+ahead\b"
     r"|\bwhat\s+to\s+(?:watch|know|expect)\b"
-    r"|\b\d{1,2}\s+things?\s+to\s+(?:know|watch)\b"
+    r"|\bthings?\s+to\s+(?:watch|know|consider)\b"
+    r"|\bto\s+watch\s+(?:this|next|the\s+coming|coming)\s+week\b"
     r"|\bto\s+watch\s+(?:this\s+week|today|next\s+week|tomorrow|on\s+\w+day)\b"
+    r"|\bto\s+watch\b[^.]{0,40}\b(?:this|next|the\s+coming|coming)\s+week\b"
+    # SEO 'price prediction' spam ("PancakeSwap (CAKE) Price Prediction: 2025, 2026,
+    # 2030") — a multi-year forecast advertorial, distinct from a real analyst
+    # 'price target'. Always content-free; never legitimate single-event news.
+    r"|\bprice\s+predictions?\b"
+    r"|\bprice\s+(?:target|forecast)\s+(?:for\s+)?20[2-9]\d\s*[,/&-]\s*20[2-9]\d\b"
     # market wraps / live blogs (a single headline of a rolling roundup)
     r"|\b(?:market|markets|stock\s+market|wall\s+street|wall\s+st\.?)\s+wrap\b"
     r"|\b(?:closing|opening)\s+bell\b"

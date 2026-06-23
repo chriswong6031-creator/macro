@@ -138,6 +138,37 @@ def test_stock_wire_qualitative_news_outranks_macro_prints():
     assert "MU" in kept[0]["tickers"]
 
 
+def test_official_pages_drop_dateless_treasury_nav_chrome(monkeypatch):
+    """Treasury list pages are scraped anchor-by-anchor; nav / section chrome
+    ('Internal Revenue Service (IRS)', 'Revenue Proposals' from the Green Book
+    sidebar) carries no date and must be dropped even though 'revenue' hands it an
+    'earnings' theme — while a dated real release survives."""
+    import requests
+    html = (
+        "<html><body><ul>"
+        "<li><a href='/news/press-releases/jy9999'>Treasury Sanctions Network "
+        "Financing Illicit Trade</a> 06/20/2026</li>"
+        "<li><a href='/policy-issues/tax-policy/revenue-proposals'>Revenue Proposals</a></li>"
+        "<li><a href='/about/internal-revenue-service'>Internal Revenue Service (IRS)</a></li>"
+        "</ul></body></html>")
+
+    class _Resp:
+        status_code = 200
+        text = html
+
+    monkeypatch.setattr(requests, "get", lambda *a, **k: _Resp())
+    items, _ = mn._fetch_official_pages({
+        "official_pages": [{"name": "Treasury - Press Releases",
+                            "url": "https://home.treasury.gov/news/press-releases",
+                            "theme": "fiscal", "tier": "official"}],
+        "official_window_days": 3650,
+    }, date(2026, 6, 22))
+    titles = [i["title"] for i in items]
+    assert any("Treasury Sanctions" in t for t in titles)               # dated release kept
+    assert "Revenue Proposals" not in titles                            # nav chrome dropped
+    assert "Internal Revenue Service (IRS)" not in titles
+
+
 def test_upcoming_catalysts_shape():
     cats = mn.upcoming_catalysts(date(2026, 6, 14), horizon_days=21)
     types = {c["type"] for c in cats}
