@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-06-22T20:18:40.863195+00:00",
+  "generated_at": "2026-06-23T02:54:38.777102+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -13,7 +13,7 @@
       "contaminated": false,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.1213,
+          "cagr": 0.1214,
           "sharpe": 0.91,
           "max_dd": -0.3754,
           "calmar": 0.32,
@@ -22,7 +22,7 @@
           "worst_decile_ret": -0.0571
         },
         "top3_mom12_rel": {
-          "cagr": 0.1387,
+          "cagr": 0.1389,
           "sharpe": 0.85,
           "max_dd": -0.4332,
           "calmar": 0.32,
@@ -31,25 +31,25 @@
           "worst_decile_ret": -0.0568
         },
         "top3_mom6_rel": {
-          "cagr": 0.1226,
+          "cagr": 0.1227,
           "sharpe": 0.73,
           "max_dd": -0.5005,
           "calmar": 0.25,
           "n_months": 274,
-          "dsr": 0.966,
+          "dsr": 0.967,
           "worst_decile_ret": -0.0585
         },
         "top3_mom12_dual": {
-          "cagr": 0.1158,
-          "sharpe": 0.84,
+          "cagr": 0.116,
+          "sharpe": 0.85,
           "max_dd": -0.2426,
           "calmar": 0.48,
           "n_months": 272,
-          "dsr": 0.989,
+          "dsr": 0.99,
           "worst_decile_ret": -0.0489
         },
         "top4_mom12_dual": {
-          "cagr": 0.1102,
+          "cagr": 0.1103,
           "sharpe": 0.92,
           "max_dd": -0.2032,
           "calmar": 0.54,
@@ -88,7 +88,7 @@
           "n": 742
         },
         "mean_diff_t": -0.77,
-        "mean_diff_p": 0.4423
+        "mean_diff_p": 0.4436
       },
       "extension_drawdown": {
         "fwd_days": 63,

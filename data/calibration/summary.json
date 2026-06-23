@@ -1,12 +1,12 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-06-22",
+  "as_of": "2026-06-23",
   "desks": [
     {
       "name": "AI Desk",
       "slug": "ai_desk",
       "scored": 0,
-      "open": 10,
+      "open": 11,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 90,
+      "open": 91,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 22,
+      "open": 27,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,

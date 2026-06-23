@@ -211,8 +211,8 @@
       "chg_20d_pct": -0.59
     },
     "usdcny": {
-      "level": 6.7671,
-      "chg_20d_pct": -0.4
+      "level": 6.7686,
+      "chg_20d_pct": -0.38
     }
   },
   "property": {
@@ -285,8 +285,8 @@
         "label": "Yuan (CNH) shock",
         "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
         "family": "fx",
-        "projection": 0.79,
-        "strength": 0.79,
+        "projection": 0.76,
+        "strength": 0.76,
         "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
       },
       {
@@ -303,8 +303,8 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": 0.44,
-        "strength": 0.44,
+        "projection": 0.43,
+        "strength": 0.43,
         "direction": "stimulus-on \u2014 CSI300, brokers, property & copper/rebar lead up"
       },
       {
@@ -317,6 +317,15 @@
         "direction": "fear spike \u2014 QVIX up, breadth collapsing, limit-downs surge"
       },
       {
+        "driver": "liquidity_impulse",
+        "label": "Liquidity impulse",
+        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
+        "family": "liquidity",
+        "projection": 0.03,
+        "strength": 0.03,
+        "direction": "domestic liquidity easing \u2014 M1/M2 up, overnight cheap, small-caps & margin bid"
+      },
+      {
         "driver": "pboc_repricing",
         "label": "PBoC / rates repricing",
         "label_zh": "\u592e\u884c/\u5229\u7387\u91cd\u5b9a\u4ef7",
@@ -324,39 +333,30 @@
         "projection": -0.02,
         "strength": 0.02,
         "direction": "rates repricing easier \u2014 SHIBOR & CGB yields down, liquidity added"
-      },
-      {
-        "driver": "liquidity_impulse",
-        "label": "Liquidity impulse",
-        "label_zh": "\u6d41\u52a8\u6027\u8109\u51b2",
-        "family": "liquidity",
-        "projection": -0.0,
-        "strength": 0.0,
-        "direction": "domestic liquidity draining \u2014 M1/M2 down, overnight dear, small-caps & margin sold"
       }
     ],
     "note": "Deterministic China cross-asset attribution \u2014 a regime READ, not a signal; never gates a score or the quad."
   },
   "conditions": {
     "roro": {
-      "roro": 0.048,
-      "roro_raw": 0.048,
+      "roro": 0.051,
+      "roro_raw": 0.051,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.606,
+      "china_roro_copper_gold": 1.595,
       "china_roro_breadth": -0.691,
       "china_roro_southbound": -1.058,
       "china_roro_m1_m2": 0.022,
       "china_roro_turnover": 1.851,
       "china_roro_qvix": -1.338,
-      "china_roro_usdcnh": 0.491,
-      "china_roro_margin": -0.495,
+      "china_roro_usdcnh": 0.519,
+      "china_roro_margin": -0.489,
       "china_roro_ah_premium": null,
       "legs": [
         {
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.606,
+          "value": 1.595,
           "lean": "risk-on"
         },
         {
@@ -398,14 +398,14 @@
           "key": "usdcnh",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": 0.491,
+          "value": 0.519,
           "lean": "risk-on"
         },
         {
           "key": "margin",
           "name_en": "Margin froth",
           "name_zh": "\u878d\u8d44\u62e5\u6324\u5ea6",
-          "value": -0.495,
+          "value": -0.489,
           "lean": "risk-off"
         }
       ]
@@ -483,7 +483,7 @@
       "note_zh": "\u5df2\u752820\u5e74A\u80a1\u524d\u77bb\u6570\u636e\u6821\u51c6\uff1a\u65e0\u524d\u77bb\u56de\u64a4\u4f18\u52bf\uff08A\u80a1\u5747\u503c\u56de\u5f52 \u2014\u2014 \u9ad8\u8bfb\u6570\u504f\u5e73/\u9006\u5411\uff09\uff1b\u533a\u95f4\u4e3a\u5386\u53f2\u5206\u4f4d\u951a\u5b9a\u3002\u63cf\u8ff0\u6027\u80cc\u666f\uff0c\u4ece\u4e0d\u8ba1\u5165\u8bc4\u5206\u3002"
     },
     "drawdown_risk": {
-      "score": 58.8,
+      "score": 57.4,
       "band": "elevated",
       "uncalibrated": false,
       "calibrated": true,
@@ -2070,7 +2070,7 @@
           0.116,
           0.002,
           0.12,
-          0.048
+          0.051
         ]
       },
       "recession": {
@@ -5226,7 +5226,7 @@
           52.3,
           56.3,
           56.2,
-          58.8
+          57.4
         ]
       },
       "fear_euphoria": {
@@ -6804,7 +6804,7 @@
           71.3,
           57.9,
           72.1,
-          63.8
+          64.2
         ]
       }
     },
@@ -6815,14 +6815,14 @@
     "fe_score": 64,
     "band": "Neutral",
     "band_zh": "\u4e2d\u6027",
-    "roro": 0.048,
+    "roro": 0.051,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.606,
+        "value": 1.595,
         "pct": 98,
         "lean": "risk-on"
       },
@@ -6870,16 +6870,16 @@
         "key": "usdcnh",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": 0.491,
-        "pct": 70,
+        "value": 0.519,
+        "pct": 71,
         "lean": "risk-on"
       },
       {
         "key": "margin",
         "name_en": "Margin froth",
         "name_zh": "\u878d\u8d44\u62e5\u6324\u5ea6",
-        "value": -0.495,
-        "pct": 6,
+        "value": -0.489,
+        "pct": 9,
         "lean": "risk-off"
       }
     ],

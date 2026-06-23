@@ -1,10 +1,11 @@
 {
-  "cash": 0.354,
+  "cash": 0.348,
   "crash": false,
   "eligible": [
     "ai_infra",
     "ai_neoclouds",
     "ai_semiconductors",
+    "big_pharma",
     "critical_minerals",
     "crypto",
     "cybersecurity",

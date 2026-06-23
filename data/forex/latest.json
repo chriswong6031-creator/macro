@@ -1,5 +1,5 @@
 {
-  "date": "Jun 22, 2026",
+  "date": "Jun 23, 2026",
   "regime": "Global reflation",
   "favored": [
     "AUD",
@@ -10,94 +10,94 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1429,
+      "quote": 1.1427,
       "chg": -1.8,
       "action": "FLAT",
-      "score": -12.9
+      "score": -10.4
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3245,
-      "chg": -1.6,
+      "quote": 1.3242,
+      "chg": -1.3,
       "action": "FLAT",
-      "score": 9.8
+      "score": 13.8
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.405,
-      "chg": 1.2,
+      "quote": 161.578,
+      "chg": 1.4,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.809,
-      "chg": 2.7,
+      "quote": 0.8087,
+      "chg": 3.2,
       "action": "LONG",
-      "score": 29.3
+      "score": 24.7
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.7004,
-      "chg": -1.8,
+      "quote": 0.6987,
+      "chg": -2.5,
       "action": "SHORT",
-      "score": -25.3
+      "score": -29.0
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4155,
-      "chg": 2.3,
+      "quote": 1.4164,
+      "chg": 2.8,
       "action": "LONG",
-      "score": 30.4
+      "score": 20.3
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.3631,
-      "chg": 0.4,
+      "quote": 17.364,
+      "chg": -0.1,
       "action": "SHORT",
-      "score": -32.9
+      "score": -43.8
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1412,
-      "chg": 1.3,
+      "quote": 5.141,
+      "chg": 1.8,
       "action": "FLAT",
-      "score": -4.0
+      "score": 4.8
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7405,
+      "quote": 6.742,
       "chg": -0.5,
       "action": "FLAT",
       "score": 15.0
     }
   },
   "dollar_desk": {
-    "lean": "mixed backdrop",
+    "lean": "dollar-supportive backdrop",
     "real_rate_regime": "Restrictive real yields",
-    "real_rate_z": 0.72,
-    "fed_path_bps": 50.0,
+    "real_rate_z": 0.67,
+    "fed_path_bps": 49.0,
     "fed_path_lean": "hawkish_repricing",
-    "usd_pos_pctile": 42.0,
+    "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
     "usd_reer_gap_pct": 0.5,
     "usd_valuation": "fair",
-    "trend": "down",
-    "trend_n_up": 1,
+    "trend": "up",
+    "trend_n_up": 4,
     "liquidity_dir": "soft",
-    "smile_confidence": "medium",
+    "smile_confidence": "low",
     "triple_red": false
   },
   "transmission": {
     "usd_dir": "flat",
     "corr": {
-      "CL=F": 0.66,
-      "SPY": -0.65,
-      "EEM": -0.62,
-      "HG=F": -0.61,
-      "GC=F": -0.53,
-      "UST10": -0.41,
-      "BTC": -0.2
+      "CL=F": 0.62,
+      "HG=F": -0.62,
+      "GC=F": -0.58,
+      "SPY": -0.56,
+      "EEM": -0.5,
+      "UST10": -0.37,
+      "BTC": -0.24
     },
     "headwind_for": [
       "US equities",
