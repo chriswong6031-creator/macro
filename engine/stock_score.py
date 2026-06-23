@@ -1180,8 +1180,10 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         notes.append({
             "kind": "rank",
             "en": "Score is a within-board percentile RANK (top of today's board), not an absolute "
-                  "0-100 conviction — the verdict reflects the absolute read.",
-            "zh": "评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数。"})
+                  "0-100 conviction — the verdict reflects the absolute read"
+                  + (", which here BLOCKS a buy (wait for a base)." if blocked else "."),
+            "zh": "评分为板内百分位排名（今日榜单靠前），并非绝对的 0-100 确信度——结论反映绝对读数"
+                  + ("，此处结论为暂不买入（等待筑底）。" if blocked else "。")})
     # (2) the forward risk-cone is favourable but the conviction score is muted — surface the
     # 'high upside / low downside' the factor axes don't capture (the AVGO complaint).
     _ah = ((rec.get("anticipation") or {}).get("horizons") or {}).get("medium") or {}
