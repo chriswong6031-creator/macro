@@ -1,7 +1,7 @@
 name: daily
 on:
   schedule:
-    - cron: "40 22 * * 1-5"   # 22:40 UTC weekdays, after US close; off-hour minute avoids scheduler congestion
+    - cron: "40 22 * * *"   # 22:40 UTC every day, after the US close (16:00 ET = 20:00/21:00 UTC across DST); off-hour minute avoids scheduler congestion
   workflow_dispatch:
 
 permissions:
