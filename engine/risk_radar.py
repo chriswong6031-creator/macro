@@ -101,6 +101,22 @@ _SCARE_LABEL = {
 _DEFAULT_BANDS = {"watch": 45.0, "caution": 58.0, "elevated": 70.0, "risk_off": 85.0}
 _STATE_ORDER = ["calm", "watch", "caution", "elevated", "risk-off"]
 _ALERT_FROM = "elevated"            # loud banner fires at/above this
+
+# ESCALATING calibrated probability: P(SPY >= 5% pullback within H business days | state),
+# MEASURED on 2006-2026 (full-history blended with the 2020+ holdout, monotonic at the top
+# where the edge is real; lower bands ~= base ~17.8% @ h21). The probability RISES as the
+# state climbs AND as more scare-types fire together (conjunction) — proven in
+# research/RISK_ENGINE_V2_FINDINGS.md / /tmp/riskbt/escalation.py. The Opus review loop is
+# allowed to retune this surface from the realized forward-outcome log.
+_PROB_CAL = {
+    "h5":  {"calm": 0.02, "watch": 0.02, "caution": 0.02, "elevated": 0.04, "risk-off": 0.065},
+    "h10": {"calm": 0.06, "watch": 0.06, "caution": 0.07, "elevated": 0.10, "risk-off": 0.14},
+    "h21": {"calm": 0.13, "watch": 0.13, "caution": 0.15, "elevated": 0.20, "risk-off": 0.27},
+}
+_PROB_BASE = {"h5": 0.036, "h10": 0.086, "h21": 0.178}   # unconditional base rates
+# extra probability when MANY scare-types fire together (independent monotonic effect, measured),
+# applied per hot Tier-A scare beyond the first, scaled by horizon, capped.
+_CONJ_BUMP = {"h5": 0.012, "h10": 0.020, "h21": 0.030}
 _GROSS = {"watch": 0.97, "caution": 0.90, "elevated": 0.78, "risk_off": 0.60, "floor": 0.50}
 
 _DISCLAIMER = ("Evidence-gated leading-risk radar (research/RISK_ENGINE_V2_FINDINGS.md). "
@@ -117,7 +133,7 @@ def _calib(root=None) -> dict:
     + scare weights; never adds/removes legs."""
     base = {"bands": dict(_DEFAULT_BANDS), "legs": {k: dict(v) for k, v in _LEG_CALIB.items()},
             "scares": {k: {"tier": v["tier"], "legs": list(v["legs"])} for k, v in _SCARES.items()},
-            "alert_from": _ALERT_FROM}
+            "prob_cal": {h: dict(v) for h, v in _PROB_CAL.items()}, "alert_from": _ALERT_FROM}
     try:
         from pathlib import Path
         base_dir = config.data_dir() if root is None else (Path(root) / "data")
@@ -128,6 +144,9 @@ def _calib(root=None) -> dict:
             for leg, d in (ov.get("legs") or {}).items():
                 if leg in base["legs"]:
                     base["legs"][leg].update(d)
+            for h, d in (ov.get("prob_cal") or {}).items():
+                if h in base["prob_cal"]:
+                    base["prob_cal"][h].update(d)
             base["alert_from"] = ov.get("alert_from", base["alert_from"])
     except Exception as e:  # noqa: BLE001
         log.warning("risk_radar: calibration overlay read failed: %s", e)
@@ -309,6 +328,7 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
 
     alert = _STATE_ORDER.index(state) >= _STATE_ORDER.index(calib.get("alert_from", _ALERT_FROM))
     gross = _gross_for(state)
+    prob = _drawdown_prob(state, len(hotA), calib)
     head_en, head_zh = _headline(state, dominant, hotA)
 
     return {
@@ -324,6 +344,7 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "scares": scares,
         "headline_en": head_en,
         "headline_zh": head_zh,
+        "drawdown_prob": prob,
         "gross_factor": gross,
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated"),
@@ -332,6 +353,24 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "loud_early": True,
         "disclaimer": _DISCLAIMER,
     }
+
+
+def _drawdown_prob(state: str, nhot: int, calib: dict | None = None) -> dict:
+    """Calibrated, ESCALATING probability of a >=5% SPY pullback within 5/10/21 business days.
+    Rises with the state (intensity) AND with conjunction (# Tier-A scares hot) — both measured.
+    Returns per-horizon probabilities + the base rate + lift, with an honest one-line note."""
+    cal = (calib or {}).get("prob_cal") or _PROB_CAL
+    conj_extra = max(0, int(nhot) - 1)
+    out = {}
+    for h in ("h5", "h10", "h21"):
+        base = cal.get(h, _PROB_CAL[h]).get(state, _PROB_BASE[h])
+        p = min(0.95, base + conj_extra * _CONJ_BUMP[h])
+        out[h] = round(p, 3)
+    out["base_h21"] = _PROB_BASE["h21"]
+    out["lift_h21"] = round(out["h21"] / _PROB_BASE["h21"], 2)
+    out["conjunction_n"] = int(nhot)
+    out["measure"] = ">=5% SPY pullback (empirical 2006-2026; rises with intensity + conjunction)"
+    return out
 
 
 def _gross_for(state: str) -> float:

@@ -239,3 +239,39 @@ After the red-team showed §2 used **event-anchored recall** (which rewards freq
 
 ### Honest redesign mandate (supersedes §4 weights)
 Build the composite ONLY from strict-bar survivors, weighted by **2020+ era lift**, regime-typed by the clusters above; calibrate alert thresholds to ≥2× forward-DD lift under an explicit FP budget; bake a **walk-forward 2020+ holdout gate** into a test; ship a **forward-outcome log**; and stand up the **deep options-flow collectors** (put/call CSV first) as the only credible path to fast vol-event lead. Frame everything as modest odds with the lift/FP/lead printed next to the alert.
+
+---
+
+## 9. ESCALATING CALIBRATED PROBABILITY (does the likelihood rise as risk builds?)
+
+YES — measured (`/tmp/riskbt/escalation.py`). P(SPY >= 5% pullback within H business days) is
+monotonic in BOTH intensity (state band) and conjunction (# Tier-A scares firing together):
+
+**Intensity (2020+ holdout — the regime that matters):**
+
+| state | H5 | H10 | H21 | H42 |
+|---|---|---|---|---|
+| calm | 0.0% | 0.0% | 0.0% | 0.0% |
+| caution | 0.0% | 0.4% | 8.1% | 17.7% |
+| elevated | 2.7% | 6.6% | 11.7% | 16.6% |
+| **risk-off** | **6.6%** | **14.7%** | **30.3%** | **42.8%** |
+| base | 3.7% | 8.5% | 18.1% | 27.1% |
+
+**Conjunction (full history):**
+
+| # Tier-A hot | H5 | H10 | H21 | H42 |
+|---|---|---|---|---|
+| 0 | 2.1% | 5.8% | 11.6% | 20.0% |
+| 1 | 2.5% | 7.2% | 16.6% | 26.2% |
+| 2 | 4.1% | 9.8% | 20.3% | 30.1% |
+| **>=3** | **8.1%** | **14.3%** | **25.0%** | **35.3%** |
+
+**Approach (honest nuance):** the radar is elevated ~3-4 weeks BEFORE events (mean top-score ~80
+from 40bd out — genuine early warning), but the 5-day hazard only spikes AT the onset. So it
+reliably flags a ~20-30% drawdown WINDOW with rising odds; it cannot pinpoint the exact day.
+
+**Implemented:** `risk_radar.compute()` now emits `drawdown_prob = {h5, h10, h21, base_h21,
+lift_h21, conjunction_n}` from a baked `_PROB_CAL` surface (blended full + 2020+, monotonic at
+the top) plus a per-extra-hot-scare bump — so the displayed probability RISES as intensity and
+conjunction build. The surface is overlay-able (`data/risk_radar/calibration.json` `prob_cal`) so
+the Opus self-correction loop retunes it from the realized forward-outcome log.

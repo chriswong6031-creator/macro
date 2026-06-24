@@ -111,6 +111,32 @@ def test_vol_term_is_not_claimed_validated():
     assert rr._LEG_CALIB["vol_term"]["lift_2020"] < rr._VALIDATED_MIN
 
 
+def test_drawdown_prob_escalates_with_intensity():
+    # P(drawdown within 21bd) must be non-decreasing as the state climbs (empirical monotonicity)
+    p = [rr._drawdown_prob(st, 0)["h21"] for st in ("calm", "watch", "caution", "elevated", "risk-off")]
+    assert p == sorted(p), f"prob not monotonic in state: {p}"
+    assert rr._drawdown_prob("risk-off", 0)["h21"] > rr._drawdown_prob("calm", 0)["h21"]
+    # and the near-term (5d) hazard is higher at risk-off than calm too
+    assert rr._drawdown_prob("risk-off", 0)["h5"] > rr._drawdown_prob("calm", 0)["h5"]
+
+
+def test_drawdown_prob_escalates_with_conjunction():
+    # more scare-types firing together raises the probability at the same state
+    lo = rr._drawdown_prob("elevated", 1)["h21"]
+    hi = rr._drawdown_prob("elevated", 3)["h21"]
+    assert hi > lo
+    assert rr._drawdown_prob("elevated", 3)["lift_h21"] > 1.0
+
+
+def test_compute_emits_drawdown_prob():
+    out = rr.compute(sigs=_sigs(credit_oas_roc=0.97, bubble_ext=0.97, growth_defensives=0.97,
+                                growth_cyc_def=0.97))
+    dp = out.get("drawdown_prob")
+    assert dp and "h5" in dp and "h10" in dp and "h21" in dp
+    assert dp["h21"] > dp["h10"] > dp["h5"]          # cumulative over longer horizon
+    assert dp["h21"] > rr._PROB_BASE["h21"]          # elevated/risk-off above base
+
+
 def test_calibration_overlay_merges(tmp_path):
     (tmp_path / "data" / "risk_radar").mkdir(parents=True)
     (tmp_path / "data" / "risk_radar" / "calibration.json").write_text(
