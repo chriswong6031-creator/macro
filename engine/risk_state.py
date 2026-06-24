@@ -368,6 +368,84 @@ def compute(latest: dict, *, gex_index=None, hyg_tlt_roc=None,
     }
 
 
+def core_series(f, cfg: dict | None = None):
+    """Daily 0-100 risk-state CORE series from the historical conditions legs that
+    exist as time series (complacency, breadth divergence, vol structure, credit).
+    The live snapshot() adds dealer-gamma / extension / turning-point / cross-asset
+    legs that have no clean history here; this core is what the ALERT fires a band
+    CROSS on (in-framework, leak-free). Returns a pandas Series (may be empty).
+    Heavy deps (pandas/numpy + conditions_frame) are imported lazily so importing
+    risk_state for the pure compute() path stays light."""
+    import numpy as np
+    import pandas as pd
+    from engine.conditions import conditions_frame
+
+    cfg = cfg or _cfg()
+    w = cfg["weights"]
+    try:
+        cf = conditions_frame(f)
+    except Exception:  # pragma: no cover - defensive
+        return pd.Series(dtype=float)
+    if cf is None or cf.empty:
+        return pd.Series(dtype=float)
+
+    mcfg = (config.load().get("engine", {}).get("conditions", {}) or {}).get("complacency", {}) or {}
+    ts = (config.load().get("engine", {}).get("conditions", {}) or {}).get("term_structure", {}) or {}
+    high_prox = float(mcfg.get("breadth_high_prox", 0.97))
+    weak_p = float(mcfg.get("breadth_weak_pctile", 0.35))
+    backw = float(ts.get("backwardation_ratio", 1.0))
+    idx = cf.index
+    zero = pd.Series(0.0, index=idx)
+
+    legs = {}
+    # complacency intensity from the calm/fragility counters
+    cc = cf["complacency_calm"] if "complacency_calm" in cf else None
+    fr = cf["complacency_fragility"] if "complacency_fragility" in cf else None
+    if cc is not None and fr is not None:
+        comp = zero.copy()
+        comp = comp.mask(cc >= 1, 0.25)
+        comp = comp.mask((cc >= 1) & (fr >= 1), 0.6)
+        comp = comp.mask((cc >= 1) & (fr >= 2), 1.0)
+        legs["complacency"] = comp
+    # breadth divergence: index near 1y high while %>200dma weak
+    if {"spy_high_prox", "breadth_above200_pctile"} <= set(cf.columns):
+        bd = ((cf["spy_high_prox"] >= high_prox) &
+              (cf["breadth_above200_pctile"] < weak_p)).astype(float)
+        legs["breadth_div"] = bd
+    # vol structure: backwardation (stress) or rich-VRP+rich-SKEW (complacency)
+    vs = zero.copy()
+    if "vix_term" in cf:
+        vs = vs.mask(cf["vix_term"] >= backw, 1.0)
+    if "vrp_pctile" in cf:
+        vs = vs.mask((vs < 0.45) & (cf["vrp_pctile"] > 0.7), 0.45)
+    if "skew_pctile" in cf:
+        vs = (vs + (cf["skew_pctile"] > 0.8).astype(float) * 0.3).clip(0, 1)
+    if "vix_term" in cf or "vrp_pctile" in cf:
+        legs["vol_structure"] = vs
+    # credit: HY OAS widening over 21d
+    if "hy_oas_chg_21d" in cf:
+        legs["credit"] = (cf["hy_oas_chg_21d"] > 0).astype(float) * 0.5
+
+    if not legs:
+        return pd.Series(dtype=float)
+
+    num = sum(s * float(w.get(n, 0.0)) for n, s in legs.items())
+    den = sum(float(w.get(n, 0.0)) for n in legs)
+    score = (num / den * 100.0) if den > 0 else zero
+
+    # per-row conjunction escalator over the leading legs present in the series
+    cj = cfg["conjunction"]
+    leading = [n for n in _LEADING if n in legs]
+    if leading:
+        hot = sum((legs[n] >= cj["threshold"]).astype(int) for n in leading)
+        bands = cfg["bands"]
+        floor2 = bands.get(cj["floor_2"].replace("-", "_"), bands["caution"])
+        floor3 = bands.get(cj["floor_3"].replace("-", "_"), bands["elevated"])
+        score = score.mask(hot >= 2, np.maximum(score, floor2))
+        score = score.mask(hot >= 3, np.maximum(score, floor3))
+    return score.round(1)
+
+
 def snapshot(latest: dict, root=None) -> dict:
     """IO wrapper the engine persists to latest['risk_state']. Loads the prior
     GEX board posture and computes the HYG-TLT roll, then calls compute(). Never

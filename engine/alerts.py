@@ -384,6 +384,83 @@ def capitulation_signal(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
                             f"S&P 未来三月 +9.3%，86% 为正（基准 +2.8%）。是恐慌而非预测。")
 
 
+# --- fused equity-internal risk state (engine/risk_state.py) --------------------
+
+def risk_state_elevated(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """The LOUD composite: fire when the fused equity-internal risk-state core
+    crosses INTO elevated. Unlike drawdown_risk_high (credit/recession-weighted),
+    this leads on positioning/vol/breadth — the exact blind spot on 2026-06-23."""
+    if not config.load()["alerts"].get("risk_state_elevated", True):
+        return None
+    from engine import risk_state as rs
+    s = rs.core_series(f)
+    if s is None or len(s.dropna()) < 2:
+        return None
+    s = s.dropna()
+    thr = float(rs._cfg()["bands"]["elevated"])
+    if not (s.iloc[-2] < thr <= s.iloc[-1]):
+        return None
+    sev = "act" if s.iloc[-1] >= float(rs._cfg()["bands"]["risk_off"]) else "warn"
+    return Alert("risk_state_elevated", sev,
+                 f"Equity risk-state crossed into {'RISK-OFF' if sev == 'act' else 'ELEVATED'} "
+                 f"({s.iloc[-1]:.0f}/100) — positioning/vol/breadth fragility building; "
+                 f"de-gross, favor entries over chasing leaders",
+                 message_zh=f"股票风险状态进入{'risk-off' if sev == 'act' else '偏高'}区"
+                            f"（{s.iloc[-1]:.0f}/100）— 仓位/波动/宽度脆弱性上升；降低敞口、择优入场而非追高")
+
+
+def hidden_fragility(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Promote the orphaned complacency / hidden-fragility detector to a real alert:
+    a CALM surface (cheap VIX, steep contango) over WEAKENING internals. Fires on the
+    cross into watch (calm>=1 & frag>=1); act-tier on hidden-fragility (calm>=1 & frag>=2)."""
+    if not config.load()["alerts"].get("hidden_fragility", True):
+        return None
+    cf = _conditions_frame(f)
+    if not {"complacency_calm", "complacency_fragility"} <= set(cf.columns):
+        return None
+    cc, fr = cf["complacency_calm"], cf["complacency_fragility"]
+    warn = ((cc >= 1) & (fr >= 1)).astype(int)
+    strong = ((cc >= 1) & (fr >= 2)).astype(int)
+    d = pd.concat([warn.rename("w"), strong.rename("s")], axis=1).dropna()
+    if len(d) < 2:
+        return None
+    y, t = d.iloc[-2], d.iloc[-1]
+    if t["s"] and not y["s"]:
+        return Alert("hidden_fragility", "act",
+                     "Hidden fragility: a calm surface (cheap VIX, contango) over weakening "
+                     "internals (thinning breadth, HY widening) — the classic complacent pre-drawdown setup",
+                     message_zh="隐性脆弱：平静表象（低VIX、contango）下内部走弱（宽度变薄、HY走阔）— 典型的自满型回撤前夜")
+    if t["w"] and not y["w"]:
+        return Alert("hidden_fragility", "warn",
+                     "Complacency watch: calm tape starting to mask weakening internals",
+                     message_zh="自满预警：平静走势开始掩盖走弱的内部结构")
+    return None
+
+
+def breadth_divergence(hist: pd.DataFrame, f: pd.DataFrame) -> Alert | None:
+    """Promote the orphaned breadth-divergence detector: index near its 1y high while
+    %>200dma is weak (a thinning tape). Fires on the cross from confirming -> diverging."""
+    if not config.load()["alerts"].get("breadth_divergence", True):
+        return None
+    cf = _conditions_frame(f)
+    if not {"spy_high_prox", "breadth_above200_pctile"} <= set(cf.columns):
+        return None
+    mcfg = config.load()["engine"]["conditions"].get("complacency", {})
+    high_prox = float(mcfg.get("breadth_high_prox", 0.97))
+    weak_p = float(mcfg.get("breadth_weak_pctile", 0.35))
+    div = ((cf["spy_high_prox"] >= high_prox) &
+           (cf["breadth_above200_pctile"] < weak_p)).astype(int)
+    d = div.dropna()
+    if len(d) < 2 or not (d.iloc[-1] and not d.iloc[-2]):
+        return None
+    b2p = cf["breadth_above200_pctile"].dropna()
+    return Alert("breadth_divergence", "warn",
+                 f"Breadth divergence: index near its 1y high while %>200dma is weak "
+                 f"({b2p.iloc[-1]:.0%} pctile) — fewer names carrying the tape",
+                 message_zh=f"宽度背离：指数接近一年高点但 %>200日均线偏弱"
+                            f"（{b2p.iloc[-1]:.0%} 分位）— 抬指数的个股在减少")
+
+
 # --- runner ---------------------------------------------------------------------
 
 def evaluate(f: pd.DataFrame) -> list[Alert]:
@@ -394,7 +471,8 @@ def evaluate(f: pd.DataFrame) -> list[Alert]:
     alerts: list[Alert] = []
     rules = [transition_state_change, net_liquidity_roc_flip, hy_oas_widening,
              gex_flip_cross, conditions_recession_state_change, nfci_tightening,
-             sahm_trigger, ebp_widening, drawdown_risk_high, capitulation_signal]
+             sahm_trigger, ebp_widening, drawdown_risk_high, capitulation_signal,
+             risk_state_elevated, hidden_fragility, breadth_divergence]
     multi = [axis_confidence_floor, sector_rs_percentile_cross,
              holdings_active_changes, sector_holdings_accumulation,
              circuit_breaker_open]
@@ -459,6 +537,40 @@ _DEFAULT_META = {
 }
 
 ALERT_META: dict[str, dict] = {
+    "risk_state_elevated": {
+        "icon": "🚨",
+        "plain_en": "Market risk-state went ELEVATED — drawdown risk is building",
+        "plain_zh": "市场风险状态转为偏高 — 回撤风险上升",
+        "what_en": "The fused equity-internal risk-state (complacency, breadth divergence, "
+                   "dealer gamma, vol structure, credit) crossed into elevated. It leads the "
+                   "credit-weighted macro gauge on positioning/vol/breadth blow-offs. "
+                   "Cue to de-gross and favor good entries over chasing leaders.",
+        "what_zh": "融合的股票内部风险状态（自满度、宽度背离、做市商Gamma、波动结构、信用）"
+                   "进入偏高区。在仓位/波动/宽度型见顶上领先于信用加权的宏观指标。"
+                   "提示降低敞口、择优入场而非追高。",
+        "anchor": "risk-state",
+    },
+    "hidden_fragility": {
+        "icon": "🫧",
+        "plain_en": "Calm surface, fragile internals — complacency watch",
+        "plain_zh": "表象平静、内部脆弱 — 自满预警",
+        "what_en": "A cheap-VIX / steep-contango calm sitting over weakening internals "
+                   "(thinning breadth, HY credit quietly widening). The classic complacent "
+                   "pre-drawdown setup. Context, not a timer — size down, don't chase.",
+        "what_zh": "低VIX、陡峭contango的平静，叠加走弱的内部结构（宽度变薄、HY信用悄然走阔）。"
+                   "典型的自满型回撤前夜。属背景而非择时 — 缩小仓位，不要追高。",
+        "anchor": "risk-state",
+    },
+    "breadth_divergence": {
+        "icon": "📉",
+        "plain_en": "Breadth divergence — fewer names carrying the index",
+        "plain_zh": "宽度背离 — 抬指数的个股在减少",
+        "what_en": "The index is near its 1-year high while the share of stocks above their "
+                   "200-day average is weak — a thinning tape. A narrowing-leadership caution.",
+        "what_zh": "指数接近一年高点，但站上200日均线的个股占比偏弱 — 走势变薄。"
+                   "属领导面收窄的警示。",
+        "anchor": "risk-state",
+    },
     "transition_state_change": {
         "icon": "🧭",
         "plain_en": "Regime radar moved — the market “weather” may be shifting",
@@ -653,6 +765,17 @@ ALERT_CONVICTION: dict[str, dict] = {
     "circuit_breaker_open": {"tier": "context",
         "edge_en": "Plumbing — data health, not a market signal.",
         "edge_zh": "管线 — 数据健康度，而非市场信号。"},
+    "risk_state_elevated": {"tier": "act",
+        "edge_en": "High — the equity-internal early-warning the credit gauge misses. "
+                   "De-risk response is sizing, not selection.",
+        "edge_zh": "高 — 信用指标看不到的股票内部早期预警。应对是调仓位，而非选股。"},
+    "hidden_fragility": {"tier": "watch",
+        "edge_en": "Medium — a calm-over-weak CONTEXT (the conjunction matters, not low "
+                   "VIX alone). Size down, don't chase.",
+        "edge_zh": "中 — 平静掩盖走弱的背景（关键是组合而非单看低VIX）。缩小仓位，不要追高。"},
+    "breadth_divergence": {"tier": "watch",
+        "edge_en": "Medium — fewer names carrying the index; a thinning-tape caution, not a timer.",
+        "edge_zh": "中 — 抬指数的个股在减少；属于宽度变薄的警示，而非择时。"},
 }
 
 

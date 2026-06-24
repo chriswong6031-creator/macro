@@ -1749,6 +1749,10 @@ alerts:
   ebp_widening_z: 2.0                 # EBP 1-month change this many sigma = credit risk-off
   drawdown_risk_high: 80              # macro-stress gauge crossing into the high band (P(dd) ~36%)
   capitulation_strong: 2              # capitulation gauge >= this (stacked) = contrarian bounce watch
+  # --- fused equity-internal RISK STATE (engine/risk_state.py) alerts ---
+  risk_state_elevated: true          # fire when the core risk-state crosses into elevated (>=60)
+  hidden_fragility: true             # fire when complacency crosses into watch/hidden-fragility (calm + weak)
+  breadth_divergence: true           # fire when index near 1y high while %>200dma turns weak
   # --- per-ticker / per-ETF alert feed (engine/ticker_alerts.py) ---
   ticker_timeline_days: 120           # window shown in each ticker / ETF alert feed
   ticker_max_events: 50               # cap on events kept per feed (most-recent-first)
