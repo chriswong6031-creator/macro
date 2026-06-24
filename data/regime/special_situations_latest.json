@@ -1,7 +1,7 @@
 {
-  "total": 1031,
+  "total": 1032,
   "n_categories": 17,
-  "cross_border": 552,
+  "cross_border": 551,
   "top_categories": [
     {
       "category": "Acquisitions",
@@ -17,5 +17,5 @@
     }
   ],
   "floor_musd": 100.0,
-  "built": "2026-06-24 08:41 UTC"
+  "built": "2026-06-24 23:29 UTC"
 }

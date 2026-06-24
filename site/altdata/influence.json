@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-24T09:06:50.589626+00:00",
+  "generated_utc": "2026-06-24T23:49:15.997262+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,13 +749,14 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.7,
+      "alt_score": 8,
+      "alt_weighted": 3.05,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
         "github_momentum",
+        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -895,10 +896,11 @@
       ],
       "n_actors": 4,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.15,
       "alt_channels": [
         "affiliation",
+        "cnbc_pick",
         "patent_cluster"
       ],
       "top_holder": {
@@ -967,12 +969,13 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.45,
+      "alt_score": 4,
+      "alt_weighted": 2.1,
       "alt_channels": [
         "affiliation",
         "material_8k",
-        "special_situation"
+        "special_situation",
+        "unusual_options"
       ],
       "top_holder": null
     },
@@ -1092,13 +1095,14 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.55,
+      "alt_score": 7,
+      "alt_weighted": 2.9,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
         "github_momentum",
+        "hf_model_momentum",
         "material_8k",
         "special_situation"
       ],
@@ -1688,6 +1692,14 @@
   "n_candidates": 0,
   "filings": [
     {
+      "date": "2026-06-24",
+      "form": "8-K",
+      "company": "American Bitcoin Corp.",
+      "ticker": "ABTC",
+      "items": "5.07,8.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1755953/000119312526281239/abtc-20260622.htm"
+    },
+    {
       "date": "2026-06-17",
       "form": "425",
       "company": "Trump Media & Technology Group Corp.",
@@ -1702,14 +1714,6 @@
       "ticker": "HUT",
       "items": "5.07",
       "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926073505/tm2617732d1_8k.htm"
-    },
-    {
-      "date": "2026-06-10",
-      "form": "425",
-      "company": "Trump Media & Technology Group Corp.",
-      "ticker": null,
-      "items": "",
-      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024736/ef20075853_425.htm"
     },
     {
       "date": "2026-06-10",
@@ -1737,6 +1741,14 @@
     },
     {
       "date": "2026-06-10",
+      "form": "425",
+      "company": "Trump Media & Technology Group Corp.",
+      "ticker": null,
+      "items": "",
+      "url": "https://www.sec.gov/Archives/edgar/data/1849635/000114036126024736/ef20075853_425.htm"
+    },
+    {
+      "date": "2026-06-10",
       "form": "8-K",
       "company": "Trump Media & Technology Group Corp.",
       "ticker": null,
@@ -1749,7 +1761,7 @@
       "company": "Hut 8 Corp.",
       "ticker": "HUT",
       "items": "8.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070744/tm2616926d1_ex99-1.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070744/tm2616926d1_8k.htm"
     },
     {
       "date": "2026-06-05",
@@ -1757,15 +1769,7 @@
       "company": "Hut 8 Corp.",
       "ticker": "HUT",
       "items": "8.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070744/tm2616926d1_8k.htm"
-    },
-    {
-      "date": "2026-06-04",
-      "form": "8-K",
-      "company": "Hut 8 Corp.",
-      "ticker": "HUT",
-      "items": "7.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070393/tm2616869d1_8k.htm"
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070744/tm2616926d1_ex99-1.htm"
     },
     {
       "date": "2026-06-04",
@@ -1776,12 +1780,12 @@
       "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070393/tm2616869d1_ex99-1.htm"
     },
     {
-      "date": "2026-06-01",
+      "date": "2026-06-04",
       "form": "8-K",
-      "company": "Vertical Data Inc.",
-      "ticker": "VDTA",
-      "items": "8.01,9.01",
-      "url": "https://www.sec.gov/Archives/edgar/data/2033264/000149315226026649/ex99-1.htm"
+      "company": "Hut 8 Corp.",
+      "ticker": "HUT",
+      "items": "7.01,9.01",
+      "url": "https://www.sec.gov/Archives/edgar/data/1964789/000110465926070393/tm2616869d1_8k.htm"
     }
   ]
 }

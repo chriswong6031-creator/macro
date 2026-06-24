@@ -1,32 +1,32 @@
 {
-  "21b8225852df": {
-    "name_en": "Cross-sector cluster \u00b7 Health Care + Materials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Materials",
-    "score": 54.4
+  "442fd205d4db": {
+    "name_en": "Cross-sector cluster \u00b7 Financials + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Financials + Industrials",
+    "score": 52.9
   },
-  "687c8b84b589": {
-    "name_en": "Cross-sector cluster \u00b7 Materials + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Materials + Industrials",
-    "score": 53.5
-  },
-  "719cac89ed7b": {
+  "5b7b225a335d": {
     "name_en": "Emerging Materials cluster",
     "name_zh": "\u65b0\u5174 Materials \u96c6\u7fa4",
-    "score": 49.5
-  },
-  "7db337a10577": {
-    "name_en": "Emerging Information Technology cluster",
-    "name_zh": "\u65b0\u5174 Information Technology \u96c6\u7fa4",
-    "score": 47.1
+    "score": 54.6
   },
   "82fa80f4d954": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Discretionary + Health Care",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Discretionary + Health Care",
-    "score": 64.8
+    "score": 65.0
+  },
+  "a89a3397bc9a": {
+    "name_en": "Cross-sector cluster \u00b7 Health Care + Real Estate",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Health Care + Real Estate",
+    "score": 71.1
+  },
+  "b0d5e75d0eef": {
+    "name_en": "Emerging Industrials cluster",
+    "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
+    "score": 52.3
   },
   "f449e2014f48": {
     "name_en": "Cross-sector cluster \u00b7 Information Technology + Consumer Discretionary",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Consumer Discretionary",
-    "score": 75.2
+    "score": 75.3
   }
 }

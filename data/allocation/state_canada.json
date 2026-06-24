@@ -1,5 +1,5 @@
 {
-  "cash": 0.219,
+  "cash": 0.329,
   "crash": false,
   "eligible": [
     "ca_asset_mgrs",
@@ -13,14 +13,13 @@
     "ca_rails_ind",
     "ca_reits",
     "ca_telecom",
-    "ca_uranium",
     "ca_utilities"
   ],
   "held": [
     "ca_banks",
     "ca_base_metals",
-    "ca_uranium",
-    "ca_utilities"
+    "ca_rails_ind",
+    "ca_pipelines"
   ],
   "leader": "ca_banks",
   "names": {

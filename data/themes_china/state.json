@@ -43,7 +43,7 @@
     "label": "deteriorating",
     "name": "Battery & Lithium",
     "name_zh": "\u9502\u7535\u6c60",
-    "rank": 8,
+    "rank": 9,
     "reco": "avoid",
     "score": 44
   },
@@ -75,9 +75,9 @@
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 9,
+    "rank": 8,
     "reco": "avoid",
-    "score": 40
+    "score": 46
   },
   "cn_food_bev": {
     "label": "deteriorating",

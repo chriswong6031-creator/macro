@@ -1,5 +1,5 @@
 {
-  "date": "2026-06-23",
+  "date": "2026-06-24",
   "score": 22,
   "band": "low",
   "band_label": "LOW \u2014 fully invested",
@@ -11,5 +11,5 @@
   "maxdd": -36.5,
   "equity_weight": 100,
   "risk_score": 22,
-  "asof": "2026-06-23"
+  "asof": "2026-06-24"
 }

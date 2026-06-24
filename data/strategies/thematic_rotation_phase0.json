@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-06-24T08:35:22.458541+00:00",
+  "generated_at": "2026-06-24T23:22:16.596824+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -13,7 +13,7 @@
       "contaminated": false,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.0886,
+          "cagr": 0.0887,
           "sharpe": 0.66,
           "max_dd": -0.4912,
           "calmar": 0.18,
@@ -22,12 +22,12 @@
           "worst_decile_ret": -0.0724
         },
         "top3_mom12_rel": {
-          "cagr": 0.09,
+          "cagr": 0.0898,
           "sharpe": 0.65,
           "max_dd": -0.4142,
           "calmar": 0.22,
           "n_months": 318,
-          "dsr": 0.948,
+          "dsr": 0.947,
           "worst_decile_ret": -0.0664
         },
         "top3_mom6_rel": {
@@ -40,7 +40,7 @@
           "worst_decile_ret": -0.0625
         },
         "top3_mom12_dual": {
-          "cagr": 0.0695,
+          "cagr": 0.0694,
           "sharpe": 0.61,
           "max_dd": -0.2804,
           "calmar": 0.25,
@@ -49,7 +49,7 @@
           "worst_decile_ret": -0.0439
         },
         "top4_mom12_dual": {
-          "cagr": 0.0721,
+          "cagr": 0.072,
           "sharpe": 0.66,
           "max_dd": -0.2407,
           "calmar": 0.3,
@@ -60,8 +60,8 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0093,
-          "ic_t_hac": 0.428,
+          "mean_ic": 0.0095,
+          "ic_t_hac": 0.436,
           "hit": 0.531,
           "n_steps": 318
         },
@@ -74,7 +74,7 @@
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0082,
+          "mean": 0.0083,
           "std": 0.0447,
           "sharpe": 0.64,
           "p05": -0.067,
@@ -87,8 +87,8 @@
           "p05": -0.1197,
           "n": 979
         },
-        "mean_diff_t": 0.09,
-        "mean_diff_p": 0.9253
+        "mean_diff_t": 0.1,
+        "mean_diff_p": 0.9229
       },
       "extension_drawdown": {
         "fwd_days": 63,
@@ -96,7 +96,7 @@
           "normal": {
             "mean_fwd_maxdd": -0.0628,
             "p05_fwd_maxdd": -0.2111,
-            "n": 49586
+            "n": 49596
           },
           "stretched": {
             "mean_fwd_maxdd": -0.052,
@@ -105,8 +105,8 @@
           },
           "parabolic": {
             "mean_fwd_maxdd": -0.0562,
-            "p05_fwd_maxdd": -0.1611,
-            "n": 2387
+            "p05_fwd_maxdd": -0.161,
+            "n": 2388
           }
         },
         "spearman_ez_vs_fwd_maxdd": 0.074
@@ -122,51 +122,51 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.5254,
-          "sharpe": 1.93,
+          "cagr": 0.5228,
+          "sharpe": 1.92,
           "max_dd": -0.1402,
-          "calmar": 3.75,
+          "calmar": 3.73,
           "n_months": 37,
-          "dsr": 0.948
+          "dsr": 0.947
         },
         "top3_mom12_rel": {
-          "cagr": 1.3639,
-          "sharpe": 1.72,
+          "cagr": 1.317,
+          "sharpe": 1.68,
           "max_dd": -0.2645,
-          "calmar": 5.16,
+          "calmar": 4.98,
           "n_months": 25,
-          "dsr": 0.859
+          "dsr": 0.846
         },
         "top3_mom6_rel": {
-          "cagr": 1.3896,
-          "sharpe": 1.84,
+          "cagr": 1.3583,
+          "sharpe": 1.81,
           "max_dd": -0.1908,
-          "calmar": 7.28,
+          "calmar": 7.12,
           "n_months": 27,
-          "dsr": 0.906
+          "dsr": 0.899
         },
         "top3_mom12_dual": {
-          "cagr": 1.2857,
-          "sharpe": 1.72,
+          "cagr": 1.2402,
+          "sharpe": 1.68,
           "max_dd": -0.2645,
-          "calmar": 4.86,
+          "calmar": 4.69,
           "n_months": 25,
-          "dsr": 0.84
+          "dsr": 0.825
         },
         "top4_mom12_dual": {
-          "cagr": 1.1158,
-          "sharpe": 1.62,
+          "cagr": 1.0822,
+          "sharpe": 1.59,
           "max_dd": -0.2332,
-          "calmar": 4.78,
+          "calmar": 4.64,
           "n_months": 25,
-          "dsr": 0.806
+          "dsr": 0.793
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.1009,
-          "ic_t_hac": 2.772,
-          "hit": 0.64,
+          "mean_ic": 0.096,
+          "ic_t_hac": 2.764,
+          "hit": 0.6,
           "n_steps": 25
         },
         "3m": {
@@ -178,42 +178,42 @@
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0345,
-          "std": 0.1254,
-          "sharpe": 0.95,
-          "p05": -0.1428,
+          "mean": 0.0341,
+          "std": 0.1259,
+          "sharpe": 0.94,
+          "p05": -0.1434,
           "n": 774
         },
         "below_trend": {
-          "mean": 0.0436,
+          "mean": 0.0438,
           "std": 0.1127,
-          "sharpe": 1.34,
+          "sharpe": 1.35,
           "p05": -0.0957,
           "n": 484
         },
-        "mean_diff_t": -1.33,
-        "mean_diff_p": 0.1824
+        "mean_diff_t": -1.42,
+        "mean_diff_p": 0.1561
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
             "mean_fwd_maxdd": -0.0904,
-            "p05_fwd_maxdd": -0.2797,
-            "n": 13027
+            "p05_fwd_maxdd": -0.2796,
+            "n": 13058
           },
           "stretched": {
-            "mean_fwd_maxdd": -0.0927,
-            "p05_fwd_maxdd": -0.3021,
-            "n": 2771
+            "mean_fwd_maxdd": -0.0928,
+            "p05_fwd_maxdd": -0.302,
+            "n": 2773
           },
           "parabolic": {
             "mean_fwd_maxdd": -0.0993,
-            "p05_fwd_maxdd": -0.321,
-            "n": 930
+            "p05_fwd_maxdd": -0.3208,
+            "n": 931
           }
         },
-        "spearman_ez_vs_fwd_maxdd": 0.022
+        "spearman_ez_vs_fwd_maxdd": 0.023
       },
       "warning": "HINDSIGHT-curated membership + only ~3y + ~15 names -> severely underpowered and survivorship-biased. Context only, never a validation."
     }

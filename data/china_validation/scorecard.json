@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-06-24T08:43:36.520738+00:00",
+  "generated_utc": "2026-06-24T23:30:51.442131+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -30,34 +30,34 @@
       "n_obs": 52,
       "by_horizon": {
         "5": {
-          "mean_ic": -0.0115,
-          "ic_ir": -0.154,
-          "t_hac": -1.707,
-          "p_hac": 0.0878,
+          "mean_ic": -0.0116,
+          "ic_ir": -0.155,
+          "t_hac": -1.709,
+          "p_hac": 0.0875,
           "hit": 0.481,
           "n": 52,
           "incremental": {
-            "surviving_frac": 0.704,
-            "ic_delta": 0.0034
+            "surviving_frac": 0.698,
+            "ic_delta": 0.0035
           }
         },
         "10": {
           "mean_ic": -0.0118,
           "ic_ir": -0.204,
-          "t_hac": -1.393,
-          "p_hac": 0.1637,
+          "t_hac": -1.397,
+          "p_hac": 0.1625,
           "hit": 0.51,
           "n": 51,
           "incremental": {
-            "surviving_frac": 0.644,
-            "ic_delta": 0.0042
+            "surviving_frac": 0.653,
+            "ic_delta": 0.0041
           }
         },
         "21": {
           "mean_ic": -0.0067,
-          "ic_ir": -0.102,
-          "t_hac": -0.625,
-          "p_hac": 0.532,
+          "ic_ir": -0.103,
+          "t_hac": -0.63,
+          "p_hac": 0.529,
           "hit": 0.51,
           "n": 49,
           "incremental": {
@@ -80,10 +80,10 @@
       },
       "sign_expected": 1,
       "sign_ok": false,
-      "t_hac": -0.625,
+      "t_hac": -0.63,
       "mean_ic": -0.0067,
       "is_context_only": true,
-      "q_fdr": 0.532
+      "q_fdr": 0.529
     },
     "chips": {
       "family": "chips",
@@ -94,9 +94,9 @@
       "by_horizon": {
         "5": {
           "mean_ic": -0.0104,
-          "ic_ir": -0.086,
-          "t_hac": -0.769,
-          "p_hac": 0.4419,
+          "ic_ir": -0.085,
+          "t_hac": -0.768,
+          "p_hac": 0.4428,
           "hit": 0.442,
           "n": 52,
           "incremental": {
@@ -105,34 +105,34 @@
           }
         },
         "10": {
-          "mean_ic": 0.0046,
+          "mean_ic": 0.0047,
           "ic_ir": 0.04,
-          "t_hac": 0.25,
-          "p_hac": 0.803,
+          "t_hac": 0.251,
+          "p_hac": 0.8015,
           "hit": 0.51,
           "n": 51,
           "incremental": {
-            "surviving_frac": 1.152,
-            "ic_delta": 0.0007
+            "surviving_frac": 1.128,
+            "ic_delta": 0.0006
           }
         },
         "21": {
           "mean_ic": 0.0172,
           "ic_ir": 0.153,
-          "t_hac": 0.737,
-          "p_hac": 0.4612,
+          "t_hac": 0.738,
+          "p_hac": 0.4605,
           "hit": 0.592,
           "n": 49,
           "incremental": {
-            "surviving_frac": 0.988,
-            "ic_delta": -0.0002
+            "surviving_frac": 0.994,
+            "ic_delta": -0.0001
           }
         },
         "63": {
           "mean_ic": 0.0252,
-          "ic_ir": 0.281,
-          "t_hac": 1.46,
-          "p_hac": 0.1444,
+          "ic_ir": 0.28,
+          "t_hac": 1.459,
+          "p_hac": 0.1447,
           "hit": 0.575,
           "n": 40,
           "incremental": {
@@ -143,10 +143,10 @@
       },
       "sign_expected": -1,
       "sign_ok": false,
-      "t_hac": 0.737,
+      "t_hac": 0.738,
       "mean_ic": 0.0172,
       "is_context_only": true,
-      "q_fdr": 0.532
+      "q_fdr": 0.529
     },
     "guidance": {
       "family": "guidance",
@@ -209,7 +209,7 @@
       "t_hac": 0.695,
       "mean_ic": 0.0315,
       "is_context_only": true,
-      "q_fdr": 0.532
+      "q_fdr": 0.529
     },
     "margin": {
       "family": "margin",
@@ -256,7 +256,7 @@
       "t_hac": 0.866,
       "mean_ic": 0.00388,
       "is_context_only": true,
-      "q_fdr": 0.532
+      "q_fdr": 0.529
     },
     "news_sentiment": {
       "family": "news_sentiment",
