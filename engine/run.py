@@ -328,6 +328,15 @@ def run() -> dict:
     try:
         from engine.risk_radar import snapshot as risk_radar_snapshot
         latest["risk_radar"] = risk_radar_snapshot()
+        # Self-auditing forward-outcome log (engine/risk_radar_audit.py): log today's read, grade
+        # matured past reads vs the realized SPY path, attach the rolling realized-accuracy
+        # scorecard. Feeds the Opus self-correction loop. Additive, never fatal.
+        try:
+            from engine import risk_radar_audit as _rra
+            if latest["risk_radar"]:
+                latest["risk_radar"]["forward_log"] = _rra.snapshot_and_grade(latest["risk_radar"])
+        except Exception as e:  # noqa: BLE001
+            log.warning("risk-radar audit failed: %s", e)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-radar failed: %s", e)
         latest["risk_radar"] = None
