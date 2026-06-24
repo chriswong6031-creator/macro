@@ -1,0 +1,51 @@
+"""Whole-market dealer-gamma vol regime — the SINGLE SHARED deriver behind both the
+dashboard banner (scripts/build_site.py) and the machine-readable contract
+(data/regime/latest.json, via engine/run.py), so the two can never drift.
+
+Reads the VALIDATED index dealer-gamma store (SPX, data/cboe/gex — the same that
+drives the dealer-gamma board, computed by engine.gex_engine). ABOVE the gamma-flip
+strike dealers are net long gamma and hedge AGAINST price (pinning / vol suppressed);
+BELOW it they are short gamma and hedge WITH price (amplifying moves) — the air-pocket
+precondition. A whole-market vol CONTEXT, not a per-stock signal, and an estimate from
+delayed CBOE chains, not ground truth.
+
+Degrade-never-raise: returns None when the store is missing / empty / NaN (callers
+simply render or serialize nothing). Unlike the episodic `gex_flip_cross` ALERT, this
+verdict is STEADY-STATE: it reports the standing regime every build, with no crossing
+required, so a downstream consumer reads "dealers short gamma" from a structured field
+instead of parsing an alert string."""
+from __future__ import annotations
+
+import pandas as pd
+
+from lib import store
+
+
+def view(gex: "pd.DataFrame | None") -> dict | None:
+    """Pure deriver over the cboe/gex frame -> structured dealer-gamma verdict.
+    Uses the flip side (spot vs flip), the engine's authoritative regime, NOT the
+    coarse net-$ sign the ETF-flows board flags — they answer different questions."""
+    if gex is None or not len(gex):
+        return None
+    g = gex.iloc[-1]
+    svf = g.get("spot_vs_flip_pct")
+    if svf is None or pd.isna(svf):
+        return None
+    flip = int(round(float(g.get("flip_strike") or 0)))
+    return {
+        "regime": "short" if float(svf) < 0 else "long",  # spot<flip -> dealers amplify
+        "spot_vs_flip_pct": round(float(svf), 1),
+        "net_gex_bn": round(float(g.get("net_gex_bn") or 0), 0),
+        "flip": flip,            # FE banner key (market_gamma.flip in dashboard.html.j2)
+        "gamma_flip": flip,      # contract alias (engine.gex_engine naming)
+        "flip_strike": flip,     # contract alias (cboe/gex store column naming)
+        "spot": int(round(float(g.get("spot") or 0))),
+        "asof": str(gex.index.max().date()),
+    }
+
+
+def snapshot() -> dict | None:
+    """Read the cboe/gex store and derive the verdict — the entry point for the
+    machine-readable contract (engine/run.py writes this into latest['market_gamma']).
+    None when the store is absent/empty so the leaf degrades to a null contract field."""
+    return view(store.read("cboe", "gex"))

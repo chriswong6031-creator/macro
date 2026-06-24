@@ -127,6 +127,19 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("cross-asset layer failed: %s", e)
         latest["cross_asset"] = None
+    # Whole-market dealer-gamma vol regime: are dealers SHORT gamma (hedging WITH price
+    # -> moves amplify, the air-pocket precondition) or LONG (pinning / vol suppressed)?
+    # The SAME deriver that renders the dashboard banner (engine.market_gamma.view, used
+    # by scripts/build_site.py) so the contract and the FE can NEVER drift. STEADY-STATE
+    # — reports the standing regime every build, unlike the episodic gex_flip_cross alert
+    # that fires only on a crossing. Additive leaf (engine/market_gamma.py): reads the
+    # validated index GEX store (cboe/gex) and degrades to None if it is missing/empty.
+    try:
+        from engine.market_gamma import snapshot as market_gamma_snapshot
+        latest["market_gamma"] = market_gamma_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("market-gamma layer failed: %s", e)
+        latest["market_gamma"] = None
     # Market-driver attribution: WHICH cross-asset force is moving the tape this
     # week (Fed repricing / real-rate / USD / credit / liquidity / China / oil /
     # AI-semis / crypto) + evidence + invalidation. Deterministic fingerprints over

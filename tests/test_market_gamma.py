@@ -21,6 +21,9 @@ def test_short_gamma_below_flip():
     assert v["flip"] == 8100 and v["spot"] == 7394
     assert v["net_gex_bn"] == 18                    # rounded
     assert v["asof"] == "2026-06-13"
+    # contract aliases co-located with the FE key, all the same value (FE uses `flip`,
+    # the contract/downstream bot reads `gamma_flip` / `flip_strike`)
+    assert v["gamma_flip"] == 8100 and v["flip_strike"] == 8100
 
 
 def test_long_gamma_above_flip():
