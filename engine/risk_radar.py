@@ -103,7 +103,7 @@ _SCARE_LABEL = {
 # the FP/sensitivity tuning workflow + the Opus self-correction loop refine per scare-type via
 # data/risk_radar/calibration.json. Still loud+early (watch/caution fire early; elevated = the
 # loud banner).
-_DEFAULT_BANDS = {"watch": 65.0, "caution": 78.0, "elevated": 87.0, "risk_off": 93.0}
+_DEFAULT_BANDS = {"watch": 55.0, "caution": 68.0, "elevated": 78.0, "risk_off": 88.0}
 _STATE_ORDER = ["calm", "watch", "caution", "elevated", "risk-off"]
 _ALERT_FROM = "elevated"            # loud banner fires at/above this
 
@@ -114,9 +114,10 @@ _ALERT_FROM = "elevated"            # loud banner fires at/above this
 # research/RISK_ENGINE_V2_FINDINGS.md / /tmp/riskbt/escalation.py. The Opus review loop is
 # allowed to retune this surface from the realized forward-outcome log.
 _PROB_CAL = {
-    "h5":  {"calm": 0.02, "watch": 0.02, "caution": 0.02, "elevated": 0.04, "risk-off": 0.065},
-    "h10": {"calm": 0.06, "watch": 0.06, "caution": 0.07, "elevated": 0.10, "risk-off": 0.14},
-    "h21": {"calm": 0.13, "watch": 0.13, "caution": 0.15, "elevated": 0.20, "risk-off": 0.27},
+    # bumped at elevated/risk-off to match the now-context-GATED state (3x more informative; tuning §)
+    "h5":  {"calm": 0.02, "watch": 0.02, "caution": 0.03, "elevated": 0.05, "risk-off": 0.08},
+    "h10": {"calm": 0.06, "watch": 0.06, "caution": 0.08, "elevated": 0.12, "risk-off": 0.17},
+    "h21": {"calm": 0.13, "watch": 0.13, "caution": 0.16, "elevated": 0.25, "risk-off": 0.33},
 }
 _PROB_BASE = {"h5": 0.036, "h10": 0.086, "h21": 0.178}   # unconditional base rates
 # extra probability when MANY scare-types fire together (independent monotonic effect, measured),
@@ -250,6 +251,53 @@ def subscore_series(sigs: pd.DataFrame | None = None, calib: dict | None = None)
     return out
 
 
+# --- context gate (the verified #1 false-positive lever) ---------------------
+# The LOUD banner (elevated+) fires only when the BROAD market is actually breaking:
+# SPY < 200dma AND %>200dma breadth in a low causal percentile (<=0.40). Measured (tuning
+# workflow, research/RISK_RADAR_TUNING.md): H21 banner precision 0.085->0.249 (2.9x), fire-rate
+# 80%->17%, STRONGER out-of-sample, permutation p=0.0. Below the gate the state is capped at
+# 'caution' (the early/quiet tier still shows) — narrow events stay quiet until the broad tape
+# confirms (loudly catching narrow events needs the options-flow data of task D). Leak-free/causal.
+_GATE_BREADTH_PCT = 0.40
+
+
+def context_gate_series(idx=None) -> pd.Series:
+    """Daily bool: is a LOUD alert permitted (broad market breaking)? True = SPY<200dma AND breadth
+    weak. Causal. If idx is given, reindexed onto it (ffill the slower breadth)."""
+    spy = _s("yahoo", "SPY")
+    if spy is None:
+        return pd.Series(dtype=bool) if idx is None else pd.Series(False, index=idx)
+    below = spy < spy.rolling(200, min_periods=120).mean()
+    gate = below
+    b = store.read("breadth", "breadth")
+    if b is not None and "pct_above_200" in b.columns:
+        bp = pct_rank_window(b["pct_above_200"].astype(float), _PCT_WIN)
+        bp.index = pd.to_datetime(bp.index)
+        base = below.index if idx is None else idx
+        gate = below.reindex(base).fillna(False) & (bp.reindex(base).ffill() <= _GATE_BREADTH_PCT)
+    if idx is not None:
+        gate = gate.reindex(idx).fillna(False)
+    return gate.astype(bool)
+
+
+def context_gate_live() -> dict:
+    """Live context-gate read for compute(): {met, spy_below_200dma, breadth_weak}."""
+    out = {"met": False, "spy_below_200dma": None, "breadth_weak": None}
+    try:
+        spy = _s("yahoo", "SPY")
+        if spy is not None and len(spy) >= 200:
+            ma = spy.rolling(200, min_periods=120).mean()
+            out["spy_below_200dma"] = bool(spy.iloc[-1] < ma.iloc[-1])
+        b = store.read("breadth", "breadth")
+        if b is not None and "pct_above_200" in b.columns:
+            bp = pct_rank_window(b["pct_above_200"].astype(float), _PCT_WIN).dropna()
+            out["breadth_weak"] = bool(bp.iloc[-1] <= _GATE_BREADTH_PCT) if len(bp) else None
+        out["met"] = bool(out["spy_below_200dma"]) and bool(out["breadth_weak"])
+    except Exception as e:  # noqa: BLE001
+        log.warning("risk_radar context gate failed: %s", e)
+    return out
+
+
 # --- live snapshot -----------------------------------------------------------
 def _band(score: float, bands: dict) -> str:
     if score is None or (isinstance(score, float) and np.isnan(score)):
@@ -265,7 +313,8 @@ def _band(score: float, bands: dict) -> str:
     return "calm"
 
 
-def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=None) -> dict:
+def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=None,
+            gate: dict | None = None) -> dict:
     """Live regime-typed risk snapshot. Pure-ish (reads store via leading_signals if sigs is None).
     Returns the risk_radar.v2 dict. Never raises."""
     calib = calib or _calib()
@@ -323,13 +372,26 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         if _STATE_ORDER.index(s["band"]) > _STATE_ORDER.index(state):
             state = s["band"]
     hotA = [s for s in tierA if s["score"] >= bands["caution"]]
-    conjunction = len(hotA) >= 2
+    # ARMED + CONFIRM conjunction (verified; the naive >=2 count was REJECTED as noise): escalate
+    # only when a VALIDATED leading leg is ARMED inside a hot Tier-A scare (its scare hot AND it has a
+    # confirmed+validated firing leg) AND a SECOND Tier-A scare is at least at watch.
+    armed = [s for s in hotA
+             if any(l.get("confirmed") and _is_validated(l["leg"], calib) for l in s["firing_legs"])]
+    second = [s for s in tierA if s["score"] >= bands["watch"]]
+    conjunction = len(armed) >= 1 and len(second) >= 2
     esc = conjunction
-    # Tier-B (vol / flow) can ESCALATE a state that a Tier-A scare already lit, never originate one
     if state != "calm" and any(s["score"] >= bands["caution"] for s in tierB):
-        esc = True
+        esc = True   # Tier-B (vol) may escalate a hot Tier-A, never originate
+    state_ungated = state
     if esc and _STATE_ORDER.index(state) < _STATE_ORDER.index("risk-off") and state != "calm":
-        state = _STATE_ORDER[_STATE_ORDER.index(state) + 1]   # escalate one band
+        state = _STATE_ORDER[_STATE_ORDER.index(state) + 1]
+        state_ungated = state
+
+    # CONTEXT GATE: the LOUD banner (elevated+) requires the broad tape to be breaking; otherwise cap
+    # at 'caution' (the early/quiet tier still shows). Biggest verified FP-reduction lever.
+    gate = gate if gate is not None else context_gate_live()
+    if not gate.get("met") and _STATE_ORDER.index(state) > _STATE_ORDER.index("caution"):
+        state = "caution"
 
     alert = _STATE_ORDER.index(state) >= _STATE_ORDER.index(calib.get("alert_from", _ALERT_FROM))
     gross = _gross_for(state)
@@ -350,6 +412,9 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "headline_en": head_en,
         "headline_zh": head_zh,
         "drawdown_prob": prob,
+        "conjunction": bool(conjunction),
+        "context_gate": gate,
+        "state_ungated": state_ungated,
         "gross_factor": gross,
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated"),
