@@ -1,0 +1,58 @@
+name: live-quotes
+# Zero-deploy live-price engine for the static GitHub-Pages dashboard.
+#
+# Every ~10 min on weekdays it fetches a last-price snapshot for the whole
+# displayed universe (every data-sym the built site emits + a CORE index/futures
+# set) and force-pushes it as a SINGLE commit to the `live-data` branch. The
+# browser live.js fetches it from raw.githubusercontent (CORS '*', ~5-min CDN
+# cache) — keyless, no Cloudflare Worker required. Force-push keeps main's history
+# clean and the `live-data` branch at exactly one commit (no unbounded growth).
+#
+# Quotes are ~15-min Yahoo-delayed; set the POLYGON_API_KEY repo secret to serve
+# real-time US prices from this job instead (the key never reaches the browser).
+on:
+  schedule:
+    # Every 10 min, Mon–Fri. Covers US + Asia + Europe equity sessions and the
+    # ~23h weekday futures tape. Weekends fall back to the last close (correct).
+    - cron: "*/10 * * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  # Only the latest snapshot matters — cancel any in-flight run so a slow fetch
+  # can't pile up behind the next tick.
+  group: live-quotes
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      # Quotes-only: needs just requests (+ pyyaml for lib.config). No pandas/scipy.
+      - run: pip install requests pyyaml
+      - name: build live-quotes snapshot
+        env:
+          POLYGON_API_KEY: ${{ secrets.POLYGON_API_KEY }}
+        run: python -m scripts.build_live_quotes --out quotes.json
+      - name: force-push snapshot to the live-data branch
+        run: |
+          set -euo pipefail
+          test -s quotes.json
+          git config user.name "dashboard-bot"
+          git config user.email "dashboard-bot@users.noreply.github.com"
+          # Single-commit orphan branch: stage ONLY quotes.json, never main's tree.
+          git checkout --orphan live-data-tmp
+          git rm -rf --cached . >/dev/null 2>&1 || true
+          git add -f quotes.json
+          git commit -m "live quotes $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push -f origin HEAD:live-data

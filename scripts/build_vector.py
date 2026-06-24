@@ -1444,6 +1444,18 @@ html[data-lang="zh"] .gd-r-cd .l-zh,html[data-lang="zh"] .gd-r-txt .l-zh{display
 @media (prefers-reduced-motion: reduce){
  #sky-sun,#sky-moon{transition:none}
  #sky-sun::before,#sky-sun::after,#sky-moon::after{animation:none}}
+/* live market strip — index / overnight-futures / global-index tiles. live.js
+   patches .nb-px (price) + .nb-chg (% change) in place; baked baselines until then */
+.market-strip{display:flex;flex-direction:column;gap:16px;margin:2px 0 26px}
+.mstrip-h{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
+.mstrip-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px}
+.mstrip-tile{display:flex;flex-direction:column;gap:3px;padding:11px 13px}
+.mstrip-name{font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mstrip-px{font-size:18px;font-weight:800;letter-spacing:-.01em;color:var(--text);font-variant-numeric:tabular-nums;line-height:1.15}
+.mstrip-chg{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;min-height:15px;color:var(--muted)}
+.mstrip-chg.up{color:color-mix(in srgb,var(--ok) 88%,var(--text))}
+.mstrip-chg.down{color:color-mix(in srgb,var(--act) 88%,var(--text))}
+@media(max-width:520px){.mstrip-row{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}.mstrip-px{font-size:16px}}
 </style>"""
 
 _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global macro regime globe">
@@ -1708,6 +1720,74 @@ def _hub_alert_rows(alerts):  # retained name for back-compat; delegates to the 
     return _g_alerts(alerts)
 
 
+# Live market strip on the landing hub. Each tile carries the canonical Yahoo
+# symbol in data-sym so live.js patches the .nb-px price + .nb-chg % in place;
+# baked baselines (nightly close store) show until the first live tick, and
+# remain if live is off. (label, sym, store-group) — group=None => no local
+# baseline (renders '—' until live fills it: ^IXIC + the index futures).
+_STRIP_GROUPS = [
+    ("US indexes", "美国指数", "idx", [
+        ("S&P 500", "^GSPC", "yahoo"), ("Nasdaq", "^IXIC", None),
+        ("Dow", "^DJI", "yahoo"), ("Russell 2000", "^RUT", "yahoo"),
+        ("VIX", "^VIX", "yahoo"),
+    ]),
+    ("US overnight futures · reference only", "美股隔夜期货 · 仅供参考", "fut", [
+        ("S&P fut", "ES=F", None), ("Nasdaq fut", "NQ=F", None),
+        ("Dow fut", "YM=F", None), ("Russell fut", "RTY=F", None),
+    ]),
+    ("Global indexes", "全球指数", "idx", [
+        ("Hang Seng", "^HSI", "hk"), ("Shanghai", "000001.SS", "china"),
+        ("Nikkei 225", "^N225", "intl"), ("S&P/TSX", "^GSPTSE", "canada"),
+        ("FTSE 100", "^FTSE", "intl"), ("DAX", "^GDAXI", "intl"),
+        ("Euro Stoxx 50", "^STOXX50E", "intl"),
+    ]),
+]
+
+
+def _strip_baseline(sym: str, group: str | None):
+    """(last_close, daily_chg_pct) from the nightly close store, or (None, None).
+    Never raises — the landing build must survive a missing/odd store file."""
+    if not group:
+        return None, None
+    try:
+        from lib import store
+        df = store.read(group, sym)
+        if df is None or getattr(df, "empty", True) or "close" not in df.columns:
+            return None, None
+        closes = df["close"].dropna()
+        if closes.empty:
+            return None, None
+        last = float(closes.iloc[-1])
+        prev = float(closes.iloc[-2]) if len(closes) >= 2 else None
+        chg = round((last / prev - 1) * 100, 2) if prev else None
+        return last, chg
+    except Exception:  # noqa: BLE001 — display-only; degrade to '—'
+        return None, None
+
+
+def _g_market_strip() -> str:
+    secs = []
+    for en, zh, mkt, syms in _STRIP_GROUPS:
+        tiles = []
+        for label, sym, group in syms:
+            px, chg = _strip_baseline(sym, group)
+            px_txt = "{:,.2f}".format(px) if px is not None else "—"
+            if chg is None:
+                chg_txt, chg_cls = "", ""
+            else:
+                chg_txt = ("+" if chg >= 0 else "") + "{:.2f}%".format(chg)
+                chg_cls = " up" if chg >= 0 else " down"
+            tiles.append(
+                '<div class="glass mstrip-tile">'
+                '<span class="mstrip-name">' + label + '</span>'
+                '<span class="nb-px mstrip-px" data-sym="' + sym + '" data-mkt="' + mkt + '">' + px_txt + '</span>'
+                '<span class="nb-chg mstrip-chg' + chg_cls + '" data-sym="' + sym + '">' + chg_txt + '</span>'
+                '</div>')
+        secs.append('<div class="mstrip-sec"><div class="mstrip-h">' + _bi(en, zh) + '</div>'
+                    '<div class="mstrip-row">' + "".join(tiles) + '</div></div>')
+    return '<section class="market-strip reveal" aria-label="Live market levels">' + "".join(secs) + '</section>'
+
+
 def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
               commodities: dict | None = None, watchlist: dict | None = None,
               etf: dict | None = None, hk: dict | None = None,
@@ -1728,6 +1808,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     hk_n = (hk_stocks or {}).get("n_setups") or 0
     legend = _g_legend(blob)
     globe_deck = _GLOBE_DECK_DOM.replace("__LEGEND__", legend)
+    market_strip = _g_market_strip()
     markets = _g_markets(blob, us_n, cn_n, hk_n)
     vectors = _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watchlist)
     alerts_html = _g_alerts(alerts)
@@ -1775,7 +1856,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         + '</span><h1>' + _bi("Market Intelligence", "市场情报") + '</h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
-        + globe_deck + markets + vectors + alerts_html
+        + market_strip + globe_deck + markets + vectors + alerts_html
         + '<div class="foot">' + _bi("Built " + built + " · mechanical, backtested, free public data · not investment advice",
                                       "生成于 " + built + " · 机械化 · 经回测 · 免费公开数据 · 非投资建议") + '</div>'
         '<footer class="site-footer"><span class="made">' + _bi("Made with ❤️ in Canada", "用 ❤️ 在加拿大制作") + '</span>'
@@ -1788,6 +1869,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<script defer src="globe-deck.js"></script>'
         '<script defer src="sky.js"></script>'
         '<script src="theme.js"></script>'
+        # live-price layer (progressive enhancement) — patches the market strip's
+        # .nb-px/.nb-chg tiles; no-ops when no Worker/snapshot URL is configured.
+        '<script src="live_config.js"></script>'
+        '<script src="live.js"></script>'
         '</body></html>'
     )
     return head + body

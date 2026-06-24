@@ -22,6 +22,10 @@
 
 const CACHE_SEC = 60;            // edge-cache window; matches live.poll_seconds
 const MAX_SYMBOLS = 200;
+// Yahoo's spark endpoint HTTP-400s a symbols list longer than ~20 (20 OK, 21
+// fails). Sending a whole 100+ symbol board in one call silently lost EVERY intl
+// quote. Chunk under the cliff and run the chunks concurrently.
+const YAHOO_BATCH = 20;
 const SYMBOL_RE = /^[A-Z0-9^][A-Z0-9.=^-]{0,15}$/;   // ticker charset (^VIX, GC=F, 0700.HK, BRK-B)
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -75,8 +79,7 @@ async function fetchPolygon(symbols, env, out) {
   }
 }
 
-async function fetchYahoo(symbols, out) {
-  if (!symbols.length) return;
+async function fetchYahooChunk(symbols, out) {
   const url = "https://query1.finance.yahoo.com/v7/finance/spark" +
               `?symbols=${encodeURIComponent(symbols.join(","))}&range=1d&interval=5m`;
   try {
@@ -94,6 +97,13 @@ async function fetchYahoo(symbols, out) {
       };
     }
   } catch (e) { /* degrade: symbol simply absent */ }
+}
+
+async function fetchYahoo(symbols, out) {
+  if (!symbols.length) return;
+  const chunks = [];
+  for (let i = 0; i < symbols.length; i += YAHOO_BATCH) chunks.push(symbols.slice(i, i + YAHOO_BATCH));
+  await Promise.all(chunks.map((c) => fetchYahooChunk(c, out)));
 }
 
 export default {

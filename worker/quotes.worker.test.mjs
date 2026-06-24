@@ -79,4 +79,29 @@ await test("rejects junk symbols / empty set; /health ok", async () => {
   assert.equal((await h.json()).ok, true);
 });
 
+await test(">20 non-US symbols chunk into ≤20-symbol Yahoo calls (index + future too)", async () => {
+  // Yahoo spark 400s a >20-symbol list; a 100+ symbol board must be split.
+  const syms = [];
+  for (let i = 0; i < 43; i++) syms.push(("000" + i).slice(-4) + ".HK");
+  syms.push("^HSI", "ES=F");                         // index + future also -> Yahoo
+  let maxChunk = 0, calls = 0;
+  globalThis.fetch = async (url) => {
+    const u = new URL(String(url));
+    assert.ok(u.hostname.includes("yahoo"), "no key → everything routes to Yahoo");
+    const list = decodeURIComponent(u.searchParams.get("symbols")).split(",");
+    maxChunk = Math.max(maxChunk, list.length);
+    calls++;
+    return new Response(JSON.stringify({
+      spark: { result: list.map((s) => ({ symbol: s,
+        response: [{ meta: { regularMarketPrice: 1.5, previousClose: 1.4, regularMarketTime: 1.7e9 } }] })) },
+    }), { status: 200 });
+  };
+  const r = await worker.fetch(req(syms.join(",")), {}, ctx);   // {} env => no key
+  const b = await r.json();
+  assert.ok(maxChunk <= 20, "no Yahoo call exceeds 20 symbols (got " + maxChunk + ")");
+  assert.ok(calls >= 3, "45 symbols split into ≥3 chunks (got " + calls + ")");
+  assert.ok(b.quotes["^HSI"] && b.quotes["ES=F"], "index + future resolved via Yahoo");
+  assert.equal(b.quotes["^HSI"].source, "yahoo");
+});
+
 console.log(`\n${passed} passed`);

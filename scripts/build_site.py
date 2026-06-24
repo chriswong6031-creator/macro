@@ -171,6 +171,15 @@ _TILE_SPEC = (
 )
 
 
+# Canonical Yahoo/Polygon symbol + data-mkt per tile, so live.js can refresh the
+# level (.nb-px) and % (.nb-chg) in place. The Treasury-yield tiles (us10y/30y/5y)
+# are FRED series with no tradeable last-price quote -> intentionally absent.
+_TILE_SYM = {
+    "SPY": ("SPY", "idx"), "QQQ": ("QQQ", "idx"), "vix": ("^VIX", "idx"),
+    "dxy": ("DX-Y.NYB", "idx"), "oil": ("CL=F", "fut"),
+}
+
+
 def market_tiles(f: pd.DataFrame) -> list[dict]:
     """Level + 1-day change for the 8 headline instruments already in the frame.
     Coloured by raw sign (the price move); semantic context lives in the panels."""
@@ -185,11 +194,13 @@ def market_tiles(f: pd.DataFrame) -> list[dict]:
         chg = last - prev
         pct = (last / prev - 1) * 100 if prev else 0.0
         is_rate = col.startswith("us")
+        sym, mkt = _TILE_SYM.get(col, (None, None))
         rows.append({
             "label": T(en, zh), "tag": T(ten, tzh),
             "level": (f"{last:.{dec}f}%" if is_rate else f"{last:,.{dec}f}"),
             "chg": f"{chg:+.{dec}f}", "pct": f"{pct:+.1f}%",
             "tone": "pos" if chg > 0 else "neg" if chg < 0 else "muted",
+            "sym": sym, "mkt": mkt,
         })
     return rows
 

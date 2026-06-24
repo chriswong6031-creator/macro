@@ -1467,8 +1467,12 @@
       {% for tl in market_tiles %}
       <div class="mtile">
         <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
-        <div class="mtile-val">{{ tl.level }}</div>
+        <div class="mtile-val{% if tl.sym %} nb-px{% endif %}"{% if tl.sym %} data-sym="{{ tl.sym }}" data-mkt="{{ tl.mkt }}"{% endif %}>{{ tl.level }}</div>
+        {% if tl.sym %}
+        <div class="mtile-chg {{ tl.tone }}"><span class="nb-chg" data-sym="{{ tl.sym }}">{{ tl.pct }}</span></div>
+        {% else %}
         <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} <span class="muted">({{ tl.pct }})</span></div>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
@@ -3460,8 +3464,6 @@ window.__CHART_SWAP__ = {
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
 <script src="charts.js"></script>
-<script src="live_config.js"></script>
-<script src="live.js"></script>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>

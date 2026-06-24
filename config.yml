@@ -328,8 +328,18 @@ live:
   universe_extra: []           # optional extra tickers beyond Mastermind assets + top US conviction
   market_context: [SPY, QQQ, "^VIX"]   # cheap live macro read emitted in overlay.market (VIX gets a band)
   # The deployed Cloudflare Worker the browser live.js calls (Phase 3, worker/quotes.worker.js).
-  # Empty string = live.js cleanly no-ops (site stays exactly as the static build rendered it).
+  # Empty string = no Worker; live.js then falls back to the static snapshot below.
+  # Override without a commit via the GitHub repo VARIABLE LIVE_QUOTES_WORKER_URL.
   quotes_worker_url: ""
+  # Keyless, no-deploy live path: the GitHub Action .github/workflows/live-quotes.yml
+  # runs scripts/build_live_quotes every ~10 min during market hours and force-pushes
+  # quotes.json to a single-commit `live-data` branch; the browser live.js fetches it
+  # from raw.githubusercontent (CORS '*', ~5-min CDN cache) when no Worker is set.
+  # Override via the repo VARIABLE LIVE_QUOTES_SNAPSHOT_URL. Empty = no snapshot.
+  snapshot_url: "https://raw.githubusercontent.com/chriswong6031-creator/macro/live-data/quotes.json"
+  # Extra symbols to always include in the snapshot universe (beyond the CORE
+  # index/futures set + every data-sym the built site emits).
+  snapshot_extra: []
 
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit

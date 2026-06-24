@@ -39,6 +39,11 @@ log = logging.getLogger("live_quotes")
 _YAHOO_SPARK = "https://query1.finance.yahoo.com/v7/finance/spark"
 _POLY_SNAPSHOT = "/v2/snapshot/locale/us/markets/stocks/tickers"
 _UA = "Mozilla/5.0 (macro-dashboard live_quotes)"
+# Yahoo's spark endpoint hard-rejects (HTTP 400) a `symbols=` list longer than ~20
+# — empirically 20 OK, 21 fails. The old batch of 50 silently dropped every intl/
+# equity quote (a board like china_stocks has 100+ symbols), so the live overlay
+# looked dead off-US. Keep a safe margin below the cliff.
+_YAHOO_BATCH = 20
 
 
 # --------------------------------------------------------------- routing ----
@@ -184,7 +189,7 @@ def fetch_polygon(symbols: list[str], key: str) -> tuple[dict, str]:
 
 def fetch_yahoo(symbols: list[str]) -> dict:
     out: dict[str, dict] = {}
-    for batch in _chunks(symbols, 50):
+    for batch in _chunks(symbols, _YAHOO_BATCH):
         j = _http_json(_YAHOO_SPARK,
                        {"symbols": ",".join(batch), "range": "1d", "interval": "5m"})
         if j:

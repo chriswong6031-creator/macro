@@ -382,7 +382,7 @@ html[data-theme="dark"] .sbar{background:#222732}
           <div class="pair-arch">{{ t(p.arch, p.arch_zh) }} · {{ t('signal on', '信号针对') }} {{ p.base }}</div>
         </div>
         <div style="text-align:right">
-          <div class="quote">{{ p.quote }}</div>
+          <div class="quote nb-px" data-sym="{{ p.key }}=X" data-mkt="fx">{{ p.quote }}</div>
           <div class="chg {{ 'up' if (p.chg or 0)>=0 else 'dn' }}">{{ '%+.1f'|format(p.chg) }}% <span class="faint">/ 1mo</span></div>
         </div>
       </div>

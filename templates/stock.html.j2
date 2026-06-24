@@ -506,6 +506,7 @@
     <div class="panel">
       <div class="topline">
         <h1 id="r_name"></h1>
+        <span id="r_live_px" class="nb-px" data-mkt="us" style="display:none;font-weight:800;font-size:17px;margin-left:2px"></span>
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span id="r_archetype" class="arch" style="display:none"></span>
@@ -1619,9 +1620,23 @@
     show('panel_smartmoney', true);
   }
 
+  // Live header price chip: set the canonical symbol + a baked last price, reveal
+  // it, and ask live.js to refresh it now (this SPA re-renders on hashchange).
+  function liveHeaderPx(d) {
+    var lp = document.getElementById('r_live_px');
+    if (!lp) return;
+    var px = d && d.tech && d.tech.price;
+    if (px == null) { lp.style.display = 'none'; lp.removeAttribute('data-sym'); return; }
+    lp.setAttribute('data-sym', d.ticker);
+    lp.textContent = '$' + Number(px).toFixed(2);          // baked; live.js overwrites
+    lp.style.display = '';
+    if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    liveHeaderPx(d);
     if (d.limited) { renderLimited(d); return; }
     // a full record may follow a limited one — re-show the panels it hid
     ['panel_mtf', 'panel_cal'].forEach(function (id) { var e = document.getElementById(id); if (e) e.style.display = ''; });

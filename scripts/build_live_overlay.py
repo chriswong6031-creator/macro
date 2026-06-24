@@ -191,12 +191,29 @@ def resolve_worker_url() -> str:
     return url.rstrip("/")
 
 
+def resolve_snapshot_url() -> str:
+    """The static live-quotes SNAPSHOT URL (the keyless, no-Worker fallback that
+    live.js fetches when no Worker is configured). ENV override
+    LIVE_QUOTES_SNAPSHOT_URL wins over config.yml live.snapshot_url; a non-https
+    value is rejected so a malformed variable can't break live.js. Default points
+    at the `live-data` branch raw.githubusercontent path the live-quotes Action
+    force-pushes (CORS '*', ~5-min CDN cache)."""
+    cfg = config.load().get("live") or {}
+    url = (os.environ.get("LIVE_QUOTES_SNAPSHOT_URL", "").strip()
+           or str(cfg.get("snapshot_url", "") or "").strip())
+    if url and not url.startswith("https://"):
+        log.warning("live snapshot URL ignored (must be https://): %r", url)
+        return ""
+    return url
+
+
 def write_live_config(site_dir) -> None:
     """Tiny browser config the static pages' live.js reads. Written by BOTH this
     intraday build and the nightly build_site, so it always reflects config.yml /
-    the LIVE_QUOTES_WORKER_URL env override."""
+    the LIVE_QUOTES_WORKER_URL + LIVE_QUOTES_SNAPSHOT_URL env overrides."""
     cfg = config.load().get("live") or {}
     js = (f"window.LIVE_QUOTES_URL={json.dumps(resolve_worker_url())};"
+          f"window.LIVE_SNAPSHOT_URL={json.dumps(resolve_snapshot_url())};"
           f"window.LIVE_POLL_SEC={int(cfg.get('poll_seconds', 60))};"
           f"window.LIVE_STALE_MIN={int(cfg.get('stale_after_min', 20))};"
           f"window.LIVE_ENABLED={json.dumps(bool(cfg.get('enabled', True)))};\n")
