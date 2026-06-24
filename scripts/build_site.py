@@ -26,7 +26,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import t as T  # noqa: E402
-from engine.i18n import tr as TR  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
 from lib import config, store  # noqa: E402
 
@@ -856,27 +855,6 @@ def advanced_breadth_view(f: pd.DataFrame) -> dict | None:
     return out
 
 
-# heat-bar fill uses theme-aware CSS variables (legible in both modes)
-HEAT_COLORS = {"70+": "var(--orange)", "55-69": "var(--up)",
-               "40-54": "var(--muted)", "0-39": "var(--info)"}
-
-# Plain-English reading of each heat band for the hover tooltip — kept jargon-free
-# on purpose (the technical band-record table lives in the column header tooltip).
-HEAT_READ = {
-    "70+": ("running very hot — and a near-fully-confirmed sector is usually a late "
-            "one. Better to hold with tight stops or trim than to start a position here.",
-            "非常热 — 几乎全部确认的板块通常已经偏晚。与其此时建仓，不如持有并收紧止损或减仓。"),
-    "55-69": ("a healthy, confirmed uptrend. Fine to hold; buying it right here hasn't "
-              "paid off historically — prefer a pullback that holds the trend.",
-              "健康、已确认的上涨趋势。可以持有；历史上此时直接买入并不划算 — 优先选择守住趋势的回调。"),
-    "40-54": ("a mixed picture, with no clear edge in either direction.",
-              "图景混杂，任一方向都没有明显优势。"),
-    "0-39": ("beaten down and quiet. It tends to drift back up eventually, but the "
-             "timing is unreliable — wait for the buy trigger to confirm.",
-             "已被打压、走势清淡。最终往往会回升，但择时不可靠 — 等待买入触发信号确认。"),
-}
-
-
 def _compact_season(line: str | None) -> tuple[str, str]:
     """'Jun: -0.4% avg, up 46% of years (n=28)' -> ('-0.4% (46%)', full)"""
     if not line:
@@ -1272,71 +1250,71 @@ def action_board(sector_timing: dict, notable: list[dict],
             "notable": notable_clean[:CAP]}
 
 
-def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]:
-    if not playbook or not playbook.get("stages"):
-        return []
-    timing = timing or {}
-    rows = sorted(playbook["stages"], key=lambda r: -r["heat"])
-    for r in rows:
-        tm = timing.get(r["ticker"])
-        if tm:
-            r["timing_state"] = tm["state"]
-            r["timing_label"] = tm.get("label", tm["state"])
-            r["timing_style"] = tm["state_style"]
-            r["timing_note"] = T(
-                f"day {tm['dc_day']} of its cycle; "
-                f"{tm['buy_zone']}/{tm['n_holdings']} top holdings in a buy setup",
-                f"周期第 {tm['dc_day']} 天；"
-                f"{tm['buy_zone']}/{tm['n_holdings']} 个重仓处于买入预备")
-        else:
-            r["timing_state"] = None
-        r["heat_color"] = HEAT_COLORS.get(r["heat_band"], "var(--muted)")
-        parts = r.get("heat_parts", {})
-        cal = r.get("heat_cal")
-        read_en, read_zh = HEAT_READ.get(r["heat_band"],
-                                         (r["heat_note"], r.get("heat_note_zh", r["heat_note"])))
-        cal_txt_en = (f" History check: in the past, sectors scoring in this {r['heat_band']} "
-                      f"range went on to beat the market {cal['hit_pct']}% of the time over "
-                      f"the next 3 months (average {cal['avg_excess_pct']:+}%, across "
-                      f"{cal['n']} cases)." if cal else "")
-        cal_txt_zh = (f" 历史回测：过去得分落在 {r['heat_band']} 区间的板块，"
-                      f"未来 3 个月跑赢市场的概率为 {cal['hit_pct']}%"
-                      f"（平均 {cal['avg_excess_pct']:+}%，共 {cal['n']} 个样本）。" if cal else "")
-        # macro-risk leg: shown only when non-zero so the pre-overlay tooltip is
-        # byte-identical. Can be a penalty (cyclical, risk-off) or a small credit
-        # (defensive) — phrased as an adjustment, and it keeps the parts reconciling
-        # to the displayed heat number (the honesty contract).
-        _mp = parts.get("macro") or 0
-        macro_en = (f", plus a macro-risk adjustment for an elevated macro-risk backdrop on a "
-                    f"macro-sensitive sector ({_mp:+d})" if _mp else "")
-        macro_zh = (f"，并计入宏观风险调整（{_mp:+d}，宏观风险升高且板块对宏观敏感时）"
-                    if _mp else "")
-        r["heat_tip"] = T(
-            f"Heat {r['heat']} out of 100 — how strong and confirmed this sector looks right "
-            f"now (0 = ice-cold, 100 = red-hot). It adds up these parts: how well it fits the "
-            f"current market backdrop ({parts.get('regime')}), the health of its trend "
-            f"({parts.get('tape')}), its chart strength ({parts.get('technicals')}), and a "
-            f"crowding penalty when it's overstretched ({parts.get('crowding')}){macro_en}. "
-            f"Reading — {r['heat_label']}: {read_en}{cal_txt_en}",
-            f"热度 {r['heat']}/100 — 衡量该板块此刻有多强、有多被确认（0 = 冰冷，100 = 火热）。"
-            f"它由以下几部分相加：与当前市场环境的契合度（{parts.get('regime')}）、"
-            f"趋势的健康度（{parts.get('tape')}）、图表强度（{parts.get('technicals')}）、"
-            f"以及过度拉伸时的拥挤度扣分（{parts.get('crowding')}）{macro_zh}。"
-            f"解读 — {TR(r['heat_label'])}：{read_zh}{cal_txt_zh}")
-        tech_bits = [f"RSI {r['tech_rsi14']:.0f}" if r.get("tech_rsi14") is not None else "RSI —",
-                     ("✓" if r.get("tech_above200") else "✗") + "200d",
-                     ("✓" if r.get("tech_above50") else "✗") + "50d"]
-        r["tech_str"] = " · ".join(tech_bits)
-        r["tech_ok"] = bool(r.get("tech_above200")) and bool(r.get("tech_above50"))
-        r["season_str"], _ = _compact_season(r.get("season_this"))
-        r["season_tip"] = _season_tooltip(r.get("season_all"), r.get("season_month"))
-        if r.get("trigger_gap_pct") is not None:
-            r["trigger_str"] = f"+{r['trigger_gap_pct']}%"
-            if r.get("trigger_progress_pct") is not None:
-                r["trigger_str"] += f" ({r['trigger_progress_pct']:.0f}% there)"
-        else:
-            r["trigger_str"] = "—"
-    return rows
+def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
+    """The Sector Confluence board — the PRIMARY buy/sell setup engine
+    (engine.sector_signals): a confluence of MACD + StochRSI crossovers on the
+    3-day chart, daily-triggered and 200-day-gated, with extended = avoid. Replaces
+    the old "leaders/avoid" scorecard + heat board (research/SECTOR_CONFLUENCE.md).
+
+    Reads the sector + SPY closes from the parquet store, runs the engine, refreshes
+    the per-state base rates live (the honesty layer), and folds in the still-useful
+    columns (seasonality, 3-mo RS, trend) — seasonality reuses the existing rich
+    tooltip already computed on the playbook stages. Display strings are composed
+    here so the template stays attribute-safe. Additive; None on any shortfall."""
+    from engine import sector_signals as ssig
+    from engine.playbook import SECTOR_NAMES
+    try:
+        sectors = config.load()["yahoo"]["tickers"]["sectors"]
+        ydir = config.data_dir() / "yahoo"
+        cols = {}
+        for t in sectors + ["SPY"]:
+            p = ydir / f"{t}.parquet"
+            if p.exists():
+                cols[t] = pd.read_parquet(p)["close"]
+        if "SPY" not in cols:
+            return None
+        closes = pd.DataFrame(cols).sort_index()
+        disl = latest.get("dislocation") or {}
+        put_absent = disl.get("put_state") == "put-absent"
+        bd = ssig.board(closes, SECTOR_NAMES, sectors, spy=closes["SPY"], put_absent=put_absent)
+        if not bd.get("sectors"):
+            return None
+        # live-measured base rates (overrides the static defaults so the displayed
+        # numbers always match the live rule); fall back to the engine's documented
+        # rates on any shortfall.
+        try:
+            cal = ssig.calibrate(closes, sectors, closes["SPY"])
+        except Exception:  # noqa: BLE001 — calibration is the honesty extra, never fatal
+            cal = {}
+        stages = {s["ticker"]: s for s in ((latest.get("playbook") or {}).get("stages") or [])}
+        month = pd.Timestamp(latest["date"]).month if latest.get("date") else None
+        for r in bd["sectors"]:
+            st = stages.get(r["ticker"], {})
+            r["verdict"] = T(r["label"], r["label_zh"])
+            r["action_txt"] = T(r["action"], r["action_zh"])
+            r["signal_txt"] = T(ssig.signal_line(r), ssig.signal_line(r, zh=True))
+            r["conv_dots"] = ("●" * max(1, min(r["conviction"], 3))) if r["side"] != "neutral" else "·"
+            r["conv_txt"] = T(r["conviction_label"], r["conviction_label_zh"])
+            r["tech_str"] = f"{'✓' if r['above200'] else '✗'}200d {'✓' if r['above50'] else '✗'}50d"
+            r["tech_ok"] = bool(r["above200"] and r["above50"])
+            r["osc_str"] = (f"RSI {r['rsi_3d']:.0f} · Stoch {r['stoch_3d']:.0f}"
+                            if r.get("rsi_3d") is not None and r.get("stoch_3d") is not None else "—")
+            r["rs_str"] = f"{r['rs_60d']:+.1f}%" if r.get("rs_60d") is not None else "—"
+            br = cal.get(r["state"]) or r.get("base_rate") or {}
+            if br:
+                n = br.get("n")
+                nbit = f" · n={n}" if n else ""
+                r["rate_str"] = T(f"{br['exc63']:+.1f}% vs SPY · {br['hit']}% up{nbit}",
+                                  f"对SPY {br['exc63']:+.1f}% · {br['hit']}% 上涨{nbit}")
+                r["rate_pos"] = br["exc63"] >= 0
+            else:
+                r["rate_str"], r["rate_pos"] = T("—", "—"), None
+            r["season_str"], _ = _compact_season(st.get("season_this"))
+            r["season_tip"] = _season_tooltip(st.get("season_all"), st.get("season_month") or month)
+        return bd
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("sector setup view failed: %s", e)
+        return None
 
 
 # --- Sector Bottom Radar (engine/sector_bottom) -------------------------------
@@ -2250,6 +2228,18 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         # stock analyzer reads from its JSON, so both pages render identical chips)
         from engine.technicals import snapshot as _snap
         s["tech"] = _snap(ec)
+        # validated confluence verdict (the same engine that drives the main-dashboard
+        # Sector buy/sell setups board) — engine/sector_signals
+        try:
+            from engine import sector_signals as _ssig
+            sig = _ssig.sector_signal(ec, SECTOR_NAMES.get(fund, fund), spy_close=_bench)
+            if sig.get("ok"):
+                sig["signal_en"] = _ssig.signal_line(sig)
+                sig["signal_zh"] = _ssig.signal_line(sig, zh=True)
+            s["confluence"] = sig
+        except Exception as _e:  # noqa: BLE001 — additive, never fatal
+            log.error("sector confluence (%s) failed: %s", fund, _e)
+            s["confluence"] = None
         feed = ticker_alerts.build_feed(
             fund, ec, etf.get("high"), _bench, res.get("ladder"),
             str(ec.index.max().date()), days=_adays, max_events=_amax)
@@ -2842,7 +2832,7 @@ def main() -> int:
         breadth_div=breadth_divergence(f),
         breadth_panel=breadth_scorecard(),
         adv_breadth=advanced_breadth_view(f),    # Advanced Breadth tracker (us_stocks page)
-        sector_rows=sector_rows(latest.get("playbook"), sector_timing),
+        sector_setups=sector_setup_view(latest, sector_timing),  # PRIMARY confluence board
         sector_radar=sector_bottom_view(latest),   # Sector Bottom Radar (us_stocks page)
         generated_utc=generated,
         chart_liquidity=chart_liquidity(f),
