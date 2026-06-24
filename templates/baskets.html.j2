@@ -279,6 +279,22 @@
       '精选主题股票篮子 — 每次成分调整均注明日期与理由；等权重、按月再平衡、调整间买入持有。若有相近行业 ETF，则按日交叉验证。仅作监测/结构参考，并非买入清单。') }}</p>
   </header>
 
+  {# Risk-state de-risk strip (engine/risk_state.py) — only when drawdown risk is elevated.
+     Frames this leadership-driven page: de-gross + favor good entries over chasing leaders
+     (sizing, not selection). Rendered server-side from latest.json.risk_state. #}
+  {% if risk_state %}
+  {% set rscol = 'var(--act)' if risk_state.state=='risk-off' else ('var(--orange)' if risk_state.state=='elevated' else 'var(--warn)') %}
+  <div class="panel pad" style="border-left:4px solid {{ rscol }};border-radius:0;margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <b style="color:{{ rscol }}">⚠️ {{ t('Market risk state', '市场风险状态') }}: {{ t(risk_state.label_en, risk_state.label_zh) }} · {{ risk_state.score|round|int }}/100</b>
+      <span class="muted" style="font-size:12px">{{ t('suggested gross', '建议总仓位') }} ×{{ '%.2f'|format(risk_state.gross_factor) }}</span>
+    </div>
+    <div class="muted" style="font-size:12.5px;margin-top:5px">{{ t(
+      'Drawdown risk is elevated — this leadership-driven page is for structure, not a buy list. De-gross and favor good entries (multi-timeframe bottoming alignment) over chasing extended leaders.',
+      '回撤风险偏高 — 本页以龙头为主，仅供结构参考而非买入清单。降低总仓位，择优入场（多周期筑底对齐）而非追逐已延展的龙头。') }}{% if risk_state.cap_leadership %} {{ t('Leadership chases are capped at this risk level.', '当前风险水平下，追逐龙头的仓位被上限约束。') }}{% endif %}</div>
+  </div>
+  {% endif %}
+
   <!-- prevailing-narrative scorecard → the Narrative Rotation playbook (filled client-side) -->
   <section id="nr-scorecard" data-alloc="allocation.json" data-page="allocation.html"></section>
 

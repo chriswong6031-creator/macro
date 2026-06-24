@@ -936,7 +936,20 @@
   /* when a dislocation is active its panel renders (only then) and floats to the very
      top of the page — a rare, urgent risk banner above the regime hero. Hidden (not
      rendered at all) when dormant, so it never occupies prime space on normal days. */
-  body.page-macro #dislocation { order: -1; scroll-margin-top: 16px; }
+  body.page-macro #dislocation { order: -2; scroll-margin-top: 16px; }
+  /* fused equity-internal RISK STATE banner (engine/risk_state.py). When the state is
+     elevated+ (alert) it FLOATS just below the acute dislocation filter and above the
+     regime hero and pulses loudly; at 'caution' it renders inline in the risk section
+     (informative, not dominating). The early-warning that LEADS the credit gauge; the
+     dislocation banner is the late, falling-knife filter. */
+  body.page-macro #risk-state { scroll-margin-top: 16px; border-left: 4px solid var(--rs); }
+  body.page-macro #risk-state.rs-float { order: -1; }
+  body.page-macro #risk-state.rs-loud { animation: rspulse 2.2s ease-in-out infinite; }
+  body.page-macro #risk-state .rs-head { font-size: 19px; font-weight: 800; color: var(--rs); letter-spacing: .2px; }
+  body.page-macro #risk-state .rs-score { font-variant-numeric: tabular-nums; }
+  body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
+  body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
+  @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
 
   @media (max-width: 900px) {
     body.page-macro .qmini { grid-template-columns: repeat(2, 34px); grid-template-rows: repeat(2, 34px); }
@@ -1533,6 +1546,76 @@
   </div>
 
   {# Fired alerts moved into the combined "Now" board (alerts · news · relief radar) below. #}
+
+  <!-- ============ EARLY RISK-STATE BANNER (engine/risk_state.py) ============ -->
+  {% set RS = latest.risk_state %}
+  {% if RS and RS.score is not none and RS.state in ['caution','elevated','risk-off'] %}
+  {% set rscol = 'var(--act)' if RS.state=='risk-off' else ('var(--orange)' if RS.state=='elevated' else 'var(--warn)') %}
+  {% set rsglow = 'rgba(224,85,85,.55)' if RS.state=='risk-off' else ('rgba(224,139,69,.5)' if RS.state=='elevated' else 'rgba(224,160,48,.4)') %}
+  {% set rsicon = '🛑' if RS.state=='risk-off' else ('🚨' if RS.state=='elevated' else '⚠️') %}
+  <div class="panel span12{% if RS.alert %} rs-float rs-loud{% endif %}" id="risk-state" style="--rs:{{ rscol }};--rs-glow:{{ rsglow }}">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div class="rs-head">{{ rsicon }} {{ t('Market risk state', '市场风险状态') }}: {{ t(RS.label_en, RS.label_zh) }}
+        {{ help('A fused EARLY-warning risk state from the equity-internal detectors the credit-weighted macro gauge misses: complacency / hidden-fragility, breadth divergence, dealer-gamma posture, vol-term structure, HY + HYG-TLT credit, plus turning-point and cross-asset confirms. Leading positioning/vol/breadth legs are weighted far above the slow credit/recession legs, so this LEADS the macro-risk gauge into a positioning/vol/breadth blow-off (e.g. the 2026-06-23 semi unwind, when macro-risk still read low). A conjunction-based CONTEXT, not validated alpha: the de-risk response is SIZING — de-gross, favour good entries over chasing extended leaders — never stock selection, and it does not alter the validated regime quad. See research/RISK_LAYER_DESIGN.md.', '融合的“早期”风险状态，取自信用加权宏观指标看不到的股票内部探测器：自满度／隐性脆弱、宽度背离、做市商Gamma、波动期限结构、HY 与 HYG-TLT 信用，外加拐点与跨资产确认。领先的仓位／波动／宽度因子权重远高于缓慢的信用／衰退因子，因此在仓位／波动／宽度型见顶中领先于宏观风险指标（如 2026-06-23 半导体崩跌时宏观风险仍读数偏低）。这是基于“组合共振”的背景，而非经验证的超额收益：应对是调整仓位——降低敞口、择优入场而非追逐已延展的龙头——绝非选股，且不改变经验证的区制四象限。详见 research/RISK_LAYER_DESIGN.md。') }}
+      </div>
+      <div class="rs-head rs-score">{{ RS.score|round|int }}<span class="muted" style="font-size:13px;font-weight:600">/100</span></div>
+    </div>
+    <p class="muted sm" style="margin:4px 0 10px">{{ t(RS.headline_en, RS.headline_zh) }}</p>
+    {% if RS.drivers %}
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+      <div class="sm" style="font-weight:700;margin-bottom:5px">{{ t('What is firing', '正在触发的因子') }}</div>
+      {% for d in RS.drivers[:5] %}
+      <div class="rs-driver sm">
+        <span class="rs-bar" style="width:{{ (d.intensity*60)|round|int + 8 }}px"></span>
+        <span>{{ t(d.detail_en, d.detail_zh) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="sm" style="margin-top:9px"><b>{{ t('Do', '应对') }}:</b> {{ t(RS.reader_contract, RS.reader_contract) }}</div>
+    <div class="muted" style="font-size:11px;margin-top:6px">{{ t(RS.disclaimer, RS.disclaimer) }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ============ MULTI-TIMEFRAME TECHNICAL MONITOR (engine/mtf_monitor.py) ============ -->
+  {% if mode == 'macro' and mtf and mtf.groups %}
+  {% set PCOL = {'falling':'var(--act)','rolling':'var(--warn)','basing':'var(--muted)','turning':'var(--up)','rising':'var(--up)','unknown':'var(--muted)'} %}
+  {% set TCOL = {'breakdown':'var(--act)','rolling-over':'var(--warn)','weakening':'var(--orange)','bottoming':'var(--up)','firm':'var(--up)','neutral':'var(--muted)'} %}
+  {% set TZH = {'breakdown':'破位','rolling-over':'走弱','weakening':'转弱','bottoming':'筑底','firm':'稳健','neutral':'中性'} %}
+  <div class="panel span12" id="mtf-monitor">
+    <h2>🕸️ {{ t('Multi-timeframe technical monitor', '多周期技术监测') }}
+      {{ help('Monthly / weekly / daily (/ 4h) MACD-RSI posture across the major indexes, asset classes and ALL sector ETFs (engine/mtf_monitor.py, reusing the leak-aware cycles.py toolkit). Watches for breakdowns, momentum rolls and bearish RSI divergences — the TOP-side mirror of the bottoming-alignment engine. Phases describe MOMENTUM, not price targets; the major-index breakdown read feeds the risk state. A narrow tape shows up here as firm indexes over breaking-down sectors.', '在主要指数、大类资产与全部行业ETF上做月线/周线/日线（/4小时）的 MACD-RSI 态势监测（engine/mtf_monitor.py，复用 cycles.py 无前视工具）。监测破位、动能走弱与看跌RSI背离 —— 是筑底对齐引擎的“顶部”镜像。相位描述的是动能而非价格目标；主要指数的破位读数会喂入风险状态。窄幅行情会表现为指数稳健而行业破位。') }}
+    </h2>
+    <p class="muted sm" style="margin:-2px 0 10px">{{ t('Breakdowns', '破位') }} <b style="color:var(--act)">{{ mtf.breakdown_count }}</b> · {{ t('rolling over', '走弱') }} <b style="color:var(--warn)">{{ mtf.rolling_count }}</b>{% if mtf.technical_intensity is not none %} · {{ t('index technical stress', '指数技术压力') }} <b>{{ (mtf.technical_intensity*100)|round|int }}%</b>{% endif %}{% if not mtf.has_4h %} · <span class="muted">{{ t('4h shown when intraday store present', '有日内数据时显示4小时') }}</span>{% endif %}</p>
+    {% for grp in [('indexes','Indexes','指数'),('assets','Asset classes','大类资产'),('sectors','Sector ETFs','行业ETF')] %}
+    {% if mtf.groups[grp[0]] %}
+    <div class="sm" style="font-weight:700;margin:10px 0 4px">{{ t(grp[1], grp[2]) }}</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="text-align:left;color:var(--muted)">
+          <th style="padding:3px 6px">{{ t('Name', '名称') }}</th>
+          <th style="padding:3px 6px">M</th><th style="padding:3px 6px">W</th>
+          <th style="padding:3px 6px">3D</th><th style="padding:3px 6px">D</th>
+          {% if mtf.has_4h %}<th style="padding:3px 6px">4H</th>{% endif %}
+          <th style="padding:3px 6px">{{ t('Read', '判定') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in mtf.groups[grp[0]] %}
+        <tr style="border-top:1px solid var(--line)">
+          <td style="padding:3px 6px"><b>{{ r.ticker }}</b> <span class="muted">{{ t(r.en, r.zh) }}</span>{% if r.flags %} <span class="muted" style="font-size:10px">· {{ r.flags|join(', ') }}</span>{% endif %}</td>
+          {% for tf in ['M','W','3D','D'] %}<td style="padding:3px 6px;color:{{ PCOL[r.tfs[tf].phase] }}">{{ t(r.tfs[tf].phase_en, r.tfs[tf].phase_zh) }}</td>{% endfor %}
+          {% if mtf.has_4h %}<td style="padding:3px 6px;color:{{ PCOL[r.tfs['4H'].phase] if '4H' in r.tfs else 'var(--muted)' }}">{% if '4H' in r.tfs %}{{ t(r.tfs['4H'].phase_en, r.tfs['4H'].phase_zh) }}{% else %}—{% endif %}</td>{% endif %}
+          <td style="padding:3px 6px;font-weight:700;color:{{ TCOL[r.tag] }}">{{ t(r.tag, TZH[r.tag]) }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div class="muted" style="font-size:11px;margin-top:8px">{{ t(mtf.disclaimer, mtf.disclaimer) }}</div>
+  </div>
+  {% endif %}
 
   <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
   {% if latest.dislocation %}

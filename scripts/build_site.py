@@ -2802,8 +2802,19 @@ def main() -> int:
             _rsp.write_text(json.dumps(_rs_view, indent=2, default=str))
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("regime-snap persist failed: %s", e)
+    # Multi-timeframe technical monitor (engine/mtf_monitor.py): monthly/weekly/daily/4h
+    # breakdown · divergence · momentum-roll watch across major indexes, asset classes
+    # and all sector ETFs. Writes site/riskdata/mtf_monitor.json (read back by risk_state
+    # on the next build for its technical leg) and feeds the dashboard grid. Never fatal.
+    try:
+        from engine import mtf_monitor as _mtfm
+        mtf_data = _mtfm.build()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("mtf monitor failed: %s", e)
+        mtf_data = None
     vm = dict(
         latest=latest,
+        mtf=mtf_data,
         macro_catalysts=macro_catalysts,
         event_strip=event_strip,
         event_risk=event_risk,

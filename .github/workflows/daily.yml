@@ -417,6 +417,22 @@ jobs:
           cat /tmp/nbrain.log
           [ "$rc" -ne 0 ] && echo "::warning title=narrative_brain::rc=$rc (non-fatal)"
           exit 0
+      - name: Risk Brain (Claude/Opus daily drawdown-risk officer; context-only, resilient)
+        # Reads the engine's own deterministic risk stack (data/regime/latest.json.risk_state,
+        # site/riskdata/mtf_monitor.json, GEX, baskets, narrative rotation, standouts) and writes
+        # a FALSIFIABLE risk read + a CODE-clamped de-risk DIRECTIVE (site/riskdata/risk_brain.json)
+        # + appends data/risk_brain/theses.jsonl. Runs AFTER build_site/build_baskets so its evidence
+        # exists. Claude via the OAuth token / ANTHROPIC_API_KEY fallback. NO-OP unless
+        # risk_brain.enabled AND a token is set. Context-only; never aborts.
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set +e
+          python -m engine.risk_brain > /tmp/rbrain.log 2>&1; rc=$?
+          cat /tmp/rbrain.log
+          [ "$rc" -ne 0 ] && echo "::warning title=risk_brain::rc=$rc (non-fatal)"
+          exit 0
       - name: Radar + Brain ledger scorer (grade the falsifiable theses vs SPY; context-only)
         # Grades data/{radar,narrative_brain}/theses.jsonl once each check_by passes (reuses
         # engine.ai_desk_scorer) -> track_record.json + a site copy. Idempotent; context-only
