@@ -1604,6 +1604,9 @@
     {% set fl = RR.forward_log %}
     <div class="muted" style="font-size:11px;border-top:1px solid var(--line);padding-top:6px">🧾 {{ t('Self-audit', '自检') }}: {{ fl.n_graded }} {{ t('graded calls', '已评判') }}{% if fl.alert_precision is not none %} · {{ t('alert precision', '警报精度') }} {{ (fl.alert_precision*100)|round|int }}%{% endif %}{% if fl.recall_dd5_h21 is not none %} · {{ t('recall', '召回') }} {{ (fl.recall_dd5_h21*100)|round|int }}%{% endif %}{% if fl.n_false_pos %} · {{ fl.n_false_pos }} {{ t('false alarms', '误报') }}{% endif %} — {{ t('Opus retunes from these', 'Opus据此再校准') }}</div>
     {% endif %}
+    {% if RR.flow_status and not RR.flow_status.mature %}
+    <div class="muted" style="font-size:11px;margin-top:4px">⏳ {{ t('Vol-event detection accruing', '波动事件探测累积中') }}: {{ t('put/call', '认沽/认购') }} {{ RR.flow_status.putcall_rows }}/{{ RR.flow_status.min_history }} · GEX {{ RR.flow_status.gex_rows }}/{{ RR.flow_status.min_history }} {{ t('days — deep options-flow history is not freely available, so these legs accrue forward and self-validate via the Opus loop', '天 — 深度期权流历史无法免费获取，故这些因子前向累积并经Opus循环自我验证') }}</div>
+    {% endif %}
     <div class="muted" style="font-size:10.5px;margin-top:5px">{{ t(RR.disclaimer, RR.disclaimer) }}</div>
   </div>
   {% endif %}

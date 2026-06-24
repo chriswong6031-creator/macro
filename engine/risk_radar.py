@@ -51,6 +51,8 @@ log = logging.getLogger(__name__)
 
 _PCT_WIN = 504          # ~2y trailing causal percentile window
 _PCT_MINP = 63
+_FLOW_MIN_HISTORY = 252  # put/call & GEX legs stay INERT until this many rows accrue (deep history
+                         # is not freely available, so they validate FORWARD via the Opus loop)
 
 # Per-leg calibration FROM THE STRICT RE-VALIDATION (research/RISK_ENGINE_V2_FINDINGS.md §8).
 # lift_2020 = measured day-level forward-lift in the 2020-2026 holdout at thr_pct; lead_d = typical
@@ -68,6 +70,10 @@ _LEG_CALIB = {
     "growth_defensives":{"lift_2020": 1.62, "lift_full": 0.78, "lead_d": 12, "thr_pct": 0.90, "era_robust": False},
     "growth_cyc_def":   {"lift_2020": 1.63, "lift_full": 1.41, "lead_d": 12, "thr_pct": 0.90, "era_robust": False},
     "vol_term":         {"lift_2020": 0.44, "lift_full": 0.85, "lead_d": 8,  "thr_pct": 0.90, "era_robust": False},
+    # Tier-B flow legs — accruing forward, NOT yet backtestable (lift_2020 unknown -> stays unvalidated
+    # until the Opus loop gates them on realized outcomes once mature). thr_pct provisional.
+    "vol_putcall":      {"lift_2020": None, "lift_full": None, "lead_d": 5, "thr_pct": 0.85, "era_robust": False, "accruing": True},
+    "vol_gex":          {"lift_2020": None, "lift_full": None, "lead_d": 3, "thr_pct": 0.85, "era_robust": False, "accruing": True},
 }
 _VALIDATED_MIN = 1.20   # a leg is a real LEADING leg only if its 2020+ lift clears this
 
@@ -86,7 +92,9 @@ _SCARES = {
     "rates":   {"tier": "A", "legs": [("rates_move", 0.80), ("rates_realrate", 0.20)]},
     "bubble":  {"tier": "A", "legs": [("bubble_ext", 0.85), ("bubble_leadership", 0.15)]},
     "growth":  {"tier": "A", "legs": [("growth_defensives", 0.50), ("growth_cyc_def", 0.50)]},
-    "vol":     {"tier": "B", "legs": [("vol_term", 1.0)]},
+    # vol = Tier-B (display/escalator-only). vol_term is weak; vol_putcall/vol_gex are INERT until
+    # mature then auto-join (they're absent from leading_signals() until >=_FLOW_MIN_HISTORY rows).
+    "vol":     {"tier": "B", "legs": [("vol_term", 0.5), ("vol_putcall", 0.3), ("vol_gex", 0.2)]},
 }
 _SCARE_LABEL = {
     "credit":  ("Credit stress", "信用压力"),
@@ -225,6 +233,17 @@ def leading_signals() -> pd.DataFrame:
         term = (vix / v3m)
     if term is not None:
         out["vol_term"] = pcol(term)
+    # Tier-B FLOW legs (put/call, dealer GEX): deep history is NOT freely available (CBOE CDN + Yahoo
+    # both block it), so these accrue FORWARD via the live collectors and are INERT until mature
+    # (>= _FLOW_MIN_HISTORY rows), after which the forward-outcome log + the Opus loop gate them like
+    # any other leg. Rising equity put/call = hedging demand building; falling/negative net GEX =
+    # dealer short-gamma (reflexive air-pocket). Both leak-free causal percentiles.
+    pc = store.read("cboe", "putcall")
+    if pc is not None and len(pc) >= _FLOW_MIN_HISTORY and "equity_pc_ratio" in pc.columns:
+        out["vol_putcall"] = pcol(pc["equity_pc_ratio"].astype(float))
+    gx = store.read("cboe", "gex")
+    if gx is not None and len(gx) >= _FLOW_MIN_HISTORY and "net_gex_bn" in gx.columns:
+        out["vol_gex"] = pcol(-gx["net_gex_bn"].astype(float))   # negative net GEX = dealer short-gamma
     return out
 
 
@@ -296,6 +315,23 @@ def context_gate_live() -> dict:
     except Exception as e:  # noqa: BLE001
         log.warning("risk_radar context gate failed: %s", e)
     return out
+
+
+def flow_status() -> dict:
+    """Accrual status of the Tier-B options-flow legs (put/call, dealer GEX). Deep history is not
+    freely available, so they accrue forward via the live collectors and ACTIVATE (auto-join the vol
+    scare-type, then get gated by the Opus loop) once both reach _FLOW_MIN_HISTORY rows."""
+    def _rows(g, n):
+        try:
+            df = store.read(g, n)
+            return 0 if df is None else int(len(df))
+        except Exception:  # noqa: BLE001
+            return 0
+    pc, gx = _rows("cboe", "putcall"), _rows("cboe", "gex")
+    return {"min_history": _FLOW_MIN_HISTORY, "putcall_rows": pc, "gex_rows": gx,
+            "mature": bool(min(pc, gx) >= _FLOW_MIN_HISTORY),
+            "note": ("options-flow vol legs (put/call, GEX) accrue forward — deep history is "
+                     "unavailable freely; they activate + self-validate via the Opus loop when mature")}
 
 
 # --- live snapshot -----------------------------------------------------------
@@ -415,6 +451,7 @@ def compute(sigs: pd.DataFrame | None = None, calib: dict | None = None, asof=No
         "conjunction": bool(conjunction),
         "context_gate": gate,
         "state_ungated": state_ungated,
+        "flow_status": flow_status(),
         "gross_factor": gross,
         "favor_entries": _STATE_ORDER.index(state) >= _STATE_ORDER.index("caution"),
         "cap_leadership": _STATE_ORDER.index(state) >= _STATE_ORDER.index("elevated"),

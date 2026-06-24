@@ -275,3 +275,26 @@ lift_h21, conjunction_n}` from a baked `_PROB_CAL` surface (blended full + 2020+
 the top) plus a per-extra-hot-scare bump — so the displayed probability RISES as intensity and
 conjunction build. The surface is overlay-able (`data/risk_radar/calibration.json` `prob_cal`) so
 the Opus self-correction loop retunes it from the realized forward-outcome log.
+
+---
+
+## 10. PHASE D — deep options-flow collectors: the honest data reality
+
+GOAL: loudly catch NARROW/fast vol events (like 2026-06-23) that the broad validated legs miss.
+The verified residual gap (§ tuning) is the vol-event scare-type, which needs options/positioning
+flow. FINDING — **deep options-flow history is NOT freely available**:
+- CBOE CDN serves only the `*_History.csv` family (SKEW 1990+, VVIX 2006+, VIX) — **put/call,
+  implied-correlation (COR), and dealer-GEX are 403/Access-Denied**.
+- Yahoo `^CPC/^CPCE/^CPCI` (put/call ratio) → **404, not carried**.
+- VVIX IS deep (cboe/vvix 2006+) but **failed the strict gate** (2020+ lift 0.94×, no edge) — not promoted.
+- Dealer GEX is point-in-time (not backfillable by construction).
+
+So the vol-event leg **cannot be backtested today**. The honest implementation (Tier-B discipline):
+the live `cboe_putcall` + `cboe_gex` collectors (already registered, accruing ~from 2026-06) feed
+two new **Tier-B flow legs** (`vol_putcall` = rising equity put/call; `vol_gex` = negative net GEX /
+dealer short-gamma) that are **INERT until `_FLOW_MIN_HISTORY` (252) rows accrue** — absent from
+`leading_signals()` until then, so they can't add noise. Once mature they auto-join the vol scare-type
+and are gated by the **same strict bar** via the Opus self-correction loop before they're trusted; vol
+stays Tier-B (display/escalator-only) until then. The dashboard shows the accrual countdown
+("Vol-event detection accruing: put/call N/252"). i.e. the radar will get materially better at narrow
+vol events ~1 year forward, validated — not faked with data we don't have.

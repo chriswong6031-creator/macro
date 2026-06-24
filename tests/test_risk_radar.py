@@ -97,7 +97,8 @@ def test_evidence_gate_validated_legs_still_lead():
     onsets = bt.detect_events()
     assert len(onsets) >= 20  # famous-event coverage 1994-2026
     rep = bt.gate_report(sigs=sigs, onsets=onsets, thr=0.90)
-    claimed = [leg for leg, c in rr._LEG_CALIB.items() if c["lift_2020"] >= rr._VALIDATED_MIN]
+    claimed = [leg for leg, c in rr._LEG_CALIB.items()
+               if c["lift_2020"] is not None and c["lift_2020"] >= rr._VALIDATED_MIN]
     assert len(claimed) >= 4
     # every leg the engine CLAIMS as validated must not be anti-predictive on live data (do-no-harm)
     for leg in claimed:
@@ -113,6 +114,30 @@ def test_credit_oas_roc_is_era_robust():
     sigs = rr.leading_signals(); onsets = bt.detect_events()
     full = bt.lift(sigs["credit_oas_roc"], onsets, thr=0.90)
     assert full["lift"] is not None and full["lift"] >= 1.3  # era-robust credit-spread velocity
+
+
+def test_flow_legs_inert_until_mature():
+    # deep options-flow history is unavailable, so put/call & GEX legs accrue forward and must be
+    # ABSENT from leading_signals() until >= _FLOW_MIN_HISTORY rows (currently ~14)
+    cols = set(rr.leading_signals().columns)
+    fs = rr.flow_status()
+    if not fs["mature"]:
+        assert "vol_putcall" not in cols and "vol_gex" not in cols
+    assert fs["min_history"] == rr._FLOW_MIN_HISTORY
+    assert fs["putcall_rows"] >= 0 and fs["gex_rows"] >= 0
+
+
+def test_flow_legs_are_tierB_and_unvalidated():
+    # the flow legs live under the vol scare (Tier-B) and are NOT validated (lift unknown)
+    vol_legs = {leg for leg, w in rr._SCARES["vol"]["legs"]}
+    assert {"vol_putcall", "vol_gex"} <= vol_legs
+    assert rr._SCARES["vol"]["tier"] == "B"
+    assert rr._is_validated("vol_putcall") is False and rr._is_validated("vol_gex") is False
+
+
+def test_flow_status_in_snapshot():
+    out = rr.compute(gate={"met": True})
+    assert "flow_status" in out and out["flow_status"]["min_history"] == rr._FLOW_MIN_HISTORY
 
 
 def test_vol_term_is_not_claimed_validated():
