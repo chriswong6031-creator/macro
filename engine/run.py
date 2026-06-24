@@ -20,6 +20,35 @@ from lib import config, store
 log = logging.getLogger(__name__)
 
 
+def freshness_stamp(asof, now=None, max_age_sessions: int = 1) -> dict:
+    """PIT freshness/staleness stamp for the contract (research/RISK_FLIP_2026-06-22.md).
+
+    On 2026-06-22 the downstream bot consumed a 2026-06-18 contract through the whole
+    session — Juneteenth (Fri 06-19) + the weekend meant no newer session existed, and
+    the daily build only lands post-close (22:40 UTC), yet latest.json carried NO
+    freshness stamp, so a 4-calendar-day-old read was treated as a live all-clear. This
+    stamps asof + build wall-clock + session age so a consumer can DISCOUNT a stale
+    contract. PURE (now injectable for tests). `age_sessions` is a holiday-agnostic
+    weekday count — coarse, and it errs toward flagging stale. Degrade-never-raise."""
+    if now is None:
+        now = pd.Timestamp.now(tz="UTC").tz_localize(None)
+    asof_d, now_d = pd.Timestamp(asof).normalize(), pd.Timestamp(now).normalize()
+    age_days = max(0, int((now_d - asof_d).days))
+    age_sessions = (max(0, len(pd.bdate_range(asof_d, now_d)) - 1)
+                    if now_d >= asof_d else 0)
+    return {
+        "asof": str(pd.Timestamp(asof).date()),
+        "built_at": pd.Timestamp(now).isoformat(timespec="seconds") + "Z",
+        "age_days": age_days,
+        "age_sessions": age_sessions,
+        "max_age_sessions": int(max_age_sessions),
+        "stale": bool(age_sessions > int(max_age_sessions)),
+        "note": ("contract asof vs build time; the daily build lands post-close "
+                 "(22:40 UTC) so a consumer reading intraday should expect asof = "
+                 "prior session — recompute age against built_at at read time."),
+    }
+
+
 def confirming_contradicting(regime: pd.DataFrame, asof: pd.Timestamp) -> tuple[list, list]:
     row = regime.loc[asof]
     confirming, contradicting = [], []
@@ -296,6 +325,13 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
         log.error("playbook failed: %s", e)
         latest["playbook"] = None
+    # Freshness / staleness guard — see freshness_stamp(). Additive, never fatal.
+    try:
+        max_age = int((config.load().get("engine", {}).get("freshness", {}) or {})
+                      .get("max_age_sessions", 1))
+        latest["freshness"] = freshness_stamp(asof, max_age_sessions=max_age)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("freshness stamp failed: %s", e)
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",
