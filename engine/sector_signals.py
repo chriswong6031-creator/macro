@@ -47,6 +47,15 @@ _EXT_RSI = 70.0           # extended / "late" thresholds (overbought)
 _EXT_STOCH = 80.0
 _OS_STOCH = 20.0          # StochRSI oversold line the user keys bottoms off
 
+# Oversold-bounce (tactical mean-reversion) carve-out — see the OVERSOLD_BOUNCE
+# state below and research/SECTOR_CONFLUENCE.md. Restricted to the four low-vol
+# DEFENSIVE sectors that an independent variance-ratio / OU-half-life test confirmed
+# are genuinely range-bound (oscillate around trend) rather than trending — so a
+# below-200d oversold dip is a buyable bounce, not a falling knife. Cyclicals are
+# deliberately excluded (their below-200d guarded tail is still ~-24%).
+_OVERSOLD_BOUNCE_COHORT = {"XLU", "XLP", "XLV", "XLRE"}
+_OSB_MAX_DEPTH = -0.12    # don't fire deeper than 12% below the 200-day (knife cap)
+
 # Measured per-state base rates (forward 63d excess vs SPY, %, hit-rate, n) from
 # the FULL state machine, weekly-sampled across the 11 sector ETFs 1998-2026
 # (``calibrate`` output — research/SECTOR_CONFLUENCE.md). Static fallback; the
@@ -54,15 +63,21 @@ _OS_STOCH = 20.0          # StochRSI oversold line the user keys bottoms off
 # Note the honest nuance: the negative avoid-edge concentrates in TOPPING/SELL —
 # a pure EXTENDED (overbought but still rising) is ~market-neutral at 63d, i.e.
 # "late, don't chase" rather than "short it".
+# Each entry carries BOTH the forward-63d EXCESS-vs-SPY (the rotation metric the
+# buy/avoid states are sorted on) AND the ABSOLUTE forward-63d return. The dual is
+# the honesty layer for OVERSOLD_BOUNCE: that state is positive ABSOLUTE (the dip
+# bounces) but ~flat/negative EXCESS (it lags a rising SPY) — so absolute is its
+# headline and excess is shown as the "lags SPY" cost. Refreshed live by calibrate.
 STATE_BASE_RATES = {
-    "BUY":         {"exc63": 1.10, "hit": 56, "n": 199},
-    "BUY_PARTIAL": {"exc63": 0.40, "hit": 50, "n": 1281},
-    "SETUP_BUY":   {"exc63": 0.32, "hit": 52, "n": 486},
-    "NEUTRAL":     {"exc63": 0.08, "hit": 50, "n": 2547},
-    "EXTENDED":    {"exc63": 0.06, "hit": 50, "n": 2185},
-    "TOPPING":     {"exc63": -0.11, "hit": 48, "n": 2335},
-    "SELL":        {"exc63": -1.24, "hit": 40, "n": 169},
-    "BELOW_TREND": {"exc63": -0.14, "hit": 49, "n": 3613},
+    "BUY":            {"exc63": 1.10, "hit": 56, "abs63": 3.70, "abs_hit": 72, "n": 199},
+    "BUY_PARTIAL":    {"exc63": 0.40, "hit": 50, "abs63": 2.25, "abs_hit": 65, "n": 1281},
+    "SETUP_BUY":      {"exc63": 0.32, "hit": 52, "abs63": 3.13, "abs_hit": 71, "n": 486},
+    "NEUTRAL":        {"exc63": 0.08, "hit": 50, "abs63": 2.72, "abs_hit": 67, "n": 2547},
+    "EXTENDED":       {"exc63": 0.06, "hit": 50, "abs63": 2.52, "abs_hit": 68, "n": 2185},
+    "TOPPING":        {"exc63": -0.11, "hit": 48, "abs63": 2.10, "abs_hit": 67, "n": 2335},
+    "SELL":           {"exc63": -1.24, "hit": 40, "abs63": -0.05, "abs_hit": 59, "n": 169},
+    "BELOW_TREND":    {"exc63": -0.16, "hit": 49, "abs63": 2.45, "abs_hit": 64, "n": 3477},
+    "OVERSOLD_BOUNCE": {"exc63": 0.29, "hit": 55, "abs63": 3.98, "abs_hit": 79, "n": 136},
 }
 
 # Display metadata per state: side, human label (EN/中文), one-line action, a UI
@@ -85,6 +100,17 @@ _STATE_META = {
                     "超买且3日线确认下穿——离场/回避。", "var(--down)", 9),
     "BELOW_TREND": ("avoid", "BELOW TREND", "趋势下方", "Below the 200-day — bottoming buys here are knives; wait for a reclaim.",
                     "处于200日线下方——此处抄底如接飞刀；等待收复。", "var(--muted)", 10),
+    # tactical mean-reversion dip — NOT a confirmed buy (own 'tactical' side so it
+    # never enters the buy/avoid counts or the rotation spread). Surfaced so the
+    # range-bound defensives stop being buried in BELOW_TREND.
+    "OVERSOLD_BOUNCE": ("tactical", "OVERSOLD BOUNCE", "超卖反弹",
+                    "Below the 200-day but a range-bound defensive, oversold and turning up with the Fed put intact — "
+                    "a tactical mean-reversion bounce (positive in ABSOLUTE terms, ~+4%/63d, hit ~79%; roughly "
+                    "market-neutral vs SPY and prone to lag in a strong bull tape). A dip-trade, not a confirmed "
+                    "trend buy — size small, set a stop.",
+                    "处于200日线下方，但属区间震荡的防御板块，已超卖并转上、且美联储托底仍在——"
+                    "战术性均值回归反弹（绝对收益为正，约+4%/63日，胜率约79%；相对SPY大致持平，强势牛市中易跑输）。"
+                    "这是抄反弹，并非确认的趋势买入——小仓位并设止损。", "var(--info)", 6),
 }
 
 # Conviction tier labels (count of agreeing legs).
@@ -144,8 +170,17 @@ def _approach_eta_days(close: pd.Series, bar_days: int) -> int | None:
     return int(round(max(eta, 0.5) * bar_days))
 
 
-def _verdict(d: pd.Series, t3: pd.Series, above200: bool, above50: bool) -> dict:
-    """The validated state machine over the latest daily (d) + 3-day (t3) flags."""
+def _verdict(d: pd.Series, t3: pd.Series, above200: bool, above50: bool, *,
+             depth200: float | None = None, slope200_up: bool = False,
+             osb_eligible: bool = False) -> dict:
+    """The validated state machine over the latest daily (d) + 3-day (t3) flags.
+
+    The below-200d branch is a falling-knife BY DEFAULT (the keyword guards default
+    off, so a bare call stays a knife). It is only carved into the tactical
+    OVERSOLD_BOUNCE state when the caller asserts ``osb_eligible`` (the range-bound
+    defensive cohort, Fed-put present — enforced in sector_signal/board) AND the
+    price shape is a shallow, turning oversold dip rather than a deep collapse:
+    ``depth200`` (price/200d - 1) shallower than -12% and the 200-day not falling."""
     ext_3d = (t3["rsi"] > _EXT_RSI) or (t3["stoch"] > _EXT_STOCH)
     ext_d = (d["rsi"] > _EXT_RSI) or (d["stoch"] > _EXT_STOCH)
     extended = ext_3d or ext_d
@@ -161,6 +196,13 @@ def _verdict(d: pd.Series, t3: pd.Series, above200: bool, above50: bool) -> dict
     dn_legs = int(ext_d) + int(t3["macd_dn"]) + int(t3["stoch_dn"] or t3["setup_dn"])
 
     if not above200:
+        # tactical oversold-bounce carve-out (literal StochRSI cross-up<20 = signal-A;
+        # the reclaim-filtered variant failed the within-regime permutation test).
+        osb = bool(t3["stoch_up"] or d["stoch_up"])
+        if (osb_eligible and osb and depth200 is not None
+                and depth200 > _OSB_MAX_DEPTH and slope200_up):
+            return {"state": "OVERSOLD_BOUNCE", "conviction": 1,
+                    "reason": "below 200d but an oversold, turning, range-bound defensive dip"}
         return {"state": "BELOW_TREND", "conviction": 1, "reason": "price below the 200-day"}
 
     # --- avoid side takes priority once extended (don't let stray up-noise mask a top)
@@ -183,14 +225,19 @@ def _verdict(d: pd.Series, t3: pd.Series, above200: bool, above50: bool) -> dict
 
 
 def sector_signal(close: pd.Series, name: str | None = None,
-                  spy_close: pd.Series | None = None) -> dict:
+                  spy_close: pd.Series | None = None, ticker: str | None = None,
+                  put_absent: bool = False) -> dict:
     """The validated confluence read for one sector ETF close series. PURE.
 
     Returns the verdict state, conviction, the daily + 3-day oscillator snapshot,
     the trend gate, an approaching-cross ETA (days), and the measured base rate for
-    the state. Thin history (<~260 daily bars) degrades to a NEUTRAL stub."""
+    the state. Thin history (<~260 daily bars) degrades to a NEUTRAL stub.
+
+    ``ticker`` + ``put_absent`` gate the tactical OVERSOLD_BOUNCE carve-out: it can
+    only fire for the range-bound defensive cohort with the Fed put PRESENT (in a
+    put-absent regime even these dips kept falling — 2000/08/22)."""
     c = close.dropna()
-    out = {"ticker": None, "name": name, "state": "NEUTRAL", "conviction": 0,
+    out = {"ticker": ticker, "name": name, "state": "NEUTRAL", "conviction": 0,
            "ok": False}
     if len(c) < 260:
         return out
@@ -200,12 +247,20 @@ def sector_signal(close: pd.Series, name: str | None = None,
     df = _flag_frame(c)
     df3 = _flag_frame(c3)
     d, t3 = df.iloc[-1], df3.iloc[-1]
-    sma200 = float(c.iloc[-200:].mean())
+    sma200_series = c.rolling(200).mean()
+    sma200 = float(sma200_series.iloc[-1])
     sma50 = float(c.iloc[-50:].mean())
     px = float(c.iloc[-1])
     above200, above50 = px > sma200, px > sma50
+    # oversold-bounce guards: shallow depth + 200-day not falling (21-bar slope),
+    # cohort + Fed-put-present eligibility (the load-bearing knife guards)
+    depth200 = (px / sma200 - 1) if sma200 else None
+    slope200_up = bool(len(sma200_series.dropna()) >= 22
+                       and sma200_series.iloc[-1] - sma200_series.iloc[-22] >= 0)
+    osb_eligible = (ticker in _OVERSOLD_BOUNCE_COHORT) and not put_absent
 
-    v = _verdict(d, t3, above200, above50)
+    v = _verdict(d, t3, above200, above50, depth200=depth200,
+                 slope200_up=slope200_up, osb_eligible=osb_eligible)
     state = v["state"]
     side, label_en, label_zh, act_en, act_zh, color, prio = _STATE_META[state]
     conv = int(v["conviction"])
@@ -281,7 +336,8 @@ def board(closes: pd.DataFrame, names: dict[str, str], sectors: list[str],
     for t in sectors:
         if t not in closes.columns:
             continue
-        sig = sector_signal(closes[t], names.get(t, t), spy_close=spy)
+        sig = sector_signal(closes[t], names.get(t, t), spy_close=spy,
+                            ticker=t, put_absent=put_absent)
         if not sig.get("ok"):
             continue
         sig["ticker"] = t
@@ -294,11 +350,13 @@ def board(closes: pd.DataFrame, names: dict[str, str], sectors: list[str],
                              -(r.get("rs_60d") if r.get("rs_60d") is not None else 0)))
     buys = [r for r in rows if r["side"] == "buy"]
     avoids = [r for r in rows if r["side"] == "avoid"]
+    tactical = [r for r in rows if r["side"] == "tactical"]
     return {
         "sectors": rows,
-        "n_buy": len(buys), "n_avoid": len(avoids),
+        "n_buy": len(buys), "n_avoid": len(avoids), "n_tactical": len(tactical),
         "buy_tickers": [r["ticker"] for r in buys],
         "avoid_tickers": [r["ticker"] for r in avoids],
+        "tactical_tickers": [r["ticker"] for r in tactical],
         "put_absent": bool(put_absent),
         "evidence": ("Confluence of MACD + StochRSI crossovers on the 3-day chart "
                      "(daily as early trigger), 200-day trend-gated; extended = avoid. "
@@ -311,14 +369,19 @@ def board(closes: pd.DataFrame, names: dict[str, str], sectors: list[str],
 
 def calibrate(closes: pd.DataFrame, sectors: list[str], spy: pd.Series,
               horizon: int = 63) -> dict:
-    """Measure each state's forward ``horizon``-day excess-vs-SPY across history
-    (weekly-sampled, point-in-time) so the UI shows MEASURED base rates. Mirrors
-    engine.technicals.calibrate's honesty pattern. Returns {state -> {exc, hit, n}}.
+    """Measure each state's forward ``horizon``-day return across history (weekly-
+    sampled, point-in-time) so the UI shows MEASURED base rates — BOTH excess-vs-SPY
+    and ABSOLUTE. Mirrors engine.technicals.calibrate's honesty pattern. Returns
+    {state -> {exc63, hit, abs63, abs_hit, n}}.
 
     Point-in-time: the 3-day flags are computed on the resampled series and
-    forward-filled onto daily dates, so the read on date t uses only data ≤ t."""
+    forward-filled onto daily dates, so the read on date t uses only data ≤ t. The
+    OVERSOLD_BOUNCE state is measured over the cohort's full below-200d history
+    (cohort + price-shape guards, the SAME _verdict); the live state additionally
+    requires the Fed put PRESENT, so the live read is conservative vs this rate."""
     from collections import defaultdict
     acc_exc: dict[str, list[float]] = defaultdict(list)
+    acc_abs: dict[str, list[float]] = defaultdict(list)
     spy = spy.dropna()
     for t in sectors:
         if t not in closes.columns:
@@ -333,19 +396,29 @@ def calibrate(closes: pd.DataFrame, sectors: list[str], spy: pd.Series,
         fwd = c.shift(-horizon) / c - 1
         spy_fwd = spy.reindex(c.index).shift(-horizon) / spy.reindex(c.index) - 1
         exc = (fwd - spy_fwd)
-        idx = np.arange(len(c))
+        osb_elig = t in _OVERSOLD_BOUNCE_COHORT
         for i in range(200, len(c) - horizon, 5):     # weekly sample
             if not np.isfinite(exc.iloc[i]):
                 continue
             d, t3 = df.iloc[i], df3.iloc[i]
             if not np.isfinite(t3.get("rsi", np.nan)):
                 continue
-            v = _verdict(d, t3, bool(c.iloc[i] > sma200.iloc[i]) if np.isfinite(sma200.iloc[i]) else True, True)
+            s2 = sma200.iloc[i]
+            above = bool(c.iloc[i] > s2) if np.isfinite(s2) else True
+            depth_i = (c.iloc[i] / s2 - 1) if np.isfinite(s2) and s2 else None
+            slope_i = bool(i >= 221 and np.isfinite(sma200.iloc[i - 21])
+                           and s2 - sma200.iloc[i - 21] >= 0)
+            v = _verdict(d, t3, above, True, depth200=depth_i,
+                         slope200_up=slope_i, osb_eligible=osb_elig)
             acc_exc[v["state"]].append(float(exc.iloc[i]))
+            acc_abs[v["state"]].append(float(fwd.iloc[i]))
     out = {}
     for st, vals in acc_exc.items():
         if len(vals) >= 50:
             a = np.array(vals)
+            b = np.array(acc_abs[st])
             out[st] = {"exc63": round(float(100 * a.mean()), 2),
-                       "hit": int(round(100 * (a > 0).mean())), "n": len(a)}
+                       "hit": int(round(100 * (a > 0).mean())),
+                       "abs63": round(float(100 * b.mean()), 2),
+                       "abs_hit": int(round(100 * (b > 0).mean())), "n": len(a)}
     return out

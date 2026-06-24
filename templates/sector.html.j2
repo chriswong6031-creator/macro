@@ -252,7 +252,8 @@
       {{ t('3-day signal', '3 日信号') }}: {{ t(c.signal_en, c.signal_zh) }} ·
       RSI {{ c.rsi_3d | round | int if c.rsi_3d is not none else "—" }} · Stoch {{ c.stoch_3d | round | int if c.stoch_3d is not none else "—" }} ·
       {{ "✓" if c.above200 else "✗" }}200d {{ "✓" if c.above50 else "✗" }}50d
-      {% if c.base_rate %}· {{ t('measured', '实测') }} {{ "%+.1f" | format(c.base_rate.exc63) }}% {{ t('vs SPY, 63d', '对 SPY，63 日') }} ({{ c.base_rate.hit }}% {{ t('up', '上涨') }}{% if c.base_rate.n %}, n={{ c.base_rate.n }}{% endif %}){% endif %}
+      {% if c.base_rate %}· {{ t('measured 63d', '实测 63 日') }}:
+        {% if c.side == 'tactical' and c.base_rate.abs63 is defined %}{{ "%+.1f" | format(c.base_rate.abs63) }}% {{ t('absolute', '绝对') }} ({{ c.base_rate.abs_hit }}% {{ t('up', '上涨') }}) · {{ "%+.1f" | format(c.base_rate.exc63) }}% {{ t('vs SPY', '对 SPY') }}{% else %}{{ "%+.1f" | format(c.base_rate.exc63) }}% {{ t('vs SPY', '对 SPY') }} ({{ c.base_rate.hit }}% {{ t('up', '上涨') }}){% endif %}{% if c.base_rate.n %}, n={{ c.base_rate.n }}{% endif %}{% endif %}
     </p>
   </div>
   {% endif %}

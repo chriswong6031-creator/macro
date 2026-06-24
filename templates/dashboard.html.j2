@@ -3175,8 +3175,11 @@
         <tr><td style="color:var(--down)"><b>TOPPING</b></td><td>overbought + rolling over — distribution</td><td>−0.1%</td></tr>
         <tr><td style="color:var(--down)"><b>SELL</b></td><td>overbought + confirmed 3-day down-cross</td><td>−1.2% (40% up)</td></tr>
         <tr><td><b>BELOW TREND</b></td><td>under the 200-day — knife; wait for a reclaim</td><td>−0.1%</td></tr>
+        <tr><td style="color:var(--info)"><b>OVERSOLD BOUNCE</b></td><td>range-bound defensive (XLU/XLP/XLV/XLRE), oversold dip below trend, Fed-put on — tactical bounce, lags SPY</td><td>+4.0% abs / +0.3% vs SPY</td></tr>
       </table>
-      *measured per state across the 11 sector ETFs. Honest ceiling: hit-rates ~50-56% — the edge
+      *measured per state across the 11 sector ETFs. The OVERSOLD BOUNCE row's headline is its ABSOLUTE
+      return (the dip bounces); its vs-SPY is shown beside it because a low-beta defensive tends to lag a
+      rising index — a tactical mean-reversion trade, never a confirmed buy. Honest ceiling: hit-rates ~50-56% — the edge
       is in magnitude and in AVOIDANCE (it stops you chasing the "confirmed leadership" that
       institutions distribute into), not a high win-rate. A risk/timing map, not a return forecast.
       </span>
@@ -3192,13 +3195,15 @@
         <tr><td style="color:var(--down)"><b>见顶</b></td><td>超买+回落——派发</td><td>−0.1%</td></tr>
         <tr><td style="color:var(--down)"><b>卖出</b></td><td>超买+3日线确认下穿</td><td>−1.2%（40%上涨）</td></tr>
         <tr><td><b>趋势下方</b></td><td>200日线下方——接飞刀；等待收复</td><td>−0.1%</td></tr>
+        <tr><td style="color:var(--info)"><b>超卖反弹</b></td><td>区间震荡的防御板块（XLU/XLP/XLV/XLRE），趋势下方超卖回调、美联储托底在位——战术反弹，跑输SPY</td><td>+4.0% 绝对 / +0.3% 对SPY</td></tr>
       </table>
-      *按状态、跨 11 个板块 ETF 实测。诚实上限：胜率约 50–56%——优势在于幅度与「回避」（避免追逐机构
+      *按状态、跨 11 个板块 ETF 实测。「超卖反弹」一行的主数字是其绝对回报（回调会反弹）；旁边的对SPY数字
+      说明低贝塔防御板块在上涨指数中通常跑输——属战术性均值回归交易，绝非确认买入。诚实上限：胜率约 50–56%——优势在于幅度与「回避」（避免追逐机构
       派发的「已确认领先」），而非高胜率。这是风险/择时地图，不是收益预测。
       </span>
     </span></span></h2>
     <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
-      {% if sector_setups.n_buy or sector_setups.n_avoid %}<b>{{ sector_setups.n_buy }}</b> {{ t('on the buy side', '在买入侧') }} · <b>{{ sector_setups.n_avoid }}</b> {{ t('extended / topping / below trend', '过热／见顶／趋势下方') }}. {% endif %}{{ t('Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast.', '横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。') }}
+      {% if sector_setups.n_buy or sector_setups.n_avoid %}<b>{{ sector_setups.n_buy }}</b> {{ t('on the buy side', '在买入侧') }} · <b>{{ sector_setups.n_avoid }}</b> {{ t('extended / topping / below trend', '过热／见顶／趋势下方') }}{% if sector_setups.n_tactical %} · <b>{{ sector_setups.n_tactical }}</b> {{ t('tactical oversold bounce', '战术超卖反弹') }}{% endif %}. {% endif %}{{ t('Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast.', '横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。') }}
     </p>
     <table>
       <tr>

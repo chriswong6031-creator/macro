@@ -1313,7 +1313,14 @@ def sector_setup_view(latest: dict, timing: dict | None = None) -> dict | None:
                             if r.get("rsi_3d") is not None and r.get("stoch_3d") is not None else "—")
             r["rs_str"] = f"{r['rs_60d']:+.1f}%" if r.get("rs_60d") is not None else "—"
             br = cal.get(r["state"]) or r.get("base_rate") or {}
-            if br:
+            if br and r["side"] == "tactical" and br.get("abs63") is not None:
+                # tactical oversold-bounce: lead with the ABSOLUTE bounce (the reason
+                # it's surfaced), show excess-vs-SPY beside it as the honest cost.
+                n = br.get("n"); nbit = f" · n={n}" if n else ""
+                r["rate_str"] = T(f"{br['abs63']:+.1f}% abs · {br['abs_hit']}% up | {br['exc63']:+.1f}% vs SPY{nbit}",
+                                  f"绝对 {br['abs63']:+.1f}% · {br['abs_hit']}% 上涨 | 对SPY {br['exc63']:+.1f}%{nbit}")
+                r["rate_pos"] = None     # mixed read — keep the cell neutral, not green
+            elif br:
                 n = br.get("n")
                 nbit = f" · n={n}" if n else ""
                 r["rate_str"] = T(f"{br['exc63']:+.1f}% vs SPY · {br['hit']}% up{nbit}",
@@ -2072,7 +2079,7 @@ def build_smartmoney_data(site: Path) -> dict | None:
 
 
 def build_sector_pages(env: Environment, site: Path, generated: str,
-                       alpha: dict | None = None) -> dict:
+                       alpha: dict | None = None, put_absent: bool = False) -> dict:
     """Render sectors/<FUND>.html drill-downs; return per-fund timing summary
     for the heat board."""
     import json as _json
@@ -2244,7 +2251,8 @@ def build_sector_pages(env: Environment, site: Path, generated: str,
         # Sector buy/sell setups board) — engine/sector_signals
         try:
             from engine import sector_signals as _ssig
-            sig = _ssig.sector_signal(ec, SECTOR_NAMES.get(fund, fund), spy_close=_bench)
+            sig = _ssig.sector_signal(ec, SECTOR_NAMES.get(fund, fund), spy_close=_bench,
+                                      ticker=fund, put_absent=put_absent)
             if sig.get("ok"):
                 sig["signal_en"] = _ssig.signal_line(sig)
                 sig["signal_zh"] = _ssig.signal_line(sig, zh=True)
@@ -2568,7 +2576,9 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("smart-money data failed: %s", e)
     try:
-        sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data)
+        _put_absent = (latest.get("dislocation") or {}).get("put_state") == "put-absent"
+        sector_timing, notable = build_sector_pages(env, site, generated, alpha=alpha_data,
+                                                    put_absent=_put_absent)
     except Exception as e:  # noqa: BLE001 — drill-downs are additive, never fatal
         log.error("sector pages failed: %s", e)
     try:
