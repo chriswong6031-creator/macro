@@ -950,6 +950,15 @@
   body.page-macro #risk-state .rs-driver { display:flex; align-items:baseline; gap:8px; padding:3px 0; }
   body.page-macro #risk-state .rs-bar { height:6px; border-radius:3px; background:var(--rs); opacity:.85; }
   @keyframes rspulse { 0%,100% { box-shadow: 0 0 0 0 var(--rs-glow); } 50% { box-shadow: 0 0 16px 2px var(--rs-glow); } }
+  /* Market Risk Radar v2 (engine/risk_radar.py) — the PRIMARY top-of-page risk read. Floats above
+     the regime hero (below the acute dislocation filter) and pulses when the gated loud banner fires. */
+  body.page-macro #risk-radar { scroll-margin-top: 16px; border-left: 4px solid var(--rr); }
+  body.page-macro #risk-radar.rr-float { order: -1; }
+  body.page-macro #risk-radar.rr-loud { animation: rspulse 2.2s ease-in-out infinite; }
+  body.page-macro #risk-radar .rr-head { font-size: 20px; font-weight: 800; color: var(--rr); letter-spacing: .2px; }
+  body.page-macro #risk-radar .rr-prob { font-variant-numeric: tabular-nums; }
+  body.page-macro #risk-radar .rr-scare { border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; }
+  body.page-macro #risk-radar .rr-chip { display: inline-block; font-size: 10.5px; padding: 1px 6px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--line); color: var(--muted); margin: 0 3px 3px 0; }
 
   @media (max-width: 900px) {
     body.page-macro .qmini { grid-template-columns: repeat(2, 34px); grid-template-rows: repeat(2, 34px); }
@@ -1551,9 +1560,57 @@
 
   {# Fired alerts moved into the combined "Now" board (alerts · news · relief radar) below. #}
 
-  <!-- ============ EARLY RISK-STATE BANNER (engine/risk_state.py) ============ -->
+  <!-- ============ MARKET RISK RADAR v2 (engine/risk_radar.py) — primary top-of-page risk read ============ -->
+  {% set RR = latest.risk_radar %}
+  {% if RR and RR.state %}
+  {% set rrcol = 'var(--act)' if RR.state=='risk-off' else ('var(--orange)' if RR.state=='elevated' else ('var(--warn)' if RR.state=='caution' else ('var(--muted)' if RR.state=='watch' else 'var(--up)'))) %}
+  {% set rrglow = 'rgba(224,85,85,.55)' if RR.state=='risk-off' else ('rgba(224,139,69,.5)' if RR.state=='elevated' else 'rgba(224,160,48,.4)') %}
+  {% set rricon = '🛑' if RR.state=='risk-off' else ('🚨' if RR.state=='elevated' else ('⚠️' if RR.state=='caution' else ('👀' if RR.state=='watch' else '✅'))) %}
+  <div class="panel span12{% if RR.alert %} rr-float rr-loud{% endif %}" id="risk-radar" style="--rr:{{ rrcol }};--rs-glow:{{ rrglow }}">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+      <div class="rr-head">{{ rricon }} {{ t('Market Risk Radar', '市场风险雷达') }} — {{ t(RR.dominant_label_en or 'calm', RR.dominant_label_zh or '平静') }}
+        {{ help('An evidence-gated, regime-typed, genuinely-LEADING drawdown-risk radar (engine/risk_radar.py). Five scare-types (credit / rates / bubble / growth = validated leading; vol = display only — needs deep options-flow data) are each built ONLY from signals that pass a strict day-level-lift backtest (research/RISK_ENGINE_V2_FINDINGS.md). LOUD + EARLY but tiered: the quiet watch/caution tiers are early and high-recall; the LOUD banner is gated to fire only when the broad tape is breaking (SPY<200dma + weak breadth) -> ~2.3x base-rate precision, ~17% of days. The drawdown odds ESCALATE with intensity + conjunction. Every call is graded forward and an Opus loop retunes the calibration from its mistakes (within bounds, behind a do-no-harm backtest). De-risk response is SIZING, not selection; the validated regime quad is untouched.', '基于证据闸、按风险类型分型、真正“领先”的回撤风险雷达（engine/risk_radar.py）。五类风险（信用/利率/泡沫/增长=经验证领先；波动=仅展示，需期权流数据），每类仅由通过严格日级提升回测的信号构成。响亮但分层：静默的watch/caution层早且高召回；响亮横幅仅在大盘破位（SPY<200日均线+宽度走弱）时触发——约2.3倍基准精度、约17%的交易日。回撤概率随强度与共振上升。每次判断都会前向评判，Opus循环据其错误在边界内（经“无害”回测）再校准。应对是调整仓位而非选股；不改变经验证的区制四象限。') }}
+      </div>
+      <div class="rr-head">{{ RR.state|upper }}{% if RR.top_score is not none %} · {{ RR.top_score|round|int }}/100{% endif %}</div>
+    </div>
+    <p class="muted sm" style="margin:4px 0 9px">{{ t(RR.headline_en, RR.headline_zh) }}</p>
+    {% if RR.drawdown_prob and RR.drawdown_prob.h21 is not none %}
+    {% set dp = RR.drawdown_prob %}
+    <div style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 11px;margin-bottom:9px">
+      <span class="sm" style="font-weight:700">{{ t('Drawdown odds (≥5% pullback, escalating)', '回撤概率（≥5%，递增）') }}:</span>
+      <span class="rr-prob"> 5d <b>{{ (dp.h5*100)|round|int }}%</b> · 10d <b>{{ (dp.h10*100)|round|int }}%</b> · 21d <b style="color:{{ rrcol }}">{{ (dp.h21*100)|round|int }}%</b></span>
+      <span class="muted sm"> ({{ dp.lift_h21 }}× {{ t('base', '基准') }} {{ (dp.base_h21*100)|round|int }}%)</span>
+    </div>
+    {% endif %}
+    {% if RR.scares %}
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px">
+    {% for s in RR.scares %}
+      {% set sb = 'var(--act)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--muted)' if s.band=='watch' else 'var(--line)'))) %}
+      <div class="rr-scare" style="border-left:3px solid {{ sb }}">
+        <div class="sm" style="font-weight:700">{{ t(s.label_en, s.label_zh) }} <span style="color:{{ sb }}">{{ s.score|round|int }}</span> <span class="muted" style="font-size:10px">[{{ s.tier }}]</span></div>
+        {% for l in s.firing_legs[:3] %}<span class="rr-chip">{{ l.leg }} {{ (l.pctile*100)|round|int }}%{% if l.confirmed %} ✓{% endif %}{% if l.lift_2020 %} · {{ l.lift_2020 }}×{% endif %}</span>{% endfor %}
+      </div>
+    {% endfor %}
+    </div>
+    {% endif %}
+    {% if RR.context_gate %}
+    <div class="sm" style="margin-bottom:5px"><b>{{ t('Loud-alert gate', '大警报闸') }}:</b>
+      {% if RR.context_gate.met %}<span style="color:{{ rrcol }}">{{ t('OPEN — broad tape breaking (SPY<200dma + weak breadth)', '开 — 大盘破位（SPY<200日均线+宽度弱）') }}</span>
+      {% else %}<span class="muted">{{ t('shut — broad tape intact; quiet tier only (narrow/fast events need options-flow data)', '关 — 大盘未破；仅静默层（窄幅/快速事件需期权流数据）') }}</span>{% endif %}
+    </div>
+    {% endif %}
+    <div class="sm" style="margin-bottom:6px"><b>{{ t('Do', '应对') }}:</b> {{ t(RR.reader_contract, RR.reader_contract) }}{% if RR.gross_factor and RR.gross_factor < 1 %} · {{ t('suggested gross', '建议总仓位') }} ×{{ '%.2f'|format(RR.gross_factor) }}{% endif %}</div>
+    {% if RR.forward_log and RR.forward_log.n_graded %}
+    {% set fl = RR.forward_log %}
+    <div class="muted" style="font-size:11px;border-top:1px solid var(--line);padding-top:6px">🧾 {{ t('Self-audit', '自检') }}: {{ fl.n_graded }} {{ t('graded calls', '已评判') }}{% if fl.alert_precision is not none %} · {{ t('alert precision', '警报精度') }} {{ (fl.alert_precision*100)|round|int }}%{% endif %}{% if fl.recall_dd5_h21 is not none %} · {{ t('recall', '召回') }} {{ (fl.recall_dd5_h21*100)|round|int }}%{% endif %}{% if fl.n_false_pos %} · {{ fl.n_false_pos }} {{ t('false alarms', '误报') }}{% endif %} — {{ t('Opus retunes from these', 'Opus据此再校准') }}</div>
+    {% endif %}
+    <div class="muted" style="font-size:10.5px;margin-top:5px">{{ t(RR.disclaimer, RR.disclaimer) }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ============ EARLY RISK-STATE BANNER (engine/risk_state.py) — fallback when Risk Radar v2 absent ============ -->
   {% set RS = latest.risk_state %}
-  {% if RS and RS.score is not none and RS.state in ['caution','elevated','risk-off'] %}
+  {% if not latest.risk_radar and RS and RS.score is not none and RS.state in ['caution','elevated','risk-off'] %}
   {% set rscol = 'var(--act)' if RS.state=='risk-off' else ('var(--orange)' if RS.state=='elevated' else 'var(--warn)') %}
   {% set rsglow = 'rgba(224,85,85,.55)' if RS.state=='risk-off' else ('rgba(224,139,69,.5)' if RS.state=='elevated' else 'rgba(224,160,48,.4)') %}
   {% set rsicon = '🛑' if RS.state=='risk-off' else ('🚨' if RS.state=='elevated' else '⚠️') %}
