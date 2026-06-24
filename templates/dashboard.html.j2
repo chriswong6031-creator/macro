@@ -1150,6 +1150,39 @@
   </div>
   {% endif %}
 
+  <!-- ===================== VOL-SHOCK RISK — leading-precursor fusion (display-only) ===================== -->
+  {% if vol_shock %}
+  {% set vs = vol_shock %}
+  {% set vsc = 'var(--up)' if vs.band == 'low' else ('var(--warn)' if vs.band == 'elevated' else 'var(--down)') %}
+  <div class="panel span12" id="vol-shock" style="border-left:3px solid {{ vsc }}">
+    <h2>⚡ {{ t('Vol-shock risk — leading-precursor fusion', '波动冲击风险 — 领先前兆融合') }}
+      {% if vs.score is not none %}<span style="color:{{ vsc }};font-weight:800">{{ vs.score_int }}<small style="font-size:13px;font-weight:600;color:var(--muted)">/100 · {{ t(vs.band|capitalize, vs.band_zh) }}</small></span>{% endif %}
+      {{ help("ONE forward 0-100 caution gauge that FUSES the fast / LEADING precursors which tend to flash BEFORE an equity vol shock — cross-asset concentration, dealer short-gamma, a VIX term inversion, a compressed variance-risk premium, complacent positioning, breadth divergence, the active turning-point caution. The two existing 0-100 scores (de-risk model + macro-risk) are deliberately SLOW recession/credit gauges that lag a days-ahead shock; this is the leading complement. Each factor's points SUM to the headline, so the bar shows exactly what is flashing. DISPLAY-ONLY / validation-accruing: never scored, feeds no allocation — each firing is logged and graded on forward data.", "一个前瞻性的 0-100 警示计，融合在股市波动冲击之前往往率先闪现的快速领先前兆——跨资产集中度、做市商空头 Gamma、VIX 期限倒挂、被压缩的波动风险溢价、自满的持仓、广度背离、已激活的转折点警示。现有两个 0-100 评分（降险模型 + 宏观风险）是刻意求稳的衰退／信用滞后计，会落后于数日内的冲击；本计为其领先互补。各因子贡献分相加即为总分，进度条直观显示当前什么在闪现。仅供展示／正在积累验证：不计分、不驱动仓位——每次触发均记录并以未来数据评分。") }}
+    </h2>
+    {% if vs.score is not none %}
+    <div class="rm-bar">{% for f in vs.factors %}{% if f.available and f.points %}<div style="width:{{ f.points }}%;background:{{ f.color }}" title="{{ f.label }}: {{ f.points }}"></div>{% endif %}{% endfor %}</div>
+    <div class="muted" style="font-size:11px">{{ t('Filled = vol-shock risk score out of 100; each segment = a leading factor\'s contribution.', '填充 = 满分100的波动冲击风险评分；每段 = 一个领先因子的贡献。') }}</div>
+    <table class="rm-tbl">
+      <tr><th class="l">{{ t('Leading factor', '领先因子') }}</th><th>{{ t('Reading', '读数') }}</th><th>{{ t('Weight', '权重') }}</th><th>{{ t('Points', '贡献') }}</th></tr>
+      {% for f in vs.factors %}
+      <tr><td class="l"><span class="rm-dot" style="background:{{ f.color }}"></span>{{ t(f.label, f.label_zh) }}
+        {% if f.note %}<div class="muted" style="font-size:10.5px;margin-left:15px">{{ t(f.note, f.note_zh) }}</div>{% endif %}</td>
+        <td>{{ (f.sub|round|int ~ '/100') if f.sub is not none else '—' }}</td>
+        <td>{{ '%.2f'|format(f.weight) }}</td>
+        <td><b>{{ ('%.1f'|format(f.points)) if f.points is not none else '—' }}</b></td></tr>
+      {% endfor %}
+      <tr><td class="l"><b>{{ t('Vol-shock risk score', '波动冲击风险评分') }}</b></td><td></td><td></td><td><b>{{ vs.score }}</b></td></tr>
+    </table>
+    {% if vs.why %}<p class="sm" style="margin:9px 0 0"><b>{{ t('Why', '原因') }}:</b> {{ t(vs.why, vs.why_zh) }}</p>{% endif %}
+    <p class="muted sm" style="margin:6px 0 0">{{ t('Graded on', '评分标准') }}: {{ t(vs.outcome_label_en, vs.outcome_label_zh) }}.
+      {% if vs.track_record and vs.track_record.n %} {{ t('Forward record', '前瞻记录') }}: {{ vs.track_record.n }} {{ t('firings', '次触发') }} · {{ (vs.track_record.hit_rate * 100) | round | int }}% {{ t('hit', '命中') }}.{% else %} {{ t('Forward record accruing — graded once N trading days elapse.', '前瞻记录积累中——满 N 个交易日后评分。') }}{% endif %}</p>
+    {% else %}
+    <p class="muted sm">{{ t('No leading precursors available right now.', '当前无可用领先前兆。') }}</p>
+    {% endif %}
+    <p class="muted sm" style="margin:8px 0 0">{{ t(vs.disclaimer, vs.disclaimer_zh) }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
   {% if signal_stack %}
   <div class="panel span12" id="signal-stack">

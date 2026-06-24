@@ -1348,6 +1348,36 @@ engine:
                              # small, intentional overlap, not double-counting noise.
       transition: 0.25
 
+  # --- Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py). DISPLAY-ONLY /
+  # validation-accruing: one forward 0-100 caution gauge fusing the LEADING vol-shock
+  # precursors, with per-factor points that sum to the headline. Mirrors the in-code
+  # DEFAULTS; the band edges + forward-outcome label are PRE-REGISTERED (do not tune
+  # post-hoc — the forward outcome log grades them). Never scored, feeds no allocation.
+  vol_shock:
+    weights:                   # per-factor weights (leading precursors heavier than slow legs)
+      concentration: 1.0       # cross-asset absorption pctile (documented drawdown leader)
+      dealer_gamma: 1.0        # dealer short-gamma amplification (from market_gamma / GEX)
+      vix_term: 0.8            # VIX term inversion (front-month fear bid)
+      vrp_skew: 0.7            # compressed variance premium + skew tail
+      put_call: 0.5            # complacent call-buying (young series => down-weighted)
+      complacency: 0.8         # hidden-fragility state + breadth divergence
+      drawdown: 0.6            # slower, VALIDATED macro-stress gauge
+      turning_point: 0.5       # CAPPED conditioning flag (never-scored doctrine)
+      event_window: 0.4        # additive positioning-fragility / event proximity
+    bands:                     # PRE-REGISTERED band edges (0-100)
+      elevated: 40
+      high: 60
+      extreme: 75
+    putcall_young_n: 60        # put/call n_obs below this => young => down-weighted
+    putcall_young_factor: 0.35
+    turning_point_cap: 60      # turning_point sub-score ceiling (can't dominate)
+    vix_term_lo: 0.85          # VIX/VIX3M ratio: deep contango => 0 risk
+    vix_term_hi: 1.05          # inverted => max risk
+    gamma_prox_pct: 3.0        # |spot_vs_flip_pct| window for dealer-gamma proximity
+    outcome_horizon_d: 10      # forward-outcome label: realized SPY drawdown <= -X% OR
+    outcome_spy_move_pct: 5.0  #   VIX intraday-high >= VIX_t * mult, within N trading days
+    outcome_vix_jump_mult: 1.4
+
   # --- Quant-factor expansion: complementary nowcast / conditions / risk layer.
   # ADDITIVE — engine/conditions.py runs alongside the validated quad, never
   # alters it. See research/QUANT_FACTOR_EXPANSION.md.
