@@ -2741,46 +2741,10 @@
   </div>
   {% endif %}{# /mode != stocks — regime posture dial #}
 
-  {% if mode != 'macro' %}
-  <!-- ============== Regime-approved sectors (stock side) ============== -->
-  <div class="panel span12">
-    <h2>{{ t('Regime-approved sectors — leaders & avoids', '周期认可的板块 — 领先与回避') }}
-      {{ help("Sector calls derived from the current regime. Confirmed leadership = an established uptrend with positive, not-yet-stretched momentum. Avoids = the evidence-backed don'ts (chasing stretched leaders and buying below-trend bounces both lost in our 2007-2026 backtest).", "源自当前周期的板块判断。已确认领先＝既定上涨趋势、动量为正且尚未过热。回避＝有证据支撑的禁忌（追逐过热领先股与买入趋势下方反弹在 2007–2026 回测中都亏钱）。") }}
-    </h2>
-    <div class="grid" style="margin-top:12px">
-      <div class="span6">
-        <h3>✅ {{ t('Confirmed leadership — where participation is real', '已确认的领先 — 参与度真实之处') }}
-          {{ help("Sectors in an established uptrend vs the market with momentum still positive and not yet stretched. Descriptive — where the market's money already is. Use it to place exposure you already intend to take.", "相对市场处于既定上涨趋势、动量仍为正且尚未过度拉伸的板块。这是描述性的 — 市场资金已经在哪里。用它来摆放你本就打算建立的敞口。") }}
-        </h3>
-        {% for x in pb.leaders %}
-          <div class="card"><span class="calltag tag-lead">{{ t('LEADER', '领先') }}</span>
-            <b class="tk">{{ x.ticker }}</b> · {{ td(x.name) }}<br>
-            <span class="muted">{{ t(x.why, x.why_zh) }}</span></div>
-        {% else %}
-          <p class="muted">{{ t('No sector currently qualifies — leadership is either stretched or unconfirmed. That itself is information: stay close to the index.', '当前无板块合格 — 领先地位要么已过度拉伸，要么尚未确认。这本身就是信息：紧贴指数。') }}</p>
-        {% endfor %}
-        {% if pb.momentum_tilt.tickers %}
-          <p class="muted" style="font-size:12px">{{ t('Longer-horizon tilt:', '较长时间尺度倾斜：') }} <b>
-            {%- for t in pb.momentum_tilt.tickers %}{{ t.ticker }}{{ ", " if not loop.last }}{% endfor -%}
-          </b> {{ help(pb.momentum_tilt.note, pb.momentum_tilt.note_zh) }}</p>
-        {% endif %}
-      </div>
-      <div class="span6">
-        <h3>🚫 {{ t("Avoid right now — the evidence-backed don'ts", '现在回避 — 有证据支撑的禁忌') }}
-          {{ help("The strongest findings in our sector backtest were about what NOT to do: chasing stretched leaders lost 55% of the time; buying below-trend bounces lost in every variant tested. These warnings carry more statistical weight than any buy signal on this page.", "我们板块回测中最强的发现都是关于不该做什么：追逐过度拉伸的领先股有 55% 的时间亏钱；买入趋势下方的反弹在测试的每个变体中都亏钱。这些警告比本页任何买入信号都带有更大的统计权重。") }}
-        </h3>
-        {% for x in pb.avoid %}
-          <div class="card"><span class="calltag tag-avoid">{{ td(x.call) }}</span>
-            <b class="tk">{{ x.ticker }}</b> · {{ td(x.name) }}<br>
-            <span class="muted">{{ t(x.why, x.why_zh) }}</span></div>
-        {% else %}
-          <p class="muted">{{ t('Nothing currently triggers the avoid rules.', '当前没有任何标的触发回避规则。') }}</p>
-        {% endfor %}
-      </div>
-    </div>
-    <p class="muted" style="font-size:12px; margin-top:8px">⚖️ {{ t(pb.honesty, pb.honesty_zh) }}</p>
-  </div>
-  {% endif %}{# /mode != macro — regime-approved sectors #}
+  {# Regime-approved "leaders & avoids" scorecard removed (2026-06-23): superseded by
+     the validated Sector buy/sell setups board (#sectors below), engine/sector_signals —
+     research/SECTOR_CONFLUENCE.md. The old card mislabelled extended sectors as
+     "confirmed leadership" and gave no topping signal. #}
   {% endif %}{# /if pb #}
 
   {% if mode != 'stocks' %}
@@ -3086,128 +3050,86 @@
   </div>
   {% endif %}
 
-  <!-- ======================= SECTOR HEAT BOARD ======================= -->
+  <!-- ============ SECTOR BUY/SELL SETUPS — confluence engine ============ -->
+  {% if sector_setups %}
   <div class="panel span12" id="sectors">
-    <h2>{{ t('Sector heat board — regime × tape × technicals × seasonality', '板块热度榜 — 周期 × 盘面 × 技术 × 季节性') }}
-      {{ help("One row per sector, everything that matters in one place. HEAT (0-100) measures how CONFIRMED a sector's strength is right now: regime fit + rotation stage + technicals, minus crowding. Important: heat describes the present, not the future — our 2007-2026 backtest shows the hottest band (70+) actually UNDERPERFORMED over the following months (everything-confirmed usually means late). So: high heat = hold/trim territory, never a fresh-entry signal; the buy workflow is the watchlist + trigger column.", "每个板块一行，把重要的一切放在一处。热度（0–100）衡量一个板块的强势此刻有多被确认：周期契合度 + 轮动阶段 + 技术面，减去拥挤度。重要：热度描述的是现在，而非未来 — 我们 2007–2026 的回测显示最热的区间（70+）在随后几个月反而跑输（万事俱备通常意味着已晚）。因此：高热度 = 持有／减仓区，绝非新建仓信号；买入流程靠观察名单 + 触发列。") }}
-    </h2>
+    <h2>{{ t('Sector buy/sell setups — 3-day MACD + StochRSI confluence', '板块买卖配置 — 3 日 MACD + StochRSI 共振') }} <span class="help">?<span class="tip">
+      <span class="l-en">
+      The primary sector timing engine: a confluence of MACD + StochRSI crossovers on the
+      <b>3-day chart</b> (the daily is the early trigger), gated by the 200-day trend and sorted
+      most-actionable first. Validated 1998-2026 (research/SECTOR_CONFLUENCE.md) — the base-rate
+      column is the MEASURED forward-63-day excess vs SPY for each state:
+      <table>
+        <tr><th>state</th><th>read it as</th><th>fwd 63d vs SPY*</th></tr>
+        <tr><td style="color:var(--up)"><b>BUY</b></td><td>fresh up-turn on daily + 3-day, above trend</td><td>+0.9% (56% up)</td></tr>
+        <tr><td style="color:var(--info)"><b>SETUP</b></td><td>approaching an up-cross — get ready</td><td>+0.3..0.7%</td></tr>
+        <tr><td style="color:var(--orange)"><b>EXTENDED</b></td><td>overbought, late — hold/trim, don't chase</td><td>~flat</td></tr>
+        <tr><td style="color:var(--down)"><b>TOPPING</b></td><td>overbought + rolling over — distribution</td><td>−0.1%</td></tr>
+        <tr><td style="color:var(--down)"><b>SELL</b></td><td>overbought + confirmed 3-day down-cross</td><td>−1.2% (40% up)</td></tr>
+        <tr><td><b>BELOW TREND</b></td><td>under the 200-day — knife; wait for a reclaim</td><td>−0.1%</td></tr>
+      </table>
+      *measured per state across the 11 sector ETFs. Honest ceiling: hit-rates ~50-56% — the edge
+      is in magnitude and in AVOIDANCE (it stops you chasing the "confirmed leadership" that
+      institutions distribute into), not a high win-rate. A risk/timing map, not a return forecast.
+      </span>
+      <span class="l-zh">
+      板块择时主引擎：3 日图上 MACD + StochRSI 交叉的共振（日线作为早期触发），以 200 日趋势把关，
+      按可操作性排序。已用 1998–2026 验证（research/SECTOR_CONFLUENCE.md）——基础概率列为各状态
+      实测的未来 63 日对 SPY 超额：
+      <table>
+        <tr><th>状态</th><th>解读</th><th>未来63日对SPY*</th></tr>
+        <tr><td style="color:var(--up)"><b>买入</b></td><td>日线+3日线同时转上，且在趋势之上</td><td>+0.9%（56%上涨）</td></tr>
+        <tr><td style="color:var(--info)"><b>预备</b></td><td>接近上穿——准备</td><td>+0.3..0.7%</td></tr>
+        <tr><td style="color:var(--orange)"><b>过热</b></td><td>超买、已晚——持有/减仓，勿追</td><td>≈持平</td></tr>
+        <tr><td style="color:var(--down)"><b>见顶</b></td><td>超买+回落——派发</td><td>−0.1%</td></tr>
+        <tr><td style="color:var(--down)"><b>卖出</b></td><td>超买+3日线确认下穿</td><td>−1.2%（40%上涨）</td></tr>
+        <tr><td><b>趋势下方</b></td><td>200日线下方——接飞刀；等待收复</td><td>−0.1%</td></tr>
+      </table>
+      *按状态、跨 11 个板块 ETF 实测。诚实上限：胜率约 50–56%——优势在于幅度与「回避」（避免追逐机构
+      派发的「已确认领先」），而非高胜率。这是风险/择时地图，不是收益预测。
+      </span>
+    </span></span></h2>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 4px">
+      {% if sector_setups.n_buy or sector_setups.n_avoid %}<b>{{ sector_setups.n_buy }}</b> {{ t('on the buy side', '在买入侧') }} · <b>{{ sector_setups.n_avoid }}</b> {{ t('extended / topping / below trend', '过热／见顶／趋势下方') }}. {% endif %}{{ t('Cross-sectionally the buy side has beaten the avoid side by ~0.8%/quarter (1998-2026). Use it to time rotation and to NOT chase extended leaders — never as a return forecast.', '横截面上买入侧每季度约跑赢回避侧 0.8%（1998–2026）。用于把握轮动、避免追逐过热领先股——切勿当作收益预测。') }}
+    </p>
     <table>
       <tr>
         <th class="l">{{ t('sector', '板块') }}</th>
-        <th class="l" style="min-width:130px">{{ t('heat', '热度') }} <span class="help">?<span class="tip">
-          <span class="l-en">
-          <b>Heat</b> = how CONFIRMED a sector's strength is (regime fit + trend stage +
-          technicals − crowding − a macro-risk adjustment when macro risk is elevated and
-          the sector is macro-sensitive). Hover each bar for its exact arithmetic.
-          <table>
-            <tr><th>band</th><th>read it as</th><th>measured 3-month record*</th></tr>
-            <tr><td style="color:var(--orange)"><b>70+ OVERHEATED</b></td><td>late — hold/trim, don't start</td><td>beat market 47% (−0.6% avg)</td></tr>
-            <tr><td style="color:var(--up)"><b>55-69 HOT</b></td><td>confirmed — hold, buy pullbacks</td><td>49% (−0.3%)</td></tr>
-            <tr><td><b>40-54 NEUTRAL</b></td><td>mixed, no lean</td><td>49% (−0.1%)</td></tr>
-            <tr><td style="color:var(--info)"><b>0-39 COLD</b></td><td>washed out — wait for trigger</td><td>50% (+0.2%)</td></tr>
-          </table>
-          *vs the index, every week 2007-2026. Note the inversion: hot sectors were
-          usually LATE. That measured record is the trust level — and it argues
-          against chasing.
-          </span>
-          <span class="l-zh">
-          <b>热度</b> = 一个板块的强势有多被确认（周期契合度 + 趋势阶段 +
-          技术面 − 拥挤度 − 宏观风险升高且板块对宏观敏感时的宏观风险调整）。
-          将鼠标悬停在每个条上可查看其精确算式。
-          <table>
-            <tr><th>区间</th><th>解读为</th><th>实测 3 个月记录*</th></tr>
-            <tr><td style="color:var(--orange)"><b>70+ 过热</b></td><td>已晚 — 持有／减仓，勿入场</td><td>跑赢市场 47%（平均 −0.6%）</td></tr>
-            <tr><td style="color:var(--up)"><b>55-69 偏热</b></td><td>已确认 — 持有，回调时买入</td><td>49%（−0.3%）</td></tr>
-            <tr><td><b>40-54 中性</b></td><td>混合，无倾向</td><td>49%（−0.1%）</td></tr>
-            <tr><td style="color:var(--info)"><b>0-39 偏冷</b></td><td>已洗盘 — 等待触发</td><td>50%（+0.2%）</td></tr>
-          </table>
-          *对比指数，2007–2026 每一周。注意这种反转：偏热的板块通常都已晚。
-          这份实测记录就是可信度 — 它反对追高。
-          </span>
-        </span></span></th>
-        <th>{{ t('stage', '阶段') }} <span class="help">?<span class="tip">
-          <span class="l-en">
-          <b>The rotation cycle</b> — every sector travels this loop vs the market:
-          <span class="lad lad-tint" style="--c:var(--info)">1. IMPROVING — momentum turns up, trend not yet confirmed. <b>Too early</b>: buying here lost money historically.</span>
-          <span class="lad lad-tint" style="--c:var(--up)">2. LEADING — confirmed uptrend. The healthy zone.</span>
-          <span class="lad lad-tint" style="--c:var(--warn)">3. WEAKENING — still above trend but losing steam. Tighten stops.</span>
-          <span class="lad lad-tint" style="--c:var(--down)">4. LAGGING — downtrend. Avoid until it improves again.</span>
-          </span>
-          <span class="l-zh">
-          <b>轮动周期</b> — 每个板块相对市场都会走完这个循环：
-          <span class="lad lad-tint" style="--c:var(--info)">1. 改善 — 动量转上，趋势尚未确认。<b>过早</b>：历史上在这里买入会亏钱。</span>
-          <span class="lad lad-tint" style="--c:var(--up)">2. 领先 — 已确认上涨趋势。健康区。</span>
-          <span class="lad lad-tint" style="--c:var(--warn)">3. 走弱 — 仍在趋势上方但动能减弱。收紧止损。</span>
-          <span class="lad lad-tint" style="--c:var(--down)">4. 落后 — 下跌趋势。回避，直到再度改善。</span>
-          </span>
-        </span></span></th>
-        <th>{{ t('3mo vs market', '3 月对比市场') }} {{ help("How much it beat or trailed the S&P 500 over the past 60 trading days — the medium-term relative trend the playbook keys off.", "过去 60 个交易日内它跑赢或落后标普 500 多少 — 剧本所依据的中期相对趋势。") }}</th>
-        <th>{{ t('technicals', '技术面') }} <span class="help">?<span class="tip">
-          <span class="l-en">
-          <b>RSI(14)</b> — a 0-100 momentum thermometer:
-          <span class="scale">
-            <span style="background:var(--g-cold)">OVERSOLD</span>
-            <span style="background:var(--muted)">SOFT</span>
-            <span style="background:var(--up)">HEALTHY</span>
-            <span style="background:var(--down)">HOT</span>
-          </span>
-          <span class="sl"><span>0</span><span>30</span><span>45</span><span>70</span><span>100</span></span>
-          <b>✓/✗ 200d and 50d</b>: whether price is above its 200-day (long-term) and
-          50-day (medium-term) average — the most basic "is it in an uptrend" filters.
-          Green row = both ✓.
-          </span>
-          <span class="l-zh">
-          <b>RSI(14)</b> — 一个 0–100 的动量温度计：
-          <span class="scale">
-            <span style="background:var(--g-cold)">超卖</span>
-            <span style="background:var(--muted)">疲软</span>
-            <span style="background:var(--up)">健康</span>
-            <span style="background:var(--down)">过热</span>
-          </span>
-          <span class="sl"><span>0</span><span>30</span><span>45</span><span>70</span><span>100</span></span>
-          <b>✓/✗ 200日 与 50日</b>：价格是否高于其 200 日（长期）与
-          50 日（中期）均线 — 最基本的"是否处于上涨趋势"过滤器。
-          绿色行 = 两者皆 ✓。
-          </span>
-        </span></span></th>
-        <th>{{ t('seasonality', '季节性') }} {{ help("This sector's average return in the current calendar month (and how often that month closed up). Hover any value for the full 12-month picture — a chart plus a table, with this month highlighted. Weak evidence by nature: background context only, never a signal on its own, and deliberately left out of the heat score.", "该板块在当前日历月的平均回报（以及该月收涨的频率）。将鼠标悬停在任意数值上可查看完整的 12 个月全貌 — 图表加表格，并高亮当前月份。本质上是弱证据：仅作背景参考，绝不单独作为信号，并已刻意排除在热度分数之外。") }}</th>
-        <th>{{ t('to trigger', '距触发') }} {{ help("For sectors below their long-term relative trend: how much more outperformance vs SPY is needed for the trend to cross (= the data-backed buy confirmation), and how far along it already is from its recent low. Small gap + high progress = watch closely.", "对于低于其长期相对趋势的板块：还需相对 SPY 多跑赢多少趋势才会交叉（= 有数据支撑的买入确认），以及从近期低点起已走了多远。差距小 + 进度高 = 密切观察。") }}</th>
-        <th>{{ t('cycle timing', '周期择时') }} {{ help("From the sector's own price cycle (click the sector name for the full drill-down): where it sits in its ~36-42 trading-day cycle and how many of its top-10 holdings are in a buy setup (BOTTOMING or BUY ZONE). The per-state historical base rates live on the drill-down page.", "来自板块自身的价格周期（点击板块名称查看完整下钻）：它处于约 36–42 个交易日周期的哪个位置，以及其前十大持仓中有多少处于买入构筑（筑底中或买入区）。各状态的历史基础概率见下钻页面。") }}</th>
+        <th class="l">{{ t('verdict', '判断') }} {{ help("BUY/SETUP = an entry above the 200-day; EXTENDED/TOPPING/SELL = late or distributing; BELOW TREND = a knife. Dots = conviction (how many of daily / 3-day MACD / 3-day StochRSI agree).", "买入/预备＝200日线上方的入场；过热/见顶/卖出＝偏晚或派发中；趋势下方＝接飞刀。圆点＝信心（日线／3日 MACD／3日 StochRSI 中有几个一致）。") }}</th>
+        <th class="l">{{ t('3-day signal', '3 日信号') }} {{ help("What actually fired on the 3-day chart (the daily is the early trigger): a MACD/StochRSI crossover, a curl approaching a cross (with an ETA in trading days), or a roll-over.", "3 日图上实际触发了什么（日线为早期触发）：MACD/StochRSI 交叉、接近交叉的拐头（含预计交易日数）、或回落。") }}</th>
+        <th>{{ t('trend', '趋势') }} {{ help("Price vs its 200-day (long-term) and 50-day (medium-term) average — the gate that separates a buyable pullback from a falling knife.", "价格相对 200 日（长期）与 50 日（中期）均线——把可买回调与接飞刀分开的闸门。") }}</th>
+        <th>{{ t('RSI / Stoch (3D)', 'RSI / Stoch（3 日）') }} {{ help("The 3-day RSI(14) and StochRSI. Above 70 / 80 = extended (late). StochRSI crossing up over 20 from oversold is the bottoming tell; dropping out of 80 is the topping tell.", "3 日 RSI(14) 与 StochRSI。高于 70／80＝过热（偏晚）。StochRSI 从超卖上穿 20 是见底信号；跌出 80 是见顶信号。") }}</th>
+        <th>{{ t('3mo vs mkt', '3 月对比市场') }} {{ help("Relative strength vs the S&P 500 over the past ~60 trading days.", "过去约 60 个交易日相对标普 500 的强弱。") }}</th>
+        <th>{{ t('seasonality', '季节性') }} {{ help("This sector's average return in the current calendar month. Hover for the full 12-month picture. Weak evidence — context only, never a signal on its own.", "该板块在当前日历月的平均回报。悬停查看完整 12 个月全貌。弱证据——仅作背景参考，绝不单独作为信号。") }}</th>
+        <th>{{ t('base rate', '基础概率') }} {{ help("The MEASURED forward 63-day excess vs SPY for this state across the 11 sector ETFs 1998-2026 — the signal's honest track record, not a promise.", "该状态实测的未来 63 日对 SPY 超额，跨 11 个板块 ETF、1998–2026——信号的真实历史记录，并非承诺。") }}</th>
       </tr>
-      {% for r in sector_rows %}
+      {% for r in sector_setups.sectors %}
       <tr>
         <td class="l"><a href="sectors/{{ r.ticker }}.html"><b>{{ r.ticker }}</b></a> <span class="muted">{{ td(r.name) }}</span></td>
-        <td class="l" data-sort="{{ r.heat }}">
-          <span class="help" style="width:auto;height:auto;border:none;margin:0;border-radius:6px">
-            <span style="display:inline-flex;align-items:center;gap:7px;cursor:help">
-              <span style="display:inline-block;width:64px;height:9px;background:var(--panel2);border-radius:5px;overflow:hidden"><i style="display:block;height:100%;width:{{ r.heat }}%;background:{{ r.heat_color }}"></i></span>
-              <b>{{ r.heat }}</b>
-              <span class="muted" style="font-size:11px">{{ td(r.heat_label) }}</span>
-            </span>
-            <span class="tip">{{ r.heat_tip }}</span>
+        <td class="l" data-sort="{{ r.priority }}">
+          <span style="display:inline-flex;align-items:center;gap:6px">
+            <span class="pill" style="border:1px solid {{ r.color }};color:{{ r.color }};background:transparent;font-weight:700">{{ r.verdict }}</span>
+            <span style="color:{{ r.color }};letter-spacing:1px;font-size:10px">{{ r.conv_dots }}</span>
           </span>
+          <div class="muted" style="font-size:11px;margin-top:3px;max-width:300px">{{ r.action_txt }}</div>
         </td>
-        <td><span class="pill stg-{{ r.stage }}">{{ td(r.stage) }}</span></td>
-        <td class="{{ 'pos' if r.mom_60d_pct > 0 else 'neg' }}" data-sort="{{ r.mom_60d_pct }}">{{ "%+.1f" | format(r.mom_60d_pct) }}%</td>
+        <td class="l" style="font-size:12px">{{ r.signal_txt }}</td>
         <td class="{{ 'pos' if r.tech_ok else '' }}" style="font-size:12px">{{ r.tech_str }}</td>
+        <td style="font-size:12px">{{ r.osc_str }}</td>
+        <td class="{% if r.rs_60d and r.rs_60d > 0 %}pos{% elif r.rs_60d and r.rs_60d < 0 %}neg{% endif %}" data-sort="{{ r.rs_60d or 0 }}">{{ r.rs_str }}</td>
         <td>
           <span class="help" style="width:auto;height:auto;border:none;margin:0">
             <span style="cursor:help">{{ r.season_str }}</span>
             <span class="tip tip-seas">{{ r.season_tip }}</span>
           </span>
         </td>
-        <td>{{ r.trigger_str }}</td>
-        <td>
-          {% if r.timing_state %}
-            <span class="pill st-{{ r.timing_state | replace(' ', '_') }}">{{ td(r.timing_label) }}</span>
-            <div class="muted" style="font-size:11px">{{ r.timing_note }}</div>
-          {% else %}—{% endif %}
-        </td>
+        <td class="{% if r.rate_pos %}pos{% elif r.rate_pos is none %}muted{% else %}neg{% endif %}" style="font-size:11.5px">{{ r.rate_str }}</td>
       </tr>
       {% endfor %}
     </table>
-    <p class="muted" style="font-size:12px">{{ t('Click any sector for its full drill-down: cycle position, multi-timeframe momentum, and each top-10 holding analyzed individually.', '点击任意板块查看完整下钻：周期位置、多时间尺度动量，以及逐一分析的每个前十大持仓。') }}</p>
+    <p class="muted" style="font-size:12px">{{ t('Click any sector for its full drill-down: cycle position, multi-timeframe momentum, the confluence signal, and each top-10 holding analyzed individually.', '点击任意板块查看完整下钻：周期位置、多时间尺度动量、共振信号，以及逐一分析的每个前十大持仓。') }}</p>
   </div>
+  {% endif %}{# /sector_setups #}
   {% endif %}{# /mode != macro — size/style + sector heat #}
 
   {% if mode != 'stocks' %}
@@ -3407,8 +3329,25 @@
     var h = e.target.closest('.help, .hovchart');
     if (!h) return;
     var r = h.getBoundingClientRect();
-    h.classList.toggle('below', r.top < 330);
     var tip = h.querySelector('.tip');
+    // Tooltips inside a horizontally-scrolling table wrapper (.tbl-scroll, applied
+    // by theme.js to wide tables) are clipped by its overflow:auto — most visibly
+    // the tall seasonality popups on the top sector rows. Lift those to fixed
+    // positioning so they escape the wrapper; pick above/below by available room.
+    if (tip && h.closest('.tbl-scroll')) {
+      tip.style.position = 'fixed';
+      tip.style.transform = 'none';
+      var tw = tip.offsetWidth || 320, th = tip.offsetHeight || 200, m = 8;
+      var left = Math.min(Math.max(m, r.left + r.width / 2 - tw / 2),
+                          window.innerWidth - tw - m);
+      tip.style.left = left + 'px';
+      tip.style.right = 'auto';
+      if (r.top - th - m > 0) { tip.style.top = (r.top - th - m) + 'px'; }
+      else { tip.style.top = (r.bottom + m) + 'px'; }
+      tip.style.bottom = 'auto';
+      return;
+    }
+    h.classList.toggle('below', r.top < 330);
     var half = ((tip && tip.offsetWidth) || 290) / 2 + 16;
     h.classList.remove('edge-right', 'edge-left');
     if (r.left + r.width / 2 + half > window.innerWidth) h.classList.add('edge-right');

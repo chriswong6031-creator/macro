@@ -237,6 +237,26 @@
     </details>
   </div>
 
+  {% if s.confluence and s.confluence.ok %}
+  {% set c = s.confluence %}
+  <div class="panel" id="confluence">
+    <h2>{{ t('Confluence setup — 3-day MACD + StochRSI', '共振配置 — 3 日 MACD + StochRSI') }}
+      {{ help("The validated buy/sell engine that drives the main-dashboard Sector setups board (research/SECTOR_CONFLUENCE.md): a confluence of MACD + StochRSI crossovers on the 3-day chart, with the daily as the early trigger, gated by the 200-day trend. Extended (RSI>70 / StochRSI>80) is never a fresh buy. The base rate is the MEASURED forward-63-day excess vs SPY for this state. Risk/timing read, not a forecast.", "驱动主看板「板块买卖配置」的已验证买卖引擎（research/SECTOR_CONFLUENCE.md）：3 日图上 MACD + StochRSI 交叉的共振，日线作为早期触发，以 200 日趋势把关。过热（RSI>70／StochRSI>80）绝不视为新买点。基础概率为该状态实测的未来 63 日对 SPY 超额。风险/择时读数，非预测。") }}
+    </h2>
+    <p style="margin:6px 0">
+      <span class="state" style="border:1px solid {{ c.color }};color:{{ c.color }};padding:2px 9px;border-radius:7px;font-weight:700">{{ t(c.label, c.label_zh) }}</span>
+      <span class="muted" style="margin-left:8px">{{ t(c.conviction_label, c.conviction_label_zh) }}{% if c.days_to_cross and c.state == 'SETUP_BUY' %} · ~{{ c.days_to_cross }}d {{ t('to cross', '后交叉') }}{% endif %}</span>
+    </p>
+    <p style="margin:4px 0">{{ t(c.action, c.action_zh) }}</p>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0">
+      {{ t('3-day signal', '3 日信号') }}: {{ t(c.signal_en, c.signal_zh) }} ·
+      RSI {{ c.rsi_3d | round | int if c.rsi_3d is not none else "—" }} · Stoch {{ c.stoch_3d | round | int if c.stoch_3d is not none else "—" }} ·
+      {{ "✓" if c.above200 else "✗" }}200d {{ "✓" if c.above50 else "✗" }}50d
+      {% if c.base_rate %}· {{ t('measured', '实测') }} {{ "%+.1f" | format(c.base_rate.exc63) }}% {{ t('vs SPY, 63d', '对 SPY，63 日') }} ({{ c.base_rate.hit }}% {{ t('up', '上涨') }}{% if c.base_rate.n %}, n={{ c.base_rate.n }}{% endif %}){% endif %}
+    </p>
+  </div>
+  {% endif %}
+
   <div class="panel">
     <h2>{{ t('Momentum across timeframes', '跨周期动量') }}
       {{ help("Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.", "同一只 ETF 的日线／3 日／周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。RSI 与 StochRSI 表盘显示超卖→超买；MACD 柱状图显示动量轨迹及距下次交叉的预估天数。") }}
