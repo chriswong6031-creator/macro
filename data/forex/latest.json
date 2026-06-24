@@ -8,64 +8,64 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1366,
+      "quote": 1.1369,
       "chg": -2.3,
       "action": "FLAT",
-      "score": -10.4
+      "score": -10.2
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3195,
+      "quote": 1.3196,
       "chg": -1.9,
       "action": "FLAT",
-      "score": 14.6
+      "score": 15.1
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.573,
-      "chg": 1.4,
+      "quote": 161.683,
+      "chg": 1.5,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.811,
-      "chg": 3.7,
+      "quote": 0.8113,
+      "chg": 3.8,
       "action": "LONG",
       "score": 27.2
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6908,
-      "chg": -3.8,
+      "quote": 0.6914,
+      "chg": -3.7,
       "action": "SHORT",
-      "score": -27.2
+      "score": -27.1
     },
     "USDCAD": {
       "label": "USD/CAD",
       "quote": 1.4222,
       "chg": 3.1,
       "action": "LONG",
-      "score": 21.1
+      "score": 21.4
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.572,
-      "chg": 1.5,
+      "quote": 17.5517,
+      "chg": 1.4,
       "action": "SHORT",
-      "score": -20.7
+      "score": -21.7
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.183,
-      "chg": 2.9,
+      "quote": 5.1743,
+      "chg": 2.7,
       "action": "FLAT",
-      "score": 3.5
+      "score": 4.0
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7655,
-      "chg": -0.1,
+      "quote": 6.7685,
+      "chg": 0.0,
       "action": "FLAT",
       "score": 15.0
     }
@@ -74,7 +74,7 @@
     "lean": "dollar-supportive backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.84,
-    "fed_path_bps": 46.0,
+    "fed_path_bps": 45.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
@@ -117,12 +117,12 @@
       "intervention_risk"
     ],
     "intensity": {
-      "carry_unwind": 23.7,
+      "carry_unwind": 22.1,
       "dollar_wrecking_ball": 35.7,
-      "em_crisis_capital_flight": 29.4,
-      "haven_flight_risk_off": 27.8,
+      "em_crisis_capital_flight": 0,
+      "haven_flight_risk_off": 25.9,
       "reflation_risk_on": 0,
-      "intervention_risk": 23.5
+      "intervention_risk": 32.7
     }
   }
 }

@@ -24,7 +24,7 @@
   "global_score": -0.231,
   "risk_state": "Neutral",
   "peg_state": "weak-side (outflow)",
-  "peg_distance": 0.913,
+  "peg_distance": 0.909,
   "global_snapshot": {
     "score": -0.231,
     "state": "Neutral",
@@ -32,10 +32,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 1.85,
+        "z": 1.93,
         "sign": -1,
         "risk": "off",
-        "level": 101.5
+        "level": 101.457
       },
       {
         "key": "vix",
@@ -56,7 +56,7 @@
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 0.87,
+        "z": 1.2,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -64,10 +64,10 @@
       {
         "key": "usdcny",
         "label": "USD / CNY",
-        "z": 0.75,
+        "z": 0.81,
         "sign": -1,
         "risk": "off",
-        "level": 6.7984
+        "level": 6.8011
       },
       {
         "key": "eem",
@@ -80,14 +80,14 @@
       {
         "key": "vhsi",
         "label": "HK Volatility (VHSI)",
-        "z": 1.11,
+        "z": 1.0,
         "sign": -1,
         "risk": "off",
-        "level": 23.1
+        "level": 22.65
       }
     ],
     "peg": {
-      "level": 7.8413,
+      "level": 7.8409,
       "distance": 0.91,
       "state": "weak-side (outflow)"
     },
@@ -98,9 +98,9 @@
       "ticker": "Financials & Banks",
       "name": "Financials & Banks",
       "tv": "HKEX:1398",
-      "rs": 9.593469691169134e-05,
-      "mom_20d_pct": 9.31,
-      "mom_60d_pct": 18.19,
+      "rs": 9.510165423071746e-05,
+      "mom_20d_pct": 8.36,
+      "mom_60d_pct": 17.17,
       "above_200d_trend": true,
       "pctile_252d": 99.6,
       "rank": 1
@@ -109,42 +109,42 @@
       "ticker": "Internet & Tech",
       "name": "Internet & Tech",
       "tv": "HKEX:700",
-      "rs": 6.225475521774827e-05,
-      "mom_20d_pct": -0.25,
-      "mom_60d_pct": 7.15,
+      "rs": 6.264341211978161e-05,
+      "mom_20d_pct": 0.37,
+      "mom_60d_pct": 7.82,
       "above_200d_trend": false,
-      "pctile_252d": 27.4,
+      "pctile_252d": 29.4,
       "rank": 2
     },
     {
       "ticker": "Exchange & Diversified",
       "name": "Exchange & Diversified",
       "tv": "HKEX:388",
-      "rs": 6.05562078819453e-05,
-      "mom_20d_pct": 1.29,
-      "mom_60d_pct": 6.01,
+      "rs": 6.0709011210389406e-05,
+      "mom_20d_pct": 1.55,
+      "mom_60d_pct": 6.28,
       "above_200d_trend": true,
-      "pctile_252d": 95.2,
+      "pctile_252d": 98.4,
       "rank": 3
     },
     {
       "ticker": "Telecom & Utilities",
       "name": "Telecom & Utilities",
       "tv": "HKEX:941",
-      "rs": 5.996756133345288e-05,
-      "mom_20d_pct": -1.52,
-      "mom_60d_pct": 1.99,
+      "rs": 5.9635049895665434e-05,
+      "mom_20d_pct": -2.06,
+      "mom_60d_pct": 1.43,
       "above_200d_trend": true,
-      "pctile_252d": 89.3,
+      "pctile_252d": 83.3,
       "rank": 4
     },
     {
       "ticker": "Insurance",
       "name": "Insurance",
       "tv": "HKEX:2318",
-      "rs": 7.058042873890487e-05,
-      "mom_20d_pct": 0.72,
-      "mom_60d_pct": 1.38,
+      "rs": 7.048686087850158e-05,
+      "mom_20d_pct": 0.59,
+      "mom_60d_pct": 1.25,
       "above_200d_trend": true,
       "pctile_252d": 74.2,
       "rank": 5
@@ -153,9 +153,9 @@
       "ticker": "Property",
       "name": "Property",
       "tv": "HKEX:16",
-      "rs": 3.8763000001020744e-05,
-      "mom_20d_pct": -6.98,
-      "mom_60d_pct": -1.05,
+      "rs": 3.871866884222384e-05,
+      "mom_20d_pct": -7.09,
+      "mom_60d_pct": -1.16,
       "above_200d_trend": true,
       "pctile_252d": 65.5,
       "rank": 6
@@ -164,53 +164,53 @@
       "ticker": "Healthcare & Pharma",
       "name": "Healthcare & Pharma",
       "tv": "HKEX:1093",
-      "rs": 5.1969012831829535e-05,
-      "mom_20d_pct": 2.02,
-      "mom_60d_pct": -4.33,
+      "rs": 5.154477432780512e-05,
+      "mom_20d_pct": 1.19,
+      "mom_60d_pct": -5.11,
       "above_200d_trend": false,
-      "pctile_252d": 22.2,
+      "pctile_252d": 19.8,
       "rank": 7
     },
     {
       "ticker": "Consumer",
       "name": "Consumer",
       "tv": "HKEX:2020",
-      "rs": 3.543012603046801e-05,
-      "mom_20d_pct": 0.85,
-      "mom_60d_pct": -6.23,
+      "rs": 3.5135549790012576e-05,
+      "mom_20d_pct": 0.01,
+      "mom_60d_pct": -7.01,
       "above_200d_trend": false,
-      "pctile_252d": 36.9,
+      "pctile_252d": 24.6,
       "rank": 8
     },
     {
       "ticker": "Energy",
       "name": "Energy",
       "tv": "HKEX:883",
-      "rs": 7.358307972533753e-05,
-      "mom_20d_pct": -1.93,
-      "mom_60d_pct": -10.72,
+      "rs": 7.314810847203012e-05,
+      "mom_20d_pct": -2.51,
+      "mom_60d_pct": -11.25,
       "above_200d_trend": true,
-      "pctile_252d": 67.1,
+      "pctile_252d": 66.7,
       "rank": 9
     },
     {
       "ticker": "Materials",
       "name": "Materials",
       "tv": "HKEX:2600",
-      "rs": 0.00012568541782438035,
-      "mom_20d_pct": -11.9,
-      "mom_60d_pct": -12.51,
+      "rs": 0.00012615601438484002,
+      "mom_20d_pct": -11.57,
+      "mom_60d_pct": -12.19,
       "above_200d_trend": false,
-      "pctile_252d": 37.7,
+      "pctile_252d": 38.5,
       "rank": 10
     },
     {
       "ticker": "Gaming & Leisure",
       "name": "Gaming & Leisure",
       "tv": "HKEX:27",
-      "rs": 2.9581193271528807e-05,
-      "mom_20d_pct": -1.78,
-      "mom_60d_pct": -12.59,
+      "rs": 2.9608025731087825e-05,
+      "mom_20d_pct": -1.69,
+      "mom_60d_pct": -12.51,
       "above_200d_trend": false,
       "pctile_252d": 0.4,
       "rank": 11
@@ -219,9 +219,9 @@
       "ticker": "Auto & EV",
       "name": "Auto & EV",
       "tv": "HKEX:1211",
-      "rs": 4.332079540283771e-05,
-      "mom_20d_pct": -10.78,
-      "mom_60d_pct": -22.29,
+      "rs": 4.332708568347046e-05,
+      "mom_20d_pct": -10.76,
+      "mom_60d_pct": -22.28,
       "above_200d_trend": false,
       "pctile_252d": 0.4,
       "rank": 12
@@ -247,24 +247,24 @@
   },
   "pair_ratios": {
     "hshare_hsi": {
-      "level": 0.332,
-      "chg_20d_pct": -0.64
+      "level": 0.3316,
+      "chg_20d_pct": -0.75
     },
     "tech_hsi": {
       "level": 0.0002,
-      "chg_20d_pct": -1.79
+      "chg_20d_pct": -1.13
     },
     "cyc_def": {
-      "level": 1.6094,
-      "chg_20d_pct": -7.83
+      "level": 1.6298,
+      "chg_20d_pct": -6.66
     },
     "infl_basket": {
-      "level": 2.0713,
-      "chg_20d_pct": 1.81
+      "level": 2.0516,
+      "chg_20d_pct": 0.84
     },
     "usdhkd": {
-      "level": 7.8413,
-      "chg_20d_pct": 0.07
+      "level": 7.8409,
+      "chg_20d_pct": 0.06
     }
   },
   "property": {
@@ -282,55 +282,46 @@
     "window_d": 5,
     "verdict": "mixed",
     "verdict_zh": "\u6df7\u5408",
-    "primary": "risk_off_washout",
-    "primary_label": "Risk-off / washout",
-    "primary_label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
-    "direction": "fear spike \u2014 VHSI up, breadth collapsing, HSI falling",
-    "direction_zh": "\u6050\u614c\u98d9\u5347 \u2014 VHSI\u4e0a\u884c\u3001\u5e02\u573a\u5bbd\u5ea6\u5d29\u584c\u3001\u6052\u6307\u4e0b\u8dcc",
-    "dir_sign": 1,
+    "primary": "china_spillover",
+    "primary_label": "China stimulus spillover",
+    "primary_label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
+    "direction": "China risk-off spilling into HK \u2014 H-shares & southbound lead down",
+    "direction_zh": "\u4e2d\u56fd\u907f\u9669\u5916\u6ea2\u81f3\u9999\u6e2f \u2014 H\u80a1\u4e0e\u5357\u5411\u9886\u8dcc",
+    "dir_sign": -1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 1.46,
-    "dominance_ratio": 1.14,
-    "agreement": 1.0,
-    "runner_up": "china_spillover",
-    "runner_up_label": "China stimulus spillover",
-    "runner_up_label_zh": "\u4e2d\u56fd\u523a\u6fc0\u5916\u6ea2",
-    "headline": "Mixed \u2014 Risk-off / washout + China stimulus spillover jointly leading (VHSI (HK vol) +1.6\u03c3, Hang Seng -1.9\u03c3, breadth >50d -1.0\u03c3); no single dominant driver.",
+    "strength": 1.28,
+    "dominance_ratio": 1.04,
+    "agreement": 0.85,
+    "runner_up": "risk_off_washout",
+    "runner_up_label": "Risk-off / washout",
+    "runner_up_label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
+    "headline": "Mixed \u2014 China stimulus spillover + Risk-off / washout jointly leading (H-shares vs HSI -1.5\u03c3, HSCEI -1.9\u03c3, southbound flow -1.2\u03c3); no single dominant driver.",
     "evidence": [
-      "VHSI (HK vol) +1.6\u03c3",
-      "Hang Seng -1.9\u03c3",
-      "breadth >50d -1.0\u03c3"
+      "H-shares vs HSI -1.5\u03c3",
+      "HSCEI -1.9\u03c3",
+      "southbound flow -1.2\u03c3"
     ],
     "evidence_legs": [
       {
-        "en": "VHSI (HK vol)",
-        "zh": "VHSI(\u6e2f\u80a1\u6ce2\u52a8\u7387)",
-        "z": 1.6
+        "en": "H-shares vs HSI",
+        "zh": "H\u80a1\u5bf9\u6052\u6307",
+        "z": -1.5
       },
       {
-        "en": "Hang Seng",
-        "zh": "\u6052\u751f\u6307\u6570",
+        "en": "HSCEI",
+        "zh": "\u56fd\u4f01\u6307\u6570",
         "z": -1.9
       },
       {
-        "en": "breadth >50d",
-        "zh": "50\u65e5\u7ebf\u4e0a\u5360\u6bd4",
-        "z": -1.0
+        "en": "southbound flow",
+        "zh": "\u5357\u5411\u8d44\u91d1",
+        "z": -1.2
       }
     ],
-    "invalidation": "Fades if VHSI (HK vol) reverses and the rest of the volatility fingerprint stops confirming.",
-    "invalidation_zh": "\u82e5VHSI(\u6e2f\u80a1\u6ce2\u52a8\u7387)\u53cd\u8f6c\u3001\u4e14\u6ce2\u52a8\u7387\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
+    "invalidation": "Fades if H-shares vs HSI reverses and the rest of the growth fingerprint stops confirming.",
+    "invalidation_zh": "\u82e5H\u80a1\u5bf9\u6052\u6307\u53cd\u8f6c\u3001\u4e14\u589e\u957f\u6307\u7eb9\u5176\u4f59\u817f\u505c\u6b62\u786e\u8ba4\uff0c\u6b64\u5224\u8bfb\u5c06\u6d88\u9000\u3002",
     "scores": [
-      {
-        "driver": "risk_off_washout",
-        "label": "Risk-off / washout",
-        "label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
-        "family": "volatility",
-        "projection": 1.46,
-        "strength": 1.46,
-        "direction": "fear spike \u2014 VHSI up, breadth collapsing, HSI falling"
-      },
       {
         "driver": "china_spillover",
         "label": "China stimulus spillover",
@@ -339,6 +330,15 @@
         "projection": -1.28,
         "strength": 1.28,
         "direction": "China risk-off spilling into HK \u2014 H-shares & southbound lead down"
+      },
+      {
+        "driver": "risk_off_washout",
+        "label": "Risk-off / washout",
+        "label_zh": "\u907f\u9669/\u6050\u614c\u51fa\u6e05",
+        "family": "volatility",
+        "projection": 1.23,
+        "strength": 1.23,
+        "direction": "fear spike \u2014 VHSI up, breadth collapsing, HSI falling"
       },
       {
         "driver": "southbound_appetite",
@@ -354,35 +354,35 @@
         "label": "Global risk-on / risk-off",
         "label_zh": "\u5168\u7403\u98ce\u9669\u504f\u597d",
         "family": "risk",
-        "projection": -0.71,
-        "strength": 0.71,
-        "direction": "global risk-OFF \u2014 S&P down, VIX & dollar up, EM/copper sold"
-      },
-      {
-        "driver": "tech_internet_leadership",
-        "label": "Tech / internet leadership",
-        "label_zh": "\u79d1\u6280/\u4e92\u8054\u7f51\u9886\u6da8",
-        "family": "equity-leadership",
         "projection": -0.7,
         "strength": 0.7,
-        "direction": "HS-TECH unwind \u2014 internet/tech-led de-rating"
+        "direction": "global risk-OFF \u2014 S&P down, VIX & dollar up, EM/copper sold"
       },
       {
         "driver": "us_rate_repricing",
         "label": "US-rate repricing (via the peg)",
         "label_zh": "\u7f8e\u606f\u91cd\u5b9a\u4ef7\uff08\u7ecf\u8054\u6c47\uff09",
         "family": "rates",
-        "projection": 0.64,
-        "strength": 0.64,
+        "projection": 0.61,
+        "strength": 0.61,
         "direction": "US rates repricing higher \u2014 dollar & HIBOR up, the peg imports tightening"
+      },
+      {
+        "driver": "tech_internet_leadership",
+        "label": "Tech / internet leadership",
+        "label_zh": "\u79d1\u6280/\u4e92\u8054\u7f51\u9886\u6da8",
+        "family": "equity-leadership",
+        "projection": -0.35,
+        "strength": 0.35,
+        "direction": "HS-TECH unwind \u2014 internet/tech-led de-rating"
       },
       {
         "driver": "peg_funding_stress",
         "label": "Peg / HIBOR funding stress",
         "label_zh": "\u8054\u6c47/HIBOR\u8d44\u91d1\u538b\u529b",
         "family": "funding",
-        "projection": 0.22,
-        "strength": 0.22,
+        "projection": 0.2,
+        "strength": 0.2,
         "direction": "funding tightening \u2014 HKD toward 7.85 weak-side, HIBOR up, Aggregate Balance drained"
       },
       {
@@ -390,36 +390,36 @@
         "label": "Commodity / energy",
         "label_zh": "\u5927\u5b97/\u80fd\u6e90",
         "family": "inflation",
-        "projection": 0.07,
-        "strength": 0.07,
-        "direction": "upstream inflation \u2014 energy/materials basket & copper lead up"
+        "projection": -0.06,
+        "strength": 0.06,
+        "direction": "upstream disinflation \u2014 energy/materials basket & copper lead down"
       }
     ],
     "note": "Deterministic HK cross-asset attribution \u2014 a regime READ, not a signal; never gates a score or the quad."
   },
   "conditions": {
     "roro": {
-      "roro": -0.556,
-      "roro_raw": -0.627,
+      "roro": -0.531,
+      "roro_raw": -0.592,
       "roro_state": "risk-off",
-      "hk_roro_copper_gold": 1.498,
+      "hk_roro_copper_gold": 1.494,
       "hk_roro_spy": -1.167,
       "hk_roro_vix": -0.415,
-      "hk_roro_dxy": -1.633,
+      "hk_roro_dxy": -1.602,
       "hk_roro_eem": -0.918,
-      "hk_roro_usdcny": -1.41,
+      "hk_roro_usdcny": -1.496,
       "hk_roro_southbound": -0.418,
-      "hk_roro_vhsi": -0.546,
-      "hk_roro_breadth": -2.541,
-      "hk_roro_peg": -1.163,
-      "hk_roro_ah_premium": 1.182,
+      "hk_roro_vhsi": -0.366,
+      "hk_roro_breadth": -2.47,
+      "hk_roro_peg": -1.148,
+      "hk_roro_ah_premium": 1.391,
       "hk_roro_hibor": 0.009,
       "legs": [
         {
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.498,
+          "value": 1.494,
           "lean": "risk-on"
         },
         {
@@ -440,7 +440,7 @@
           "key": "dxy",
           "name_en": "US Dollar (20d)",
           "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-          "value": -1.633,
+          "value": -1.602,
           "lean": "risk-off"
         },
         {
@@ -454,7 +454,7 @@
           "key": "usdcny",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": -1.41,
+          "value": -1.496,
           "lean": "risk-off"
         },
         {
@@ -468,28 +468,28 @@
           "key": "vhsi",
           "name_en": "HK Volatility (VHSI)",
           "name_zh": "\u6e2f\u80a1\u6ce2\u52a8\u7387\uff08VHSI\uff09",
-          "value": -0.546,
+          "value": -0.366,
           "lean": "risk-off"
         },
         {
           "key": "breadth",
           "name_en": "Breadth (% > 50d)",
           "name_zh": "\u5e02\u573a\u5bbd\u5ea6\uff08>50\u65e5\uff09",
-          "value": -2.541,
+          "value": -2.47,
           "lean": "risk-off"
         },
         {
           "key": "peg",
           "name_en": "HKD peg distance",
           "name_zh": "\u6e2f\u5143\u8054\u6c47\u8ddd\u79bb",
-          "value": -1.163,
+          "value": -1.148,
           "lean": "risk-off"
         },
         {
           "key": "ah_premium",
           "name_en": "AH premium",
           "name_zh": "AH \u6ea2\u4ef7",
-          "value": 1.182,
+          "value": 1.391,
           "lean": "risk-on"
         },
         {
@@ -502,7 +502,7 @@
       ]
     },
     "recession": {
-      "score": 50.4,
+      "score": 50.3,
       "label": "high",
       "legs": [
         {
@@ -547,7 +547,7 @@
           "label_zh": "\u8054\u6c47\u8d44\u91d1\u538b\u529b",
           "weight": 1.0,
           "active": true,
-          "value": 91.3,
+          "value": 90.9,
           "points": 14.0
         },
         {
@@ -578,7 +578,7 @@
       "note_zh": "\u672a\u6821\u51c6\u7684\u5c55\u793a\u6027\u4eea\u8868 \u2014\u2014 \u9999\u6e2f\u5386\u53f2\u77ed\u4e14\u4e0e\u5168\u7403\u9ad8\u5ea6\u8026\u5408\uff0c\u4e0d\u58f0\u79f0\u4efb\u4f55\u524d\u77bb\u56de\u64a4\u4f18\u52bf\uff1b\u533a\u95f4\u4e3a\u8be5\u4eea\u8868\u81ea\u8eab\u7684\u5386\u53f2\u5206\u4f4d\u951a\u5b9a\u3002\u4ece\u4e0d\u8ba1\u5165\u8bc4\u5206\u3002"
     },
     "drawdown_risk": {
-      "score": 81.5,
+      "score": 80.5,
       "band": "high",
       "calibrated": false,
       "note": "history-anchored rank-percentile of HK stress legs \u2014 uncalibrated, display-only context, never scored",
@@ -2161,8 +2161,8 @@
           -0.067,
           -0.039,
           -0.141,
-          -0.41,
-          -0.556
+          -0.411,
+          -0.531
         ]
       },
       "recession": {
@@ -3742,7 +3742,7 @@
           48.2,
           50.4,
           50.3,
-          50.4
+          50.3
         ]
       },
       "drawdown": {
@@ -5322,7 +5322,7 @@
           73.4,
           77.0,
           79.8,
-          81.5
+          80.5
         ]
       },
       "fear_euphoria": {
@@ -6901,8 +6901,8 @@
           46.9,
           48.9,
           39.6,
-          22.1,
-          13.3
+          21.9,
+          14.4
         ]
       }
     },
@@ -6910,17 +6910,17 @@
     "note": "display-only conditioning lens \u2014 RORO + uncalibrated slowdown/drawdown gauges; never feeds hk_axes / hk_regime / hk_playbook"
   },
   "fear_euphoria": {
-    "fe_score": 13,
+    "fe_score": 14,
     "band": "Fear",
     "band_zh": "\u6050\u60e7",
-    "roro": -0.556,
+    "roro": -0.531,
     "roro_state": "risk-off",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.498,
+        "value": 1.494,
         "pct": 97,
         "lean": "risk-on"
       },
@@ -6944,7 +6944,7 @@
         "key": "dxy",
         "name_en": "US Dollar (20d)",
         "name_zh": "\u7f8e\u5143\uff0820\u65e5\uff09",
-        "value": -1.633,
+        "value": -1.602,
         "pct": 6,
         "lean": "risk-off"
       },
@@ -6960,7 +6960,7 @@
         "key": "usdcny",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": -1.41,
+        "value": -1.496,
         "pct": 6,
         "lean": "risk-off"
       },
@@ -6976,15 +6976,15 @@
         "key": "vhsi",
         "name_en": "HK Volatility (VHSI)",
         "name_zh": "\u6e2f\u80a1\u6ce2\u52a8\u7387\uff08VHSI\uff09",
-        "value": -0.546,
-        "pct": 27,
+        "value": -0.366,
+        "pct": 31,
         "lean": "risk-off"
       },
       {
         "key": "breadth",
         "name_en": "Breadth (% > 50d)",
         "name_zh": "\u5e02\u573a\u5bbd\u5ea6\uff08>50\u65e5\uff09",
-        "value": -2.541,
+        "value": -2.47,
         "pct": 0,
         "lean": "risk-off"
       },
@@ -6992,7 +6992,7 @@
         "key": "peg",
         "name_en": "HKD peg distance",
         "name_zh": "\u6e2f\u5143\u8054\u6c47\u8ddd\u79bb",
-        "value": -1.163,
+        "value": -1.148,
         "pct": 23,
         "lean": "risk-off"
       },
@@ -7000,8 +7000,8 @@
         "key": "ah_premium",
         "name_en": "AH premium",
         "name_zh": "AH \u6ea2\u4ef7",
-        "value": 1.182,
-        "pct": 61,
+        "value": 1.391,
+        "pct": 67,
         "lean": "risk-on"
       },
       {

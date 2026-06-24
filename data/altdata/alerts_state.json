@@ -29,6 +29,7 @@
   "ETSY": 2,
   "FBIN": 2,
   "FITB": 2,
+  "FSV": 2,
   "GEV": 2,
   "GLW": 2,
   "GNRC": 2,
@@ -37,9 +38,11 @@
   "GSK": 3,
   "HIMS": 2,
   "HON": 3,
+  "HOOD": 2,
   "HUBB": 2,
   "IBM": 2,
   "IEP": 2,
+  "IFF": 2,
   "INTC": 3,
   "IONQ": 2,
   "KBR": 2,
@@ -84,5 +87,6 @@
   "USAR": 2,
   "VRT": 2,
   "VST": 3,
-  "WDC": 2
+  "WDC": 2,
+  "Z": 2
 }

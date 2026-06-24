@@ -1,6 +1,6 @@
 {
   "n": 27,
-  "built": "2026-06-24 04:18 UTC",
+  "built": "2026-06-24 07:28 UTC",
   "cards": [
     {
       "key": "spvector",
@@ -176,7 +176,7 @@
     {
       "key": "gold_macro",
       "name": "Gold Macro Timer",
-      "cagr": 6.86,
+      "cagr": 6.87,
       "sharpe": 0.62,
       "maxdd": -33.0,
       "income": 2.48,
@@ -194,7 +194,7 @@
     {
       "key": "copper_growth",
       "name": "Copper Growth Cyclical",
-      "cagr": 7.26,
+      "cagr": 7.28,
       "sharpe": 0.57,
       "maxdd": -32.9,
       "income": 1.26,

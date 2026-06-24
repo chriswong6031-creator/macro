@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-24T04:30:37.604219+00:00",
+  "generated_utc": "2026-06-24T07:42:08.502682+00:00",
   "as_of": "2026-06-24",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4460,9 +4460,54 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 229,
+      "rows": 234,
       "last_seen": "2026-06-24",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Val+Hoyle+Says+Congress+Passed+Housing+Language+in+Affordable+Housing+Bill",
+          "time": "2026-06-24 06:19:51",
+          "headline": "Press Release: Val Hoyle Says Congress Passed Housing Language in Affordable Housing Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Congress passed housing legislation incorporating Hoyle-backed rural housing provisions to expand vouchers and preserve affordable rentals.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"col\u2026",
+          "image": "https://www.quiverquant.com/images/H001094_congress.png",
+          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/NETSOL+Technologies+and+Applicon+Financial+Solutions+Form+Strategic+Partnership+to+Expand+Nordic+Market+Presence",
+          "time": "2026-06-24 06:10:22",
+          "headline": "NETSOL Technologies and Applicon Financial Solutions Form Strategic Partnership to Expand Nordic Market Presence",
+          "category": "press_release_summary",
+          "summary": "<p>NETSOL and Applicon Financial Solutions partner to enhance technological capabilities for Nordic financial institutions, advancing digital transformation efforts.</p><div class='ai_summary'><h2>Quiver AI Summary</h\u2026",
+          "image": "https://www.quiverquant.com/images/ntwk_rect_new.png",
+          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Moylan+Advances+Nearly+%241.9+Billion+in+Guam+Defense+Funding+in+FY2027+NDAA+Committee+Vote",
+          "time": "2026-06-24 04:19:53",
+          "headline": "Press Release: Moylan Advances Nearly $1.9 Billion in Guam Defense Funding in FY2027 NDAA Committee Vote",
+          "category": "legislation_automated",
+          "summary": "<p>Congressman Moylan highlights House committee approval of a defense bill with major Guam investments and policy provisions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/M001219_congress.png",
+          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Johnson+Says+House%2C+Senate+Pass+Bipartisan+Housing+Affordability+Bill",
+          "time": "2026-06-24 04:19:53",
+          "headline": "Press Release: Mike Johnson Says House, Senate Pass Bipartisan Housing Affordability Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Congress passed bipartisan housing legislation aimed at improving affordability, reducing regulations, and expanding homeownership opportunities.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong styl\u2026",
+          "image": "https://www.quiverquant.com/images/J000299_congress.png",
+          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Issues+Statement+on+Passage+of+Housing+Bill",
+          "time": "2026-06-24 04:19:53",
+          "headline": "Press Release: Andrea Salinas Issues Statement on Passage of Housing Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Representative Salinas praises legislation aimed at reducing housing costs, expanding supply, and supporting homeownership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/S001226_congress.png",
+          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/MoonLake+Immunotherapeutics+Prices+%24200+Million+Public+Offering+of+Class+A+Ordinary+Shares+and+Pre-Funded+Warrants",
           "time": "2026-06-24 03:10:24",
@@ -4470,6 +4515,15 @@
           "category": "press_release_summary",
           "summary": "<p>MoonLake Immunotherapeutics announces a public offering of shares, aiming to raise approximately $200 million for research and development.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>MoonLake Immunothe\u2026",
           "image": "https://www.quiverquant.com/images/mltx_rect_new.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Maggie+Goodlander+Backed+Housing+Bill+Sent+to+President%E2%80%99s+Desk",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Maggie Goodlander Backed Housing Bill Sent to President\u2019s Desk",
+          "category": "legislation_automated",
+          "summary": "<p>Goodlander-backed bipartisan housing bill advances, aiming to reduce costs, streamline development, and expand home supply.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/G000604_congress.png",
           "_first_seen": "2026-06-24T03:43:41.893444+00:00"
         },
         {
@@ -4572,15 +4626,6 @@
           "_first_seen": "2026-06-24T03:43:41.893444+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Maggie+Goodlander+Backed+Housing+Bill+Sent+to+President%E2%80%99s+Desk",
-          "time": "2026-06-24 02:21:36",
-          "headline": "Press Release: Maggie Goodlander Backed Housing Bill Sent to President\u2019s Desk",
-          "category": "legislation_automated",
-          "summary": "<p>Goodlander-backed bipartisan housing bill advances, aiming to reduce costs, streamline development, and expand home supply.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
-          "image": "https://www.quiverquant.com/images/G000604_congress.png",
-          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Dan+Meuser+Backs+House+Passage+of+Housing+Affordability+Bill",
           "time": "2026-06-24 02:21:36",
           "headline": "Press Release: Dan Meuser Backs House Passage of Housing Affordability Bill",
@@ -4617,75 +4662,30 @@
           "_first_seen": "2026-06-24T03:43:41.893444+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mariannette+Miller-Meeks+Votes+to+Advance+Housing+Bill+to+President+Trump%E2%80%99s+Desk",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brad+Sherman+Backs+Bipartisan+Amendment+Calling+for+Release+of+Armenian+Detainees",
           "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Mariannette Miller-Meeks Votes to Advance Housing Bill to President Trump\u2019s Desk",
+          "headline": "Press Release: Brad Sherman Backs Bipartisan Amendment Calling for Release of Armenian Detainees",
           "category": "legislation_automated",
-          "summary": "<p>Miller-Meeks supported final passage of a bipartisan housing bill aimed at easing regulations and expanding homeownership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/M001215_congress.png",
+          "summary": "<p>Sherman backed bipartisan action urging Azerbaijan to release Armenian prisoners and detainees, citing human rights concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,16\u2026",
+          "image": "https://www.quiverquant.com/images/S000344_congress.png",
           "_first_seen": "2026-06-24T00:26:44.983264+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Sharice+Davids+Votes+for+Bipartisan+Housing+Package+to+Lower+Costs",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Hakeem+Jeffries+criticizes+Trump+administration%E2%80%99s+Iran+war+funding+in+press+conference",
           "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Sharice Davids Votes for Bipartisan Housing Package to Lower Costs",
+          "headline": "Press Release: Hakeem Jeffries criticizes Trump administration\u2019s Iran war funding in press conference",
           "category": "legislation_automated",
-          "summary": "<p>Representative Davids backed a bipartisan housing bill aimed at reducing costs, boosting supply, and strengthening renter protections.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
-          "image": "https://www.quiverquant.com/images/D000629_congress.png",
+          "summary": "<p>Jeffries criticized Trump\u2019s Iran policy, urging taxpayer funds be redirected to domestic priorities rather than military spending.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(1\u2026",
+          "image": "https://www.quiverquant.com/images/J000294_congress.png",
           "_first_seen": "2026-06-24T00:26:44.983264+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+House+Housing+Legislation",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lateefah+Simon+Bill+on+Small+Business+Cybersecurity+Passes+House+Unanimously",
           "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in House Housing Legislation",
+          "headline": "Press Release: Lateefah Simon Bill on Small Business Cybersecurity Passes House Unanimously",
           "category": "legislation_automated",
-          "summary": "<p>House passed housing legislation including Downing\u2019s repair grants bill, aiming to expand supply and modernize federal housing programs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color:\u2026",
-          "image": "https://www.quiverquant.com/images/D000634_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Ann+Wagner+Votes+for+Housing+Legislation",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Ann Wagner Votes for Housing Legislation",
-          "category": "legislation_automated",
-          "summary": "<p>Ann Wagner said she backed bipartisan housing legislation aimed at reducing costs and streamlining regulations for affordable homebuilding.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"col\u2026",
-          "image": "https://www.quiverquant.com/images/W000812_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Chu%2C+Schiff%2C+House+Colleagues+Introduce+Bill+to+Honor+Holocaust+Rescue+Efforts",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Chu, Schiff, House Colleagues Introduce Bill to Honor Holocaust Rescue Efforts",
-          "category": "legislation_automated",
-          "summary": "<p>Lawmakers propose a Congressional Gold Medal to honor Americans who rescued and aided Holocaust refugees.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Lawmakers i\u2026",
-          "image": "https://www.quiverquant.com/images/C001080_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Steven+Horsford+Backs+Passage+of+Housing+Legislation+in+Congress",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Steven Horsford Backs Passage of Housing Legislation in Congress",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Horsford praises a bipartisan housing bill aimed at expanding homeownership and reducing investor dominance in housing.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(\u2026",
-          "image": "https://www.quiverquant.com/images/H001066_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Langworthy+and+Gottheimer+Introduce+BUSES+Act+on+Bus+Idling+Rules",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Langworthy and Gottheimer Introduce BUSES Act on Bus Idling Rules",
-          "category": "legislation_automated",
-          "summary": "<p>Bipartisan bill seeks a national bus idling standard, limiting local mandates and private enforcement programs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Lawma\u2026",
-          "image": "https://www.quiverquant.com/images/L000600_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Julie+Fedorchak+backs+final+passage+of+21st+Century+ROAD+to+Housing+Act",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Julie Fedorchak backs final passage of 21st Century ROAD to Housing Act",
-          "category": "legislation_automated",
-          "summary": "<p>Fedorchak backed bipartisan housing legislation aimed at reducing regulation, expanding supply, and lowering costs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">F\u2026",
-          "image": "https://www.quiverquant.com/images/F000482_congress.png",
+          "summary": "<p>House unanimously passed a bipartisan bill directing a federal review of small business cybersecurity risks and support resources.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(1\u2026",
+          "image": "https://www.quiverquant.com/images/S001231_congress.png",
           "_first_seen": "2026-06-24T00:26:44.983264+00:00"
         }
       ]
@@ -4878,34 +4878,86 @@
       "emoji": "\ud83d\udcd1",
       "label_en": "Bill summaries",
       "label_zh": "\u6cd5\u6848\u6458\u8981",
-      "rows": 206,
-      "last_seen": "2026-06-23",
+      "rows": 212,
+      "last_seen": "2026-06-24",
       "recent": [
         {
-          "currentChamber": "Unknown",
-          "title": "Tribal Trust Land Homeownership Act of 2025",
+          "currentChamber": "Senate",
+          "title": "Protect College Sports Act of 2026",
           "congress": "119",
-          "number": "723",
+          "number": "4668",
           "originChamber": "Senate",
           "billType": "S",
-          "summary": "<p><strong>Tribal Trust Land Homeownership Act of 2025</strong></p><p>This act sets forth requirements for the processing of a proposed residential leasehold mortgage, business leasehold mortgage, land mortgage, or ri\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/723?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-05-04",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
+          "summary": "<p><strong>Protect College Sports Act of 2026</strong></p><p>This bill establishes requirements for name, image, or likeness (NIL) agreements for college student athletes and provides a limited antitrust exemption for\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4668?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-02",
+          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "United States Commission on International Religious Freedom Reauthorization Act of 2026",
+          "congress": "119",
+          "number": "1744",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>United States Commission on International Religious Freedom Reauthorization Act of 2026</strong></p><p>This bill reauthorizes the U.S. Commission on International Religious Freedom through 2028. The commiss\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/1744?format=json",
+          "lastAction": "Passed House",
+          "lastActionDate": "2026-06-08",
+          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Faster Labor Contracts Act",
+          "congress": "119",
+          "number": "5408",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Faster Labor Contracts Act</strong></p><p>This bill establishes mandatory deadlines for parties negotiating an initial collective bargaining agreement (CBA)&nbsp;and provides for mediation and arbitration t\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/5408?format=json",
+          "lastAction": "Passed House",
+          "lastActionDate": "2026-06-09",
+          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
         },
         {
           "currentChamber": "Unknown",
-          "title": "Rural Broadband Protection Act of 2025",
+          "title": "Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act",
           "congress": "119",
-          "number": "98",
+          "number": "2393",
           "originChamber": "Senate",
           "billType": "S",
-          "summary": "<p><strong>Rural Broadband Protection Act of 2025</strong></p><p>This act requires the Federal Communications Commission (FCC) to vet the qualifications of applicants for certain funding programs that support affordab\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/98?format=json",
+          "summary": "<p><strong>Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act</strong></p><p>This act authorizes the Department of Veterans Affairs to carry out a major medical facility project in St. Louis, M\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/2393?format=json",
           "lastAction": "Public Law",
-          "lastActionDate": "2026-05-11",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
+          "lastActionDate": "2026-06-09",
+          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Take Care of America\u2019s Veterans Act",
+          "congress": "119",
+          "number": "9237",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Take Care of America's Veterans Act</strong></p><p>This bill addresses veterans\u2019 benefits, health care, counseling, Department of Veterans Affairs (VA) personnel, VA infrastructure, and the Veterans Communi\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9237?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-10",
+          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Community College Agriculture Advancement Act of 2026",
+          "congress": "119",
+          "number": "4730",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Community College Agriculture Advancement Act of 2026</strong></p><p>This bill allows the Department of Agriculture (USDA) to make competitive grants to assist eligible entities (i.e.,&nbsp;a junior or comm\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4730?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-10",
+          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
         },
         {
           "currentChamber": "Unknown",
@@ -4918,6 +4970,19 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/2815?format=json",
           "lastAction": "Public Law",
           "lastActionDate": "2026-05-19",
+          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
+        },
+        {
+          "currentChamber": "Unknown",
+          "title": "ARTIST Act",
+          "congress": "119",
+          "number": "254",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Alaska\u2019s Right to Ivory Sales and Tradition Act or the ARTIST Act</strong></p><p>This act prohibits states from imposing bans on marine mammal products produced by Alaska Natives.</p><p>Specifically, states\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/254?format=json",
+          "lastAction": "Public Law",
+          "lastActionDate": "2026-06-12",
           "_first_seen": "2026-06-23T11:16:34.012349+00:00"
         },
         {
@@ -4948,16 +5013,68 @@
         },
         {
           "currentChamber": "Unknown",
-          "title": "ARTIST Act",
+          "title": "Rural Broadband Protection Act of 2025",
           "congress": "119",
-          "number": "254",
+          "number": "98",
           "originChamber": "Senate",
           "billType": "S",
-          "summary": "<p><strong>Alaska\u2019s Right to Ivory Sales and Tradition Act or the ARTIST Act</strong></p><p>This act prohibits states from imposing bans on marine mammal products produced by Alaska Natives.</p><p>Specifically, states\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/254?format=json",
+          "summary": "<p><strong>Rural Broadband Protection Act of 2025</strong></p><p>This act requires the Federal Communications Commission (FCC) to vet the qualifications of applicants for certain funding programs that support affordab\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/98?format=json",
           "lastAction": "Public Law",
-          "lastActionDate": "2026-06-12",
+          "lastActionDate": "2026-05-11",
           "_first_seen": "2026-06-23T11:16:34.012349+00:00"
+        },
+        {
+          "currentChamber": "Unknown",
+          "title": "Tribal Trust Land Homeownership Act of 2025",
+          "congress": "119",
+          "number": "723",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Tribal Trust Land Homeownership Act of 2025</strong></p><p>This act sets forth requirements for the processing of a proposed residential leasehold mortgage, business leasehold mortgage, land mortgage, or ri\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/723?format=json",
+          "lastAction": "Public Law",
+          "lastActionDate": "2026-05-04",
+          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Providing for consideration of the bill (H.R. 6387) to amend the Clean Air Act to require revisions to regulations governing the review and handling of air quality monitoring data influenced by exceptional events or a\u2026",
+          "congress": "119",
+          "number": "1174",
+          "originChamber": "House",
+          "billType": "HRES",
+          "summary": "This resolution provides for the consideration of the bill (H.R. 6387) to amend the Clean Air Act to require revisions to regulations governing the review and handling of air quality monitoring data influenced by exce\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hres/1174?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-04-15",
+          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Expressing support for rural communities across the United States as stewards of the environment, major suppliers of United States energy resources, critical providers of food production and manufacturing capacity, an\u2026",
+          "congress": "119",
+          "number": "1182",
+          "originChamber": "House",
+          "billType": "HRES",
+          "summary": "<p>This resolution states that the House of Representatives has demonstrated support for U.S. prosperity and economic growth, especially in rural communities, through policies related to energy, health care, manufactu\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hres/1182?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-04-16",
+          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "To designate the facility of the United States Postal Service located at 16 Rev Dr Martin Luther King Jr Drive in Willingboro, New Jersey, as the \"James A. Cotten Post Office\".",
+          "congress": "119",
+          "number": "8326",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "This bill designates the facility of the United States Postal Service located at 16 Rev Dr Martin Luther King Jr Drive in Willingboro, New Jersey, as the \"James A. Cotten Post Office\".",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8326?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-04-16",
+          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
         },
         {
           "currentChamber": "House",
@@ -4974,13 +5091,26 @@
         },
         {
           "currentChamber": "Senate",
-          "title": "FLEX Act",
+          "title": "A joint resolution to direct the removal of United States Armed Forces from hostilities within or against the Islamic Republic of Iran that have not been authorized by Congress.",
           "congress": "119",
-          "number": "4328",
+          "number": "184",
+          "originChamber": "Senate",
+          "billType": "SJRES",
+          "summary": "<p>This joint resolution directs the President to remove U.S. Armed Forces from hostilities within or against Iran unless a declaration of war or authorization to use military force for such purpose has been enacted.<\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/sjres/184?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-04-16",
+          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Ensuring Access to Lower-Cost Medicines for Seniors Act",
+          "congress": "119",
+          "number": "4323",
           "originChamber": "Senate",
           "billType": "S",
-          "summary": "<p><strong>Fostering Learning and Excellence in Charter Schools Act or the FLEX Act</strong></p><p>This bill expands and revises the Charter Schools Program (CSP), including by expanding the allowable uses of&nbsp;CSP\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4328?format=json",
+          "summary": "<p><strong>Ensuring Access to Lower-Cost Medicines for Seniors Act</strong></p><p>This bill requires prescription drug plans under the Medicare prescription drug benefit to include generic drugs and biosimilars on the\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4323?format=json",
           "lastAction": "Introduced in Senate",
           "lastActionDate": "2026-04-16",
           "_first_seen": "2026-06-20T01:08:32.329145+00:00"
@@ -5000,93 +5130,15 @@
         },
         {
           "currentChamber": "Senate",
-          "title": "Ensuring Access to Lower-Cost Medicines for Seniors Act",
+          "title": "FLEX Act",
           "congress": "119",
-          "number": "4323",
+          "number": "4328",
           "originChamber": "Senate",
           "billType": "S",
-          "summary": "<p><strong>Ensuring Access to Lower-Cost Medicines for Seniors Act</strong></p><p>This bill requires prescription drug plans under the Medicare prescription drug benefit to include generic drugs and biosimilars on the\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4323?format=json",
+          "summary": "<p><strong>Fostering Learning and Excellence in Charter Schools Act or the FLEX Act</strong></p><p>This bill expands and revises the Charter Schools Program (CSP), including by expanding the allowable uses of&nbsp;CSP\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4328?format=json",
           "lastAction": "Introduced in Senate",
           "lastActionDate": "2026-04-16",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A joint resolution to direct the removal of United States Armed Forces from hostilities within or against the Islamic Republic of Iran that have not been authorized by Congress.",
-          "congress": "119",
-          "number": "184",
-          "originChamber": "Senate",
-          "billType": "SJRES",
-          "summary": "<p>This joint resolution directs the President to remove U.S. Armed Forces from hostilities within or against Iran unless a declaration of war or authorization to use military force for such purpose has been enacted.<\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/sjres/184?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-04-16",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A resolution recognizing and honoring National Mushroom Day and the contributions of Chester and Berks Counties to the national mushroom industry and to healthy diets.",
-          "congress": "119",
-          "number": "676",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution supports the recognition of National Mushroom Day and honors Pennsylvania for its contributions to the national mushroom industry.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/sres/676?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-04-16",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "To designate the facility of the United States Postal Service located at 16 Rev Dr Martin Luther King Jr Drive in Willingboro, New Jersey, as the \"James A. Cotten Post Office\".",
-          "congress": "119",
-          "number": "8326",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "This bill designates the facility of the United States Postal Service located at 16 Rev Dr Martin Luther King Jr Drive in Willingboro, New Jersey, as the \"James A. Cotten Post Office\".",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8326?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-16",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Expressing support for rural communities across the United States as stewards of the environment, major suppliers of United States energy resources, critical providers of food production and manufacturing capacity, an\u2026",
-          "congress": "119",
-          "number": "1182",
-          "originChamber": "House",
-          "billType": "HRES",
-          "summary": "<p>This resolution states that the House of Representatives has demonstrated support for U.S. prosperity and economic growth, especially in rural communities, through policies related to energy, health care, manufactu\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hres/1182?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-16",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "IGO Anti-Boycott Act",
-          "congress": "119",
-          "number": "4296",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>IGO Anti-Boycott Act</strong></p><p>This bill penalizes U.S. persons (individuals or entities) that participate in certain boycotts imposed by international governmental organizations (IGOs).</p><p>The bill\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4296?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-04-15",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "To amend title 5, United States Code, to authorize the increase of the retirement age in the United States Capitol Police.",
-          "congress": "119",
-          "number": "8364",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p>This bill authorizes the Capitol Police Board to waive the mandatory retirement age for members of the Capitol Police up to age 65. (Under current law, a member of the Capitol Police is generally subject to mandato\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8364?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-20",
           "_first_seen": "2026-06-20T01:08:32.329145+00:00"
         },
         {
@@ -5104,28 +5156,28 @@
         },
         {
           "currentChamber": "Senate",
-          "title": "A resolution supporting the goals and ideals of National Safe Digging Month.",
+          "title": "IGO Anti-Boycott Act",
           "congress": "119",
-          "number": "673",
+          "number": "4296",
           "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution expresses support for National Safe Digging Month and encourages all homeowners and excavators to call 811 to find the location of underground utility lines before digging.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/sres/673?format=json",
-          "lastAction": "Passed Senate",
+          "billType": "S",
+          "summary": "<p><strong>IGO Anti-Boycott Act</strong></p><p>This bill penalizes U.S. persons (individuals or entities) that participate in certain boycotts imposed by international governmental organizations (IGOs).</p><p>The bill\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4296?format=json",
+          "lastAction": "Introduced in Senate",
           "lastActionDate": "2026-04-15",
           "_first_seen": "2026-06-20T01:08:32.329145+00:00"
         },
         {
           "currentChamber": "House",
-          "title": "Providing for consideration of the bill (H.R. 6387) to amend the Clean Air Act to require revisions to regulations governing the review and handling of air quality monitoring data influenced by exceptional events or a\u2026",
+          "title": "Gasoline Export Ban Act of 2026",
           "congress": "119",
-          "number": "1174",
+          "number": "8266",
           "originChamber": "House",
-          "billType": "HRES",
-          "summary": "This resolution provides for the consideration of the bill (H.R. 6387) to amend the Clean Air Act to require revisions to regulations governing the review and handling of air quality monitoring data influenced by exce\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hres/1174?format=json",
-          "lastAction": "Reported to House",
-          "lastActionDate": "2026-04-15",
+          "billType": "HR",
+          "summary": "<p><strong>Gasoline Export Ban Act of 2026</strong></p><p>This bill prohibits the exportation of gasoline produced in the United States during certain periods of high gasoline prices.</p><p>Specifically, the bill dire\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8266?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-04-14",
           "_first_seen": "2026-06-20T01:08:32.329145+00:00"
         },
         {
@@ -5142,68 +5194,16 @@
           "_first_seen": "2026-06-20T01:08:32.329145+00:00"
         },
         {
-          "currentChamber": "House",
-          "title": "Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
-          "congress": "119",
-          "number": "86",
-          "originChamber": "House",
-          "billType": "HCONRES",
-          "summary": "<p>This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities against Iran unless explicitly authorized by a declaration of war or a congressional authorization for use of military f\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hconres/86?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-20",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
           "currentChamber": "Senate",
-          "title": "Senior Hunger Prevention Act of 2026",
+          "title": "A resolution supporting the goals and ideals of National Safe Digging Month.",
           "congress": "119",
-          "number": "4286",
+          "number": "673",
           "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Senior Hunger Prevention Act of 2026</strong></p><p>This bill expands and modifies nutrition programs for older adults and adults with disabilities, including the Supplemental Nutrition Assistance Program (\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4286?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-04-14",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Chronic Care Management Improvement Act of 2026",
-          "congress": "119",
-          "number": "8261",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Chronic Care Management Improvement Act of </strong><strong>2026</strong></p><p>This bill eliminates cost-sharing for chronic care management services under Medicare.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8261?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-14",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Senior Hunger Prevention Act of 2026",
-          "congress": "119",
-          "number": "8256",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Senior Hunger Prevention Act of 2026</strong></p><p>This bill expands and modifies nutrition programs for older adults and adults with disabilities, including the Supplemental Nutrition Assistance Program (\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8256?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-14",
-          "_first_seen": "2026-06-20T01:08:32.329145+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Gasoline Export Ban Act of 2026",
-          "congress": "119",
-          "number": "8266",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Gasoline Export Ban Act of 2026</strong></p><p>This bill prohibits the exportation of gasoline produced in the United States during certain periods of high gasoline prices.</p><p>Specifically, the bill dire\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8266?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-04-14",
+          "billType": "SRES",
+          "summary": "<p>This resolution expresses support for National Safe Digging Month and encourages all homeowners and excavators to call 811 to find the location of underground utility lines before digging.</p>",
+          "url": "https://api.congress.gov/v3/bill/119/sres/673?format=json",
+          "lastAction": "Passed Senate",
+          "lastActionDate": "2026-04-15",
           "_first_seen": "2026-06-20T01:08:32.329145+00:00"
         }
       ]
@@ -5471,84 +5471,21 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 28069,
+      "rows": 28095,
       "last_seen": "2026-06-24",
       "recent": [
         {
           "ticker": "DDOG",
-          "owner_name": "NATIONAL BANK OF CANADA /FI/",
+          "owner_name": "VISTA EQUITY PARTNERS MANAGEMENT, LLC",
           "owner_title": "Institution",
-          "shares": "161651",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AON",
-          "owner_name": "Invesco Ltd.",
-          "owner_title": "Institution",
-          "shares": "1336129",
+          "shares": "161054",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Sustainable Growth Advisers, LP",
+          "owner_name": "Raymond James Financial Services Advisors, Inc.",
           "owner_title": "Institution",
-          "shares": "4652553",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Artisan Partners Limited Partnership",
-          "owner_title": "Institution",
-          "shares": "4618514",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "SG Americas Securities, LLC",
-          "owner_title": "Institution",
-          "shares": "4609206",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Asset Management One Co., Ltd.",
-          "owner_title": "Institution",
-          "shares": "4593969",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "CI INVESTMENTS INC.",
-          "owner_title": "Institution",
-          "shares": "4555051",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Cetera Investment Advisers",
-          "owner_title": "Institution",
-          "shares": "4469661",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "HARRIS ASSOCIATES L P",
-          "owner_title": "Institution",
-          "shares": "4463110",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Ninety One UK Ltd",
-          "owner_title": "Institution",
-          "shares": "4454291",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Allspring Global Investments Holdings, LLC",
-          "owner_title": "Institution",
-          "shares": "4437101",
+          "shares": "5051637",
           "_collected": "2026-06-24"
         },
         {
@@ -5609,44 +5546,107 @@
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Vontobel Holding Ltd.",
+          "owner_name": "BRIGHTON JONES LLC",
           "owner_title": "Institution",
-          "shares": "4653451",
+          "shares": "4134274",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Treasurer of the State of North Carolina",
+          "owner_name": "WORLDQUANT MILLENNIUM ADVISORS LLC",
           "owner_title": "Institution",
-          "shares": "4811413",
+          "shares": "4100611",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "PUBLIC EMPLOYEES RETIREMENT ASSOCIATION OF COLORADO",
+          "owner_name": "PUBLIC SECTOR PENSION INVESTMENT BOARD",
           "owner_title": "Institution",
-          "shares": "4838746",
+          "shares": "4069336",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Raymond James Financial Services Advisors, Inc.",
+          "owner_name": "Creative Planning",
           "owner_title": "Institution",
-          "shares": "5051637",
+          "shares": "4065394",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "PFA Pension, Forsikringsaktieselskab",
+          "owner_name": "PUBLIC EMPLOYEES RETIREMENT SYSTEM OF OHIO",
           "owner_title": "Institution",
-          "shares": "5374012",
+          "shares": "3997790",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Temasek Holdings (Private) Ltd",
+          "owner_name": "Retirement Systems of Alabama",
           "owner_title": "Institution",
-          "shares": "5313275",
+          "shares": "3984816",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "FEDERATED HERMES, INC.",
+          "owner_title": "Institution",
+          "shares": "3968766",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "JANE STREET GROUP, LLC",
+          "owner_title": "Institution",
+          "shares": "3936221",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Bank Julius Baer & Co. Ltd, Zurich",
+          "owner_title": "Institution",
+          "shares": "3910159",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Allspring Global Investments Holdings, LLC",
+          "owner_title": "Institution",
+          "shares": "4437101",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Ninety One UK Ltd",
+          "owner_title": "Institution",
+          "shares": "4454291",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "HARRIS ASSOCIATES L P",
+          "owner_title": "Institution",
+          "shares": "4463110",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "NOMURA ASSET MANAGEMENT CO LTD",
+          "owner_title": "Institution",
+          "shares": "4850020",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "STATE OF WISCONSIN INVESTMENT BOARD",
+          "owner_title": "Institution",
+          "shares": "4987135",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "TWO SIGMA ADVISERS, LP",
+          "owner_title": "Institution",
+          "shares": "4979120",
           "_collected": "2026-06-24"
         }
       ]
@@ -10988,6 +10988,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "IFF",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "300256",
         "category": "Divestitures",
         "confidence": "high",
@@ -11357,11 +11365,11 @@
       },
       {
         "ticker": "TBRG",
-        "category": "Going-Private",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "EZJ",
@@ -15565,11 +15573,11 @@
       },
       {
         "ticker": "BRAI",
-        "category": "Acquisitions",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Other"
       },
       {
         "ticker": "CSGS",
@@ -16093,6 +16101,14 @@
       },
       {
         "ticker": "SMOFF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ANY",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -23445,11 +23461,11 @@
       },
       {
         "ticker": "WS",
-        "category": "M&A / Divestitures",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "M&A / Divestitures"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "7229",
@@ -26538,6 +26554,14 @@
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "HOOD",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "ROYL",
@@ -32596,6 +32620,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "NWSLL",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "NEE-PS",
         "category": "Acquisitions",
         "confidence": "high",
@@ -32965,11 +32997,11 @@
       },
       {
         "ticker": "SPCX",
-        "category": "Acquisitions",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Other"
       },
       {
         "ticker": "ISNRU",
@@ -34021,11 +34053,11 @@
       },
       {
         "ticker": "TWOD",
-        "category": "Other",
-        "confidence": "medium",
+        "category": "Acquisitions",
+        "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "VRRM",
@@ -34844,6 +34876,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "QUBT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "LEDS",
         "category": "Delistings",
         "confidence": "high",
@@ -35116,6 +35156,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SVAQW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "BTAFF",
         "category": "Delistings",
         "confidence": "high",
@@ -35354,6 +35402,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "KDP",
+        "category": "Spin-Offs",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
       },
       {
         "ticker": "VEEAW",
@@ -35642,6 +35698,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "Z",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "ACQC",
@@ -36836,6 +36900,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GME-WT",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "BWLP",
         "category": "Divestitures",
         "confidence": "high",
@@ -37252,6 +37324,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "SINT",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "SOUNW",
         "category": "Acquisitions",
         "confidence": "high",
@@ -37316,6 +37396,46 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GOOGN",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TTI",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "WAVE",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "FSV",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "PRA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "BWMX",
         "category": "Acquisitions",
         "confidence": "high",
@@ -37370,14 +37490,6 @@
         "activist": false,
         "filer": null,
         "detail": "Issuer Tenders"
-      },
-      {
-        "ticker": "GOOGN",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "SREA",
@@ -37820,12 +37932,52 @@
         "detail": "Other"
       },
       {
+        "ticker": "FCFS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "HSCSW",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "KRP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "RMR",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
         "ticker": "TONX",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "WHLRL",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
       },
       {
         "ticker": "EQH-PC",
@@ -38276,8 +38428,14 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17527,
-        "wow_pct": 0.39,
+        "stars": 17532,
+        "wow_pct": 0.42,
+        "hot": true
+      },
+      {
+        "ticker": "IBM",
+        "stars": 7525,
+        "wow_pct": 0.05,
         "hot": true
       },
       {
@@ -38294,37 +38452,43 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 195908,
-        "wow_pct": 0.03,
-        "hot": true
-      },
-      {
-        "ticker": "IBM",
-        "stars": 7523,
+        "stars": 195910,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 246081,
+        "stars": 246085,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186723,
+        "stars": 186728,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19504,
+        "stars": 19505,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77133,
+        "stars": 77135,
+        "wow_pct": 0.02,
+        "hot": false
+      },
+      {
+        "ticker": "GTLB",
+        "stars": 24464,
+        "wow_pct": 0.02,
+        "hot": false
+      },
+      {
+        "ticker": "PLTR",
+        "stars": 21853,
         "wow_pct": 0.01,
         "hot": false
       },
@@ -38341,26 +38505,14 @@
         "hot": false
       },
       {
-        "ticker": "GTLB",
-        "stars": 24461,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
         "ticker": "MDB",
-        "stars": 28388,
+        "stars": 28387,
         "wow_pct": 0.0,
         "hot": false
       },
       {
         "ticker": "PATH",
         "stars": 88,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "PLTR",
-        "stars": 21852,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -39809,11 +39961,53 @@
     ],
     "news": [
       {
+        "headline": "Press Release: Val Hoyle Says Congress Passed Housing Language in Affordable Housing Bill",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 06:19:51",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Val+Hoyle+Says+Congress+Passed+Housing+Language+in+Affordable+Housing+Bill"
+      },
+      {
+        "headline": "NETSOL Technologies and Applicon Financial Solutions Form Strategic Partnership to Expand Nordic Market Presence",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-24 06:10:22",
+        "url": "https://www.quiverquant.com/news/NETSOL+Technologies+and+Applicon+Financial+Solutions+Form+Strategic+Partnership+to+Expand+Nordic+Market+Presence"
+      },
+      {
+        "headline": "Press Release: Moylan Advances Nearly $1.9 Billion in Guam Defense Funding in FY2027 NDAA Committee Vote",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 04:19:53",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Moylan+Advances+Nearly+%241.9+Billion+in+Guam+Defense+Funding+in+FY2027+NDAA+Committee+Vote"
+      },
+      {
+        "headline": "Press Release: Mike Johnson Says House, Senate Pass Bipartisan Housing Affordability Bill",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 04:19:53",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Johnson+Says+House%2C+Senate+Pass+Bipartisan+Housing+Affordability+Bill"
+      },
+      {
+        "headline": "Press Release: Andrea Salinas Issues Statement on Passage of Housing Bill",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 04:19:53",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Issues+Statement+on+Passage+of+Housing+Bill"
+      },
+      {
         "headline": "MoonLake Immunotherapeutics Prices $200 Million Public Offering of Class A Ordinary Shares and Pre-Funded Warrants",
         "ticker": null,
         "category": "press_release_summary",
         "time": "2026-06-24 03:10:24",
         "url": "https://www.quiverquant.com/news/MoonLake+Immunotherapeutics+Prices+%24200+Million+Public+Offering+of+Class+A+Ordinary+Shares+and+Pre-Funded+Warrants"
+      },
+      {
+        "headline": "Press Release: Maggie Goodlander Backed Housing Bill Sent to President\u2019s Desk",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Maggie+Goodlander+Backed+Housing+Bill+Sent+to+President%E2%80%99s+Desk"
       },
       {
         "headline": "Press Release: House passes housing bill with Vel\u00e1zquez-backed cooperative housing and oversight provisions",
@@ -39893,13 +40087,6 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Young+Kim+Helps+Advance+Housing+Legislation+in+House"
       },
       {
-        "headline": "Press Release: Maggie Goodlander Backed Housing Bill Sent to President\u2019s Desk",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 02:21:36",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Maggie+Goodlander+Backed+Housing+Bill+Sent+to+President%E2%80%99s+Desk"
-      },
-      {
         "headline": "Press Release: Dan Meuser Backs House Passage of Housing Affordability Bill",
         "ticker": null,
         "category": "legislation_automated",
@@ -39912,41 +40099,6 @@
         "category": "insiders_automated",
         "time": "2026-06-24 01:45:34",
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24SYRE+Sells+20%2C000+Shares"
-      },
-      {
-        "headline": "uniQure Announces Pricing of $225 Million Public Offering of Ordinary Shares",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-24 01:20:23",
-        "url": "https://www.quiverquant.com/news/uniQure+Announces+Pricing+of+%24225+Million+Public+Offering+of+Ordinary+Shares"
-      },
-      {
-        "headline": "CEA Industries and YZi Labs Reach Governance Agreement, Add New Directors and End Consent Solicitation",
-        "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-24 00:40:22",
-        "url": "https://www.quiverquant.com/news/CEA+Industries+and+YZi+Labs+Reach+Governance+Agreement%2C+Add+New+Directors+and+End+Consent+Solicitation"
-      },
-      {
-        "headline": "Press Release: Mariannette Miller-Meeks Votes to Advance Housing Bill to President Trump\u2019s Desk",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mariannette+Miller-Meeks+Votes+to+Advance+Housing+Bill+to+President+Trump%E2%80%99s+Desk"
-      },
-      {
-        "headline": "Press Release: Sharice Davids Votes for Bipartisan Housing Package to Lower Costs",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Sharice+Davids+Votes+for+Bipartisan+Housing+Package+to+Lower+Costs"
-      },
-      {
-        "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in House Housing Legislation",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+House+Housing+Legislation"
       }
     ],
     "wsb": [
@@ -40539,6 +40691,26 @@
         "summary": "Departments of Labor, Health and Human Services, and Education, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations to the Departments of Labor, Health and Human Services, and Education; and related agencies.  The bill provides appropriations to the Department of"
       },
       {
+        "title": "Community College Agriculture Advancement Act of 2026",
+        "sector": "Infrastructure",
+        "chamber": "Senate",
+        "bill": "S4730",
+        "last_action": "Introduced in Senate",
+        "last_action_date": "2026-06-10",
+        "url": "https://api.congress.gov/v3/bill/119/s/4730?format=json",
+        "summary": "Community College Agriculture Advancement Act of 2026   This bill allows the Department of Agriculture (USDA) to make competitive grants to assist eligible entities (i.e.,&nbsp;a junior or community college, or a consortium or alliance of two-year public colleges, supporting agriculture advancement)"
+      },
+      {
+        "title": "Take Care of America\u2019s Veterans Act",
+        "sector": "Defense",
+        "chamber": "House",
+        "bill": "HR9237",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-06-10",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9237?format=json",
+        "summary": "Take Care of America's Veterans Act   This bill addresses veterans\u2019 benefits, health care, counseling, Department of Veterans Affairs (VA) personnel, VA infrastructure, and the Veterans Community Care Program (VCCP).  The bill modifies various compensation programs for veterans, including by (1) all"
+      },
+      {
         "title": "Transportation, Housing and Urban Development, and Related Agencies Appropriations Act, 2027",
         "sector": "Energy",
         "chamber": "House",
@@ -40657,26 +40829,6 @@
         "last_action_date": "2026-05-20",
         "url": "https://api.congress.gov/v3/bill/119/s/4583?format=json",
         "summary": "Legalizing Premium Health Care Act of 2026     This bill allows any Medicare beneficiary to enter into a contract with an eligible professional, regardless of whether the professional is participating in Medicare, for any item or service covered by Medicare.  Such beneficiaries may submit a claim fo"
-      },
-      {
-        "title": "Crystal Reservoir Conveyance Act",
-        "sector": "Aerospace",
-        "chamber": "House",
-        "bill": "HR5911",
-        "last_action": "Reported to House",
-        "last_action_date": "2026-05-20",
-        "url": "https://api.congress.gov/v3/bill/119/hr/5911?format=json",
-        "summary": "Crystal Reservoir Conveyance Act   This bill directs the Forest Service to convey specified property and water rights in&nbsp;Ouray County, Colorado, to the City of Ouray, Colorado, for use as open space for recreational activities (such as fishing) at no cost to the public.  The property and water "
-      },
-      {
-        "title": "License to Drill Act",
-        "sector": "Energy",
-        "chamber": "House",
-        "bill": "HR7831",
-        "last_action": "Reported to House",
-        "last_action_date": "2026-05-20",
-        "url": "https://api.congress.gov/v3/bill/119/hr/7831?format=json",
-        "summary": "License to Drill Act   This bill extends through FY2037 the Bureau of Land Management\u2019s (BLM\u2019s) authority to collect oil and gas permit processing fees. For each new permit application, BLM collects a fee that is transferred to the BLM Permit Processing Improvement Fund.&nbsp;(Under current law, the"
       },
       {
         "title": "Geothermal Energy Advancement Act",
@@ -41803,7 +41955,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.39% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.42% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -41932,6 +42084,16 @@
         "why": "insider_cluster: 11 insiders, $53,591,973 net \u00b7 special_situation: Divestitures"
       },
       {
+        "ticker": "HOOD",
+        "score": 2,
+        "weighted_score": 1.4,
+        "channel_list": [
+          "insider_cluster",
+          "special_situation"
+        ],
+        "why": "insider_cluster: 3 insiders, $47,955,128 net \u00b7 special_situation: Capital Returns"
+      },
+      {
         "ticker": "QNT",
         "score": 2,
         "weighted_score": 1.4,
@@ -42016,7 +42178,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "cnbc_pick: Stephanie Link \u00b7 material_8k: 5 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Acquisitions"
+        "why": "cnbc_pick: Stephanie Link \u00b7 material_8k: 5 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other"
       },
       {
         "ticker": "ETN",
@@ -42058,16 +42220,6 @@
           "fda_label_expansion"
         ],
         "why": "clinical_phase3_start: 1 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: ONUREG"
-      },
-      {
-        "ticker": "PFE",
-        "score": 2,
-        "weighted_score": 1.05,
-        "channel_list": [
-          "clinical_phase3_start",
-          "fda_label_expansion"
-        ],
-        "why": "clinical_phase3_start: 10 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: XELJANZ"
       }
     ]
   }

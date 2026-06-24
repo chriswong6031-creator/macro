@@ -1,10 +1,10 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.061,
+  "roro": 0.059,
   "cap_recent": true,
   "fear_built": 0.502,
-  "roro_velocity": -0.286,
+  "roro_velocity": -0.288,
   "vel_pctile": 0.091,
   "legs_up": 1,
   "legs_total": 7,
