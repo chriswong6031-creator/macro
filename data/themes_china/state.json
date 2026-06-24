@@ -11,7 +11,7 @@
     "label": "deteriorating",
     "name": "Home Appliances",
     "name_zh": "\u5bb6\u7535",
-    "rank": 13,
+    "rank": 14,
     "reco": "avoid",
     "score": 34
   },
@@ -75,9 +75,9 @@
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 16,
+    "rank": 13,
     "reco": "avoid",
-    "score": 30
+    "score": 34
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -107,7 +107,7 @@
     "label": "deteriorating",
     "name": "Medical Devices & TCM",
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
-    "rank": 15,
+    "rank": 16,
     "reco": "avoid",
     "score": 31
   },
@@ -163,7 +163,7 @@
     "label": "deteriorating",
     "name": "Software & AI Apps",
     "name_zh": "\u8f6f\u4ef6\u4e0eAI\u5e94\u7528",
-    "rank": 14,
+    "rank": 15,
     "reco": "avoid",
     "score": 31
   },
