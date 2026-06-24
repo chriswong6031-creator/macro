@@ -34,8 +34,9 @@ def test_page_has_chrome_and_mount_and_assets():
     assert '<script src="theme.js">' in html and '<script src="ai_desk.js">' in html
     # bilingual: the t() macro must emit the zh label alongside the en one
     assert "AI交易台" in html and 'class="l-zh"' in html
-    # cross-links to the sibling AI page both exist
-    assert 'href="aibrief.html"' in html and 'href="ai_desk.html"' in html
+    # cross-links to the sibling AI pages both exist (the "AI Daily Brief" entry was
+    # renamed to "Mastermind" -> mastermind.html across the nav)
+    assert 'href="mastermind.html"' in html and 'href="ai_desk.html"' in html
 
 
 def test_renderer_covers_the_key_surfaces():
