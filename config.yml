@@ -2468,6 +2468,22 @@ narrative_brain:
   horizon_d: 21                  # trading-day horizon for the falsifiable proxy-vs-SPY check
   rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
 
+# Risk Brain — daily Claude/Opus DRAWDOWN-RISK officer over the deterministic risk stack
+# (engine/risk_brain.py). LEAF · CONTEXT-ONLY · DEGRADE-NEVER-RAISE. Reads the engine's own
+# outputs (risk_state, mtf_monitor, GEX, breadth, baskets, rotation, standouts), writes
+# site/riskdata/risk_brain.json (a Mastermind contract artifact). The de-risk DIRECTIVE is a
+# SIZING posture clamped in code to be no LESS cautious than the engine; never stock selection.
+risk_brain:
+  enabled: true                  # MASTER SWITCH (no-op anyway without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # Claude-Code OAuth (Bearer + oauth beta header)
+  api_key_env: ANTHROPIC_API_KEY             # fallback if no OAuth token
+  model: claude-opus-4-8         # deep daily risk reasoning
+  interval_days: 1
+  max_tokens: 5000
+  max_gross_tilt: 0.5            # cap on the subtract-only gross reduction the directive can imply
+  horizon_d: 21                  # trading-day horizon for the falsifiable drawdown thesis
+  dd_threshold_pct: 5.0          # the SPY drawdown the elevated-state thesis is graded on
+
 # =============================================================================
 # White House Watch — primary-source policy monitor + Claude-Opus alert desk
 # (engine/whitehouse_feed.py + engine/whitehouse_brain.py + scripts/build_whitehouse.py).

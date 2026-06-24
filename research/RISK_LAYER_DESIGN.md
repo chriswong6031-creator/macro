@@ -142,10 +142,12 @@ brain-wiring**, not mostly new math.
    └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-The **contract the Mastermind brain reads** is extended in exactly one primary place:
-a new top-level `risk_state` object in `data/regime/latest.json` (the file
-`master_brain._macro_summary`/`_macro_backdrop` already reads), mirrored into the
-allocation `ai_handoff` so the de-risk directive travels with the rotation call.
+The **contract the Mastermind brain reads** is extended in three places:
+1. a new top-level `risk_state` object in `data/regime/latest.json` (the file
+   `master_brain._macro_summary`/`_macro_backdrop` already reads) — the loud, early state;
+2. `site/riskdata/mtf_monitor.json` — the multi-timeframe technical grid + `technical_intensity`;
+3. `site/riskdata/risk_brain.json` — the daily Opus risk read + the CODE-clamped de-risk
+   `directive` (sizing posture, never selection), graded forward via `data/risk_brain/theses.jsonl`.
 
 ---
 
