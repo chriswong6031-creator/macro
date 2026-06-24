@@ -320,6 +320,17 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-state failed: %s", e)
         latest["risk_state"] = None
+    # Risk Radar v2 (engine/risk_radar.py): the EVIDENCE-GATED, regime-typed, genuinely-leading
+    # successor to risk_state — scare-typed sub-scores (credit/rates/bubble/growth + vol display-
+    # only) built ONLY from signals that pass the strict day-level-lift backtest gate, loud+early,
+    # with each alert carrying its measured lift/lead. Primary top-level risk read for the brain.
+    # Additive, never fatal. See research/RISK_ENGINE_V2_FINDINGS.md.
+    try:
+        from engine.risk_radar import snapshot as risk_radar_snapshot
+        latest["risk_radar"] = risk_radar_snapshot()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("risk-radar failed: %s", e)
+        latest["risk_radar"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
