@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-06-24T00:48:31.164880+00:00",
+  "generated_at": "2026-06-24T04:04:44.664012+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -122,7 +122,7 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.5253,
+          "cagr": 0.5254,
           "sharpe": 1.93,
           "max_dd": -0.1402,
           "calmar": 3.75,
@@ -164,7 +164,7 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.101,
+          "mean_ic": 0.1009,
           "ic_t_hac": 2.772,
           "hit": 0.64,
           "n_steps": 25

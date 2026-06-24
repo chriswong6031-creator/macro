@@ -532,3 +532,7 @@
 {"date": "2026-06-23", "ticker": "WING", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-23", "ticker": "FWRD", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-23", "ticker": "DFH", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-23", "ticker": "CCS", "score": 7.0, "percentile": 7.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-23", "ticker": "ACAD", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-23", "ticker": "MA", "score": 81.0, "percentile": 81.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-23", "ticker": "CPRI", "score": 98.0, "percentile": 98.0, "regime": "mixed", "horizons": [21, 63, 126]}

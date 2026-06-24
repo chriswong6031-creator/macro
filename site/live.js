@@ -5,26 +5,49 @@
  * If nothing is configured/served it cleanly no-ops and the page stays exactly as
  * the build rendered it.
  *
- * Two data sources, both optional:
- *   - the Worker /quotes endpoint (window.LIVE_QUOTES_URL) -> freshest prices.
+ * Three price sources, in priority order (all optional):
+ *   - the Worker /quotes endpoint (window.LIVE_QUOTES_URL) -> freshest, per-page,
+ *     real-time US via Polygon.
+ *   - a static full-universe snapshot JSON (window.LIVE_SNAPSHOT_URL, written by
+ *     scripts/build_live_quotes on a GitHub Action, fetched from raw.githubusercontent
+ *     CORS) -> keyless ~15-min quotes with NO Worker deploy. Same {ts,quotes} shape.
  *   - the static live/overlay.json (written by build_live_overlay) -> the
- *     divergence flag + market sessions (+ a price fallback when no Worker).
+ *     divergence flag + market sessions (+ a price fallback when neither above).
  *
  * Cards carry <span class="nb-px" data-sym="600519.SS" data-mkt="cn">. data-sym is
  * the CANONICAL Yahoo/Polygon symbol the build already knows — the browser does NO
  * symbol re-derivation (the old JS heuristic double-suffixed CN/.BJ names). data-mkt
- * only decides the "$" prefix.
+ * decides the "$" prefix ("us") and decimal precision ("fx" -> 4dp). An adjacent
+ * <span class="nb-chg" data-sym="..."> (optional) is painted with the % change
+ * (green up / red down) computed from prevClose — used by the index/futures strips.
  */
 (function () {
   if (!window.LIVE_ENABLED) return;                          // static-site no-op
   var URL = window.LIVE_QUOTES_URL || "";
+  var SNAP = window.LIVE_SNAPSHOT_URL || "";                 // keyless no-Worker fallback
   var POLL = (window.LIVE_POLL_SEC || 60) * 1000;
   var STALE_MIN = window.LIVE_STALE_MIN || 20;
   var OVERLAY = "live/overlay.json";
-  var inflight = false, lastTs = 0;
+  var inflight = false, lastTs = 0, pendingRefresh = false;
 
   function nodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym]")); }
+  function chgNodes() { return [].slice.call(document.querySelectorAll(".nb-chg[data-sym]")); }
+  function symNodes() { return [].slice.call(document.querySelectorAll(".nb-px[data-sym],.nb-chg[data-sym]")); }
   function rawSym(el) { return (el.getAttribute("data-sym") || "").trim().toUpperCase(); }
+  function fmtPrice(price, mkt) {
+    var dec = (mkt === "fx") ? 4 : 2;
+    var s;
+    try { s = Number(price).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+    catch (e) { s = Number(price).toFixed(dec); }
+    return (mkt === "us" ? "$" : "") + s;
+  }
+  function paintChg(el, chg, stale) {
+    var up = chg >= 0;
+    el.textContent = (up ? "+" : "") + Number(chg).toFixed(2) + "%";
+    el.classList.remove("up", "down", "stale");
+    el.classList.add(up ? "up" : "down");
+    if (stale) el.classList.add("stale");      // last-session move, not live
+  }
   function regionOf(s) {
     if (/\.HK$/.test(s)) return "hk";
     if (/\.(SS|SZ|BJ)$/.test(s)) return "cn";
@@ -45,6 +68,8 @@
       ".nb-dvg{font-size:10px;font-weight:700;margin-left:5px;padding:0 4px;border-radius:4px;" +
       "vertical-align:middle;white-space:nowrap}" +
       ".nb-dvg.alert{background:#7f1d1d;color:#fecaca}.nb-dvg.watch{background:#78350f;color:#fde68a}" +
+      ".nb-chg{font-weight:600}.nb-chg.up{color:#16a34a}.nb-chg.down{color:#dc2626}" +
+      ".nb-chg.stale{color:#9ca3af;font-weight:500}" +
       "@media (forced-colors:active){.nb-px[data-live]::after{forced-color-adjust:none;border:1px solid currentColor}}" +
       "@keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)}" +
       "70%{box-shadow:0 0 0 5px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}";
@@ -66,31 +91,47 @@
     var sessions = (overlay && overlay.sessions) || {};
     var ovT = (overlay && overlay.tickers) || {};
     var serverNow = Date.now();
+
+    // Resolve one symbol to a normalised reading, preferring the (fresh) live
+    // quote (Worker or snapshot) over a fresh overlay price.
+    function pick(sym) {
+      var q = quotes[sym], ov = ovT[sym];
+      var r = { price: null, src: null, stale: true, ageMin: null, chg: null };
+      if (q && q.price != null) {
+        r.price = q.price; r.src = q.source;
+        var prev = (q.prevClose != null) ? q.prevClose : null;
+        r.chg = (q.changePct != null) ? q.changePct : (prev ? (q.price / prev - 1) * 100 : null);
+        r.ageMin = Math.max(0, (serverNow - (q.ts || serverNow)) / 60000);
+        r.stale = r.ageMin > STALE_MIN;
+      } else if (ov && ov.price != null) {
+        r.price = ov.price; r.src = ov.source; r.stale = !!ov.stale; r.ageMin = ov.age_min;
+        r.chg = (ov.chg_pct != null) ? ov.chg_pct : null;
+      }
+      return r;
+    }
+
     nodes().forEach(function (el) {
       var sym = rawSym(el);
       var mkt = el.getAttribute("data-mkt") || "us";
-      var q = quotes[sym];
-      var ov = ovT[sym];
-      // price: prefer the (fresh) Worker quote, else a fresh overlay price.
-      var price = null, src = null, stale = true, ageMin = null;
-      if (q && q.price != null) {
-        price = q.price; src = q.source;
-        ageMin = Math.max(0, (serverNow - (q.ts || serverNow)) / 60000);
-        stale = ageMin > STALE_MIN;
-      } else if (ov && ov.price != null) {
-        price = ov.price; src = ov.source; stale = !!ov.stale; ageMin = ov.age_min;
-      }
-      if (price != null) {
-        el.textContent = (mkt === "us" ? "$" : "") + Number(price).toFixed(2);
+      var p = pick(sym);
+      if (p.price != null) {
+        el.textContent = fmtPrice(p.price, mkt);
         var sess = sessions[regionOf(sym)];
         var closed = sess && sess.open === false;
-        el.setAttribute("data-live", stale ? (closed ? "closed" : "stale") : "1");
-        el.title = (stale ? (closed ? "market closed" : "delayed") : "live") +
-          " · " + (src || "?") + (ageMin != null ? " · " + Number(ageMin).toFixed(0) + "m ago" : "");
+        el.setAttribute("data-live", p.stale ? (closed ? "closed" : "stale") : "1");
+        el.title = (p.stale ? (closed ? "market closed" : "delayed") : "live") +
+          " · " + (p.src || "?") + (p.ageMin != null ? " · " + Number(p.ageMin).toFixed(0) + "m ago" : "");
       }
       // divergence chip (only when fresh + not baseline-stale): the nightly
       // invalidation signal, surfaced to the human watching the same card.
+      var ov = ovT[sym];
       if (ov && ov.divergence && !ov.stale && !ov.baseline_stale) setChip(el, ov.divergence);
+    });
+
+    // % change chips (index / futures / FX strips): green up, red down, muted stale.
+    chgNodes().forEach(function (el) {
+      var p = pick(rawSym(el));
+      if (p.chg != null) paintChg(el, p.chg, p.stale);
     });
   }
 
@@ -104,27 +145,49 @@
 
   function tick() {
     if (document.hidden || inflight) return;                 // pause hidden / no overlap
-    var ns = nodes();
+    var ns = symNodes();
     if (!ns.length) return;
     var syms = {};
     ns.forEach(function (el) { var s = rawSym(el); if (s) syms[s] = 1; });
     var list = Object.keys(syms);
     if (!list.length) return;
     inflight = true;
-    var qP = URL ? getJSON(URL.replace(/\/$/, "") + "/quotes?symbols=" + encodeURIComponent(list.join(",")))
-                 : Promise.resolve(null);
-    Promise.all([qP, getJSON(OVERLAY)]).then(function (res) {
+    // Worker first (per-page symbol list, real-time US); else the full-universe
+    // snapshot (one CDN-cached file, keyless, shared by every browser/page). If a
+    // Worker IS set but fails/returns empty this tick, fall back to the snapshot
+    // before degrading to the overlay — a transient Worker outage shouldn't blank.
+    var qP;
+    if (URL) {
+      qP = getJSON(URL.replace(/\/$/, "") + "/quotes?symbols=" + encodeURIComponent(list.join(",")))
+        .then(function (r) {
+          if ((!r || !r.quotes || !Object.keys(r.quotes).length) && SNAP) return getJSON(SNAP);
+          return r;
+        });
+    } else {
+      qP = SNAP ? getJSON(SNAP) : Promise.resolve(null);
+    }
+    function done() {
       inflight = false;
+      // a refresh() requested mid-flight (SPA navigated to a new symbol) runs now.
+      if (pendingRefresh) { pendingRefresh = false; tick(); }
+    }
+    Promise.all([qP, getJSON(OVERLAY)]).then(function (res) {
       var quotes = (res[0] && res[0].quotes) || {};
       var ts = (res[0] && res[0].ts) || 0;
-      if (ts && ts < lastTs) return;                         // ignore out-of-order
-      if (ts) lastTs = ts;
-      if (Object.keys(quotes).length || res[1]) apply(quotes, res[1]);
-    }, function () { inflight = false; });
+      if (!(ts && ts < lastTs)) {                            // ignore out-of-order
+        if (ts) lastTs = ts;
+        if (Object.keys(quotes).length || res[1]) apply(quotes, res[1]);
+      }
+      done();
+    }, done);
   }
 
   function start() {
     injectStyle();
+    // Refresh hook for SPA pages (the single-stock view re-renders .nb-px nodes
+    // client-side on hashchange) — they call this right after setting data-sym.
+    // If a poll is in flight, defer so the new symbol isn't dropped.
+    window.LiveQuotes = { refresh: function () { if (inflight) pendingRefresh = true; else tick(); } };
     tick();
     setInterval(tick, POLL);
     document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });

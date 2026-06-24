@@ -195,6 +195,7 @@
         <a href="../reports.html">📰 <span class="l-en">Research Reports</span><span class="l-zh">研究报告</span><span class="d"><span class="l-en">In-depth market & macro reports</span><span class="l-zh">深度市场与宏观报告</span></span></a>
         <a href="../policy_watch.html">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span><span class="d"><span class="l-en">Fed + Administration intent & capital rotation</span><span class="l-zh">美联储+政府意图与资本轮动</span></span></a>
         <a href="../alt_data.html">📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span><span class="d"><span class="l-en">Signal intelligence · convergence · influence graph · actionable</span><span class="l-zh">信号情报 · 汇聚 · 影响力图谱 · 可操作</span></span></a>
+        <a href="../congress_trades.html">🏛️ <span class="l-en">Congressional Trades</span><span class="l-zh">国会交易</span><span class="d"><span class="l-en">Politician disclosures · half-year watchlist · scored to copy</span><span class="l-zh">政界披露 · 半年观察清单 · 评分跟单</span></span></a>
         <a href="../radar.html">🛰️ <span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span><span class="d"><span class="l-en">Real activity vs price · variant edge</span><span class="l-zh">真实活动 vs 价格 · 变量边际</span></span></a>
         <a href="../demand.html">🧭 <span class="l-en">Demand Desk</span><span class="l-zh">需求台</span><span class="d"><span class="l-en">Forward demand vs the priced consensus</span><span class="l-zh">前瞻需求 vs 已定价共识</span></span></a>
         <a href="../etfs.html">🐳 <span class="l-en">ETF Flows</span><span class="l-zh">ETF资金流</span><span class="d"><span class="l-en">Fund flow monitor</span><span class="l-zh">资金流监控</span></span></a>
@@ -206,6 +207,9 @@
       </div>
     </div>
   </div>
+  
+  <script src="../live_config.js"></script>
+  <script src="../live.js"></script>
   <div class="nav-search">
     <span class="mag">🔎</span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -809,6 +813,26 @@
     </details>
   </div>
 
+  
+  
+  <div class="panel" id="confluence">
+    <h2><span class="l-en">Confluence setup — 3-day MACD + StochRSI</span><span class="l-zh">共振配置 — 3 日 MACD + StochRSI</span>
+      <span class="help">?<span class="tip"><span class="l-en">The validated buy/sell engine that drives the main-dashboard Sector setups board (research/SECTOR_CONFLUENCE.md): a confluence of MACD + StochRSI crossovers on the 3-day chart, with the daily as the early trigger, gated by the 200-day trend. Extended (RSI>70 / StochRSI>80) is never a fresh buy. The base rate is the MEASURED forward-63-day excess vs SPY for this state. Risk/timing read, not a forecast.</span><span class="l-zh">驱动主看板「板块买卖配置」的已验证买卖引擎（research/SECTOR_CONFLUENCE.md）：3 日图上 MACD + StochRSI 交叉的共振，日线作为早期触发，以 200 日趋势把关。过热（RSI>70／StochRSI>80）绝不视为新买点。基础概率为该状态实测的未来 63 日对 SPY 超额。风险/择时读数，非预测。</span></span></span>
+    </h2>
+    <p style="margin:6px 0">
+      <span class="state" style="border:1px solid var(--orange);color:var(--orange);padding:2px 9px;border-radius:7px;font-weight:700"><span class="l-en">EXTENDED</span><span class="l-zh">过热</span></span>
+      <span class="muted" style="margin-left:8px"><span class="l-en">setup</span><span class="l-zh">预备</span></span>
+    </p>
+    <p style="margin:4px 0"><span class="l-en">Overbought and still rising — late; hold/trim, don't chase.</span><span class="l-zh">超买且仍在上行——已晚；持有/减仓，勿追。</span></p>
+    <p class="muted" style="font-size:12.5px;margin:6px 0 0">
+      <span class="l-en">3-day signal</span><span class="l-zh">3 日信号</span>: <span class="l-en">StochRSI ↑20, MACD curling up, ~5d to cross</span><span class="l-zh">StochRSI 上穿20, MACD 上弯, 约5天后交叉</span> ·
+      RSI 52 · Stoch 48 ·
+      ✓200d ✓50d
+      · <span class="l-en">measured</span><span class="l-zh">实测</span> +0.1% <span class="l-en">vs SPY, 63d</span><span class="l-zh">对 SPY，63 日</span> (50% <span class="l-en">up</span><span class="l-zh">上涨</span>, n=2185)
+    </p>
+  </div>
+  
+
   <div class="panel">
     <h2><span class="l-en">Momentum across timeframes</span><span class="l-zh">跨周期动量</span>
       <span class="help">?<span class="tip"><span class="l-en">Daily / 3-day / weekly views of the same ETF. Weekly is the tide, 3-day the wave, daily the ripple — signals are strongest when all three agree. RSI & StochRSI gauges show oversold→overbought; the MACD bars show momentum's trajectory and the estimated days to its next cross.</span><span class="l-zh">同一只 ETF 的日线／3 日／周线视角。周线是潮汐，3 日是波浪，日线是涟漪 — 三者一致时信号最强。RSI 与 StochRSI 表盘显示超卖→超买；MACD 柱状图显示动量轨迹及距下次交叉的预估天数。</span></span></span>
@@ -1409,6 +1433,5 @@
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>
 </footer>
-<script defer data-whb data-root="../" src="../wh_banner.js"></script>
 </body>
 </html>

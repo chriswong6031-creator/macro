@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-24T01:13:04.181849+00:00",
+  "generated_utc": "2026-06-24T04:30:37.604219+00:00",
   "as_of": "2026-06-24",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -2022,483 +2022,483 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 21291,
+      "rows": 21388,
       "last_seen": "2026-06-24",
       "recent": [
         {
-          "Ticker": "CIFR",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Page Tyler",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "M",
-          "Shares": "1419236.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "9689582.0",
-          "fileDate": "2026-06-24T00:13:26.000",
-          "officerTitle": "Chief Executive Officer",
-          "isDirector": "True",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CIFR",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Page Tyler",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "F",
-          "Shares": "724520.0",
-          "PricePerShare": "28.14",
-          "SharesOwnedFollowing": "8965062.0",
-          "fileDate": "2026-06-24T00:13:26.000",
-          "officerTitle": "Chief Executive Officer",
-          "isDirector": "True",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "15056.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "6790648.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "7474.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "2032864.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "14119.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4501611.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "17698.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "6622946.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "10284.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "3679230.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "4614.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "1012873.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "9278.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "2051843.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "7745.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4082910.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "35190.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "17576160.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "1566.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "660699.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "477.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "238194.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "3999.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "839167.0",
-          "fileDate": "2026-06-24T00:11:09.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "NINE",
+          "Ticker": "SYRE",
           "Date": "2026-06-23T00:00:00.000",
-          "Name": "Law Adam R.",
+          "Name": "Fairmount Funds Management LLC",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "4684781.0",
+          "PricePerShare": "85.31",
+          "SharesOwnedFollowing": "0.0",
+          "fileDate": "2026-06-24T01:56:26.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-24T02:00:07.183",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "SYRE",
+          "Date": "2026-06-23T00:00:00.000",
+          "Name": "Fairmount Funds Management LLC",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "C",
+          "Shares": "666680.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "4684781.0",
+          "fileDate": "2026-06-24T01:56:26.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-24T02:00:07.183",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "DOMO",
+          "Date": "2026-06-19T00:00:00.000",
+          "Name": "Thayne Daren",
           "AcquiredDisposedCode": "A",
           "TransactionCode": "A",
-          "Shares": "92222.0",
+          "Shares": "140121.0",
           "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "92222.0",
-          "fileDate": "2026-06-24T00:10:24.000",
-          "officerTitle": "See Remarks",
+          "SharesOwnedFollowing": "550416.0",
+          "fileDate": "2026-06-24T01:38:46.000",
+          "officerTitle": "CTO & EVP  of Product",
           "isDirector": "False",
           "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
+          "uploaded": "2026-06-24T01:45:04.247",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
         },
         {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "23616.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "6805704.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
+          "Ticker": "DOMO",
+          "Date": "2026-06-19T00:00:00.000",
+          "Name": "Crane Tod",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "122634.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "345292.0",
+          "fileDate": "2026-06-24T01:38:27.000",
+          "officerTitle": "Chief Financial Officer",
           "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:45:04.247",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "DOMO",
+          "Date": "2026-06-19T00:00:00.000",
+          "Name": "James Joshua G",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "245269.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "1734961.0",
+          "fileDate": "2026-06-24T01:37:44.000",
+          "officerTitle": "Founder and CEO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "True",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:45:04.247",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "SYRE",
+          "Date": "2026-06-22T00:00:00.000",
+          "Name": "HENDERSON MICHAEL THOMAS",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "20000.0",
+          "PricePerShare": "100.0",
+          "SharesOwnedFollowing": "68606.0",
+          "fileDate": "2026-06-24T01:32:23.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:45:04.247",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "SELWYN JOFFE",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "51501.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "615604.0",
+          "fileDate": "2026-06-24T01:20:28.000",
+          "officerTitle": "President, CEO & Chairman",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-21T00:00:00.000",
+          "Name": "SELWYN JOFFE",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "14931.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "630535.0",
+          "fileDate": "2026-06-24T01:20:28.000",
+          "officerTitle": "President, CEO & Chairman",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-21T00:00:00.000",
+          "Name": "Stone Juliet Lynn",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "3717.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "38838.0",
+          "fileDate": "2026-06-24T01:19:33.000",
+          "officerTitle": "VP, Gen Counsel and Secretary",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Stone Juliet Lynn",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "1725.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "35121.0",
+          "fileDate": "2026-06-24T01:19:33.000",
+          "officerTitle": "VP, Gen Counsel and Secretary",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Burlingame Glenn Daniel",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "5176.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "6700.0",
+          "fileDate": "2026-06-24T01:18:19.000",
+          "officerTitle": "VP, General Counsel & Sec.",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Pulik Richard",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "F",
+          "Shares": "2129.0",
+          "PricePerShare": "31.43",
+          "SharesOwnedFollowing": "276420.0",
+          "fileDate": "2026-06-24T01:17:34.000",
+          "officerTitle": "CFO",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-21T00:00:00.000",
+          "Name": "Schooner Douglas Earl",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "2169.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "42465.0",
+          "fileDate": "2026-06-24T01:17:03.000",
+          "officerTitle": "Chief Manufacturing Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Schooner Douglas Earl",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "4589.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "40296.0",
+          "fileDate": "2026-06-24T01:17:03.000",
+          "officerTitle": "Chief Manufacturing Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "ROIV",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Humes Jennifer",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "F",
+          "Shares": "3582.0",
+          "PricePerShare": "31.43",
+          "SharesOwnedFollowing": "109782.0",
+          "fileDate": "2026-06-24T01:16:22.000",
+          "officerTitle": "Chief Accounting Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "GNK",
+          "Date": "2026-06-18T00:00:00.000",
+          "Name": "Das Paramita",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "9554.0",
+          "PricePerShare": null,
+          "SharesOwnedFollowing": "9554.0",
+          "fileDate": "2026-06-24T01:15:48.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": null,
+          "isTenPercentOwner": null,
+          "isOther": null,
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-21T00:00:00.000",
+          "Name": "Shah Kamlesh",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "2789.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "42373.0",
+          "fileDate": "2026-06-24T01:15:13.000",
+          "officerTitle": "Chief Accounting Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Shah Kamlesh",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "3882.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "39584.0",
+          "fileDate": "2026-06-24T01:15:13.000",
+          "officerTitle": "Chief Accounting Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:30:07.684",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-20T00:00:00.000",
+          "Name": "Lee David Sung",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "10904.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "78442.0",
+          "fileDate": "2026-06-24T01:10:09.000",
+          "officerTitle": "CFO",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:15:04.611",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "MPAA",
+          "Date": "2026-06-21T00:00:00.000",
+          "Name": "Lee David Sung",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "5577.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "84019.0",
+          "fileDate": "2026-06-24T01:10:09.000",
+          "officerTitle": "CFO",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:15:04.611",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
+        },
+        {
+          "Ticker": "AEVA",
+          "Date": "2026-06-18T00:00:00.000",
+          "Name": "SYLEBRA CAPITAL LLC",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "6150.0",
+          "PricePerShare": "24.39",
+          "SharesOwnedFollowing": "16240671.0",
+          "fileDate": "2026-06-24T01:07:53.000",
+          "officerTitle": null,
+          "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "True",
           "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
+          "uploaded": "2026-06-24T01:15:04.611",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
         },
         {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "27762.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "6640644.0",
-          "fileDate": "2026-06-24T00:09:51.000",
+          "Ticker": "CXAI",
+          "Date": "2026-06-18T00:00:00.000",
+          "Name": "Priya Shanti",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "514019.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "808806.0",
+          "fileDate": "2026-06-24T00:51:36.000",
           "officerTitle": null,
-          "isDirector": "False",
+          "isDirector": "True",
           "isOfficer": "False",
-          "isTenPercentOwner": "True",
+          "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:00:05.892",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
         },
         {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "2456.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "662265.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
+          "Ticker": "CXAI",
+          "Date": "2026-06-18T00:00:00.000",
+          "Name": "Sheikh Khurram P",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "794393.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "3510828.0",
+          "fileDate": "2026-06-24T00:51:18.000",
+          "officerTitle": "Chief Executive Officer",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:00:05.892",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
         },
         {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "7237.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "1017487.0",
-          "fileDate": "2026-06-24T00:09:51.000",
+          "Ticker": "CXAI",
+          "Date": "2026-06-18T00:00:00.000",
+          "Name": "Mathai George",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "397197.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "691984.0",
+          "fileDate": "2026-06-24T00:50:57.000",
           "officerTitle": null,
-          "isDirector": "False",
+          "isDirector": "True",
           "isOfficer": "False",
-          "isTenPercentOwner": "True",
+          "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:00:05.892",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
         },
         {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "22148.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "4515730.0",
-          "fileDate": "2026-06-24T00:09:51.000",
+          "Ticker": "CXAI",
+          "Date": "2026-06-18T00:00:00.000",
+          "Name": "MARTINO CAMILLO",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "934580.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "1335590.0",
+          "fileDate": "2026-06-24T00:50:35.000",
           "officerTitle": null,
-          "isDirector": "False",
+          "isDirector": "True",
           "isOfficer": "False",
-          "isTenPercentOwner": "True",
+          "isTenPercentOwner": "False",
           "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "6273.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "843166.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "55200.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "17611350.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "14554.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "2061121.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "748.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "238671.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
-        },
-        {
-          "Ticker": "CRWV",
-          "Date": "2026-06-22T00:00:00.000",
-          "Name": "Magnetar Financial LLC",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "J",
-          "Shares": "16132.0",
-          "PricePerShare": null,
-          "SharesOwnedFollowing": "3689514.0",
-          "fileDate": "2026-06-24T00:09:51.000",
-          "officerTitle": null,
-          "isDirector": "False",
-          "isOfficer": "False",
-          "isTenPercentOwner": "True",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-24T00:15:11.239",
-          "_first_seen": "2026-06-24T00:23:00.936139+00:00"
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-24T01:00:05.892",
+          "_first_seen": "2026-06-24T03:43:25.151978+00:00"
         }
       ]
     },
@@ -4460,25 +4460,205 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 212,
+      "rows": 229,
       "last_seen": "2026-06-24",
       "recent": [
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Hakeem+Jeffries+criticizes+Trump+administration%E2%80%99s+Iran+war+funding+in+press+conference",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Hakeem Jeffries criticizes Trump administration\u2019s Iran war funding in press conference",
+          "url": "https://www.quiverquant.com/news/MoonLake+Immunotherapeutics+Prices+%24200+Million+Public+Offering+of+Class+A+Ordinary+Shares+and+Pre-Funded+Warrants",
+          "time": "2026-06-24 03:10:24",
+          "headline": "MoonLake Immunotherapeutics Prices $200 Million Public Offering of Class A Ordinary Shares and Pre-Funded Warrants",
+          "category": "press_release_summary",
+          "summary": "<p>MoonLake Immunotherapeutics announces a public offering of shares, aiming to raise approximately $200 million for research and development.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>MoonLake Immunothe\u2026",
+          "image": "https://www.quiverquant.com/images/mltx_rect_new.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+passes+housing+bill+with+Vel%C3%A1zquez-backed+cooperative+housing+and+oversight+provisions",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: House passes housing bill with Vel\u00e1zquez-backed cooperative housing and oversight provisions",
           "category": "legislation_automated",
-          "summary": "<p>Jeffries criticized Trump\u2019s Iran policy, urging taxpayer funds be redirected to domestic priorities rather than military spending.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(1\u2026",
-          "image": "https://www.quiverquant.com/images/J000294_congress.png",
+          "summary": "<p>House passed a housing bill advancing cooperative housing access and stronger oversight of federally monitored public housing authorities.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"colo\u2026",
+          "image": "https://www.quiverquant.com/images/V000081_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Ayanna+Pressley+Bills+Pass+in+Congress+Housing+Package",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Ayanna Pressley Bills Pass in Congress Housing Package",
+          "category": "legislation_automated",
+          "summary": "<p>Pressley announces passage of four housing bills aimed at equity, affordability, renter protections, and family financial stability.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb\u2026",
+          "image": "https://www.quiverquant.com/images/P000617_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Yassamin+Ansari+Votes+to+Advance+Bipartisan+Housing+Package",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Rep. Yassamin Ansari Votes to Advance Bipartisan Housing Package",
+          "category": "legislation_automated",
+          "summary": "<p>Ansari backs bipartisan housing legislation aimed at increasing supply, reducing barriers, and lowering costs for working families.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(\u2026",
+          "image": "https://www.quiverquant.com/images/A000381_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brad+Schneider+Announces+House+Passage+of+Bipartisan+Housing+Bill",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Brad Schneider Announces House Passage of Bipartisan Housing Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Schneider backed bipartisan housing legislation aimed at increasing supply, lowering costs, and expanding homeownership access.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,\u2026",
+          "image": "https://www.quiverquant.com/images/S001190_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Susie+Lee+Announces+House+Passage+of+Bipartisan+Housing+Bill",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Susie Lee Announces House Passage of Bipartisan Housing Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Congresswoman Susie Lee touts bipartisan housing legislation aimed at expanding supply and reducing housing costs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Le\u2026",
+          "image": "https://www.quiverquant.com/images/L000590_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Vince+Fong+Backs+Housing+Bill+Passed+by+House%2C+Sent+to+President%27s+Desk",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Vince Fong Backs Housing Bill Passed by House, Sent to President's Desk",
+          "category": "legislation_automated",
+          "summary": "<p>Congressman Vince Fong backed a bipartisan housing bill aimed at increasing supply, reducing regulations, and improving affordability.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
+          "image": "https://www.quiverquant.com/images/F000480_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Adrian+Smith+Celebrates+House+Passage+of+Wildfire+Disaster+Assistance+Bill",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Adrian Smith Celebrates House Passage of Wildfire Disaster Assistance Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Congressman Adrian Smith praised House passage of a bill to speed federal disaster aid for Nebraska wildfire recovery.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\u2026",
+          "image": "https://www.quiverquant.com/images/S001172_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Juan+Vargas+Applauds+House+Passage+of+Bipartisan+Housing+Bill",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Juan Vargas Applauds House Passage of Bipartisan Housing Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Juan Vargas praised House passage of a bipartisan housing bill that expands supply, affordability, and credit union flexibility.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rg\u2026",
+          "image": "https://www.quiverquant.com/images/V000130_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Ashley+Hinson+backs+housing+bill+targeting+investor+purchases+of+Iowa+homes",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Ashley Hinson backs housing bill targeting investor purchases of Iowa homes",
+          "category": "legislation_automated",
+          "summary": "<p>Hinson backed bipartisan housing legislation aimed at reducing costs, expanding supply, and limiting investor purchases of single-family homes.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\u2026",
+          "image": "https://www.quiverquant.com/images/H001091_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Scott+Peters+says+House+passed+bipartisan+housing+package",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Scott Peters says House passed bipartisan housing package",
+          "category": "legislation_automated",
+          "summary": "<p>Representative Scott Peters praised House passage of a bipartisan housing package aimed at boosting supply and affordability.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,16\u2026",
+          "image": "https://www.quiverquant.com/images/P000608_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Young+Kim+Helps+Advance+Housing+Legislation+in+House",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Young Kim Helps Advance Housing Legislation in House",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Young Kim supports legislation aimed at expanding housing supply, reducing costs, and improving homeownership access.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
+          "image": "https://www.quiverquant.com/images/K000397_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Maggie+Goodlander+Backed+Housing+Bill+Sent+to+President%E2%80%99s+Desk",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Maggie Goodlander Backed Housing Bill Sent to President\u2019s Desk",
+          "category": "legislation_automated",
+          "summary": "<p>Goodlander-backed bipartisan housing bill advances, aiming to reduce costs, streamline development, and expand home supply.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/G000604_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Dan+Meuser+Backs+House+Passage+of+Housing+Affordability+Bill",
+          "time": "2026-06-24 02:21:36",
+          "headline": "Press Release: Dan Meuser Backs House Passage of Housing Affordability Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Meuser-backed bipartisan housing bill passed the House, aiming to expand supply, ease regulations, and bolster community banks.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,\u2026",
+          "image": "https://www.quiverquant.com/images/M001204_congress.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24SYRE+Sells+20%2C000+Shares",
+          "time": "2026-06-24 01:45:34",
+          "headline": "Insider Sale: Director at $SYRE Sells 20,000 Shares",
+          "category": "insiders_automated",
+          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1779990/Michael-Thomas-Henderson\">MICHAEL THOMAS HENDERSON</a>, a director at <a href=\"https://www.quiverquant.com/stock/SYRE/\">$SYRE</a>, sold 20,000 shares of the com\u2026",
+          "image": "https://www.quiverquant.com/images/syre_rect_new.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/uniQure+Announces+Pricing+of+%24225+Million+Public+Offering+of+Ordinary+Shares",
+          "time": "2026-06-24 01:20:23",
+          "headline": "uniQure Announces Pricing of $225 Million Public Offering of Ordinary Shares",
+          "category": "press_release_summary",
+          "summary": "<p>uniQure N.V. announces a public offering of 4,945,055 shares at $45.50 each, aiming to raise approximately $225 million.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>uniQure N.V. announced the pricing of\u2026",
+          "image": "https://www.quiverquant.com/images/qure_rect_new.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/CEA+Industries+and+YZi+Labs+Reach+Governance+Agreement%2C+Add+New+Directors+and+End+Consent+Solicitation",
+          "time": "2026-06-24 00:40:22",
+          "headline": "CEA Industries and YZi Labs Reach Governance Agreement, Add New Directors and End Consent Solicitation",
+          "category": "press_release_summary",
+          "summary": "<p>YZi Labs ends consent solicitation, appoints new board members, and forms CEO search committee to enhance long-term stakeholder value.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>CEA Industries Inc. (BN\u2026",
+          "image": "https://www.quiverquant.com/images/bnc_rect_new.png",
+          "_first_seen": "2026-06-24T03:43:41.893444+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mariannette+Miller-Meeks+Votes+to+Advance+Housing+Bill+to+President+Trump%E2%80%99s+Desk",
+          "time": "2026-06-24 00:22:22",
+          "headline": "Press Release: Mariannette Miller-Meeks Votes to Advance Housing Bill to President Trump\u2019s Desk",
+          "category": "legislation_automated",
+          "summary": "<p>Miller-Meeks supported final passage of a bipartisan housing bill aimed at easing regulations and expanding homeownership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
+          "image": "https://www.quiverquant.com/images/M001215_congress.png",
           "_first_seen": "2026-06-24T00:26:44.983264+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Al+Green+Opposes+H.R.+1181+in+House+Rules+Committee+Hearing",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Sharice+Davids+Votes+for+Bipartisan+Housing+Package+to+Lower+Costs",
           "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Al Green Opposes H.R. 1181 in House Rules Committee Hearing",
+          "headline": "Press Release: Sharice Davids Votes for Bipartisan Housing Package to Lower Costs",
           "category": "legislation_automated",
-          "summary": "<p>Congressman Al Green opposed H.R. 1181 in a House hearing, urging financial monitoring to help prevent mass shootings.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\u2026",
-          "image": "https://www.quiverquant.com/images/G000553_congress.png",
+          "summary": "<p>Representative Davids backed a bipartisan housing bill aimed at reducing costs, boosting supply, and strengthening renter protections.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
+          "image": "https://www.quiverquant.com/images/D000629_congress.png",
+          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+House+Housing+Legislation",
+          "time": "2026-06-24 00:22:22",
+          "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in House Housing Legislation",
+          "category": "legislation_automated",
+          "summary": "<p>House passed housing legislation including Downing\u2019s repair grants bill, aiming to expand supply and modernize federal housing programs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color:\u2026",
+          "image": "https://www.quiverquant.com/images/D000634_congress.png",
+          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Ann+Wagner+Votes+for+Housing+Legislation",
+          "time": "2026-06-24 00:22:22",
+          "headline": "Press Release: Ann Wagner Votes for Housing Legislation",
+          "category": "legislation_automated",
+          "summary": "<p>Ann Wagner said she backed bipartisan housing legislation aimed at reducing costs and streamlining regulations for affordable homebuilding.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"col\u2026",
+          "image": "https://www.quiverquant.com/images/W000812_congress.png",
+          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Chu%2C+Schiff%2C+House+Colleagues+Introduce+Bill+to+Honor+Holocaust+Rescue+Efforts",
+          "time": "2026-06-24 00:22:22",
+          "headline": "Press Release: Chu, Schiff, House Colleagues Introduce Bill to Honor Holocaust Rescue Efforts",
+          "category": "legislation_automated",
+          "summary": "<p>Lawmakers propose a Congressional Gold Medal to honor Americans who rescued and aided Holocaust refugees.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Lawmakers i\u2026",
+          "image": "https://www.quiverquant.com/images/C001080_congress.png",
           "_first_seen": "2026-06-24T00:26:44.983264+00:00"
         },
         {
@@ -4506,186 +4686,6 @@
           "category": "legislation_automated",
           "summary": "<p>Fedorchak backed bipartisan housing legislation aimed at reducing regulation, expanding supply, and lowering costs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">F\u2026",
           "image": "https://www.quiverquant.com/images/F000482_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Eric+Burlison+to+Host+Press+Conference+on+Healthcare+Affordability+Package",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Rep. Eric Burlison to Host Press Conference on Healthcare Affordability Package",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Burlison will hold a Capitol Hill press conference on healthcare affordability, price transparency, and patient choice.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
-          "image": "https://www.quiverquant.com/images/B001316_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brad+Sherman+Backs+Bipartisan+Amendment+Calling+for+Release+of+Armenian+Detainees",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Brad Sherman Backs Bipartisan Amendment Calling for Release of Armenian Detainees",
-          "category": "legislation_automated",
-          "summary": "<p>Sherman backed bipartisan action urging Azerbaijan to release Armenian prisoners and detainees, citing human rights concerns.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,16\u2026",
-          "image": "https://www.quiverquant.com/images/S000344_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+House+Housing+Legislation",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in House Housing Legislation",
-          "category": "legislation_automated",
-          "summary": "<p>House passed housing legislation including Downing\u2019s repair grants bill, aiming to expand supply and modernize federal housing programs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color:\u2026",
-          "image": "https://www.quiverquant.com/images/D000634_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lateefah+Simon+Bill+on+Small+Business+Cybersecurity+Passes+House+Unanimously",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Lateefah Simon Bill on Small Business Cybersecurity Passes House Unanimously",
-          "category": "legislation_automated",
-          "summary": "<p>House unanimously passed a bipartisan bill directing a federal review of small business cybersecurity risks and support resources.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(1\u2026",
-          "image": "https://www.quiverquant.com/images/S001231_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Flood+Comments+on+Final+Passage+of+Housing+Bill",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Mike Flood Comments on Final Passage of Housing Bill",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Flood announces final passage of housing legislation aimed at reducing regulation and increasing housing supply.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
-          "image": "https://www.quiverquant.com/images/F000474_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Brett+Guthrie+Supports+Bipartisan+Housing+Package+in+House+Vote",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Brett Guthrie Supports Bipartisan Housing Package in House Vote",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Guthrie supported a bipartisan housing bill aimed at reducing red tape, expanding lending, and boosting homeownership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(1\u2026",
-          "image": "https://www.quiverquant.com/images/G000558_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Andy+Harris+Announces+%246.3+Million+Head+Start+Grant+for+SHORE+UP+Programs",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Andy Harris Announces $6.3 Million Head Start Grant for SHORE UP Programs",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Harris announced $6.3 million in federal Head Start funding for SHORE UP programs serving Maryland\u2019s First District.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189\u2026",
-          "image": "https://www.quiverquant.com/images/H001052_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mariannette+Miller-Meeks+Votes+to+Advance+Housing+Bill+to+President+Trump%E2%80%99s+Desk",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Mariannette Miller-Meeks Votes to Advance Housing Bill to President Trump\u2019s Desk",
-          "category": "legislation_automated",
-          "summary": "<p>Miller-Meeks supported final passage of a bipartisan housing bill aimed at easing regulations and expanding homeownership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/M001215_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Bipartisan+Housing+Package+Backed+by+Emanuel+Cleaver",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: House Passes Bipartisan Housing Package Backed by Emanuel Cleaver",
-          "category": "legislation_automated",
-          "summary": "<p>House passes bipartisan housing legislation to modernize federal programs, expand supply, and support affordability.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">\u2026",
-          "image": "https://www.quiverquant.com/images/C001061_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Ann+Wagner+Votes+for+Housing+Legislation",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Ann Wagner Votes for Housing Legislation",
-          "category": "legislation_automated",
-          "summary": "<p>Ann Wagner said she backed bipartisan housing legislation aimed at reducing costs and streamlining regulations for affordable homebuilding.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"col\u2026",
-          "image": "https://www.quiverquant.com/images/W000812_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Raja+Krishnamoorthi+Questions+Witnesses+at+Shadow+Hearing+on+Public+Health%2C+Baby+Food+Safety+and+Vaping",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Raja Krishnamoorthi Questions Witnesses at Shadow Hearing on Public Health, Baby Food Safety and Vaping",
-          "category": "legislation_automated",
-          "summary": "<p>Krishnamoorthi criticized Trump health policies, focusing on public health cuts, vaccine misinformation, baby food safety, and youth vaping.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"co\u2026",
-          "image": "https://www.quiverquant.com/images/K000391_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Sharice+Davids+Votes+for+Bipartisan+Housing+Package+to+Lower+Costs",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Sharice Davids Votes for Bipartisan Housing Package to Lower Costs",
-          "category": "legislation_automated",
-          "summary": "<p>Representative Davids backed a bipartisan housing bill aimed at reducing costs, boosting supply, and strengthening renter protections.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
-          "image": "https://www.quiverquant.com/images/D000629_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Votes+to+Advance+Bipartisan+Housing+Bill+to+the+President%E2%80%99s+Desk",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: John Larson Votes to Advance Bipartisan Housing Bill to the President\u2019s Desk",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Larson supported a bipartisan housing bill aimed at boosting supply, affordability, homeownership, and renter protections.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,\u2026",
-          "image": "https://www.quiverquant.com/images/L000557_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Chu%2C+Schiff%2C+House+Colleagues+Introduce+Bill+to+Honor+Holocaust+Rescue+Efforts",
-          "time": "2026-06-24 00:22:22",
-          "headline": "Press Release: Chu, Schiff, House Colleagues Introduce Bill to Honor Holocaust Rescue Efforts",
-          "category": "legislation_automated",
-          "summary": "<p>Lawmakers propose a Congressional Gold Medal to honor Americans who rescued and aided Holocaust refugees.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Lawmakers i\u2026",
-          "image": "https://www.quiverquant.com/images/C001080_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+CRO+of+%24CHPT+Sells+4%2C072+Shares",
-          "time": "2026-06-24 00:12:57",
-          "headline": "Insider Sale: CRO of $CHPT Sells 4,072 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>John David Vice, the CRO of <a href=\"https://www.quiverquant.com/stock/CHPT/\">$CHPT</a>, sold 4,072 shares of the company on 06-23-2026 for an estimated <strong>$29,052</strong>. We received data on the trade from \u2026",
-          "image": "https://www.quiverquant.com/images/chpt_rect_new.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24ARLO+Sells+5%2C260+Shares",
-          "time": "2026-06-24 00:12:57",
-          "headline": "Insider Sale: Director at $ARLO Sells 5,260 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>Amy M Rothstein, a director at <a href=\"https://www.quiverquant.com/stock/ARLO/\">$ARLO</a>, sold 5,260 shares of the company on 06-22-2026 for an estimated <strong>$68,510</strong>. We received data on the trade fr\u2026",
-          "image": "https://www.quiverquant.com/images/arlo_rect_new.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Congress+Vote%3A+The+House+has+passed+S.+629+-++Emergency+Conservation+Program+Improvement+Act+of+2025",
-          "time": "2026-06-23 23:59:09",
-          "headline": "Congress Vote: The House has passed S. 629 -  Emergency Conservation Program Improvement Act of 2025",
-          "category": "legislation_automated",
-          "summary": "<p>The House has passed S. 629 -  Emergency Conservation Program Improvement Act of 2025. This bill was introduced by <a href=\"https://www.quiverquant.com/congresstrading/politician/Deb%20Fischer-F000463\">Senator Deb \u2026",
-          "image": "https://www.quiverquant.com/images/F000463_congress.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24CIFR+Sells+15%2C000+Shares",
-          "time": "2026-06-23 23:46:33",
-          "headline": "Insider Sale: Director at $CIFR Sells 15,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>CARY M GROSSMAN, a director at <a href=\"https://www.quiverquant.com/stock/CIFR/\">$CIFR</a>, sold 15,000 shares of the company on 06-18-2026 for an estimated <strong>$441,450</strong>. We received data on the trade \u2026",
-          "image": "https://www.quiverquant.com/images/cifr_rect_new.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/General+Fusion+Reports+Significant+LM26+Plasma+Heating+Progress+Toward+Key+Fusion+Milestone",
-          "time": "2026-06-23 23:30:28",
-          "headline": "General Fusion Reports Significant LM26 Plasma Heating Progress Toward Key Fusion Milestone",
-          "category": "press_release_summary",
-          "summary": "<p>General Fusion reports progress towards 1 keV electron temperature milestone, achieving 8.4 million degrees Celsius with LM26 fusion machine.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>General Fusion I\u2026",
-          "image": "https://www.quiverquant.com/images/svac_rect_new.png",
-          "_first_seen": "2026-06-24T00:26:44.983264+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/CEREBRAS+SYSTEMS+%28%24CBRS%29+Releases+Q1+2026+Earnings",
-          "time": "2026-06-23 22:51:09",
-          "headline": "CEREBRAS SYSTEMS ($CBRS) Releases Q1 2026 Earnings",
-          "category": "earnings_automated",
-          "summary": "<p>CEREBRAS SYSTEMS (<a href=\"https://www.quiverquant.com/stock/CBRS/\">$CBRS</a>) posted quarterly earnings results for Q1 2026 on Tuesday, June 23rd. The company reported earnings of -$0.04 per share, beating estimat\u2026",
-          "image": "https://www.quiverquant.com/images/cbrs_rect_new.png",
           "_first_seen": "2026-06-24T00:26:44.983264+00:00"
         }
       ]
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 27669,
+      "rows": 28069,
       "last_seen": "2026-06-24",
       "recent": [
         {
-          "ticker": "DAL",
-          "owner_name": "COMMONWEALTH OF PENNSYLVANIA PUBLIC SCHOOL EMPLS RETRMT SYS",
+          "ticker": "DDOG",
+          "owner_name": "NATIONAL BANK OF CANADA /FI/",
           "owner_title": "Institution",
-          "shares": "151314",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "JANUS HENDERSON GROUP PLC",
-          "owner_title": "Institution",
-          "shares": "32297269",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Sanders Capital, LLC",
-          "owner_title": "Institution",
-          "shares": "29818675",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "BAILLIE GIFFORD & CO",
-          "owner_title": "Institution",
-          "shares": "29387070",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Swiss National Bank",
-          "owner_title": "Institution",
-          "shares": "28236000",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "AMERICAN CENTURY COMPANIES INC",
-          "owner_title": "Institution",
-          "shares": "26600380",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "MASSACHUSETTS FINANCIAL SERVICES CO /MA/",
-          "owner_title": "Institution",
-          "shares": "25952500",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "BANK OF MONTREAL /CAN/",
-          "owner_title": "Institution",
-          "shares": "24640996",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
-          "owner_title": "Institution",
-          "shares": "24620350",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "VICTORY CAPITAL MANAGEMENT INC",
-          "owner_title": "Institution",
-          "shares": "24448590",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "HSBC HOLDINGS PLC",
-          "owner_title": "Institution",
-          "shares": "23474107",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "CALIFORNIA PUBLIC EMPLOYEES RETIREMENT SYSTEM",
-          "owner_title": "Institution",
-          "shares": "21785734",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
-          "owner_title": "Institution",
-          "shares": "21415372",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "RAYMOND JAMES FINANCIAL INC",
-          "owner_title": "Institution",
-          "shares": "21213148",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "Assenagon Asset Management S.A.",
-          "owner_title": "Institution",
-          "shares": "20521783",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "National Pension Service",
-          "owner_title": "Institution",
-          "shares": "19843319",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "PRINCIPAL FINANCIAL GROUP INC",
-          "owner_title": "Institution",
-          "shares": "19149017",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "WELLS FARGO & COMPANY/MN",
-          "owner_title": "Institution",
-          "shares": "32078451",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "DEUTSCHE BANK AG\\",
-          "owner_title": "Institution",
-          "shares": "32308027",
+          "shares": "161651",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AON",
-          "owner_name": "Case Gregory C",
-          "owner_title": "President & CEO",
-          "shares": "1113950",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "ARROWSTREET CAPITAL, LIMITED PARTNERSHIP",
-          "owner_title": "Institution",
-          "shares": "32578171",
-          "_collected": "2026-06-24"
-        },
-        {
-          "ticker": "AMZN",
           "owner_name": "Invesco Ltd.",
           "owner_title": "Institution",
-          "shares": "59604857",
+          "shares": "1336129",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Nuveen, LLC",
+          "owner_name": "Sustainable Growth Advisers, LP",
           "owner_title": "Institution",
-          "shares": "57301203",
+          "shares": "4652553",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Legal & General Group Plc",
+          "owner_name": "Artisan Partners Limited Partnership",
           "owner_title": "Institution",
-          "shares": "55539603",
+          "shares": "4618514",
           "_collected": "2026-06-24"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ALLIANCEBERNSTEIN L.P.",
+          "owner_name": "SG Americas Securities, LLC",
           "owner_title": "Institution",
-          "shares": "53928034",
+          "shares": "4609206",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Asset Management One Co., Ltd.",
+          "owner_title": "Institution",
+          "shares": "4593969",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "CI INVESTMENTS INC.",
+          "owner_title": "Institution",
+          "shares": "4555051",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Cetera Investment Advisers",
+          "owner_title": "Institution",
+          "shares": "4469661",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "HARRIS ASSOCIATES L P",
+          "owner_title": "Institution",
+          "shares": "4463110",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Ninety One UK Ltd",
+          "owner_title": "Institution",
+          "shares": "4454291",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Allspring Global Investments Holdings, LLC",
+          "owner_title": "Institution",
+          "shares": "4437101",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "COMMONWEALTH EQUITY SERVICES, LLC",
+          "owner_title": "Institution",
+          "shares": "4395363",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "WILLIAM BLAIR INVESTMENT MANAGEMENT, LLC",
+          "owner_title": "Institution",
+          "shares": "4387003",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Veritas Asset Management LLP",
+          "owner_title": "Institution",
+          "shares": "4375845",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "FIRST TRUST ADVISORS LP",
+          "owner_title": "Institution",
+          "shares": "4335130",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Appaloosa LP",
+          "owner_title": "Institution",
+          "shares": "4320000",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "TRUIST FINANCIAL CORP",
+          "owner_title": "Institution",
+          "shares": "4256979",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "FARALLON CAPITAL MANAGEMENT LLC",
+          "owner_title": "Institution",
+          "shares": "4218394",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "BANQUE PICTET & CIE SA",
+          "owner_title": "Institution",
+          "shares": "4135006",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Vontobel Holding Ltd.",
+          "owner_title": "Institution",
+          "shares": "4653451",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Treasurer of the State of North Carolina",
+          "owner_title": "Institution",
+          "shares": "4811413",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "PUBLIC EMPLOYEES RETIREMENT ASSOCIATION OF COLORADO",
+          "owner_title": "Institution",
+          "shares": "4838746",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Raymond James Financial Services Advisors, Inc.",
+          "owner_title": "Institution",
+          "shares": "5051637",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "PFA Pension, Forsikringsaktieselskab",
+          "owner_title": "Institution",
+          "shares": "5374012",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Temasek Holdings (Private) Ltd",
+          "owner_title": "Institution",
+          "shares": "5313275",
           "_collected": "2026-06-24"
         }
       ]
@@ -5655,78 +5655,158 @@
       "emoji": "\ud83d\udcb0",
       "label_en": "Executive comp",
       "label_zh": "\u9ad8\u7ba1\u85aa\u916c",
-      "rows": 880,
-      "last_seen": "2026-06-23",
+      "rows": 895,
+      "last_seen": "2026-06-24",
       "recent": [
         {
-          "ticker": "DDOG",
-          "name": "Alexis L\u00ea-Qu\u00f4c",
-          "role": "President, CTO and Co-Founder",
-          "year": "2022",
-          "total_comp": "9543163.0",
-          "salary": "395833.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Keny F. Wilper",
-          "role": "COO",
-          "year": "2023",
-          "total_comp": "1633700.0",
-          "salary": "230000.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "CVS",
-          "name": "Prem S. Shah",
-          "role": "Executive Vice President and Group President",
-          "year": "2024",
-          "total_comp": "13265855.0",
-          "salary": "972917.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "CVS",
-          "name": "J. David Joyner",
+          "ticker": "CRH",
+          "name": "Jim Mintern",
           "role": "CEO",
-          "year": "2024",
-          "total_comp": "17808792.0",
-          "salary": "1103495.0",
+          "year": "2022",
+          "total_comp": "4419756.0",
+          "salary": "904649.0",
           "bonus": null,
-          "_collected": "2026-06-23"
+          "_collected": "2026-06-24"
         },
         {
-          "ticker": "CVS",
-          "name": "Karen S. Lynch",
-          "role": "Former President and CEO",
+          "ticker": "CRH",
+          "name": "Randy Lake",
+          "role": "COO",
           "year": "2024",
-          "total_comp": "23431466.0",
-          "salary": "1191781.0",
+          "total_comp": "8385336.0",
+          "salary": "1521520.0",
           "bonus": null,
-          "_collected": "2026-06-23"
+          "_collected": "2026-06-24"
         },
         {
-          "ticker": "CVS",
-          "name": "Thomas F. Cowhey",
-          "role": "Former CFO",
+          "ticker": "CRH",
+          "name": "Jim Mintern",
+          "role": "CEO",
           "year": "2025",
-          "total_comp": "6715138.0",
-          "salary": "420833.0",
+          "total_comp": "17841808.0",
+          "salary": "1750000.0",
           "bonus": null,
-          "_collected": "2026-06-23"
+          "_collected": "2026-06-24"
         },
         {
-          "ticker": "CVS",
-          "name": "Brian O. Newman",
+          "ticker": "CRH",
+          "name": "Randy Lake",
+          "role": "COO",
+          "year": "2025",
+          "total_comp": "10272161.0",
+          "salary": "1578000.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Nancy Buese",
           "role": "CFO",
           "year": "2025",
-          "total_comp": "9420508.0",
-          "salary": "696970.0",
+          "total_comp": "9345345.0",
+          "salary": "640385.0",
+          "bonus": "1000000.0",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Peter Buckley",
+          "role": "President, International Division",
+          "year": "2025",
+          "total_comp": "5893065.0",
+          "salary": "1042455.0",
           "bonus": null,
-          "_collected": "2026-06-23"
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Alan Connolly",
+          "role": "Former Interim Chief Financial Officer",
+          "year": "2025",
+          "total_comp": "2790187.0",
+          "salary": "597720.0",
+          "bonus": "200000.0",
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Albert Manifold",
+          "role": "Former CEO",
+          "year": "2024",
+          "total_comp": "13582146.0",
+          "salary": "1918594.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Nathan Creech",
+          "role": "President, Americas Division",
+          "year": "2025",
+          "total_comp": "10992579.0",
+          "salary": "1213000.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Nathan Creech",
+          "role": "President, Americas Division",
+          "year": "2024",
+          "total_comp": "6457338.0",
+          "salary": "1170000.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Peter Buckley",
+          "role": "President, International Division",
+          "year": "2024",
+          "total_comp": "4089110.0",
+          "salary": "876244.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Albert Manifold",
+          "role": "Former CEO",
+          "year": "2023",
+          "total_comp": "13760706.0",
+          "salary": "1848196.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Jim Mintern",
+          "role": "CEO",
+          "year": "2023",
+          "total_comp": "6036557.0",
+          "salary": "963518.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Albert Manifold",
+          "role": "Former CEO",
+          "year": "2022",
+          "total_comp": "11475917.0",
+          "salary": "1735275.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
+        },
+        {
+          "ticker": "CRH",
+          "name": "Jim Mintern",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "5699182.0",
+          "salary": "1000219.0",
+          "bonus": null,
+          "_collected": "2026-06-24"
         },
         {
           "ticker": "CVS",
@@ -5735,46 +5815,6 @@
           "year": "2025",
           "total_comp": "10977716.0",
           "salary": "1000000.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "CVS",
-          "name": "Steven H. Nelson",
-          "role": "Executive Vice President and President, Aetna",
-          "year": "2025",
-          "total_comp": "11587110.0",
-          "salary": "1000000.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "CVS",
-          "name": "Prem S. Shah",
-          "role": "Executive Vice President and Group President",
-          "year": "2025",
-          "total_comp": "13379210.0",
-          "salary": "1100000.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "CVS",
-          "name": "J. David Joyner",
-          "role": "CEO",
-          "year": "2025",
-          "total_comp": "21214084.0",
-          "salary": "1500000.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Gregory C. Anderson",
-          "role": "CEO",
-          "year": "2022",
-          "total_comp": "2245306.0",
-          "salary": "260000.0",
           "bonus": null,
           "_collected": "2026-06-23"
         },
@@ -5790,122 +5830,82 @@
         },
         {
           "ticker": "ALGT",
-          "name": "Maurice J. Gallagher, Jr.",
+          "name": "Gregory C. Anderson",
           "role": "CEO",
-          "year": "2023",
-          "total_comp": "937500.0",
-          "salary": "187500.0",
+          "year": "2022",
+          "total_comp": "2245306.0",
+          "salary": "260000.0",
           "bonus": null,
           "_collected": "2026-06-23"
         },
         {
-          "ticker": "ALGT",
-          "name": "Robert J. Neal",
+          "ticker": "CVS",
+          "name": "J. David Joyner",
+          "role": "CEO",
+          "year": "2025",
+          "total_comp": "21214084.0",
+          "salary": "1500000.0",
+          "bonus": null,
+          "_collected": "2026-06-23"
+        },
+        {
+          "ticker": "CVS",
+          "name": "Prem S. Shah",
+          "role": "Executive Vice President and Group President",
+          "year": "2025",
+          "total_comp": "13379210.0",
+          "salary": "1100000.0",
+          "bonus": null,
+          "_collected": "2026-06-23"
+        },
+        {
+          "ticker": "CVS",
+          "name": "Steven H. Nelson",
+          "role": "Executive Vice President and President, Aetna",
+          "year": "2025",
+          "total_comp": "11587110.0",
+          "salary": "1000000.0",
+          "bonus": null,
+          "_collected": "2026-06-23"
+        },
+        {
+          "ticker": "CVS",
+          "name": "Karen S. Lynch",
+          "role": "Former President and CEO",
+          "year": "2024",
+          "total_comp": "23431466.0",
+          "salary": "1191781.0",
+          "bonus": null,
+          "_collected": "2026-06-23"
+        },
+        {
+          "ticker": "CVS",
+          "name": "Brian O. Newman",
           "role": "CFO",
-          "year": "2023",
-          "total_comp": "1811834.0",
-          "salary": "235000.0",
-          "bonus": "600000.0",
+          "year": "2025",
+          "total_comp": "9420508.0",
+          "salary": "696970.0",
+          "bonus": null,
           "_collected": "2026-06-23"
         },
         {
           "ticker": "CVS",
           "name": "Thomas F. Cowhey",
           "role": "Former CFO",
-          "year": "2024",
-          "total_comp": "7644364.0",
-          "salary": "998387.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Drew A. Wells",
-          "role": "Chief Commercial Officer",
-          "year": "2023",
-          "total_comp": "1820464.0",
-          "salary": "235000.0",
-          "bonus": "608630.0",
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Gregory C. Anderson",
-          "role": "CEO",
-          "year": "2023",
-          "total_comp": "8623742.0",
-          "salary": "65000.0",
-          "bonus": "3872.0",
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Maurice J. Gallagher, Jr.",
-          "role": "CEO",
-          "year": "2024",
-          "total_comp": "666667.0",
-          "salary": "666667.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Keny F. Wilper",
-          "role": "COO",
-          "year": "2024",
-          "total_comp": "931435.0",
-          "salary": "240000.0",
-          "bonus": null,
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Micah J. Richins",
-          "role": "President, Sunseeker Resorts",
-          "year": "2024",
-          "total_comp": "1149971.0",
-          "salary": "300001.0",
-          "bonus": "300000.0",
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Drew A. Wells",
-          "role": "Chief Commercial Officer",
-          "year": "2024",
-          "total_comp": "1162970.0",
-          "salary": "240000.0",
-          "bonus": "350000.0",
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Robert J. Neal",
-          "role": "CFO",
-          "year": "2024",
-          "total_comp": "1162970.0",
-          "salary": "240000.0",
-          "bonus": "350000.0",
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Gregory C. Anderson",
-          "role": "CEO",
-          "year": "2024",
-          "total_comp": "1756230.0",
-          "salary": "400000.0",
-          "bonus": "200000.0",
-          "_collected": "2026-06-23"
-        },
-        {
-          "ticker": "ALGT",
-          "name": "Micah J. Richins",
-          "role": "President, Sunseeker Resorts",
           "year": "2025",
-          "total_comp": "918838.0",
-          "salary": "310963.0",
-          "bonus": "600000.0",
+          "total_comp": "6715138.0",
+          "salary": "420833.0",
+          "bonus": null,
+          "_collected": "2026-06-23"
+        },
+        {
+          "ticker": "CVS",
+          "name": "J. David Joyner",
+          "role": "CEO",
+          "year": "2024",
+          "total_comp": "17808792.0",
+          "salary": "1103495.0",
+          "bonus": null,
           "_collected": "2026-06-23"
         }
       ]
@@ -8101,11 +8101,11 @@
       },
       {
         "ticker": "TMHC",
-        "category": "Going-Private",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "1129",
@@ -8661,11 +8661,11 @@
       },
       {
         "ticker": "DEVS",
-        "category": "Restructuring",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Restructuring"
+        "detail": "Delistings"
       },
       {
         "ticker": "FULC",
@@ -9253,11 +9253,11 @@
       },
       {
         "ticker": "FMC",
-        "category": "Strategic Reviews",
-        "confidence": "high",
+        "category": "Divestitures",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Strategic Reviews"
+        "detail": "Divestitures"
       },
       {
         "ticker": "GPRO",
@@ -9293,11 +9293,11 @@
       },
       {
         "ticker": "SGMO",
-        "category": "Strategic Reviews",
+        "category": "Restructuring",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Strategic Reviews"
+        "detail": "Restructuring"
       },
       {
         "ticker": "SNSE",
@@ -10981,14 +10981,6 @@
       },
       {
         "ticker": "300013",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
-      },
-      {
-        "ticker": "IFF",
         "category": "Divestitures",
         "confidence": "high",
         "activist": false,
@@ -28621,11 +28613,11 @@
       },
       {
         "ticker": "LPG",
-        "category": "Other Situations",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other Situations"
+        "detail": "Other"
       },
       {
         "ticker": "LIFE",
@@ -32604,14 +32596,6 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "NWSLL",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
-      },
-      {
         "ticker": "NEE-PS",
         "category": "Acquisitions",
         "confidence": "high",
@@ -32829,11 +32813,11 @@
       },
       {
         "ticker": "UMC",
-        "category": "Other",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "YPF",
@@ -34956,6 +34940,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "OPIRQ",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
         "ticker": "TPST",
         "category": "Delistings",
         "confidence": "high",
@@ -34996,6 +34988,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "AMC",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "SHFSW",
         "category": "Delistings",
         "confidence": "high",
@@ -35018,6 +35018,14 @@
         "activist": false,
         "filer": null,
         "detail": "Going-Private"
+      },
+      {
+        "ticker": "ZCMD",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "AREBW",
@@ -35213,11 +35221,11 @@
       },
       {
         "ticker": "CIMG",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "CBGGF",
@@ -35612,6 +35620,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "VOXR",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "CMLSQ",
         "category": "Restructuring",
         "confidence": "high",
@@ -35989,11 +36005,11 @@
       },
       {
         "ticker": "CBAT",
-        "category": "Delistings",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "SKYE",
@@ -36556,6 +36572,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "CRTMF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "AFJKU",
         "category": "Delistings",
         "confidence": "high",
@@ -36820,6 +36844,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "DAIO",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "EVTV",
         "category": "Delistings",
         "confidence": "high",
@@ -36949,6 +36981,14 @@
       },
       {
         "ticker": "PSA-PS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CRBD",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -37493,11 +37533,11 @@
       },
       {
         "ticker": "ORLA",
-        "category": "Other",
-        "confidence": "medium",
+        "category": "Acquisitions",
+        "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "SKK",
@@ -37674,6 +37714,126 @@
         "activist": false,
         "filer": null,
         "detail": "Strategic Reviews"
+      },
+      {
+        "ticker": "CASIF",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "AUGO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "AZI",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "BLDP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "CCJ",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "GDTC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "EPOW",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "LFS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "QMMM",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "SDM",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "BOLD",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ETR",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "FISV",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "TONX",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "EQH-PC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       }
     ],
     "unusual_options": [
@@ -38116,20 +38276,14 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17518,
-        "wow_pct": 0.34,
-        "hot": true
-      },
-      {
-        "ticker": "GOOGL",
-        "stars": 195916,
-        "wow_pct": 0.04,
+        "stars": 17527,
+        "wow_pct": 0.39,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14615,
-        "wow_pct": 0.04,
+        "stars": 14617,
+        "wow_pct": 0.05,
         "hot": true
       },
       {
@@ -38139,32 +38293,38 @@
         "hot": true
       },
       {
+        "ticker": "GOOGL",
+        "stars": 195908,
+        "wow_pct": 0.03,
+        "hot": true
+      },
+      {
+        "ticker": "IBM",
+        "stars": 7523,
+        "wow_pct": 0.03,
+        "hot": true
+      },
+      {
         "ticker": "META",
-        "stars": 246083,
+        "stars": 246081,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186733,
+        "stars": 186723,
+        "wow_pct": 0.03,
+        "hot": true
+      },
+      {
+        "ticker": "U",
+        "stars": 19504,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77129,
-        "wow_pct": 0.01,
-        "hot": false
-      },
-      {
-        "ticker": "IBM",
-        "stars": 7522,
-        "wow_pct": 0.01,
-        "hot": false
-      },
-      {
-        "ticker": "U",
-        "stars": 19501,
+        "stars": 77133,
         "wow_pct": 0.01,
         "hot": false
       },
@@ -38182,7 +38342,7 @@
       },
       {
         "ticker": "GTLB",
-        "stars": 24460,
+        "stars": 24461,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -38636,6 +38796,14 @@
           "sellers": 6
         },
         {
+          "ticker": "SYRE",
+          "buy_usd": 0.0,
+          "sell_usd": 403873065.0,
+          "net_usd": -403873065.0,
+          "buyers": 0,
+          "sellers": 9
+        },
+        {
           "ticker": "FLY",
           "buy_usd": 0.0,
           "sell_usd": 384000000.0,
@@ -38666,14 +38834,6 @@
           "net_usd": -241928893.0,
           "buyers": 0,
           "sellers": 41
-        },
-        {
-          "ticker": "LTH",
-          "buy_usd": 0.0,
-          "sell_usd": 200295431.0,
-          "net_usd": -200295431.0,
-          "buyers": 0,
-          "sellers": 7
         }
       ]
     },
@@ -39649,88 +39809,123 @@
     ],
     "news": [
       {
-        "headline": "Press Release: Hakeem Jeffries criticizes Trump administration\u2019s Iran war funding in press conference",
+        "headline": "MoonLake Immunotherapeutics Prices $200 Million Public Offering of Class A Ordinary Shares and Pre-Funded Warrants",
         "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Hakeem+Jeffries+criticizes+Trump+administration%E2%80%99s+Iran+war+funding+in+press+conference"
+        "category": "press_release_summary",
+        "time": "2026-06-24 03:10:24",
+        "url": "https://www.quiverquant.com/news/MoonLake+Immunotherapeutics+Prices+%24200+Million+Public+Offering+of+Class+A+Ordinary+Shares+and+Pre-Funded+Warrants"
       },
       {
-        "headline": "Press Release: Al Green Opposes H.R. 1181 in House Rules Committee Hearing",
+        "headline": "Press Release: House passes housing bill with Vel\u00e1zquez-backed cooperative housing and oversight provisions",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Al+Green+Opposes+H.R.+1181+in+House+Rules+Committee+Hearing"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+House+passes+housing+bill+with+Vel%C3%A1zquez-backed+cooperative+housing+and+oversight+provisions"
       },
       {
-        "headline": "Press Release: Steven Horsford Backs Passage of Housing Legislation in Congress",
+        "headline": "Press Release: Ayanna Pressley Bills Pass in Congress Housing Package",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Steven+Horsford+Backs+Passage+of+Housing+Legislation+in+Congress"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Ayanna+Pressley+Bills+Pass+in+Congress+Housing+Package"
       },
       {
-        "headline": "Press Release: Langworthy and Gottheimer Introduce BUSES Act on Bus Idling Rules",
+        "headline": "Press Release: Rep. Yassamin Ansari Votes to Advance Bipartisan Housing Package",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Langworthy+and+Gottheimer+Introduce+BUSES+Act+on+Bus+Idling+Rules"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Yassamin+Ansari+Votes+to+Advance+Bipartisan+Housing+Package"
       },
       {
-        "headline": "Press Release: Julie Fedorchak backs final passage of 21st Century ROAD to Housing Act",
+        "headline": "Press Release: Brad Schneider Announces House Passage of Bipartisan Housing Bill",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Julie+Fedorchak+backs+final+passage+of+21st+Century+ROAD+to+Housing+Act"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brad+Schneider+Announces+House+Passage+of+Bipartisan+Housing+Bill"
       },
       {
-        "headline": "Press Release: Rep. Eric Burlison to Host Press Conference on Healthcare Affordability Package",
+        "headline": "Press Release: Susie Lee Announces House Passage of Bipartisan Housing Bill",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Eric+Burlison+to+Host+Press+Conference+on+Healthcare+Affordability+Package"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Susie+Lee+Announces+House+Passage+of+Bipartisan+Housing+Bill"
       },
       {
-        "headline": "Press Release: Brad Sherman Backs Bipartisan Amendment Calling for Release of Armenian Detainees",
+        "headline": "Press Release: Vince Fong Backs Housing Bill Passed by House, Sent to President's Desk",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brad+Sherman+Backs+Bipartisan+Amendment+Calling+for+Release+of+Armenian+Detainees"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Vince+Fong+Backs+Housing+Bill+Passed+by+House%2C+Sent+to+President%27s+Desk"
       },
       {
-        "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in House Housing Legislation",
+        "headline": "Press Release: Adrian Smith Celebrates House Passage of Wildfire Disaster Assistance Bill",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+House+Housing+Legislation"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Adrian+Smith+Celebrates+House+Passage+of+Wildfire+Disaster+Assistance+Bill"
       },
       {
-        "headline": "Press Release: Lateefah Simon Bill on Small Business Cybersecurity Passes House Unanimously",
+        "headline": "Press Release: Juan Vargas Applauds House Passage of Bipartisan Housing Bill",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Lateefah+Simon+Bill+on+Small+Business+Cybersecurity+Passes+House+Unanimously"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Juan+Vargas+Applauds+House+Passage+of+Bipartisan+Housing+Bill"
       },
       {
-        "headline": "Press Release: Mike Flood Comments on Final Passage of Housing Bill",
+        "headline": "Press Release: Ashley Hinson backs housing bill targeting investor purchases of Iowa homes",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Flood+Comments+on+Final+Passage+of+Housing+Bill"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Ashley+Hinson+backs+housing+bill+targeting+investor+purchases+of+Iowa+homes"
       },
       {
-        "headline": "Press Release: Brett Guthrie Supports Bipartisan Housing Package in House Vote",
+        "headline": "Press Release: Scott Peters says House passed bipartisan housing package",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Brett+Guthrie+Supports+Bipartisan+Housing+Package+in+House+Vote"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Scott+Peters+says+House+passed+bipartisan+housing+package"
       },
       {
-        "headline": "Press Release: Andy Harris Announces $6.3 Million Head Start Grant for SHORE UP Programs",
+        "headline": "Press Release: Young Kim Helps Advance Housing Legislation in House",
         "ticker": null,
         "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Andy+Harris+Announces+%246.3+Million+Head+Start+Grant+for+SHORE+UP+Programs"
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Young+Kim+Helps+Advance+Housing+Legislation+in+House"
+      },
+      {
+        "headline": "Press Release: Maggie Goodlander Backed Housing Bill Sent to President\u2019s Desk",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Maggie+Goodlander+Backed+Housing+Bill+Sent+to+President%E2%80%99s+Desk"
+      },
+      {
+        "headline": "Press Release: Dan Meuser Backs House Passage of Housing Affordability Bill",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-24 02:21:36",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Dan+Meuser+Backs+House+Passage+of+Housing+Affordability+Bill"
+      },
+      {
+        "headline": "Insider Sale: Director at $SYRE Sells 20,000 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-06-24 01:45:34",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24SYRE+Sells+20%2C000+Shares"
+      },
+      {
+        "headline": "uniQure Announces Pricing of $225 Million Public Offering of Ordinary Shares",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-24 01:20:23",
+        "url": "https://www.quiverquant.com/news/uniQure+Announces+Pricing+of+%24225+Million+Public+Offering+of+Ordinary+Shares"
+      },
+      {
+        "headline": "CEA Industries and YZi Labs Reach Governance Agreement, Add New Directors and End Consent Solicitation",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-24 00:40:22",
+        "url": "https://www.quiverquant.com/news/CEA+Industries+and+YZi+Labs+Reach+Governance+Agreement%2C+Add+New+Directors+and+End+Consent+Solicitation"
       },
       {
         "headline": "Press Release: Mariannette Miller-Meeks Votes to Advance Housing Bill to President Trump\u2019s Desk",
@@ -39740,27 +39935,6 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Mariannette+Miller-Meeks+Votes+to+Advance+Housing+Bill+to+President+Trump%E2%80%99s+Desk"
       },
       {
-        "headline": "Press Release: House Passes Bipartisan Housing Package Backed by Emanuel Cleaver",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+House+Passes+Bipartisan+Housing+Package+Backed+by+Emanuel+Cleaver"
-      },
-      {
-        "headline": "Press Release: Ann Wagner Votes for Housing Legislation",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Ann+Wagner+Votes+for+Housing+Legislation"
-      },
-      {
-        "headline": "Press Release: Raja Krishnamoorthi Questions Witnesses at Shadow Hearing on Public Health, Baby Food Safety and Vaping",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Raja+Krishnamoorthi+Questions+Witnesses+at+Shadow+Hearing+on+Public+Health%2C+Baby+Food+Safety+and+Vaping"
-      },
-      {
         "headline": "Press Release: Sharice Davids Votes for Bipartisan Housing Package to Lower Costs",
         "ticker": null,
         "category": "legislation_automated",
@@ -39768,25 +39942,11 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Sharice+Davids+Votes+for+Bipartisan+Housing+Package+to+Lower+Costs"
       },
       {
-        "headline": "Press Release: John Larson Votes to Advance Bipartisan Housing Bill to the President\u2019s Desk",
+        "headline": "Press Release: Troy Downing\u2019s Whole-Home Repairs Act Included in House Housing Legislation",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Votes+to+Advance+Bipartisan+Housing+Bill+to+the+President%E2%80%99s+Desk"
-      },
-      {
-        "headline": "Press Release: Chu, Schiff, House Colleagues Introduce Bill to Honor Holocaust Rescue Efforts",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-24 00:22:22",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Chu%2C+Schiff%2C+House+Colleagues+Introduce+Bill+to+Honor+Holocaust+Rescue+Efforts"
-      },
-      {
-        "headline": "Insider Sale: CRO of $CHPT Sells 4,072 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-24 00:12:57",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+CRO+of+%24CHPT+Sells+4%2C072+Shares"
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Troy+Downing%E2%80%99s+Whole-Home+Repairs+Act+Included+in+House+Housing+Legislation"
       }
     ],
     "wsb": [
@@ -41643,7 +41803,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.34% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.39% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -41656,7 +41816,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,598,503 reviews \u00b7 github_momentum: +0.04% stars \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,598,503 reviews \u00b7 github_momentum: +0.03% stars \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MSFT",
