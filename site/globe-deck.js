@@ -490,7 +490,8 @@
       li.innerHTML =
         '<span class="gd-r-sm"></span>' +
         '<span class="gd-r-main"><span class="gd-r-idx">' + m.flag + ' ' + bilingual(m.index_name_en, m.index_name_zh) + '</span>' +
-        '<span class="gd-r-px">' + (m.index_price || "—") + ' <em style="color:' + ((m.index_chg_pct || 0) >= 0 ? "var(--up)" : "var(--down)") + '">' + ((m.index_chg_pct || 0) >= 0 ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em></span></span>' +
+        '<span class="gd-r-px"><span class="nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + (m.index_price || "—") + '</span> ' +
+        '<em class="nb-chg ' + ((m.index_chg_pct || 0) >= 0 ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '">' + ((m.index_chg_pct || 0) >= 0 ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em></span></span>' +
         '<span class="gd-r-state"><span class="gd-r-dot"></span><span class="gd-r-txt"></span><span class="gd-r-cd"></span></span>';
       li.addEventListener("click", function () { selectMarket(m); });
       li.addEventListener("mouseenter", function () { hovered = m.cc; });
@@ -546,6 +547,10 @@
   // ---- boot ----------------------------------------------------------------
   function boot(topo) {
     buildGeometry(topo); readPalette(); buildStars(); buildSidebar(); size();
+    // The clock is built lazily (after a topo fetch + idle callback), so live.js's
+    // first poll already ran against an empty DOM — nudge it to patch the fresh
+    // .nb-px/.nb-chg index nodes now instead of waiting a full poll interval.
+    if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
     if (poster) poster.style.opacity = "0";
     canvas.style.opacity = "1";
     render(performance.now());

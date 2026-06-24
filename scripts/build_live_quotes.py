@@ -46,7 +46,7 @@ _SYMBOL_RE = re.compile(r"^[A-Z0-9^][A-Z0-9.=^-]{0,19}$")
 _DATA_SYM_RE = re.compile(r'data-sym="([^"]+)"')
 
 # CORE live universe — always fetched even if no page links them yet. Drives the
-# landing "market strip" + dashboard index/futures tiles. All keyless via Yahoo.
+# landing Market clock rows + dashboard index/futures tiles. All keyless via Yahoo.
 US_INDEXES = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX"]
 US_FUTURES = ["ES=F", "NQ=F", "YM=F", "RTY=F"]              # overnight, reference only
 INTL_INDEXES = [
@@ -61,10 +61,11 @@ INTL_INDEXES = [
     "^STOXX50E",   # Euro Stoxx 50
     "^AXJO",       # ASX 200 (Australia)
     "^KS11",       # KOSPI (South Korea)
+    "^TWII",       # TAIEX (Taiwan) — landing market-clock row
     "^BSESN",      # BSE Sensex (India)
 ]
 CORE_ETFS = ["SPY", "QQQ", "DIA", "IWM"]
-# Headline cross-asset set the dashboard market tiles + landing strip reference,
+# Headline cross-asset set the dashboard market tiles reference,
 # kept in CORE so they're live regardless of when the site's data-sym is scraped.
 CORE_COMMODITIES = ["GC=F", "SI=F", "HG=F", "CL=F", "DX-Y.NYB"]
 CORE_FX = ["EURUSD=X", "USDJPY=X", "GBPUSD=X", "AUDUSD=X", "USDCAD=X", "USDCNH=X"]
