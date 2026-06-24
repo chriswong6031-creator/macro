@@ -120,6 +120,23 @@ def test_credit_leg_combines_hy_and_hyg_tlt():
     assert out["legs"]["credit"]["intensity"] == 1.0
 
 
+def test_technical_leg_fires_and_counts_as_leading():
+    # technical breakdown of the indexes (from mtf_monitor) is a leading leg
+    latest = _benign_latest()
+    latest["conditions"]["complacency"]["state"] = "hidden_fragility"  # 1 leading hot
+    out = rs.compute(latest, gex_index=_gex_long(), tech_intensity=0.9)
+    assert out["legs"]["technical"]["available"] is True
+    assert out["legs"]["technical"]["intensity"] == 0.9
+    # complacency(1.0) + technical(0.9) = 2 hot leading legs -> conjunction escalates
+    assert out["conjunction"]["escalated"] is True
+    assert "technical" in out["conjunction"]["hot_leading_legs"]
+
+
+def test_technical_leg_absent_when_none():
+    out = rs.compute(_benign_latest(), gex_index=_gex_long(), tech_intensity=None)
+    assert out["legs"]["technical"]["available"] is False
+
+
 def test_graceful_no_legs():
     out = rs.compute({})
     assert out["score"] is None

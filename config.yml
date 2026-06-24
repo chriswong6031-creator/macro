@@ -1563,6 +1563,7 @@ engine:
       complacency: 1.0       # hidden-fragility conjunction (keystone leg)
       breadth_div: 0.9       # index near highs while %>200dma weak
       dealer_gamma: 0.9      # dealer short-gamma / below flip / vol-hole
+      technical: 0.8         # major indexes rolling over/breaking down (mtf_monitor)
       extension: 0.8         # parabolic / cohort-stretch froth (optional leg)
       vol_structure: 0.7     # backwardation (stress) or rich-VRP+calm (complacency)
       credit: 0.6            # HY OAS 21d widening + HYG-TLT rolling down

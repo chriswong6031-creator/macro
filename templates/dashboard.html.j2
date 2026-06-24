@@ -1577,6 +1577,46 @@
   </div>
   {% endif %}
 
+  <!-- ============ MULTI-TIMEFRAME TECHNICAL MONITOR (engine/mtf_monitor.py) ============ -->
+  {% if mode == 'macro' and mtf and mtf.groups %}
+  {% set PCOL = {'falling':'var(--act)','rolling':'var(--warn)','basing':'var(--muted)','turning':'var(--up)','rising':'var(--up)','unknown':'var(--muted)'} %}
+  {% set TCOL = {'breakdown':'var(--act)','rolling-over':'var(--warn)','weakening':'var(--orange)','bottoming':'var(--up)','firm':'var(--up)','neutral':'var(--muted)'} %}
+  {% set TZH = {'breakdown':'破位','rolling-over':'走弱','weakening':'转弱','bottoming':'筑底','firm':'稳健','neutral':'中性'} %}
+  <div class="panel span12" id="mtf-monitor">
+    <h2>🕸️ {{ t('Multi-timeframe technical monitor', '多周期技术监测') }}
+      {{ help('Monthly / weekly / daily (/ 4h) MACD-RSI posture across the major indexes, asset classes and ALL sector ETFs (engine/mtf_monitor.py, reusing the leak-aware cycles.py toolkit). Watches for breakdowns, momentum rolls and bearish RSI divergences — the TOP-side mirror of the bottoming-alignment engine. Phases describe MOMENTUM, not price targets; the major-index breakdown read feeds the risk state. A narrow tape shows up here as firm indexes over breaking-down sectors.', '在主要指数、大类资产与全部行业ETF上做月线/周线/日线（/4小时）的 MACD-RSI 态势监测（engine/mtf_monitor.py，复用 cycles.py 无前视工具）。监测破位、动能走弱与看跌RSI背离 —— 是筑底对齐引擎的“顶部”镜像。相位描述的是动能而非价格目标；主要指数的破位读数会喂入风险状态。窄幅行情会表现为指数稳健而行业破位。') }}
+    </h2>
+    <p class="muted sm" style="margin:-2px 0 10px">{{ t('Breakdowns', '破位') }} <b style="color:var(--act)">{{ mtf.breakdown_count }}</b> · {{ t('rolling over', '走弱') }} <b style="color:var(--warn)">{{ mtf.rolling_count }}</b>{% if mtf.technical_intensity is not none %} · {{ t('index technical stress', '指数技术压力') }} <b>{{ (mtf.technical_intensity*100)|round|int }}%</b>{% endif %}{% if not mtf.has_4h %} · <span class="muted">{{ t('4h shown when intraday store present', '有日内数据时显示4小时') }}</span>{% endif %}</p>
+    {% for grp in [('indexes','Indexes','指数'),('assets','Asset classes','大类资产'),('sectors','Sector ETFs','行业ETF')] %}
+    {% if mtf.groups[grp[0]] %}
+    <div class="sm" style="font-weight:700;margin:10px 0 4px">{{ t(grp[1], grp[2]) }}</div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="text-align:left;color:var(--muted)">
+          <th style="padding:3px 6px">{{ t('Name', '名称') }}</th>
+          <th style="padding:3px 6px">M</th><th style="padding:3px 6px">W</th>
+          <th style="padding:3px 6px">3D</th><th style="padding:3px 6px">D</th>
+          {% if mtf.has_4h %}<th style="padding:3px 6px">4H</th>{% endif %}
+          <th style="padding:3px 6px">{{ t('Read', '判定') }}</th>
+        </tr></thead>
+        <tbody>
+        {% for r in mtf.groups[grp[0]] %}
+        <tr style="border-top:1px solid var(--line)">
+          <td style="padding:3px 6px"><b>{{ r.ticker }}</b> <span class="muted">{{ t(r.en, r.zh) }}</span>{% if r.flags %} <span class="muted" style="font-size:10px">· {{ r.flags|join(', ') }}</span>{% endif %}</td>
+          {% for tf in ['M','W','3D','D'] %}<td style="padding:3px 6px;color:{{ PCOL[r.tfs[tf].phase] }}">{{ t(r.tfs[tf].phase_en, r.tfs[tf].phase_zh) }}</td>{% endfor %}
+          {% if mtf.has_4h %}<td style="padding:3px 6px;color:{{ PCOL[r.tfs['4H'].phase] if '4H' in r.tfs else 'var(--muted)' }}">{% if '4H' in r.tfs %}{{ t(r.tfs['4H'].phase_en, r.tfs['4H'].phase_zh) }}{% else %}—{% endif %}</td>{% endif %}
+          <td style="padding:3px 6px;font-weight:700;color:{{ TCOL[r.tag] }}">{{ t(r.tag, TZH[r.tag]) }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div class="muted" style="font-size:11px;margin-top:8px">{{ t(mtf.disclaimer, mtf.disclaimer) }}</div>
+  </div>
+  {% endif %}
+
   <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
   {% if latest.dislocation %}
   {% set DL = latest.dislocation %}

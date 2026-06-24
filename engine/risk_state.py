@@ -50,6 +50,7 @@ _DEFAULT_WEIGHTS = {
     "complacency": 1.0,     # hidden-fragility conjunction (the keystone leg)
     "breadth_div": 0.9,     # index near highs while %>200dma weak
     "dealer_gamma": 0.9,    # dealer short-gamma / below flip / vol-hole
+    "technical": 0.8,       # indexes breaking down / rolling over across timeframes
     "extension": 0.8,       # parabolic / cohort-stretch froth (optional leg)
     "vol_structure": 0.7,   # backwardation (stress) or rich-VRP+calm (complacency)
     "credit": 0.6,          # HY OAS 21d widening + HYG-TLT rolling down
@@ -67,7 +68,7 @@ _ALERT_FROM = "elevated"   # state at/above which the loud banner + alert fire
 # leading legs get averaged down by many calm slow legs — exactly how 2026-06-23 read
 # "neutral" while breadth divergence was at max. So when >=2 LEADING legs fire hard,
 # the STATE (and score) is floored — conjunction is itself the early warning.
-_LEADING = ("complacency", "breadth_div", "dealer_gamma", "extension", "vol_structure")
+_LEADING = ("complacency", "breadth_div", "dealer_gamma", "technical", "extension", "vol_structure")
 _DEFAULT_CONJUNCTION = {"threshold": 0.6, "floor_2": "caution", "floor_3": "elevated"}
 
 _STATE_ORDER = ["risk-on", "neutral", "caution", "elevated", "risk-off"]
@@ -241,6 +242,19 @@ def _leg_extension(board_stretch):
     return intensity, f"leaders {board_stretch}", "龙头延展度"
 
 
+def _leg_technical(tech_intensity):
+    """Multi-timeframe technical breakdown of the major indexes, from the prior
+    build's mtf_monitor (engine/mtf_monitor.py). tech_intensity in [0,1] = how
+    broadly the indexes are rolling over / breaking down on the higher timeframes."""
+    i = _num(tech_intensity)
+    if i is None:
+        return None, None, None
+    i = _clip01(i)
+    if i <= 0:
+        return 0.0, "indexes technically firm", "指数技术面稳健"
+    return i, f"indexes rolling over / breaking down ({i:.0%})", "指数多周期走弱/破位"
+
+
 def _leg_turning_point(latest: dict):
     tp = (latest or {}).get("turning_point") or {}
     state = tp.get("state")
@@ -273,11 +287,11 @@ def _leg_macro_backdrop(latest: dict):
 
 
 # --- core --------------------------------------------------------------------
-def compute(latest: dict, *, gex_index=None, hyg_tlt_roc=None,
-            board_stretch=None, cfg: dict | None = None) -> dict:
+def compute(latest: dict, *, gex_index=None, hyg_tlt_roc=None, board_stretch=None,
+            tech_intensity=None, cfg: dict | None = None) -> dict:
     """Pure function: fuse the legs from an already-assembled `latest` dict plus a
-    few injected reads (gex_index, hyg_tlt_roc, board_stretch). Returns the
-    risk_state.v1 dict. Never raises."""
+    few injected reads (gex_index, hyg_tlt_roc, board_stretch, tech_intensity).
+    Returns the risk_state.v1 dict. Never raises."""
     cfg = cfg or _cfg()
     weights = cfg["weights"]
     bands = cfg["bands"]
@@ -289,6 +303,7 @@ def compute(latest: dict, *, gex_index=None, hyg_tlt_roc=None,
         "vol_structure": _leg_vol_structure(cond),
         "credit": _leg_credit(cond, hyg_tlt_roc, cfg["hyg_tlt_scale"]),
         "dealer_gamma": _leg_dealer_gamma(gex_index),
+        "technical": _leg_technical(tech_intensity),
         "extension": _leg_extension(board_stretch),
         "turning_point": _leg_turning_point(latest),
         "cross_asset": _leg_cross_asset(latest),
@@ -461,7 +476,15 @@ def snapshot(latest: dict, root=None) -> dict:
         log.warning("risk_state: hyg/tlt read failed: %s", e)
         hyg_tlt_roc = None
     try:
-        return compute(latest, gex_index=gex_index, hyg_tlt_roc=hyg_tlt_roc)
+        from engine import mtf_monitor
+        mm = mtf_monitor.published(root=root) or {}
+        tech_intensity = mm.get("technical_intensity")
+    except Exception as e:  # pragma: no cover - defensive
+        log.warning("risk_state: mtf_monitor read failed: %s", e)
+        tech_intensity = None
+    try:
+        return compute(latest, gex_index=gex_index, hyg_tlt_roc=hyg_tlt_roc,
+                       tech_intensity=tech_intensity)
     except Exception as e:  # pragma: no cover - defensive
         log.error("risk_state compute failed: %s", e)
         return {"schema": "risk_state.v1", "score": None, "state": None,
