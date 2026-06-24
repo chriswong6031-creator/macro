@@ -2499,6 +2499,21 @@ risk_brain:
   horizon_d: 21                  # trading-day horizon for the falsifiable drawdown thesis
   dd_threshold_pct: 5.0          # the SPY drawdown the elevated-state thesis is graded on
 
+# Risk Radar self-correction loop (engine/risk_radar_review.py). Opus reviews the radar's graded
+# MISTAKES (false positives + missed drawdowns) and proposes calibration nudges to cut FPs + catch
+# misses. TWO guards: a CODE clamp (bands +/-12 & ordered, leg thr_pct in [0.80,0.97], prob_cal in
+# [0,0.6] & monotonic, alert_from >= caution) AND a do-no-harm BACKTEST gate (apply only if
+# historical alert F1 improves full+2020 without breaking the evidence gate). Default-off w/o token.
+risk_radar_review:
+  enabled: true                  # MASTER SWITCH (no-op without a token)
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
+  api_key_env: ANTHROPIC_API_KEY
+  model: claude-opus-4-8
+  interval_days: 7               # retune weekly (needs matured outcomes)
+  max_tokens: 4000
+  min_graded: 30                 # don't retune until >=30 calls have been graded
+  band_max_delta: 12.0           # bands may move at most this far from the baked default
+
 # =============================================================================
 # White House Watch — primary-source policy monitor + Claude-Opus alert desk
 # (engine/whitehouse_feed.py + engine/whitehouse_brain.py + scripts/build_whitehouse.py).

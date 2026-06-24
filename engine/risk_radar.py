@@ -96,9 +96,14 @@ _SCARE_LABEL = {
     "vol":     ("Volatility event", "波动率事件"),
 }
 
-# LOUD + EARLY tiers on the 0-100 sub-score scale (per user: high recall, accept FP; the forward
-# log + Opus retune handle precision). Defaults; overridable via data/risk_radar/calibration.json.
-_DEFAULT_BANDS = {"watch": 45.0, "caution": 58.0, "elevated": 70.0, "risk_off": 85.0}
+# LOUD + EARLY tiers on the 0-100 sub-score scale. CALIBRATED via a band sweep vs forward
+# drawdowns (the naive 45/58/70/85 fired ~81% of days in 2020+ = useless precision; the MAX-of-4
+# sub-score inflates the scale). 65/78/87/93 cuts the 2020+ fire-rate ~81%->45% while LIFTING
+# precision (0.21->0.30) and keeping high recall (~0.75) — F1 0.35->0.43. Interim default;
+# the FP/sensitivity tuning workflow + the Opus self-correction loop refine per scare-type via
+# data/risk_radar/calibration.json. Still loud+early (watch/caution fire early; elevated = the
+# loud banner).
+_DEFAULT_BANDS = {"watch": 65.0, "caution": 78.0, "elevated": 87.0, "risk_off": 93.0}
 _STATE_ORDER = ["calm", "watch", "caution", "elevated", "risk-off"]
 _ALERT_FROM = "elevated"            # loud banner fires at/above this
 
