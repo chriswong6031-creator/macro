@@ -376,6 +376,23 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("risk-radar failed: %s", e)
         latest["risk_radar"] = None
+    # Vol-Shock Risk Predictor (engine/vol_shock_scorecard.py): ONE forward 0-100
+    # caution gauge that FUSES the fast/LEADING precursors which flash before a vol
+    # shock (cross-asset concentration, dealer short-gamma, VIX term inversion,
+    # compressed VRP/skew, complacent positioning, the active turning-point caution)
+    # — all already computed on `latest` but never co-fused. Runs LAST so it reads
+    # every leaf above (conditions / cross_asset / dislocation / turning_point /
+    # macro_risk / market_gamma). DISPLAY-ONLY / validation-accruing: never scored,
+    # feeds no allocation; each firing is logged + graded on forward data (the
+    # outcome log can't be tuned post-hoc). Additive, never fatal.
+    try:
+        from engine import vol_shock_scorecard as _vss
+        latest["vol_shock"] = _vss.snapshot(latest)
+        _vss.append_log(latest["vol_shock"], latest)
+        _vss.resolve_from_store()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("vol-shock scorecard failed: %s", e)
+        latest["vol_shock"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal
