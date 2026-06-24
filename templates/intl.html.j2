@@ -588,7 +588,7 @@
       {% if b.spark_svg %}{{ b.spark_svg|safe }}{% endif %}
       <div class="row small" style="gap:10px;margin-top:5px">
         {% if b.alpha is defined and b.alpha is not none %}<span>α <b>{{ '%+.2f'|format(b.alpha) }}</b></span>{% endif %}
-        {% if b.price is not none %}<span class="muted">{{ b.price }}</span>{% endif %}
+        {% if b.price is not none %}<span class="nb-px muted" data-sym="{{ b.ticker }}" data-mkt="intl">{{ b.price }}</span>{% endif %}
         {% if b.off_high is not none %}<span class="muted">{{ '%.0f'|format(b.off_high) }}% {{ t('off high', '距高') }}</span>{% endif %}
       </div>
       {# volatility black hole (vol_squeeze) chip — single-stock vol black hole, close-only #}

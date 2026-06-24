@@ -126,3 +126,9 @@
       </div>
     </div>
   </div>
+  {# Live-price layer (progressive enhancement). Wired here ONCE — this partial is
+     the single nav include every built page reaches — so live.js patches any
+     .nb-px[data-sym] / .nb-chg[data-sym] across the whole site. No-ops cleanly
+     when neither a Worker URL nor a snapshot URL is configured. #}
+  <script src="{{ NP }}live_config.js"></script>
+  <script src="{{ NP }}live.js"></script>

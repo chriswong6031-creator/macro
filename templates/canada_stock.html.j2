@@ -183,6 +183,7 @@
     <div class="panel">
       <div class="topline">
         <h1 id="r_name"></h1>
+        <span id="r_live_px" class="nb-px" data-mkt="ca" style="display:none;font-weight:800;font-size:17px;margin-left:2px"></span>
         <span id="r_state" class="state"></span>
         <span id="r_eq" class="eqbadge" style="display:none"></span>
         <span style="flex:1"></span>
@@ -438,9 +439,23 @@
     panel.style.display = 'block';
   }
 
+  // Live header price chip (CAD, no '$' prefix). Set the canonical symbol + a
+  // baked last price, reveal it, and ask live.js to refresh it now.
+  function liveHeaderPx(d) {
+    var lp = document.getElementById('r_live_px');
+    if (!lp) return;
+    var px = d && d.tech && d.tech.price;
+    if (px == null) { lp.style.display = 'none'; lp.removeAttribute('data-sym'); return; }
+    lp.setAttribute('data-sym', d.ticker);
+    lp.textContent = Number(px).toFixed(2);                // baked; live.js overwrites
+    lp.style.display = '';
+    if (window.LiveQuotes && window.LiveQuotes.refresh) window.LiveQuotes.refresh();
+  }
+
   function render(d) {
     document.getElementById('result').style.display = 'block';
     document.getElementById('r_name').textContent = d.name + ' (' + d.ticker + ')';
+    liveHeaderPx(d);
     var st = document.getElementById('r_state');
     st.textContent = dlabel(d.ladder.state) || d.ladder.label;
     st.className = 'state st-' + d.ladder.state.replace(/ /g, '_');

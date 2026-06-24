@@ -247,7 +247,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
     {% for a in assets %}
     <button class="atab {{ 'active' if loop.first else '' }}" data-asset="{{ a.key }}">
       <div class="an">{{ t(a.label, a.zh) }}</div>
-      <div class="ap">{{ a.price|money }} <span class="{{ 'up' if (a.chg or 0)>=0 else 'down' }}" style="font-size:12px">{{ '%+0.1f'|format(a.chg) if a.chg is not none else '' }}%</span></div>
+      <div class="ap">{% if a.sym %}<span class="nb-px" data-sym="{{ a.sym }}" data-mkt="us">{{ a.price|money }}</span>{% else %}{{ a.price|money }}{% endif %} <span class="{{ 'up' if (a.chg or 0)>=0 else 'down' }}" style="font-size:12px">{{ '%+0.1f'|format(a.chg) if a.chg is not none else '' }}%</span></div>
       <div class="am">{{ t('Allocate', '配置') }} <b style="color:{{ 'var(--blue)' if a.alloc_pct>0 else 'var(--muted)' }}">{{ a.alloc_pct }}%</b></div>
       <span class="tag {{ 'calm' if a.risk_on else 'elev' }}">{{ t('Risk', '风险') }} {{ td(a.risk_word) }}</span>
     </button>
@@ -263,7 +263,7 @@ html[data-theme="dark"] .tl-asset{background:var(--grid)} /* --bg is near-black 
       <div class="card">
         <h2>{{ t(a.label, a.zh) }} · {{ t('Market state', '市场状态') }}</h2>
         <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
-          <div class="hero-state" style="font-size:42px">{{ a.price|money }}</div>
+          <div class="hero-state{% if a.sym %} nb-px{% endif %}"{% if a.sym %} data-sym="{{ a.sym }}" data-mkt="us"{% endif %} style="font-size:42px">{{ a.price|money }}</div>
           <div class="{{ 'up' if (a.chg or 0)>=0 else 'down' }}" style="font-weight:700">{{ '%+0.1f'|format(a.chg) if a.chg is not none else '—' }}% <span class="faint" style="font-weight:600">{{ t('1mo', '1月') }}</span></div>
           <div class="faint" style="font-size:13px">{{ a.unit }}</div>
         </div>
