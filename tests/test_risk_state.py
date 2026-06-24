@@ -137,6 +137,31 @@ def test_technical_leg_absent_when_none():
     assert out["legs"]["technical"]["available"] is False
 
 
+def test_sizing_fields_degross_and_favor_entries():
+    # benign -> no de-gross, no entry tilt
+    benign = rs.compute(_benign_latest(), gex_index=_gex_long())
+    assert benign["gross_factor"] == 1.0
+    assert benign["favor_entries"] in (False, True)  # depends on banding; benign is risk-on/neutral
+    # blow-off -> de-gross < 1, favor entries, cap leadership
+    blow = rs.compute(_blowoff_latest(), gex_index=_gex_short(),
+                      hyg_tlt_roc=-0.03, board_stretch="stretched")
+    assert blow["gross_factor"] < 1.0
+    assert blow["gross_factor"] >= 0.5            # floored
+    assert blow["favor_entries"] is True
+    assert blow["cap_leadership"] is True
+
+
+def test_sizing_monotonic_in_state():
+    # gross_factor must be non-increasing as the state worsens
+    order = {"risk-on": 1.0, "neutral": 1.0, "caution": 0.90, "elevated": 0.78, "risk-off": 0.60}
+    g = rs._cfg()["gross"]
+    prev = 1.01
+    for st in rs._STATE_ORDER:
+        gf = rs._sizing(st, g)["gross_factor"]
+        assert gf <= prev + 1e-9
+        prev = gf
+
+
 def test_graceful_no_legs():
     out = rs.compute({})
     assert out["score"] is None

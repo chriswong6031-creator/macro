@@ -1581,6 +1581,11 @@ engine:
       floor_3: elevated      # >=3 hot leading legs -> at least elevated (fires the alert)
     alert_from: elevated     # state at/above which the loud banner + alert fire
     hyg_tlt_scale: 0.04      # HYG/TLT 20d drop that maps to full credit-ETF intensity
+    gross:                   # subtract-only gross multiplier per state — the SIZING response
+      caution: 0.90          # (de-gross + favor entries over chasing leaders), never selection
+      elevated: 0.78
+      risk_off: 0.60
+      floor: 0.50            # never de-gross below this
 
   # --- Vol-regime SUBTRACT-ONLY sizing overlay. Lets the validated index vol-regime
   # (engine/vol_regime.py -> site/vol/regime.json) actually move money as a gross/sizing

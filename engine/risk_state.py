@@ -63,6 +63,12 @@ _DEFAULT_WEIGHTS = {
 _DEFAULT_BANDS = {"neutral": 20.0, "caution": 40.0, "elevated": 60.0, "risk_off": 80.0}
 _ALERT_FROM = "elevated"   # state at/above which the loud banner + alert fire
 
+# Subtract-only gross multiplier per state — the canonical SIZING response consumers
+# (Mastermind books, baskets/ladder) apply, mirroring engine.vol_regime.sizing_overlay.
+# Routes the risk state into SIZING, never selection (the validated channel — the edge is
+# the absolute-trend drawdown gate, not selection rank; see narrative-rotation findings).
+_DEFAULT_GROSS = {"caution": 0.90, "elevated": 0.78, "risk_off": 0.60, "floor": 0.50}
+
 # Conjunction escalator: the composite's value is the CONJUNCTION of leading legs
 # firing together, not their diluted mean. A plain weighted mean lets two screaming
 # leading legs get averaged down by many calm slow legs — exactly how 2026-06-23 read
@@ -90,9 +96,24 @@ def _cfg() -> dict:
     weights = {**_DEFAULT_WEIGHTS, **(c.get("weights") or {})}
     bands = {**_DEFAULT_BANDS, **(c.get("bands") or {})}
     conjunction = {**_DEFAULT_CONJUNCTION, **(c.get("conjunction") or {})}
-    return {"weights": weights, "bands": bands, "conjunction": conjunction,
+    gross = {**_DEFAULT_GROSS, **(c.get("gross") or {})}
+    return {"weights": weights, "bands": bands, "conjunction": conjunction, "gross": gross,
             "alert_from": c.get("alert_from", _ALERT_FROM),
             "hyg_tlt_scale": float(c.get("hyg_tlt_scale", 0.04))}
+
+
+def _sizing(state: str, gross: dict) -> dict:
+    """Subtract-only gross multiplier + entry/leadership guidance for a state. The de-risk
+    response is SIZING (de-gross + favor good entries over chasing extended leaders), never
+    a new selection score. Consumed by the Mastermind books + the baskets surface."""
+    gf = {"risk-on": 1.0, "neutral": 1.0,
+          "caution": gross["caution"], "elevated": gross["elevated"],
+          "risk-off": gross["risk_off"]}.get(state, 1.0)
+    gf = max(float(gross["floor"]), float(gf))
+    rank = _STATE_ORDER.index(state) if state in _STATE_ORDER else 1
+    return {"gross_factor": round(gf, 3),
+            "favor_entries": rank >= _STATE_ORDER.index("caution"),
+            "cap_leadership": rank >= _STATE_ORDER.index("elevated")}
 
 
 # --- small helpers -----------------------------------------------------------
@@ -361,6 +382,7 @@ def compute(latest: dict, *, gex_index=None, hyg_tlt_roc=None, board_stretch=Non
     label_en, label_zh = _LABEL[state]
     alert = _STATE_ORDER.index(state) >= _STATE_ORDER.index(cfg["alert_from"])
     head_en, head_zh = _headline(state, score, drivers)
+    sizing = _sizing(state, cfg["gross"])
 
     return {
         "schema": "risk_state.v1",
@@ -375,6 +397,9 @@ def compute(latest: dict, *, gex_index=None, hyg_tlt_roc=None, board_stretch=Non
         "legs": legs,
         "conjunction": {"hot_leading_legs": hot, "escalated": escalated,
                         "floor": conj_floor if escalated else None},
+        "gross_factor": sizing["gross_factor"],
+        "favor_entries": sizing["favor_entries"],
+        "cap_leadership": sizing["cap_leadership"],
         "alert": bool(alert),
         "n_legs": sum(1 for v in legs.values() if v.get("available")),
         "reader_contract": _READER_CONTRACT[state],
