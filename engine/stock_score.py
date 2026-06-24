@@ -1241,6 +1241,11 @@ def conviction_profile(rec: dict, market: str, *, ctx: dict | None = None) -> di
         "notes": notes or None,       # honesty notes: percentile-rank caveat + favourable-cone read
         "n_axes": n_axes,
         "cycle_blocked": blocked,
+        # multi-timeframe bottoming-ALIGNMENT (engine.cycles.mtf_alignment) — the
+        # standout-strip selection gate: aligned = weekly not-falling + 3-day nearing
+        # a bullish cross + daily just-crossed/about-to. Surfaced here so every board's
+        # rows carry it via the attached conviction (display chip + the buyable filter).
+        "alignment": (rec.get("ladder") or {}).get("alignment"),
         "valuation_band": (val or {}).get("band"),
         "valuation_watch": bool((val or {}).get("watch")),
         "valuation_note": (val or {}).get("note"),

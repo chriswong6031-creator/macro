@@ -1632,6 +1632,136 @@ def _tf_turning_up(s: dict) -> bool:
                 or s.get("macd_approaching_up") or s.get("stoch_cross_up"))
 
 
+# ----- multi-timeframe BOTTOMING ALIGNMENT (the standout-strip selection gate) ----
+# The standout boards historically SELECTED on a momentum/edge/flow z-floor and only
+# *labelled* the cycle — so a name mid-way through its WEEKLY bear leg (still falling)
+# could be surfaced as a "buy" card: a falling knife. This screen makes multi-timeframe
+# alignment the SELECTION gate instead. It admits a name only when the weekly is NOT
+# still falling (basing / turning / rising) AND the 3-day is at/nearing a bullish cross
+# AND the daily has just crossed or is about to (or is already rising but not extended).
+# It composes the per-timeframe MACD posture the engine already computes; the one
+# missing primitive — "weekly histogram below zero AND still dropping", which
+# macd_approaching_dn / macd_curl_dn never flag (they only fire ABOVE zero) — is added
+# here as _hist_falling. Display-tier: this is a calibrated cycle read, not a validated
+# probability; it gates WHICH names a screen shows, ranked by alignment quality.
+_ALIGN_PHASE_VAL = {"rising": 1.0, "turning": 0.8, "basing": 0.4,
+                    "rolling": 0.2, "falling": 0.0, "unknown": 0.0}
+# ladder states that are structurally NOT a bottoming entry (a falling knife or a top)
+# — excluded from alignment regardless of a one-bar daily up-tick.
+_ALIGN_BAD_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH", "COUNTERTREND BOUNCE"}
+_ALIGN_KNIFE_BLOCK = 0.7        # washout knife severity that HARD-excludes a name
+_ALIGN_DAILY_MAX_DAYS = 2       # "daily about to cross in 1-2 days"
+_ALIGN_RSI_EXTENDED = 68.0      # a daily already this hot is a chase, not an early entry
+
+
+def _hist_falling(spark, bars: int = 3) -> bool:
+    """True if a MACD histogram is strictly DECLINING over the last `bars` steps —
+    the 'below zero AND still dropping' bear-leg tell that the realized/approaching
+    down-cross flags miss (those only fire above zero). `spark` = a _tf_state
+    spark_hist (most-recent last)."""
+    h = [x for x in (spark or []) if x is not None]
+    if len(h) < bars + 1:
+        return False
+    seg = h[-(bars + 1):]
+    return all(seg[i] < seg[i - 1] for i in range(1, len(seg)))
+
+
+def _tf_phase(s: dict) -> str:
+    """Classify one timeframe's MACD posture for the bottoming screen:
+    ``rising`` (above zero, healthy) · ``rolling`` (above zero but topping) ·
+    ``turning`` (below zero, first hint of an up-turn) · ``basing`` (below zero,
+    flat near a low) · ``falling`` (below zero AND still dropping, or a fresh
+    down-cross) · ``unknown`` (no data)."""
+    if not s:
+        return "unknown"
+    if s.get("macd_pos"):
+        return "rolling" if (s.get("macd_cross_dn") or s.get("macd_curl_dn")) else "rising"
+    if s.get("macd_cross_dn"):
+        return "falling"
+    if (s.get("macd_cross_up") or s.get("macd_curl_up")
+            or s.get("macd_approaching_up") or s.get("stoch_cross_up")):
+        return "turning"
+    if _hist_falling(s.get("spark_hist")):
+        return "falling"
+    return "basing"
+
+
+def _daily_trigger(d: dict) -> str | None:
+    """The daily entry trigger: ``crossed`` (just crossed up) / ``imminent`` (<=N
+    days to a bullish cross) / ``early`` (already crossed and rising but NOT
+    extended) / None. Encodes "just crossed or about to in 1-2 days, ok if a bit
+    started"."""
+    if not d:
+        return None
+    if d.get("macd_cross_up"):
+        return "crossed"
+    dtc = d.get("macd_days_to_cross")          # 0 is a valid ETA (crosses ~this bar), not "missing"
+    if d.get("macd_approaching_up") and dtc is not None and dtc <= _ALIGN_DAILY_MAX_DAYS:
+        return "imminent"
+    rsi = d.get("rsi14")                        # guard falsy-zero: an absent RSI is unknown, not 50
+    if (d.get("macd_pos") and not d.get("macd_cross_dn") and not d.get("macd_curl_dn")
+            and (rsi is None or rsi <= _ALIGN_RSI_EXTENDED)):
+        return "early"
+    return None
+
+
+def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
+                  wo: dict | None = None) -> dict:
+    """Weekly + 3-Day + Daily bottoming-ALIGNMENT verdict for the standout strip.
+
+    ``aligned`` (the HARD selection gate) is True when ALL hold:
+      * weekly is NOT still falling — phase in {basing, turning, rising};
+      * 3-day is at/nearing a bullish cross — phase in {turning, rising};
+      * daily has a trigger — just crossed / imminent (<=2d) / early-rising-not-extended;
+      * not a deep falling knife (washout < knife block) and not a structurally-bad
+        cycle state (DECLINE / ROLLING OVER / TOP WATCH / COUNTERTREND BOUNCE).
+    ``near`` (display-tagged BACKFILL only, never a confirmed buy): the weekly is fine
+    and ONE lower timeframe is turning, but not all three confirmed.
+
+    ``score`` (0-100) ranks survivors by alignment quality (weekly-heaviest, daily-
+    trigger fresh, knife-tempered). Returns {} when there is no daily timeframe."""
+    D = mtf.get("D") or {}
+    if not D:
+        return {}
+    W, T3 = mtf.get("W") or {}, mtf.get("3D") or {}
+    wph, t3ph, dph = _tf_phase(W), _tf_phase(T3), _tf_phase(D)
+    have_tf = bool(W) and bool(T3)             # need weekly + 3-day to judge alignment
+
+    weekly_ok = wph in ("basing", "turning", "rising")
+    t3_ok = t3ph in ("turning", "rising")
+    trigger = _daily_trigger(D)
+    daily_ok = trigger is not None
+
+    knife = float((wo or {}).get("knife", 0.0))
+    state = (lad or {}).get("state")
+    blocked = ((knife >= _ALIGN_KNIFE_BLOCK) or (state in _ALIGN_BAD_STATES)
+               or (wph == "falling"))
+
+    aligned = bool(have_tf and weekly_ok and t3_ok and daily_ok and not blocked)
+    near = bool(have_tf and weekly_ok and not blocked and not aligned
+                and (t3_ok or daily_ok))
+
+    trig_val = {"crossed": 1.0, "imminent": 0.8, "early": 0.55, None: 0.0}[trigger]
+    raw = (0.42 * _ALIGN_PHASE_VAL[wph] + 0.30 * _ALIGN_PHASE_VAL[t3ph]
+           + 0.28 * trig_val)
+    score = round(100.0 * raw * (1.0 - 0.45 * min(knife, 1.0)), 1)
+
+    dtxt = {"crossed": "crossed up", "imminent": "≈ cross", "early": "rising",
+            None: "—"}[trigger]
+    line = (f"Weekly {wph} · 3-Day {'✓' if t3_ok else '·'} · Daily {dtxt}")
+    line_zh = (f"周线{ {'rising':'上行','turning':'转向','basing':'筑底','rolling':'走弱','falling':'下行','unknown':'—'}[wph] } · "
+               f"3日{'✓' if t3_ok else '·'} · "
+               f"日线{ {'crossed up':'已上穿','≈ cross':'临近上穿','rising':'上行','—':'—'}[dtxt] }")
+    return {
+        "aligned": aligned, "near": near, "score": score,
+        "weekly": wph, "three_day": t3ph, "daily": dph,
+        "weekly_ok": weekly_ok, "three_day_ok": t3_ok, "daily_ok": daily_ok,
+        "daily_trigger": trigger, "days_to_cross": D.get("macd_days_to_cross"),
+        "knife": round(knife, 2), "have_tf": have_tf, "blocked": blocked,
+        "line": line, "line_zh": line_zh,
+    }
+
+
 # ----- washout / knife-risk (Phase 2) -----
 # MEASURED, counter-intuitively (research/BOTTOM_CONFIDENCE.md, 68,916 evals): a
 # deep stretch BELOW the 200-day + a VIX panic is NOT a higher-confidence bottom —
@@ -1783,6 +1913,7 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
     early = early_signals(close, cyc, mtf)
     lad = ladder_state(cyc, mtf, early, liquidity=liquidity,
                        macro_drag=macro_drag, macro_beta=macro_beta, vol_regime=vol_regime)
+    wo = washout(close, cyc, vix_ctx) if cyc else {}
     if lad:
         age = signal_age(close, lad["state"], high, kind)
         if age:
@@ -1791,11 +1922,14 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
         eq = entry_quality(close, cyc, mtf, early, regime, state=lad["state"])
         if eq:
             lad.update(entry_quality_fields(eq, state=lad["state"]))
-            wo = washout(close, cyc, vix_ctx)
             bc = bottom_confidence(mtf, eq, lad["state"], wo=wo)
             if bc:
                 lad.update(bottom_confidence_fields(bc))
                 lad["bottom_confidence"] = bc["score"]
+        # multi-timeframe bottoming-alignment gate — the standout-strip SELECTION
+        # filter (weekly not-falling + 3-day nearing cross + daily just-crossed/about),
+        # so a mid-weekly-bear falling knife can no longer be surfaced as a buy card.
+        lad["alignment"] = mtf_alignment(mtf, cyc, lad, wo=wo)
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 
