@@ -137,6 +137,15 @@ def state_series(subs: pd.DataFrame, calib: dict) -> pd.Series:
     esc = (conj | (b_hot & (maxA > 0)))
     st = maxA + (esc & (maxA < 4) & (maxA > 0)).astype(int)
     st = st.clip(0, 4)
+    # CONTEXT GATE: cap the loud (elevated+) state at caution where the broad tape isn't breaking
+    # (SPY<200dma AND breadth weak). The verified #1 false-positive lever; mirrors compute().
+    try:
+        from engine.risk_radar import context_gate_series
+        gate = context_gate_series(subs.index).reindex(subs.index).fillna(False)
+        cap = _ORDER.index("caution")
+        st = st.mask((~gate) & (st > cap), cap)
+    except Exception:  # noqa: BLE001
+        pass
     return st.map(lambda i: _ORDER[int(i)])
 
 

@@ -36,7 +36,7 @@ def test_snapshot_never_raises():
 # --- tier behavior -----------------------------------------------------------
 def test_tierA_growth_originates_elevated():
     # both validated growth legs near top -> growth sub-score high -> at least caution
-    out = rr.compute(sigs=_sigs(growth_defensives=0.95, growth_cyc_def=0.95))
+    out = rr.compute(sigs=_sigs(growth_defensives=0.95, growth_cyc_def=0.95), gate={"met": True})
     g = next(s for s in out["scares"] if s["scare"] == "growth")
     assert g["tier"] == "A"
     assert g["score"] >= rr._DEFAULT_BANDS["caution"]
@@ -52,16 +52,26 @@ def test_tierB_vol_cannot_originate():
 
 
 def test_tierB_vol_escalates_a_hot_tierA():
-    base = rr.compute(sigs=_sigs(growth_defensives=0.90, growth_cyc_def=0.90))
-    esc = rr.compute(sigs=_sigs(growth_defensives=0.90, growth_cyc_def=0.90, vol_term=0.99))
+    base = rr.compute(sigs=_sigs(growth_defensives=0.90, growth_cyc_def=0.90), gate={"met": True})
+    esc = rr.compute(sigs=_sigs(growth_defensives=0.90, growth_cyc_def=0.90, vol_term=0.99), gate={"met": True})
     order = ["calm", "watch", "caution", "elevated", "risk-off"]
     assert order.index(esc["state"]) >= order.index(base["state"])
 
 
 def test_dominant_is_validated_leg_not_coincident_vol():
     # growth (validated) + vol (coincident) both hot -> dominant names growth, not vol
-    out = rr.compute(sigs=_sigs(growth_defensives=0.95, growth_cyc_def=0.95, vol_term=0.99))
+    out = rr.compute(sigs=_sigs(growth_defensives=0.95, growth_cyc_def=0.95, vol_term=0.99), gate={"met": True})
     assert out["dominant_scare"] in ("growth", "credit", "bubble", "rates")
+
+
+def test_context_gate_caps_loud_alert():
+    # same hot signals: gate MET -> loud (elevated/risk-off, alert); gate NOT met -> capped to caution
+    hot = dict(credit_oas_roc=0.97, bubble_ext=0.97, growth_defensives=0.97, growth_cyc_def=0.97)
+    on = rr.compute(sigs=_sigs(**hot), gate={"met": True})
+    off = rr.compute(sigs=_sigs(**hot), gate={"met": False})
+    assert on["state"] in ("elevated", "risk-off") and on["alert"] is True
+    assert off["state"] == "caution" and off["alert"] is False
+    assert off["context_gate"]["met"] is False
 
 
 def test_loud_early_calm_when_quiet():
@@ -73,7 +83,7 @@ def test_loud_early_calm_when_quiet():
 
 def test_gross_and_contracts_scale_with_state():
     hot = rr.compute(sigs=_sigs(credit_oas_roc=0.97, bubble_ext=0.97, growth_defensives=0.97,
-                                growth_cyc_def=0.97))
+                                growth_cyc_def=0.97), gate={"met": True})
     assert hot["state"] in ("elevated", "risk-off")
     assert hot["alert"] is True
     assert hot["gross_factor"] < 1.0
@@ -130,7 +140,7 @@ def test_drawdown_prob_escalates_with_conjunction():
 
 def test_compute_emits_drawdown_prob():
     out = rr.compute(sigs=_sigs(credit_oas_roc=0.97, bubble_ext=0.97, growth_defensives=0.97,
-                                growth_cyc_def=0.97))
+                                growth_cyc_def=0.97), gate={"met": True})
     dp = out.get("drawdown_prob")
     assert dp and "h5" in dp and "h10" in dp and "h21" in dp
     assert dp["h21"] > dp["h10"] > dp["h5"]          # cumulative over longer horizon
