@@ -1,173 +1,175 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-06-22",
-  "generated_at": "2026-06-23T12:16:26.415187+00:00",
+  "as_of": "2026-06-23",
+  "generated_at": "2026-06-24T01:18:24.812076+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-06-22-CWEN-1",
-      "ticker": "CWEN",
-      "name": "Clearway Energy, Inc. (Class C)",
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The selection axis (revisions z=2.56, insider buying) supports a constructive medium-term bias, but the daily ladder is in BOTTOM WATCH with a bearish bigger-picture and macro liquidity contraction, so any advantage is deferred until a base is confirmed.",
-      "evidence": [
-        "verdict: High-confluence leader (context)",
-        "selection z=1.69 (revision z=2.56)",
-        "cycle_blocked=false, no forced avoidance"
-      ],
-      "dissent": "Bearish cycle (left-translated, below 10-day MA) and net liquidity contraction could drive a breakdown below the swing low rather than a base.",
-      "falsifier": {
-        "text": "If price closes below the recent swing low of ~36.50, the bottoming thesis is invalidated and the lean shifts to avoid.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "CWEN",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 30
-        }
-      },
-      "check_by": "2026-08-03",
-      "engine_verdict": "High-confluence leader (context)"
-    },
-    {
-      "id": "2026-06-22-GNL-2",
-      "ticker": "GNL",
-      "name": "Global Net Lease, Inc.",
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The selection edge (SUE z=1.04, revisions z=2.56) is offset by the accounting watch flag and weak macro tailwind; risk-reward only becomes favourable once the quality flag is cleared.",
-      "evidence": [
-        "verdict: Leader \u00b7 accounting watch",
-        "selection z=1.76",
-        "accounting flag: watch",
-        "macro: US net liquidity contracting"
-      ],
-      "dissent": "The REIT's high payout ratios (dividends ~$192m vs CFO ~$223m) and potential accounting issues could mask stress that a pure SUE/revision screen misses.",
-      "falsifier": {
-        "text": "A subsequent 10-Q filing that reveals a material auditor finding or an earnings miss would falsify the cautious view and move it to avoid.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "GNL",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-20",
-      "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
-    },
-    {
-      "id": "2026-06-22-MRP-3",
-      "ticker": "MRP",
-      "name": "Millrose Properties, Inc.",
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "Clean accounting (quality z=2.90) and a base-building entry setup (off -13.5% from high, RSI 50) provide a safety margin, though weak momentum and left-translated cycle mean the base could take time to develop.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "quality z=2.90, accounting clean",
-        "entry off-high -13.5%, pct 51"
-      ],
-      "dissent": "Net income growth of -254% and a left-translated cycle suggest structural weakness; a false base could lead to a further leg down.",
-      "falsifier": {
-        "text": "If price breaks below the swing low near $27, the base-building hypothesis fails and the lean turns to avoid.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "MRP",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 30
-        }
-      },
-      "check_by": "2026-08-03",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-06-22-PJT-4",
-      "ticker": "PJT",
-      "name": "PJT Partners, Inc.",
+      "id": "2026-06-23-CHE-1",
+      "ticker": "CHE",
+      "name": "Chemed Corp.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The TURN SIGNALED ladder and imminent entry urgency are attractive, but the selection axis (z=0.13) provides no validated edge, so any directional bet is a coin flip.",
+      "horizon_d": 20,
+      "thesis": "The deterministic verdict is 'Neutral \u2014 no clear edge'; the selection axis is slightly negative with fading earnings surprise and weak momentum, leaving no validated basis to expect outperformance over the next month.",
       "evidence": [
         "verdict: Neutral \u2014 no clear edge",
-        "selection z=0.13",
-        "entry z=0.67, off-high -19%"
+        "selection axis z = -0.15, pct 48",
+        "SUE z = -0.32, 24 days stale",
+        "alpha (momentum) z = -0.75",
+        "high quality factor (z=2.62) but not a standalone alpha driver"
       ],
-      "dissent": "The combination of quality (z=2.48) and a macro-sensitive financial turning from an oversold base could produce a sharp rally that makes neutral look timid.",
+      "dissent": "Extremely strong quality (accounting clean, high profitability) could attract defensive flows and cushion relative drawdowns.",
       "falsifier": {
-        "text": "A close above the 50-day moving average (~$155.5) on above-average volume would shift the balance towards a constructive lean.",
+        "text": "If CHE's relative strength vs the S&P 500 rises and the next earnings report drives SUE z firmly positive, the neutral stance would be invalidated.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-13",
+      "check_by": "2026-07-21",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-06-22-MCY-5",
-      "ticker": "MCY",
-      "name": "Mercury General",
+      "id": "2026-06-23-BRC-2",
+      "ticker": "BRC",
+      "name": "Brady Corporation",
       "lean": "constructive",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The RALLY ON ladder and robust selection edge (SUE z=1.26, revisions z=2.09, momentum z=1.68) support trend continuation, though macro liquidity contraction caps conviction.",
+      "thesis": "The verdict is 'Constructive \u2014 building a base', with the selection axis positive (z=0.78) driven by strong earnings revisions, suggesting residual alpha can drive outperformance as the daily rally continues.",
       "evidence": [
-        "verdict: High-confluence leader (context)",
-        "selection z=1.83",
-        "ladder: RALLY ON, bullish regime",
-        "momentum/SUE/revision all positive"
+        "verdict: Constructive \u2014 building a base",
+        "selection axis z = 0.78, pct 62",
+        "revisions z = 1.18 (literature tier)",
+        "alpha z = 0.21",
+        "ladder: RALLY ON, above 10/50/200 DMA"
       ],
-      "dissent": "At 52-week highs (off_high_pct=0) and with aggregate macro risk elevated, the name is vulnerable to sudden mean-reversion if liquidity tightens further.",
+      "dissent": "The prior daily cycle was left-translated (topped early) and the quality composite is low (z=-0.75) with an accounting watch flag; the base could fail quickly.",
       "falsifier": {
-        "text": "A close below the 50-day moving average ($98.2) would break the uptrend and invalidate the constructive lean.",
+        "text": "A close below the recent swing low (~80) or a downward revisions surprise that flips the revisions z negative would prove the constructive lean wrong.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "MCY",
+          "subject_ticker": "BRC",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-07-20",
-      "engine_verdict": "High-confluence leader (context)"
+      "check_by": "2026-07-21",
+      "engine_verdict": "Constructive \u2014 building a base"
     },
     {
-      "id": "2026-06-22-YETI-6",
-      "ticker": "YETI",
-      "name": "Yeti Holdings",
+      "id": "2026-06-23-AWR-3",
+      "ticker": "AWR",
+      "name": "American States Water Company",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 25,
-      "thesis": "The TURN SIGNALED base and quality factors (z=2.02) outweigh a negative SUE, but the negative earnings surprise (-0.87z) and macro headwinds keep conviction low.",
+      "horizon_d": 20,
+      "thesis": "The stock is in a fresh buy zone with a moderately positive selection axis (z=0.30) and strong earnings revisions; the risk profile is supported by low volatility and a shallow drawdown from highs.",
       "evidence": [
         "verdict: Constructive \u2014 building a base",
-        "entry z=0.85, off-high -5.6%",
-        "quality z=2.02, clean accounting"
+        "selection axis z = 0.30, pct 55",
+        "revisions z = 0.86",
+        "entry axis z = 0.59 (BUY NOW urgency)",
+        "ladder: FRESH BUY, cycle low 23 days ago"
       ],
-      "dissent": "Consumer discretionary with falling SUE and MACD negative; the turn could be a dead-cat bounce in a weakening consumer spending environment.",
+      "dissent": "The investor cycle phase is late and approaching the upper band, limiting further upside. Quality is below average (z=-0.15) and SUE is negative (-0.08).",
       "falsifier": {
-        "text": "A break below the turn low of ~$45.50 would show the base failed and turn the lean to avoid.",
+        "text": "If the price falls back below the 10-day moving average and daily momentum rolls over, the constructive call is invalid.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "YETI",
+          "subject_ticker": "AWR",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 25
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-27",
+      "check_by": "2026-07-21",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-06-23-TXRH-4",
+      "ticker": "TXRH",
+      "name": "Texas Roadhouse",
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The verdict is 'Neutral \u2014 no clear edge'; despite a positive SUE and strong entry setup, the selection axis is flat, revisions are negative, and elevated macro-headwinds for a consumer-discretionary name neutralize any edge.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "selection axis z = -0.03, pct 50",
+        "SUE z = 0.57 (positive but offset by negative revisions and momentum)",
+        "tailwind z = -0.32 (headwind)",
+        "prior cycle left-translated, weekly trend mixed"
+      ],
+      "dissent": "A rapid improvement in consumer sentiment or a powerful earnings beat could ignite a catch-up rally from a low base.",
+      "falsifier": {
+        "text": "A breakout above the prior swing high (~193) on strong volume accompanied by a turn-up in the revisions z-score would disprove the neutral call.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-07-21",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-06-23-CWT-5",
+      "ticker": "CWT",
+      "name": "California Water Service Group",
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The engine verdict is neutral; an extremely strong entry axis (z=0.91) suggests a short-term bounce, but the selection axis is barely above zero (z=0.09) with negative SUE and momentum, leaving no reliable edge.",
+      "evidence": [
+        "verdict: Neutral \u2014 no clear edge",
+        "selection axis z = 0.09, pct 51",
+        "SUE z = -0.51, alpha z = -0.61",
+        "entry axis z = 0.91 (FRESH BUY)",
+        "low quality composite (z=-0.13)"
+      ],
+      "dissent": "The low-volatility, high-beta profile in a buy zone could produce a mean-reversion rally that yields relative outperformance for a few weeks.",
+      "falsifier": {
+        "text": "A sustained close above 48.5 and an upward revision cycle that pushes SUE into positive territory would invalidate the neutral stance.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-07-21",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-06-23-CHCO-6",
+      "ticker": "CHCO",
+      "name": "City Holding Company",
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "The board verdict is constructive, with a positive selection axis (z=0.48) backed by solid revisions and a positive SUE; the turn-signaled pattern off a cycle low offers a plausible base for outperformance.",
+      "evidence": [
+        "verdict: Constructive \u2014 building a base",
+        "selection axis z = 0.48, pct 57",
+        "revisions z = 0.81",
+        "SUE z = 0.27",
+        "ladder: TURN SIGNALED, above key moving averages"
+      ],
+      "dissent": "Quality is notably weak (z=-0.67) and the small market cap adds idiosyncratic risk; the turn signal may fail as the weekly trend remains mixed.",
+      "falsifier": {
+        "text": "A break below the 50-day moving average (~125) with daily momentum turning negative would invalidate the constructive lean.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "CHCO",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-21",
       "engine_verdict": "Constructive \u2014 building a base"
     }
   ],
