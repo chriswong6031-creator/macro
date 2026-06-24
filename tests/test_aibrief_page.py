@@ -73,7 +73,7 @@ def test_page_does_not_link_old_brief_pages():
     assert 'href="brief.html"' not in html
     assert 'href="china_brief.html"' not in html
     assert 'href="hk_brief.html"' not in html
-    assert 'href="aibrief.html"' in html  # the button self-links to the new page
+    assert 'href="mastermind.html"' in html  # the nav AI entry now points to the Mastermind page
 
 
 def test_no_template_links_deleted_brief_pages():
