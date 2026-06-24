@@ -135,9 +135,50 @@ def dedupe_dual_class(rows: list[dict]) -> list[dict]:
     return out
 
 
+# minimum aligned names a standout strip shows before it backfills with NEAR-aligned
+# (clearly tagged) candidates — so the strip is never bare in thin tape but never pads
+# with falling knives (near-aligned still requires a not-falling weekly).
+ALIGN_MIN_KEEP = 6
+
+
+def _align_tier(a: dict | None) -> str | None:
+    """'aligned' / 'near' / None from an engine.cycles.mtf_alignment dict."""
+    a = a or {}
+    if a.get("aligned"):
+        return "aligned"
+    if a.get("near"):
+        return "near"
+    return None
+
+
+def alignment_gate(rows: list[dict], align_of, *, min_keep: int = 0,
+                   sort_key=None, tier_key: str = "align_tier") -> list[dict]:
+    """Filter an (already-ranked) row list to bottoming-ALIGNED names, backfilling
+    NEAR-aligned names only up to ``min_keep``. ``align_of(row)`` returns that row's
+    alignment dict (engine.cycles.mtf_alignment). Knives / unaligned / thin-history
+    rows are DROPPED. Every kept row is tagged ``row[tier_key]`` in {'aligned','near'}
+    so the card can flag a near-aligned (unconfirmed) pick. When ``sort_key`` is given,
+    aligned and near are each sorted by it descending (e.g. by alignment score)."""
+    aligned, near = [], []
+    for r in rows:
+        tier = _align_tier(align_of(r))
+        if tier is None:
+            continue
+        r[tier_key] = tier
+        (aligned if tier == "aligned" else near).append(r)
+    if sort_key is not None:
+        aligned.sort(key=sort_key, reverse=True)
+        near.sort(key=sort_key, reverse=True)
+    if len(aligned) >= min_keep:
+        return aligned
+    return aligned + near[: max(0, min_keep - len(aligned))]
+
+
 def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
                 lag_max: float = LAG_MAX, n_buy: int = N_BUY, n_lag: int = N_LAG,
-                as_of=None, rank_by: str = "setup") -> dict:
+                as_of=None, rank_by: str = "setup",
+                align_map: dict | None = None,
+                align_min_keep: int = ALIGN_MIN_KEEP) -> dict:
     """Split scored candidates into the constructive ``buy`` shortlist and the
     ``laggards`` watch. ``cands`` is a list of ``(score, row)`` from :func:`setup_score`.
 
@@ -151,7 +192,14 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
         research/CHINA_HK_STOCK_SIGNALS.md).
 
     The factor composite (``row['factor_z']``) breaks near-ties as a LIGHT quality leg.
-    Dual-class duplicates collapse to the best-ranked variant."""
+    Dual-class duplicates collapse to the best-ranked variant.
+
+    ``align_map`` (ticker -> engine.cycles.mtf_alignment dict), when given, REPLACES the
+    ``alpha >= buy_min`` admission with the multi-timeframe BOTTOMING-ALIGNMENT gate: the
+    buy list becomes the aligned names (weekly not-falling + 3-day nearing a bullish cross
+    + daily just-crossed/about-to), ranked by alignment score then the market's leg, with
+    NEAR-aligned names backfilling only up to ``align_min_keep`` (each tagged align_tier).
+    This is how a falling knife is kept off the strip — the laggards board is unchanged."""
     def _key(x):
         s, r = x
         primary = (r.get("alpha") if rank_by == "alpha" else s) or 0.0
@@ -159,9 +207,19 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
 
     ranked_desc = sorted(cands, key=_key, reverse=True)   # best (buys) first
     ranked_asc = sorted(cands, key=_key)                  # worst (laggards) first
-    buys = dedupe_dual_class(
-        [r for s, r in ranked_desc
-         if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
+    if align_map is not None:
+        def _asort(r):
+            a = align_map.get(r.get("ticker")) or {}
+            sec = (r.get("alpha") if rank_by == "alpha" else r.get("setup")) or 0.0
+            return (a.get("score") or 0.0, sec)
+        buys = dedupe_dual_class(
+            alignment_gate([r for _s, r in ranked_desc],
+                           lambda r: align_map.get(r.get("ticker")),
+                           min_keep=align_min_keep, sort_key=_asort))[:n_buy]
+    else:
+        buys = dedupe_dual_class(
+            [r for s, r in ranked_desc
+             if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
     laggards = dedupe_dual_class(
         [r for s, r in ranked_asc
          if r.get("alpha") is not None and r["alpha"] <= lag_max])[:n_lag]

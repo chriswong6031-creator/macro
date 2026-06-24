@@ -28,6 +28,7 @@ from engine import stock_technicals  # noqa: E402  — richer close-only technic
 from engine import vol_squeeze  # noqa: E402  — single-stock volatility black hole (close-only)
 from engine import stock_view  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
+from engine.setups import ALIGN_MIN_KEEP  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
 from scripts.build_hk import tv_symbol  # noqa: E402
@@ -694,18 +695,38 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         z = c.get("composite_z")
         return z if z is not None else -9.0
 
-    def buyable(e: dict) -> bool:
+    def _entry_ok(e: dict) -> bool:
         c = e.get("conviction") or {}
         if c.get("cycle_blocked"):
             return False
         ez = (c.get("axes") or {}).get("entry", {}).get("z")
         return ez is None or ez > -0.1
 
+    def _atier(e: dict):
+        a = (e.get("conviction") or {}).get("alignment") or {}
+        return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+    def _ascore(e: dict):
+        a = (e.get("conviction") or {}).get("alignment") or {}
+        return ((a.get("score") or 0.0), comp(e))
+
     ranked = sorted(enriched, key=comp, reverse=True)
-    buys = [e for e in ranked if buyable(e)][:n_buy]
+    # BOTTOMING-ALIGNMENT gate (the HK parallel of the US/CN fix): a name is BUYABLE only
+    # when its weekly/3-day/daily are aligned to the upside (engine.cycles.mtf_alignment) —
+    # weekly not-falling + 3-day nearing a bullish cross + daily just-crossed/about-to — so a
+    # mid-weekly-bear name the southbound crowd is accumulating into a fall (or a cheaper-and-
+    # cheaper A/H value leg) can no longer be sold as a buy. NEAR-aligned names backfill only
+    # when too few are fully aligned; aligned names rank by alignment score then conviction.
+    elig = [e for e in ranked if _entry_ok(e) and _atier(e)]
+    aligned = sorted([e for e in elig if _atier(e) == "aligned"], key=_ascore, reverse=True)
+    near = sorted([e for e in elig if _atier(e) == "near"], key=_ascore, reverse=True)
+    buys = (aligned if len(aligned) >= ALIGN_MIN_KEEP
+            else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])[:n_buy]
+    for e in buys:
+        e["align_tier"] = _atier(e)
     buy_keys = {id(e) for e in buys}
-    # strong-but-blocked names (good edge, wrong tape / extended) -> a WATCH strip, not the
-    # buy list — the honest "wait for a base" demotion the old board lacked.
+    # strong-but-unaligned names (good edge, weekly still falling / unconfirmed) -> a WATCH
+    # strip, not the buy list — the honest "wait for the weekly to turn" demotion.
     watch = [e for e in ranked if id(e) not in buy_keys and comp(e) > 0.2][:8]
     laggards = sorted(enriched, key=comp)[:n_lag]
 
@@ -723,7 +744,7 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
            "calm": calm, "cohort": cohort or None,
            "buy": buys, "watch": watch, "laggards": laggards,
            "southbound_summary": hk_southbound_stocks.market_summary(),
-           "eligible": sum(1 for e in enriched if comp(e) > 0),
+           "eligible": len(aligned),
            "universe": len(enriched)}
     if disp_regime:                                  # selection-regime gross dial (board context)
         out["dispersion_regime"] = disp_regime
