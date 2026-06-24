@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-23",
-  "generated_at": "2026-06-24T07:48:08.840701+00:00",
+  "generated_at": "2026-06-24T09:12:43.132067+00:00",
   "degraded": null,
   "notes": [
     {
@@ -10,23 +10,23 @@
       "name": "Chemed Corp.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The deterministic engine verdict is Neutral \u2014 no clear edge; the selection axis is mixed (SUE negative, revisions mildly positive, momentum negative) and the quality axis is merely a display factor, not a validated forward predictor. Without a falsifiable edge, the neutral lean matches the profile.",
+      "horizon_d": 30,
+      "thesis": "Profile verdict is neutral; high quality factor provides a cushion but earnings-surprise and momentum signals are flat, and the engine finds no clear edge.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection z: -0.15, SUE z: -0.32, revisions z: 0.23, momentum z: -0.75",
-        "entry axis unblocked but not compelling",
-        "quality z: 2.62 (display only)"
+        "Verdict: Neutral \u2014 no clear edge",
+        "Quality axis 84th percentile (z 2.62) but selection composite z -0.15",
+        "SUE z -0.32, alpha z -0.75",
+        "Cycle mid, no block, uptrend intact"
       ],
-      "dissent": "Chemed is a high-quality compounder with clean accounting; in a contracting-liquidity macro environment, defensive names can hold up better than the index even without a stock-specific edge.",
+      "dissent": "Quality could drive mean-reversion rally from -20% off high, but the engine rates the edge insufficient.",
       "falsifier": {
-        "text": "CHE closes above $460 with a fresh earnings surprise (SUE > 1) within 20 days \u2014 the neutral call would then be proven wrong.",
+        "text": "CHE outperforms the S&P 500 by >5% over 30 days driven by a fresh earnings beat or insider buying catalyst that the current detectors did not capture.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-21",
+      "check_by": "2026-08-04",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -34,28 +34,28 @@
       "ticker": "BRC",
       "name": "Brady Corporation",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "The screen is constructive with a building-base setup; the engine\u2019s top driver \u2018earnings \u00b7 insider \u00b7 revisions\u2019 is supported by strong positive revisions (z: 1.18), and the entry axis is favourable, though the accounting-watch flag and a left-translated prior cycle cap conviction.",
+      "conviction": "low",
+      "horizon_d": 40,
+      "thesis": "Engine sees a base building with strong revisions and positive entry mechanics, despite a left-translated prior cycle and accounting watch; constructive lean follows the verdict with low conviction.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection revisions z: 1.18 (literature-backed leg)",
-        "entry axis z: 0.16, tailwind z: 0.40",
-        "caution: accounting watch, prior cycle left-translated"
+        "Verdict: Constructive \u2014 building a base",
+        "Selection axis z 0.78 (pct 62), revision leg z 1.18",
+        "Entry axis positive (z 0.16, not blocked)",
+        "Ladder RALLY ON, uptrend, no cycle block"
       ],
-      "dissent": "The accounting-watch flag and a -4.0% net income growth rate suggest underlying business quality is deteriorating; if the earnings revision trend reverses, the base may fail and the stock could underperform.",
+      "dissent": "Left-translated prior cycle hints at tiring trend; below-average quality with accounting watch and absence of SUE support could stall the advance.",
       "falsifier": {
-        "text": "BRC closes below the 50-day moving average (~$82.60) on expanding volume \u2014 that would break the structure and invalidate the constructive lean.",
+        "text": "BRC's 10-day average rolls over and price closes below the 50-day moving average within the next 40 days, breaking the base-building structure.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BRC",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 40
         }
       },
-      "check_by": "2026-07-21",
+      "check_by": "2026-08-18",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -63,28 +63,28 @@
       "ticker": "AWR",
       "name": "American States Water Company",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "A fresh-buy ladder signal and constructive building-base verdict are backed by a positive revisions leg (z: 0.86) and strong entry timing, though the daily cycle is approaching the upper band and macro liquidity is a headwind, keeping conviction modest.",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Fresh buy signal with bullish weekly alignment and positive revisions supports a constructive lean; late investor cycle and negative alpha keep conviction low.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "ladder: FRESH BUY, entry axis z: 0.59",
-        "selection revisions z: 0.86",
-        "cycle: approaching_band, late investor phase, right translation"
+        "Verdict: Constructive \u2014 building a base",
+        "Ladder FRESH BUY, entry urgency 'now', entry axis pct 59 (z 0.59)",
+        "Revisions leg z 0.86, overall selection pct 55",
+        "Cycle translation right, not blocked"
       ],
-      "dissent": "The daily cycle is late, SUE is near-zero (z: -0.08), and water utilities are highly sensitive to interest-rate expectations; a macro-driven spike in real yields could hit the stock even if the base looks sound.",
+      "dissent": "Late investor phase and approaching_band cycle plus alpha z -0.52 suggest the edge may be short-lived; SUE near zero offers no catalyst.",
       "falsifier": {
-        "text": "AWR closes below $77 (breaching the recent swing low) \u2014 that would prove the constructive base call wrong.",
+        "text": "AWR closes below its 10-day moving average within the next two weeks, negating the fresh buy signal.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "AWR",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-07-21",
+      "check_by": "2026-08-04",
       "engine_verdict": "Constructive \u2014 building a base"
     },
     {
@@ -93,23 +93,23 @@
       "name": "Texas Roadhouse",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The verdict is Neutral \u2014 no clear edge; the turn-signaled bottoming looks superficially attractive, but the mixed weekly regime, flat selection axis (SUE positive, revisions negative), and elevated macro-risk for a macro-sensitive consumer name leave no falsifiable edge to lean one way or the other.",
+      "horizon_d": 30,
+      "thesis": "Despite a bottoming signal and positive SUE, the engine's neutral verdict reflects mixed selection and a left-translated prior cycle; no clear edge over the S&P 500.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "ladder: TURN SIGNALED, mixed regime",
-        "selection z: -0.03, SUE z: 0.57, revisions z: -0.05, momentum z: -0.37",
-        "macro-risk elevated, accounting watch"
+        "Verdict: Neutral \u2014 no clear edge",
+        "Selection composite z -0.03, pct 50, SUE z 0.57 positive but neutral revisions",
+        "Bottoming TURN SIGNALED with half-size entry; cycle left-translated",
+        "Quality watch flag, macro headwind flagged"
       ],
-      "dissent": "The entry axis is strong (z: 0.67, vol-squeeze present) and SUE is positive, suggesting the recent earnings surprise could act as a catalyst for a mean-reversion rally if consumer confidence holds.",
+      "dissent": "If the bottoming turns into a weekly bullish signal, the high entry score could drive a short-term break higher; the engine may be overly cautious.",
       "falsifier": {
-        "text": "TXRH closes above $185 and the weekly MACD turns positive \u2014 that would show a genuine regime shift and make the neutral lean too cautious.",
+        "text": "TXRH's RSI drops below 50 again and price re-tests the swing low near $170, proving the bottoming false.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-21",
+      "check_by": "2026-08-04",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -118,23 +118,23 @@
       "name": "California Water Service Group",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "The engine says Neutral despite a FRESH BUY ladder signal; the selection profile is hampered by a weak SUE (z: -0.51) and a sharp NI contraction (-33%), offsetting the high entry-axis score, so there is no clear edge to lean constructive.",
+      "horizon_d": 30,
+      "thesis": "Engine's neutral verdict caps the strong fresh buy entry; weak SUE and negative momentum offset revisions, leaving no reliable edge relative to the market.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "ladder: FRESH BUY, entry axis z: 0.91",
-        "SUE z: -0.51, revisions z: 0.66, NI growth -33%",
-        "low-vol/low-beta factor support but not a forward edge"
+        "Verdict: Neutral \u2014 no clear edge",
+        "FRESH BUY signal, entry axis pct 64 (z 0.91), but selection axis only pct 51",
+        "SUE z -0.51, alpha z -0.61, revisions z 0.66",
+        "Cycle in_band, investor mid, right translation"
       ],
-      "dissent": "The stock is near 52-week highs with extremely favourable entry timing and a positive revisions trend; if the next earnings surprise is positive, it could break out and leave the neutral lean behind.",
+      "dissent": "The fresh buy in a bullish medium-term structure could still deliver a quick rally; the neutral verdict may be too conservative if momentum turns positive.",
       "falsifier": {
-        "text": "CWT posts a positive earnings surprise (SUE > 0.5) and closes above $48 \u2014 that would invalidate the neutral stance.",
+        "text": "CWT breaks above $47.50 with volume and strong relative strength vs. utilities, indicating the neutral lean understated the edge.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-21",
+      "check_by": "2026-08-04",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -142,28 +142,28 @@
       "ticker": "CHCO",
       "name": "City Holding Company",
       "lean": "constructive",
-      "conviction": "medium",
-      "horizon_d": 20,
-      "thesis": "The screen labels this constructive on a base-building signal; positive revisions (z: 0.81) and a modestly positive SUE (0.27) provide a literature-backed event edge, and the entry timing is solid, though factor quality is low, so conviction is medium.",
+      "conviction": "low",
+      "horizon_d": 30,
+      "thesis": "Positive revisions and a bottoming turn signal align with engine's constructive verdict; late-cycle characteristics and below-average quality keep conviction low.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection revisions z: 0.81, SUE z: 0.27",
-        "entry axis z: 0.59, ladder: TURN SIGNALED",
-        "quality factor z: -0.67 (clean accounting)"
+        "Verdict: Constructive \u2014 building a base",
+        "Selection axis z 0.48, pct 57, revision leg z 0.81",
+        "Bottoming TURN SIGNALED, entry axis pct 59 (z 0.59), not blocked",
+        "Cycle approaching_band but right translation, no failed cycle"
       ],
-      "dissent": "The stock is a small-cap regional bank with negative short-interest z-score; quality metrics are weak, and any deterioration in regional bank sentiment or a failed cycle in financials could cause the base to break down rapidly.",
+      "dissent": "Late investor phase and approaching_band cycle may stall the move; quality factor is in the bottom 40th percentile, limiting sector-relative appeal.",
       "falsifier": {
-        "text": "CHCO closes below $125 \u2014 near the recent cycle low \u2014 which would break the base and prove the constructive lean false.",
+        "text": "CHCO's price breaks below the recent swing low of $122.88, invalidating the base-building thesis.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "CHCO",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 20
+          "horizon_d": 30
         }
       },
-      "check_by": "2026-07-21",
+      "check_by": "2026-08-04",
       "engine_verdict": "Constructive \u2014 building a base"
     }
   ],
