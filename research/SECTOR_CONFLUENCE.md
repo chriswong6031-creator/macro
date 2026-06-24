@@ -75,17 +75,54 @@ momentum stalling** (daily roll), escalating to TOPPING (extended + 3D rolling) 
 SELL (extended + confirmed 3D down-cross). This is exactly how `engine/cycles.py`
 already treats single names.
 
+## The OVERSOLD_BOUNCE carve-out — the 200-day gate is not uniform (2026-06-24)
+
+The original hard 200-day gate dumped EVERY below-trend signal into `BELOW_TREND`
+("knife; wait for a reclaim"). User pushback: low-vol defensives just oscillate
+around their 200-day, so that buries buyable oversold dips on stable names (XLU
+sits below its 200d 26% of the time, crosses it ~9.4×/yr, only ~-6.8% deep). A
+per-sector decomposition (`scripts/_bt_below200_meanrev*.py`) plus an
+adversarially-verified 7-agent workflow settled it:
+
+* **Confirmed (independent of the 200d):** XLU/XLP/XLV/XLRE are genuinely mean-
+  reverting — Lo-MacKinlay VR63 0.595 vs cyclicals 0.750, OU half-life ~28d vs 38d,
+  exact-permutation p=0.0030; the defensives occupy the top-4 mean-reverting slots.
+* **Confirmed:** their below-200d oversold dips bounce in **ABSOLUTE** terms
+  (+~4%/63d, hit ~79-85%, *median ≥ mean* — not a tail mirage), positive in all 4
+  eras. The gate suppressed ~27-40% of each name's signals.
+* **The governing caveat:** those dips show ~flat-to-negative **EXCESS vs SPY** (a
+  low-beta defensive lags a ripping index) — so it's a *tactical / absolute bounce*,
+  NOT a beat-the-market rotation buy. And ~half the lift is the below-200d mean-
+  reversion REGIME + drift; the StochRSI cross's own timing edge is weak (2 of 4
+  eras, no 10d edge). Credit the regime, not the signal.
+* **Knife protection must stay:** unguarded below-200d oversold buys on deep
+  cyclicals are real knives (63d worst-path drawdown -56%). Guards contain it for
+  defensives (worst -16.9%/63d); `put-present` is load-bearing (scrubbed 2008 from
+  106 signals to 5). Cyclicals stay excluded (their guarded tail is still ~-24%).
+
+So the fix is a NEW **`OVERSOLD_BOUNCE`** state (a distinct `tactical` side that
+never enters the buy/avoid counts or the rotation spread), restricted to the
+`{XLU,XLP,XLV,XLRE}` cohort, trigger = the literal StochRSI cross-up<20 (the
+reclaim-filtered variant FAILED the within-regime permutation), guards = Fed-put-
+present + 200-day-not-falling (21-bar slope ≥ 0) + not-deep (> -12% below the 200d).
+It is surfaced with a **dual base rate** (ABSOLUTE leads — the bounce you capture —
+with excess-vs-SPY beside it as the honest "lags SPY" cost) and labelled a tactical
+mean-reversion dip, never a confirmed buy. The verifiers rejected the alternative
+(a tuned VR63 numeric gate) as overfit; a 4-name allowlist justified by an
+independent structural test is more honest and auditable.
+
 ## The engine (`engine/sector_signals.py`)
 
 State machine over the latest daily + 3-day flags, 200-day-gated (verbatim states in
 the module): `BUY` (full MTF confluence) · `BUY_PARTIAL` · `SETUP_BUY` · `NEUTRAL` ·
 `EXTENDED` (late) · `TOPPING` · `SELL` · `BELOW_TREND` (knife; hardened by the index
-Fed-put gate). `calibrate()` re-measures each state's forward-63d excess weekly-
-sampled across history so the UI shows **measured** base rates (the static
-`STATE_BASE_RATES` defaults equal that calibration). Honest nuance the calibration
-surfaces: the negative avoid-edge concentrates in TOPPING/SELL — a pure EXTENDED
-(overbought but still rising) is ~market-neutral at 63d, i.e. *"late, don't chase"*
-rather than *"short it"*.
+Fed-put gate) · `OVERSOLD_BOUNCE` (the tactical defensive carve-out above).
+`calibrate()` re-measures each state's forward-63d return weekly-sampled across
+history — BOTH excess-vs-SPY and ABSOLUTE — so the UI shows **measured** dual base
+rates (the static `STATE_BASE_RATES` defaults equal that calibration). Honest nuance:
+the negative avoid-edge concentrates in TOPPING/SELL — a pure EXTENDED (overbought
+but still rising) is ~market-neutral at 63d, i.e. *"late, don't chase"* rather than
+*"short it"*; and OVERSOLD_BOUNCE is positive ABSOLUTE but ~flat on excess.
 
 ## Honest ceiling (carried onto the UI)
 

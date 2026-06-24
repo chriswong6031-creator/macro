@@ -97,7 +97,93 @@ def test_every_state_has_display_metadata_and_base_rate():
     for st in ss._STATE_META:
         assert st in ss.STATE_BASE_RATES or st == "NEUTRAL"
     for st, meta in ss._STATE_META.items():
-        assert meta[0] in ("buy", "neutral", "avoid")
+        assert meta[0] in ("buy", "neutral", "avoid", "tactical")
+
+
+# -------------------------------------------------- oversold-bounce carve-out ----
+
+def test_oversold_bounce_fires_for_eligible_shallow_turning_dip():
+    d = _row(stoch_up=True, rsi=35, stoch=22)
+    t3 = _row(stoch_up=True, rsi=38, stoch=22)
+    v = ss._verdict(d, t3, above200=False, above50=False,
+                    depth200=-0.05, slope200_up=True, osb_eligible=True)
+    assert v["state"] == "OVERSOLD_BOUNCE"
+    assert ss._STATE_META["OVERSOLD_BOUNCE"][0] == "tactical"
+
+
+def test_oversold_bounce_requires_caller_eligibility():
+    # same dip but caller did not assert eligibility (not a cohort name / put absent)
+    d = _row(stoch_up=True); t3 = _row(stoch_up=True)
+    v = ss._verdict(d, t3, above200=False, above50=False,
+                    depth200=-0.05, slope200_up=True, osb_eligible=False)
+    assert v["state"] == "BELOW_TREND"
+
+
+def test_oversold_bounce_blocked_when_deep_knife():
+    d = _row(stoch_up=True); t3 = _row(stoch_up=True)
+    v = ss._verdict(d, t3, above200=False, above50=False,
+                    depth200=-0.20, slope200_up=True, osb_eligible=True)
+    assert v["state"] == "BELOW_TREND"     # >12% below the 200d = knife
+
+
+def test_oversold_bounce_blocked_when_200d_falling():
+    d = _row(stoch_up=True); t3 = _row(stoch_up=True)
+    v = ss._verdict(d, t3, above200=False, above50=False,
+                    depth200=-0.05, slope200_up=False, osb_eligible=True)
+    assert v["state"] == "BELOW_TREND"     # still-collapsing trend = knife
+
+
+def test_bare_below200_call_is_a_knife_by_default():
+    # a bare _verdict() (no osb kwargs) must never emit the tactical state
+    d = _row(stoch_up=True); t3 = _row(stoch_up=True)
+    assert ss._verdict(d, t3, above200=False, above50=False)["state"] == "BELOW_TREND"
+
+
+def _defensive_dip() -> pd.Series:
+    """A long uptrend (rising 200d) then a shallow multi-week selloff + small uptick
+    — a buyable oversold dip ~8% below a still-rising 200d (not a deep knife)."""
+    base = np.concatenate([np.full(470, 0.0010), np.full(30, -0.006), np.full(3, 0.004)])
+    idx = pd.bdate_range("2015-01-01", periods=len(base))
+    return pd.Series(100 * np.cumprod(1 + base), index=idx)
+
+
+def test_sector_signal_oversold_bounce_cohort_and_put_gate():
+    px = _defensive_dip()
+    # cohort name, Fed put present -> tactical oversold bounce
+    a = ss.sector_signal(px, "Utilities", ticker="XLU", put_absent=False)
+    assert a["state"] == "OVERSOLD_BOUNCE" and a["side"] == "tactical"
+    assert a["above200"] is False
+    # same dip, Fed put ABSENT -> demoted to a knife
+    b = ss.sector_signal(px, "Utilities", ticker="XLU", put_absent=True)
+    assert b["state"] == "BELOW_TREND"
+    # same dip, NON-cohort (cyclical) name -> knife, never the carve-out
+    c = ss.sector_signal(px, "Technology", ticker="XLK", put_absent=False)
+    assert c["state"] == "BELOW_TREND"
+
+
+def test_board_tactical_lane_excluded_from_buy_count():
+    px = _defensive_dip()
+    spy = pd.Series(100 * np.cumprod(np.full(len(px), 1.0004)), index=px.index)
+    closes = pd.DataFrame({"XLU": px, "SPY": spy})
+    bd = ss.board(closes, {"XLU": "Utilities"}, ["XLU"], spy=closes["SPY"], put_absent=False)
+    assert bd["tactical_tickers"] == ["XLU"]
+    assert "XLU" not in bd["buy_tickers"] and "XLU" not in bd["avoid_tickers"]
+    assert bd["n_buy"] == 0 and bd["n_tactical"] == 1
+    # put-absent turns the carve-out off entirely
+    bd2 = ss.board(closes, {"XLU": "Utilities"}, ["XLU"], spy=closes["SPY"], put_absent=True)
+    assert bd2["tactical_tickers"] == []
+
+
+def test_calibrate_emits_dual_absolute_and_excess():
+    rng = np.random.default_rng(1)
+    idx = pd.bdate_range("2005-01-01", periods=1500)
+    closes = pd.DataFrame({t: pd.Series(50 * np.cumprod(1 + rng.normal(0.0004, 0.012, len(idx))), index=idx)
+                           for t in ["XLU", "XLP", "XLK"]})
+    spy = pd.Series(100 * np.cumprod(1 + rng.normal(0.0003, 0.01, len(idx))), index=idx)
+    cal = ss.calibrate(closes, ["XLU", "XLP", "XLK"], spy)
+    for rec in cal.values():
+        assert {"exc63", "hit", "abs63", "abs_hit", "n"} <= set(rec)
+        assert isinstance(rec["abs63"], float)
 
 
 # -------------------------------------------------------------- price layer ----
@@ -191,7 +277,7 @@ def test_calibrate_returns_measured_rates():
     cal = ss.calibrate(closes_df, ["AAA", "BBB", "CCC"], spy)
     assert isinstance(cal, dict)
     for st, rec in cal.items():
-        assert set(rec) == {"exc63", "hit", "n"}
+        assert {"exc63", "hit", "abs63", "abs_hit", "n"} <= set(rec)
         assert isinstance(rec["exc63"], float)       # JSON-clean (not np.float64)
         assert rec["n"] >= 50
 
