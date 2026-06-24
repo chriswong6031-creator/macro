@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import t as T  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
+from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -2343,31 +2344,6 @@ def build_advanced_page(env: Environment, site: Path, generated: str, latest: di
     (site / "advanced.html").write_text(html)
     log.info("wrote advanced.html (%.0f KB)", (site / "advanced.html").stat().st_size / 1024)
     return cross_asset
-
-
-def market_gamma_view(gex) -> dict | None:
-    """Market-wide dealer-gamma vol regime from the VALIDATED index dealer-gamma read
-    (SPX, data/cboe/gex via engine.gex_engine — the same that drives the dealer-gamma
-    board). ABOVE the gamma-flip strike dealers are net long gamma and hedge AGAINST
-    moves (pinning / vol suppressed); BELOW it they're short gamma and hedge WITH moves
-    (amplifying). A whole-market vol CONTEXT for the per-stock setups — not a per-stock
-    signal. Graceful: None if the store is missing/empty (the note simply won't render).
-    Uses the flip side (spot vs flip), the engine's authoritative regime, NOT the coarse
-    net-$ sign the ETF-flows board flags — they answer different questions."""
-    if gex is None or not len(gex):
-        return None
-    g = gex.iloc[-1]
-    svf = g.get("spot_vs_flip_pct")
-    if svf is None or pd.isna(svf):
-        return None
-    return {
-        "regime": "short" if float(svf) < 0 else "long",
-        "spot_vs_flip_pct": round(float(svf), 1),
-        "net_gex_bn": round(float(g.get("net_gex_bn") or 0), 0),
-        "flip": int(round(float(g.get("flip_strike") or 0))),
-        "spot": int(round(float(g.get("spot") or 0))),
-        "asof": str(gex.index.max().date()),
-    }
 
 
 def index_health_rows() -> list[dict]:
