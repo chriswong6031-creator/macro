@@ -175,7 +175,7 @@ html[data-theme="dark"] .sbar{background:#222732}
 {% include "_vector_polish.html.j2" %}
 </head>
 <body>
-<nav class="site-nav" style="max-width:1180px;margin:0 auto 16px;padding:0 20px">
+<nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
   {% include "_navlinks.html.j2" %}
   <div class="nav-ctrls">
     <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
@@ -274,7 +274,7 @@ html[data-theme="dark"] .sbar{background:#222732}
         <div class="dt-lab">{{ t('Valuation (REER)', '估值（REER）') }}</div>
         <div class="dt-val">{{ '%+.1f'|format(v.gap_pct) }}% <span style="font-size:11px;font-weight:600;color:var(--muted)">{{ t('vs 5y mean', '相对5年均值') }}</span></div>
         <div class="dt-sub"><span class="dt-chip {{ v.label }}">{{ t(VALL[v.label][0], VALL[v.label][1]) }}</span>{% if v.stretched %} · <b>{{ t('stretched', '偏离') }}</b>{% endif %}
-          {% if v.verdict %}<span class="vg {{ v.verdict|lower }}" title="{{ t('Split-half forward-IC verdict for the dollar REER value factor (measured by scripts.calibrate_forex). ', '美元REER估值因子的前后半段远期IC判定。') }}{{ v.verdict }}{% if v.ic_full is not none %} · IC {{ '%+.3f'|format(v.ic_full) }}{% endif %}{% if v.verdict == 'CONFIRMED' and not v.promotable %} — but fails the deflated-Sharpe gate, so display-only{% endif %}">{{ {'CONFIRMED':'✓','INVERTED':'⇄','DIRECTIONAL':'~','CONTEXT':'·','UNMEASURED':'–'}.get(v.verdict,'') }}</span>{% endif %}</div>
+          {% if v.verdict %}<span class="vg {{ v.verdict|lower }}" title="Split-half forward-IC verdict for the dollar REER value factor (scripts.calibrate_forex). {{ v.verdict }}{% if v.ic_full is not none %} · IC {{ '%+.3f'|format(v.ic_full) }}{% endif %}{% if v.verdict == 'CONFIRMED' and not v.promotable %} — but fails the deflated-Sharpe gate, so display-only{% endif %}">{{ {'CONFIRMED':'✓','INVERTED':'⇄','DIRECTIONAL':'~','CONTEXT':'·','UNMEASURED':'–'}.get(v.verdict,'') }}</span>{% endif %}</div>
         <span class="lead-tag context">{{ t('context · multi-year', '背景 · 多年') }}{% if v.verdict == 'CONFIRMED' %} · {{ t('forward-IC confirmed', '远期IC已确认') }}{% endif %}</span>
       </div>{% endif %}
 
@@ -303,6 +303,105 @@ html[data-theme="dark"] .sbar{background:#222732}
       </div>{% endif %}
     </div>
   </div>
+  {% endif %}
+
+  <!-- ===================== §1.5 · FX STRESS & REGIME RADAR ===================== -->
+  {% if regime and regime.scenarios %}
+  <div class="section-h"><span class="sn">§1.5</span><h2>{{ t('FX Stress & Regime Radar', 'FX压力与格局雷达') }}</h2>
+    <span class="sh-sub">{{ t('the joint velocity + level configuration of currency moves → named macro scenarios with an empirical historical frequency', '货币速度+水平的联合配置 → 命名宏观情景及经验历史频率') }}</span></div>
+  <div style="margin:2px 0 12px"><span class="lead-tag coincident">{{ t('coincident', '同步') }}</span>
+    <span class="lead-tag context">{{ t('empirical base rate · display-only / never scored', '经验基率 · 仅供展示/从不评分') }}</span>
+    {% if regime.dominant %}<span class="sub" style="margin-left:8px">{{ t('Dominant now:', '当前主导：') }}
+      <b>{% for s in regime.scenarios if s.key == regime.dominant %}{{ t(s.name_en, s.name_zh) }}{% endfor %}</b></span>
+    {% else %}<span class="sub faint" style="margin-left:8px">{{ t('No scenario active — currency moves are not configured like a known stress regime today.', '当前无激活情景 — 货币走势未呈现已知压力格局。') }}</span>{% endif %}
+  </div>
+  <div class="board-grid">
+  {% for s in regime.scenarios %}
+    {% set p = s.prob %}
+    {% set ic = (C.red if s.intensity_today >= 65 else (C.amber if s.intensity_today >= 40 else C.muted)) %}
+    <div class="card"{% if s.key == regime.dominant %} style="border-color:{{ C.red }}"{% endif %}>
+      <div class="pair-head">
+        <div>
+          <div class="pair-name" style="font-size:16px">{{ t(s.name_en, s.name_zh) }}</div>
+          <div class="pair-arch">{{ s.n_fired }}/{{ s.min_legs }}+ {{ t('legs firing', '腿触发') }}
+            {% if s.active %}· <span style="color:var(--red);font-weight:800">{{ t('ACTIVE', '激活') }}</span>{% endif %}
+            {% if s.key == regime.dominant %}· {{ t('dominant', '主导') }}{% endif %}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="hero-state" style="font-size:30px;color:{{ ic }}">{{ s.intensity_today|round|int }}<span style="font-size:12px;color:var(--muted)">/100</span></div>
+          <div class="sub faint">{{ t('stress intensity', '压力强度') }}</div>
+        </div>
+      </div>
+
+      {# probability block — past-tense empirical frequency, status-aware #}
+      <div class="verdict-box" style="margin:12px 0">
+        <div class="fgrp" style="margin-top:0">{{ t('Forward analogue from history', '历史远期类比') }}</div>
+        {% if p.status == 'ok' %}
+        {% set pc = (p.p_cond * 100)|round|int %}{% set br = (p.base_rate * 100)|round|int %}
+        <div class="sub">{{ t(
+          'On the %d days at least this stressed, %d%% saw the adverse move within %dd — vs a %d%% base rate.'|format(p.n_raw, pc, p.N, br),
+          '在%d个至少同等压力的历史日中，%d%%在%d天内出现不利走势 — 而无条件基率为%d%%。'|format(p.n_raw, pc, p.N, br)) }}</div>
+        <div class="sub faint" style="margin-top:5px">95% CI {{ (p.wilson_lo*100)|round|int }}–{{ (p.wilson_hi*100)|round|int }}%
+          · n={{ p.n_raw }} (n<sub>eff</sub>≈{{ p.n_eff|round(1) }}) · {{ t('lift', '提升') }} {{ '%+.0f'|format(p.abs_lift*100) }}pp
+          {% if p.ci_separated %}· <span style="color:var(--green)">{{ t('CIs separate', '区间分离') }}</span>{% else %}· {{ t('CIs overlap — lift not robust', '区间重叠 — 提升不稳健') }}{% endif %}</div>
+        {% elif p.status == 'insufficient' %}
+        <div class="sub faint">{{ t('Insufficient history at this stress level', '此压力水平历史样本不足') }} (n={{ p.n_raw }}, n<sub>eff</sub>≈{{ p.n_eff|round(1) }}).</div>
+        {% elif p.status == 'unprecedented' %}
+        <div class="sub faint">{{ t('Unprecedented in the available record', '可得历史中前所未见') }} (n={{ p.n_raw }}).</div>
+        {% else %}
+        <div class="sub faint">{{ t('Building — warm-up window not yet complete.', '积累中 — 预热窗口尚未完成。') }}</div>
+        {% endif %}
+        {% if p.base_rate is not none %}<div class="sub faint" style="margin-top:3px">{{ t('Defining outcome', '界定结果') }}: {{ t('adverse move over', '不利走势于') }} {{ p.N }}{{ t('d', '天') }}{% if p.i0_pctile is not none %} · {{ t('today’s stress is at the', '当前压力处于') }} {{ (p.i0_pctile*100)|round|int }}{{ t('th %ile of history', '历史百分位') }}{% endif %}.</div>{% endif %}
+        {% if s.illustrative %}<div class="sub faint" style="margin-top:3px">⚑ {{ t('Managed-regime / intervention truncates the distribution — illustrative only.', '受管理体制/干预会截断分布 — 仅供示意。') }}</div>{% endif %}
+      </div>
+
+      {# leg readout — velocity + level + cross-currency + risk-driver #}
+      <div class="fgrp">{{ t('What’s firing', '触发因素') }}</div>
+      {% for leg in s.fired_legs %}
+      <div class="frow">
+        <span class="flabel">{{ t(leg.en, leg.zh) }}</span>
+        {% if leg.value is not none %}{{ fbar(leg.value) }}{% else %}<div class="fbar"><span class="mid"></span></div>{% endif %}
+        <span class="fwt">{% if leg.absent %}<span class="faint">n/a</span>{% elif leg.fired %}<span style="color:var(--red)">●</span>{% else %}<span class="faint">○</span>{% endif %}</span>
+      </div>
+      {% endfor %}
+      <div class="framing" style="margin-top:8px">{{ t(s.disc_en, s.disc_zh) }}</div>
+    </div>
+  {% endfor %}
+  </div>
+
+  {# per-currency move kinematics — literal move + velocity + acceleration #}
+  {% if kinematics and kinematics.rows %}
+  <div class="card" style="margin-top:18px">
+    <h2>{{ t('Currency move kinematics', '货币走势动力学') }} <span class="faint">· {{ t('literal move + velocity + acceleration', '实际走势 + 速度 + 加速度') }}</span></h2>
+    <table class="tbl">
+      <thead><tr>
+        <th>{{ t('Currency', '货币') }}</th>
+        <th>1d</th><th>5d</th><th>20d</th>
+        <th>{{ t('Velocity', '速度') }}</th>
+        <th>{{ t('Accel', '加速') }}</th>
+        <th>{{ t('Vol %ile', '波动百分位') }}</th>
+        <th>{{ t('Ex-$ 5d', '去美元5d') }}</th>
+        <th>{{ t('State', '状态') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for r in kinematics.rows %}
+        <tr>
+          <td><b>{{ r.ccy }}</b> <span class="faint">{{ t(r.label_en, r.label_zh) if r.label_en != r.ccy else '' }}</span></td>
+          <td class="{{ 'chg up' if (r.lit_1d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.lit_1d_pct) if r.lit_1d_pct is not none else '—' }}</td>
+          <td class="{{ 'chg up' if (r.lit_5d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.lit_5d_pct) if r.lit_5d_pct is not none else '—' }}</td>
+          <td class="{{ 'chg up' if (r.lit_20d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.lit_20d_pct) if r.lit_20d_pct is not none else '—' }}</td>
+          <td>{{ '%+.1f'|format(r.vel_z) if r.vel_z is not none else '—' }}</td>
+          <td>{{ '%+.1f'|format(r.accel_z) if r.accel_z is not none else '—' }}</td>
+          <td>{{ (r.rvol_pctile*100)|round|int if r.rvol_pctile is not none else '—' }}</td>
+          <td class="{{ 'chg up' if (r.resid_5d_pct or 0) >= 0 else 'chg dn' }}">{{ '%+.1f'|format(r.resid_5d_pct) if r.resid_5d_pct is not none else '—' }}</td>
+          <td>{{ t(r.state_en, r.state_zh) }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="sub faint" style="margin-top:8px">{{ t('Literal % move (1/5/20d, vs USD), velocity = recent speed in σ-units, acceleration = change in velocity, realized-vol percentile, and the idiosyncratic (ex-dollar residual) 5d move. COINCIDENT and DESCRIPTIVE — a read of how fast each currency is moving, never a forecast or a buy list.', '实际百分比走势（1/5/20天，对美元）、速度=近端走势的σ单位、加速度=速度变化、实现波动率百分位，以及特异（剔除美元残差）的5天走势。同步且描述性 — 衡量每种货币移动速度，绝非预测或买入清单。') }}</div>
+  </div>
+  {% endif %}
   {% endif %}
 
   <!-- ===================== §02 · DOLLAR TRANSMISSION ===================== -->
@@ -559,7 +658,8 @@ html[data-theme="dark"] .sbar{background:#222732}
       <p><b>{{ t('Honesty bar.', '诚信底线。') }}</b> {{ t('FX violates uncovered interest parity (the carry "puzzle"), and carry has fat-tailed crash risk that clusters with equity crises (1998 / 2008 / 2015 / 2020 / 2024). So these are RISK-CONTEXT reads, not trade signals or measured alpha. Weights are MEASURED by split-half forward-return calibration (Spearman IC, split 2015, peg windows excised) — the glyph on each factor marks its verdict: ✓ CONFIRMED (held sign in both halves), ⇄ INVERTED (robustly predicts the opposite — e.g. the carry forward-premium puzzle), ~ DIRECTIONAL (full sample only), · CONTEXT (weak). Most FX factors land DIRECTIONAL or CONTEXT, so confidence stays dampened until a pair has ≥2 robust factors. Pegs & intervention zones (USD/JPY MoF, SNB, managed USD/CNH) cap or flatten the verdict.', '外汇违反无抛补利率平价（套息“谜题”），且套息具有与股市危机同步聚集的肥尾崩盘风险（1998/2008/2015/2020/2024）。因此这些是风险背景解读，而非交易信号或已测得的超额收益。权重由前后半段远期收益校准测得（Spearman IC，2015分割，剔除挂钩窗口）— 每个因子的字形标注其判定：✓ 已确认（两半段同号）、⇄ 反向（稳健预测相反方向，如套息远期溢价之谜）、~ 有方向（仅全样本）、· 背景（弱）。多数外汇因子落入有方向或背景，故在某货币对具备≥2个稳健因子前信心保持折减。挂钩与干预区间（美元/日元财务省、瑞士央行、受管理的美元/离岸人民币）会限制或抹平结论。') }}</p>
       <p><b>{{ t('The Dollar Desk (§01) is display-only.', '美元桌（§01）仅供展示。') }}</b> {{ t('The dollar is the master variable — it conditions commodities, equities, bonds and crypto — so we read it deeply: real-rate regime, the Fed policy path (US leg of the rate differential), COT positioning, REER valuation, a multi-horizon trend stack, USD liquidity, and a smile-confirmation tally. But NONE of it is scored. The dollar move is often the tightening itself (coincident), FX direction is famously unforecastable (Meese-Rogoff), and every dollar leg is labeled coincident or context. The "lean" is a balance of context flags — a summary, not a trade call. There is deliberately no aggregate "USD → BUY/SELL".', '美元是主控变量 — 它影响大宗商品、股票、债券与加密货币 — 因此我们深入解读：实际利率格局、美联储政策路径（利差的美国端）、COT持仓、REER估值、多周期趋势栈、美元流动性，以及微笑确认计数。但这些都不参与评分。美元波动往往就是紧缩本身（同步），外汇方向出了名地不可预测（Meese-Rogoff），每个美元项都标注为同步或背景。"倾向"是背景信号的平衡 — 仅为汇总，非交易建议。我们刻意不给出汇总的"美元→买/卖"。') }}</p>
       <p><b>{{ t('Transmission (§02) is contemporaneous.', '传导（§02）为同步关系。') }}</b> {{ t('Dollar↔asset correlations are computed live and are regime-dependent and unstable — sign flips happen, and the stability dot flags them. Gold is shown with its real-rate leg; the 10y-Treasury sign is unstable because the rate channel and haven channel oppose each other. This is a map of how today\'s dollar move is rippling, not a forecast — and it complements the cross-asset PCA on the Cross-Asset page (which asks "are the markets one bet?") rather than duplicating it. Scorecards (§06) are honest PIT backtests of risk premia with fat tails; the Max-DD and skew are the truth the Sharpe hides.', '美元与各资产的相关性为实时计算，随格局变化且不稳定 — 符号会翻转，稳定性圆点会标记之。黄金附带其实际利率项；10年期国债符号不稳定，因为利率渠道与避险渠道相互抵消。这是当前美元波动如何扩散的地图，而非预测 — 它与跨资产页面的PCA（"各市场是否同一笔交易？"）互补而非重复。记分卡（§06）是对带肥尾风险溢价的诚实时点回测；最大回撤与偏度才是夏普比率掩盖的真相。') }}</p>
-      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: Yahoo FX spot, FRED policy & short rates + broad-dollar legs + real yields (DFII10) + breakevens + Fed balance sheet & RRP + BIS REER, CFTC Commitments of Traders, and Fed-funds (ZQ) futures for the policy path.', '免费/无密钥：Yahoo外汇即期、FRED政策与短端利率+广义美元分项+实际收益率（DFII10）+盈亏平衡+美联储资产负债表与RRP+BIS实际有效汇率、CFTC交易商持仓、以及联邦基金（ZQ）期货政策路径。') }}
+      <p><b>{{ t('The Stress & Regime Radar (§1.5) is an empirical base rate, not a forecast.', '压力与格局雷达（§1.5）是经验基率，而非预测。') }}</b> {{ t('Each scenario builds a strictly-causal stress intensity from the joint configuration of currency moves — VELOCITY (recent speed in σ-units and its acceleration) and LITERAL level (drawdowns, percentiles, distance to peg/intervention zones, the CNH basis). The probability is a PAST-TENSE conditional frequency: of all the days in history at least this stressed, the share that saw the defining adverse move within N days — shown beside the unconditional base rate, the sample n, an overlap-deflated n_eff = n/N (forward windows overlap, so the effective sample is smaller and the interval wider), and a Wilson 95% interval on both. We did NOT search a threshold to maximize it — today’s reading is the only condition — so there is no multiple-testing bias to correct. It is computed once over the full causal record (no peg-window excision, because this is a realized frequency, not a fitted weight), and it is DISPLAY-ONLY: it never feeds a score, conviction or BUY/SELL. FX direction is famously unforecastable (Meese-Rogoff); a wide interval means thin history, not low risk; and the record cannot capture tail events outside the sample (1998 / 2008 / 2015 / 2020 / 2024). Managed (USD/CNH) and intervention (USD/JPY MoF, SNB) regimes truncate the distribution — those scenarios are flagged illustrative.', '每个情景由货币走势的联合配置构建严格因果的压力强度 — 速度（近端走势的σ单位及其加速度）与实际水平（回撤、百分位、距挂钩/干预区的距离、离岸人民币基差）。概率为过去时的条件频率：在历史上所有至少同等压力的日子里，于N天内出现界定性不利走势的占比 — 并列出无条件基率、样本量n、经重叠折减的有效样本n_eff = n/N（远期窗口重叠，故有效样本更小、区间更宽），以及两者的Wilson 95%区间。我们并未搜索阈值来最大化它 — 当前读数是唯一条件 — 故无需校正多重检验偏差。它在完整因果记录上一次性计算（不剔除挂钩窗口，因为这是已实现频率而非拟合权重），且仅供展示：从不参与评分、信心或买/卖。外汇方向出了名地不可预测（Meese-Rogoff）；区间宽意味着历史样本薄，而非风险低；且记录无法涵盖样本外的尾部事件（1998/2008/2015/2020/2024）。受管理（美元/离岸人民币）与干预（美元/日元财务省、瑞士央行）体制会截断分布 — 相关情景标注为仅供示意。') }}</p>
+      <p><b>{{ t('Data.', '数据。') }}</b> {{ t('Free / keyless: Yahoo FX spot, FRED policy & short rates + broad-dollar legs + real yields (DFII10) + breakevens + Fed balance sheet & RRP + BIS REER, CFTC Commitments of Traders, Fed-funds (ZQ) futures for the policy path, and the ICE BofA MOVE bond-vol index.', '免费/无密钥：Yahoo外汇即期、FRED政策与短端利率+广义美元分项+实际收益率（DFII10）+盈亏平衡+美联储资产负债表与RRP+BIS实际有效汇率、CFTC交易商持仓、联邦基金（ZQ）期货政策路径、以及ICE BofA MOVE债券波动率指数。') }}
       {% if not cot_ok %}<span class="flag info">ℹ {{ t('COT positioning is temporarily unavailable (CFTC endpoint outage); it populates on the next successful collection.', 'COT持仓暂不可用（CFTC接口故障）；将在下次成功采集时填充。') }}</span>{% endif %}</p>
       <p class="meta-foot">{{ t('History', '历史') }} {{ cal_span }} · {{ t('built', '构建于') }} {{ built }}</p>
     </div>

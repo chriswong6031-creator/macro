@@ -2618,7 +2618,7 @@ def main() -> int:
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",
                   "lightweight-charts.js",
-                  "allocation_scorecard.js", "live.js"):
+                  "allocation_scorecard.js", "live.js", "wh_banner.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())

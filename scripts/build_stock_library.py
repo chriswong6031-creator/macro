@@ -30,7 +30,8 @@ from engine.conditions import sector_macro_beta  # noqa: E402
 from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
-from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
+from engine.setups import (  # noqa: E402
+    ALIGN_MIN_KEEP, US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer)
 from engine import stock_score  # noqa: E402
 from engine import entry_signal  # noqa: E402
 from engine import risk_sizing  # noqa: E402 — vol-managed inverse-vol sizing (the validated Sharpe lever)
@@ -1409,25 +1410,48 @@ def main() -> int:
                   if p.get("composite_z") is not None and t in row_by_t]
         scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
         # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
-        # realize -0.7pp/mo and a -58% vs -41% worst drawdown). A name is BUYABLE only if its
-        # cycle/extension does NOT block (downtrend / parabolic / over-extended chase like CASY)
-        # AND its entry is constructive (entry_z > 0; an ABSENT entry is not "poor", so it
-        # stays). Strong-but-not-buyable names go to a WATCH list ("leaders — wait for a
-        # pullback") so they are surfaced honestly, never sold as buys.
-        def _buyable(p):
+        # realize -0.7pp/mo and a -58% vs -41% worst drawdown) AND the new BOTTOMING-ALIGNMENT
+        # gate. A name is BUYABLE only if its cycle/extension does NOT block (downtrend /
+        # parabolic / over-extended chase) AND its entry is constructive (entry_z > 0) AND its
+        # weekly/3-day/daily are ALIGNED to the upside (engine.cycles.mtf_alignment: weekly
+        # not-falling + 3-day nearing a bullish cross + daily just-crossed/about-to) — so a
+        # mid-weekly-bear falling knife with a strong event EDGE can no longer top the board.
+        # NEAR-aligned names backfill (tagged) only when too few are fully aligned; the buy
+        # list is ranked by alignment score first, then the Conviction composite. Strong-but-
+        # unaligned names (wrong tape / weekly still falling) drop to the WATCH strip.
+        def _entry_ok(p):
             if p.get("cycle_blocked"):
                 return False
             ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
             return ez is None or ez > 0
-        buyable = [(t, p) for t, p in scored if _buyable(p)]
+
+        def _atier(p):
+            a = p.get("alignment") or {}
+            return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
+
+        def _asort(tp):
+            _t, p, _tier = tp
+            a = p.get("alignment") or {}
+            return ((a.get("score") or 0.0), (p.get("composite_z") or 0.0))
+
+        elig = [(t, p, _atier(p)) for t, p in scored if _entry_ok(p) and _atier(p)]
+        aligned = sorted([x for x in elig if x[2] == "aligned"], key=_asort, reverse=True)
+        near = sorted([x for x in elig if x[2] == "near"], key=_asort, reverse=True)
+        buyable = (aligned if len(aligned) >= ALIGN_MIN_KEEP
+                   else aligned + near[: ALIGN_MIN_KEEP - len(aligned)])
+        buy_ids = {t for t, _, _ in buyable}
         watch = [(t, p) for t, p in scored
-                 if not _buyable(p) and (p.get("composite_z") or 0) > 0]
-        wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
-                "gate_go": gate_go,
-                "buy": [row_by_t[t] for t, _ in buyable[:120]],
+                 if t not in buy_ids and (p.get("composite_z") or 0) > 0]
+
+        def _tag(t, tier):
+            r = row_by_t[t]
+            r["align_tier"] = tier
+            return r
+        wide = {"as_of": alpha_asof, "rank_by": "bottoming-alignment", "gate_go": gate_go,
+                "buy": [_tag(t, tier) for t, _, tier in buyable[:120]],
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
-        eligible = sum(1 for _, p in buyable if (p.get("composite_z") or 0) > 0)
+        eligible = len(aligned)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)

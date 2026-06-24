@@ -1,19 +1,19 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.379,
+  "roro": 0.099,
   "cap_recent": true,
   "fear_built": 0.502,
-  "roro_velocity": -0.005,
-  "vel_pctile": 0.48,
+  "roro_velocity": -0.247,
+  "vel_pctile": 0.109,
   "legs_up": 1,
   "legs_total": 7,
   "flipped_legs": [
     "skew"
   ],
-  "days_since_last_snap": 6,
-  "fear_rebuilding": false,
-  "vix_term": 0.874,
+  "days_since_last_snap": 7,
+  "fear_rebuilding": true,
+  "vix_term": 0.925,
   "status": "dormant",
   "gates": {
     "velocity": false,

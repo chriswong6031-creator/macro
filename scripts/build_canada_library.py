@@ -578,22 +578,26 @@ def main(alpha: dict | None = None) -> dict | None:
 
     # cross-sectional alpha-led "Top setups" — selection (alpha) × timing (cycle)
     setups = None
+    # BOTTOMING-ALIGNMENT gate (mirrors the US/CN/HK fix): the buy shortlist is gated on
+    # multi-timeframe alignment (weekly not-falling + 3-day nearing a bullish cross + daily
+    # just-crossed/about-to) so a mid-weekly-bear falling knife is kept off the strip;
+    # within aligned names the validated alpha leg is the ranking tiebreaker.
+    align_map = {t: (p or {}).get("alignment") for t, p in profiles.items()}
     if cand:
-        # alpha-led (rank_by="alpha"): like the US, Canada residual momentum is the
-        # positive-IC selection leg; cycle timing is displayed context, not the sort key.
         # n_buy generous (100) so the Stock Dashboard's "show more" can reveal the full
-        # bench. The SHIPPED rank stays the VALIDATED alpha leg — the Conviction composite
-        # rides as the displayed profile/verdict on each card, never as the sort key.
+        # bench. The Conviction composite rides as the displayed profile/verdict per card.
         as_of = (alpha or {}).get("as_of")
-        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
-        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100)
+        eligible = sum(1 for _s, r in cand
+                       if (align_map.get(r.get("ticker")) or {}).get("aligned"))
+        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100,
+                             align_map=align_map)
         # attach the unified Conviction Profile to every shipped row (the dashboard card
         # and the name's own page then render the SAME block — never disagree).
         for r in setups["buy"] + setups.get("laggards", []):
             t = r.get("ticker")
             if profiles.get(t):
                 r["conviction"] = profiles[t]
-        setups["eligible"] = eligible        # how many cleared the +0.5 alpha floor
+        setups["eligible"] = eligible        # how many passed the alignment gate
         setups["universe"] = len(cand)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
@@ -603,7 +607,8 @@ def main(alpha: dict | None = None) -> dict | None:
         # Ranked by the validated alpha leg; enriched with price/off-high/sparkline + the
         # Conviction profile; eligible = how many cleared the +0.5 alpha floor.
         wide = compute_canada_standouts(
-            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12))
+            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12,
+                        align_map=align_map))
         for r in wide["buy"] + wide.get("laggards", []):
             t = r.get("ticker")
             if r.get("conviction") is None and profiles.get(t):
@@ -612,7 +617,7 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
-        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+        wide["eligible"] = eligible          # how many passed the alignment gate
         wide["universe"] = len(cand)
         if disp_regime:                      # selection-regime gross dial (board + bot)
             wide["dispersion_regime"] = disp_regime

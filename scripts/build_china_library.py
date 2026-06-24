@@ -862,24 +862,30 @@ def main(alpha: dict | None = None) -> dict | None:
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
 
-    # cross-sectional "Top setups" — selection (alpha) × timing (cycle), surfaced on
-    # china.html. Buys = strong alpha with constructive timing; laggards = weak alpha.
+    # cross-sectional "Top setups" — now BOTTOMING-ALIGNED, not reversal/momentum-led.
+    # The buy shortlist is gated on multi-timeframe alignment (weekly not-falling +
+    # 3-day nearing a bullish cross + daily just-crossed/about-to), so a mid-weekly-bear
+    # falling knife can no longer be surfaced as a buy card. The reversal-led setup score
+    # survives only as the ranking tiebreaker within aligned names; the cycle alignment
+    # is the gate. NEAR-aligned names backfill (clearly tagged) only when too few names
+    # are fully aligned. align_map keys on the same alignment block the Conviction profile
+    # carries (engine.cycles.mtf_alignment), available on every analyzed name's ladder.
     setups = None
+    align_map = {t: (p or {}).get("alignment") for t, p in profiles.items()}
     if cand:
         # n_buy generous so the standout strip's "show more" can reveal the full
-        # ranked shortlist (the card grid shows 12, reveals the rest on demand). The
-        # SHIPPED rank stays CN's VALIDATED leg (rank_by='setup', the reversal-led
-        # construction); the Conviction composite rides as the displayed profile.
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110)
+        # ranked shortlist (the card grid shows 12, reveals the rest on demand).
+        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110,
+                             align_map=align_map)
         (site / "factordata" / "china_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
         # WIDE "Standout individual stocks" board (the China parallel of
-        # us_standouts.json). Ranked by the VALIDATED reversal-led setup leg; each row
-        # carries the unified Conviction profile + price/off-high/sparkline so a
-        # transient build failure leaves a stale-but-present artifact (the page falls
-        # back to china_setups otherwise). eligible = names clearing the +0.5 alpha
-        # quality floor; universe = the scored candidate count.
-        wide = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110, n_lag=12)
+        # us_standouts.json). Same bottoming-alignment gate; each row carries the unified
+        # Conviction profile + price/off-high/sparkline so a transient build failure leaves
+        # a stale-but-present artifact. eligible = names passing the alignment gate;
+        # universe = the scored candidate count.
+        wide = rank_setups(cand, as_of=(alpha or {}).get("as_of"), n_buy=110, n_lag=12,
+                           align_map=align_map)
         for r in wide["buy"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
@@ -888,7 +894,8 @@ def main(alpha: dict | None = None) -> dict | None:
             if risk_sig.get(t):
                 r["risk_sizing"] = risk_sig[t]       # the vol-managed sizing for the card / bot
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
-        eligible = sum(1 for _s, r in cand if (r.get("alpha") or 0) >= 0.5)
+        eligible = sum(1 for _s, r in cand
+                       if (align_map.get(r.get("ticker")) or {}).get("aligned"))
         wide["eligible"] = eligible
         wide["universe"] = len(cand)
         if disp_regime:                      # selection-regime gross dial (board context)
@@ -897,7 +904,7 @@ def main(alpha: dict | None = None) -> dict | None:
             wide["qvix_regime"] = qvix_reg
         (site / "factordata" / "china_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote china_standouts.json (%d buy of %d eligible / %d universe)",
+        log.info("wrote china_standouts.json (%d buy of %d aligned / %d universe)",
                  len(wide["buy"]), eligible, len(cand))
     log.info("china library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))

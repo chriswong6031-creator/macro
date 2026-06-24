@@ -2435,6 +2435,34 @@ narrative_brain:
   rel_threshold: 0.05            # ±5% proxy-vs-SPY = the wrong-way threshold
 
 # =============================================================================
+# White House Watch — primary-source policy monitor + Claude-Opus alert desk
+# (engine/whitehouse_feed.py + engine/whitehouse_brain.py + scripts/build_whitehouse.py).
+# LEAF · CONTEXT-ONLY · DEGRADE-NEVER-RAISE. The hourly `whitehouse-sentinel` workflow
+# polls the White House RSS feeds; each NEW announcement is judged by the Opus brain for
+# market significance. An activated alert drives the site-wide ticker banner
+# (site/wh_banner.json → templates/wh_banner.js) and a report on site/whitehouse.html
+# (implications · sector head/tailwinds · the names most exposed). Nothing here feeds a
+# score, size or allocation. AUTH order: Claude-Code OAuth (Opus) → ANTHROPIC_API_KEY
+# (Opus) → DeepSeek reasoning (so CI still runs without the subscription token).
+# =============================================================================
+whitehouse:
+  enabled: true                   # MASTER SWITCH — no-op anyway without a provider
+  oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN   # the "Opus brain via the CLI" (Bearer + oauth beta)
+  api_key_env: ANTHROPIC_API_KEY             # direct-API fallback
+  deepseek_key_env: DEEPSEEK_API_KEY         # last-resort reasoning fallback (CI without the token)
+  deepseek_base_url: https://api.deepseek.com/anthropic
+  opus_model: claude-opus-4-8     # the significance + report model
+  deepseek_model: deepseek-v4-pro
+  provider_order: [oauth, anthropic, deepseek]
+  max_tokens: 4000
+  min_importance: 60              # importance floor (0-100) below which NO banner activates
+  max_banner_days: 7             # hard ceiling on how long a banner stays live
+  max_tickers: 8                 # cap named beneficiaries per alert (honesty over breadth)
+  max_sectors: 6
+  max_new_per_run: 6             # cap brain calls per sentinel run (cost guard)
+  max_banner_alerts: 6           # cap LIVE banners on the scrolling ticker (readability)
+
+# =============================================================================
 # Alt-Data Brain — Claude-Opus convergence analyst for the Signal Intelligence desk
 # (engine/altdata_brain.py). Reads the deterministic weighted-convergence substrate +
 # the influence graph as an EVIDENCE PACK and emits an ACTIONABLE scored axis (action /
@@ -2696,6 +2724,66 @@ forex:
     timeline_days: 60
     shock:                          # per-pair |move| % that flags an FX shock (lower vol than commods)
       enter_pct: {EURUSD: 1.5, USDJPY: 2.0, GBPUSD: 1.8, AUDUSD: 2.0, USDCAD: 1.5, USDCHF: 1.8, USDMXN: 3.0, USDBRL: 3.5, USDCNH: 1.2}
+
+  # ---------------------------------------------------------------------------
+  # FX STRESS & REGIME RADAR — read the JOINT configuration of currency moves
+  # (velocity + level) to NAME the macro scenario (carry unwind / dollar tightening /
+  # EM crisis / safe-haven flight / reflation / intervention) and attach an HONEST,
+  # EMPIRICAL probability = a PAST-TENSE conditional base rate, NEVER a forecast:
+  # P(adverse forward move | stress intensity >= today's), with the unconditional base
+  # rate, sample n (+ overlap-deflated n_eff=n/N) and a Wilson 95% CI on both. Strictly
+  # causal (intensity uses only data <= t; forward label is (t,t+N]); DISPLAY-ONLY,
+  # never scored / never fed to a conviction/allocation. See engine/forex_regime.py.
+  # ---------------------------------------------------------------------------
+  regime:
+    enabled: true
+    add_drivers:                    # extra series the radar needs (folded into drivers)
+      move: [yahoo, "_MOVE"]        # ICE BofA MOVE bond-vol index (data/yahoo/_MOVE.parquet, 2002->)
+    z_lookback_d: 252               # causal z baseline window (moments shift(1)-ed to exclude t)
+    z_min_periods: 60
+    ewma_halflife_d: 20             # velocity vol normalizer (EWMA realized vol)
+    squash: {z_lo: 0.5, z_hi: 3.0}  # leg sub-intensity ramp (fire threshold ~0.6, saturates ~1.5x)
+    probability:
+      n_min_eff: 9                  # n_eff below this -> suppress the %, show words instead
+      wilson_z: 1.96                # 95% Wilson score interval
+      overlap_deflate: true         # n_eff = n_raw / N (one independent obs per N-day window)
+    kinematics:
+      lit_windows_d: [1, 5, 20]     # literal % moves shown per currency
+      rvol_window_d: 20
+      rvol_pctile_lookback_d: 504
+    scenarios:                      # per-scenario: forward horizon + adverse-outcome theta + leg weights
+      carry_unwind:
+        min_legs: 3
+        theta: {carry_dd: -0.06, spy_dd: -0.08, vix_level: 35}
+        weights: {funder_5d_z: 1.0, carry_5d_z: 1.0, funder_minus_carry: 1.5,
+                  carry_resid_corr: 0.75, dvix_z: 0.75, jpy_accel_z: 1.0}
+      dollar_wrecking_ball:
+        min_legs: 3
+        theta: {eem_dd: -0.08, emoas_bp: 75}
+        weights: {bdxy_20d_z: 1.0, bdxy_pctile: 1.0, usd_up_breadth: 1.5,
+                  adv_vs_em_usd: 1.0, dreal_20d_z: 0.5, dnfci_20d_z: 0.75}
+      em_crisis_capital_flight:
+        min_legs: 3
+        illustrative: true          # managed USD/CNH truncation
+        theta: {em_resid_dd: -0.08, emoas_bp: 150}
+        weights: {em_resid_10d_z: 1.0, em_minus_adv_z: 1.5, emoas_d5_z: 1.0,
+                  cnh_basis: 0.75, em_fx_drawdown: 0.5, eem_10d_z: 0.75}
+      haven_flight_risk_off:
+        min_legs: 3
+        theta: {spy_dd: -0.10, vix_level: 35, hyoas_bp: 150}
+        weights: {haven_5d_z: 1.0, risk_dn_breadth: 1.5, vol_spike: 1.0,
+                  hy_d5_z: 1.0, growth_scare: 0.75, gold_minus_spy: 0.5}
+      reflation_risk_on:
+        min_legs: 3
+        theta: {risk_reversal: -0.06}
+        weights: {risk_20d_z: 1.0, risk_minus_funder: 1.5, commodity_tailwind: 0.75,
+                  credit_vol_compress: 0.75, dbe_20d_z: 0.5, low_resid_corr: 0.5}
+      intervention_risk:
+        min_legs: 2
+        illustrative: true          # MoF/SNB intervention truncates the distribution
+        theta: {usdjpy_1d_gap: -0.025}
+        weights: {usdjpy_velocity: 1.5, usdjpy_level: 1.0, usdjpy_persistence: 1.0,
+                  snb_cnh_strain: 0.5, rate_diff_context: 0.5}
 
   # ---------------------------------------------------------------------------
   # DOLLAR DESK — a deepened, multi-signal read of the master variable (broad USD).

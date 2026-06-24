@@ -558,6 +558,18 @@ jobs:
         # backwards = lookahead). Lossless via a snapshot_json column. Display/research-
         # only, never read back into a score; the script always exits 0.
         run: python -m scripts.archive_signals || true
+      - name: White House Watch — re-render page + inject site-wide alert banner
+        # PAGE-ONLY here: re-render site/wh_banner.json + site/whitehouse.html from the
+        # already-committed ledger (no feed poll, no Opus call, no ledger/state writes) — the
+        # hourly `whitehouse-sentinel` workflow is the SOLE brain-caller / ledger-writer, so
+        # the two workflows can never race to append-then-clobber an alert. Then inject the
+        # alert-ticker <script> into EVERY generated page (depth-aware, idempotent) so the
+        # banner shows site-wide. MUST be the last page-mutating step so no later builder
+        # strips the tag. Resilient: rc 10 = "changed" (the desk's success signal, not an
+        # error); each script leaves prior output in place on any real failure.
+        run: |
+          python -m scripts.build_whitehouse --page-only; rc=$?; [ $rc -eq 0 ] || [ $rc -eq 10 ] || echo "whitehouse desk skipped (additive)"
+          python -m scripts.inject_wh_banner || echo "banner inject skipped (additive)"
       - name: commit engine outputs
         if: always()   # commit the freshly-built pages even if a LATER optional builder times out or is cancelled. pages.yml deploys the COMMITTED main tree, so a skipped commit = stale live site. The builders are individually resilient (each leaves the prior page in place on its own error), so partial output is never broken — committing what built beats shipping nothing.
         run: |
