@@ -344,23 +344,55 @@ def _piotroski(rows: list[dict]) -> dict | None:
 
 def _altman(latest: dict, mktcap: float | None) -> dict | None:
     """Altman Z-score (classic, manufacturers) — distress < 1.81, grey 1.81-2.99,
-    safe > 2.99. Uses market cap for X4; labelled approximate for non-manufacturers."""
+    safe > 2.99. Uses market cap for X4; labelled approximate for non-manufacturers.
+
+    X4 (leverage) divides market cap by total liabilities. The EDGAR `Liabilities` tag is
+    sparse — absent on many large filers' latest annual row — and when it is missing the leg
+    used to silently drop out, summing only 4 legs and SYSTEMATICALLY understating Z (X4 is the
+    term that rewards a large equity cushion vs. debt). That fabricated distress for solvent,
+    liability-light names (e.g. AMZN). We now reconstruct liabilities as assets - equity (the
+    `equity` tag is far more reliably populated) so the leg is not dropped. `approx=True` flags
+    a score still computed WITHOUT the X4 leverage leg (liabilities un-reconstructable) — too
+    incomplete for the policy layer to hard-block on."""
     a = _num(latest.get("assets"))
     if not a or not mktcap:
         return None
     ca, cl = _num(latest.get("cur_assets")), _num(latest.get("cur_liab"))
     wc = (ca - cl) if (ca is not None and cl is not None) else None
-    legs = [(1.2, wc / a if wc is not None else None),
+    liab = _num(latest.get("liabilities"))
+    reconstructed = False
+    if not liab:                                   # reconstruct: liabilities = assets - equity
+        eq = _num(latest.get("equity"))
+        recon = (a - eq) if eq is not None else None
+        if recon is not None:
+            liab, reconstructed = recon, True
+    # An implausibly small total-liabilities figure (real tag OR reconstructed) makes X4 = mktcap/liab
+    # explode into a false "safe" — every going concern carries meaningful liabilities. Floor it at 1%
+    # of assets; below that the figure is corrupt, so drop X4 (-> approx) rather than trust it.
+    if liab is not None and liab < 0.01 * a:
+        liab, reconstructed = None, False
+    x4 = mktcap / liab if liab else None
+    if x4 is not None and x4 > 100:                # equity:liabilities > 100:1 is non-physical -> corrupt
+        x4, reconstructed = None, False            # data (bad mktcap/liab); drop the leg (-> approx)
+    # the four non-leverage legs — whether the name has a standalone score WITHOUT X4
+    base = [(1.2, wc / a if wc is not None else None),
             (1.4, _num(latest.get("retained_earnings")) and _num(latest.get("retained_earnings")) / a),
             (3.3, _num(latest.get("op_income")) and _num(latest.get("op_income")) / a),
-            (0.6, mktcap / _num(latest.get("liabilities")) if _num(latest.get("liabilities")) else None),
             (1.0, _num(latest.get("revenue")) and _num(latest.get("revenue")) / a)]
+    base_avail = [(c, x) for c, x in base if x is not None]
+    legs = base + [(0.6, x4)]
     avail = [(c, x) for c, x in legs if x is not None]
     if len(avail) < 4:
         return None
     z = sum(c * x for c, x in avail)
     zone = "safe" if z > 2.99 else "grey" if z >= 1.81 else "distress"
-    return {"z": round(z, 2), "zone": zone}
+    # A reconstructed X4 (a positive leg) can only LIFT Z — it legitimately rescues a solvent name
+    # from a false distress. But it must not be the SOLE reason a name ENTERS distress: if the name
+    # had no standalone score without X4 (< 4 real legs) and still reads distress, that verdict rests
+    # on the approximation — flag approx so the policy layer demotes it to context, never a hard veto.
+    # No X4 leg at all is likewise too incomplete to hard-block on.
+    approx = (x4 is None) or (reconstructed and len(base_avail) < 4 and zone == "distress")
+    return {"z": round(z, 2), "zone": zone, "approx": approx}
 
 
 def _cagr(series: list) -> float | None:
