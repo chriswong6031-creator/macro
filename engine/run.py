@@ -265,6 +265,19 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("vol-regime mirror failed: %s", e)
         latest["vol_regime"] = None
+    # Fused equity-internal RISK STATE (engine/risk_state.py): the loud, EARLY
+    # drawdown-risk gauge that leads the credit-weighted macro_risk above. Fuses the
+    # orphaned detectors (complacency/hidden-fragility, breadth divergence, dealer GEX
+    # posture, vol structure, HY/HYG-TLT credit, turning-point, cross-asset) into one
+    # top-level state the brain can act on. Reads only the already-assembled `latest`
+    # + a prior-build GEX read + HYG/TLT — runs AFTER macro_risk so it can anchor on it,
+    # BEFORE the playbook so conclusions can read it. Additive, never fatal.
+    try:
+        from engine.risk_state import snapshot as risk_state_snapshot
+        latest["risk_state"] = risk_state_snapshot(latest)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("risk-state failed: %s", e)
+        latest["risk_state"] = None
     try:
         latest["playbook"] = build_playbook(f, regime, yahoo_closes(), latest)
     except Exception as e:  # noqa: BLE001 — conclusions are additive, never fatal

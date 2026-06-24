@@ -1552,6 +1552,35 @@ engine:
                              # small, intentional overlap, not double-counting noise.
       transition: 0.25
 
+  # --- Fused equity-internal RISK STATE (engine/risk_state.py). The loud, EARLY
+  # drawdown-risk gauge that LEADS the credit-weighted macro_risk above by fusing the
+  # orphaned positioning/vol/breadth detectors. Inverse weighting of MRS: leading legs
+  # dominate, slow credit/recession legs are light. Conjunction-based early warning,
+  # NOT validated alpha; de-risk response is sizing only. See research/RISK_LAYER_DESIGN.md.
+  # All keys optional — engine/risk_state.py bakes in these same defaults.
+  risk_state:
+    weights:
+      complacency: 1.0       # hidden-fragility conjunction (keystone leg)
+      breadth_div: 0.9       # index near highs while %>200dma weak
+      dealer_gamma: 0.9      # dealer short-gamma / below flip / vol-hole
+      extension: 0.8         # parabolic / cohort-stretch froth (optional leg)
+      vol_structure: 0.7     # backwardation (stress) or rich-VRP+calm (complacency)
+      credit: 0.6            # HY OAS 21d widening + HYG-TLT rolling down
+      turning_point: 0.4     # cross-leaf fragility meta-state
+      cross_asset: 0.3       # bonds/fx not confirming an equity calm
+      macro_backdrop: 0.3    # the validated credit/recession MRS, as a light anchor
+    bands:                   # score (0-100) -> state cutoffs
+      neutral: 20.0
+      caution: 40.0
+      elevated: 60.0
+      risk_off: 80.0
+    conjunction:             # the loud part: >=2 LEADING legs firing hard floors the
+      threshold: 0.6         # state, so a few screaming legs aren't averaged to silence
+      floor_2: caution       # >=2 hot leading legs -> at least caution
+      floor_3: elevated      # >=3 hot leading legs -> at least elevated (fires the alert)
+    alert_from: elevated     # state at/above which the loud banner + alert fire
+    hyg_tlt_scale: 0.04      # HYG/TLT 20d drop that maps to full credit-ETF intensity
+
   # --- Vol-regime SUBTRACT-ONLY sizing overlay. Lets the validated index vol-regime
   # (engine/vol_regime.py -> site/vol/regime.json) actually move money as a gross/sizing
   # caution in the baskets, per-stock ladder and Mastermind lenses. Drawdown / capital-
