@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-24T07:42:08.502682+00:00",
+  "generated_utc": "2026-06-24T09:06:38.961095+00:00",
   "as_of": "2026-06-24",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4470,7 +4470,7 @@
           "category": "legislation_automated",
           "summary": "<p>Congress passed housing legislation incorporating Hoyle-backed rural housing provisions to expand vouchers and preserve affordable rentals.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"col\u2026",
           "image": "https://www.quiverquant.com/images/H001094_congress.png",
-          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+          "_first_seen": "2026-06-24T08:11:23.742872+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/NETSOL+Technologies+and+Applicon+Financial+Solutions+Form+Strategic+Partnership+to+Expand+Nordic+Market+Presence",
@@ -4479,25 +4479,7 @@
           "category": "press_release_summary",
           "summary": "<p>NETSOL and Applicon Financial Solutions partner to enhance technological capabilities for Nordic financial institutions, advancing digital transformation efforts.</p><div class='ai_summary'><h2>Quiver AI Summary</h\u2026",
           "image": "https://www.quiverquant.com/images/ntwk_rect_new.png",
-          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Moylan+Advances+Nearly+%241.9+Billion+in+Guam+Defense+Funding+in+FY2027+NDAA+Committee+Vote",
-          "time": "2026-06-24 04:19:53",
-          "headline": "Press Release: Moylan Advances Nearly $1.9 Billion in Guam Defense Funding in FY2027 NDAA Committee Vote",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Moylan highlights House committee approval of a defense bill with major Guam investments and policy provisions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
-          "image": "https://www.quiverquant.com/images/M001219_congress.png",
-          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Johnson+Says+House%2C+Senate+Pass+Bipartisan+Housing+Affordability+Bill",
-          "time": "2026-06-24 04:19:53",
-          "headline": "Press Release: Mike Johnson Says House, Senate Pass Bipartisan Housing Affordability Bill",
-          "category": "legislation_automated",
-          "summary": "<p>Congress passed bipartisan housing legislation aimed at improving affordability, reducing regulations, and expanding homeownership opportunities.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong styl\u2026",
-          "image": "https://www.quiverquant.com/images/J000299_congress.png",
-          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+          "_first_seen": "2026-06-24T08:11:23.742872+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Issues+Statement+on+Passage+of+Housing+Bill",
@@ -4506,7 +4488,25 @@
           "category": "legislation_automated",
           "summary": "<p>Representative Salinas praises legislation aimed at reducing housing costs, expanding supply, and supporting homeownership.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
           "image": "https://www.quiverquant.com/images/S001226_congress.png",
-          "_first_seen": "2026-06-24T06:53:23.322905+00:00"
+          "_first_seen": "2026-06-24T08:11:23.742872+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Johnson+Says+House%2C+Senate+Pass+Bipartisan+Housing+Affordability+Bill",
+          "time": "2026-06-24 04:19:53",
+          "headline": "Press Release: Mike Johnson Says House, Senate Pass Bipartisan Housing Affordability Bill",
+          "category": "legislation_automated",
+          "summary": "<p>Congress passed bipartisan housing legislation aimed at improving affordability, reducing regulations, and expanding homeownership opportunities.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong styl\u2026",
+          "image": "https://www.quiverquant.com/images/J000299_congress.png",
+          "_first_seen": "2026-06-24T08:11:23.742872+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Moylan+Advances+Nearly+%241.9+Billion+in+Guam+Defense+Funding+in+FY2027+NDAA+Committee+Vote",
+          "time": "2026-06-24 04:19:53",
+          "headline": "Press Release: Moylan Advances Nearly $1.9 Billion in Guam Defense Funding in FY2027 NDAA Committee Vote",
+          "category": "legislation_automated",
+          "summary": "<p>Congressman Moylan highlights House committee approval of a defense bill with major Guam investments and policy provisions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,\u2026",
+          "image": "https://www.quiverquant.com/images/M001219_congress.png",
+          "_first_seen": "2026-06-24T08:11:23.742872+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/MoonLake+Immunotherapeutics+Prices+%24200+Million+Public+Offering+of+Class+A+Ordinary+Shares+and+Pre-Funded+Warrants",
@@ -4892,7 +4892,7 @@
           "url": "https://api.congress.gov/v3/bill/119/s/4668?format=json",
           "lastAction": "Introduced in Senate",
           "lastActionDate": "2026-06-02",
-          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
           "currentChamber": "House",
@@ -4905,7 +4905,7 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/1744?format=json",
           "lastAction": "Passed House",
           "lastActionDate": "2026-06-08",
-          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
           "currentChamber": "House",
@@ -4918,7 +4918,7 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/5408?format=json",
           "lastAction": "Passed House",
           "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
           "currentChamber": "Unknown",
@@ -4931,7 +4931,7 @@
           "url": "https://api.congress.gov/v3/bill/119/s/2393?format=json",
           "lastAction": "Public Law",
           "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
           "currentChamber": "House",
@@ -4944,7 +4944,7 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/9237?format=json",
           "lastAction": "Introduced in House",
           "lastActionDate": "2026-06-10",
-          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
           "currentChamber": "Senate",
@@ -4957,7 +4957,7 @@
           "url": "https://api.congress.gov/v3/bill/119/s/4730?format=json",
           "lastAction": "Introduced in Senate",
           "lastActionDate": "2026-06-10",
-          "_first_seen": "2026-06-24T06:53:23.719146+00:00"
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
           "currentChamber": "Unknown",
@@ -6414,49 +6414,58 @@
     ],
     "hf": [
       {
-        "ticker": "AAPL",
-        "downloads_30d": 6862263.0,
-        "wow_pct": 0.0
+        "ticker": "CRM",
+        "downloads_30d": 7174982.0,
+        "wow_pct": 0.2,
+        "hot": true
+      },
+      {
+        "ticker": "META",
+        "downloads_30d": 90073346.0,
+        "wow_pct": 0.2,
+        "hot": true
       },
       {
         "ticker": "AMZN",
         "downloads_30d": 25406024.0,
-        "wow_pct": 0.0
+        "wow_pct": 0.0,
+        "hot": false
       },
       {
         "ticker": "BABA",
         "downloads_30d": 213405525.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "CRM",
-        "downloads_30d": 7162381.0,
-        "wow_pct": 0.0
+        "wow_pct": 0.0,
+        "hot": false
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 207603398.0,
-        "wow_pct": 0.0
+        "downloads_30d": 207594610.0,
+        "wow_pct": -0.0,
+        "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 10037965.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "META",
-        "downloads_30d": 89893632.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "MSFT",
-        "downloads_30d": 29595708.0,
-        "wow_pct": 0.0
+        "downloads_30d": 10037302.0,
+        "wow_pct": -0.0,
+        "hot": false
       },
       {
         "ticker": "NVDA",
         "downloads_30d": 29111832.0,
-        "wow_pct": 0.0
+        "wow_pct": 0.0,
+        "hot": false
+      },
+      {
+        "ticker": "MSFT",
+        "downloads_30d": 29515960.0,
+        "wow_pct": -0.3,
+        "hot": false
+      },
+      {
+        "ticker": "AAPL",
+        "downloads_30d": 6800927.0,
+        "wow_pct": -0.9,
+        "hot": false
       }
     ],
     "material_8k": [
@@ -16708,6 +16717,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "CEG",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "6367",
         "category": "Capital Returns",
         "confidence": "high",
@@ -25877,11 +25894,11 @@
       },
       {
         "ticker": "HIMS",
-        "category": "M&A / Divestitures",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "M&A / Divestitures"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "IBE",
@@ -28029,11 +28046,11 @@
       },
       {
         "ticker": "ESAB",
-        "category": "M&A / Divestitures",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "M&A / Divestitures"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "FITB",
@@ -35124,6 +35141,14 @@
         "detail": "Deal Terminations"
       },
       {
+        "ticker": "VCIG",
+        "category": "Acquisitions",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "ABPWW",
         "category": "Delistings",
         "confidence": "high",
@@ -35285,11 +35310,11 @@
       },
       {
         "ticker": "GVA",
-        "category": "Restructuring",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Restructuring"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "ITRMF",
@@ -35885,11 +35910,11 @@
       },
       {
         "ticker": "OSRHW",
-        "category": "Delistings",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "SMXT",
@@ -35959,6 +35984,14 @@
         "ticker": "SPRC",
         "category": "Acquisitions",
         "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "AVAH",
+        "category": "Acquisitions",
+        "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
@@ -36140,6 +36173,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "WRDIF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "RMBI",
         "category": "Acquisitions",
         "confidence": "high",
@@ -36266,6 +36307,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "ODVWZ",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "GNLN",
@@ -36413,11 +36462,11 @@
       },
       {
         "ticker": "HVIIR",
-        "category": "Acquisitions",
+        "category": "SPACs",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "SPACs"
       },
       {
         "ticker": "DCBG",
@@ -36546,6 +36595,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "YHC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "BMNP",
@@ -36964,6 +37021,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "XRN-PB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "QLEP-UN",
         "category": "Other",
         "confidence": "high",
@@ -37245,11 +37310,11 @@
       },
       {
         "ticker": "NRXP",
-        "category": "Delistings",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "AVXL",
@@ -37282,6 +37347,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "BRKHU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "XHLD",
@@ -37426,6 +37499,46 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "LFS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "MAXNQ",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "NIPG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SCOR",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "WLYB",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "PRA",
@@ -37882,14 +37995,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "LFS",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "QMMM",
@@ -38428,19 +38533,19 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17532,
+        "stars": 17533,
         "wow_pct": 0.42,
+        "hot": true
+      },
+      {
+        "ticker": "NET",
+        "stars": 14619,
+        "wow_pct": 0.07,
         "hot": true
       },
       {
         "ticker": "IBM",
         "stars": 7525,
-        "wow_pct": 0.05,
-        "hot": true
-      },
-      {
-        "ticker": "NET",
-        "stars": 14617,
         "wow_pct": 0.05,
         "hot": true
       },
@@ -38452,19 +38557,19 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 195910,
+        "stars": 195911,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 246085,
+        "stars": 246089,
         "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186728,
+        "stars": 186729,
         "wow_pct": 0.03,
         "hot": true
       },
@@ -38476,7 +38581,7 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77135,
+        "stars": 77136,
         "wow_pct": 0.02,
         "hot": false
       },
@@ -38484,6 +38589,12 @@
         "ticker": "GTLB",
         "stars": 24464,
         "wow_pct": 0.02,
+        "hot": false
+      },
+      {
+        "ticker": "CRM",
+        "stars": 11239,
+        "wow_pct": 0.01,
         "hot": false
       },
       {
@@ -38495,12 +38606,6 @@
       {
         "ticker": "AMD",
         "stars": 6645,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "CRM",
-        "stars": 11238,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -39975,11 +40080,11 @@
         "url": "https://www.quiverquant.com/news/NETSOL+Technologies+and+Applicon+Financial+Solutions+Form+Strategic+Partnership+to+Expand+Nordic+Market+Presence"
       },
       {
-        "headline": "Press Release: Moylan Advances Nearly $1.9 Billion in Guam Defense Funding in FY2027 NDAA Committee Vote",
+        "headline": "Press Release: Andrea Salinas Issues Statement on Passage of Housing Bill",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-24 04:19:53",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Moylan+Advances+Nearly+%241.9+Billion+in+Guam+Defense+Funding+in+FY2027+NDAA+Committee+Vote"
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Issues+Statement+on+Passage+of+Housing+Bill"
       },
       {
         "headline": "Press Release: Mike Johnson Says House, Senate Pass Bipartisan Housing Affordability Bill",
@@ -39989,11 +40094,11 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Johnson+Says+House%2C+Senate+Pass+Bipartisan+Housing+Affordability+Bill"
       },
       {
-        "headline": "Press Release: Andrea Salinas Issues Statement on Passage of Housing Bill",
+        "headline": "Press Release: Moylan Advances Nearly $1.9 Billion in Guam Defense Funding in FY2027 NDAA Committee Vote",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-24 04:19:53",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Andrea+Salinas+Issues+Statement+on+Passage+of+Housing+Bill"
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Moylan+Advances+Nearly+%241.9+Billion+in+Guam+Defense+Funding+in+FY2027+NDAA+Committee+Vote"
       },
       {
         "headline": "MoonLake Immunotherapeutics Prices $200 Million Public Offering of Class A Ordinary Shares and Pre-Funded Warrants",

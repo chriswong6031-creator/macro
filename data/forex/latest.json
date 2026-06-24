@@ -8,38 +8,38 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1369,
-      "chg": -2.3,
+      "quote": 1.1362,
+      "chg": -2.4,
       "action": "FLAT",
-      "score": -10.2
+      "score": -9.9
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3196,
+      "quote": 1.3193,
       "chg": -1.9,
       "action": "FLAT",
       "score": 15.1
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.683,
+      "quote": 161.685,
       "chg": 1.5,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8113,
+      "quote": 0.8115,
       "chg": 3.8,
       "action": "LONG",
-      "score": 27.2
+      "score": 27.3
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6914,
-      "chg": -3.7,
+      "quote": 0.6909,
+      "chg": -3.8,
       "action": "SHORT",
-      "score": -27.1
+      "score": -26.9
     },
     "USDCAD": {
       "label": "USD/CAD",
@@ -50,10 +50,10 @@
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.5517,
-      "chg": 1.4,
-      "action": "SHORT",
-      "score": -21.7
+      "quote": 17.5887,
+      "chg": 1.6,
+      "action": "FLAT",
+      "score": -19.2
     },
     "USDBRL": {
       "label": "USD/BRL",
@@ -64,8 +64,8 @@
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7685,
-      "chg": 0.0,
+      "quote": 6.772,
+      "chg": 0.1,
       "action": "FLAT",
       "score": 15.0
     }
@@ -74,7 +74,7 @@
     "lean": "dollar-supportive backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.84,
-    "fed_path_bps": 45.0,
+    "fed_path_bps": 46.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
@@ -117,12 +117,12 @@
       "intervention_risk"
     ],
     "intensity": {
-      "carry_unwind": 22.1,
-      "dollar_wrecking_ball": 35.7,
+      "carry_unwind": 22.6,
+      "dollar_wrecking_ball": 38.1,
       "em_crisis_capital_flight": 0,
-      "haven_flight_risk_off": 25.9,
+      "haven_flight_risk_off": 27.4,
       "reflation_risk_on": 0,
-      "intervention_risk": 32.7
+      "intervention_risk": 33.9
     }
   }
 }

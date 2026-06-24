@@ -5,13 +5,13 @@
     "name_zh": "AI\u7b97\u529b\u4e0e\u5149\u6a21\u5757",
     "rank": 2,
     "reco": "accumulate",
-    "score": 71
+    "score": 72
   },
   "cn_appliances": {
     "label": "deteriorating",
     "name": "Home Appliances",
     "name_zh": "\u5bb6\u7535",
-    "rank": 18,
+    "rank": 17,
     "reco": "avoid",
     "score": 27
   },
@@ -21,7 +21,7 @@
     "name_zh": "\u6c7d\u8f66\u6574\u8f66",
     "rank": 22,
     "reco": "avoid",
-    "score": 20
+    "score": 19
   },
   "cn_baijiu": {
     "label": "deteriorating",
@@ -51,7 +51,7 @@
     "label": "emerging",
     "name": "Brokers & Securities",
     "name_zh": "\u5238\u5546",
-    "rank": 5,
+    "rank": 6,
     "reco": "hold",
     "score": 59
   },
@@ -59,9 +59,9 @@
     "label": "deteriorating",
     "name": "Coal",
     "name_zh": "\u7164\u70ad",
-    "rank": 11,
+    "rank": 12,
     "reco": "avoid",
-    "score": 39
+    "score": 37
   },
   "cn_consumer_elec": {
     "label": "neutral",
@@ -69,7 +69,7 @@
     "name_zh": "\u6d88\u8d39\u7535\u5b50",
     "rank": 4,
     "reco": "hold",
-    "score": 63
+    "score": 64
   },
   "cn_defense": {
     "label": "deteriorating",
@@ -77,7 +77,7 @@
     "name_zh": "\u519b\u5de5\u822a\u5929",
     "rank": 9,
     "reco": "avoid",
-    "score": 41
+    "score": 40
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -107,25 +107,25 @@
     "label": "deteriorating",
     "name": "Medical Devices & TCM",
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
-    "rank": 19,
+    "rank": 18,
     "reco": "avoid",
-    "score": 27
+    "score": 26
   },
   "cn_metals": {
     "label": "deteriorating",
     "name": "Industrial Metals",
     "name_zh": "\u6709\u8272\u91d1\u5c5e",
-    "rank": 12,
+    "rank": 11,
     "reco": "avoid",
-    "score": 37
+    "score": 38
   },
   "cn_pharma_cxo": {
     "label": "emerging",
     "name": "Innovative Pharma & CXO",
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
-    "rank": 6,
+    "rank": 5,
     "reco": "hold",
-    "score": 58
+    "score": 60
   },
   "cn_rare_earth": {
     "label": "dominant",
@@ -155,9 +155,9 @@
     "label": "deteriorating",
     "name": "SOE Blue Chips (\u4e2d\u7279\u4f30)",
     "name_zh": "\u4e2d\u7279\u4f30\u00b7\u592e\u4f01",
-    "rank": 17,
+    "rank": 19,
     "reco": "avoid",
-    "score": 28
+    "score": 26
   },
   "cn_software": {
     "label": "deteriorating",
@@ -165,7 +165,7 @@
     "name_zh": "\u8f6f\u4ef6\u4e0eAI\u5e94\u7528",
     "rank": 15,
     "reco": "avoid",
-    "score": 29
+    "score": 30
   },
   "cn_solar": {
     "label": "deteriorating",

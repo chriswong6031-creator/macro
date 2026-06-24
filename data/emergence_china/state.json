@@ -1,18 +1,23 @@
 {
-  "1ccd0bc44526": {
-    "name_en": "Emerging Healthcare cluster",
-    "name_zh": "\u65b0\u5174 Healthcare \u96c6\u7fa4",
-    "score": 54.4
-  },
   "51bfb40d4e5f": {
     "name_en": "Cross-sector cluster \u00b7 Industrials + Consumer Cyclical",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Consumer Cyclical",
     "score": 79.1
   },
+  "7a9d9213f491": {
+    "name_en": "Cross-sector cluster \u00b7 Healthcare + Industrials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Healthcare + Industrials",
+    "score": 61.4
+  },
   "7bf9ea5c3d0d": {
     "name_en": "Emerging Industrials cluster",
     "name_zh": "\u65b0\u5174 Industrials \u96c6\u7fa4",
     "score": 46.8
+  },
+  "86195e87fb74": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Technology",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Technology",
+    "score": 70.3
   },
   "99f97c4a76b0": {
     "name_en": "Cross-sector cluster \u00b7 Basic Materials + Healthcare",
@@ -23,10 +28,5 @@
     "name_en": "Cross-sector cluster \u00b7 Energy + Utilities",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Energy + Utilities",
     "score": 60.6
-  },
-  "a8865853b1ce": {
-    "name_en": "Cross-sector cluster \u00b7 Technology + Industrials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Technology + Industrials",
-    "score": 57.6
   }
 }

@@ -5,14 +5,14 @@
     {
       "name": "AI Desk",
       "slug": "ai_desk",
-      "scored": 0,
-      "open": 11,
-      "hit_rate": null,
-      "dir_accuracy": null,
+      "scored": 1,
+      "open": 12,
+      "hit_rate": 0.0,
+      "dir_accuracy": 0.0,
       "conviction_monotone": null,
       "regimes": [],
       "health": "cold",
-      "health_note": "only 0 scored \u2014 check-by windows still maturing; treat as provisional"
+      "health_note": "only 1 scored \u2014 check-by windows still maturing; treat as provisional"
     },
     {
       "name": "Policy Intent",

@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-06-24T07:20:04.257725+00:00",
+  "generated_utc": "2026-06-24T08:43:36.520738+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,
@@ -156,58 +156,58 @@
       "n_obs": 19,
       "by_horizon": {
         "5": {
-          "mean_ic": -0.0153,
-          "ic_ir": -0.057,
-          "t_hac": -0.524,
-          "p_hac": 0.6005,
+          "mean_ic": -0.0149,
+          "ic_ir": -0.056,
+          "t_hac": -0.512,
+          "p_hac": 0.6087,
           "hit": 0.421,
           "n": 19,
           "incremental": {
-            "surviving_frac": -5.569,
-            "ic_delta": 0.1005
+            "surviving_frac": -5.597,
+            "ic_delta": 0.0983
           }
         },
         "10": {
-          "mean_ic": 0.0191,
-          "ic_ir": 0.079,
-          "t_hac": 0.392,
-          "p_hac": 0.6952,
+          "mean_ic": 0.0197,
+          "ic_ir": 0.082,
+          "t_hac": 0.405,
+          "p_hac": 0.6852,
           "hit": 0.579,
           "n": 19,
           "incremental": {
-            "surviving_frac": 3.874,
-            "ic_delta": 0.0549
+            "surviving_frac": 3.65,
+            "ic_delta": 0.0522
           }
         },
         "21": {
-          "mean_ic": 0.0284,
-          "ic_ir": 0.114,
-          "t_hac": 0.64,
-          "p_hac": 0.5224,
+          "mean_ic": 0.0315,
+          "ic_ir": 0.124,
+          "t_hac": 0.695,
+          "p_hac": 0.487,
           "hit": 0.526,
           "n": 19,
           "incremental": {
-            "surviving_frac": 3.067,
-            "ic_delta": 0.0587
+            "surviving_frac": 2.771,
+            "ic_delta": 0.0558
           }
         },
         "63": {
-          "mean_ic": 0.0998,
-          "ic_ir": 0.421,
-          "t_hac": 2.876,
-          "p_hac": 0.004,
+          "mean_ic": 0.1001,
+          "ic_ir": 0.422,
+          "t_hac": 2.866,
+          "p_hac": 0.0042,
           "hit": 0.688,
           "n": 16,
           "incremental": {
-            "surviving_frac": 0.178,
-            "ic_delta": -0.082
+            "surviving_frac": 0.091,
+            "ic_delta": -0.091
           }
         }
       },
       "sign_expected": 1,
       "sign_ok": true,
-      "t_hac": 0.64,
-      "mean_ic": 0.0284,
+      "t_hac": 0.695,
+      "mean_ic": 0.0315,
       "is_context_only": true,
       "q_fdr": 0.532
     },
