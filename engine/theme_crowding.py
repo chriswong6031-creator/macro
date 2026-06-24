@@ -55,18 +55,57 @@ def _mean_pairwise_corr(rw: pd.DataFrame) -> float | None:
     return float(off) if np.isfinite(off) else None
 
 
+def _window_mean_corr(A: np.ndarray, lo: int, hi: int,
+                      resid: pd.DataFrame) -> float | None:
+    """Mean off-diagonal correlation of A[lo:hi] — a numpy fast path equivalent to
+    _mean_pairwise_corr(resid.iloc[lo:hi]). Where the kept members have no internal NaN
+    (the common case in a recent window), the mean pairwise correlation is computed in
+    O(members) via the standardised-sum identity  1ᵀRλ1 = (1/(w−1))·Σ_t (Σ_i z_{t,i})²
+    instead of forming the full O(members²) correlation matrix. The rare window with
+    scattered NaNs among kept members falls back to the EXACT pandas pairwise-complete
+    path, so the output is identical to the original to floating-point precision."""
+    w = hi - lo
+    if w < 20:
+        return None
+    W = A[lo:hi]
+    keep = (~np.isnan(W)).sum(axis=0) >= int(w * 0.8)      # == dropna(axis=1, thresh=int(w*0.8))
+    if keep.sum() < 3:
+        return None
+    Wk = W[:, keep]
+    with np.errstate(invalid="ignore"):
+        sd = np.nanstd(Wk, axis=0, ddof=1)                 # == drop zero-variance members
+    nz = sd > 0
+    if nz.sum() < 3:
+        return None
+    Wk = Wk[:, nz]
+    if np.isnan(Wk).any():                                 # scattered NaN → exact pairwise fallback
+        return _mean_pairwise_corr(resid.iloc[lo:hi])
+    n = Wk.shape[1]
+    Z = (Wk - Wk.mean(axis=0)) / sd[nz]                    # standardise each kept column
+    rs = Z.sum(axis=1)                                     # per-day cross-member sum
+    off = (float(rs @ rs) / (w - 1) - n) / (n * (n - 1))   # (1ᵀRλ1 − n) / (n²−n)
+    return float(off) if np.isfinite(off) else None
+
+
 def _comovement_series(resid: pd.DataFrame, win: int = COMOVE_WIN,
                        step: int = 5) -> pd.Series:
     """Rolling mean-pairwise residual correlation, sampled every `step` days (cheap
-    enough to z-score the latest value vs the basket's own history)."""
+    enough to z-score the latest value vs the basket's own history).
+
+    Vectorised: the per-window correlation is computed in numpy (see _window_mean_corr)
+    rather than rebuilding a pandas correlation matrix per window — this is the engine's
+    dominant per-basket cost and is quadratic in member count, so it dominates the wider
+    baskets. Output is identical to the prior per-window _mean_pairwise_corr loop."""
     idx = resid.index
+    A = resid.to_numpy(dtype=float)
+    n = len(idx)
     pts = {}
-    for i in range(win, len(idx), step):
-        v = _mean_pairwise_corr(resid.iloc[i - win:i])
+    for i in range(win, n, step):
+        v = _window_mean_corr(A, i - win, i, resid)
         if v is not None:
             pts[idx[i - 1]] = v
-    # always include the very last day so the live read is current
-    last = _mean_pairwise_corr(resid.iloc[-win:])
+    # always include the very last day so the live read is current (matches resid.iloc[-win:])
+    last = _window_mean_corr(A, max(0, n - win), n, resid)
     if last is not None:
         pts[idx[-1]] = last
     return pd.Series(pts).sort_index()
