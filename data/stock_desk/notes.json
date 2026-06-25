@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-24",
-  "generated_at": "2026-06-25T02:57:16.931014+00:00",
+  "generated_at": "2026-06-25T08:17:27.599039+00:00",
   "degraded": null,
   "notes": [
     {
@@ -10,23 +10,22 @@
       "name": "Chemed Corp.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Verdict is Neutral with no clear edge; selection z-score near median and validated SUE leg negative, with quality driver providing little differentiation against a mixed macro tape. No risk-control angle justifies a directional lean.",
+      "horizon_d": 20,
+      "thesis": "The engine's verdict is Neutral and no validated directional edge is apparent; high quality factor (z=2.62) does not predict short-term returns, and the selection axis is essentially flat at -0.16.",
       "evidence": [
         "verdict: Neutral \u2014 no clear edge",
-        "selection z -0.16 (48th pct), SUE z -0.32",
-        "quality z 2.62 is display-only rank",
-        "cycle unblocked but macro sensitive"
+        "selection z-score near zero",
+        "SUE z=-0.32, momentum z=-0.78 (context only)"
       ],
-      "dissent": "Strong quality and low-vol characteristics could provide defensive outperformance if market corrects, making neutral too conservative.",
+      "dissent": "High quality and low beta could attract safe-haven bids if broader market turbulence intensifies, but that is not the base case.",
       "falsifier": {
-        "text": "If CHE gains more than 2% vs the S&P 500 over the next 15 trading days on expanding volume, the neutral lean is too pessimistic.",
+        "text": "If CHE breaks above 470 on rising earnings revisions, the neutral stance would be too conservative.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-15",
+      "check_by": "2026-07-22",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -35,27 +34,26 @@
       "name": "Adamas Trust, Inc.",
       "lean": "constructive",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "High-confluence leader with positive revision and momentum context axes, entry unblocked, and regime balanced. However, trust tier is context-only and price is at 52-week highs, so constructive lean hinges on risk management \u2013 the \u2018don\u2019t chase\u2019 brake is already reflected by the engine\u2019s hold entry urgency.",
+      "horizon_d": 20,
+      "thesis": "Rated a high-confluence leader with strong revisions (literature-tier z=1.26) and positive momentum context, and the uptrend is intact above the 50/200 DMA; risk controls do not block participation.",
       "evidence": [
         "verdict: High-confluence leader (context)",
-        "selection z 1.01 (65th pct), revisions z 1.26, alpha z 0.81",
-        "entry unblocked but urgency hold, off-high 0%",
-        "trust tier: event-edge, not standalone alpha"
+        "revision z=1.26, selection axis pct 65",
+        "RALLY ON, above 50/200 DMA"
       ],
-      "dissent": "At fresh highs with no validated SUE and macro liquidity contracting, ADAM may be prone to mean-reversion if the cycle matures quickly; any risk-off could erase gains.",
+      "dissent": "Being pinned at the 52-week high (off_high_pct=0.0) leaves no cushion; profit-taking could reverse the trend rapidly.",
       "falsifier": {
-        "text": "If ADAM closes below its 20-day moving average within the next 10 trading days, the constructive lean is invalidated.",
+        "text": "If ADAM closes below the rising 10-day average within the next two weeks, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ADAM",
           "vs": "SPY",
           "op": "<",
           "threshold": -0.05,
-          "horizon_d": 10
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-08",
+      "check_by": "2026-07-22",
       "engine_verdict": "High-confluence leader (context)"
     },
     {
@@ -65,16 +63,15 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "FRESH BUY signal with a recent swing low, price above rising 10-day, and weekly alignment. Quality and entry axes support a constructive stance, while the mixed regime and contracting liquidity serve as risk controls rather than contraindications.",
+      "thesis": "The engine signals a fresh buy and a base building; entry conditions (urgency, off-high, RSI) are favorable, though SUE is slightly negative and net income growth is deeply negative.",
       "evidence": [
         "verdict: Constructive \u2014 building a base",
-        "ladder: FRESH BUY, urgency now",
-        "selection z 0.44 (57th pct), revisions z 0.71, alpha z 0.39",
-        "quality z 0.44, accounting clean, entry z 0.59"
+        "FRESH BUY, entry axis pct 59",
+        "price above rising 10-day and 50/200 DMA, RSI 61"
       ],
-      "dissent": "Fundamentals show -74.3% net income growth and high repurchases; the base-building may be a value trap if earnings continue to deteriorate.",
+      "dissent": "A -74% net income decline and negative SUE suggest the business is under pressure; a macro liquidity contraction could stall the base build.",
       "falsifier": {
-        "text": "If EW closes below the swing low of 82.16 (from 2026-05-19) at any point in the next 20 trading days, the constructive lean is wrong.",
+        "text": "If EW closes below 86.50 (near the recent swing low) and MACD turns negative, the constructive lean is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "EW",
@@ -93,28 +90,26 @@
       "name": "Broadstone Net Lease, Inc.",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Verdict flags accounting watch; despite positive SUE and revisions, the quality axis is negative (z -0.24) and fundamentals show declining NI growth. The rally-on uptrend is held, but caution is warranted until accounting concerns are resolved.",
+      "horizon_d": 20,
+      "thesis": "Validated SUE (z=0.81) and strong revisions make it a leader, but the engine explicitly cautions 'accounting watch' and entry conditions lack urgency; it is prudent to await confirmation before turning fully constructive.",
       "evidence": [
         "verdict: Leader \u00b7 accounting watch \u2014 confirm before adding",
-        "selection z 1.15 (67th pct) with SUE z 0.81, revisions z 1.27, alpha z 1.13",
-        "quality z -0.24, accounting flags: watch",
-        "entry unblocked, urgency hold, off-high 0%",
-        "fundamentals: NI growth -40.6%"
+        "SUE z=0.81, validated tier",
+        "accounting flags: watch"
       ],
-      "dissent": "If accounting concerns prove unfounded, the strong selection and momentum could drive alpha, and the cautious lean would miss upside.",
+      "dissent": "If the accounting concern proves benign and the uptrend accelerates, this cautious stance will underperform.",
       "falsifier": {
-        "text": "If BNL clears its accounting flags (e.g., clean audit filing) and price continues to hold above the 50-DMA, the cautious lean should be revisited.",
+        "text": "If BNL breaks above 22.00 on above-average volume without additional accounting red flags, the cautious lean will have been unnecessarily conservative.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BNL",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-15",
+      "check_by": "2026-07-22",
       "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
     },
     {
@@ -124,17 +119,15 @@
       "lean": "constructive",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Constructive base with momentum z 1.49 and revision support; the engine\u2019s entry axis is favorable. Despite negative fundamentals and a negative tailwind z, the risk controls embedded in the entry framework (hold urgency, off-high -3.9%) limit downside.",
+      "thesis": "The uptrend is intact, supported by strong context momentum (z=1.49) and a base-building signal from the engine, even though fundamentals are weak and tailwinds are absent.",
       "evidence": [
         "verdict: Constructive \u2014 building a base",
-        "selection z 0.56 (59th pct), alpha z 1.49, revision z 0.35",
-        "entry z 0.40, off-high -3.9%",
-        "tailwind z -0.32 (45th pct) but mixed regime",
-        "fundamentals: NI growth -205.5%, negative margin"
+        "momentum z=1.49, entry axis pct 56",
+        "RALLY ON, above 50/200 DMA"
       ],
-      "dissent": "Consumer discretionary with deep earnings losses and high debt is vulnerable if liquidity contracts further; the base could break down quickly.",
+      "dissent": "Negative net margin, high debt, and a late-cycle investor phase raise the probability of a sudden reversal.",
       "falsifier": {
-        "text": "If BC closes below its 50-day simple moving average within the next 20 trading days, the constructive lean is falsified.",
+        "text": "If BC falls below 82 (its 50-day average) and daily momentum flips negative, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BC",
@@ -153,23 +146,22 @@
       "name": "Pacira BioSciences, Inc.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "Verdict is Neutral without edge; selection axis near median with weak alpha and negative SUE, while the modest off-high discount and quality z only slightly above average. No clear risk-reshape lever to justify a directional lean.",
+      "horizon_d": 20,
+      "thesis": "No clear directional edge: positive revisions are offset by negative SUE and weak momentum, and the engine verdict confirms the name is not a high-conviction candidate.",
       "evidence": [
         "verdict: Neutral \u2014 no clear edge",
-        "selection z 0.13 (52nd pct), SUE z -0.32, alpha z -0.32",
-        "entry z 0.40, off-high -12%",
-        "quality z 0.38, clean accounting, but weak momentum"
+        "SUE z=-0.32, momentum z=-0.32",
+        "selection axis near zero (z=0.13)"
       ],
-      "dissent": "A small-cap health care name with strong buybacks and clean accounting could surge on any positive trial news, making neutral too cautious.",
+      "dissent": "If revisions continue to improve and the stock pushes above recent resistance, a trend could emerge that the neutral call would miss.",
       "falsifier": {
-        "text": "If PCRX rallies more than 5% relative to the S&P 500 over the next 15 trading days on above-average volume, the neutral lean is too conservative.",
+        "text": "If PCRX breaks above 25.00 on a positive earnings surprise, the neutral rating will have been misplaced.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-15",
+      "check_by": "2026-07-22",
       "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
