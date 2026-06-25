@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-06-24T19:25:00Z",
+  "generated_at": "2026-06-25T05:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -2141,560 +2141,560 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 999576.93,
-        "cash": 163536.04,
-        "invested": 836040.89,
-        "total_return_pct": -0.0423,
-        "vs_spy_pct": 0.4206,
+        "current_nav": 993900.84,
+        "cash": 163562.0,
+        "invested": 830338.84,
+        "total_return_pct": -0.6099,
+        "vs_spy_pct": 0.432,
         "benchmark": "SPY",
-        "day_change_pct": 2.4325,
+        "day_change_pct": 1.8508,
         "max_drawdown_pct": -2.416,
         "realized_since": "2026-06-19",
         "series": [
           {
-            "date": "2026-02-11",
+            "date": "2026-02-12",
             "nav": 1000000.0,
             "spy_nav": 1000000.0,
             "kind": "pre_inception"
           },
           {
-            "date": "2026-02-12",
-            "nav": 1000000.0,
-            "spy_nav": 984551.13,
-            "kind": "pre_inception"
-          },
-          {
             "date": "2026-02-13",
             "nav": 1000000.0,
-            "spy_nav": 985244.73,
+            "spy_nav": 1000704.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-17",
             "nav": 1000000.0,
-            "spy_nav": 986834.39,
+            "spy_nav": 1002319.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-18",
             "nav": 1000000.0,
-            "spy_nav": 991805.82,
+            "spy_nav": 1007368.53,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-19",
             "nav": 1000000.0,
-            "spy_nav": 989190.0,
+            "spy_nav": 1004711.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-20",
             "nav": 1000000.0,
-            "spy_nav": 996343.69,
+            "spy_nav": 1011977.6,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-23",
             "nav": 1000000.0,
-            "spy_nav": 986169.71,
+            "spy_nav": 1001643.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-24",
             "nav": 1000000.0,
-            "spy_nav": 993337.64,
+            "spy_nav": 1008924.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-25",
             "nav": 1000000.0,
-            "spy_nav": 1001719.76,
+            "spy_nav": 1017438.04,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-26",
             "nav": 1000000.0,
-            "spy_nav": 996155.74,
+            "spy_nav": 1011786.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-27",
             "nav": 1000000.0,
-            "spy_nav": 991372.25,
+            "spy_nav": 1006928.16,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-02",
             "nav": 1000000.0,
-            "spy_nav": 991935.93,
+            "spy_nav": 1007500.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-03",
             "nav": 1000000.0,
-            "spy_nav": 983192.67,
+            "spy_nav": 998620.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-04",
             "nav": 1000000.0,
-            "spy_nav": 990129.39,
+            "spy_nav": 1005665.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-05",
             "nav": 1000000.0,
-            "spy_nav": 984608.88,
+            "spy_nav": 1000058.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-06",
             "nav": 1000000.0,
-            "spy_nav": 971703.48,
+            "spy_nav": 986950.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-09",
             "nav": 1000000.0,
-            "spy_nav": 980215.63,
+            "spy_nav": 995596.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-10",
             "nav": 1000000.0,
-            "spy_nav": 978640.3,
+            "spy_nav": 993996.42,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-11",
             "nav": 1000000.0,
-            "spy_nav": 977411.94,
+            "spy_nav": 992748.79,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-12",
             "nav": 1000000.0,
-            "spy_nav": 962569.99,
+            "spy_nav": 977673.95,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-13",
             "nav": 1000000.0,
-            "spy_nav": 957121.74,
+            "spy_nav": 972140.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-16",
             "nav": 1000000.0,
-            "spy_nav": 966862.24,
+            "spy_nav": 982033.55,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-17",
             "nav": 1000000.0,
-            "spy_nav": 969405.63,
+            "spy_nav": 984616.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-18",
             "nav": 1000000.0,
-            "spy_nav": 955878.88,
+            "spy_nav": 970877.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-19",
             "nav": 1000000.0,
-            "spy_nav": 953523.27,
+            "spy_nav": 968485.28,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-20",
             "nav": 1000000.0,
-            "spy_nav": 939853.78,
+            "spy_nav": 954601.29,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-23",
             "nav": 1000000.0,
-            "spy_nav": 949722.26,
+            "spy_nav": 964624.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-24",
             "nav": 1000000.0,
-            "spy_nav": 946534.18,
+            "spy_nav": 961386.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-25",
             "nav": 1000000.0,
-            "spy_nav": 951808.99,
+            "spy_nav": 966744.1,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-26",
             "nav": 1000000.0,
-            "spy_nav": 934810.88,
+            "spy_nav": 949479.26,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-27",
             "nav": 1000000.0,
-            "spy_nav": 918870.59,
+            "spy_nav": 933288.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-30",
             "nav": 1000000.0,
-            "spy_nav": 915798.38,
+            "spy_nav": 930168.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-31",
             "nav": 1000000.0,
-            "spy_nav": 942418.74,
+            "spy_nav": 957206.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-01",
             "nav": 1000000.0,
-            "spy_nav": 949519.36,
+            "spy_nav": 964418.54,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-02",
             "nav": 1000000.0,
-            "spy_nav": 950374.38,
+            "spy_nav": 965286.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-06",
             "nav": 1000000.0,
-            "spy_nav": 954866.61,
+            "spy_nav": 969849.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-07",
             "nav": 1000000.0,
-            "spy_nav": 955286.82,
+            "spy_nav": 970276.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-08",
             "nav": 1000000.0,
-            "spy_nav": 979617.55,
+            "spy_nav": 994989.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-09",
             "nav": 1000000.0,
-            "spy_nav": 985269.05,
+            "spy_nav": 1000729.19,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-10",
             "nav": 1000000.0,
-            "spy_nav": 984617.02,
+            "spy_nav": 1000066.93,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-13",
             "nav": 1000000.0,
-            "spy_nav": 994239.09,
+            "spy_nav": 1009839.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-14",
             "nav": 1000000.0,
-            "spy_nav": 1006353.77,
+            "spy_nav": 1022144.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-15",
             "nav": 1000000.0,
-            "spy_nav": 1014294.91,
+            "spy_nav": 1030210.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-16",
             "nav": 1000000.0,
-            "spy_nav": 1016787.34,
+            "spy_nav": 1032742.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-17",
             "nav": 1000000.0,
-            "spy_nav": 1029075.92,
+            "spy_nav": 1045223.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-20",
             "nav": 1000000.0,
-            "spy_nav": 1027018.11,
+            "spy_nav": 1043133.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-21",
             "nav": 1000000.0,
-            "spy_nav": 1020294.27,
+            "spy_nav": 1036304.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-22",
             "nav": 1000000.0,
-            "spy_nav": 1030626.48,
+            "spy_nav": 1046798.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-23",
             "nav": 1000000.0,
-            "spy_nav": 1026626.9,
+            "spy_nav": 1042736.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-24",
             "nav": 1000000.0,
-            "spy_nav": 1034582.54,
+            "spy_nav": 1050816.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-27",
             "nav": 1000000.0,
-            "spy_nav": 1036364.93,
+            "spy_nav": 1052626.83,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-28",
             "nav": 1000000.0,
-            "spy_nav": 1031322.03,
+            "spy_nav": 1047504.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-29",
             "nav": 1000000.0,
-            "spy_nav": 1031162.65,
+            "spy_nav": 1047342.92,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-30",
             "nav": 1000000.0,
-            "spy_nav": 1041422.33,
+            "spy_nav": 1057763.59,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-01",
             "nav": 1000000.0,
-            "spy_nav": 1044306.15,
+            "spy_nav": 1060692.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-04",
             "nav": 1000000.0,
-            "spy_nav": 1040480.46,
+            "spy_nav": 1056806.94,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-05",
             "nav": 1000000.0,
-            "spy_nav": 1048827.39,
+            "spy_nav": 1065284.84,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-06",
             "nav": 1000000.0,
-            "spy_nav": 1063405.5,
+            "spy_nav": 1080091.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-07",
             "nav": 1000000.0,
-            "spy_nav": 1060144.99,
+            "spy_nav": 1076780.03,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-08",
             "nav": 1000000.0,
-            "spy_nav": 1068897.62,
+            "spy_nav": 1085670.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-11",
             "nav": 1000000.0,
-            "spy_nav": 1071332.13,
+            "spy_nav": 1088142.71,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-12",
             "nav": 1000000.0,
-            "spy_nav": 1069709.12,
+            "spy_nav": 1086494.24,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-13",
             "nav": 1000000.0,
-            "spy_nav": 1075693.98,
+            "spy_nav": 1092573.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-14",
             "nav": 1000000.0,
-            "spy_nav": 1084185.79,
+            "spy_nav": 1101198.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-15",
             "nav": 1000000.0,
-            "spy_nav": 1071143.73,
+            "spy_nav": 1087951.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-18",
             "nav": 1000000.0,
-            "spy_nav": 1070390.25,
+            "spy_nav": 1087186.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-19",
             "nav": 1000000.0,
-            "spy_nav": 1060528.4,
+            "spy_nav": 1077169.46,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-20",
             "nav": 1000000.0,
-            "spy_nav": 1071397.75,
+            "spy_nav": 1088209.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-21",
             "nav": 1000000.0,
-            "spy_nav": 1073522.43,
+            "spy_nav": 1090367.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-22",
             "nav": 1000000.0,
-            "spy_nav": 1077743.04,
+            "spy_nav": 1094654.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-26",
             "nav": 1000000.0,
-            "spy_nav": 1084897.79,
+            "spy_nav": 1101921.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-27",
             "nav": 1000000.0,
-            "spy_nav": 1084709.84,
+            "spy_nav": 1101730.33,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-28",
             "nav": 1000000.0,
-            "spy_nav": 1090693.72,
+            "spy_nav": 1107808.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-29",
             "nav": 1000000.0,
-            "spy_nav": 1093411.08,
+            "spy_nav": 1110568.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-01",
             "nav": 1000000.0,
-            "spy_nav": 1096388.56,
+            "spy_nav": 1113592.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-02",
             "nav": 1000000.0,
-            "spy_nav": 1097877.39,
+            "spy_nav": 1115104.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-03",
             "nav": 1000000.0,
-            "spy_nav": 1090173.39,
+            "spy_nav": 1107279.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-04",
             "nav": 1000000.0,
-            "spy_nav": 1094292.81,
+            "spy_nav": 1111463.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-05",
             "nav": 1000000.0,
-            "spy_nav": 1066049.8,
+            "spy_nav": 1082777.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-08",
             "nav": 1000000.0,
-            "spy_nav": 1068463.52,
+            "spy_nav": 1085229.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-09",
             "nav": 1000000.0,
-            "spy_nav": 1065327.1,
+            "spy_nav": 1082043.45,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-10",
             "nav": 1000000.0,
-            "spy_nav": 1048531.62,
+            "spy_nav": 1064984.43,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-11",
             "nav": 1000000.0,
-            "spy_nav": 1066353.35,
+            "spy_nav": 1083085.81,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-12",
             "nav": 1000000.0,
-            "spy_nav": 1072120.46,
+            "spy_nav": 1088943.4,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-15",
             "nav": 1000000.0,
-            "spy_nav": 1091026.19,
+            "spy_nav": 1108145.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-16",
             "nav": 1000000.0,
-            "spy_nav": 1084521.97,
+            "spy_nav": 1101539.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-17",
             "nav": 1000000.0,
-            "spy_nav": 1070978.6,
+            "spy_nav": 1087783.64,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-18",
             "nav": 1000000.0,
-            "spy_nav": 1082113.56,
+            "spy_nav": 1099093.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-22",
             "nav": 998980.57,
-            "spy_nav": 1078708.17,
+            "spy_nav": 1095634.49,
             "kind": "realized"
           },
           {
             "date": "2026-06-23",
             "nav": 975840.06,
-            "spy_nav": 1063043.22,
+            "spy_nav": 1079723.74,
+            "kind": "realized"
+          },
+          {
+            "date": "2026-06-24",
+            "nav": 993900.84,
+            "spy_nav": 1079223.27,
             "kind": "realized"
           }
         ],
@@ -2916,560 +2916,560 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 978518.13,
-        "cash": 90463.68,
-        "invested": 888054.45,
-        "total_return_pct": -2.1482,
-        "vs_spy_pct": -0.3859,
+        "current_nav": 982803.37,
+        "cash": 90478.04,
+        "invested": 892325.33,
+        "total_return_pct": -1.7197,
+        "vs_spy_pct": 0.0882,
         "benchmark": "SPY",
-        "day_change_pct": -2.6491,
+        "day_change_pct": 0.4379,
         "max_drawdown_pct": -2.6491,
         "realized_since": "2026-06-21",
         "series": [
           {
-            "date": "2026-02-11",
+            "date": "2026-02-12",
             "nav": 1000000.0,
             "spy_nav": 1000000.0,
             "kind": "pre_inception"
           },
           {
-            "date": "2026-02-12",
-            "nav": 1000000.0,
-            "spy_nav": 984551.13,
-            "kind": "pre_inception"
-          },
-          {
             "date": "2026-02-13",
             "nav": 1000000.0,
-            "spy_nav": 985244.73,
+            "spy_nav": 1000704.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-17",
             "nav": 1000000.0,
-            "spy_nav": 986834.39,
+            "spy_nav": 1002319.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-18",
             "nav": 1000000.0,
-            "spy_nav": 991805.82,
+            "spy_nav": 1007368.53,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-19",
             "nav": 1000000.0,
-            "spy_nav": 989190.0,
+            "spy_nav": 1004711.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-20",
             "nav": 1000000.0,
-            "spy_nav": 996343.69,
+            "spy_nav": 1011977.6,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-23",
             "nav": 1000000.0,
-            "spy_nav": 986169.71,
+            "spy_nav": 1001643.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-24",
             "nav": 1000000.0,
-            "spy_nav": 993337.64,
+            "spy_nav": 1008924.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-25",
             "nav": 1000000.0,
-            "spy_nav": 1001719.76,
+            "spy_nav": 1017438.04,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-26",
             "nav": 1000000.0,
-            "spy_nav": 996155.74,
+            "spy_nav": 1011786.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-27",
             "nav": 1000000.0,
-            "spy_nav": 991372.25,
+            "spy_nav": 1006928.16,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-02",
             "nav": 1000000.0,
-            "spy_nav": 991935.93,
+            "spy_nav": 1007500.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-03",
             "nav": 1000000.0,
-            "spy_nav": 983192.67,
+            "spy_nav": 998620.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-04",
             "nav": 1000000.0,
-            "spy_nav": 990129.39,
+            "spy_nav": 1005665.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-05",
             "nav": 1000000.0,
-            "spy_nav": 984608.88,
+            "spy_nav": 1000058.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-06",
             "nav": 1000000.0,
-            "spy_nav": 971703.48,
+            "spy_nav": 986950.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-09",
             "nav": 1000000.0,
-            "spy_nav": 980215.63,
+            "spy_nav": 995596.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-10",
             "nav": 1000000.0,
-            "spy_nav": 978640.3,
+            "spy_nav": 993996.42,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-11",
             "nav": 1000000.0,
-            "spy_nav": 977411.94,
+            "spy_nav": 992748.79,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-12",
             "nav": 1000000.0,
-            "spy_nav": 962569.99,
+            "spy_nav": 977673.95,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-13",
             "nav": 1000000.0,
-            "spy_nav": 957121.74,
+            "spy_nav": 972140.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-16",
             "nav": 1000000.0,
-            "spy_nav": 966862.24,
+            "spy_nav": 982033.55,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-17",
             "nav": 1000000.0,
-            "spy_nav": 969405.63,
+            "spy_nav": 984616.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-18",
             "nav": 1000000.0,
-            "spy_nav": 955878.88,
+            "spy_nav": 970877.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-19",
             "nav": 1000000.0,
-            "spy_nav": 953523.27,
+            "spy_nav": 968485.28,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-20",
             "nav": 1000000.0,
-            "spy_nav": 939853.78,
+            "spy_nav": 954601.29,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-23",
             "nav": 1000000.0,
-            "spy_nav": 949722.26,
+            "spy_nav": 964624.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-24",
             "nav": 1000000.0,
-            "spy_nav": 946534.18,
+            "spy_nav": 961386.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-25",
             "nav": 1000000.0,
-            "spy_nav": 951808.99,
+            "spy_nav": 966744.1,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-26",
             "nav": 1000000.0,
-            "spy_nav": 934810.88,
+            "spy_nav": 949479.26,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-27",
             "nav": 1000000.0,
-            "spy_nav": 918870.59,
+            "spy_nav": 933288.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-30",
             "nav": 1000000.0,
-            "spy_nav": 915798.38,
+            "spy_nav": 930168.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-31",
             "nav": 1000000.0,
-            "spy_nav": 942418.74,
+            "spy_nav": 957206.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-01",
             "nav": 1000000.0,
-            "spy_nav": 949519.36,
+            "spy_nav": 964418.54,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-02",
             "nav": 1000000.0,
-            "spy_nav": 950374.38,
+            "spy_nav": 965286.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-06",
             "nav": 1000000.0,
-            "spy_nav": 954866.61,
+            "spy_nav": 969849.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-07",
             "nav": 1000000.0,
-            "spy_nav": 955286.82,
+            "spy_nav": 970276.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-08",
             "nav": 1000000.0,
-            "spy_nav": 979617.55,
+            "spy_nav": 994989.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-09",
             "nav": 1000000.0,
-            "spy_nav": 985269.05,
+            "spy_nav": 1000729.19,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-10",
             "nav": 1000000.0,
-            "spy_nav": 984617.02,
+            "spy_nav": 1000066.93,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-13",
             "nav": 1000000.0,
-            "spy_nav": 994239.09,
+            "spy_nav": 1009839.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-14",
             "nav": 1000000.0,
-            "spy_nav": 1006353.77,
+            "spy_nav": 1022144.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-15",
             "nav": 1000000.0,
-            "spy_nav": 1014294.91,
+            "spy_nav": 1030210.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-16",
             "nav": 1000000.0,
-            "spy_nav": 1016787.34,
+            "spy_nav": 1032742.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-17",
             "nav": 1000000.0,
-            "spy_nav": 1029075.92,
+            "spy_nav": 1045223.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-20",
             "nav": 1000000.0,
-            "spy_nav": 1027018.11,
+            "spy_nav": 1043133.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-21",
             "nav": 1000000.0,
-            "spy_nav": 1020294.27,
+            "spy_nav": 1036304.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-22",
             "nav": 1000000.0,
-            "spy_nav": 1030626.48,
+            "spy_nav": 1046798.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-23",
             "nav": 1000000.0,
-            "spy_nav": 1026626.9,
+            "spy_nav": 1042736.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-24",
             "nav": 1000000.0,
-            "spy_nav": 1034582.54,
+            "spy_nav": 1050816.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-27",
             "nav": 1000000.0,
-            "spy_nav": 1036364.93,
+            "spy_nav": 1052626.83,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-28",
             "nav": 1000000.0,
-            "spy_nav": 1031322.03,
+            "spy_nav": 1047504.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-29",
             "nav": 1000000.0,
-            "spy_nav": 1031162.65,
+            "spy_nav": 1047342.92,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-30",
             "nav": 1000000.0,
-            "spy_nav": 1041422.33,
+            "spy_nav": 1057763.59,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-01",
             "nav": 1000000.0,
-            "spy_nav": 1044306.15,
+            "spy_nav": 1060692.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-04",
             "nav": 1000000.0,
-            "spy_nav": 1040480.46,
+            "spy_nav": 1056806.94,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-05",
             "nav": 1000000.0,
-            "spy_nav": 1048827.39,
+            "spy_nav": 1065284.84,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-06",
             "nav": 1000000.0,
-            "spy_nav": 1063405.5,
+            "spy_nav": 1080091.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-07",
             "nav": 1000000.0,
-            "spy_nav": 1060144.99,
+            "spy_nav": 1076780.03,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-08",
             "nav": 1000000.0,
-            "spy_nav": 1068897.62,
+            "spy_nav": 1085670.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-11",
             "nav": 1000000.0,
-            "spy_nav": 1071332.13,
+            "spy_nav": 1088142.71,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-12",
             "nav": 1000000.0,
-            "spy_nav": 1069709.12,
+            "spy_nav": 1086494.24,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-13",
             "nav": 1000000.0,
-            "spy_nav": 1075693.98,
+            "spy_nav": 1092573.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-14",
             "nav": 1000000.0,
-            "spy_nav": 1084185.79,
+            "spy_nav": 1101198.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-15",
             "nav": 1000000.0,
-            "spy_nav": 1071143.73,
+            "spy_nav": 1087951.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-18",
             "nav": 1000000.0,
-            "spy_nav": 1070390.25,
+            "spy_nav": 1087186.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-19",
             "nav": 1000000.0,
-            "spy_nav": 1060528.4,
+            "spy_nav": 1077169.46,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-20",
             "nav": 1000000.0,
-            "spy_nav": 1071397.75,
+            "spy_nav": 1088209.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-21",
             "nav": 1000000.0,
-            "spy_nav": 1073522.43,
+            "spy_nav": 1090367.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-22",
             "nav": 1000000.0,
-            "spy_nav": 1077743.04,
+            "spy_nav": 1094654.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-26",
             "nav": 1000000.0,
-            "spy_nav": 1084897.79,
+            "spy_nav": 1101921.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-27",
             "nav": 1000000.0,
-            "spy_nav": 1084709.84,
+            "spy_nav": 1101730.33,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-28",
             "nav": 1000000.0,
-            "spy_nav": 1090693.72,
+            "spy_nav": 1107808.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-29",
             "nav": 1000000.0,
-            "spy_nav": 1093411.08,
+            "spy_nav": 1110568.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-01",
             "nav": 1000000.0,
-            "spy_nav": 1096388.56,
+            "spy_nav": 1113592.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-02",
             "nav": 1000000.0,
-            "spy_nav": 1097877.39,
+            "spy_nav": 1115104.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-03",
             "nav": 1000000.0,
-            "spy_nav": 1090173.39,
+            "spy_nav": 1107279.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-04",
             "nav": 1000000.0,
-            "spy_nav": 1094292.81,
+            "spy_nav": 1111463.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-05",
             "nav": 1000000.0,
-            "spy_nav": 1066049.8,
+            "spy_nav": 1082777.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-08",
             "nav": 1000000.0,
-            "spy_nav": 1068463.52,
+            "spy_nav": 1085229.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-09",
             "nav": 1000000.0,
-            "spy_nav": 1065327.1,
+            "spy_nav": 1082043.45,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-10",
             "nav": 1000000.0,
-            "spy_nav": 1048531.62,
+            "spy_nav": 1064984.43,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-11",
             "nav": 1000000.0,
-            "spy_nav": 1066353.35,
+            "spy_nav": 1083085.81,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-12",
             "nav": 1000000.0,
-            "spy_nav": 1072120.46,
+            "spy_nav": 1088943.4,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-15",
             "nav": 1000000.0,
-            "spy_nav": 1091026.19,
+            "spy_nav": 1108145.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-16",
             "nav": 1000000.0,
-            "spy_nav": 1084521.97,
+            "spy_nav": 1101539.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-17",
             "nav": 1000000.0,
-            "spy_nav": 1070978.6,
+            "spy_nav": 1087783.64,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-18",
             "nav": 1000000.0,
-            "spy_nav": 1082113.56,
+            "spy_nav": 1099093.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-22",
             "nav": 1005145.83,
-            "spy_nav": 1078708.17,
+            "spy_nav": 1095634.49,
             "kind": "realized"
           },
           {
             "date": "2026-06-23",
             "nav": 978518.13,
-            "spy_nav": 1063043.22,
+            "spy_nav": 1079723.74,
+            "kind": "realized"
+          },
+          {
+            "date": "2026-06-24",
+            "nav": 982803.37,
+            "spy_nav": 1079223.27,
             "kind": "realized"
           }
         ],
@@ -3691,560 +3691,560 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 997781.04,
-        "cash": 423775.84,
-        "invested": 574005.2,
-        "total_return_pct": -0.2219,
-        "vs_spy_pct": 0.7269,
+        "current_nav": 992554.32,
+        "cash": 423843.1,
+        "invested": 568711.22,
+        "total_return_pct": -0.7446,
+        "vs_spy_pct": 1.0633,
         "benchmark": "SPY",
-        "day_change_pct": 0.9529,
+        "day_change_pct": 0.4241,
         "max_drawdown_pct": -2.1751,
         "realized_since": "2026-06-21",
         "series": [
           {
-            "date": "2026-02-11",
+            "date": "2026-02-12",
             "nav": 1000000.0,
             "spy_nav": 1000000.0,
             "kind": "pre_inception"
           },
           {
-            "date": "2026-02-12",
-            "nav": 1000000.0,
-            "spy_nav": 984551.13,
-            "kind": "pre_inception"
-          },
-          {
             "date": "2026-02-13",
             "nav": 1000000.0,
-            "spy_nav": 985244.73,
+            "spy_nav": 1000704.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-17",
             "nav": 1000000.0,
-            "spy_nav": 986834.39,
+            "spy_nav": 1002319.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-18",
             "nav": 1000000.0,
-            "spy_nav": 991805.82,
+            "spy_nav": 1007368.53,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-19",
             "nav": 1000000.0,
-            "spy_nav": 989190.0,
+            "spy_nav": 1004711.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-20",
             "nav": 1000000.0,
-            "spy_nav": 996343.69,
+            "spy_nav": 1011977.6,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-23",
             "nav": 1000000.0,
-            "spy_nav": 986169.71,
+            "spy_nav": 1001643.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-24",
             "nav": 1000000.0,
-            "spy_nav": 993337.64,
+            "spy_nav": 1008924.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-25",
             "nav": 1000000.0,
-            "spy_nav": 1001719.76,
+            "spy_nav": 1017438.04,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-26",
             "nav": 1000000.0,
-            "spy_nav": 996155.74,
+            "spy_nav": 1011786.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-27",
             "nav": 1000000.0,
-            "spy_nav": 991372.25,
+            "spy_nav": 1006928.16,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-02",
             "nav": 1000000.0,
-            "spy_nav": 991935.93,
+            "spy_nav": 1007500.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-03",
             "nav": 1000000.0,
-            "spy_nav": 983192.67,
+            "spy_nav": 998620.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-04",
             "nav": 1000000.0,
-            "spy_nav": 990129.39,
+            "spy_nav": 1005665.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-05",
             "nav": 1000000.0,
-            "spy_nav": 984608.88,
+            "spy_nav": 1000058.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-06",
             "nav": 1000000.0,
-            "spy_nav": 971703.48,
+            "spy_nav": 986950.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-09",
             "nav": 1000000.0,
-            "spy_nav": 980215.63,
+            "spy_nav": 995596.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-10",
             "nav": 1000000.0,
-            "spy_nav": 978640.3,
+            "spy_nav": 993996.42,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-11",
             "nav": 1000000.0,
-            "spy_nav": 977411.94,
+            "spy_nav": 992748.79,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-12",
             "nav": 1000000.0,
-            "spy_nav": 962569.99,
+            "spy_nav": 977673.95,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-13",
             "nav": 1000000.0,
-            "spy_nav": 957121.74,
+            "spy_nav": 972140.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-16",
             "nav": 1000000.0,
-            "spy_nav": 966862.24,
+            "spy_nav": 982033.55,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-17",
             "nav": 1000000.0,
-            "spy_nav": 969405.63,
+            "spy_nav": 984616.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-18",
             "nav": 1000000.0,
-            "spy_nav": 955878.88,
+            "spy_nav": 970877.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-19",
             "nav": 1000000.0,
-            "spy_nav": 953523.27,
+            "spy_nav": 968485.28,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-20",
             "nav": 1000000.0,
-            "spy_nav": 939853.78,
+            "spy_nav": 954601.29,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-23",
             "nav": 1000000.0,
-            "spy_nav": 949722.26,
+            "spy_nav": 964624.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-24",
             "nav": 1000000.0,
-            "spy_nav": 946534.18,
+            "spy_nav": 961386.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-25",
             "nav": 1000000.0,
-            "spy_nav": 951808.99,
+            "spy_nav": 966744.1,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-26",
             "nav": 1000000.0,
-            "spy_nav": 934810.88,
+            "spy_nav": 949479.26,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-27",
             "nav": 1000000.0,
-            "spy_nav": 918870.59,
+            "spy_nav": 933288.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-30",
             "nav": 1000000.0,
-            "spy_nav": 915798.38,
+            "spy_nav": 930168.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-31",
             "nav": 1000000.0,
-            "spy_nav": 942418.74,
+            "spy_nav": 957206.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-01",
             "nav": 1000000.0,
-            "spy_nav": 949519.36,
+            "spy_nav": 964418.54,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-02",
             "nav": 1000000.0,
-            "spy_nav": 950374.38,
+            "spy_nav": 965286.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-06",
             "nav": 1000000.0,
-            "spy_nav": 954866.61,
+            "spy_nav": 969849.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-07",
             "nav": 1000000.0,
-            "spy_nav": 955286.82,
+            "spy_nav": 970276.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-08",
             "nav": 1000000.0,
-            "spy_nav": 979617.55,
+            "spy_nav": 994989.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-09",
             "nav": 1000000.0,
-            "spy_nav": 985269.05,
+            "spy_nav": 1000729.19,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-10",
             "nav": 1000000.0,
-            "spy_nav": 984617.02,
+            "spy_nav": 1000066.93,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-13",
             "nav": 1000000.0,
-            "spy_nav": 994239.09,
+            "spy_nav": 1009839.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-14",
             "nav": 1000000.0,
-            "spy_nav": 1006353.77,
+            "spy_nav": 1022144.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-15",
             "nav": 1000000.0,
-            "spy_nav": 1014294.91,
+            "spy_nav": 1030210.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-16",
             "nav": 1000000.0,
-            "spy_nav": 1016787.34,
+            "spy_nav": 1032742.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-17",
             "nav": 1000000.0,
-            "spy_nav": 1029075.92,
+            "spy_nav": 1045223.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-20",
             "nav": 1000000.0,
-            "spy_nav": 1027018.11,
+            "spy_nav": 1043133.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-21",
             "nav": 1000000.0,
-            "spy_nav": 1020294.27,
+            "spy_nav": 1036304.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-22",
             "nav": 1000000.0,
-            "spy_nav": 1030626.48,
+            "spy_nav": 1046798.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-23",
             "nav": 1000000.0,
-            "spy_nav": 1026626.9,
+            "spy_nav": 1042736.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-24",
             "nav": 1000000.0,
-            "spy_nav": 1034582.54,
+            "spy_nav": 1050816.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-27",
             "nav": 1000000.0,
-            "spy_nav": 1036364.93,
+            "spy_nav": 1052626.83,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-28",
             "nav": 1000000.0,
-            "spy_nav": 1031322.03,
+            "spy_nav": 1047504.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-29",
             "nav": 1000000.0,
-            "spy_nav": 1031162.65,
+            "spy_nav": 1047342.92,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-30",
             "nav": 1000000.0,
-            "spy_nav": 1041422.33,
+            "spy_nav": 1057763.59,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-01",
             "nav": 1000000.0,
-            "spy_nav": 1044306.15,
+            "spy_nav": 1060692.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-04",
             "nav": 1000000.0,
-            "spy_nav": 1040480.46,
+            "spy_nav": 1056806.94,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-05",
             "nav": 1000000.0,
-            "spy_nav": 1048827.39,
+            "spy_nav": 1065284.84,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-06",
             "nav": 1000000.0,
-            "spy_nav": 1063405.5,
+            "spy_nav": 1080091.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-07",
             "nav": 1000000.0,
-            "spy_nav": 1060144.99,
+            "spy_nav": 1076780.03,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-08",
             "nav": 1000000.0,
-            "spy_nav": 1068897.62,
+            "spy_nav": 1085670.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-11",
             "nav": 1000000.0,
-            "spy_nav": 1071332.13,
+            "spy_nav": 1088142.71,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-12",
             "nav": 1000000.0,
-            "spy_nav": 1069709.12,
+            "spy_nav": 1086494.24,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-13",
             "nav": 1000000.0,
-            "spy_nav": 1075693.98,
+            "spy_nav": 1092573.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-14",
             "nav": 1000000.0,
-            "spy_nav": 1084185.79,
+            "spy_nav": 1101198.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-15",
             "nav": 1000000.0,
-            "spy_nav": 1071143.73,
+            "spy_nav": 1087951.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-18",
             "nav": 1000000.0,
-            "spy_nav": 1070390.25,
+            "spy_nav": 1087186.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-19",
             "nav": 1000000.0,
-            "spy_nav": 1060528.4,
+            "spy_nav": 1077169.46,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-20",
             "nav": 1000000.0,
-            "spy_nav": 1071397.75,
+            "spy_nav": 1088209.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-21",
             "nav": 1000000.0,
-            "spy_nav": 1073522.43,
+            "spy_nav": 1090367.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-22",
             "nav": 1000000.0,
-            "spy_nav": 1077743.04,
+            "spy_nav": 1094654.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-26",
             "nav": 1000000.0,
-            "spy_nav": 1084897.79,
+            "spy_nav": 1101921.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-27",
             "nav": 1000000.0,
-            "spy_nav": 1084709.84,
+            "spy_nav": 1101730.33,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-28",
             "nav": 1000000.0,
-            "spy_nav": 1090693.72,
+            "spy_nav": 1107808.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-29",
             "nav": 1000000.0,
-            "spy_nav": 1093411.08,
+            "spy_nav": 1110568.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-01",
             "nav": 1000000.0,
-            "spy_nav": 1096388.56,
+            "spy_nav": 1113592.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-02",
             "nav": 1000000.0,
-            "spy_nav": 1097877.39,
+            "spy_nav": 1115104.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-03",
             "nav": 1000000.0,
-            "spy_nav": 1090173.39,
+            "spy_nav": 1107279.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-04",
             "nav": 1000000.0,
-            "spy_nav": 1094292.81,
+            "spy_nav": 1111463.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-05",
             "nav": 1000000.0,
-            "spy_nav": 1066049.8,
+            "spy_nav": 1082777.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-08",
             "nav": 1000000.0,
-            "spy_nav": 1068463.52,
+            "spy_nav": 1085229.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-09",
             "nav": 1000000.0,
-            "spy_nav": 1065327.1,
+            "spy_nav": 1082043.45,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-10",
             "nav": 1000000.0,
-            "spy_nav": 1048531.62,
+            "spy_nav": 1064984.43,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-11",
             "nav": 1000000.0,
-            "spy_nav": 1066353.35,
+            "spy_nav": 1083085.81,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-12",
             "nav": 1000000.0,
-            "spy_nav": 1072120.46,
+            "spy_nav": 1088943.4,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-15",
             "nav": 1000000.0,
-            "spy_nav": 1091026.19,
+            "spy_nav": 1108145.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-16",
             "nav": 1000000.0,
-            "spy_nav": 1084521.97,
+            "spy_nav": 1101539.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-17",
             "nav": 1000000.0,
-            "spy_nav": 1070978.6,
+            "spy_nav": 1087783.64,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-18",
             "nav": 1000000.0,
-            "spy_nav": 1082113.56,
+            "spy_nav": 1099093.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-22",
             "nav": 1010338.91,
-            "spy_nav": 1078708.17,
+            "spy_nav": 1095634.49,
             "kind": "realized"
           },
           {
             "date": "2026-06-23",
             "nav": 988362.61,
-            "spy_nav": 1063043.22,
+            "spy_nav": 1079723.74,
+            "kind": "realized"
+          },
+          {
+            "date": "2026-06-24",
+            "nav": 992554.32,
+            "spy_nav": 1079223.27,
             "kind": "realized"
           }
         ],
@@ -4452,560 +4452,560 @@
       "performance": {
         "inception_date": "2026-06-22",
         "starting_nav": 1000000.0,
-        "current_nav": 980569.66,
-        "cash": 294367.01,
-        "invested": 686202.64,
-        "total_return_pct": -1.943,
-        "vs_spy_pct": -1.3069,
+        "current_nav": 975004.28,
+        "cash": 294413.74,
+        "invested": 680590.54,
+        "total_return_pct": -2.4996,
+        "vs_spy_pct": -1.0017,
         "benchmark": "SPY",
-        "day_change_pct": 0.7144,
+        "day_change_pct": 0.1428,
         "max_drawdown_pct": -2.6386,
         "realized_since": "2026-06-22",
         "series": [
           {
-            "date": "2026-02-11",
+            "date": "2026-02-12",
             "nav": 1000000.0,
             "spy_nav": 1000000.0,
             "kind": "pre_inception"
           },
           {
-            "date": "2026-02-12",
-            "nav": 1000000.0,
-            "spy_nav": 984551.13,
-            "kind": "pre_inception"
-          },
-          {
             "date": "2026-02-13",
             "nav": 1000000.0,
-            "spy_nav": 985244.73,
+            "spy_nav": 1000704.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-17",
             "nav": 1000000.0,
-            "spy_nav": 986834.39,
+            "spy_nav": 1002319.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-18",
             "nav": 1000000.0,
-            "spy_nav": 991805.82,
+            "spy_nav": 1007368.53,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-19",
             "nav": 1000000.0,
-            "spy_nav": 989190.0,
+            "spy_nav": 1004711.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-20",
             "nav": 1000000.0,
-            "spy_nav": 996343.69,
+            "spy_nav": 1011977.6,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-23",
             "nav": 1000000.0,
-            "spy_nav": 986169.71,
+            "spy_nav": 1001643.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-24",
             "nav": 1000000.0,
-            "spy_nav": 993337.64,
+            "spy_nav": 1008924.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-25",
             "nav": 1000000.0,
-            "spy_nav": 1001719.76,
+            "spy_nav": 1017438.04,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-26",
             "nav": 1000000.0,
-            "spy_nav": 996155.74,
+            "spy_nav": 1011786.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-27",
             "nav": 1000000.0,
-            "spy_nav": 991372.25,
+            "spy_nav": 1006928.16,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-02",
             "nav": 1000000.0,
-            "spy_nav": 991935.93,
+            "spy_nav": 1007500.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-03",
             "nav": 1000000.0,
-            "spy_nav": 983192.67,
+            "spy_nav": 998620.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-04",
             "nav": 1000000.0,
-            "spy_nav": 990129.39,
+            "spy_nav": 1005665.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-05",
             "nav": 1000000.0,
-            "spy_nav": 984608.88,
+            "spy_nav": 1000058.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-06",
             "nav": 1000000.0,
-            "spy_nav": 971703.48,
+            "spy_nav": 986950.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-09",
             "nav": 1000000.0,
-            "spy_nav": 980215.63,
+            "spy_nav": 995596.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-10",
             "nav": 1000000.0,
-            "spy_nav": 978640.3,
+            "spy_nav": 993996.42,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-11",
             "nav": 1000000.0,
-            "spy_nav": 977411.94,
+            "spy_nav": 992748.79,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-12",
             "nav": 1000000.0,
-            "spy_nav": 962569.99,
+            "spy_nav": 977673.95,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-13",
             "nav": 1000000.0,
-            "spy_nav": 957121.74,
+            "spy_nav": 972140.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-16",
             "nav": 1000000.0,
-            "spy_nav": 966862.24,
+            "spy_nav": 982033.55,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-17",
             "nav": 1000000.0,
-            "spy_nav": 969405.63,
+            "spy_nav": 984616.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-18",
             "nav": 1000000.0,
-            "spy_nav": 955878.88,
+            "spy_nav": 970877.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-19",
             "nav": 1000000.0,
-            "spy_nav": 953523.27,
+            "spy_nav": 968485.28,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-20",
             "nav": 1000000.0,
-            "spy_nav": 939853.78,
+            "spy_nav": 954601.29,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-23",
             "nav": 1000000.0,
-            "spy_nav": 949722.26,
+            "spy_nav": 964624.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-24",
             "nav": 1000000.0,
-            "spy_nav": 946534.18,
+            "spy_nav": 961386.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-25",
             "nav": 1000000.0,
-            "spy_nav": 951808.99,
+            "spy_nav": 966744.1,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-26",
             "nav": 1000000.0,
-            "spy_nav": 934810.88,
+            "spy_nav": 949479.26,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-27",
             "nav": 1000000.0,
-            "spy_nav": 918870.59,
+            "spy_nav": 933288.85,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-30",
             "nav": 1000000.0,
-            "spy_nav": 915798.38,
+            "spy_nav": 930168.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-31",
             "nav": 1000000.0,
-            "spy_nav": 942418.74,
+            "spy_nav": 957206.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-01",
             "nav": 1000000.0,
-            "spy_nav": 949519.36,
+            "spy_nav": 964418.54,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-02",
             "nav": 1000000.0,
-            "spy_nav": 950374.38,
+            "spy_nav": 965286.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-06",
             "nav": 1000000.0,
-            "spy_nav": 954866.61,
+            "spy_nav": 969849.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-07",
             "nav": 1000000.0,
-            "spy_nav": 955286.82,
+            "spy_nav": 970276.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-08",
             "nav": 1000000.0,
-            "spy_nav": 979617.55,
+            "spy_nav": 994989.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-09",
             "nav": 1000000.0,
-            "spy_nav": 985269.05,
+            "spy_nav": 1000729.19,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-10",
             "nav": 1000000.0,
-            "spy_nav": 984617.02,
+            "spy_nav": 1000066.93,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-13",
             "nav": 1000000.0,
-            "spy_nav": 994239.09,
+            "spy_nav": 1009839.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-14",
             "nav": 1000000.0,
-            "spy_nav": 1006353.77,
+            "spy_nav": 1022144.76,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-15",
             "nav": 1000000.0,
-            "spy_nav": 1014294.91,
+            "spy_nav": 1030210.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-16",
             "nav": 1000000.0,
-            "spy_nav": 1016787.34,
+            "spy_nav": 1032742.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-17",
             "nav": 1000000.0,
-            "spy_nav": 1029075.92,
+            "spy_nav": 1045223.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-20",
             "nav": 1000000.0,
-            "spy_nav": 1027018.11,
+            "spy_nav": 1043133.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-21",
             "nav": 1000000.0,
-            "spy_nav": 1020294.27,
+            "spy_nav": 1036304.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-22",
             "nav": 1000000.0,
-            "spy_nav": 1030626.48,
+            "spy_nav": 1046798.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-23",
             "nav": 1000000.0,
-            "spy_nav": 1026626.9,
+            "spy_nav": 1042736.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-24",
             "nav": 1000000.0,
-            "spy_nav": 1034582.54,
+            "spy_nav": 1050816.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-27",
             "nav": 1000000.0,
-            "spy_nav": 1036364.93,
+            "spy_nav": 1052626.83,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-28",
             "nav": 1000000.0,
-            "spy_nav": 1031322.03,
+            "spy_nav": 1047504.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-29",
             "nav": 1000000.0,
-            "spy_nav": 1031162.65,
+            "spy_nav": 1047342.92,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-30",
             "nav": 1000000.0,
-            "spy_nav": 1041422.33,
+            "spy_nav": 1057763.59,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-01",
             "nav": 1000000.0,
-            "spy_nav": 1044306.15,
+            "spy_nav": 1060692.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-04",
             "nav": 1000000.0,
-            "spy_nav": 1040480.46,
+            "spy_nav": 1056806.94,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-05",
             "nav": 1000000.0,
-            "spy_nav": 1048827.39,
+            "spy_nav": 1065284.84,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-06",
             "nav": 1000000.0,
-            "spy_nav": 1063405.5,
+            "spy_nav": 1080091.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-07",
             "nav": 1000000.0,
-            "spy_nav": 1060144.99,
+            "spy_nav": 1076780.03,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-08",
             "nav": 1000000.0,
-            "spy_nav": 1068897.62,
+            "spy_nav": 1085670.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-11",
             "nav": 1000000.0,
-            "spy_nav": 1071332.13,
+            "spy_nav": 1088142.71,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-12",
             "nav": 1000000.0,
-            "spy_nav": 1069709.12,
+            "spy_nav": 1086494.24,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-13",
             "nav": 1000000.0,
-            "spy_nav": 1075693.98,
+            "spy_nav": 1092573.01,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-14",
             "nav": 1000000.0,
-            "spy_nav": 1084185.79,
+            "spy_nav": 1101198.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-15",
             "nav": 1000000.0,
-            "spy_nav": 1071143.73,
+            "spy_nav": 1087951.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-18",
             "nav": 1000000.0,
-            "spy_nav": 1070390.25,
+            "spy_nav": 1087186.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-19",
             "nav": 1000000.0,
-            "spy_nav": 1060528.4,
+            "spy_nav": 1077169.46,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-20",
             "nav": 1000000.0,
-            "spy_nav": 1071397.75,
+            "spy_nav": 1088209.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-21",
             "nav": 1000000.0,
-            "spy_nav": 1073522.43,
+            "spy_nav": 1090367.38,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-22",
             "nav": 1000000.0,
-            "spy_nav": 1077743.04,
+            "spy_nav": 1094654.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-26",
             "nav": 1000000.0,
-            "spy_nav": 1084897.79,
+            "spy_nav": 1101921.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-27",
             "nav": 1000000.0,
-            "spy_nav": 1084709.84,
+            "spy_nav": 1101730.33,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-28",
             "nav": 1000000.0,
-            "spy_nav": 1090693.72,
+            "spy_nav": 1107808.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-29",
             "nav": 1000000.0,
-            "spy_nav": 1093411.08,
+            "spy_nav": 1110568.11,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-01",
             "nav": 1000000.0,
-            "spy_nav": 1096388.56,
+            "spy_nav": 1113592.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-02",
             "nav": 1000000.0,
-            "spy_nav": 1097877.39,
+            "spy_nav": 1115104.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-03",
             "nav": 1000000.0,
-            "spy_nav": 1090173.39,
+            "spy_nav": 1107279.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-04",
             "nav": 1000000.0,
-            "spy_nav": 1094292.81,
+            "spy_nav": 1111463.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-05",
             "nav": 1000000.0,
-            "spy_nav": 1066049.8,
+            "spy_nav": 1082777.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-08",
             "nav": 1000000.0,
-            "spy_nav": 1068463.52,
+            "spy_nav": 1085229.09,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-09",
             "nav": 1000000.0,
-            "spy_nav": 1065327.1,
+            "spy_nav": 1082043.45,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-10",
             "nav": 1000000.0,
-            "spy_nav": 1048531.62,
+            "spy_nav": 1064984.43,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-11",
             "nav": 1000000.0,
-            "spy_nav": 1066353.35,
+            "spy_nav": 1083085.81,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-12",
             "nav": 1000000.0,
-            "spy_nav": 1072120.46,
+            "spy_nav": 1088943.4,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-15",
             "nav": 1000000.0,
-            "spy_nav": 1091026.19,
+            "spy_nav": 1108145.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-16",
             "nav": 1000000.0,
-            "spy_nav": 1084521.97,
+            "spy_nav": 1101539.52,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-17",
             "nav": 1000000.0,
-            "spy_nav": 1070978.6,
+            "spy_nav": 1087783.64,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-18",
             "nav": 1000000.0,
-            "spy_nav": 1082113.56,
+            "spy_nav": 1099093.31,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-22",
             "nav": 1000000.0,
-            "spy_nav": 1078708.17,
+            "spy_nav": 1095634.49,
             "kind": "realized"
           },
           {
             "date": "2026-06-23",
             "nav": 973614.24,
-            "spy_nav": 1063043.22,
+            "spy_nav": 1079723.74,
+            "kind": "realized"
+          },
+          {
+            "date": "2026-06-24",
+            "nav": 975004.28,
+            "spy_nav": 1079223.27,
             "kind": "realized"
           }
         ],
@@ -5021,18 +5021,18 @@
       "benchmark": "FXI",
       "as_of": "2026-06-24",
       "market_status": {
-        "open": false,
+        "open": true,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-06-24T23:01:58.281746+08:00",
-        "asof_cst": "2026-06-24T23:01:58.281746+08:00",
+        "asof": "2026-06-25T09:35:00.476470+08:00",
+        "asof_cst": "2026-06-25T09:35:00.476470+08:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-06-25T09:30:00+08:00",
-        "next_open_day": "2026-06-25",
-        "prev_trading_day": "2026-06-23"
+        "next_open": "2026-06-26T09:30:00+08:00",
+        "next_open_day": "2026-06-26",
+        "prev_trading_day": "2026-06-24"
       },
-      "gross": 0.565,
-      "cash": 0.435,
+      "gross": 0.32,
+      "cash": 0.68,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -5041,70 +5041,24 @@
       "sleeves": null,
       "positions": [
         {
-          "ticker": "688411.SS",
-          "name": "海博思创",
-          "sleeve": "brain",
-          "venue": "A-share",
-          "weight": 0.2704,
-          "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "海博思创 (688411.SS), grid-scale energy-storage systems, keeps a structural-growth seat but I am cutting it hard from 27% to 12%. It is my worst position (−4.3%) and sits in the weakest momentum complex (NEV mom_20d −5.4%, below 200d trend), so carrying it at a quarter of the book was uncompensated concentration in a drawdown-elevated regime. The storage buildout narrative is intact enough to hold a residual stake; the oversize bet is not. Falsifier: another leg down through ~250 or continued NEV-sector RS deterioration and the residual goes too.",
-          "opened_at": "2026-06-22T07:24:32.994124+00:00",
-          "held_days": 2,
-          "cost_basis": 278.06,
-          "current_price": 266.19,
-          "market_value": 268047.18,
-          "unrealized_pnl": -11952.82,
-          "unrealized_pct": -4.27,
-          "thesis_full": {
-            "summary": "海博思创 (688411.SS), grid-scale energy-storage systems, keeps a structural-growth seat but I am cutting it hard from 27% to 12%. It is my worst position (−4.3%) and sits in the weakest momentum complex (NEV mom_20d −5.4%, below 200d trend), so carrying it at a quarter of the book was uncompensated concentration in a drawdown-elevated regime. The storage buildout narrative is intact enough to hold a residual stake; the oversize bet is not. Falsifier: another leg down through ~250 or continued NEV-sector RS deterioration and the residual goes too.",
-            "why_now": "海博思创 (688411.SS), grid-scale energy-storage systems, keeps a structural-growth seat but I am cutting it hard from 27% to 12%. It is my worst position (−4.3%) and sits in the weakest momentum complex (NEV mom_20d −5.4%, below 200d trend), so carrying it at a quarter of the book was uncompensated concentration in a drawdown-elevated regime. The storage buildout narrative is intact enough to hold a residual stake; the oversize bet is not. Falsifier: another leg down through ~250 or continued NEV-sector RS deterioration and the residual goes too.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
           "ticker": "603301.SS",
           "name": "振德医疗",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.1248,
+          "weight": 0.15,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "振德医疗 (603301.SS) is the anchor: the unified intake flags it as an alpha leader with residual α 2.77 and entry STILL intact (lean up), and it is already +1.85% for me. Healthcare RS is deeply washed out (rank 9, mom_60d −14.7%), so I am holding a name that is working on its own merits inside a sector positioned for mean-reversion rather than chasing a crowded one. Falsifier: if the alpha-intact entry flips to extended/laggard on the next intake, or it breaks below my ~86.5 cost on volume, I cut. Adding modestly to make it the largest single weight.",
+          "rationale": "振德医疗 (603301.SS), medical dressings/PPE, is the book's defensive anchor and I am holding it at ~15% into a confirmed risk-off Asia open. It is a low-beta, cash-generative defensive-medical name, one of only two positions green for me (+1.85% on the settled book), and the unified intake still flags it an alpha leader (residual α 2.77, entry intact). Healthcare RS is deeply washed (rank 9, mom_60d −14.7%, 3.2 pctile), so it carries oversold mean-reversion optionality on top of genuine downside cushion — exactly what you want to own while KOSPI craters −9.99% and Shanghai/HK sell off. I am sizing it as the largest single weight without pressing into the tape. Falsifier: the intake flips alpha-intact to extended/laggard, or it breaks my ~86.5 cost on volume.",
           "opened_at": "2026-06-23T01:36:10.615687+00:00",
           "held_days": 1,
-          "cost_basis": 86.46,
+          "cost_basis": 86.7293,
           "current_price": 88.06,
-          "market_value": 123657.82,
+          "market_value": 148685.53,
           "unrealized_pnl": 2246.79,
-          "unrealized_pct": 1.85,
+          "unrealized_pct": 1.53,
           "thesis_full": {
-            "summary": "振德医疗 (603301.SS) is the anchor: the unified intake flags it as an alpha leader with residual α 2.77 and entry STILL intact (lean up), and it is already +1.85% for me. Healthcare RS is deeply washed out (rank 9, mom_60d −14.7%), so I am holding a name that is working on its own merits inside a sector positioned for mean-reversion rather than chasing a crowded one. Falsifier: if the alpha-intact entry flips to extended/laggard on the next intake, or it breaks below my ~86.5 cost on volume, I cut. Adding modestly to make it the largest single weight.",
-            "why_now": "振德医疗 (603301.SS) is the anchor: the unified intake flags it as an alpha leader with residual α 2.77 and entry STILL intact (lean up), and it is already +1.85% for me. Healthcare RS is deeply washed out (rank 9, mom_60d −14.7%), so I am holding a name that is working on its own merits inside a sector positioned for mean-reversion rather than chasing a crowded one. Falsifier: if the alpha-intact entry flips to extended/laggard on the next intake, or it breaks below my ~86.5 cost on volume, I cut. Adding modestly to make it the largest single weight.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
-          "ticker": "688585.SS",
-          "name": "上纬新材",
-          "sleeve": "brain",
-          "venue": "A-share",
-          "weight": 0.1084,
-          "verdict": "hold",
-          "conviction": "low",
-          "rationale": "上纬新材 (上纬新材, 688585.SS), wind-blade composite/resin materials, is kept as a small speculative-beta tail. The brief notes the small-cap/large-cap ratio is still rising (+3.6% 20d) — speculative appetite is live — and this is a low-float wind-materials name with carbon-fiber optionality. But it is uncorroborated by the intake desks and it is a micro-float, the first thing to be hit if risk-off deepens, so I keep it intentionally small. Falsifier: a break of the small-cap bid (small/large ratio rolling over) or a move below my ~163 cost and this is the first name I sell.",
-          "opened_at": "2026-06-22T07:24:32.994124+00:00",
-          "held_days": 2,
-          "cost_basis": 163.33,
-          "current_price": 159.47,
-          "market_value": 107400.35,
-          "unrealized_pnl": -2599.64,
-          "unrealized_pct": -2.36,
-          "thesis_full": {
-            "summary": "上纬新材 (上纬新材, 688585.SS), wind-blade composite/resin materials, is kept as a small speculative-beta tail. The brief notes the small-cap/large-cap ratio is still rising (+3.6% 20d) — speculative appetite is live — and this is a low-float wind-materials name with carbon-fiber optionality. But it is uncorroborated by the intake desks and it is a micro-float, the first thing to be hit if risk-off deepens, so I keep it intentionally small. Falsifier: a break of the small-cap bid (small/large ratio rolling over) or a move below my ~163 cost and this is the first name I sell.",
-            "why_now": "上纬新材 (上纬新材, 688585.SS), wind-blade composite/resin materials, is kept as a small speculative-beta tail. The brief notes the small-cap/large-cap ratio is still rising (+3.6% 20d) — speculative appetite is live — and this is a low-float wind-materials name with carbon-fiber optionality. But it is uncorroborated by the intake desks and it is a micro-float, the first thing to be hit if risk-off deepens, so I keep it intentionally small. Falsifier: a break of the small-cap bid (small/large ratio rolling over) or a move below my ~163 cost and this is the first name I sell.",
+            "summary": "振德医疗 (603301.SS), medical dressings/PPE, is the book's defensive anchor and I am holding it at ~15% into a confirmed risk-off Asia open. It is a low-beta, cash-generative defensive-medical name, one of only two positions green for me (+1.85% on the settled book), and the unified intake still flags it an alpha leader (residual α 2.77, entry intact). Healthcare RS is deeply washed (rank 9, mom_60d −14.7%, 3.2 pctile), so it carries oversold mean-reversion optionality on top of genuine downside cushion — exactly what you want to own while KOSPI craters −9.99% and Shanghai/HK sell off. I am sizing it as the largest single weight without pressing into the tape. Falsifier: the intake flips alpha-intact to extended/laggard, or it breaks my ~86.5 cost on volume.",
+            "why_now": "振德医疗 (603301.SS), medical dressings/PPE, is the book's defensive anchor and I am holding it at ~15% into a confirmed risk-off Asia open. It is a low-beta, cash-generative defensive-medical name, one of only two positions green for me (+1.85% on the settled book), and the unified intake still flags it an alpha leader (residual α 2.77, entry intact). Healthcare RS is deeply washed (rank 9, mom_60d −14.7%, 3.2 pctile), so it carries oversold mean-reversion optionality on top of genuine downside cushion — exactly what you want to own while KOSPI craters −9.99% and Shanghai/HK sell off. I am sizing it as the largest single weight without pressing into the tape. Falsifier: the intake flips alpha-intact to extended/laggard, or it breaks my ~86.5 cost on volume.",
             "bull": [],
             "bear": []
           }
@@ -5114,20 +5068,43 @@
           "name": "养元饮品",
           "sleeve": "brain",
           "venue": "A-share",
-          "weight": 0.0614,
+          "weight": 0.12,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "养元饮品 (603156.SS), the 'six-walnut' beverage maker, is my defensive mean-reversion seat: Consumer Staples is at the 0.4th percentile (rank 15, mom_60d −25.5%), precisely the deeply-washed cohort the desk says offers the higher-odds reversal in a stagflation quad. It is a cash-generative staple already +1.7% for me, so I get oversold-snapback optionality with downside cushion while the risk-off confirmation plays out. Falsifier: staples RS makes a fresh percentile low or it breaks back below my ~45.7 cost on volume.",
+          "rationale": "养元饮品 (603156.SS), the 'six-walnut' beverage staple, is the second defensive mean-reversion seat, nudged to ~12% precisely because the overnight tape is risk-off. Consumer Staples sits at the 0.4th percentile (rank 15, mom_60d −25.5%) — the deeply-washed cohort the desk favours for higher-odds reversal in a stagflation quad — and this is a cash-generative staple already +1.7% for me, giving oversold-snapback optionality with real downside cushion as Asia sells off hard. Falsifier: staples RS prints a fresh percentile low, or it breaks back below my ~45.7 cost on volume.",
           "opened_at": "2026-06-22T07:24:32.994124+00:00",
           "held_days": 2,
-          "cost_basis": 45.68,
+          "cost_basis": 46.0562,
           "current_price": 46.45,
-          "market_value": 60836.49,
+          "market_value": 118948.43,
           "unrealized_pnl": 1008.48,
-          "unrealized_pct": 1.69,
+          "unrealized_pct": 0.86,
           "thesis_full": {
-            "summary": "养元饮品 (603156.SS), the 'six-walnut' beverage maker, is my defensive mean-reversion seat: Consumer Staples is at the 0.4th percentile (rank 15, mom_60d −25.5%), precisely the deeply-washed cohort the desk says offers the higher-odds reversal in a stagflation quad. It is a cash-generative staple already +1.7% for me, so I get oversold-snapback optionality with downside cushion while the risk-off confirmation plays out. Falsifier: staples RS makes a fresh percentile low or it breaks back below my ~45.7 cost on volume.",
-            "why_now": "养元饮品 (603156.SS), the 'six-walnut' beverage maker, is my defensive mean-reversion seat: Consumer Staples is at the 0.4th percentile (rank 15, mom_60d −25.5%), precisely the deeply-washed cohort the desk says offers the higher-odds reversal in a stagflation quad. It is a cash-generative staple already +1.7% for me, so I get oversold-snapback optionality with downside cushion while the risk-off confirmation plays out. Falsifier: staples RS makes a fresh percentile low or it breaks back below my ~45.7 cost on volume.",
+            "summary": "养元饮品 (603156.SS), the 'six-walnut' beverage staple, is the second defensive mean-reversion seat, nudged to ~12% precisely because the overnight tape is risk-off. Consumer Staples sits at the 0.4th percentile (rank 15, mom_60d −25.5%) — the deeply-washed cohort the desk favours for higher-odds reversal in a stagflation quad — and this is a cash-generative staple already +1.7% for me, giving oversold-snapback optionality with real downside cushion as Asia sells off hard. Falsifier: staples RS prints a fresh percentile low, or it breaks back below my ~45.7 cost on volume.",
+            "why_now": "养元饮品 (603156.SS), the 'six-walnut' beverage staple, is the second defensive mean-reversion seat, nudged to ~12% precisely because the overnight tape is risk-off. Consumer Staples sits at the 0.4th percentile (rank 15, mom_60d −25.5%) — the deeply-washed cohort the desk favours for higher-odds reversal in a stagflation quad — and this is a cash-generative staple already +1.7% for me, giving oversold-snapback optionality with real downside cushion as Asia sells off hard. Falsifier: staples RS prints a fresh percentile low, or it breaks back below my ~45.7 cost on volume.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
+          "ticker": "688411.SS",
+          "name": "海博思创",
+          "sleeve": "brain",
+          "venue": "A-share",
+          "weight": 0.05,
+          "verdict": "hold",
+          "conviction": "low",
+          "rationale": "海博思创 (688411.SS), grid-scale energy storage, is cut from a settled ~27% down to a ~5% token seat — the single biggest de-risk of this overnight review. It is my worst position (−4.3%) and sits in the weakest momentum complex (NEV rank 3, mom_20d −5.4%, below 200d trend) — the high-beta exposure that gets hit first when the regional tape rolls over, and the live tape is rolling over hard (KOSPI −9.99%, Shanghai −1.37%, Hang Seng −1.82%). The storage-buildout narrative is intact enough to keep a watching seat, but carrying real size into this open is uncompensated. Falsifier: a leg down through ~250 or continued NEV-sector RS deterioration and the residual goes too.",
+          "opened_at": "2026-06-22T07:24:32.994124+00:00",
+          "held_days": 2,
+          "cost_basis": 278.06,
+          "current_price": 266.19,
+          "market_value": 49561.84,
+          "unrealized_pnl": -2210.07,
+          "unrealized_pct": -4.27,
+          "thesis_full": {
+            "summary": "海博思创 (688411.SS), grid-scale energy storage, is cut from a settled ~27% down to a ~5% token seat — the single biggest de-risk of this overnight review. It is my worst position (−4.3%) and sits in the weakest momentum complex (NEV rank 3, mom_20d −5.4%, below 200d trend) — the high-beta exposure that gets hit first when the regional tape rolls over, and the live tape is rolling over hard (KOSPI −9.99%, Shanghai −1.37%, Hang Seng −1.82%). The storage-buildout narrative is intact enough to keep a watching seat, but carrying real size into this open is uncompensated. Falsifier: a leg down through ~250 or continued NEV-sector RS deterioration and the residual goes too.",
+            "why_now": "海博思创 (688411.SS), grid-scale energy storage, is cut from a settled ~27% down to a ~5% token seat — the single biggest de-risk of this overnight review. It is my worst position (−4.3%) and sits in the weakest momentum complex (NEV rank 3, mom_20d −5.4%, below 200d trend) — the high-beta exposure that gets hit first when the regional tape rolls over, and the live tape is rolling over hard (KOSPI −9.99%, Shanghai −1.37%, Hang Seng −1.82%). The storage-buildout narrative is intact enough to keep a watching seat, but carrying real size into this open is uncompensated. Falsifier: a leg down through ~250 or continued NEV-sector RS deterioration and the residual goes too.",
             "bull": [],
             "bear": []
           }
@@ -5136,9 +5113,9 @@
       "decisions": [
         {
           "subject": "China book",
-          "lean": "China book positioned cautiously-constructive for a Stagflation/Q3 regime where the fear-euphoria confirmation reads risk-off (breadth, southbound, QVIX, offshore yuan, margin all off) and drawdown risk is elevated (62.5). I run ~67% invested / ~33% cash and lead with quality and corroboration rather than chasing the extended Technology micro-caps the buy board keeps flagging as cycle-blocked. The book has four legs: (1) a corroborated alpha-leader anchor still working — 振德医疗 (603301.SS), the desk's α-2.77 entry-intact name in washed-out healthcare; (2) an industrial-reflation lever — 时代电气 (688187.SS), the buy board's top non-blocked score (89, bottoming-now) and my play on PMI holding 50 into the Jun-30 NBS print; (3) a quality tech expression — 中芯国际 (688981.SS), SMIC, riding the only sector above its 200d trend via the most-liquid name rather than an extended float; and (4) two oversold/defensive seats — 养元饮品 (603156.SS) in 0.4-percentile staples for mean-reversion, plus a small speculative tail in 上纬新材 (688585.SS). The decisive move today was cutting 海博思创 (688411.SS) from 27% to 12%: it is my worst position in the weakest momentum complex (NEV below trend), and a quarter-of-book bet there was uncompensated concentration risk. Key falsifiers for the whole book: USD/CNY breaking 6.85–6.90 (would flip the mean-reversion setup to broad de-rating) and a sub-50 PMI on Jun 30 (kills the industrial-reflation leg).",
-          "thesis": "No full exits today. Materially trimmed 海博思创 (688411.SS) from 27.0% to 12% — reducing concentration in my worst-performing name inside the weakest-RS complex (NEV/storage below 200d trend) while keeping a residual structural-storage stake. Funded the two new positions (时代电气 688187.SS, 中芯国际 688981.SS) and the small add to 振德医疗 from that trim plus existing cash; left ~33% in cash given risk-off confirmation and elevated drawdown band.",
-          "logged_at": "2026-06-24T15:01:58.281146+00:00"
+          "lean": "Overnight review verdict: HOLD-AND-PRESS the de-risk. The live tape is Asia-wide risk-off — KOSPI −9.99% (circuit-breaker territory), Shanghai −1.37%, Hang Seng −1.82%, Euro Stoxx −1.28%, DAX −0.98%. The green US index futures (S&P +0.42%, Nasdaq +1.35%, Russell +0.76%) and falling VIX (−4.41%) are NOT my tape; my benchmark is FXI (China large-cap), which trades off the Asia complex that is selling off. The in-house China read corroborates: Stagflation Q3 (growth −0.29, inflation +0.82), drawdown-risk 62.5 'elevated', and internal RoRo confirmed risk-off (5 of 8 legs — breadth, southbound, QVIX, offshore yuan, margin froth). Doctrine is confirmation over prediction, so I refuse to carry uncompensated beta into this: I cut 海博思创 (688411.SS) energy-storage from ~27% to a ~5% token (my worst loser, weakest NEV momentum complex), and I fully EXIT 上纬新材 (688585.SS), a ~11% seat I could not articulate a live thesis for — un-thesis'd high-beta is the first thing to shed in a risk-off open. What remains is two deeply-washed defensive mean-reversion anchors with downside cushion and positive carry for me — 振德医疗 (603301.SS) medical at ~15% and 养元饮品 (603156.SS) staples at ~12% — for ~32% invested and ~68% cash. If FXI gaps down at the open, this book outperforms on the downside; if Asia stabilises, the two washed defensives carry the snapback and I have ample dry powder to lean back in with confirmation. Settles at the open, not now.",
+          "thesis": "Fully exited 上纬新材 (688585.SS, ~11% settled, −2.4%): no live thesis I could defend, and an un-thesis'd higher-beta materials seat is exactly what to shed into a confirmed risk-off Asia open — proceeds to cash. Cut 海博思创 (688411.SS) from ~27% to ~5%: worst position, weakest momentum complex (NEV below 200d trend), uncompensated high beta into a selling tape. Net effect raises cash from ~43% to ~68% and concentrates the residual in two defensive deeply-washed mean-reversion anchors.",
+          "logged_at": "2026-06-25T01:35:00.475705+00:00"
         }
       ],
       "pending_orders": [],
@@ -5153,560 +5130,560 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 991168.44,
-        "cash": 431226.6,
-        "invested": 559941.84,
-        "total_return_pct": -0.8832,
-        "vs_spy_pct": 1.2798,
+        "current_nav": 991236.89,
+        "cash": 674041.09,
+        "invested": 317195.81,
+        "total_return_pct": -0.8763,
+        "vs_spy_pct": 1.6331,
         "benchmark": "FXI",
-        "day_change_pct": 92.7505,
-        "max_drawdown_pct": -49.1753,
+        "day_change_pct": -2.0283,
+        "max_drawdown_pct": -2.0283,
         "realized_since": "2026-06-21",
         "series": [
           {
-            "date": "2026-02-11",
+            "date": "2026-02-12",
             "nav": 1000000.0,
             "spy_nav": 1000000.0,
             "kind": "pre_inception"
           },
           {
-            "date": "2026-02-12",
-            "nav": 1000000.0,
-            "spy_nav": 979478.05,
-            "kind": "pre_inception"
-          },
-          {
             "date": "2026-02-13",
             "nav": 1000000.0,
-            "spy_nav": 971117.32,
+            "spy_nav": 991464.1,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-17",
             "nav": 1000000.0,
-            "spy_nav": 975931.07,
+            "spy_nav": 996378.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-18",
             "nav": 1000000.0,
-            "spy_nav": 980998.23,
+            "spy_nav": 1001552.03,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-19",
             "nav": 1000000.0,
-            "spy_nav": 978211.28,
+            "spy_nav": 998706.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-20",
             "nav": 1000000.0,
-            "spy_nav": 983278.44,
+            "spy_nav": 1003880.02,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-23",
             "nav": 1000000.0,
-            "spy_nav": 979984.78,
+            "spy_nav": 1000517.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-24",
             "nav": 1000000.0,
-            "spy_nav": 972130.68,
+            "spy_nav": 992498.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-25",
             "nav": 1000000.0,
-            "spy_nav": 973397.44,
+            "spy_nav": 993791.99,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-26",
             "nav": 1000000.0,
-            "spy_nav": 947301.7,
+            "spy_nav": 967149.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-27",
             "nav": 1000000.0,
-            "spy_nav": 944514.76,
+            "spy_nav": 964304.16,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-02",
             "nav": 1000000.0,
-            "spy_nav": 934887.27,
+            "spy_nav": 954474.95,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-03",
             "nav": 1000000.0,
-            "spy_nav": 913605.28,
+            "spy_nav": 932747.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-04",
             "nav": 1000000.0,
-            "spy_nav": 917405.57,
+            "spy_nav": 936626.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-05",
             "nav": 1000000.0,
-            "spy_nav": 901444.15,
+            "spy_nav": 920331.14,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-06",
             "nav": 1000000.0,
-            "spy_nav": 907524.67,
+            "spy_nav": 926539.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-09",
             "nav": 1000000.0,
-            "spy_nav": 924246.22,
+            "spy_nav": 943610.96,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-10",
             "nav": 1000000.0,
-            "spy_nav": 927033.16,
+            "spy_nav": 946456.29,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-11",
             "nav": 1000000.0,
-            "spy_nav": 922219.42,
+            "spy_nav": 941541.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-12",
             "nav": 1000000.0,
-            "spy_nav": 916138.81,
+            "spy_nav": 935333.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-13",
             "nav": 1000000.0,
-            "spy_nav": 918165.71,
+            "spy_nav": 937403.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-16",
             "nav": 1000000.0,
-            "spy_nav": 934380.54,
+            "spy_nav": 953957.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-17",
             "nav": 1000000.0,
-            "spy_nav": 934633.85,
+            "spy_nav": 954216.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-18",
             "nav": 1000000.0,
-            "spy_nav": 917152.26,
+            "spy_nav": 936368.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-19",
             "nav": 1000000.0,
-            "spy_nav": 916898.85,
+            "spy_nav": 936109.64,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-20",
             "nav": 1000000.0,
-            "spy_nav": 890803.11,
+            "spy_nav": 909467.15,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-23",
             "nav": 1000000.0,
-            "spy_nav": 896376.99,
+            "spy_nav": 915157.82,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-24",
             "nav": 1000000.0,
-            "spy_nav": 895363.54,
+            "spy_nav": 914123.13,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-25",
             "nav": 1000000.0,
-            "spy_nav": 912085.1,
+            "spy_nav": 931195.04,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-26",
             "nav": 1000000.0,
-            "spy_nav": 884975.91,
+            "spy_nav": 903517.86,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-27",
             "nav": 1000000.0,
-            "spy_nav": 882949.01,
+            "spy_nav": 901448.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-30",
             "nav": 1000000.0,
-            "spy_nav": 886749.4,
+            "spy_nav": 905328.51,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-31",
             "nav": 1000000.0,
-            "spy_nav": 909551.57,
+            "spy_nav": 928608.42,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-01",
             "nav": 1000000.0,
-            "spy_nav": 900937.43,
+            "spy_nav": 919813.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-02",
             "nav": 1000000.0,
-            "spy_nav": 900937.43,
+            "spy_nav": 919813.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-06",
             "nav": 1000000.0,
-            "spy_nav": 900684.02,
+            "spy_nav": 919555.08,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-07",
             "nav": 1000000.0,
-            "spy_nav": 898910.53,
+            "spy_nav": 917744.43,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-08",
             "nav": 1000000.0,
-            "spy_nav": 920952.56,
+            "spy_nav": 940248.28,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-09",
             "nav": 1000000.0,
-            "spy_nav": 919432.48,
+            "spy_nav": 938696.35,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-10",
             "nav": 1000000.0,
-            "spy_nav": 918419.02,
+            "spy_nav": 937661.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-13",
             "nav": 1000000.0,
-            "spy_nav": 923739.5,
+            "spy_nav": 943093.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-14",
             "nav": 1000000.0,
-            "spy_nav": 934633.85,
+            "spy_nav": 954216.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-15",
             "nav": 1000000.0,
-            "spy_nav": 934380.54,
+            "spy_nav": 953957.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-16",
             "nav": 1000000.0,
-            "spy_nav": 943248.0,
+            "spy_nav": 963010.86,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-17",
             "nav": 1000000.0,
-            "spy_nav": 952622.18,
+            "spy_nav": 972581.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-20",
             "nav": 1000000.0,
-            "spy_nav": 954142.35,
+            "spy_nav": 974133.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-21",
             "nav": 1000000.0,
-            "spy_nav": 940207.74,
+            "spy_nav": 959906.9,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-22",
             "nav": 1000000.0,
-            "spy_nav": 936660.76,
+            "spy_nav": 956285.6,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-23",
             "nav": 1000000.0,
-            "spy_nav": 924499.63,
+            "spy_nav": 943869.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-24",
             "nav": 1000000.0,
-            "spy_nav": 933873.81,
+            "spy_nav": 953440.27,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-27",
             "nav": 1000000.0,
-            "spy_nav": 923486.18,
+            "spy_nav": 942835.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-28",
             "nav": 1000000.0,
-            "spy_nav": 918419.02,
+            "spy_nav": 937661.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-29",
             "nav": 1000000.0,
-            "spy_nav": 920699.24,
+            "spy_nav": 939989.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-30",
             "nav": 1000000.0,
-            "spy_nav": 932100.32,
+            "spy_nav": 951629.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-01",
             "nav": 1000000.0,
-            "spy_nav": 932607.05,
+            "spy_nav": 952146.96,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-04",
             "nav": 1000000.0,
-            "spy_nav": 926019.71,
+            "spy_nav": 945421.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-05",
             "nav": 1000000.0,
-            "spy_nav": 924499.63,
+            "spy_nav": 943869.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-06",
             "nav": 1000000.0,
-            "spy_nav": 949835.33,
+            "spy_nav": 969736.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-07",
             "nav": 1000000.0,
-            "spy_nav": 942234.54,
+            "spy_nav": 961976.17,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-08",
             "nav": 1000000.0,
-            "spy_nav": 943501.41,
+            "spy_nav": 963269.58,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-11",
             "nav": 1000000.0,
-            "spy_nav": 949328.61,
+            "spy_nav": 969218.87,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-12",
             "nav": 1000000.0,
-            "spy_nav": 945781.62,
+            "spy_nav": 965597.57,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-13",
             "nav": 1000000.0,
-            "spy_nav": 969343.73,
+            "spy_nav": 989653.35,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-14",
             "nav": 1000000.0,
-            "spy_nav": 943501.41,
+            "spy_nav": 963269.58,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-15",
             "nav": 1000000.0,
-            "spy_nav": 917152.26,
+            "spy_nav": 936368.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-18",
             "nav": 1000000.0,
-            "spy_nav": 909311.21,
+            "spy_nav": 928363.02,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-19",
             "nav": 1000000.0,
-            "spy_nav": 912328.85,
+            "spy_nav": 931443.89,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-20",
             "nav": 1000000.0,
-            "spy_nav": 911323.03,
+            "spy_nav": 930417.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-21",
             "nav": 1000000.0,
-            "spy_nav": 902521.59,
+            "spy_nav": 921431.15,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-22",
             "nav": 1000000.0,
-            "spy_nav": 893217.28,
+            "spy_nav": 911931.9,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-26",
             "nav": 1000000.0,
-            "spy_nav": 899000.99,
+            "spy_nav": 917836.79,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-27",
             "nav": 1000000.0,
-            "spy_nav": 888187.81,
+            "spy_nav": 906797.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-28",
             "nav": 1000000.0,
-            "spy_nav": 879889.42,
+            "spy_nav": 898324.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-29",
             "nav": 1000000.0,
-            "spy_nav": 881398.2,
+            "spy_nav": 899865.18,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-01",
             "nav": 1000000.0,
-            "spy_nav": 888690.77,
+            "spy_nav": 907310.55,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-02",
             "nav": 1000000.0,
-            "spy_nav": 914340.67,
+            "spy_nav": 933497.87,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-03",
             "nav": 1000000.0,
-            "spy_nav": 893720.24,
+            "spy_nav": 912445.4,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-04",
             "nav": 1000000.0,
-            "spy_nav": 891959.89,
+            "spy_nav": 910648.17,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-05",
             "nav": 1000000.0,
-            "spy_nav": 873854.14,
+            "spy_nav": 892163.07,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-08",
             "nav": 1000000.0,
-            "spy_nav": 872093.89,
+            "spy_nav": 890365.94,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-09",
             "nav": 1000000.0,
-            "spy_nav": 872345.27,
+            "spy_nav": 890622.58,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-10",
             "nav": 1000000.0,
-            "spy_nav": 873854.14,
+            "spy_nav": 892163.07,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-11",
             "nav": 1000000.0,
-            "spy_nav": 877877.6,
+            "spy_nav": 896270.82,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-12",
             "nav": 1000000.0,
-            "spy_nav": 887433.48,
+            "spy_nav": 906026.92,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-15",
             "nav": 1000000.0,
-            "spy_nav": 889536.34,
+            "spy_nav": 908173.84,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-16",
             "nav": 1000000.0,
-            "spy_nav": 875601.73,
+            "spy_nav": 893947.27,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-17",
             "nav": 1000000.0,
-            "spy_nav": 852546.25,
+            "spy_nav": 870408.73,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-18",
             "nav": 1000000.0,
-            "spy_nav": 843678.7,
+            "spy_nav": 861355.39,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-22",
             "nav": 1011758.56,
-            "spy_nav": 846972.37,
+            "spy_nav": 864718.07,
             "kind": "realized"
           },
           {
             "date": "2026-06-23",
-            "nav": 514223.53,
-            "spy_nav": 831770.99,
+            "nav": 1000000.0,
+            "spy_nav": 849198.19,
+            "kind": "realized"
+          },
+          {
+            "date": "2026-06-24",
+            "nav": 991236.89,
+            "spy_nav": 837040.89,
             "kind": "realized"
           }
         ],
@@ -5722,18 +5699,18 @@
       "benchmark": "FXI",
       "as_of": "2026-06-24",
       "market_status": {
-        "open": false,
+        "open": true,
         "venue": "A-share (Shanghai/Shenzhen)",
-        "asof": "2026-06-25T00:02:34.170560+08:00",
-        "asof_cst": "2026-06-25T00:02:34.170560+08:00",
+        "asof": "2026-06-25T09:35:00.496559+08:00",
+        "asof_cst": "2026-06-25T09:35:00.496559+08:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-06-25T09:30:00+08:00",
-        "next_open_day": "2026-06-25",
+        "next_open": "2026-06-26T09:30:00+08:00",
+        "next_open_day": "2026-06-26",
         "prev_trading_day": "2026-06-24"
       },
-      "gross": 0.7749,
-      "cash": 0.2251,
+      "gross": 0.6998,
+      "cash": 0.3002,
       "regime": {
         "quad": "Q3",
         "quad_name": "Stagflation",
@@ -5742,93 +5719,47 @@
       "sleeves": null,
       "positions": [
         {
-          "ticker": "0981.HK",
-          "name": "SMIC",
-          "sleeve": "brain",
-          "venue": "HK",
-          "weight": 0.1315,
-          "verdict": "hold",
-          "conviction": "high",
-          "rationale": "SMIC (0981.HK) is my best winner (+7.6%) and the desk's top-scored HK name (conviction 100), but the entry tag is 'NEARING A LOW / pullback / quarter' — i.e. extended after a momentum run. I trim from 14.3% to 12% to bank some gain and respect the mean-reversion warning while keeping a core position in China's domestic-semiconductor reshoring story. Falsifier: a 3-5% volume-led RS reversal would tell me the momentum leg is rolling and I'd cut further.",
-          "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 2,
-          "cost_basis": 78.8,
-          "current_price": 77.85,
-          "market_value": 128432.74,
-          "unrealized_pnl": -1567.26,
-          "unrealized_pct": -1.21,
-          "thesis_full": {
-            "summary": "SMIC (0981.HK) is my best winner (+7.6%) and the desk's top-scored HK name (conviction 100), but the entry tag is 'NEARING A LOW / pullback / quarter' — i.e. extended after a momentum run. I trim from 14.3% to 12% to bank some gain and respect the mean-reversion warning while keeping a core position in China's domestic-semiconductor reshoring story. Falsifier: a 3-5% volume-led RS reversal would tell me the momentum leg is rolling and I'd cut further.",
-            "why_now": "SMIC (0981.HK) is my best winner (+7.6%) and the desk's top-scored HK name (conviction 100), but the entry tag is 'NEARING A LOW / pullback / quarter' — i.e. extended after a momentum run. I trim from 14.3% to 12% to bank some gain and respect the mean-reversion warning while keeping a core position in China's domestic-semiconductor reshoring story. Falsifier: a 3-5% volume-led RS reversal would tell me the momentum leg is rolling and I'd cut further.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
           "ticker": "0700.HK",
           "name": "Tencent",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1258,
+          "weight": 0.15,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "Tencent (0700.HK) stays the book's quality anchor and an FXI heavyweight I want to track closely. Technology is the one A-share momentum leader (+46% 60d) and Tencent is the highest-quality, lowest-beta way to hold that exposure into a risk-off HK tape; gaming/ads/cloud cash flows are defensible and the name is only ~2% offside. I hold it near benchmark weight — not a high-beta bet, a durable compounder I don't want to be short of versus FXI.",
+          "rationale": "Tencent (0700.HK) is lifted to the book's largest weight and quality anchor. With global tech rebounding overnight (Nasdaq-100 fut +1.39%, VIX -4.41%) and Technology the one A-share momentum leader (+46% 60d), Tencent is the lowest-beta, FXI-heavyweight way to hold that leg without owning extended high-beta semis. Gaming/ads/cloud cash flows are defensible and it is only ~2% offside. Falsifier: a volume-led break of recent support signalling the tech momentum leg is rolling over.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 2,
-          "cost_basis": 439.0,
-          "current_price": 414.8,
-          "market_value": 122833.71,
-          "unrealized_pnl": -7166.29,
-          "unrealized_pct": -5.51,
+          "cost_basis": 437.6152,
+          "current_price": 428.8,
+          "market_value": 146927.41,
+          "unrealized_pnl": -3020.5,
+          "unrealized_pct": -2.01,
           "thesis_full": {
-            "summary": "Tencent (0700.HK) stays the book's quality anchor and an FXI heavyweight I want to track closely. Technology is the one A-share momentum leader (+46% 60d) and Tencent is the highest-quality, lowest-beta way to hold that exposure into a risk-off HK tape; gaming/ads/cloud cash flows are defensible and the name is only ~2% offside. I hold it near benchmark weight — not a high-beta bet, a durable compounder I don't want to be short of versus FXI.",
-            "why_now": "Tencent (0700.HK) stays the book's quality anchor and an FXI heavyweight I want to track closely. Technology is the one A-share momentum leader (+46% 60d) and Tencent is the highest-quality, lowest-beta way to hold that exposure into a risk-off HK tape; gaming/ads/cloud cash flows are defensible and the name is only ~2% offside. I hold it near benchmark weight — not a high-beta bet, a durable compounder I don't want to be short of versus FXI.",
+            "summary": "Tencent (0700.HK) is lifted to the book's largest weight and quality anchor. With global tech rebounding overnight (Nasdaq-100 fut +1.39%, VIX -4.41%) and Technology the one A-share momentum leader (+46% 60d), Tencent is the lowest-beta, FXI-heavyweight way to hold that leg without owning extended high-beta semis. Gaming/ads/cloud cash flows are defensible and it is only ~2% offside. Falsifier: a volume-led break of recent support signalling the tech momentum leg is rolling over.",
+            "why_now": "Tencent (0700.HK) is lifted to the book's largest weight and quality anchor. With global tech rebounding overnight (Nasdaq-100 fut +1.39%, VIX -4.41%) and Technology the one A-share momentum leader (+46% 60d), Tencent is the lowest-beta, FXI-heavyweight way to hold that leg without owning extended high-beta semis. Gaming/ads/cloud cash flows are defensible and it is only ~2% offside. Falsifier: a volume-led break of recent support signalling the tech momentum leg is rolling over.",
             "bull": [],
             "bear": []
           }
         },
         {
-          "ticker": "3993.HK",
-          "name": "CMOC Group",
+          "ticker": "0981.HK",
+          "name": "SMIC",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1122,
+          "weight": 0.12,
           "verdict": "hold",
-          "conviction": "low",
-          "rationale": "CMOC Group (3993.HK) is my biggest loser (-11.5%) and I trim it from 10.8% to 7% rather than capitulate. The reason I keep any: copper/gold is the lone risk-on macro leg (97th pctile) and CMOC is a direct copper/cobalt proxy, so the one thing the tape is rewarding is its commodity. But nonferrous momentum is negative and it's a cyclical in a risk-off market, so I cut the drag and hold a reduced call-option position. Falsifier: copper rolling over or a fresh leg down through recent lows ends it.",
+          "conviction": "high",
+          "rationale": "SMIC (0981.HK) is my best winner (+7.6%) and the desk's top-scored HK name (conviction 100), but the entry tag is 'NEARING A LOW / pullback' (extended). With global tech bid overnight I revise the queued 9% panic cut UP to a modest trim (14.3%->12%): I bank some gain and respect the mean-reversion warning while keeping a real core in China's domestic-semiconductor reshoring story. Falsifier: a 3-5% volume-led RS reversal tells me the momentum leg is rolling and I cut to a stub.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 2,
-          "cost_basis": 18.94,
-          "current_price": 17.29,
-          "market_value": 109545.94,
-          "unrealized_pnl": -10454.06,
-          "unrealized_pct": -8.71,
+          "cost_basis": 78.8,
+          "current_price": 84.8,
+          "market_value": 117541.93,
+          "unrealized_pnl": 8316.65,
+          "unrealized_pct": 7.61,
           "thesis_full": {
-            "summary": "CMOC Group (3993.HK) is my biggest loser (-11.5%) and I trim it from 10.8% to 7% rather than capitulate. The reason I keep any: copper/gold is the lone risk-on macro leg (97th pctile) and CMOC is a direct copper/cobalt proxy, so the one thing the tape is rewarding is its commodity. But nonferrous momentum is negative and it's a cyclical in a risk-off market, so I cut the drag and hold a reduced call-option position. Falsifier: copper rolling over or a fresh leg down through recent lows ends it.",
-            "why_now": "CMOC Group (3993.HK) is my biggest loser (-11.5%) and I trim it from 10.8% to 7% rather than capitulate. The reason I keep any: copper/gold is the lone risk-on macro leg (97th pctile) and CMOC is a direct copper/cobalt proxy, so the one thing the tape is rewarding is its commodity. But nonferrous momentum is negative and it's a cyclical in a risk-off market, so I cut the drag and hold a reduced call-option position. Falsifier: copper rolling over or a fresh leg down through recent lows ends it.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
-          "ticker": "1929.HK",
-          "name": "Chow Tai Fook",
-          "sleeve": "brain",
-          "venue": "HK",
-          "weight": 0.1081,
-          "verdict": "hold",
-          "conviction": "low",
-          "rationale": "Chow Tai Fook (1929.HK) is trimmed (10.5%→6%): a gold-jewellery retailer that benefits from elevated gold and a structural China gold-savings bid, but it's a discretionary-consumer name and consumer is washed out (extreme low percentiles) in a risk-off tape. I keep a half-sized position for the gold-retail angle and to avoid selling the bottom, but it's on a short leash — if consumer breadth doesn't stabilize I exit.",
-          "opened_at": "2026-06-22T16:02:17.968634+00:00",
-          "held_days": 2,
-          "cost_basis": 12.33,
-          "current_price": 11.83,
-          "market_value": 105539.33,
-          "unrealized_pnl": -4460.67,
-          "unrealized_pct": -4.06,
-          "thesis_full": {
-            "summary": "Chow Tai Fook (1929.HK) is trimmed (10.5%→6%): a gold-jewellery retailer that benefits from elevated gold and a structural China gold-savings bid, but it's a discretionary-consumer name and consumer is washed out (extreme low percentiles) in a risk-off tape. I keep a half-sized position for the gold-retail angle and to avoid selling the bottom, but it's on a short leash — if consumer breadth doesn't stabilize I exit.",
-            "why_now": "Chow Tai Fook (1929.HK) is trimmed (10.5%→6%): a gold-jewellery retailer that benefits from elevated gold and a structural China gold-savings bid, but it's a discretionary-consumer name and consumer is washed out (extreme low percentiles) in a risk-off tape. I keep a half-sized position for the gold-retail angle and to avoid selling the bottom, but it's on a short leash — if consumer breadth doesn't stabilize I exit.",
+            "summary": "SMIC (0981.HK) is my best winner (+7.6%) and the desk's top-scored HK name (conviction 100), but the entry tag is 'NEARING A LOW / pullback' (extended). With global tech bid overnight I revise the queued 9% panic cut UP to a modest trim (14.3%->12%): I bank some gain and respect the mean-reversion warning while keeping a real core in China's domestic-semiconductor reshoring story. Falsifier: a 3-5% volume-led RS reversal tells me the momentum leg is rolling and I cut to a stub.",
+            "why_now": "SMIC (0981.HK) is my best winner (+7.6%) and the desk's top-scored HK name (conviction 100), but the entry tag is 'NEARING A LOW / pullback' (extended). With global tech bid overnight I revise the queued 9% panic cut UP to a modest trim (14.3%->12%): I bank some gain and respect the mean-reversion warning while keeping a real core in China's domestic-semiconductor reshoring story. Falsifier: a 3-5% volume-led RS reversal tells me the momentum leg is rolling and I cut to a stub.",
             "bull": [],
             "bear": []
           }
@@ -5838,20 +5769,43 @@
           "name": "China Life",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.1071,
+          "weight": 0.1032,
           "verdict": "hold",
           "conviction": "high",
-          "rationale": "China Life (2628.HK) is corroborated across desks (conviction 89, BOTTOMING) and is the kind of defensive, rate-sensitive insurer that holds up in a risk-off HK tape; it's already green for me. With the 10y CGB stabilizing and a weak-growth/easing backdrop, insurers carry positively and screen as a confirmed bottoming bid rather than a speculative reversal. Core defensive hold.",
+          "rationale": "China Life (2628.HK) is the core defensive anchor — corroborated across desks (conviction 89, BOTTOMING) and one of my few green names (+1.1%). It is the rate-sensitive insurer that holds up in exactly this HK risk-off tape, and with the overnight 10Y rallying (-1.10bp) the carry/duration angle is supported. Ballast for an HK market still red even as the world stabilizes. Falsifier: a break of its bottoming low on volume, or CGB yields backing up sharply, ends the carry thesis.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 2,
           "cost_basis": 28.02,
-          "current_price": 29.3,
-          "market_value": 104568.16,
-          "unrealized_pnl": 4568.16,
-          "unrealized_pct": 4.57,
+          "current_price": 28.32,
+          "market_value": 101070.66,
+          "unrealized_pnl": 1070.66,
+          "unrealized_pct": 1.07,
           "thesis_full": {
-            "summary": "China Life (2628.HK) is corroborated across desks (conviction 89, BOTTOMING) and is the kind of defensive, rate-sensitive insurer that holds up in a risk-off HK tape; it's already green for me. With the 10y CGB stabilizing and a weak-growth/easing backdrop, insurers carry positively and screen as a confirmed bottoming bid rather than a speculative reversal. Core defensive hold.",
-            "why_now": "China Life (2628.HK) is corroborated across desks (conviction 89, BOTTOMING) and is the kind of defensive, rate-sensitive insurer that holds up in a risk-off HK tape; it's already green for me. With the 10y CGB stabilizing and a weak-growth/easing backdrop, insurers carry positively and screen as a confirmed bottoming bid rather than a speculative reversal. Core defensive hold.",
+            "summary": "China Life (2628.HK) is the core defensive anchor — corroborated across desks (conviction 89, BOTTOMING) and one of my few green names (+1.1%). It is the rate-sensitive insurer that holds up in exactly this HK risk-off tape, and with the overnight 10Y rallying (-1.10bp) the carry/duration angle is supported. Ballast for an HK market still red even as the world stabilizes. Falsifier: a break of its bottoming low on volume, or CGB yields backing up sharply, ends the carry thesis.",
+            "why_now": "China Life (2628.HK) is the core defensive anchor — corroborated across desks (conviction 89, BOTTOMING) and one of my few green names (+1.1%). It is the rate-sensitive insurer that holds up in exactly this HK risk-off tape, and with the overnight 10Y rallying (-1.10bp) the carry/duration angle is supported. Ballast for an HK market still red even as the world stabilizes. Falsifier: a break of its bottoming low on volume, or CGB yields backing up sharply, ends the carry thesis.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
+          "ticker": "3993.HK",
+          "name": "CMOC Group",
+          "sleeve": "brain",
+          "venue": "HK",
+          "weight": 0.08,
+          "verdict": "hold",
+          "conviction": "medium",
+          "rationale": "CMOC Group (3993.HK) is my biggest loser (-11.5%), but I REVISE the queued capitulation (->5%) and hold a fuller 8%. Selling a copper/cobalt proxy at the lows into a stabilizing global tape (VIX -4.4%, US futures green) would be capitulating at the bottom, and copper/gold is the lone risk-on macro leg (97th pctile). I keep a meaningful call-option position on the global re-risk, not a press — nonferrous momentum is still negative, so it stays on a leash. Falsifier: copper rolling over or a fresh leg down through recent lows ends it and I exit.",
+          "opened_at": "2026-06-22T16:02:17.968634+00:00",
+          "held_days": 2,
+          "cost_basis": 18.94,
+          "current_price": 16.76,
+          "market_value": 78361.29,
+          "unrealized_pnl": -10192.58,
+          "unrealized_pct": -11.51,
+          "thesis_full": {
+            "summary": "CMOC Group (3993.HK) is my biggest loser (-11.5%), but I REVISE the queued capitulation (->5%) and hold a fuller 8%. Selling a copper/cobalt proxy at the lows into a stabilizing global tape (VIX -4.4%, US futures green) would be capitulating at the bottom, and copper/gold is the lone risk-on macro leg (97th pctile). I keep a meaningful call-option position on the global re-risk, not a press — nonferrous momentum is still negative, so it stays on a leash. Falsifier: copper rolling over or a fresh leg down through recent lows ends it and I exit.",
+            "why_now": "CMOC Group (3993.HK) is my biggest loser (-11.5%), but I REVISE the queued capitulation (->5%) and hold a fuller 8%. Selling a copper/cobalt proxy at the lows into a stabilizing global tape (VIX -4.4%, US futures green) would be capitulating at the bottom, and copper/gold is the lone risk-on macro leg (97th pctile). I keep a meaningful call-option position on the global re-risk, not a press — nonferrous momentum is still negative, so it stays on a leash. Falsifier: copper rolling over or a fresh leg down through recent lows ends it and I exit.",
             "bull": [],
             "bear": []
           }
@@ -5861,38 +5815,66 @@
           "name": "Kuaishou",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0755,
+          "weight": 0.0747,
           "verdict": "hold",
-          "conviction": null,
-          "rationale": null,
+          "conviction": "low",
+          "rationale": "Kuaishou (1024.HK) is down -8.5% and gaming/media sits at extreme-low percentiles (~0.4th) — a washed-out, high-beta short-video/ad name. With global risk appetite recovering overnight (KOSPI +8.5%, VIX down), I keep it as a measured mean-reversion call option on the most beaten-down corner, not a conviction add. It is explicitly on a short leash. Falsifier: a fresh volume-led low, or HK risk-off deepening despite the global stabilization, and I exit.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 2,
           "cost_basis": 46.9,
-          "current_price": 43.22,
-          "market_value": 73722.82,
-          "unrealized_pnl": -6277.18,
-          "unrealized_pct": -7.85,
-          "thesis_full": null
+          "current_price": 42.92,
+          "market_value": 73211.08,
+          "unrealized_pnl": -6788.92,
+          "unrealized_pct": -8.49,
+          "thesis_full": {
+            "summary": "Kuaishou (1024.HK) is down -8.5% and gaming/media sits at extreme-low percentiles (~0.4th) — a washed-out, high-beta short-video/ad name. With global risk appetite recovering overnight (KOSPI +8.5%, VIX down), I keep it as a measured mean-reversion call option on the most beaten-down corner, not a conviction add. It is explicitly on a short leash. Falsifier: a fresh volume-led low, or HK risk-off deepening despite the global stabilization, and I exit.",
+            "why_now": "Kuaishou (1024.HK) is down -8.5% and gaming/media sits at extreme-low percentiles (~0.4th) — a washed-out, high-beta short-video/ad name. With global risk appetite recovering overnight (KOSPI +8.5%, VIX down), I keep it as a measured mean-reversion call option on the most beaten-down corner, not a conviction add. It is explicitly on a short leash. Falsifier: a fresh volume-led low, or HK risk-off deepening despite the global stabilization, and I exit.",
+            "bull": [],
+            "bear": []
+          }
         },
         {
           "ticker": "1398.HK",
           "name": "ICBC",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0624,
+          "weight": 0.0605,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "ICBC (1398.HK) is a BUY-ZONE name (conviction 75) and a high-dividend megabank that is exactly the defensive bid working in HK right now. I keep it but don't add: the top-down read flags HK Financials as deeply extended (98.8th pctile), so this is a benchmark-tracking yield position, not a place to press. Held for carry and FXI parity.",
+          "rationale": "ICBC (1398.HK) is a BUY-ZONE name (conviction 75), a high-dividend megabank providing the defensive yield bid that works in a risk-off HK tape. The desk's HK board shows banks BOTTOMING with high conviction. The caveat — HK Financials ~98th pctile, extended — means I hold for carry/FXI parity but do not add. Falsifier: financials finally roll with the broad tape despite their defensive billing.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 2,
           "cost_basis": 6.85,
-          "current_price": 6.96,
-          "market_value": 60963.5,
-          "unrealized_pnl": 963.5,
-          "unrealized_pct": 1.61,
+          "current_price": 6.77,
+          "market_value": 59299.27,
+          "unrealized_pnl": -700.73,
+          "unrealized_pct": -1.17,
           "thesis_full": {
-            "summary": "ICBC (1398.HK) is a BUY-ZONE name (conviction 75) and a high-dividend megabank that is exactly the defensive bid working in HK right now. I keep it but don't add: the top-down read flags HK Financials as deeply extended (98.8th pctile), so this is a benchmark-tracking yield position, not a place to press. Held for carry and FXI parity.",
-            "why_now": "ICBC (1398.HK) is a BUY-ZONE name (conviction 75) and a high-dividend megabank that is exactly the defensive bid working in HK right now. I keep it but don't add: the top-down read flags HK Financials as deeply extended (98.8th pctile), so this is a benchmark-tracking yield position, not a place to press. Held for carry and FXI parity.",
+            "summary": "ICBC (1398.HK) is a BUY-ZONE name (conviction 75), a high-dividend megabank providing the defensive yield bid that works in a risk-off HK tape. The desk's HK board shows banks BOTTOMING with high conviction. The caveat — HK Financials ~98th pctile, extended — means I hold for carry/FXI parity but do not add. Falsifier: financials finally roll with the broad tape despite their defensive billing.",
+            "why_now": "ICBC (1398.HK) is a BUY-ZONE name (conviction 75), a high-dividend megabank providing the defensive yield bid that works in a risk-off HK tape. The desk's HK board shows banks BOTTOMING with high conviction. The caveat — HK Financials ~98th pctile, extended — means I hold for carry/FXI parity but do not add. Falsifier: financials finally roll with the broad tape despite their defensive billing.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
+          "ticker": "1929.HK",
+          "name": "Chow Tai Fook",
+          "sleeve": "brain",
+          "venue": "HK",
+          "weight": 0.06,
+          "verdict": "hold",
+          "conviction": "low",
+          "rationale": "Chow Tai Fook (1929.HK) is held at a stub (6%) rather than slashed to the queued 4%: a gold-jewellery retailer with a structural China gold-savings bid, washed out with consumer at extreme-low percentiles. I do not dump a washed-out name at the bottom into a stabilizing tape, but discretionary consumer is genuinely weak in HK so it stays small and on a very short leash. Falsifier: consumer breadth fails to stabilize and I exit fully.",
+          "opened_at": "2026-06-22T16:02:17.968634+00:00",
+          "held_days": 2,
+          "cost_basis": 12.33,
+          "current_price": 11.48,
+          "market_value": 58770.96,
+          "unrealized_pnl": -4351.51,
+          "unrealized_pct": -6.89,
+          "thesis_full": {
+            "summary": "Chow Tai Fook (1929.HK) is held at a stub (6%) rather than slashed to the queued 4%: a gold-jewellery retailer with a structural China gold-savings bid, washed out with consumer at extreme-low percentiles. I do not dump a washed-out name at the bottom into a stabilizing tape, but discretionary consumer is genuinely weak in HK so it stays small and on a very short leash. Falsifier: consumer breadth fails to stabilize and I exit fully.",
+            "why_now": "Chow Tai Fook (1929.HK) is held at a stub (6%) rather than slashed to the queued 4%: a gold-jewellery retailer with a structural China gold-savings bid, washed out with consumer at extreme-low percentiles. I do not dump a washed-out name at the bottom into a stabilizing tape, but discretionary consumer is genuinely weak in HK so it stays small and on a very short leash. Falsifier: consumer breadth fails to stabilize and I exit fully.",
             "bull": [],
             "bear": []
           }
@@ -5902,20 +5884,20 @@
           "name": "Bank of China",
           "sleeve": "brain",
           "venue": "HK",
-          "weight": 0.0523,
+          "weight": 0.0514,
           "verdict": "hold",
           "conviction": "medium",
-          "rationale": "Bank of China (3988.HK) is my smallest, steadiest holding (slightly green) — a high-dividend, low-beta megabank that anchors the defensive sleeve. Same caveat as ICBC: financials are crowded/extended, so I hold a modest weight for yield and benchmark coverage rather than upside. It's ballast, not a thesis.",
+          "rationale": "Bank of China (3988.HK) is steady ballast (slightly green, +0.8%) — a high-dividend, low-beta megabank anchoring the defensive sleeve alongside ICBC. Same crowding caveat (financials extended) so I hold a modest weight for yield and benchmark coverage rather than upside. In a still-soft HK tape it is exactly the low-beta carry I want to keep. It's ballast, not a thesis.",
           "opened_at": "2026-06-22T16:02:17.968634+00:00",
           "held_days": 2,
           "cost_basis": 5.23,
-          "current_price": 5.34,
-          "market_value": 51051.63,
-          "unrealized_pnl": 1051.63,
-          "unrealized_pct": 2.1,
+          "current_price": 5.27,
+          "market_value": 50382.41,
+          "unrealized_pnl": 382.41,
+          "unrealized_pct": 0.76,
           "thesis_full": {
-            "summary": "Bank of China (3988.HK) is my smallest, steadiest holding (slightly green) — a high-dividend, low-beta megabank that anchors the defensive sleeve. Same caveat as ICBC: financials are crowded/extended, so I hold a modest weight for yield and benchmark coverage rather than upside. It's ballast, not a thesis.",
-            "why_now": "Bank of China (3988.HK) is my smallest, steadiest holding (slightly green) — a high-dividend, low-beta megabank that anchors the defensive sleeve. Same caveat as ICBC: financials are crowded/extended, so I hold a modest weight for yield and benchmark coverage rather than upside. It's ballast, not a thesis.",
+            "summary": "Bank of China (3988.HK) is steady ballast (slightly green, +0.8%) — a high-dividend, low-beta megabank anchoring the defensive sleeve alongside ICBC. Same crowding caveat (financials extended) so I hold a modest weight for yield and benchmark coverage rather than upside. In a still-soft HK tape it is exactly the low-beta carry I want to keep. It's ballast, not a thesis.",
+            "why_now": "Bank of China (3988.HK) is steady ballast (slightly green, +0.8%) — a high-dividend, low-beta megabank anchoring the defensive sleeve alongside ICBC. Same crowding caveat (financials extended) so I hold a modest weight for yield and benchmark coverage rather than upside. In a still-soft HK tape it is exactly the low-beta carry I want to keep. It's ballast, not a thesis.",
             "bull": [],
             "bear": []
           }
@@ -5924,9 +5906,9 @@
       "decisions": [
         {
           "subject": "China book",
-          "lean": "HK book repositioned for a risk-off Hong Kong tape (global dollar strength, weak peg at 7.84, fear score 14, RoRo 5/8 legs risk-off) inside a China stagflation regime. The move is: keep quality and the confirmed defensive bid, cut unflagged high-beta, and deploy fresh capital only into setups that have already turned. I hold Tencent (0700.HK, 13%) and trim winner SMIC (0981.HK, 14%→12%) as my tech core; keep the defensive sleeve in China Life (2628.HK, 11%), ICBC (1398.HK, 8%) and Bank of China (3988.HK, 6%) for carry and FXI parity without pressing the extended financials. New adds: Agricultural Bank of China (1288.HK, 7%) — the single best-corroborated HK bank (conviction 93) — and China Resources Land (1109.HK, 9%), a quality SOE developer in confirmed UPTREND with mainland accumulation, the most attractive home for new money. I trim two losers rather than capitulate: CMOC (3993.HK, 11%→7%) is kept only because copper/gold is the lone risk-on macro leg and CMOC is its proxy; Chow Tai Fook (1929.HK, 10%→6%) keeps a half-size gold-retail position on a short leash. Book is ~79% invested / ~21% cash — dry powder is appropriate in a confirmed risk-off HK tape, and the cash is there to add on confirmation (a Tech RS reversal feeding the washed-out sectors, or the property catch-up extending). I'm accountable to HKD NAV vs FXI; this keeps me bank/quality-weighted near the benchmark while tilting active risk into the one confirmed non-financial uptrend.",
-          "thesis": "Exited Kuaishou (1024.HK, was 7.5%, -8.5%): unflagged by every desk, a high-beta short-video/media name in a sector at the 0.4th percentile with momentum still falling — a classic falling knife in a risk-off tape. Doctrine is confirmation over prediction, so I'm not catching it; proceeds funded the AgBank (1288.HK) and China Resources Land (1109.HK) adds. Also trimmed SMIC (0981.HK), CMOC (3993.HK) and Chow Tai Fook (1929.HK) as described per-name.",
-          "logged_at": "2026-06-24T16:02:34.169976+00:00"
+          "lean": "Overnight review: the global panic that justified the queued de-risk has reversed — VIX -4.41%, US futures green (Nasdaq fut +1.39%, S&P +0.43%), KOSPI +8.50% (full reversal of the prior -9.99% crash), Nikkei +1.69%, 10Y -1.10bp. But HK/China is the lone laggard still selling off (Hang Seng -1.82%, Shanghai -1.37%) under mild USD strength (+0.21%) and a weak peg. So I REVISE the queued panic-trim rather than hold it: I do NOT capitulate the cyclical losers (CMOC, Chow Tai Fook) into a stabilizing global tape, and I keep a fuller SMIC since global tech is bid — but I keep a defensive tilt and ~30% cash because HK specifically remains red and the China regime is Stagflation/risk-off (Fear band 14, breadth/southbound/yuan all risk-off). Quality + defensive ballast (Tencent, China Life, megabanks) anchors; washed-out cyclicals (CMOC, Kuaishou, Chow Tai Fook) held as mean-reversion call options on the global re-risk, not pressed. Benchmarked to FXI.",
+          "thesis": "Relative to the queued panic-trim: I do NOT slash CMOC (3993.HK) to a 5% stub or Chow Tai Fook (1929.HK) to 4% — selling them at the lows into a stabilizing global tape (VIX -4.4%, copper/gold still 97th pctile risk-on) would be capitulating at the bottom. I trim SMIC (0981.HK) only modestly (14.3%->12%) to bank gain on an extended winner rather than the deeper 9% panic cut. Net: a measured lean-back-in, cash ~30%.",
+          "logged_at": "2026-06-25T01:35:00.495950+00:00"
         }
       ],
       "pending_orders": [],
@@ -5941,560 +5923,560 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 976692.75,
-        "cash": 220034.92,
-        "invested": 756657.83,
-        "total_return_pct": -2.3307,
-        "vs_spy_pct": 0.1017,
+        "current_nav": 979516.08,
+        "cash": 293951.06,
+        "invested": 685565.02,
+        "total_return_pct": -2.0484,
+        "vs_spy_pct": 0.7744,
         "benchmark": "FXI",
-        "day_change_pct": 208.0211,
-        "max_drawdown_pct": -68.4995,
+        "day_change_pct": -2.6913,
+        "max_drawdown_pct": -2.6913,
         "realized_since": "2026-06-21",
         "series": [
           {
-            "date": "2026-02-11",
+            "date": "2026-02-12",
             "nav": 1000000.0,
             "spy_nav": 1000000.0,
             "kind": "pre_inception"
           },
           {
-            "date": "2026-02-12",
-            "nav": 1000000.0,
-            "spy_nav": 979478.05,
-            "kind": "pre_inception"
-          },
-          {
             "date": "2026-02-13",
             "nav": 1000000.0,
-            "spy_nav": 971117.32,
+            "spy_nav": 991464.1,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-17",
             "nav": 1000000.0,
-            "spy_nav": 975931.07,
+            "spy_nav": 996378.7,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-18",
             "nav": 1000000.0,
-            "spy_nav": 980998.23,
+            "spy_nav": 1001552.03,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-19",
             "nav": 1000000.0,
-            "spy_nav": 978211.28,
+            "spy_nav": 998706.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-20",
             "nav": 1000000.0,
-            "spy_nav": 983278.44,
+            "spy_nav": 1003880.02,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-23",
             "nav": 1000000.0,
-            "spy_nav": 979984.78,
+            "spy_nav": 1000517.34,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-24",
             "nav": 1000000.0,
-            "spy_nav": 972130.68,
+            "spy_nav": 992498.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-25",
             "nav": 1000000.0,
-            "spy_nav": 973397.44,
+            "spy_nav": 993791.99,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-26",
             "nav": 1000000.0,
-            "spy_nav": 947301.7,
+            "spy_nav": 967149.5,
             "kind": "pre_inception"
           },
           {
             "date": "2026-02-27",
             "nav": 1000000.0,
-            "spy_nav": 944514.76,
+            "spy_nav": 964304.16,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-02",
             "nav": 1000000.0,
-            "spy_nav": 934887.27,
+            "spy_nav": 954474.95,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-03",
             "nav": 1000000.0,
-            "spy_nav": 913605.28,
+            "spy_nav": 932747.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-04",
             "nav": 1000000.0,
-            "spy_nav": 917405.57,
+            "spy_nav": 936626.98,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-05",
             "nav": 1000000.0,
-            "spy_nav": 901444.15,
+            "spy_nav": 920331.14,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-06",
             "nav": 1000000.0,
-            "spy_nav": 907524.67,
+            "spy_nav": 926539.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-09",
             "nav": 1000000.0,
-            "spy_nav": 924246.22,
+            "spy_nav": 943610.96,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-10",
             "nav": 1000000.0,
-            "spy_nav": 927033.16,
+            "spy_nav": 946456.29,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-11",
             "nav": 1000000.0,
-            "spy_nav": 922219.42,
+            "spy_nav": 941541.69,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-12",
             "nav": 1000000.0,
-            "spy_nav": 916138.81,
+            "spy_nav": 935333.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-13",
             "nav": 1000000.0,
-            "spy_nav": 918165.71,
+            "spy_nav": 937403.05,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-16",
             "nav": 1000000.0,
-            "spy_nav": 934380.54,
+            "spy_nav": 953957.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-17",
             "nav": 1000000.0,
-            "spy_nav": 934633.85,
+            "spy_nav": 954216.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-18",
             "nav": 1000000.0,
-            "spy_nav": 917152.26,
+            "spy_nav": 936368.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-19",
             "nav": 1000000.0,
-            "spy_nav": 916898.85,
+            "spy_nav": 936109.64,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-20",
             "nav": 1000000.0,
-            "spy_nav": 890803.11,
+            "spy_nav": 909467.15,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-23",
             "nav": 1000000.0,
-            "spy_nav": 896376.99,
+            "spy_nav": 915157.82,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-24",
             "nav": 1000000.0,
-            "spy_nav": 895363.54,
+            "spy_nav": 914123.13,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-25",
             "nav": 1000000.0,
-            "spy_nav": 912085.1,
+            "spy_nav": 931195.04,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-26",
             "nav": 1000000.0,
-            "spy_nav": 884975.91,
+            "spy_nav": 903517.86,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-27",
             "nav": 1000000.0,
-            "spy_nav": 882949.01,
+            "spy_nav": 901448.49,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-30",
             "nav": 1000000.0,
-            "spy_nav": 886749.4,
+            "spy_nav": 905328.51,
             "kind": "pre_inception"
           },
           {
             "date": "2026-03-31",
             "nav": 1000000.0,
-            "spy_nav": 909551.57,
+            "spy_nav": 928608.42,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-01",
             "nav": 1000000.0,
-            "spy_nav": 900937.43,
+            "spy_nav": 919813.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-02",
             "nav": 1000000.0,
-            "spy_nav": 900937.43,
+            "spy_nav": 919813.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-06",
             "nav": 1000000.0,
-            "spy_nav": 900684.02,
+            "spy_nav": 919555.08,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-07",
             "nav": 1000000.0,
-            "spy_nav": 898910.53,
+            "spy_nav": 917744.43,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-08",
             "nav": 1000000.0,
-            "spy_nav": 920952.56,
+            "spy_nav": 940248.28,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-09",
             "nav": 1000000.0,
-            "spy_nav": 919432.48,
+            "spy_nav": 938696.35,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-10",
             "nav": 1000000.0,
-            "spy_nav": 918419.02,
+            "spy_nav": 937661.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-13",
             "nav": 1000000.0,
-            "spy_nav": 923739.5,
+            "spy_nav": 943093.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-14",
             "nav": 1000000.0,
-            "spy_nav": 934633.85,
+            "spy_nav": 954216.23,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-15",
             "nav": 1000000.0,
-            "spy_nav": 934380.54,
+            "spy_nav": 953957.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-16",
             "nav": 1000000.0,
-            "spy_nav": 943248.0,
+            "spy_nav": 963010.86,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-17",
             "nav": 1000000.0,
-            "spy_nav": 952622.18,
+            "spy_nav": 972581.44,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-20",
             "nav": 1000000.0,
-            "spy_nav": 954142.35,
+            "spy_nav": 974133.47,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-21",
             "nav": 1000000.0,
-            "spy_nav": 940207.74,
+            "spy_nav": 959906.9,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-22",
             "nav": 1000000.0,
-            "spy_nav": 936660.76,
+            "spy_nav": 956285.6,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-23",
             "nav": 1000000.0,
-            "spy_nav": 924499.63,
+            "spy_nav": 943869.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-24",
             "nav": 1000000.0,
-            "spy_nav": 933873.81,
+            "spy_nav": 953440.27,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-27",
             "nav": 1000000.0,
-            "spy_nav": 923486.18,
+            "spy_nav": 942835.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-28",
             "nav": 1000000.0,
-            "spy_nav": 918419.02,
+            "spy_nav": 937661.67,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-29",
             "nav": 1000000.0,
-            "spy_nav": 920699.24,
+            "spy_nav": 939989.66,
             "kind": "pre_inception"
           },
           {
             "date": "2026-04-30",
             "nav": 1000000.0,
-            "spy_nav": 932100.32,
+            "spy_nav": 951629.62,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-01",
             "nav": 1000000.0,
-            "spy_nav": 932607.05,
+            "spy_nav": 952146.96,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-04",
             "nav": 1000000.0,
-            "spy_nav": 926019.71,
+            "spy_nav": 945421.61,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-05",
             "nav": 1000000.0,
-            "spy_nav": 924499.63,
+            "spy_nav": 943869.68,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-06",
             "nav": 1000000.0,
-            "spy_nav": 949835.33,
+            "spy_nav": 969736.21,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-07",
             "nav": 1000000.0,
-            "spy_nav": 942234.54,
+            "spy_nav": 961976.17,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-08",
             "nav": 1000000.0,
-            "spy_nav": 943501.41,
+            "spy_nav": 963269.58,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-11",
             "nav": 1000000.0,
-            "spy_nav": 949328.61,
+            "spy_nav": 969218.87,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-12",
             "nav": 1000000.0,
-            "spy_nav": 945781.62,
+            "spy_nav": 965597.57,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-13",
             "nav": 1000000.0,
-            "spy_nav": 969343.73,
+            "spy_nav": 989653.35,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-14",
             "nav": 1000000.0,
-            "spy_nav": 943501.41,
+            "spy_nav": 963269.58,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-15",
             "nav": 1000000.0,
-            "spy_nav": 917152.26,
+            "spy_nav": 936368.36,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-18",
             "nav": 1000000.0,
-            "spy_nav": 909311.21,
+            "spy_nav": 928363.02,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-19",
             "nav": 1000000.0,
-            "spy_nav": 912328.85,
+            "spy_nav": 931443.89,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-20",
             "nav": 1000000.0,
-            "spy_nav": 911323.03,
+            "spy_nav": 930417.0,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-21",
             "nav": 1000000.0,
-            "spy_nav": 902521.59,
+            "spy_nav": 921431.15,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-22",
             "nav": 1000000.0,
-            "spy_nav": 893217.28,
+            "spy_nav": 911931.9,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-26",
             "nav": 1000000.0,
-            "spy_nav": 899000.99,
+            "spy_nav": 917836.79,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-27",
             "nav": 1000000.0,
-            "spy_nav": 888187.81,
+            "spy_nav": 906797.06,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-28",
             "nav": 1000000.0,
-            "spy_nav": 879889.42,
+            "spy_nav": 898324.8,
             "kind": "pre_inception"
           },
           {
             "date": "2026-05-29",
             "nav": 1000000.0,
-            "spy_nav": 881398.2,
+            "spy_nav": 899865.18,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-01",
             "nav": 1000000.0,
-            "spy_nav": 888690.77,
+            "spy_nav": 907310.55,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-02",
             "nav": 1000000.0,
-            "spy_nav": 914340.67,
+            "spy_nav": 933497.87,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-03",
             "nav": 1000000.0,
-            "spy_nav": 893720.24,
+            "spy_nav": 912445.4,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-04",
             "nav": 1000000.0,
-            "spy_nav": 891959.89,
+            "spy_nav": 910648.17,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-05",
             "nav": 1000000.0,
-            "spy_nav": 873854.14,
+            "spy_nav": 892163.07,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-08",
             "nav": 1000000.0,
-            "spy_nav": 872093.89,
+            "spy_nav": 890365.94,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-09",
             "nav": 1000000.0,
-            "spy_nav": 872345.27,
+            "spy_nav": 890622.58,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-10",
             "nav": 1000000.0,
-            "spy_nav": 873854.14,
+            "spy_nav": 892163.07,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-11",
             "nav": 1000000.0,
-            "spy_nav": 877877.6,
+            "spy_nav": 896270.82,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-12",
             "nav": 1000000.0,
-            "spy_nav": 887433.48,
+            "spy_nav": 906026.92,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-15",
             "nav": 1000000.0,
-            "spy_nav": 889536.34,
+            "spy_nav": 908173.84,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-16",
             "nav": 1000000.0,
-            "spy_nav": 875601.73,
+            "spy_nav": 893947.27,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-17",
             "nav": 1000000.0,
-            "spy_nav": 852546.25,
+            "spy_nav": 870408.73,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-18",
             "nav": 1000000.0,
-            "spy_nav": 843678.7,
+            "spy_nav": 861355.39,
             "kind": "pre_inception"
           },
           {
             "date": "2026-06-22",
             "nav": 1006606.86,
-            "spy_nav": 846972.37,
+            "spy_nav": 864718.07,
             "kind": "realized"
           },
           {
             "date": "2026-06-23",
-            "nav": 317086.32,
-            "spy_nav": 831770.99,
+            "nav": 1000000.0,
+            "spy_nav": 849198.19,
+            "kind": "realized"
+          },
+          {
+            "date": "2026-06-24",
+            "nav": 979516.08,
+            "spy_nav": 837040.89,
             "kind": "realized"
           }
         ],
