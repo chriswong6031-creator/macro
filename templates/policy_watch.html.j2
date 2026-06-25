@@ -116,6 +116,30 @@
     {{ bl(intel.regime_read.en, intel.regime_read.zh) }}
   </div>
 
+  <!-- ================= CATALYST SPINE ================= -->
+  {% if catalysts and catalysts.spine %}
+  {% set _WEIGHT = {'high':'高','medium':'中','low':'低'} %}
+  {% set _wcls = {'high':'b-inf','medium':'b-prior','low':'b-open'} %}
+  <h2 class="sec">🗓️ {{ t('Catalyst spine — inflation to decision', '催化剂主线 — 从通胀到决议') }}</h2>
+  <p class="lede" style="color:var(--muted)">{{ bl(catalysts.intro_en, catalysts.intro_zh) }}</p>
+  <table class="data">
+    <tr><th>{{ t('Date', '日期') }}</th><th>{{ t('Event', '事件') }}</th><th>{{ t('Impact', '影响') }}</th><th>{{ t('Read', '解读') }}</th></tr>
+    {% for c in catalysts.spine %}
+    <tr{% if c.key %} style="background:color-mix(in srgb,var(--link) 7%,transparent)"{% endif %}>
+      <td style="white-space:nowrap">
+        <strong>{{ c.date }}</strong><br>
+        <span class="conf">{{ bl(c.when_en, c.when_zh) }}</span>
+        {% if c.days_to is not none %}<br><span class="b {{ 'b-open' if c.past else 'b-fact' }}">{% if c.past %}{{ t('passed', '已过') }}{% elif c.days_to == 0 %}{{ t('today', '今日') }}{% elif c.days_to == 1 %}{{ t('tomorrow', '明日') }}{% else %}{{ t('in', '剩') }} {{ c.days_to }}{{ t('d', '天') }}{% endif %}</span>{% endif %}
+      </td>
+      <td>{% if c.key %}★ {% endif %}<strong>{{ bl(c.event_en, c.event_zh) }}</strong></td>
+      <td><span class="b {{ _wcls.get(c.weight, 'b-open') }}">{{ code(c.weight, _WEIGHT) }}</span></td>
+      <td>{{ bl(c.note_en, c.note_zh) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="conf">{{ t('★ = the catalysts that actually move the decision (June CPI → the July 28–29 FOMC). Each hot print ratchets hike odds; PCE is largely pre-figured. Display / context only.', '★ = 真正影响决议的催化剂（6月CPI → 7月28–29日FOMC）。每次偏热读数都上调加息概率；PCE 大体已被预定。仅供展示／参考。') }}</p>
+  {% endif %}
+
   <!-- ================= INTENT DESK (LLM, accountable) ================= -->
   {% if desk %}
   <h2 class="sec">🤖 {{ t('Intent Desk — accountable realpolitik leans', '意图台 — 可问责的现实政治判断') }}</h2>

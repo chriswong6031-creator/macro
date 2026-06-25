@@ -102,6 +102,33 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.warning("policy dates skipped: %s", e)
 
+    # catalyst spine — stamp each dated event with a live days-to / past flag so the
+    # forward calendar counts down on the page (additive; absent block -> section hides)
+    catalysts = None
+    try:
+        cat = intel.get("catalysts")
+        if cat and cat.get("spine"):
+            from datetime import date as _date
+            # the spine is an all-ET calendar (8:30am prints, 2pm decisions) — count down
+            # against the US/Eastern date so it doesn't roll over after ~8pm ET (UTC midnight)
+            try:
+                from zoneinfo import ZoneInfo
+                today = datetime.now(ZoneInfo("America/New_York")).date()
+            except Exception:  # noqa: BLE001 — fall back to UTC if tz db is unavailable
+                today = datetime.now(timezone.utc).date()
+            rows = []
+            for ev in cat["spine"]:
+                try:
+                    d = _date.fromisoformat(ev.get("date", ""))
+                    days_to = (d - today).days
+                except Exception:  # noqa: BLE001
+                    days_to = None
+                rows.append({**ev, "days_to": days_to,
+                             "past": days_to is not None and days_to < 0})
+            catalysts = {**cat, "spine": rows}
+    except Exception as e:  # noqa: BLE001
+        log.warning("catalyst spine skipped: %s", e)
+
     # unified accountability scorecard (predictions / rotation / stance / freshness) +
     # the sharpest divergence (a targeted theme that is actually lagging worst).
     scorecard = None
@@ -115,8 +142,8 @@ def main() -> int:
     env = Environment(loader=FileSystemLoader(str(config.ROOT / "templates")), autoescape=True)
     html = env.get_template("policy_watch.html.j2").render(
         intel=intel, counts=counts, desk=desk, fed_stance=fed_stance, fed_hist=fed_hist,
-        rot=rot, rot_hist=rot_hist, dates=dates, scorecard=scorecard, generated_utc=built,
-        active_section="research", active_page="policy_watch",
+        rot=rot, rot_hist=rot_hist, dates=dates, catalysts=catalysts, scorecard=scorecard,
+        generated_utc=built, active_section="research", active_page="policy_watch",
     )
     (site / "policy_watch.html").write_text(html)
     log.info("wrote %s/policy_watch.html (%d preds, %d task forces, %d KB)",
