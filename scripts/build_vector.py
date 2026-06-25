@@ -2210,6 +2210,7 @@ def main() -> int:
         legs = {}
         for _mod, _key in (("btc_netliq", "netliq"), ("btc_leverage_cascade", "leverage"),
                            ("btc_impulse_radar", "impulse_radar"),
+                           ("btc_intraday_cvd", "intraday_cvd"),
                            ("btc_dat", "dat"), ("etf_perfund", "etf_perfund")):
             try:
                 _m = __import__(f"engine.{_mod}", fromlist=["x"])

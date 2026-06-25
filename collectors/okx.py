@@ -29,6 +29,11 @@ class OkxAdapter(Adapter):
     name = "okx"
     group = "okx"
     stale_after_days = 3
+    # taker_volume_hourly keeps intraday timestamps; every DAILY series here
+    # already self-normalizes its index to midnight (.dt.normalize()), so a
+    # non-normalizing upsert is a no-op for them and only preserves the hourly
+    # series (verified: all stored okx daily series are all-midnight).
+    normalize_index = False
 
     def __init__(self) -> None:
         self.cfg = config.load()["okx"]
@@ -47,6 +52,9 @@ class OkxAdapter(Adapter):
         tk = self._taker_volume()
         if tk is not None:
             out["taker_volume"] = tk
+        tkh = self._taker_volume_hourly()
+        if tkh is not None:
+            out["taker_volume_hourly"] = tkh
         sp = self._spot_candles(full_history)
         if sp is not None:
             out["spot_usdt_daily"] = sp
@@ -168,3 +176,26 @@ class OkxAdapter(Adapter):
         sell = pd.to_numeric(df["sell_vol"], errors="coerce")
         df["taker_buy_ratio"] = buy / (buy + sell).replace(0, np.nan)
         return df.set_index("date")[["taker_buy_ratio"]].dropna().sort_index()
+
+    def _taker_volume_hourly(self) -> pd.DataFrame | None:
+        """Rubik aggregate taker buy/sell volume at HOURLY granularity, raw
+        volumes kept (not just the ratio) so engine/btc_intraday_cvd can build a
+        cumulative-volume-delta (CVD = Σ(buy−sell)). The rubik 1H window is the
+        last ~720 hours (~30 days), recent-only; store.upsert ACCUMULATES it
+        forward so a deep hourly aggressor-flow history builds over time (the
+        genuine sub-daily order-flow feed the impulse-radar screens lacked).
+        DISPLAY-ONLY / accruing — never scored until it has the history to be
+        validated by the falsifier gate."""
+        r = self.http_get(self.cfg["taker_url"], retries=self.cfg["retries"],
+                          params={"ccy": "BTC", "instType": "CONTRACTS", "period": "1H"},
+                          timeout=30)
+        data = r.json().get("data", [])
+        if not data:
+            return None
+        # rows: [ts_ms, sellVol, buyVol] (OKX v5 order is sell-then-buy — do NOT flip)
+        df = pd.DataFrame(data, columns=["ts", "sell_vol", "buy_vol"])
+        df["ts"] = pd.to_datetime(pd.to_numeric(df["ts"]), unit="ms")
+        df["taker_buy_vol"] = pd.to_numeric(df["buy_vol"], errors="coerce")
+        df["taker_sell_vol"] = pd.to_numeric(df["sell_vol"], errors="coerce")
+        return (df.set_index("ts")[["taker_buy_vol", "taker_sell_vol"]]
+                .dropna().sort_index())
