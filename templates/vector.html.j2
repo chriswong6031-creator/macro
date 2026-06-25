@@ -552,9 +552,9 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     </div>
     {% set cl = regime.context_legs %}
     {% if cl %}
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+    <div id="leverage" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
       {% if cl.netliq and cl.netliq.ok %}<span class="rgc-fac">🌊 {{ t('Net-liquidity','净流动性') }}: <b>{{ t(cl.netliq.impulse_state, cl.netliq.impulse_state) }}</b></span>{% endif %}
-      {% if cl.leverage and cl.leverage.ok %}<span class="rgc-fac" style="{{ 'border-color:var(--r3)' if cl.leverage.cascade_risk=='high' else '' }}">⚡ {{ t('Leverage','杠杆') }}: <b>{{ t(cl.leverage.cascade_risk, cl.leverage.cascade_risk) }}</b>{% if cl.leverage.derisk_cap %} · {{ t('cap','上限') }} {{ (cl.leverage.derisk_cap*100)|round|int }}%{% endif %}</span>{% endif %}
+      {% if cl.leverage and cl.leverage.ok %}{% set lev_col = {'high':'var(--red)','elevated':'var(--warn)'} %}{% set _lc = lev_col.get(cl.leverage.cascade_risk,'') %}<span class="rgc-fac" style="{% if _lc %}border-color:{{ _lc }};color:{{ _lc }}{% endif %}">⚡ {{ t('Leverage','杠杆') }}: <b>{{ t(cl.leverage.cascade_risk, cl.leverage.cascade_risk) }}</b>{% if cl.leverage.cascade_risk=='low' and cl.leverage.oi_only_risk and cl.leverage.oi_only_risk != 'low' %} · {{ t('OI','持仓') }} <b style="color:var(--warn)">{{ t(cl.leverage.oi_only_risk, cl.leverage.oi_only_risk) }}</b>{% endif %}{% if cl.leverage.derisk_cap %} · {{ t('cap','上限') }} {{ (cl.leverage.derisk_cap*100)|round|int }}%{% endif %}</span>{% endif %}
       {% if cl.dat and cl.dat.ok and cl.dat.mnav is not none %}<span class="rgc-fac" style="{{ 'border-color:var(--r3)' if cl.dat.state=='discount' else '' }}">🏛 {{ t('MSTR mNAV','MSTR mNAV') }}: <b>{{ '%.2f'|format(cl.dat.mnav) }}×</b> {{ t(cl.dat.state, cl.dat.state) }}</span>{% endif %}
       {% if cl.etf_perfund and cl.etf_perfund.ok and cl.etf_perfund.ibit_share is not none %}<span class="rgc-fac">📊 IBIT {{ (cl.etf_perfund.ibit_share*100)|round|int }}%</span>{% endif %}
     </div>
@@ -621,6 +621,52 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     {% endfor %}
   </div>
   <div class="sub faint" style="margin:8px 4px 4px;font-size:12px">{{ t('Grade = the MEASURED forward record (data/vector/calibration.json): CONFIRMED holds in both halves of history · DIRECTIONAL one half weak · EXTREMES only the tails pay · CONTEXT not predictive · NEW = a mastermind-upgrade axis still accruing its forward record. Sparklines show each axis over the last ~60 days.', '评级 = 实测前瞻记录（data/vector/calibration.json）：CONFIRMED 在前后两半段均成立 · DIRECTIONAL 有一半较弱 · EXTREMES 仅尾部有效 · CONTEXT 不具预测性 · NEW = 新增的升级维度，仍在积累前瞻记录。迷你图为各维度最近约 60 天走势。') }}</div>
+  {% endif %}
+
+  <!-- ===================== IMPULSE RADAR (forward pressure) ===================== -->
+  {% set ir = regime.context_legs.impulse_radar if regime.context_legs else none %}
+  {% if ir and ir.ok %}
+  {% set lad_col = {'quiet':'var(--muted)','coiled':'var(--blue)','warning':'var(--warn)','trigger':'var(--red)'} %}
+  {% set lad_lab = {'quiet':'Quiet','coiled':'Coiled · loading','warning':'WARNING','trigger':'TRIGGER'} %}
+  {% set lad_zh = {'quiet':'平静','coiled':'蓄势','warning':'警告','trigger':'触发'} %}
+  <div class="card" id="impulse" style="margin-bottom:18px">
+    <h2>{{ t('Impulse Radar · forward pressure','脉冲雷达 · 前瞻压力') }}</h2>
+    <div class="sub" style="margin-top:2px">{{ t('Adversarially-verified LEADING precursor crosses only — escalates on a cross and DECAYS to quiet, distinct from the standing regime read. Context legs alone cap at “coiled”; only an act-tier cross reaches warning/trigger. Display-only.','仅基于经对抗验证的领先前兆突破 — 突破时升级、随后衰减回平静，独立于当前regime读数。背景因子最高只到“蓄势”；仅行动级突破才达到警告/触发。仅供展示。') }}</div>
+    {% if ir.staleness and ir.staleness.stale %}
+    <div style="margin-top:10px;padding:8px 12px;border-radius:8px;background:var(--bear-soft);border:1px solid var(--bear);color:var(--bear);font-weight:600;font-size:12.5px">⚠ {{ t('Intraday data STALE — freshest hourly candle','日内数据过期 — 最新小时K线') }} {{ ir.staleness.intraday_asof }} ({{ t('daily close','日线收盘') }} {{ ir.staleness.daily_asof }}). {{ t('An intraday flush could go unseen — check the hourly feed.','日内闪跌可能无法被捕捉 — 请检查小时数据源。') }}</div>
+    {% endif %}
+    <div class="grid cols-2" style="margin-top:12px">
+      {% for g in [ir.down, ir.up] %}
+      {% set gnm = 'Down' if loop.first else 'Up' %}{% set gnm_zh = '下行' if loop.first else '上行' %}
+      <div style="border:1px solid var(--grid);border-radius:12px;padding:13px 15px;background:var(--bg)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <b style="font-size:13px;color:var(--ink)">{{ t(gnm,gnm_zh) }}-{{ t('impulse','脉冲') }}</b>
+          <span style="font-weight:800;font-size:11.5px;padding:2px 9px;border-radius:7px;color:#fff;background:{{ lad_col.get(g.ladder,'var(--muted)') }}">{{ t(lad_lab.get(g.ladder,g.ladder), lad_zh.get(g.ladder,g.ladder)) }}</span>
+        </div>
+        <div style="margin-top:9px;height:9px;border-radius:6px;background:var(--grid);overflow:hidden"><div style="height:100%;width:{{ g.score }}%;background:{{ lad_col.get(g.ladder,'var(--muted)') }}"></div></div>
+        <div class="faint" style="font-size:11px;margin-top:4px">{{ t('pressure','压力') }} {{ g.score }}/100{% if not g.act_live %} · {{ t('no act-tier cross (context only)','无行动级突破（仅背景）') }}{% endif %}</div>
+        <div style="margin-top:9px;display:flex;flex-direction:column;gap:3px">
+          {% for l in g.legs if l.points > 0 %}
+          <div style="display:flex;justify-content:space-between;font-size:11.5px">
+            <span style="color:{{ 'var(--ink)' if l.tier=='act' else 'var(--muted)' }}">{{ '●' if l.tier=='act' else '○' }} {{ t(l.label, l.label) }}</span>
+            <span class="faint">{{ l.points }}{% if l.fired_today %} · {{ t('fresh','新触发') }}{% elif l.days_since is not none %} · {{ l.days_since }}d{% endif %}</span>
+          </div>
+          {% else %}
+          <div class="faint" style="font-size:11px">{{ t('no live legs','无活跃因子') }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+      {% if ir.fuel_gauge %}<span class="rgc-fac" style="{{ 'border-color:var(--warn);color:var(--warn)' if ir.fuel_gauge.lit else '' }}">🔋 {{ t('Fuel','燃料') }}: OI {{ (ir.fuel_gauge.oi_pctile*100)|round|int if ir.fuel_gauge.oi_pctile is not none else '—' }}%ile × vov {{ (ir.fuel_gauge.vov_pctile*100)|round|int if ir.fuel_gauge.vov_pctile is not none else '—' }}%ile{% if ir.fuel_gauge.lit %} · {{ t('loading','蓄能') }}{% endif %}</span>{% endif %}
+      {% if ir.cascade and ir.cascade.oi_only_risk and ir.cascade.oi_only_risk != 'low' %}<span class="rgc-fac" style="border-color:var(--warn);color:var(--warn)">⚡ {{ t('OI-only de-risk','仅持仓减仓') }}: <b>{{ t(ir.cascade.oi_only_risk, ir.cascade.oi_only_risk) }}</b></span>{% endif %}
+    </div>
+    <div class="sub faint" style="margin-top:10px;font-size:11px">{{ t('Honesty: none of the three act-tier legs (DVOL jolt, SOPR spike, SOPR capitulation) led the 2026-06-24 options-calm flush — this is an early de-risk/pressure read, not a top-caller. UP fires only as a reactive wash-out bounce, never a pre-emptive bottom.','诚实说明：三个行动级因子（DVOL 跳升、SOPR 骤升、SOPR 投降）均未领先 2026-06-24 的期权平静式下跌 — 这是早期减仓/压力读数，而非顶部预言。上行仅作为反应式洗盘反弹触发，绝非提前抄底。') }}</div>
+    {% set _act = (ir.down.legs + ir.up.legs) | selectattr('tier','equalto','act') | list %}
+    {% set _dem = _act | selectattr('demoted') | list %}
+    <div class="sub faint" style="margin-top:5px;font-size:11px">🛡 {{ t('Falsifier','证伪器') }}: <b style="color:{{ 'var(--bear)' if _dem else 'var(--blue)' }}">{{ _act|length - _dem|length }}/{{ _act|length }}</b> {{ t('act legs still leading','行动级因子仍领先') }} — {{ t('each re-validated leak-free every build; a leg that stops leading (holdout lift below floor) is auto-demoted to zero points (CI-gated).','每次构建均无前视重新验证；停止领先（留出样本 lift 低于下限）的因子自动降级为零分（CI 门控）。') }}{% if _dem %} · <b style="color:var(--bear)">{{ _dem|length }} {{ t('DEMOTED','已降级') }}</b>{% endif %}</div>
+  </div>
   {% endif %}
 
   <!-- ===================== MARKET STATE HERO ===================== -->
