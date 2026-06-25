@@ -1,15 +1,15 @@
 {
   "schema": "policy_intel.v1",
-  "as_of": "2026-06-18",
+  "as_of": "2026-06-24",
   "lens": "realpolitik — revealed preference / interest-driven; non-partisan",
   "is_context_only": true,
   "thesis": {
-    "en": "A coordinated regime of low-real-yield engineering + strategic re-industrialization. The Fed under Warsh institutionalizes a narrower, more discretionary, framework-resetting central bank (strict 2% target, less unconventional easing, no self-binding forward guidance), while Treasury under Bessent runs explicit yield suppression via bill-heavy issuance, buybacks, dealer-intermediation reform, and a de-facto funding alignment with the Fed. Industrial policy (advanced-chip tariffs, nuclear-for-AI) steers capital toward strategic domestic capacity.",
-    "zh": "一个协调一致的“压低实际收益率 + 战略再工业化”政策体制。沃什治下的美联储将其制度化为一个更收窄、更具相机抉择、重置框架的央行（严格2%目标、减少非常规宽松、不再自缚式前瞻指引）；贝森特治下的财政部则通过偏短端发债、回购、做市商中介改革，以及与美联储事实上的融资协同，明确压低收益率。产业政策（先进芯片关税、为AI供电的核能）将资本引向战略性国内产能。"
+    "en": "A coordinated regime of low-real-yield engineering + strategic re-industrialization. The Fed under Warsh institutionalizes a narrower, more discretionary, framework-resetting central bank (strict 2% target, less unconventional easing, no self-binding forward guidance), while Treasury under Bessent runs explicit yield suppression via bill-heavy issuance, buybacks, dealer-intermediation reform, and a de-facto funding alignment with the Fed. Industrial policy (advanced-chip tariffs, nuclear-for-AI) steers capital toward strategic domestic capacity. UPDATE (6/24): read this as a SEQUENCED, optionality-based campaign — not a static state — and downgrade 'coordinated' to aligned-incentives / revealed-preference, mostly common-cause. The hawkish tape (Sept-hike ~73%, DXY 13-mo high, real 10y 2.29%, gold<$4,000) is the credibility-banking STAGING phase, not the destination: Warsh's guidance/dot deletion + the inflation-frameworks and AI-productivity task forces are optionality infrastructure that pre-loads doctrinal cover for a post-midterm pivot, and Bessent's 6/24 'strong dollar while cutting' is the FX bridge (manufactured demand + Iran haven bid) that lets the front end ease without breaking the ~$9.7T FY2026 refi math. Net: the administration wants the OUTCOME of lower real yields without the inflation-validating OPTICS of near-term cuts — so it suppresses yields structurally now and holds easing as inflation-gated optionality post-midterm.",
+    "zh": "一个协调一致的“压低实际收益率 + 战略再工业化”政策体制。沃什治下的美联储将其制度化为一个更收窄、更具相机抉择、重置框架的央行（严格2%目标、减少非常规宽松、不再自缚式前瞻指引）；贝森特治下的财政部则通过偏短端发债、回购、做市商中介改革，以及与美联储事实上的融资协同，明确压低收益率。产业政策（先进芯片关税、为AI供电的核能）将资本引向战略性国内产能。更新（6/24）：应将其理解为一场分阶段、以“灵活性”为核心的运动——而非静态状态——并把“协调一致”下调为“利益一致／显示性偏好、且大多为共同成因”。鹰派的盘面（9月加息约73%、DXY十三个月新高、10年期实际收益率2.29%、黄金跌破4000美元）是“储蓄信誉”的铺垫阶段，而非终点：沃什取消指引／点位，加上通胀框架与AI生产率工作组，构成为中期选举后转向预置教义掩护的“灵活性基础设施”；而贝森特6/24“降息中维持强美元”则是那座汇率之桥（人为需求＋伊朗避险买盘），让短端得以宽松而不击穿约9.7万亿美元的2026财年再融资数学。归结：政府想要“更低实际收益率”的结果，却不要“近期降息”那种坐实通胀的观感——于是当下以结构性手段压低收益率，并把宽松作为中期选举后、取决于通胀的“期权”持有。"
   },
   "regime_read": {
-    "en": "The market-relevant divergence: the consensus narrative casts Warsh as a dovish Trump instrument (Warren's 'sock puppet'), yet his revealed debut was a hawkish hold with a possible-hike dot. The low-yield outcome the administration wants is being pursued STRUCTURALLY — framework reset, balance-sheet posture, and Treasury issuance — not via near-term cuts. Trade the structure, not the rhetoric.",
-    "zh": "对市场最关键的背离：主流叙事把沃什描绘成特朗普的鸽派工具（沃伦称其“提线木偶”），但他实际的首秀却是鹰派按兵不动、并暗示年内可能加息。政府想要的低收益率结果，是通过“结构性”手段实现的——框架重置、资产负债表姿态、财政部发债结构——而非近期降息。交易结构，而非言辞。"
+    "en": "The market-relevant divergence: the consensus narrative casts Warsh as a dovish Trump instrument (Warren's 'sock puppet'), yet his revealed debut was a hawkish hold with a possible-hike dot. The low-yield outcome the administration wants is being pursued STRUCTURALLY — framework reset, balance-sheet posture, and Treasury issuance — not via near-term cuts. Trade the structure, not the rhetoric. SECOND TELL (6/24): the entire hawkish surface is the SETUP, not the destination — strong-dollar/strict-2% credibility is being BANKED now to spend on a post-midterm 'earned-disinflation' cut, with the dot/guidance deletion ensuring that cut violates no prior and the AI-productivity/look-through doctrine furnishing the technocratic alibi. Bessent's 'you can have a strong dollar when rates are being cut' (volunteered on a ~73% Sept-hike day) is the giveaway. Trade-relevant line: do NOT pay up for terminal-rate-stays-high duration shorts on the hawkish tape alone, and do NOT trust 'debasement is dead' at peak-hawk — own optionality on a dovish/debasement surprise that bases when DXY+2Y+real-yields+hike-odds peak TOGETHER. Gate it on P5; the debasement washout is a positioning flush, not a fundamental refutation (deficits/issuance are unchanged by gold's price).",
+    "zh": "对市场最关键的背离：主流叙事把沃什描绘成特朗普的鸽派工具（沃伦称其“提线木偶”），但他实际的首秀却是鹰派按兵不动、并暗示年内可能加息。政府想要的低收益率结果，是通过“结构性”手段实现的——框架重置、资产负债表姿态、财政部发债结构——而非近期降息。交易结构，而非言辞。第二个破绽（6/24）：整个鹰派表象是铺垫、而非终点——强美元／严格2%的信誉正被“储蓄”起来，以便在中期选举后、以“应得的反通胀”之名启动降息；取消点位／指引确保该次降息不违背任何先前承诺，而AI生产率／“透视性看待”教义则提供技术官僚式的挡箭牌。贝森特那句“降息时也能维持强美元”（在9月加息概率约73%的当天主动抛出）正是泄露。可操作的要点：不要仅凭鹰派盘面就为“终端利率维持高位”的久期空头付高价，也不要在鹰派高峰相信“去货币化已死”——应持有对“鸽派／去货币化意外”的期权，其筑底发生在美元+2年期+实际收益率+加息概率同时见顶之时。以P5为闸门；去货币化的洗盘是仓位踩踏，而非基本面证伪（赤字与发债规模并不因金价而改变）。"
   },
   "fed": {
     "chair": "Kevin Warsh",
@@ -20,274 +20,837 @@
     },
     "task_forces": [
       {
-        "id": "tf_comms", "name_en": "Communications", "name_zh": "沟通",
+        "id": "tf_comms",
+        "name_en": "Communications",
+        "name_zh": "沟通",
         "charter_en": "Review Fed communications, the SEP/dot-plot, transcript release practice, and the press conference; recommendations due ~end-2026; the vote on changes is deferred until it reports.",
         "charter_zh": "审查美联储沟通方式、SEP/点阵图、纪要发布做法及新闻发布会；建议约于2026年底出炉；相关变更的表决推迟至其汇报后。",
         "realpolitik_en": "Institutionalizes killing forward guidance and the dot plot — more chair discretion, less market self-binding.",
         "realpolitik_zh": "将“废除前瞻指引与点阵图”制度化——主席相机抉择空间更大，对市场的自我约束更少。",
-        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "high"
+        "check_by": "2026-12-31",
+        "status": "pending",
+        "basis": "FACT (charter) · INFERENCE (read)",
+        "confidence": "high"
       },
       {
-        "id": "tf_balance", "name_en": "Balance-sheet policy", "name_zh": "资产负债表政策",
+        "id": "tf_balance",
+        "name_en": "Balance-sheet policy",
+        "name_zh": "资产负债表政策",
         "charter_en": "Reconsider the Fed's balance-sheet framework and tools.",
         "charter_zh": "重新审视美联储的资产负债表框架与工具。",
         "realpolitik_en": "Codifies a smaller, less-interventionist balance sheet and the 'bills-from-MBS' reinvestment that conveniently aids Treasury's bill-heavy funding (the Fed/Treasury nexus).",
         "realpolitik_zh": "将“更小、更少干预的资产负债表”及“以MBS回流资金购买短期国库券”的再投资姿态制度化——恰好配合财政部偏短端的融资需求（美联储/财政部联结点）。",
-        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "high"
+        "check_by": "2026-12-31",
+        "status": "pending",
+        "basis": "FACT (charter) · INFERENCE (read)",
+        "confidence": "high"
       },
       {
-        "id": "tf_data", "name_en": "Data sources", "name_zh": "数据来源",
+        "id": "tf_data",
+        "name_en": "Data sources",
+        "name_zh": "数据来源",
         "charter_en": "Review the Fed's use of and reliance on existing data sources.",
         "charter_zh": "审查美联储对现有数据来源的使用与依赖。",
         "realpolitik_en": "Revisits which data the Fed trusts (deemphasizing soft/lagging series), widening interpretive latitude for policy.",
         "realpolitik_zh": "重新界定美联储信任哪些数据（弱化软性/滞后序列），为政策解读拓宽空间。",
-        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "medium"
+        "check_by": "2026-12-31",
+        "status": "pending",
+        "basis": "FACT (charter) · INFERENCE (read)",
+        "confidence": "medium"
       },
       {
-        "id": "tf_productivity", "name_en": "Productivity, jobs & AI", "name_zh": "生产率、就业与AI",
+        "id": "tf_productivity",
+        "name_en": "Productivity, jobs & AI",
+        "name_zh": "生产率、就业与AI",
         "charter_en": "Study productivity and jobs in an era of transformation (AI).",
         "charter_zh": "研究AI变革时代下的生产率与就业。",
         "realpolitik_en": "Builds the intellectual case that AI lifts productivity/potential growth — justification to tolerate stronger demand without hiking. A supply-side narrative aligned with the administration's AI-dominance agenda.",
         "realpolitik_zh": "构建“AI提升生产率/潜在增长”的理论依据——为“容忍更强需求而不加息”背书。这一供给侧叙事与政府的AI主导议程一致。",
-        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "medium"
+        "check_by": "2026-12-31",
+        "status": "pending",
+        "basis": "FACT (charter) · INFERENCE (read)",
+        "confidence": "medium"
       },
       {
-        "id": "tf_inflation", "name_en": "Inflation frameworks", "name_zh": "通胀框架",
+        "id": "tf_inflation",
+        "name_en": "Inflation frameworks",
+        "name_zh": "通胀框架",
         "charter_en": "Re-examine the Fed's inflation frameworks.",
         "charter_zh": "重新检视美联储的通胀框架。",
         "realpolitik_en": "The vehicle to formally bury 2020 FAIT and lock in a strict 2% target — the doctrinal core of the reset.",
         "realpolitik_zh": "正式埋葬2020年FAIT、锁定严格2%目标的载体——本次重置的教义核心。",
-        "check_by": "2026-12-31", "status": "pending", "basis": "FACT (charter) · INFERENCE (read)", "confidence": "high"
+        "check_by": "2026-12-31",
+        "status": "pending",
+        "basis": "FACT (charter) · INFERENCE (read)",
+        "confidence": "high"
       }
     ],
     "staffing_note": {
       "en": "Each task force pairs internal Fed staff with external experts Warsh is 'still recruiting' — NO external members named as of the June 17 debut. First named member is itself a tracked signal.",
       "zh": "每个工作组由美联储内部人员搭配外部专家组成，沃什表示仍在“招募中”——截至6月17日首秀尚无外部成员公布。首位公布的成员本身即是一个被追踪的信号。"
+    },
+    "optionality_read": {
+      "en": "Decode the Warsh redesign as PIVOT INFRASTRUCTURE, not just hawkishness. (1) Deleting the dot plot / forward guidance removes the time-stamped record against which a future political-looking cut could be judged — a sudden post-midterm cut violates no prior, it is just 'the new data' (accountability-deletion as optionality). (2) The inflation-frameworks task force is the machinery to re-specify what '2%' operationally means (index, horizon, tariff look-through) — watch for language splitting 'tariff level-shifts' from 'underlying inflation', the cut permission slip that prices first in breakevens and the belly. (3) The productivity/AI task force furnishes a higher-trend-growth / lower-required-real-rate alibi so ~3.3% core PCE becomes compatible with easing without formally moving the target. One week on, the design has already done the Fed's tightening FOR it: dollar 13-mo high, real 10y +57bp, the AI froth and the debasement trade both flushed — with the policy rate UNCHANGED. ADVERSARY CAVEATS: Warsh's anti-guidance ideology predates any 2026-27 cut calculus and cuts both ways; tariff look-through is orthodox decades-old doctrine; any chair would study AI — only TIMING relative to the pivot window discriminates intent from coincidence.",
+      "zh": "把沃什的重设解读为“转向基础设施”，而非单纯的鹰派。（1）废除点阵图／前瞻指引，等于删除了未来一次“看似政治化”的降息可被对照评判的时间戳记录——中期选举后的一次突然降息不违背任何先前承诺，它只是“新数据”（以删除问责换取灵活性）。（2）通胀框架工作组是重新界定“2%”操作含义（指数、视野、关税透视）的机器——留意把“关税带来的价位跳升”与“潜在通胀”区分开的措辞，那就是降息“许可证”，会率先在盈亏平衡通胀与曲线中段定价。（3）生产率／AI工作组提供“趋势增长更高／所需实际利率更低”的挡箭牌，使约3.3%的核心PCE在不正式移动目标的前提下与宽松“相容”。一周之后，该设计已替美联储完成了紧缩：美元十三个月新高、10年期实际收益率+57bp、AI泡沫与去货币化交易双双被冲洗——而政策利率纹丝未动。对抗性告诫：沃什反指引的理念早于任何2026-27降息盘算、且利弊双向；关税透视本属数十年的正统教义；任何主席都会研究AI——唯有相对转向窗口的“时点”才能把意图与巧合区分开。",
+      "basis": "INFERENCE / PRIOR · adversary-tested",
+      "confidence": "medium"
     }
   },
   "administration": {
-    "decision_makers": ["Donald Trump (President)", "Scott Bessent (Treasury Secretary)", "DOE Sec. Chris Wright (energy/nuclear)"],
-    "decision_makers_zh": ["特朗普（总统）", "贝森特（财政部长）", "能源部长赖特（能源/核能）"],
+    "decision_makers": [
+      "Donald Trump (President)",
+      "Scott Bessent (Treasury Secretary)",
+      "DOE Sec. Chris Wright (energy/nuclear)"
+    ],
+    "decision_makers_zh": [
+      "特朗普（总统）",
+      "贝森特（财政部长）",
+      "能源部长赖特（能源/核能）"
+    ],
     "grand_strategy": {
       "en": "Treasury's revealed strategy under Bessent is yield suppression — 'Making America Affordable Again' — via short-end/bill-heavy funding rather than long-end coupons or deficit elimination, plus market-structure reform to expand dealer capacity to absorb Treasuries (eSLR reform, SEC central-clearing, buyback expansion). The objective Bessent states plainly: keep the risk-free rate low to lower mortgage and car payments. Pair this with concrete industrial policy (chip tariffs, nuclear-for-AI) and the picture is reflation-with-repression: hold real yields down while steering capital into strategic domestic capacity.",
       "zh": "贝森特治下财政部的实际策略是压低收益率——“让美国重新负担得起”——通过偏短端/票据为主的发债（而非增加长端票息或消除赤字），并辅以扩大做市商承接国债能力的市场结构改革（eSLR改革、SEC中央清算、扩大回购）。贝森特直言其目标：压低无风险利率以降低房贷与车贷。再叠加具体的产业政策（芯片关税、为AI供电的核能），整体图景即“带金融抑制的再通胀”：压住实际收益率，同时把资本引向战略性国内产能。"
     },
     "verified_levers": [
       {
+        "id": "lever_dollar_bridge",
+        "title_en": "The 'strong dollar while cutting' bridge (Bessent, 6/24)",
+        "title_zh": "贝森特的“降息中强美元”之桥（6/24）",
+        "detail_en": "On CNBC (6/24) Bessent asserted 'you can have a strong dollar when rates are being cut' (because capital keeps flowing while the economy is strong), said inflation falls back to target now Iran has eased, claimed AI will 'at least double productivity' (Greenspan 1990s), framed inflation as 'services — you don't import services', and praised Warsh's guidance/dot deletion. DECODE: a currency normally weakens when its CB cuts; he squares it by leaning on the non-rate legs (growth differential + Iran haven bid + GENIUS/stablecoin manufactured T-bill demand). 'Strong NOW because of non-rate legs' is defensible; 'strong-dollar-AND-cuts is a durable law' is spin. FACT = the quotes; INFERENCE (high) = he needs DXY firm DURING easing so the front end can ease without an imported-inflation/foreign-selling loop breaking the ~$9.7T FY2026 refi math. Conditional, not structural — it holds only while the manufactured demand AND the Iran scare persist.",
+        "detail_zh": "在CNBC（6/24）上，贝森特断言“降息时也能维持强美元”（因经济强劲时资本持续流入），称伊朗缓和后通胀将回落至目标，宣称AI将“至少使生产率翻倍”（格林斯潘1990年代），把通胀定性为“服务业——服务进口不来”，并称赞沃什取消指引／点位。解码：央行降息时货币通常走弱；他靠倚重非利率支柱（增长差＋伊朗避险买盘＋GENIUS／稳定币人为制造的短债需求）来自圆其说。说“当下因非利率支柱而强”站得住脚；说“强美元与降息是持久定律”则是话术。事实＝那些原话；推断（高）＝他需要美元在宽松期间保持坚挺，使短端得以宽松而不触发“输入性通胀／外资抛售”反馈环、击穿约9.7万亿美元的2026财年再融资数学。有条件、而非结构性——仅在人为需求与伊朗恐慌同时存在时才成立。",
+        "basis": "FACT (quotes) + INFERENCE (read)",
+        "confidence": "medium-high"
+      },
+      {
         "id": "lever_issuance",
-        "title_en": "Bill-heavy issuance ('Bessent put')", "title_zh": "偏短端发债（“贝森特托底”）",
+        "title_en": "Bill-heavy issuance ('Bessent put')",
+        "title_zh": "偏短端发债（“贝森特托底”）",
         "detail_en": "Treasury guided it likely will NOT change coupon auction sizes for several quarters, using T-bills as the issuance 'shock absorber' (SB0314, Nov 2025; held at Feb & May 2026 refundings).",
         "detail_zh": "财政部已指引未来数个季度很可能不调整票息拍卖规模，以短期国库券作为发债的“减震器”（SB0314，2025年11月；并在2026年2月与5月再融资中维持）。",
-        "basis": "FACT", "confidence": "high"
+        "basis": "FACT",
+        "confidence": "high"
       },
       {
         "id": "lever_intermediation",
-        "title_en": "Dealer-intermediation reform", "title_zh": "做市商中介改革",
+        "title_en": "Dealer-intermediation reform",
+        "title_zh": "做市商中介改革",
         "detail_en": "Buyback program expanded (counterparty set widened H1 2026, final amendments Mar 30 2026), eSLR reform supported, SEC central-clearing backed — all to clear dealer balance-sheet capacity to absorb Treasuries.",
         "detail_zh": "扩大回购计划（2026年上半年扩大交易对手范围，3月30日定稿修订）、支持eSLR改革、支持SEC中央清算——皆为释放做市商资产负债表空间以承接国债。",
-        "basis": "FACT", "confidence": "high"
+        "basis": "FACT",
+        "confidence": "high"
       },
       {
         "id": "lever_fed_nexus",
-        "title_en": "De-facto Fed/Treasury funding nexus", "title_zh": "事实上的美联储/财政部融资联结",
+        "title_en": "De-facto Fed/Treasury funding nexus",
+        "title_zh": "事实上的美联储/财政部融资联结",
         "detail_en": "Bessent explicitly cites the FOMC's shift to buying T-bills with MBS-runoff proceeds as a development that aids Treasury's bill-heavy funding. (FACT: the Fed reinvestment. INFERENCE: 'alignment' is the analyst's read.)",
         "detail_zh": "贝森特明确将FOMC“以MBS回流资金购买短期国库券”列为有助于其偏短端融资的进展。（事实：美联储的再投资；推断：“协同”为分析判断。）",
-        "basis": "FACT + INFERENCE", "confidence": "medium-high"
+        "basis": "FACT + INFERENCE",
+        "confidence": "medium-high"
       },
       {
         "id": "lever_chips",
-        "title_en": "25% advanced-chip tariff", "title_zh": "25%先进芯片关税",
+        "title_en": "25% advanced-chip tariff",
+        "title_zh": "25%先进芯片关税",
         "detail_en": "Jan 14 2026 Section 232 25% tariff on certain advanced computing chips, naming NVIDIA H200 & AMD MI325X. NOTE: a reshoring exemption for fab-input chips was REFUTED — do not assume a clean domestic-fab carve-out.",
         "detail_zh": "2026年1月14日依据232条款对部分先进计算芯片征收25%关税，点名英伟达H200与AMD MI325X。注意：所谓“为建厂进口芯片豁免”已被证伪——不要假设存在干净的国内建厂豁免。",
-        "basis": "FACT", "confidence": "high"
+        "basis": "FACT",
+        "confidence": "high"
       },
       {
         "id": "lever_nuclear",
-        "title_en": "Nuclear-for-AI build-out", "title_zh": "为AI供电的核能建设",
+        "title_en": "Nuclear-for-AI build-out",
+        "title_zh": "为AI供电的核能建设",
         "detail_en": "EO 14299 (May 23 2025): quadruple nuclear to 400 GW by 2050; 3 pilot reactors to criticality by Jul 4 2026; ≥20 MT HALEU released for private/AI projects; AI/critical-infra reactor by Oct 2027; DoD reactor. CAVEAT: targets are aspirational and slipping (only 1–2 of 3 pilots may hit Jul 4; Antares Mark-0 reached criticality early June 2026).",
         "detail_zh": "第14299号行政令（2025年5月23日）：到2050年将核电翻两番至400吉瓦；3座试点反应堆于2026年7月4日前达临界；释放≥20公吨HALEU用于私营/AI项目；2027年10月前建成AI/关键基础设施反应堆；国防部反应堆。警告：目标偏理想且在滑期（3座试点或仅1–2座能赶上7月4日；Antares Mark-0已于2026年6月初达临界）。",
-        "basis": "FACT (directive) · CAVEAT (execution slipping)", "confidence": "high"
+        "basis": "FACT (directive) · CAVEAT (execution slipping)",
+        "confidence": "high"
       }
     ],
     "theaters": [
       {
-        "id": "th_china", "title_en": "China — tech war in a negotiated PAUSE", "title_zh": "中国 —— 科技战处于谈判暂停期",
+        "id": "th_china",
+        "title_en": "China — tech war in a negotiated PAUSE",
+        "title_zh": "中国 —— 科技战处于谈判暂停期",
         "facts_en": "Nov 10 2025 US-China deal: fentanyl tariff cut 10pp; the reciprocal-tariff truce extended to Nov 10 2026 (10% stays). China to issue general licenses for rare earths / gallium / germanium / antimony / graphite and suspend its expanded rare-earth controls; both sides suspend post-Mar-2025 retaliation. SEPARATELY structural: USTR Section 301 semiconductor determination (Dec 29 2025; initial 0%, scheduled step-up ~Jun 23 2027) + the Jan 14 2026 25% advanced-chip tariff. CRITICAL RISK: the IEEPA tariff stack (the bulk of the wall) is legally contingent on a pending SCOTUS ruling — courts found overreach; tariffs stay in force pending review.",
         "facts_zh": "2025年11月10日美中协议：芬太尼关税下调10个百分点；对等关税休战延长至2026年11月10日（10%保留）。中国将为稀土/镓/锗/锑/石墨发放一般许可并暂停其扩大的稀土管制；双方暂停2025年3月以来的反制。另有结构性动作：USTR 232/301半导体认定（2025年12月29日，初始0%，约2027年6月23日上调）+ 2026年1月14日25%先进芯片关税。关键风险：IEEPA关税体系（关税墙主体）在法律上取决于最高法院待决裁决——法院已认定越权，裁决前关税仍生效。",
         "realpolitik_en": "Revealed posture is managed DE-RISKING, not decoupling: a tariff truce buys rare-earth supply and calm into 2026 while the structural chip/AI controls (Section 301, export rules) keep tightening. The headline 'trade war' is paused; the tech war is not. Watch the SCOTUS ruling as a binary on the whole tariff edifice.",
         "realpolitik_zh": "真实姿态是“管理式去风险”而非脱钩：关税休战换取稀土供应与2026年的平静，同时结构性芯片/AI管制（301条款、出口规则）持续收紧。头条“贸易战”已暂停，科技战未停。最高法院裁决是整座关税大厦的二元变量。",
         "capital_en": "Two-sided: truce relieves rare-earth/critical-minerals supply (caps a squeeze) yet the de-risking mandate still funds domestic minerals & chip onshoring; a SCOTUS strike-down would unwind the tariff-protection premium.",
         "capital_zh": "两面性：休战缓解稀土/关键矿产供应（抑制逼空），但去风险使命仍为国内矿产与芯片回流提供资金；最高法院推翻关税将瓦解关税保护溢价。",
-        "basis": "FACT (deal/301/tariff) · INFERENCE (read)", "confidence": "high"
+        "basis": "FACT (deal/301/tariff) · INFERENCE (read)",
+        "confidence": "high"
       },
       {
-        "id": "th_iran", "title_en": "Iran / Middle East — fragile ceasefire after a 2026 war", "title_zh": "伊朗/中东 —— 2026年战争后的脆弱停火",
+        "id": "th_iran",
+        "title_en": "Iran / Middle East — fragile ceasefire after a 2026 war",
+        "title_zh": "伊朗/中东 —— 2026年战争后的脆弱停火",
         "facts_en": "A ~6-week 2026 Iran war pushed oil to ~$100/bbl (highest since 2022) as shipping lanes went offline; Apr 8 2026 a Pakistan-mediated conditional ceasefire; by Jun 14 2026 a US-Iran ceasefire with the Strait of Hormuz reopening. Talks (Pakistan-mediated) cover Hormuz navigation, nuclear/missile limits, sanctions. GAP: the US 15-point plan demands Iran END all enrichment; Iran insists on the right to enrich + sanctions lifted — NOT agreed. Deal is unsigned/fragile.",
         "facts_zh": "约6周的2026年伊朗战争一度将油价推升至约100美元/桶（2022年以来最高），航道一度中断；2026年4月8日达成巴基斯坦斡旋的有条件停火；至2026年6月14日美伊停火、霍尔木兹海峡重开。谈判（巴方斡旋）涵盖霍尔木兹通航、核/导弹限制、制裁。分歧：美方15点方案要求伊朗停止一切浓缩；伊朗坚持浓缩权+解除制裁——尚未达成。协议未签、脆弱。",
         "realpolitik_en": "The administration optimizes for cheap oil + deterrence + a deal it can brand. Hormuz reopening = a deliberate disinflation lever (helps the Fed/Treasury low-yield agenda). But the enrichment gap means re-escalation risk is live; the oil-down trade is policy-contingent, not structural.",
         "realpolitik_zh": "政府的优化目标是低油价+威慑+可宣传的协议。霍尔木兹重开是有意的反通胀杠杆（助力美联储/财政部的低收益率议程）。但浓缩分歧意味着再升级风险仍在；油价下行交易取决于政策，而非结构性。",
         "capital_en": "Oil two-sided around headlines (re-escalation = spike; durable deal = fade). Energy was the TOP ETF-inflow sector in Q1 2026 (first in years) on the conflict — the rotation is real but headline-fragile. Defense bid persists regardless.",
         "capital_zh": "油价随头条两面波动（再升级=飙升；持久协议=回落）。2026年一季度能源是ETF净流入最多的板块（多年来首次），但该轮动易受头条左右。无论如何国防仍获买盘。",
-        "basis": "FACT (conflict/ceasefire/oil) · INFERENCE (read)", "confidence": "medium-high"
+        "basis": "FACT (conflict/ceasefire/oil) · INFERENCE (read)",
+        "confidence": "medium-high"
       },
       {
-        "id": "th_nato", "title_en": "NATO / Defense — a structural spending super-cycle", "title_zh": "北约/国防 —— 结构性开支超级周期",
+        "id": "th_nato",
+        "title_en": "NATO / Defense — a structural spending super-cycle",
+        "title_zh": "北约/国防 —— 结构性开支超级周期",
         "facts_en": "NATO Hague Summit (Jun 2025): allies committed to 5% of GDP by 2035 (3.5% core + 1.5% related). US FY2027 defense request = $1.5T ($1.15T discretionary + $350B reconciliation) = +24% real vs FY2026 discretionary, +38% incl. reconciliation. FY2026 DoD appropriation $839.2B (signed Feb 3 2026). FY2025 reconciliation added $152.3B DoD (5-yr availability). Priorities: shipbuilding, Golden Dome / missile defense, munitions, drones.",
         "facts_zh": "北约海牙峰会（2025年6月）：盟国承诺2035年前国防开支达GDP的5%（3.5%核心+1.5%相关）。美国FY2027国防申请=1.5万亿美元（1.15万亿可自由支配+0.35万亿对账拨款）=较FY2026实际增长24%，含对账增长38%。FY2026国防部拨款8392亿（2026年2月3日签署）。FY2025对账法新增国防部1523亿（5年可用）。优先：造船、金穹/导弹防御、弹药、无人机。",
         "realpolitik_en": "This is the most durable, least-headline-fragile rotation in the whole map — multi-year, bipartisan, treaty-locked (2035), and funded through both appropriations AND reconciliation. Revealed intent: re-industrialize the defense base + force allied procurement of US primes.",
         "realpolitik_zh": "这是整张地图中最持久、最不受头条左右的轮动——多年、两党、条约锁定（2035）、且通过常规拨款与对账双渠道融资。真实意图：重建国防工业基础+迫使盟国采购美国军工巨头。",
         "capital_en": "Targeted/high-confidence: defense primes + shipbuilding + missile-defense/Golden Dome + munitions + drones. Proxies ITA, XAR, PPA, SHLD.",
         "capital_zh": "受益/高置信：军工巨头+造船+导弹防御/金穹+弹药+无人机。代理 ITA、XAR、PPA、SHLD。",
-        "basis": "FACT (budget/NATO) · INFERENCE (read)", "confidence": "high"
+        "basis": "FACT (budget/NATO) · INFERENCE (read)",
+        "confidence": "high"
       },
       {
-        "id": "th_dollar", "title_en": "Dollar / debt — real policy vs the 'Mar-a-Lago' theory", "title_zh": "美元/债务 —— 真实政策 vs “海湖庄园”理论",
+        "id": "th_dollar",
+        "title_en": "Dollar / debt — real policy vs the 'Mar-a-Lago' theory",
+        "title_zh": "美元/债务 —— 真实政策 vs “海湖庄园”理论",
         "facts_en": "REAL, enacted: the GENIUS Act — Treasury (Bessent) explicitly frames stablecoins as driving 'a surge in demand for US Treasuries' and 'dollar supremacy' (a funding channel for the debt). THEORY, not policy: the 'Mar-a-Lago Accord' (a 'dominant-but-weaker' dollar via coordinated CB intervention — foreign CBs swap into 50-100yr low-coupon bonds; IEEPA 'user fee' on foreign Treasury holdings; gold revaluation). CORRECTIONS: Stephen Miran AUTHORED the framework as FORMER CEA chair — he is NOT on the Fed Board and is NOT the current CEA chair (both widely-circulated claims are FALSE).",
         "facts_zh": "真实、已立法：GENIUS法案——财政部（贝森特）明确将稳定币定位为推动“美债需求激增”与“美元至上”（一条债务融资渠道）。理论、非政策：“海湖庄园协议”（通过协同央行干预实现“强势但偏弱”的美元——外国央行换入50-100年低息债券；依IEEPA对外国持有美债征“使用费”；黄金重估）。更正：斯蒂芬·米兰以“前”CEA主席身份提出该框架——他并不在美联储理事会、也不是现任CEA主席（两种流传说法均为假）。",
         "realpolitik_en": "The enacted lever is the GENIUS/stablecoin → T-bill demand channel (reinforces the Bessent bill-heavy, low-yield agenda). The Mar-a-Lago dollar-devaluation is a SCENARIO to monitor, not a base case — don't trade it as policy. The honest read: financial repression is happening via issuance + stablecoin demand, not (yet) via overt currency realignment.",
         "realpolitik_zh": "已落地的杠杆是GENIUS/稳定币→短债需求渠道（强化贝森特偏短端、低收益率议程）。海湖庄园式美元贬值是需监测的“情景”，而非基准——不要把它当政策来交易。诚实解读：金融抑制正通过发债结构+稳定币需求发生，而非（目前）通过公开的货币重整。",
         "capital_en": "Reinforces front-end Treasuries + the low-real-yield regime; stablecoin issuers/rails a structural T-bill bid. A genuine Mar-a-Lago turn (low odds) would be dollar-bearish / gold-bullish — a tail to watch, not own.",
         "capital_zh": "强化短端美债+低实际收益率体制；稳定币发行方/通道形成结构性短债买盘。真正的海湖庄园转向（概率低）将利空美元/利多黄金——属待观察尾部，而非持仓。",
-        "basis": "FACT (GENIUS) · THEORY (Mar-a-Lago) · CORRECTED (Miran role)", "confidence": "high (GENIUS) / low (accord)"
+        "basis": "FACT (GENIUS) · THEORY (Mar-a-Lago) · CORRECTED (Miran role)",
+        "confidence": "high (GENIUS) / low (accord)"
       }
     ]
   },
   "rotation": {
     "targeted": [
-      {"theme_en": "Nuclear · uranium · HALEU/fuel cycle", "theme_zh": "核能·铀·HALEU燃料循环",
-       "mechanism_en": "EO 14299 quadruple-to-400GW; HALEU released for AI; DoD/pilot reactors", "mechanism_zh": "第14299号行政令翻两番至400吉瓦；为AI释放HALEU；国防部/试点反应堆",
-       "proxies": ["URA", "URNM", "NLR", "SMR", "OKLO", "CCJ", "LEU"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
-      {"theme_en": "Power · grid · datacenter capex (AI compute)", "theme_zh": "电力·电网·数据中心资本开支（AI算力）",
-       "mechanism_en": "AI build-out + nuclear-for-AI demand on the grid", "mechanism_zh": "AI建设 + 为AI供电对电网的需求",
-       "proxies": ["GEV", "VST", "CEG", "ETN", "PWR", "GRID"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
-      {"theme_en": "Domestic semiconductors / fabs", "theme_zh": "国内半导体/晶圆厂",
-       "mechanism_en": "25% Section-232 chip tariff pressures import channels (no verified fab-input exemption)", "mechanism_zh": "25%的232条款芯片关税挤压进口渠道（无已核实的建厂进口豁免）",
-       "proxies": ["SMH", "SOXX"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "medium-high"},
-      {"theme_en": "Financials / dealer banks", "theme_zh": "金融/做市商银行",
-       "mechanism_en": "eSLR reform + central-clearing + buyback expansion ease bank Treasury intermediation", "mechanism_zh": "eSLR改革+中央清算+扩大回购，缓解银行承接国债的约束",
-       "proxies": ["XLF", "KBE"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
-      {"theme_en": "Front-end Treasuries", "theme_zh": "短端美债",
-       "mechanism_en": "Bill-heavy issuance + yield suppression + Fed bills-from-MBS", "mechanism_zh": "偏短端发债+压低收益率+美联储以MBS资金购买短债",
-       "proxies": ["BIL", "SHV"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
-      {"theme_en": "Defense · shipbuilding · missile defense", "theme_zh": "国防·造船·导弹防御",
-       "mechanism_en": "NATO 5%-of-GDP-by-2035 (3.5%+1.5%) + US FY2027 $1.5T defense request (+38% real incl. reconciliation); shipbuilding / Golden Dome / munitions / drones prioritized", "mechanism_zh": "北约2035年GDP的5%（3.5%+1.5%）+ 美国FY2027 1.5万亿国防申请（含对账实际增长38%）；优先造船/金穹/弹药/无人机",
-       "proxies": ["ITA", "XAR", "PPA", "SHLD"], "basis": "FACT mechanism · INFERENCE proxies", "confidence": "high"},
-      {"theme_en": "Energy (oil & gas)", "theme_zh": "能源（油气）",
-       "mechanism_en": "2026 Iran war drove oil ~$100 & made Energy the top ETF-inflow sector (Q1 2026); two-sided around the fragile Hormuz ceasefire", "mechanism_zh": "2026年伊朗战争推升油价约100美元，使能源成为一季度ETF净流入最多板块；围绕脆弱的霍尔木兹停火两面波动",
-       "proxies": ["XLE", "XOP"], "basis": "FACT mechanism (headline-fragile)", "confidence": "medium"},
-      {"theme_en": "Critical minerals / rare earths", "theme_zh": "关键矿产/稀土",
-       "mechanism_en": "De-risking funds domestic minerals — BUT the Nov-2025 China truce restores rare-earth/gallium/germanium licenses, capping the squeeze (two-sided)", "mechanism_zh": "去风险为国内矿产提供资金——但2025年11月中国休战恢复稀土/镓/锗许可，抑制逼空（两面性）",
-       "proxies": ["REMX", "MP"], "basis": "FACT mechanism (truce caveat)", "confidence": "medium"}
+      {
+        "theme_en": "Nuclear · uranium · HALEU/fuel cycle",
+        "theme_zh": "核能·铀·HALEU燃料循环",
+        "mechanism_en": "EO 14299 quadruple-to-400GW; HALEU released for AI; DoD/pilot reactors",
+        "mechanism_zh": "第14299号行政令翻两番至400吉瓦；为AI释放HALEU；国防部/试点反应堆",
+        "proxies": [
+          "URA",
+          "URNM",
+          "NLR",
+          "SMR",
+          "OKLO",
+          "CCJ",
+          "LEU"
+        ],
+        "basis": "FACT mechanism · INFERENCE proxies",
+        "confidence": "high"
+      },
+      {
+        "theme_en": "Power · grid · datacenter capex (AI compute)",
+        "theme_zh": "电力·电网·数据中心资本开支（AI算力）",
+        "mechanism_en": "AI build-out + nuclear-for-AI demand on the grid",
+        "mechanism_zh": "AI建设 + 为AI供电对电网的需求",
+        "proxies": [
+          "GEV",
+          "VST",
+          "CEG",
+          "ETN",
+          "PWR",
+          "GRID"
+        ],
+        "basis": "FACT mechanism · INFERENCE proxies",
+        "confidence": "high"
+      },
+      {
+        "theme_en": "Domestic semiconductors / fabs",
+        "theme_zh": "国内半导体/晶圆厂",
+        "mechanism_en": "25% Section-232 chip tariff pressures import channels (no verified fab-input exemption)",
+        "mechanism_zh": "25%的232条款芯片关税挤压进口渠道（无已核实的建厂进口豁免）",
+        "proxies": [
+          "SMH",
+          "SOXX"
+        ],
+        "basis": "FACT mechanism · INFERENCE proxies",
+        "confidence": "medium-high"
+      },
+      {
+        "theme_en": "Financials / dealer banks",
+        "theme_zh": "金融/做市商银行",
+        "mechanism_en": "eSLR reform + central-clearing + buyback expansion ease bank Treasury intermediation",
+        "mechanism_zh": "eSLR改革+中央清算+扩大回购，缓解银行承接国债的约束",
+        "proxies": [
+          "XLF",
+          "KBE"
+        ],
+        "basis": "FACT mechanism · INFERENCE proxies",
+        "confidence": "high"
+      },
+      {
+        "theme_en": "Front-end Treasuries",
+        "theme_zh": "短端美债",
+        "mechanism_en": "Bill-heavy issuance + yield suppression + Fed bills-from-MBS + GENIUS/stablecoin captive bid. CAVEAT (6/24): the duration-transfer cuts both ways — a shorter WAM means a larger share reprices each quarter, so a Sept HIKE (~73% odds) reprices the bill stock UP fast (the program's own backfire condition).",
+        "mechanism_zh": "偏短端发债+压低收益率+美联储以MBS资金购买短债+GENIUS／稳定币被动买盘。告诫（6/24）：久期转移是双刃剑——加权久期更短意味着每季度重定价的占比更大，因此一次9月加息（概率约73%）会让短债存量迅速向上重定价（该计划自身的反噬条件）。",
+        "proxies": [
+          "BIL",
+          "SHV"
+        ],
+        "basis": "FACT mechanism · INFERENCE proxies",
+        "confidence": "high"
+      },
+      {
+        "theme_en": "Defense · shipbuilding · missile defense",
+        "theme_zh": "国防·造船·导弹防御",
+        "mechanism_en": "NATO 5%-of-GDP-by-2035 (3.5%+1.5%) + US FY2027 $1.5T defense request (+38% real incl. reconciliation); shipbuilding / Golden Dome / munitions / drones prioritized",
+        "mechanism_zh": "北约2035年GDP的5%（3.5%+1.5%）+ 美国FY2027 1.5万亿国防申请（含对账实际增长38%）；优先造船/金穹/弹药/无人机",
+        "proxies": [
+          "ITA",
+          "XAR",
+          "PPA",
+          "SHLD"
+        ],
+        "basis": "FACT mechanism · INFERENCE proxies",
+        "confidence": "high"
+      },
+      {
+        "theme_en": "Energy (oil & gas)",
+        "theme_zh": "能源（油气）",
+        "mechanism_en": "2026 Iran war drove oil ~$100 & made Energy the top ETF-inflow sector (Q1 2026); two-sided around the fragile Hormuz ceasefire",
+        "mechanism_zh": "2026年伊朗战争推升油价约100美元，使能源成为一季度ETF净流入最多板块；围绕脆弱的霍尔木兹停火两面波动",
+        "proxies": [
+          "XLE",
+          "XOP"
+        ],
+        "basis": "FACT mechanism (headline-fragile)",
+        "confidence": "medium"
+      },
+      {
+        "theme_en": "Critical minerals / rare earths",
+        "theme_zh": "关键矿产/稀土",
+        "mechanism_en": "De-risking funds domestic minerals — BUT the Nov-2025 China truce restores rare-earth/gallium/germanium licenses, capping the squeeze (two-sided)",
+        "mechanism_zh": "去风险为国内矿产提供资金——但2025年11月中国休战恢复稀土/镓/锗许可，抑制逼空（两面性）",
+        "proxies": [
+          "REMX",
+          "MP"
+        ],
+        "basis": "FACT mechanism (truce caveat)",
+        "confidence": "medium"
+      }
     ],
     "starved": [
-      {"theme_en": "Import-dependent advanced-chip channels", "theme_zh": "依赖进口的先进芯片渠道",
-       "mechanism_en": "25% tariff raises cost of imported compute (H200/MI325X named)", "mechanism_zh": "25%关税抬高进口算力成本（点名H200/MI325X）",
-       "proxies": [], "basis": "FACT mechanism", "confidence": "high"},
-      {"theme_en": "Long-duration / term-premium-sensitive", "theme_zh": "长久期/对期限溢价敏感",
-       "mechanism_en": "Assets that 'fight the Bessent put' if yield suppression holds (policy-contested, not a clean short)", "mechanism_zh": "若压低收益率持续，与“贝森特托底”对抗的资产（政策博弈中，并非干净的做空）",
-       "proxies": ["TLT"], "basis": "INFERENCE / PRIOR", "confidence": "low-medium"},
-      {"theme_en": "Old transparent-guidance rates-vol strategies", "theme_zh": "依赖透明指引的利率波动率策略",
-       "mechanism_en": "A less-predictable communications regime raises event-vol around a guidance-free Fed", "mechanism_zh": "更不可预测的沟通体制抬高了“无指引美联储”前后的事件性波动",
-       "proxies": [], "basis": "INFERENCE", "confidence": "medium"}
+      {
+        "theme_en": "Debasement / hard-money trade (gold · silver · BTC) — bottoming watch",
+        "theme_zh": "去货币化／硬通货交易（金·银·比特币）—— 筑底观察",
+        "mechanism_en": "Pressured NOW by the hawkish tape (real 10y 2.29, DXY 13-mo high) — gold<$4,000, silver ~-18%, BTC -50% from Oct ATH. But the ~57bp real-yield move is too small to explain the full synchronized drawdown: the residual is a positioning flush, and a falling gold price is the best rhetoric against the debasement thesis (so states won't lean against it — passive alignment, ~10% engineered). BOTTOMS when DXY+2Y+DFII10+hike-odds peak TOGETHER while core inflation is still ugly (months before the first cut); gold bases first, silver/BTC (higher beta) follow. 'Debasement is dead' at peak-hawk = contrarian tell, not a fundamental update (deficits/issuance unchanged by gold's price).",
+        "mechanism_zh": "当下被鹰派盘面压制（10年期实际收益率2.29、DXY十三个月新高）——黄金跌破4000、白银约-18%、比特币较10月高点-50%。但约57bp的实际收益率变动不足以解释全部同步回撤：残差是仓位踩踏，而下行金价是对抗去货币化叙事最好的修辞（故当局不出手托底——被动一致、约10%人为）。其筑底发生在美元+2年期+DFII10+加息概率同时见顶、而核心通胀仍难看之时（早于首次降息数月）；黄金最先筑底，白银／比特币（更高贝塔）随后。鹰派高峰的“去货币化已死”＝反向破绽，而非基本面更新（赤字／发债不因金价而变）。",
+        "proxies": [
+          "GLD",
+          "SLV",
+          "IBIT"
+        ],
+        "basis": "INFERENCE (positioning + bottoming trigger)",
+        "confidence": "low"
+      },
+      {
+        "theme_en": "Import-dependent advanced-chip channels",
+        "theme_zh": "依赖进口的先进芯片渠道",
+        "mechanism_en": "25% tariff raises cost of imported compute (H200/MI325X named)",
+        "mechanism_zh": "25%关税抬高进口算力成本（点名H200/MI325X）",
+        "proxies": [],
+        "basis": "FACT mechanism",
+        "confidence": "high"
+      },
+      {
+        "theme_en": "Long-duration / term-premium-sensitive",
+        "theme_zh": "长久期/对期限溢价敏感",
+        "mechanism_en": "Assets that 'fight the Bessent put' if yield suppression holds (policy-contested, not a clean short)",
+        "mechanism_zh": "若压低收益率持续，与“贝森特托底”对抗的资产（政策博弈中，并非干净的做空）",
+        "proxies": [
+          "TLT"
+        ],
+        "basis": "INFERENCE / PRIOR",
+        "confidence": "low-medium"
+      },
+      {
+        "theme_en": "Old transparent-guidance rates-vol strategies",
+        "theme_zh": "依赖透明指引的利率波动率策略",
+        "mechanism_en": "A less-predictable communications regime raises event-vol around a guidance-free Fed",
+        "mechanism_zh": "更不可预测的沟通体制抬高了“无指引美联储”前后的事件性波动",
+        "proxies": [],
+        "basis": "INFERENCE",
+        "confidence": "medium"
+      }
     ]
   },
   "predictions": [
-    {"id": "P1", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Fed releases a revised SEP/communications framework (new dot-plot format, or formal discontinuation, or transcript/presser changes).",
-     "text_zh": "美联储发布修订后的SEP/沟通框架（点阵图改版、正式停用、或纪要/发布会变更）。"},
-    {"id": "P2", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Inflation-frameworks task force formally recommends abandoning 2020 FAIT for a strict 2% target.",
-     "text_zh": "通胀框架工作组正式建议放弃2020年FAIT、回归严格2%目标。"},
-    {"id": "P3", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-09-30", "status": "open",
-     "text_en": "Warsh keeps withholding his own dot OR the dot plot is suspended over the next 2–3 meetings.",
-     "text_zh": "未来2–3次会议中，沃什继续不提交自己的点位，或点阵图被暂停。"},
-    {"id": "P4", "thread": "fed", "tier": "policy-action", "confidence": "medium", "check_by": "2026-09-30", "status": "open",
-     "text_en": "At least one named external task-force expert is announced.",
-     "text_zh": "至少公布一位具名的外部工作组专家。"},
-    {"id": "P5", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-09-30", "status": "open",
-     "text_en": "The Fed does NOT cut at the July and September 2026 meetings (hold or hike). Falsified by any 2026 cut ahead of the median path.",
-     "text_zh": "美联储在2026年7月与9月会议上不降息（按兵或加息）。若年内先于中值路径降息则证伪。"},
-    {"id": "P6", "thread": "treasury", "tier": "policy-action", "confidence": "high", "check_by": "2026-08-31", "status": "open",
-     "text_en": "No coupon auction-size INCREASE at the Aug 2026 refunding (bills stay the shock absorber). Falsified by any coupon-size hike.",
-     "text_zh": "2026年8月再融资不上调票息拍卖规模（短债仍为减震器）。若上调票息规模则证伪。"},
-    {"id": "P7", "thread": "treasury", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Treasury keeps publicly framing policy as keeping the risk-free rate low / affordability.",
-     "text_zh": "财政部继续公开将政策表述为压低无风险利率/可负担性。"},
-    {"id": "P8", "thread": "treasury", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Concrete eSLR-reform progress (a proposed or final rule from a banking regulator).",
-     "text_zh": "eSLR改革取得具体进展（银行监管机构出台拟议或最终规则）。"},
-    {"id": "P9", "thread": "treasury", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "SEC advances Treasury central-clearing expansion (a rule or compliance milestone).",
-     "text_zh": "SEC推进国债中央清算扩容（规则或合规里程碑）。"},
-    {"id": "P10", "thread": "fed", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
-     "text_en": "The Fed keeps reinvesting MBS runoff into T-bills through 2026.",
-     "text_zh": "美联储在2026年内持续将MBS回流资金再投资于短期国库券。"},
-    {"id": "P11", "thread": "policy", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
-     "text_en": "The 25% advanced-chip tariff stays in force (not rescinded) and/or the covered list expands.",
-     "text_zh": "25%先进芯片关税继续生效（未被撤销）且/或覆盖清单扩大。"},
-    {"id": "P12", "thread": "policy", "tier": "policy-action", "confidence": "medium", "check_by": "2026-07-04", "status": "open",
-     "text_en": "At least one of the three pilot reactors reaches criticality (partial-pass already likely — Antares Mark-0, early June 2026).",
-     "text_zh": "三座试点反应堆中至少一座达临界（已可能部分达成——Antares Mark-0，2026年6月初）。"},
-    {"id": "P13", "thread": "policy", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "DOE releases ≥20 MT HALEU into the fuel bank for private/AI projects.",
-     "text_zh": "美国能源部向燃料库释放≥20公吨HALEU用于私营/AI项目。"},
-    {"id": "P14", "thread": "policy", "tier": "policy-action", "confidence": "low", "check_by": "2027-10-31", "status": "open",
-     "text_en": "The AI/critical-infrastructure reactor program shows a contracted/sited project.",
-     "text_zh": "AI/关键基础设施反应堆计划出现已签约/选址的项目。"},
-    {"id": "P15", "thread": "rotation", "tier": "market-outcome", "confidence": "low", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Nuclear/uranium proxies (URA/URNM/SMR/OKLO/CCJ) outperform the S&P 500 over the next 2 quarters. Falsified by sustained underperformance.",
-     "text_zh": "核能/铀代理（URA/URNM/SMR/OKLO/CCJ）未来两个季度跑赢标普500。若持续跑输则证伪。"},
-    {"id": "P16", "thread": "rotation", "tier": "market-outcome", "confidence": "medium", "check_by": "2026-08-31", "status": "open",
-     "text_en": "Front-end Treasury demand stays robust (bill auctions well-covered, no forced coupon shift).",
-     "text_zh": "短端美债需求保持强劲（票据拍卖认购充分，未被迫调整票息）。"},
-    {"id": "P17", "thread": "rotation", "tier": "market-outcome", "confidence": "low", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Financials/dealer-bank proxies (XLF) benefit on eSLR-reform headlines.",
-     "text_zh": "金融/做市商银行代理（XLF）受益于eSLR改革相关消息。"},
-    {"id": "P18", "thread": "rotation", "tier": "market-outcome", "confidence": "low", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Long-duration Treasuries (TLT) do NOT sustain a term-premium blowout that overrides the suppression campaign in H2 2026. Falsified by a disorderly long-end selloff.",
-     "text_zh": "长久期美债（TLT）在2026下半年不出现压过压制行动的期限溢价飙升。若长端无序抛售则证伪。"},
-    {"id": "P19", "thread": "china", "tier": "policy-action", "confidence": "medium", "check_by": "2026-11-10", "status": "open",
-     "text_en": "The US-China reciprocal-tariff truce holds (no return above the 10% reciprocal rate) through its Nov 10 2026 expiry.",
-     "text_zh": "美中对等关税休战维持（不回升至10%以上），直至2026年11月10日到期。"},
-    {"id": "P20", "thread": "china", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "If SCOTUS strikes the IEEPA tariff authority, the administration re-imposes equivalent protection via Section 232/301 (the tariff wall is not dismantled).",
-     "text_zh": "若最高法院推翻IEEPA关税权限，政府将通过232/301条款重新施加等效保护（关税墙不被拆除）。"},
-    {"id": "P21", "thread": "china", "tier": "policy-action", "confidence": "medium", "check_by": "2027-06-30", "status": "open",
-     "text_en": "The Section 301 semiconductor tariff steps up above 0% on/around its scheduled ~Jun 23 2027 date.",
-     "text_zh": "301条款半导体关税在约2027年6月23日的预定日期前后上调至0%以上。"},
-    {"id": "P22", "thread": "iran", "tier": "policy-action", "confidence": "medium", "check_by": "2026-09-30", "status": "open",
-     "text_en": "The US-Iran ceasefire holds with no full re-closure of the Strait of Hormuz through Q3 2026.",
-     "text_zh": "美伊停火维持，2026年三季度前霍尔木兹海峡未再全面关闭。"},
-    {"id": "P23", "thread": "iran", "tier": "policy-action", "confidence": "medium", "check_by": "2026-09-30", "status": "open",
-     "text_en": "No signed comprehensive US-Iran nuclear deal by Q3 2026 (the enrichment gap persists).",
-     "text_zh": "2026年三季度前未签署全面的美伊核协议（浓缩分歧仍在）。"},
-    {"id": "P24", "thread": "nato", "tier": "policy-action", "confidence": "high", "check_by": "2027-03-31", "status": "open",
-     "text_en": "Enacted US FY2027 defense topline lands as a real increase over FY2026 (toward the $1.5T request).",
-     "text_zh": "已通过的美国FY2027国防总额较FY2026实际增长（趋向1.5万亿申请）。"},
-    {"id": "P25", "thread": "nato", "tier": "policy-action", "confidence": "high", "check_by": "2026-12-31", "status": "open",
-     "text_en": "No rollback of the NATO Hague 5%-by-2035 pledge; aggregate allied defense spending keeps rising.",
-     "text_zh": "北约海牙“2035年5%”承诺未被推翻；盟国国防开支总额持续上升。"},
-    {"id": "P26", "thread": "rotation", "tier": "market-outcome", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Defense proxies (ITA/XAR/PPA/SHLD) outperform the S&P 500 over the next 2 quarters.",
-     "text_zh": "国防代理（ITA/XAR/PPA/SHLD）未来两个季度跑赢标普500。"},
-    {"id": "P27", "thread": "dollar", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "Stablecoin reserves' Treasury holdings rise materially in 2026 (the GENIUS-Act funding channel operates as Treasury frames it).",
-     "text_zh": "2026年稳定币储备所持美债显著上升（GENIUS法案融资渠道如财政部所述运作）。"},
-    {"id": "P28", "thread": "dollar", "tier": "policy-action", "confidence": "medium", "check_by": "2026-12-31", "status": "open",
-     "text_en": "NO enacted 'Mar-a-Lago Accord' action (IEEPA user-fee on foreign Treasuries or coordinated dollar devaluation) by year-end — it stays theory.",
-     "text_zh": "年底前未出台任何“海湖庄园协议”行动（对外国持有美债征IEEPA使用费或协同美元贬值）——仍停留于理论。"},
-    {"id": "P29", "thread": "iran", "tier": "market-outcome", "confidence": "medium", "check_by": "2026-09-30", "status": "open",
-     "text_en": "Oil does NOT sustain >$100/bbl absent a Hormuz re-closure (the ceasefire holds as a disinflation lever).",
-     "text_zh": "在霍尔木兹未再关闭的情况下，油价不持续高于100美元/桶（停火作为反通胀杠杆维持）。"}
+    {
+      "id": "P1",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Fed releases a revised SEP/communications framework (new dot-plot format, or formal discontinuation, or transcript/presser changes).",
+      "text_zh": "美联储发布修订后的SEP/沟通框架（点阵图改版、正式停用、或纪要/发布会变更）。"
+    },
+    {
+      "id": "P2",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Inflation-frameworks task force formally recommends abandoning 2020 FAIT for a strict 2% target.",
+      "text_zh": "通胀框架工作组正式建议放弃2020年FAIT、回归严格2%目标。"
+    },
+    {
+      "id": "P3",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-09-30",
+      "status": "open",
+      "text_en": "Warsh keeps withholding his own dot OR the dot plot is suspended over the next 2–3 meetings.",
+      "text_zh": "未来2–3次会议中，沃什继续不提交自己的点位，或点阵图被暂停。"
+    },
+    {
+      "id": "P4",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-09-30",
+      "status": "open",
+      "text_en": "At least one named external task-force expert is announced.",
+      "text_zh": "至少公布一位具名的外部工作组专家。"
+    },
+    {
+      "id": "P5",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-09-30",
+      "status": "open",
+      "text_en": "The Fed does NOT cut at the July and September 2026 meetings (hold or hike). Falsified by any 2026 cut ahead of the median path.",
+      "text_zh": "美联储在2026年7月与9月会议上不降息（按兵或加息）。若年内先于中值路径降息则证伪。"
+    },
+    {
+      "id": "P6",
+      "thread": "treasury",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-08-31",
+      "status": "open",
+      "text_en": "No coupon auction-size INCREASE at the Aug 2026 refunding (bills stay the shock absorber). Falsified by any coupon-size hike.",
+      "text_zh": "2026年8月再融资不上调票息拍卖规模（短债仍为减震器）。若上调票息规模则证伪。"
+    },
+    {
+      "id": "P7",
+      "thread": "treasury",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Treasury keeps publicly framing policy as keeping the risk-free rate low / affordability.",
+      "text_zh": "财政部继续公开将政策表述为压低无风险利率/可负担性。"
+    },
+    {
+      "id": "P8",
+      "thread": "treasury",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Concrete eSLR-reform progress (a proposed or final rule from a banking regulator).",
+      "text_zh": "eSLR改革取得具体进展（银行监管机构出台拟议或最终规则）。"
+    },
+    {
+      "id": "P9",
+      "thread": "treasury",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "SEC advances Treasury central-clearing expansion (a rule or compliance milestone).",
+      "text_zh": "SEC推进国债中央清算扩容（规则或合规里程碑）。"
+    },
+    {
+      "id": "P10",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "The Fed keeps reinvesting MBS runoff into T-bills through 2026.",
+      "text_zh": "美联储在2026年内持续将MBS回流资金再投资于短期国库券。"
+    },
+    {
+      "id": "P11",
+      "thread": "policy",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "The 25% advanced-chip tariff stays in force (not rescinded) and/or the covered list expands.",
+      "text_zh": "25%先进芯片关税继续生效（未被撤销）且/或覆盖清单扩大。"
+    },
+    {
+      "id": "P12",
+      "thread": "policy",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-07-04",
+      "status": "open",
+      "text_en": "At least one of the three pilot reactors reaches criticality (partial-pass already likely — Antares Mark-0, early June 2026).",
+      "text_zh": "三座试点反应堆中至少一座达临界（已可能部分达成——Antares Mark-0，2026年6月初）。"
+    },
+    {
+      "id": "P13",
+      "thread": "policy",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "DOE releases ≥20 MT HALEU into the fuel bank for private/AI projects.",
+      "text_zh": "美国能源部向燃料库释放≥20公吨HALEU用于私营/AI项目。"
+    },
+    {
+      "id": "P14",
+      "thread": "policy",
+      "tier": "policy-action",
+      "confidence": "low",
+      "check_by": "2027-10-31",
+      "status": "open",
+      "text_en": "The AI/critical-infrastructure reactor program shows a contracted/sited project.",
+      "text_zh": "AI/关键基础设施反应堆计划出现已签约/选址的项目。"
+    },
+    {
+      "id": "P15",
+      "thread": "rotation",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Nuclear/uranium proxies (URA/URNM/SMR/OKLO/CCJ) outperform the S&P 500 over the next 2 quarters. Falsified by sustained underperformance.",
+      "text_zh": "核能/铀代理（URA/URNM/SMR/OKLO/CCJ）未来两个季度跑赢标普500。若持续跑输则证伪。"
+    },
+    {
+      "id": "P16",
+      "thread": "rotation",
+      "tier": "market-outcome",
+      "confidence": "medium",
+      "check_by": "2026-08-31",
+      "status": "open",
+      "text_en": "Front-end Treasury demand stays robust (bill auctions well-covered, no forced coupon shift).",
+      "text_zh": "短端美债需求保持强劲（票据拍卖认购充分，未被迫调整票息）。"
+    },
+    {
+      "id": "P17",
+      "thread": "rotation",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Financials/dealer-bank proxies (XLF) benefit on eSLR-reform headlines.",
+      "text_zh": "金融/做市商银行代理（XLF）受益于eSLR改革相关消息。"
+    },
+    {
+      "id": "P18",
+      "thread": "rotation",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Long-duration Treasuries (TLT) do NOT sustain a term-premium blowout that overrides the suppression campaign in H2 2026. Falsified by a disorderly long-end selloff.",
+      "text_zh": "长久期美债（TLT）在2026下半年不出现压过压制行动的期限溢价飙升。若长端无序抛售则证伪。"
+    },
+    {
+      "id": "P19",
+      "thread": "china",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-11-10",
+      "status": "open",
+      "text_en": "The US-China reciprocal-tariff truce holds (no return above the 10% reciprocal rate) through its Nov 10 2026 expiry.",
+      "text_zh": "美中对等关税休战维持（不回升至10%以上），直至2026年11月10日到期。"
+    },
+    {
+      "id": "P20",
+      "thread": "china",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "If SCOTUS strikes the IEEPA tariff authority, the administration re-imposes equivalent protection via Section 232/301 (the tariff wall is not dismantled).",
+      "text_zh": "若最高法院推翻IEEPA关税权限，政府将通过232/301条款重新施加等效保护（关税墙不被拆除）。"
+    },
+    {
+      "id": "P21",
+      "thread": "china",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2027-06-30",
+      "status": "open",
+      "text_en": "The Section 301 semiconductor tariff steps up above 0% on/around its scheduled ~Jun 23 2027 date.",
+      "text_zh": "301条款半导体关税在约2027年6月23日的预定日期前后上调至0%以上。"
+    },
+    {
+      "id": "P22",
+      "thread": "iran",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-09-30",
+      "status": "open",
+      "text_en": "The US-Iran ceasefire holds with no full re-closure of the Strait of Hormuz through Q3 2026.",
+      "text_zh": "美伊停火维持，2026年三季度前霍尔木兹海峡未再全面关闭。"
+    },
+    {
+      "id": "P23",
+      "thread": "iran",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-09-30",
+      "status": "open",
+      "text_en": "No signed comprehensive US-Iran nuclear deal by Q3 2026 (the enrichment gap persists).",
+      "text_zh": "2026年三季度前未签署全面的美伊核协议（浓缩分歧仍在）。"
+    },
+    {
+      "id": "P24",
+      "thread": "nato",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2027-03-31",
+      "status": "open",
+      "text_en": "Enacted US FY2027 defense topline lands as a real increase over FY2026 (toward the $1.5T request).",
+      "text_zh": "已通过的美国FY2027国防总额较FY2026实际增长（趋向1.5万亿申请）。"
+    },
+    {
+      "id": "P25",
+      "thread": "nato",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "No rollback of the NATO Hague 5%-by-2035 pledge; aggregate allied defense spending keeps rising.",
+      "text_zh": "北约海牙“2035年5%”承诺未被推翻；盟国国防开支总额持续上升。"
+    },
+    {
+      "id": "P26",
+      "thread": "rotation",
+      "tier": "market-outcome",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Defense proxies (ITA/XAR/PPA/SHLD) outperform the S&P 500 over the next 2 quarters.",
+      "text_zh": "国防代理（ITA/XAR/PPA/SHLD）未来两个季度跑赢标普500。"
+    },
+    {
+      "id": "P27",
+      "thread": "dollar",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Stablecoin reserves' Treasury holdings rise materially in 2026 (the GENIUS-Act funding channel operates as Treasury frames it).",
+      "text_zh": "2026年稳定币储备所持美债显著上升（GENIUS法案融资渠道如财政部所述运作）。"
+    },
+    {
+      "id": "P28",
+      "thread": "dollar",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "NO enacted 'Mar-a-Lago Accord' action (IEEPA user-fee on foreign Treasuries or coordinated dollar devaluation) by year-end — it stays theory.",
+      "text_zh": "年底前未出台任何“海湖庄园协议”行动（对外国持有美债征IEEPA使用费或协同美元贬值）——仍停留于理论。"
+    },
+    {
+      "id": "P29",
+      "thread": "iran",
+      "tier": "market-outcome",
+      "confidence": "medium",
+      "check_by": "2026-09-30",
+      "status": "open",
+      "text_en": "Oil does NOT sustain >$100/bbl absent a Hormuz re-closure (the ceasefire holds as a disinflation lever).",
+      "text_zh": "在霍尔木兹未再关闭的情况下，油价不持续高于100美元/桶（停火作为反通胀杠杆维持）。"
+    },
+    {
+      "id": "P30",
+      "thread": "dollar",
+      "tier": "policy-action",
+      "confidence": "high",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Bessent keeps publicly asserting 'strong dollar' compatibility WITH lower rates (the strong-dollar-while-cutting frame) through year-end 2026, while NO overt FX intervention or dollar-realignment action is taken. Falsified by Treasury explicitly seeking/accepting a weaker dollar OR by FX intervention.",
+      "text_zh": "贝森特在2026年底前持续公开主张“强美元”与更低利率相容（降息中强美元框架），且未采取任何公开的汇率干预或美元重整行动。若财政部明确寻求／接受弱美元、或进行汇率干预则证伪。"
+    },
+    {
+      "id": "P31",
+      "thread": "dollar",
+      "tier": "market-outcome",
+      "confidence": "medium",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "DXY does NOT fall ~1:1 with 2Y US-vs-G10 rate-differential compression as the easing path gets priced in H2 2026 — the dollar holds on non-rate legs (growth/haven/rails) as hike-odds roll over. Falsified if DXY declines roughly in lockstep with the 2Y differential.",
+      "text_zh": "随2026下半年降息路径被price-in，DXY不与2年期美-G10利差压缩约1:1同步下行——美元靠非利率支柱（增长／避险／通道）在加息概率回落时站稳。若DXY与2年期利差大致同步下跌则证伪。"
+    },
+    {
+      "id": "P32",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2027-03-31",
+      "status": "open",
+      "text_en": "At least one of the inflation-frameworks or productivity/AI task forces publishes language operationally distinguishing 'tariff/supply-driven level shifts' from 'underlying inflation', OR an upward r-star/trend-productivity re-estimate, BEFORE the first 2026-27 rate cut. Falsified if the first cut precedes any such doctrinal output.",
+      "text_zh": "通胀框架或生产率／AI工作组中，至少一个在首次2026-27降息之前，发布把“关税／供给驱动的价位跳升”与“潜在通胀”区分开的操作性措辞，或上调r-star／趋势生产率的重估。若首次降息先于任何此类教义产出则证伪。"
+    },
+    {
+      "id": "P33",
+      "thread": "fed",
+      "tier": "market-outcome",
+      "confidence": "medium",
+      "check_by": "2027-06-30",
+      "status": "open",
+      "text_en": "If the Fed cuts within ~6 months after the Nov 2026 midterms WITH core PCE still >=3%, it draws materially LESS 'broke its own guidance/political' criticism than the 2019/2024 episodes (the accountability-deletion thesis). Falsified by a comparable or louder backlash, or by re-imposing a binding quantitative path.",
+      "text_zh": "若美联储在2026年中期选举后约6个月内、在核心PCE仍≥3%的情况下降息，其招致的“自食其言／政治化”批评显著少于2019/2024（删除问责论）。若引发同等或更强烈的反弹、或重新施加具约束力的量化路径则证伪。"
+    },
+    {
+      "id": "P34",
+      "thread": "debasement",
+      "tier": "market-outcome",
+      "confidence": "medium",
+      "check_by": "2027-03-31",
+      "status": "open",
+      "text_en": "Debasement assets (gold first) put in a durable bottom that COINCIDES with the simultaneous peak of DXY + 2Y + real yields (DFII10) + hike-odds, while core inflation is still elevated — the trough precedes the first actual cut by a multi-month margin. Falsified if gold/silver/BTC make new lows AFTER all four have clearly peaked.",
+      "text_zh": "去货币化资产（黄金最先）筑出持久底部，且与美元+2年期+实际收益率（DFII10）+加息概率的同时见顶相吻合，而核心通胀仍偏高——底部早于首次实际降息数月。若黄金／白银／比特币在上述四者均明显见顶之后再创新低则证伪。"
+    },
+    {
+      "id": "P35",
+      "thread": "debasement",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2027-06-30",
+      "status": "open",
+      "text_en": "KILL-SWITCH: Gold does NOT break to new all-time highs (above the ~Jan 2026 $5,589 peak) WHILE the Fed is actively easing the front end in the H2 2026-H1 2027 pivot window. A new-high gold breakout concurrent with easing falsifies the 'strong dollar while cutting' bridge.",
+      "text_zh": "终止开关：在2026下半年-2027上半年的转向窗口、美联储正积极宽松短端期间，黄金不创历史新高（不突破约2026年1月的5,589美元峰值）。若黄金在宽松期间创历史新高，则证伪“降息中强美元”之桥。"
+    },
+    {
+      "id": "P36",
+      "thread": "fed",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2027-06-30",
+      "status": "open",
+      "text_en": "Real 10y yields (DFII10) PEAK in 2026 at/near the hawkish-tape high (~2.2-2.5% area) and do not sustain materially new highs once hike-odds roll over — i.e. ~2.2-2.5% marks the real-yield ceiling for this regime. Falsified by DFII10 sustaining materially above its 2026 peak into 2027.",
+      "text_zh": "10年期实际收益率（DFII10）于2026年在鹰派盘面高位附近（约2.2-2.5%区间）见顶，并在加息概率回落后不持续创显著新高——即约2.2-2.5%为本轮体制的实际收益率上限。若DFII10在2027年持续显著高于其2026年峰值则证伪。"
+    },
+    {
+      "id": "P37",
+      "thread": "fed",
+      "tier": "policy-action",
+      "confidence": "medium",
+      "check_by": "2027-01-31",
+      "status": "open",
+      "text_en": "There is NO immediate large Fed cut within ~2 months of the Nov 3 2026 midterms; any easing is delayed and/or delivered curve/balance-sheet-first from a higher base (inflation-gated, not calendar-driven). Falsified by a clean >=25bp funds-rate cut at the first post-midterm FOMC.",
+      "text_zh": "2026年11月3日中期选举后约2个月内，美联储不立即大幅降息；任何宽松都被延迟、且／或先经曲线／资产负债表、从更高基点启动（取决于通胀，而非日历）。若中期选举后首次FOMC出现干净的≥25bp降息则证伪。"
+    },
+    {
+      "id": "P38",
+      "thread": "dollar",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2026-12-31",
+      "status": "open",
+      "text_en": "Stablecoin reserve T-bill holdings scale materially (toward/above ~$300B) in 2026 even as foreign official reserve demand stagnates (the GENIUS captive-bid operates) — BUT front-end yields stay dominated by Fed-path expectations rather than stablecoin-adjusted net supply. Falsified if holdings stall/shrink, or if they demonstrably set the marginal bill yield.",
+      "text_zh": "2026年稳定币储备所持短债显著扩大（趋向／超过约3000亿美元），即便外国官方储备需求停滞（GENIUS被动买盘运作）——但短端收益率仍由美联储路径预期主导，而非由经稳定币调整的净供给决定。若持有量停滞／收缩、或其可证明地决定边际短债收益率则证伪。"
+    },
+    {
+      "id": "P39",
+      "thread": "debasement",
+      "tier": "market-outcome",
+      "confidence": "low",
+      "check_by": "2027-06-30",
+      "status": "open",
+      "text_en": "On the RECOVERY leg of the debasement trade, the beta-magnitude ordering holds (silver and BTC outperform gold in percentage terms) even if the strict gold->silver->BTC lead-lag SEQUENCE is noisy. Falsified if gold outperforms both silver and BTC on the re-rate.",
+      "text_zh": "在去货币化交易的反弹腿上，按涨幅的贝塔排序成立（白银与比特币以百分比计跑赢黄金），即便严格的黄金→白银→比特币领先-滞后次序较为嘈杂。若黄金在重估中同时跑赢白银与比特币则证伪。"
+    }
   ],
   "monitor": [
-    {"name": "FOMC statements · presser transcripts · SEP tables", "name_zh": "FOMC声明 · 发布会纪要 · SEP预测表", "who": "Federal Reserve", "who_zh": "美联储", "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm", "cadence": "each meeting; task-force reports ~year-end 2026", "cadence_zh": "每次会议；工作组报告约2026年底"},
-    {"name": "Treasury quarterly refunding + Bessent remarks + TBAC", "name_zh": "财政部季度再融资 + 贝森特讲话 + TBAC", "who": "US Treasury", "who_zh": "美国财政部", "url": "https://home.treasury.gov/news/press-releases", "cadence": "quarterly (next Aug 2026) + ad hoc", "cadence_zh": "每季度（下次2026年8月）+ 不定期"},
-    {"name": "Section-232 chip-tariff modifications / covered-list changes", "name_zh": "232条款芯片关税调整 / 覆盖清单变更", "who": "White House", "who_zh": "白宫", "url": "https://www.whitehouse.gov/presidential-actions/", "cadence": "ad hoc", "cadence_zh": "不定期"},
-    {"name": "Nuclear: pilot-reactor criticality · HALEU releases · reprocessing", "name_zh": "核能：试点反应堆临界 · HALEU释放 · 后处理", "who": "DOE Office of Nuclear Energy", "who_zh": "美国能源部核能办公室", "url": "https://www.energy.gov/ne/listings/ne-articles", "cadence": "ad hoc", "cadence_zh": "不定期"},
-    {"name": "eSLR reform rules", "name_zh": "eSLR改革规则", "who": "Fed / OCC / FDIC", "who_zh": "美联储 / OCC / FDIC", "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg.htm", "cadence": "ad hoc", "cadence_zh": "不定期"},
-    {"name": "Treasury central-clearing rulemaking", "name_zh": "国债中央清算规则制定", "who": "SEC", "who_zh": "SEC", "url": "https://www.sec.gov/rules-regulations", "cadence": "ad hoc", "cadence_zh": "不定期"},
-    {"name": "Principals to track for hawkish/dovish & policy drift", "name_zh": "需追踪的关键人物（鹰/鸽倾向与政策漂移）", "who": "Warsh · Bessent · DOE Sec. Wright · FOMC dot participants", "who_zh": "沃什 · 贝森特 · 能源部长赖特 · FOMC点阵图参与者", "url": "", "cadence": "continuous", "cadence_zh": "持续"}
+    {
+      "name": "Four-variable bottom-confirmation: DFII10 + DXY + 2Y-vs-G10 differential + CME hike-odds",
+      "name_zh": "四变量筑底确认：DFII10 + DXY + 2年期对G10利差 + CME加息概率",
+      "who": "FRED / CME FedWatch / market",
+      "who_zh": "FRED / CME FedWatch / 市场",
+      "url": "https://fred.stlouisfed.org/series/DFII10",
+      "cadence": "daily — the debasement-trade trough signal (peak TOGETHER)",
+      "cadence_zh": "每日 —— 去货币化交易的底部信号（同时见顶）"
+    },
+    {
+      "name": "Stablecoin reserve T-bill holdings (GENIUS captive-bid gauge)",
+      "name_zh": "稳定币储备所持短债（GENIUS被动买盘指标）",
+      "who": "Issuer attestations / Treasury TIC",
+      "who_zh": "发行方披露 / 财政部TIC",
+      "url": "https://home.treasury.gov/news/press-releases",
+      "cadence": "monthly-ish",
+      "cadence_zh": "约每月"
+    },
+    {
+      "name": "FOMC statements · presser transcripts · SEP tables",
+      "name_zh": "FOMC声明 · 发布会纪要 · SEP预测表",
+      "who": "Federal Reserve",
+      "who_zh": "美联储",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases.htm",
+      "cadence": "each meeting; task-force reports ~year-end 2026",
+      "cadence_zh": "每次会议；工作组报告约2026年底"
+    },
+    {
+      "name": "Treasury quarterly refunding + Bessent remarks + TBAC",
+      "name_zh": "财政部季度再融资 + 贝森特讲话 + TBAC",
+      "who": "US Treasury",
+      "who_zh": "美国财政部",
+      "url": "https://home.treasury.gov/news/press-releases",
+      "cadence": "quarterly (next Aug 2026) + ad hoc",
+      "cadence_zh": "每季度（下次2026年8月）+ 不定期"
+    },
+    {
+      "name": "Section-232 chip-tariff modifications / covered-list changes",
+      "name_zh": "232条款芯片关税调整 / 覆盖清单变更",
+      "who": "White House",
+      "who_zh": "白宫",
+      "url": "https://www.whitehouse.gov/presidential-actions/",
+      "cadence": "ad hoc",
+      "cadence_zh": "不定期"
+    },
+    {
+      "name": "Nuclear: pilot-reactor criticality · HALEU releases · reprocessing",
+      "name_zh": "核能：试点反应堆临界 · HALEU释放 · 后处理",
+      "who": "DOE Office of Nuclear Energy",
+      "who_zh": "美国能源部核能办公室",
+      "url": "https://www.energy.gov/ne/listings/ne-articles",
+      "cadence": "ad hoc",
+      "cadence_zh": "不定期"
+    },
+    {
+      "name": "eSLR reform rules",
+      "name_zh": "eSLR改革规则",
+      "who": "Fed / OCC / FDIC",
+      "who_zh": "美联储 / OCC / FDIC",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/bcreg.htm",
+      "cadence": "ad hoc",
+      "cadence_zh": "不定期"
+    },
+    {
+      "name": "Treasury central-clearing rulemaking",
+      "name_zh": "国债中央清算规则制定",
+      "who": "SEC",
+      "who_zh": "SEC",
+      "url": "https://www.sec.gov/rules-regulations",
+      "cadence": "ad hoc",
+      "cadence_zh": "不定期"
+    },
+    {
+      "name": "Principals to track for hawkish/dovish & policy drift",
+      "name_zh": "需追踪的关键人物（鹰/鸽倾向与政策漂移）",
+      "who": "Warsh · Bessent · DOE Sec. Wright · FOMC dot participants",
+      "who_zh": "沃什 · 贝森特 · 能源部长赖特 · FOMC点阵图参与者",
+      "url": "",
+      "cadence": "continuous",
+      "cadence_zh": "持续"
+    }
   ],
   "sources": [
     "https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf",
@@ -307,10 +870,14 @@
     "https://www.congress.gov/crs-product/R48891",
     "https://home.treasury.gov/news/press-releases/sb0197",
     "https://www.cfr.org/articles/mar-lago-accord-not-recipe-success",
-    "https://www.ishares.com/us/insights/inside-the-market/2026-etf-market-trends-and-flows"
+    "https://www.ishares.com/us/insights/inside-the-market/2026-etf-market-trends-and-flows",
+    "https://www.cnbc.com/2026/06/24/cnbc-transcript-us-treasury-secretary-scott-bessent-speaks-with-cnbcs-joe-kernen-on-squawk-box-today.html",
+    "https://home.treasury.gov/news/press-releases/sb0539",
+    "https://www.coindesk.com/markets/2026/06/24/gold-silver-and-bitcoin-tumble-as-debasement-trade-unwinds",
+    "https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html"
   ],
   "caveats": {
-    "en": "China / Iran / NATO threads are now PRIMARY-SOURCED (Nov-2025 China deal, 2026 Iran ceasefire, NATO Hague 5%, FY2027 $1.5T defense, GENIUS Act). KEY CORRECTIONS: the 'Mar-a-Lago Accord' is a THEORY, not enacted policy — don't trade it as base case; Stephen Miran authored it as FORMER CEA chair and is NOT on the Fed Board / NOT current CEA chair. CONTINGENCIES: the IEEPA tariff stack is legally pending a SCOTUS ruling; the China truce is a PAUSE (expires Nov 10 2026) not peace; the Iran ceasefire is unsigned/fragile (enrichment gap). Realpolitik reads, all ticker proxies, and market-outcome predictions (P15–P18, P26, P29) are INFERENCE, not source-endorsed. Nuclear targets are aspirational and slipping; the chip-tariff reshoring-exemption was REFUTED. Time-sensitive; re-verify before trading. Context only — not investment advice.",
-    "zh": "中国/伊朗/北约线索现已有一手来源（2025年11月美中协议、2026年伊朗停火、北约海牙5%、FY2027 1.5万亿国防、GENIUS法案）。关键更正：“海湖庄园协议”是理论而非已落地政策——勿当基准交易；斯蒂芬·米兰以“前”CEA主席身份提出，并不在美联储理事会、也非现任CEA主席。或有变数：IEEPA关税体系在法律上待最高法院裁决；中国休战是暂停（2026年11月10日到期）而非和平；伊朗停火未签、脆弱（浓缩分歧）。realpolitik解读、所有代理标的、及市场结果类预测（P15–P18、P26、P29）均为推断。核能目标偏理想且在滑期；芯片关税建厂豁免已被证伪。具时效性，交易前请重新核实。仅供参考，不构成投资建议。"
+    "en": "China / Iran / NATO threads are now PRIMARY-SOURCED (Nov-2025 China deal, 2026 Iran ceasefire, NATO Hague 5%, FY2027 $1.5T defense, GENIUS Act). KEY CORRECTIONS: the 'Mar-a-Lago Accord' is a THEORY, not enacted policy — don't trade it as base case; Stephen Miran authored it as FORMER CEA chair and is NOT on the Fed Board / NOT current CEA chair. CONTINGENCIES: the IEEPA tariff stack is legally pending a SCOTUS ruling; the China truce is a PAUSE (expires Nov 10 2026) not peace; the Iran ceasefire is unsigned/fragile (enrichment gap). Realpolitik reads, all ticker proxies, and market-outcome predictions (P15–P18, P26, P29) are INFERENCE, not source-endorsed. Nuclear targets are aspirational and slipping; the chip-tariff reshoring-exemption was REFUTED. Time-sensitive; re-verify before trading. Context only — not investment advice. CALIBRATION (6/24, after a 6-lens adversary pass): the 'coordinated gameplan' is ~60-70% common-cause (one oil shock + a hawkish Fed + ordinary debt management all point the same way), ~22-30% Bessent talking his book, and only a small (~10-15%) genuinely-coordinated residual — which is exactly where the falsifiable tells (P30-P39) live. P5 (no July+Sept 2026 cut) is the master gate. The 'hawkishness is the setup not the destination' frame is near-unfalsifiable on its own (both staying hawkish and cutting 'confirm' it) — so trade the dated tells, not the frame. Down-weighted as over-determined: tariff look-through is orthodox; any chair studies AI; gold<$4000 is textbook rising-real-yields + strong-dollar.",
+    "zh": "中国/伊朗/北约线索现已有一手来源（2025年11月美中协议、2026年伊朗停火、北约海牙5%、FY2027 1.5万亿国防、GENIUS法案）。关键更正：“海湖庄园协议”是理论而非已落地政策——勿当基准交易；斯蒂芬·米兰以“前”CEA主席身份提出，并不在美联储理事会、也非现任CEA主席。或有变数：IEEPA关税体系在法律上待最高法院裁决；中国休战是暂停（2026年11月10日到期）而非和平；伊朗停火未签、脆弱（浓缩分歧）。realpolitik解读、所有代理标的、及市场结果类预测（P15–P18、P26、P29）均为推断。核能目标偏理想且在滑期；芯片关税建厂豁免已被证伪。具时效性，交易前请重新核实。仅供参考，不构成投资建议。校准（6/24，经6视角对抗审查）：所谓“协调棋局”约60-70%为共同成因（一次油价冲击+一个鹰派美联储+常规债务管理皆指向同一方向）、约22-30%是贝森特为自己仓位喊话，仅约10-15%为真正协同的残差——而那恰是可证伪“破绽”（P30-P39）所在。P5（2026年7月与9月不降息）是总闸门。“鹰派是铺垫、非终点”这一框架本身近乎不可证伪（维持鹰派与转为降息都可被印证）——故应交易有日期的破绽，而非框架。因过度决定而被下调权重：关税透视本属正统；任何主席都会研究AI；金价跌破4000是教科书式的实际收益率上行+强美元。"
   }
 }
