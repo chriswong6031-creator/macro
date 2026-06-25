@@ -14,6 +14,7 @@ geo-blocked 451/403, verified 2026-06-12).
 """
 from __future__ import annotations
 
+import logging
 import time
 
 import numpy as np
@@ -21,6 +22,8 @@ import pandas as pd
 
 from collectors.base import Adapter
 from lib import config, store
+
+log = logging.getLogger(__name__)
 
 MAX_PAGES_FIRST_RUN = 30  # ~3000 funding prints ~ 1000 days
 
@@ -52,15 +55,34 @@ class OkxAdapter(Adapter):
         tk = self._taker_volume()
         if tk is not None:
             out["taker_volume"] = tk
-        tkh = self._taker_volume_hourly()
-        if tkh is not None:
-            out["taker_volume_hourly"] = tkh
+        try:                                  # rubik hourly outage must degrade ONLY this
+            tkh = self._taker_volume_hourly()  # series, never fail the whole okx adapter
+            if tkh is not None:                # (which would freeze the daily series + trip
+                out["taker_volume_hourly"] = tkh  # the circuit breaker)
+        except Exception as e:  # noqa: BLE001
+            log.warning("okx taker_volume_hourly fetch failed (non-fatal): %s", e)
         sp = self._spot_candles(full_history)
         if sp is not None:
             out["spot_usdt_daily"] = sp
         if not out:
             raise ValueError("okx returned nothing")
         return out
+
+    def validate(self, name: str, df: pd.DataFrame) -> pd.DataFrame:
+        """taker_volume_hourly MUST keep its intraday timestamps — skip the
+        base-class .normalize() for it (which would collapse 24 rows/day to 1 and
+        silently defeat the hourly-CVD accrual). Every other okx series is daily
+        and IS normalized. Mirrors CoinbaseAdapter.validate for btc_hourly."""
+        if df is None or df.empty:
+            raise ValueError(f"{self.name}/{name}: empty frame")
+        df = df.copy()
+        df.index = pd.to_datetime(df.index)
+        if name != "taker_volume_hourly":
+            df.index = df.index.normalize()
+        df = df[~df.index.duplicated(keep="last")].sort_index().dropna(how="all")
+        if df.empty:
+            raise ValueError(f"{self.name}/{name}: all-NaN after cleaning")
+        return df
 
     def _funding(self, full_history: bool) -> pd.DataFrame | None:
         last_stored = store.last_date(self.group, "funding_rate")

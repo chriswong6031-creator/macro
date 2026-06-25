@@ -138,6 +138,30 @@ def test_ledger_stamp_and_grade_roundtrip():
         LED._path = orig
 
 
+def test_ledger_grade_skips_a_bad_row():
+    """Audit MEDIUM: one corrupt/hand-edited asof must NOT abort grading of every
+    other matured row (the live hit-rate display must keep filling)."""
+    tmp = Path(tempfile.mkdtemp()) / "ledger.jsonl"
+    orig = LED._path
+    LED._path = lambda: tmp
+    try:
+        idx = pd.date_range("2024-01-01", periods=12, freq="D")
+        close = pd.Series(100.0, index=idx)
+        sig = pd.DataFrame({"close": close}, index=idx)
+        LED._write([
+            {"asof": "2024-01-02", "fires": {"d2": True, "d3": False, "u1": False}, "outcome": None},
+            {"asof": "not-a-date", "fires": {"d2": True, "d3": False, "u1": False}, "outcome": None},
+            {"asof": "2024-01-03", "fires": {"d2": True, "d3": False, "u1": False}, "outcome": None},
+        ])
+        summ = LED.grade(sig)
+        rows = LED.load()
+        assert summ["ok"] is True
+        assert rows[0]["outcome"] is not None and rows[2]["outcome"] is not None   # valid rows graded
+        assert rows[1]["outcome"] is None                                          # bad row skipped, not fatal
+    finally:
+        LED._path = orig
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]
     for fn in fns:

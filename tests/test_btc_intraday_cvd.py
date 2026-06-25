@@ -45,6 +45,21 @@ def test_collector_empty_returns_none():
     assert a._taker_volume_hourly() is None
 
 
+def test_validate_preserves_hourly_normalizes_daily():
+    """THE accrual-killer guard: run_adapter calls adapter.validate() BEFORE
+    upsert, and the BASE validate normalizes every index to dates. The OKX
+    override MUST exempt taker_volume_hourly (else 24 rows/day collapse to 1 and
+    the sub-daily CVD silently dies), while still normalizing daily series."""
+    a = OkxAdapter()
+    idx = pd.date_range("2026-06-01", periods=48, freq="h")
+    hourly = pd.DataFrame({"taker_buy_vol": [1.0] * 48, "taker_sell_vol": [1.0] * 48}, index=idx)
+    vh = a.validate("taker_volume_hourly", hourly)
+    assert len(vh) == 48                                   # NOT collapsed to 2 days
+    assert (vh.index.minute == 0).all()                    # intraday timestamps kept
+    daily = pd.DataFrame({"x": [1.0] * 48}, index=idx)
+    assert len(a.validate("funding_rate", daily)) == 2     # daily series still normalized
+
+
 def _store_patch(frames):
     orig = CVD.store.read
     CVD.store.read = lambda ns, nm: frames.get((ns, nm))
@@ -92,6 +107,38 @@ def test_engine_divergence_when_history_sufficient():
     assert o["divergence"] is not None
     assert 0.0 <= o["divergence"]["pctile"] <= 1.0
     assert o["divergence"]["state"] in ("hidden_distribution", "hidden_accumulation", "none")
+
+
+def test_engine_stale_when_hourly_lags_reference():
+    """Audit HIGH: a silently-frozen okx hourly feed must be FLAGGED stale by
+    comparing it to the live coinbase intraday reference."""
+    n = 800
+    cvd_df = _hourly(n, np.full(n, 1e7), np.full(n, 1e7))
+    ref_idx = pd.date_range(cvd_df.index[-1] + pd.Timedelta(days=5), periods=10, freq="h")
+    ref = pd.DataFrame({"close": [60000.0] * 10}, index=ref_idx)        # reference 5d ahead
+    orig = _store_patch({("okx", "taker_volume_hourly"): cvd_df, ("coinbase", "btc_hourly"): ref})
+    try:
+        o = CVD.compute()
+    finally:
+        CVD.store.read = orig
+    assert o["stale"] is True and o["hours_behind_ref"] > 48
+
+
+def test_engine_gap_detection_restarts_cumsum():
+    """Audit MEDIUM: a gap wider than the rubik window can't be backfilled, so the
+    cumsum must restart after it (not silently span a permanent hole)."""
+    a = pd.date_range("2026-01-01", periods=100, freq="h")
+    b = pd.date_range(a[-1] + pd.Timedelta(hours=800), periods=200, freq="h")   # 800h > 720h gap
+    idx = a.append(b)
+    cvd_df = pd.DataFrame({"taker_buy_vol": np.full(300, 1e7),
+                           "taker_sell_vol": np.full(300, 1.2e7)}, index=idx)
+    orig = _store_patch({("okx", "taker_volume_hourly"): cvd_df})
+    try:
+        o = CVD.compute()
+    finally:
+        CVD.store.read = orig
+    assert o["gap_detected"] is True
+    assert o["n_hours"] == 200            # only the post-gap contiguous segment counts
 
 
 def test_engine_no_store_degrades():
