@@ -203,12 +203,21 @@ def alloc_sizing(last: pd.Series, eq: pd.Series, acfg: dict) -> dict:
     thr, decay = float(acfg.get("dd_threshold", 0.25)), float(acfg.get("dd_decay", 1.0))
     floor = float(acfg.get("dd_floor", 0.40))
     cap = min(1.0, max(floor, 1.0 - decay * max(0.0, (-dd) - thr)))
+    # bottom-detector overlay (adds size at washout lows the brake would otherwise sit out)
+    b_thr = float(acfg.get("bottom_thr", 0.30))
+    b_boost = float(acfg.get("bottom_boost", 0.40))
+    bp = float(last.get("bottom_pressure")) if pd.notna(last.get("bottom_pressure")) else 0.0
+    b_strength = max(0.0, min(1.0, (bp - b_thr) / max(1.0 - b_thr, 1e-9)))
+    b_add = b_boost * b_strength if acfg.get("bottom_overlay", True) else 0.0
     return {
         "tier": btc_signals.conviction_tier(cp, acfg),
         "mult": round(float(btc_signals.conviction_multiplier(cp, acfg)), 2),
         "brake_active": bool(cap < 0.999),
         "brake_cap": round(100 * cap),
         "dd": round(100 * dd),
+        "bottom_pressure": round(100 * bp),
+        "bottom_active": bool(b_add > 0.005),
+        "bottom_add": round(100 * b_add),
     }
 
 
@@ -2060,7 +2069,7 @@ def main() -> int:
 
     eq = alloc_equity(close, sig["alloc_optimal"])
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
-    sizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])
+    asizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])  # conviction/brake/bottom-overlay decomposition
     cards = {v: scorecard(close, sig[f"alloc_{v}"])
              for v in ("conservative", "moderate", "aggressive", "optimal")}
 
@@ -2254,7 +2263,7 @@ def main() -> int:
         "alt_leader": last.get("alt_cycle_leader", "BTC"),
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
-        "alloc_sizing": sizing,
+        "alloc_sizing": asizing,
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
         "composite_context": last.get("composite_context", ""),
