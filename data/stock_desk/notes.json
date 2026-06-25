@@ -1,7 +1,7 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-24",
-  "generated_at": "2026-06-25T09:47:55.647830+00:00",
+  "generated_at": "2026-06-25T11:41:53.045030+00:00",
   "degraded": null,
   "notes": [
     {
@@ -10,22 +10,22 @@
       "name": "Chemed Corp.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The deterministic verdict is Neutral \u2014 no clear edge; SUE and momentum are negative, revisions only slightly positive. The uptrend is intact but does not, by itself, provide a validated edge over the S&P 500 at this horizon.",
+      "horizon_d": 20,
+      "thesis": "No clear edge: negative earnings surprise and weak momentum offset a high quality factor; the uptrend lacks a validated catalyst to predict relative outperformance.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection axis z = -0.16 (SUE -0.32, alpha -0.78)",
-        "cycle_blocked: false, but no entry urgency"
+        "verdict 'Neutral \u2014 no clear edge'",
+        "selection z -0.16, SUE z -0.32, alpha z -0.78",
+        "quality factor z 2.62 but lone positive"
       ],
-      "dissent": "Quality factor z-score is very high (2.62) and accounting is clean; a sudden improvement in earnings momentum could flip the profile.",
+      "dissent": "Exceptional quality and a resilient uptrend could compound if broad market sentiment shifts, turning the stock into a safe-haven winner.",
       "falsifier": {
-        "text": "If SUE z-score turns positive or daily momentum z > 0 within 10 trading days, the neutral lean would be too conservative.",
+        "text": "If CHE closes above $500 within 20 trading days, the neutral lean would be proven too cautious.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-08",
+      "check_by": "2026-07-22",
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
@@ -33,17 +33,17 @@
       "ticker": "ADAM",
       "name": "Adamas Trust, Inc.",
       "lean": "constructive",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The verdict designates a high-confluence leader; positive revisions (literature) and momentum context combine with an intact uptrend and on-cycle phase to support a conditional edge, though the absence of a validated SUE leg and quality data tempers confidence.",
+      "thesis": "High revisions and strong momentum indicate relative strength; price at 52-week highs in a confirmed uptrend without cycle blockage.",
       "evidence": [
-        "verdict: High-confluence leader (context)",
-        "selection z = 1.01 driven by revision (+1.26) and alpha (+0.81)",
-        "entry not blocked, trend intact, cycle mid-phase"
+        "verdict 'High-confluence leader (context)'",
+        "selection z 1.01, revision z 1.26, alpha z 0.81",
+        "price at 52w high, RALLY ON ladder"
       ],
-      "dissent": "No SUE signal, quality metrics missing entirely, and the trust tier itself notes the edge is a confluence read, not standalone alpha \u2014 any macro liquidity headwind could erase this small-cap momentum.",
+      "dissent": "A small real estate trust may be highly sensitive to contracting liquidity; a macro shock could reverse the move quickly.",
       "falsifier": {
-        "text": "If the revision z-score drops below 0.5 or the daily RSI falls below 50 within 20 trading days, the constructive lean is falsified.",
+        "text": "If ADAM closes below $8.50 within 20 trading days, the constructive lean is invalidated.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "ADAM",
@@ -62,26 +62,26 @@
       "name": "Broadstone Net Lease, Inc.",
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 15,
-      "thesis": "The engine grades it a Leader but flags an accounting watch; despite strong SUE and revision signals, the negative quality factor z-score and the explicit caution demand a conservative stance until accounting risks are clarified.",
+      "horizon_d": 20,
+      "thesis": "Strong earnings surprise and upward revisions are attractive, but an accounting watch flag and below-average quality factor introduce downside risk that warrants a cautious stance.",
       "evidence": [
-        "verdict: Leader \u00b7 accounting watch \u2014 confirm before adding",
-        "quality z = -0.24, factors flag: watch",
-        "selection z = 1.15 (SUE +0.81 validated, revision +1.27 literature)"
+        "verdict 'Leader \u00b7 accounting watch \u2014 confirm before adding'",
+        "accounting watch flag, quality z -0.24",
+        "selection z 1.15, SUE z 0.81, revision z 1.27"
       ],
-      "dissent": "The validated SUE leg and strong revision signal historically associate with short-term drift; if the accounting watch proves cosmetic, the name could outperform.",
+      "dissent": "If the accounting concern proves benign, the powerful earnings-driven momentum could drive material outperformance, making the cautious lean too conservative.",
       "falsifier": {
-        "text": "If a subsequent fundamental check clears the accounting watch and quality z-score recovers above +0.3 within 15 trading days, the cautious lean was overdone.",
+        "text": "If BNL closes above $23 within 20 trading days without adverse accounting news, the cautious lean would be disproven.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BNL",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 15
+          "horizon_d": 20
         }
       },
-      "check_by": "2026-07-15",
+      "check_by": "2026-07-22",
       "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
     },
     {
@@ -89,17 +89,17 @@
       "ticker": "EW",
       "name": "Edwards Lifesciences",
       "lean": "constructive",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The explicit verdict is Constructive \u2014 building a base, supported by a fresh buy technical entry, positive revision and momentum context, and a clean accounting flag; the engine's risk controls allow a guarded positive lean relative to the S&P 500.",
+      "thesis": "The stock is building a base with a FRESH BUY signal and positive earnings revisions, suggesting limited downside and potential for relative gains.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "entry z = 0.59, urgency: now, fresh buy signal",
-        "selection: revision +0.71, alpha +0.39; accounting clean"
+        "verdict 'Constructive \u2014 building a base'",
+        "FRESH BUY ladder, entry urgency 'now'",
+        "revision z 0.71, alpha z 0.39"
       ],
-      "dissent": "SUE is negative (-0.27), profitability factor is modest, and the daily cycle is approaching a band \u2014 a premature entry could suffer a false breakout.",
+      "dissent": "A steep -74.3% net income decline and negative SUE could signal deeper fundamental erosion that a base-building pattern fails to overcome.",
       "falsifier": {
-        "text": "If price closes below the 10-day moving average (approx. $83.80 based on 7% above 50dma of ~83.8) within 5 trading days, the constructive lean is wrong.",
+        "text": "If EW closes below $82 within 20 trading days, the constructive lean is wrong.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "EW",
@@ -117,17 +117,17 @@
       "ticker": "BC",
       "name": "Brunswick",
       "lean": "constructive",
-      "conviction": "medium",
+      "conviction": "low",
       "horizon_d": 20,
-      "thesis": "The verdict is Constructive \u2014 building a base, with the uptrend intact (low off high, on-cycle) and selection supported by momentum context and positive revisions; despite a negative SUE, the engine's risk reshape plus clean accounting permit a cautious edge.",
+      "thesis": "Strong price momentum (alpha z 1.49) and a confirmed uptrend support outperformance despite mixed fundamentals; the base-building verdict aligns.",
       "evidence": [
-        "verdict: Constructive \u2014 building a base",
-        "selection: alpha +1.49 context, revision +0.35 literature",
-        "entry z = 0.40, cycle mid/late but not failed, accounting clean"
+        "verdict 'Constructive \u2014 building a base'",
+        "alpha z 1.49, revision z 0.35",
+        "RALLY ON uptrend, price above 50dma/200dma"
       ],
-      "dissent": "Net income is deeply negative (-205.5% growth), consumer discretionary exposure is cyclical, and the SUE signal is negative \u2014 a fundamental deterioration could abruptly reverse the trend.",
+      "dissent": "The company has negative net income, a high-beta profile, and the late investor cycle phase could expose it to a sharp drawdown if market risk appetite fades.",
       "falsifier": {
-        "text": "If the stock breaks below its 50-day moving average (approx. $80.2 based on 5.8% above) within 10 trading days, the constructive lean is invalidated.",
+        "text": "If BC closes below $80 within 20 trading days, the constructive lean is disproven.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "BC",
@@ -146,22 +146,22 @@
       "name": "Pacira BioSciences, Inc.",
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 10,
-      "thesis": "The profile verdict is Neutral \u2014 no clear edge; SUE and alpha are negative, the revision leg is modest, and while the trend is intact, the lack of a verified edge and the late investor cycle phase suggest no directional advantage over the S&P 500.",
+      "horizon_d": 20,
+      "thesis": "Selection metrics are near zero, with negative earnings surprise and weak momentum; the strong factor profile is insufficient to form a reliable edge.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection z = 0.13 (SUE -0.32 validated, alpha -0.32 context)",
-        "entry not blocked but trend hold, investor phase late"
+        "verdict 'Neutral \u2014 no clear edge'",
+        "selection z 0.13, SUE z -0.32, alpha z -0.32",
+        "quality drive present but not overwhelming"
       ],
-      "dissent": "The quality factor is positive and the company is actively repurchasing shares; a sudden earnings surprise could reignite momentum and make neutral look like a missed opportunity.",
+      "dissent": "A high payout and investment factor score could signal undervaluation that eventually re-rates the stock, even if near-term catalysts are absent.",
       "falsifier": {
-        "text": "If the daily momentum z-score turns positive and the stock breaks above its 52-week high within 10 trading days, the neutral lean was too bearish.",
+        "text": "If PCRX closes above $27.20 (reclaiming its 52-week high) within 20 trading days, the neutral lean would be proven wrong.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-07-08",
+      "check_by": "2026-07-22",
       "engine_verdict": "Neutral \u2014 no clear edge"
     }
   ],
