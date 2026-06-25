@@ -1,0 +1,339 @@
+name: render
+# FAST site re-render + deploy from ALREADY-COMMITTED data — the express lane for
+# shipping a template / CSS / JS bug fix WITHOUT waiting on the nightly `daily`
+# pipeline's data collection (up to ~100m), its LLM "brain" layers (~20m), or the
+# special-situations EDGAR sweep (~28m). Recent dailies ran 1h12m–2h31m; a render
+# is a handful of minutes.
+#
+# How it stays fast AND correct: every page builder reads COMMITTED engine output
+# (regime/latest.json, each desk's latest.json, the brains' committed *.json) and
+# re-renders its template — build_site itself "never refetches and never recomputes
+# the classifier", so the rendered site is a pure function of data already on main.
+# This workflow therefore DELIBERATELY does NOT run, in render mode:
+#   • the collectors (scripts.collect)            — the API data pull
+#   • engine.run                                  — preserves the COMMITTED regime +
+#                                                   catalyst digest exactly as deployed
+#   • the master / ai_desk / narrative / altdata LLM brains and their thesis
+#     ledgers + scorers                           — those APPEND to forward-accountability
+#                                                   ledgers; only the nightly may advance them
+#   • build_special_situations                    — the slow EDGAR fetch (page stays as last built)
+#   • factor_series / stock_briefs                — their own isolated daily jobs
+#   • notify / archive_signals                    — side-effects that belong to the nightly
+# and it carries NO API/LLM secrets, so nothing reaches the network — pages render
+# straight from the committed snapshots on disk.
+#
+# It commits ONLY site/ (never data/ or reports/), so the nightly `daily` pipeline
+# stays the single source of truth for every data ledger. daily.yml is untouched.
+#
+# Note: static assets directly under site/ (e.g. live.js, *.css) already deploy in
+# ~1 min via pages.yml on any push to site/** — you only need THIS workflow for
+# template (.html.j2) fixes that must be re-rendered through a builder.
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Which pages to rebuild from committed data (all = every page)"
+        type: choice
+        default: all
+        options: [all, macro, china, hk, markets, gex, baskets]
+  push:
+    branches: [main]
+    # A HUMAN pushing a template or builder change auto-renders + deploys. The
+    # nightly bot only ever touches data/ + site/ + reports/, so its commits never
+    # match these paths — no loop, no double-fire. (The site/ commit this workflow
+    # makes triggers pages.yml's committed-tree deploy once more; idempotent.)
+    paths:
+      - "templates/**"
+      - "scripts/build_*.py"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  # Its OWN lane, isolated from `pipeline-daily` so a render can never starve (or be
+  # starved by) the nightly. cancel-in-progress: a newer render supersedes an older
+  # in-flight one (you only care about the latest templates going live).
+  group: pipeline-render
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - run: git pull origin main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # Restore the gitignored breadth close caches (the stock-search libraries +
+      # build_site's per-name analyze read constituent closes) and the intraday cache
+      # (chart data). Restore-only — the nightly `collect` job produces/saves them; we
+      # fall back via restore-keys to the most recent daily's cache.
+      - name: restore breadth (S&P 500) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/breadth/_closes_cache.parquet
+          key: breadth-closes-render-${{ github.run_id }}
+          restore-keys: breadth-closes-
+      - name: restore smallcap (S&P 600) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/smallcap_breadth/_closes_cache.parquet
+          key: smallcap-closes-render-${{ github.run_id }}
+          restore-keys: smallcap-closes-
+      - name: restore midcap (S&P 400) close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/midcap_breadth/_closes_cache.parquet
+          key: midcap-closes-render-${{ github.run_id }}
+          restore-keys: midcap-closes-
+      - name: restore china breadth close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/china_breadth/_closes_cache.parquet
+          key: china-breadth-closes-render-${{ github.run_id }}
+          restore-keys: china-breadth-closes-
+      - name: restore hk breadth close cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/hk_breadth/_closes_cache.parquet
+          key: hk-breadth-closes-render-${{ github.run_id }}
+          restore-keys: hk-breadth-closes-
+      - name: restore intraday (4H) cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/intraday
+          key: intraday-render-${{ github.run_id }}
+          restore-keys: intraday-
+      - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
+        # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
+        # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
+        # sweep, notify and archive_signals. Each builder is individually resilient
+        # (a non-zero exit is annotated + summarised but NEVER aborts the job), exactly
+        # like the nightly — so one broken page can't 404 the whole deploy.
+        env:
+          # Only the live-quotes worker URL (a repo VARIABLE, baked into live_config.js so
+          # browser live prices stay wired) — NO API/LLM secrets, so the render makes no
+          # network calls and is a pure function of the committed data on disk.
+          LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
+        run: |
+          set +e
+          SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"
+          echo "::notice::render scope = $SCOPE"
+          # marker for the library-rebuild guard (same as daily): only libraries whose
+          # dashboard didn't build them fresh this run get rebuilt by the safety net.
+          touch /tmp/render_libs_marker
+
+          run_py() {   # resilient serial builder (spine, page-renderers, narrow scopes)
+            local label="$1"; local mod="$2"; shift 2
+            echo "::group::$label"
+            python -m "$mod" "$@" > /tmp/step.log 2>&1; local rc=$?
+            cat /tmp/step.log
+            echo "::endgroup::"
+            if [ "$rc" -ne 0 ]; then
+              echo "::error title=$label failed (rc=$rc)::$(tail -n 2 /tmp/step.log | tr '\n' ' ' | tail -c 600)"
+              { echo "### ❌ $label failed (rc=$rc)"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 60 /tmp/step.log; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+            fi
+          }
+
+          # ---- spine: the macro/US dashboard + the desks its pages embed ----
+          # build_site reads the COMMITTED regime/latest.json (no engine.run needed) and
+          # renders macro.html + the US stock pages + news.html + the stock library.
+          spine() {
+            run_py "S&P allocation vector (build_spvector)"        scripts.build_spvector
+            run_py "alternative data desk (build_alt_data)"        scripts.build_alt_data
+            run_py "macro dashboard + US stocks (build_site)"      scripts.build_site
+            run_py "congressional trades desk (build_congress)"    scripts.build_congress
+          }
+
+          # ---- US page-renderers: deterministic JSON merges + chrome (NO LLM) ----
+          us_pages() {
+            run_py "radar upgrade (build_radar_plus)"   scripts.build_radar_plus
+            run_py "radar IC ledger (build_radar_ic)"   scripts.build_radar_ic
+            run_py "radar page (build_radar_page)"      scripts.build_radar_page
+            run_py "intelligence bundle (build_intelligence)" scripts.build_intelligence
+            run_py "brain briefing tunnel (build_briefing)"   scripts.build_briefing
+            run_py "intelligence hub (build_intel_hub)" scripts.build_intel_hub
+            run_py "demand desk page (build_demand)"    scripts.build_demand
+            run_py "calibration hub (build_calibration)" scripts.build_calibration
+            run_py "AI daily brief page (build_aibrief)" scripts.build_aibrief
+            run_py "mastermind snapshot page (build_mastermind)" scripts.build_mastermind
+            run_py "AI desk page (build_ai_desk_page)"  scripts.build_ai_desk_page
+          }
+
+          hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+
+          # ---- the parallel regional/desk band (mirrors daily, MINUS special-sits) ----
+          band() {
+            local ART=/tmp/band; rm -rf "$ART"; mkdir -p "$ART"
+            brun() {
+              local slug="$1" label="$2" mod="$3"; shift 3
+              local t0 t1 rc
+              t0=$(date +%s)
+              { echo "$label"; python -m "$mod" "$@" 2>&1; } > "$ART/$slug.log"; rc=$?
+              t1=$(date +%s)
+              echo "$rc"          > "$ART/$slug.rc"
+              echo "$((t1 - t0))" > "$ART/$slug.sec"
+            }
+            cl_markets() {
+              brun commodities  "build commodity vector (build_commodities)"         scripts.build_commodities
+              brun spr          "build strategic reserves (build_spr)"               scripts.build_spr
+              brun forex        "build forex vector (build_forex)"                   scripts.build_forex
+              brun bonds        "build bonds & bond-health (build_bonds)"            scripts.build_bonds
+              brun crossasset   "cross-asset vector (build_crossasset)"              scripts.build_crossasset
+              brun transmission "rate & inflation transmission (build_transmission)" scripts.build_transmission
+              brun discovery    "discovery leaderboard (build_discovery)"            scripts.build_discovery
+            }
+            cl_china() { brun china "build china a-share dashboard (build_china)" scripts.build_china; }
+            cl_hk()    { brun hk    "build hong kong / hang seng (build_hk)"      scripts.build_hk; }
+            cl_gex() {
+              brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
+              brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
+              brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+              brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
+            }
+            cl_baskets() {
+              brun baskets     "thematic baskets (build_baskets)"        scripts.build_baskets
+              brun news        "news suite (build_news)"                 scripts.build_news
+              brun methodology "methodology page (build_methodology)"    scripts.build_methodology
+            }
+            cl_misc() {
+              brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
+              brun reports       "research reports section (build_reports)"     scripts.build_reports
+              brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
+              brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
+              brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
+            }
+            cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
+            wait
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery gex_board vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch index_changes"
+            echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
+            for slug in $ORDER; do
+              [ -f "$ART/$slug.log" ] || continue
+              local label rc sec
+              label=$(head -n1 "$ART/$slug.log")
+              rc=$(cat "$ART/$slug.rc" 2>/dev/null || echo "?")
+              sec=$(cat "$ART/$slug.sec" 2>/dev/null || echo "?")
+              echo "::group::$label  [${sec}s, rc=$rc]"
+              tail -n +2 "$ART/$slug.log"
+              echo "::endgroup::"
+              echo "- ${label} — ${sec}s (rc=${rc})" >> "$GITHUB_STEP_SUMMARY"
+              if [ "$rc" != "0" ] && [ "$rc" != "?" ]; then
+                echo "::error title=${label} failed (rc=${rc})::$(tail -n 2 "$ART/$slug.log" | tr '\n' ' ' | tail -c 600)"
+                { echo "### ❌ ${label} failed (rc=${rc})"; echo '<details><summary>traceback</summary>'; echo; echo '```'; tail -n 40 "$ART/$slug.log"; echo '```'; echo '</details>'; } >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+          }
+
+          # ---- the failure-path library safety net (verbatim from daily) ----
+          libs() {
+            libdir() {
+              case "$1" in
+                scripts.build_china_library) echo site/chinastockdata;;
+                scripts.build_hk_library) echo site/hkstockdata;;
+                scripts.build_canada_library) echo site/canadastockdata;;
+                scripts.build_intl_library) echo site/intlstockdata;;
+              esac
+            }
+            for mod in scripts.build_china_library scripts.build_hk_library scripts.build_canada_library scripts.build_intl_library; do
+              local idx="$(libdir "$mod")/index.json"
+              if [ -f /tmp/render_libs_marker ] && [ "$idx" -nt /tmp/render_libs_marker ]; then
+                echo "::notice::$mod — already built fresh this run ($idx); skipping redundant rebuild"
+                continue
+              fi
+              echo "::group::$mod"; python -m "$mod" > /tmp/lib.log 2>&1; local rc=$?; cat /tmp/lib.log; echo "::endgroup::"
+              if [ "$rc" -ne 0 ]; then
+                echo "::error title=$mod failed (rc=$rc)::$(tail -n 2 /tmp/lib.log | tr '\n' ' ' | tail -c 600)"
+                { echo "### ❌ $mod failed (rc=$rc)"; echo '```'; tail -n 40 /tmp/lib.log; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+          }
+
+          case "$SCOPE" in
+            all)
+              spine; band; hub; us_pages; libs ;;
+            macro)
+              spine; hub; us_pages ;;
+            china)
+              run_py "build china a-share dashboard (build_china)" scripts.build_china; hub ;;
+            hk)
+              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+            markets)
+              run_py "build commodity vector (build_commodities)"         scripts.build_commodities
+              run_py "build strategic reserves (build_spr)"               scripts.build_spr
+              run_py "build forex vector (build_forex)"                   scripts.build_forex
+              run_py "build bonds & bond-health (build_bonds)"            scripts.build_bonds
+              run_py "cross-asset vector (build_crossasset)"              scripts.build_crossasset
+              run_py "rate & inflation transmission (build_transmission)" scripts.build_transmission
+              run_py "discovery leaderboard (build_discovery)"            scripts.build_discovery
+              hub ;;
+            gex)
+              run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
+              run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
+              run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
+              run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
+              hub ;;
+            baskets)
+              run_py "thematic baskets (build_baskets)"     scripts.build_baskets
+              run_py "news suite (build_news)"              scripts.build_news
+              run_py "methodology page (build_methodology)" scripts.build_methodology
+              run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
+              run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
+              run_py "radar page (build_radar_page)"        scripts.build_radar_page
+              hub ;;
+            *)
+              echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
+          esac
+          exit 0
+      - name: guard — inline JS must parse
+        # Same gate as pages.yml: refuse to deploy if a committed inline <script> has a
+        # JS syntax error (e.g. an empty template var rendering the page blank), so a bad
+        # render keeps the last-good site live instead of shipping a broken page.
+        run: python3 scripts/check_inline_js.py site
+      - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
+        if: always()
+        run: |
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+          # ONLY site/ — never data/ or reports/. The render may touch data/ as a build
+          # side-effect (cache writes, alert appends), but committing none of it keeps the
+          # nightly the single source of truth for every forward-accountability ledger.
+          git add site/
+          # force-add the gitignored-but-tracked-on-main site subtrees (search libraries,
+          # chart OHLC, intraday, stock briefs) so the committed-tree deploy ships them —
+          # a no-op for any subtree this scope didn't rebuild.
+          git add -f site/stockbrief site/stockdata site/ohlc site/intraday 2>/dev/null || true
+          git add -f site/chinastockdata site/canadastockdata site/intlstockdata 2>/dev/null || true
+          git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no rendered-site changes to commit"; exit 0; fi
+          git commit -m "render: site re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
+          # best-effort push (the deploy below uses the uploaded artifact, so it never
+          # hinges on this landing): rebase-retry, preferring our fresh render on conflict.
+          # In a rebase, `-X theirs` keeps the commits being REPLAYED (our render) — same
+          # convention daily.yml uses to prefer its freshly-collected data.
+          for i in 1 2 3 4 5; do
+            if git pull --rebase -X theirs origin main && git push; then
+              echo "pushed rendered site on attempt $i"; exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "render push attempt $i lost a race; re-syncing"; sleep $((i * 7))
+          done
+          echo "::warning::could not push rendered site after 5 attempts (non-fatal — it still deploys via artifact)"
+      - name: upload pages artifact
+        if: always()   # deploy the freshly rendered tree even if the commit-push lost a race
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+      - id: deployment
+        if: always()
+        uses: actions/deploy-pages@v4
