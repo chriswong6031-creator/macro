@@ -427,17 +427,21 @@
     "guidance_direction": "on_hold",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "high",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
     "evidence": [
       {
         "field": "tone_score",
-        "quote_span": "decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+        "quote_span": "decided to maintain the target range"
       },
       {
         "field": "guidance_direction",
-        "quote_span": "decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+        "quote_span": "decided to maintain the target range"
+      },
+      {
+        "field": "risk_delta",
+        "quote_span": "decided to maintain the target range"
       }
     ],
     "degraded_reason": null,
@@ -945,14 +949,14 @@
   },
   "fed_path": {
     "asof": "2026-06-24",
-    "built": "2026-06-25T10:53:01.085701+00:00",
+    "built": "2026-06-25T12:12:58.000251+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": null,
+      "m1": 3.63,
       "m3": 3.75,
       "m6": 3.94,
       "m12": 4.05
@@ -3195,7 +3199,7 @@
     "state": "neutral",
     "label_en": "Neutral",
     "label_zh": "\u4e2d\u6027",
-    "headline_en": "Neutral: drawdown risk contained (29/100). Drivers: SPX: dealers short gamma; net GEX -34.0bn; spot below gamma flip, indexes rolling over / breaking down (33%), complacency=calm (steep contango).",
+    "headline_en": "Neutral: drawdown risk contained (29/100). Drivers: SPX: dealers short gamma; net GEX -34.4bn; spot below gamma flip, indexes rolling over / breaking down (33%), complacency=calm (steep contango).",
     "headline_zh": "\u4e2d\u6027\uff1a\u56de\u64a4\u98ce\u9669\u53ef\u63a7\uff0829/100\uff09\u3002",
     "drivers": [
       {
@@ -3203,7 +3207,7 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -34.0bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -34.4bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       {
@@ -3277,7 +3281,7 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -34.0bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -34.4bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       "technical": {
@@ -4839,32 +4843,32 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 3999.4,
+        "price": 3994.5,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -10.5,
-        "pct_vs_200dma": -10.2,
-        "rsi14": 31.0,
+        "pct_vs_50dma": -10.6,
+        "pct_vs_200dma": -10.3,
+        "rsi14": 30.0,
         "macd_pos": false,
-        "off_52w_high_pct": -24.8,
+        "off_52w_high_pct": -24.9,
         "season_this": "Jun: -0.9% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.9%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -14.0
+        "mom_60d_pct": -14.1
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 69.56,
+        "price": 69.72,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -24.1,
-        "pct_vs_200dma": -6.1,
+        "pct_vs_50dma": -23.9,
+        "pct_vs_200dma": -5.9,
         "rsi14": 25.0,
         "macd_pos": false,
-        "off_52w_high_pct": -38.4,
+        "off_52w_high_pct": -38.3,
         "season_this": "Jun: +2.1% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.1%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -37.6
+        "mom_60d_pct": -37.5
       },
       {
         "ticker": "HG=F",
@@ -4872,8 +4876,8 @@
         "price": 6.09,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -2.6,
-        "pct_vs_200dma": 8.2,
+        "pct_vs_50dma": -2.7,
+        "pct_vs_200dma": 8.1,
         "rsi14": 42.0,
         "macd_pos": false,
         "off_52w_high_pct": -8.4,
@@ -4884,17 +4888,17 @@
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 101.58,
+        "price": 101.72,
         "above50": true,
         "above200": true,
-        "pct_vs_50dma": 2.3,
-        "pct_vs_200dma": 2.8,
-        "rsi14": 76.0,
+        "pct_vs_50dma": 2.4,
+        "pct_vs_200dma": 3.0,
+        "rsi14": 78.0,
         "macd_pos": true,
-        "off_52w_high_pct": -0.0,
+        "off_52w_high_pct": 0.0,
         "season_this": "Jun: -0.1% avg, up 45% of years (n=56)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.1%\uff0c45% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=56\uff09",
-        "mom_60d_pct": 1.5
+        "mom_60d_pct": 1.7
       }
     ],
     "evidence": {
@@ -4970,7 +4974,7 @@
   },
   "freshness": {
     "asof": "2026-06-24",
-    "built_at": "2026-06-25T10:53:03Z",
+    "built_at": "2026-06-25T12:13:00Z",
     "age_days": 1,
     "age_sessions": 1,
     "max_age_sessions": 1,

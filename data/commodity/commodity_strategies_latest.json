@@ -6,7 +6,7 @@
     "copper",
     "oil"
   ],
-  "built": "2026-06-25 11:23 UTC",
+  "built": "2026-06-25 12:43 UTC",
   "cards": [
     {
       "key": "cm_gold_swap",
@@ -32,7 +32,7 @@
     {
       "key": "cm_silver_macro",
       "name": "Silver Macro + Industrial Model",
-      "cagr": 8.02,
+      "cagr": 8.01,
       "sharpe": 0.5,
       "maxdd": -54.6
     },
@@ -46,21 +46,21 @@
     {
       "key": "cm_copper_macro",
       "name": "Copper Growth & Dollar Model",
-      "cagr": 7.85,
+      "cagr": 7.84,
       "sharpe": 0.55,
       "maxdd": -38.4
     },
     {
       "key": "cm_oil_swap",
       "name": "Oil Trend Swap",
-      "cagr": 2.58,
+      "cagr": 2.59,
       "sharpe": 0.23,
       "maxdd": -44.4
     },
     {
       "key": "cm_oil_macro",
       "name": "Oil Macro Multifactor",
-      "cagr": 5.24,
+      "cagr": 5.25,
       "sharpe": 0.37,
       "maxdd": -43.5
     },
