@@ -277,6 +277,19 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
   align-items: center; column-gap: 12px; row-gap: 9px; margin: 0 0 16px; }
 .site-nav .nav-links { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap;
   align-items: center; gap: 3px; min-width: 0; }
+/* ── Brand lockup — the crafted Mastermind “M” logomark + MASTERMIND wordmark, the
+   first item in the shared _navlinks list, pinned at the head of the menu bar and
+   linking Home. The wordmark collapses on phones (≤560px) to keep the menu compact;
+   the full “Market Intelligence” lockup also lives on the landing hero. */
+.site-nav .nav-brand { display: inline-flex; align-items: center; gap: 8px; flex: none;
+  padding: 3px 10px 3px 4px; margin: 0 6px 0 0; border-radius: 11px; text-decoration: none;
+  transition: background .18s, transform .16s ease; }
+.site-nav .nav-brand:hover { background: color-mix(in srgb, var(--link) 11%, transparent);
+  transform: translateY(-1px); }
+.site-nav .nav-brand .brand-glyph { width: 29px; height: 29px; display: block; flex: none;
+  filter: drop-shadow(0 2px 6px rgba(40,56,128,.34)); }
+.site-nav .nav-brand .brand-word { font-size: 13px; font-weight: 800; letter-spacing: .145em;
+  color: var(--text); white-space: nowrap; }
 .site-nav a.nav-link { padding: 7px 11px; border-radius: 9px; font-size: 13.5px;
   font-weight: 500; color: var(--muted); text-decoration: none; white-space: nowrap;
   transition: color .18s, background .18s; }
@@ -650,6 +663,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt { color: #fff; }
   .site-nav .nav-ctrls { grid-column: 1; grid-row: 1; margin-top: 0; }
   .site-nav .nav-links { grid-column: 1; grid-row: 2; }
   .nav-search { grid-column: 1; grid-row: 3; }
+  .site-nav .nav-brand .brand-word { display: none; }  /* phones: keep the menu compact, glyph only */
   .site-nav a.nav-link { padding: 6px 8px; font-size: 12.5px; }
   .site-nav .nav-ctrls { gap: 7px; }
 }

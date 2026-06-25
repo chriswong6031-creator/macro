@@ -1141,6 +1141,36 @@ def _when_zh(ts: pd.Timestamp, date_only: bool) -> str:
 # strings; per-build data (regimes, prices, alerts) is injected via .replace(). All
 # bilingual text is literal <span class="l-en/l-zh"> pairs (theme.css toggles them).
 # --------------------------------------------------------------------------- #
+# Crafted Mastermind "M" brand glyph — a gradient squircle tile (blue→indigo→violet
+# with a top sheen + inner rim light) carrying an ascending market-peak "M" with a
+# soft emboss. Improved from the original Mastermind app mark. Kept BYTE-FOR-BYTE in
+# sync with the nav-bar copy in templates/_site_nav.html.j2 (.nav-brand). CSS sizes it
+# via `.hub-logo .brand-glyph`; the width/height attrs are only a no-CSS fallback.
+_BRAND_MARK_SVG = (
+    '<svg class="brand-glyph" width="64" height="64" viewBox="0 0 40 40" '
+    'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    '<defs>'
+    '<linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">'
+    '<stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>'
+    '<stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>'
+    '<linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">'
+    '<stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>'
+    '<radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">'
+    '<stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>'
+    '<linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">'
+    '<stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>'
+    '</defs>'
+    '<rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>'
+    '<rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>'
+    '<rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>'
+    '<rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>'
+    '<g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">'
+    '<path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>'
+    '<path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>'
+    '</g></svg>'
+)
+
+
 _GLOBE_HUB_CSS = r"""<style>
 html{overflow-x:hidden}
 
@@ -1164,6 +1194,18 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     WITHOUT any rectangular scrim that would cut a line across the body */
  filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
 html[data-lang="zh"] .h h1{letter-spacing:0}
+/* ===== brand lockup — the crafted Mastermind “M” glyph + the Market-Intelligence
+   wordmark, standing in for the old plain-text title. The container drops the
+   gradient-text treatment (it would clip the SVG); the wordmark span keeps it. ===== */
+.h h1.hub-logo{display:inline-flex;align-items:center;justify-content:center;gap:clamp(12px,1.7vw,19px);
+ background:none;-webkit-text-fill-color:currentColor;color:var(--text);filter:none}
+.h h1.hub-logo .brand-glyph{width:clamp(48px,6.4vw,66px);height:clamp(48px,6.4vw,66px);flex:none;
+ filter:drop-shadow(0 6px 18px rgba(40,56,128,.42)) drop-shadow(0 1px 2px var(--bg))}
+.h h1.hub-logo .logo-word{-webkit-text-fill-color:transparent;
+ background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
+@media(max-width:520px){.h h1.hub-logo{gap:11px}.h h1.hub-logo .brand-glyph{width:44px;height:44px}}
 .h p{color:var(--muted);font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:560px;line-height:1.5;text-wrap:balance;
  text-shadow:0 1px 2px var(--bg),0 0 10px var(--bg),0 0 20px var(--bg)}
 
@@ -1778,7 +1820,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '</div>'
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
         + _bi("Live · zero-cost data engine · updated " + built, "实时 · 零成本数据引擎 · 更新于 " + built)
-        + '</span><h1>' + _bi("Market Intelligence", "市场情报") + '</h1>'
+        + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
+        + '<span class="logo-word">' + _bi("Market Intelligence", "市场情报") + '</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
         + globe_deck + markets + vectors + alerts_html
