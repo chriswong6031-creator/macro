@@ -41,12 +41,18 @@ log = logging.getLogger(__name__)
 # Source tiers — one reputable-outlet allowlist, tiered. Substring match on the
 # article domain (so finance.yahoo.com matches yahoo.com).
 # --------------------------------------------------------------------------- #
-# Tier 1 — global wires / papers of record. A hit here is trusted on the source
-# alone (the query already matched the body); they don't churn stock-pick noise.
+# Tier 1 — global wires / papers of record + primary central-bank sources. A hit
+# here is trusted on the source alone (the query already matched the body); they
+# don't churn stock-pick noise. The central banks publish their own speeches /
+# statements / minutes — the most authoritative macro source there is, and the
+# category Perplexity Finance surfaces (e.g. a BoJ outlook speech) that wire
+# reporting only paraphrases. They only surface via on-topic macro queries.
 TIER1_SOURCES = [
     "reuters.com", "apnews.com", "bloomberg.com", "wsj.com", "ft.com",
     "nytimes.com", "washingtonpost.com", "cnbc.com", "economist.com",
     "barrons.com", "spglobal.com", "bbc.com", "bbc.co.uk",
+    # primary central-bank sources (statements / speeches / minutes)
+    "federalreserve.gov", "ecb.europa.eu", "boj.or.jp",
 ]
 # Tier 2 — quality business / market press (broader than tier-1, still curated).
 TIER2_SOURCES = [
@@ -56,6 +62,10 @@ TIER2_SOURCES = [
     "theguardian.com", "guardian.co.uk", "fortune.com", "forbes.com",
     "businessinsider.com", "morningstar.com", "investors.com", "thestreet.com",
     "nikkei.com", "scmp.com", "japantimes.co.jp",
+    # macro data house + Asian business press (matched Perplexity's source list;
+    # India dailies join the existing Asian quality press above). The economictimes
+    # subdomain is pinned so general timesofindia.* world/politics doesn't leak in.
+    "tradingeconomics.com", "economictimes.indiatimes.com", "moneycontrol.com",
 ]
 # Tier 3 — finance aggregators / blogs. Useful breadth but noisier; these must
 # clear a theme/entity gate before they're kept, never the source alone.

@@ -33,6 +33,22 @@ def test_source_tier_tier2():
     assert nc.source_tier("axios.com") == 2
 
 
+def test_source_tier_central_banks_tier1():
+    # primary central-bank sources rank as wires (trusted on source alone)
+    assert nc.source_tier("federalreserve.gov") == 1
+    assert nc.source_tier("www.ecb.europa.eu") == 1
+    assert nc.source_tier("boj.or.jp") == 1
+
+
+def test_source_tier_added_business_press_tier2():
+    # outlets matched from Perplexity Finance's source list
+    assert nc.source_tier("tradingeconomics.com") == 2
+    assert nc.source_tier("economictimes.indiatimes.com") == 2
+    assert nc.source_tier("moneycontrol.com") == 2
+    # the ET subdomain is pinned — general Times of India must NOT be allowlisted
+    assert nc.source_tier("timesofindia.indiatimes.com") == 0
+
+
 def test_source_tier_tier3():
     assert nc.source_tier("benzinga.com") == 3
     assert nc.source_tier("seekingalpha.com") == 3
