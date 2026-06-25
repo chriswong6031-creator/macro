@@ -970,6 +970,20 @@ deribit:
   term_tenors_d: [7, 30, 90, 180]   # ATM IV term-structure standardized tenors
   skew_target_d: 30                 # 25-delta skew/RR measured at the ~30d expiry
 
+btc_impulse_radar:
+  # Forward IMPULSE-PRESSURE radar (engine/btc_impulse_radar.py) — DISPLAY-ONLY.
+  # Legs = adversarially-verified LEADING precursors only (see
+  # research/VECTOR_IMPULSE_PREDICTION.md). Each fires on a leak-free threshold
+  # cross and DECAYS to quiet; context legs cannot exceed `coiled` (only an
+  # act-tier cross reaches warning/trigger). All keys optional — in-code defaults
+  # apply when absent.
+  enabled: true
+  horizon_days: 6        # decay lookback for a leg's most-recent fire
+  cbp_z_w: 90            # causal z window — Coinbase premium (D1 context)
+  dvol_z_w: 60           # causal z window — DVOL intraday range (D2 act)
+  sopr_z_w: 90           # causal z window — aggregate SOPR (D3 down / U1 up act)
+  pctile_w: 252          # causal trailing-percentile window — OI / vol-of-vol fuel
+
 farside:
   # Farside Investors — the canonical FREE daily US spot-Bitcoin-ETF flow table,
   # per fund + total, in US$m, since the 2024-01-11 launch (parens = outflow, "-" =

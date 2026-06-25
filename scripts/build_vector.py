@@ -2152,9 +2152,18 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001 — the regime scorecard is optional
         log.warning("regime composite failed (%s)", e)
         regime = {"ok": False}
+    if regime.get("ok"):           # P3 falsifier: re-validate the impulse legs + refresh the gate
+        try:                       # BEFORE the radar leg below, so it reads a fresh verdict
+            from engine import btc_impulse_radar_backtest
+            _gv = btc_impulse_radar_backtest.validate(sig)
+            if _gv.get("ok"):
+                btc_impulse_radar_backtest.write_gate(_gv)
+        except Exception as _ge:   # noqa: BLE001 — falsifier is additive
+            log.warning("impulse falsifier skipped (%s)", _ge)
     if regime.get("ok"):           # deferred CONTEXT legs (display-only; each degrades to ok:False)
         legs = {}
         for _mod, _key in (("btc_netliq", "netliq"), ("btc_leverage_cascade", "leverage"),
+                           ("btc_impulse_radar", "impulse_radar"),
                            ("btc_dat", "dat"), ("etf_perfund", "etf_perfund")):
             try:
                 _m = __import__(f"engine.{_mod}", fromlist=["x"])
@@ -2163,10 +2172,16 @@ def main() -> int:
                 elif _mod == "btc_dat":               # reads a manual json drop + parquet close, not the df
                     legs[_key] = _m.compute()
                 else:
-                    legs[_key] = _m.compute(sig)       # btc_netliq / btc_leverage_cascade take the df
+                    legs[_key] = _m.compute(sig)       # btc_netliq / cascade / impulse_radar take the df
             except Exception as _le:  # noqa: BLE001 — context legs are optional
                 legs[_key] = {"ok": False, "reason": f"{type(_le).__name__}"}
         regime["context_legs"] = legs
+        try:                       # P3 forward-outcome ledger: stamp today + grade matured rows
+            from engine import btc_impulse_ledger
+            btc_impulse_ledger.stamp(legs.get("impulse_radar"), sig)
+            regime["impulse_ledger"] = btc_impulse_ledger.grade(sig)
+        except Exception as _il:   # noqa: BLE001 — ledger is additive
+            log.warning("impulse ledger skipped (%s)", _il)
     if regime.get("ok"):           # accrue the falsifiable forward ledger (context-only, separate)
         try:
             from engine import btc_regime_ledger

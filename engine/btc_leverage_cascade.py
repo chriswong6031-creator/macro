@@ -218,6 +218,22 @@ def compute(sig_df: pd.DataFrame | None = None) -> dict:
             derisk_cap = None
 
         # ------------------------------------------------------------------ #
+        # OI-ONLY de-risk break (one-sided, LOW-CONVICTION). The AND gate above
+        # silences crowded-but-not-euphoric OI — the 2026-06-23 case (OI 86th
+        # pctile & building, funding neutral → cascade_risk "low"). This path
+        # lets the OI leg warn ON ITS OWN, regardless of funding. HONESTY: OI
+        # percentile is anti-predictive standalone (measured lift ~0.36), so this
+        # is a soft "crowding building" de-risk nudge, NOT a validated crash
+        # call — surfaced because crowded OI should be able to flag, never scored.
+        # ------------------------------------------------------------------ #
+        if oi_state == "stretched":
+            oi_only_risk = "high"
+        elif oi_state == "elevated":
+            oi_only_risk = "elevated"
+        else:
+            oi_only_risk = "low"
+
+        # ------------------------------------------------------------------ #
         # Current readings (for the display card)
         # ------------------------------------------------------------------ #
         fa_last = None
@@ -245,6 +261,7 @@ def compute(sig_df: pd.DataFrame | None = None) -> dict:
             "one_sided": True,   # can only flag de-risk, never add
             "asof": asof,
             "cascade_risk": cascade_risk,
+            "oi_only_risk": oi_only_risk,   # funding-independent OI-crowding de-risk (low-conviction)
             "funding_state": f_state,
             "oi_state": oi_state,
             "derisk_cap": derisk_cap,
@@ -261,3 +278,31 @@ def compute(sig_df: pd.DataFrame | None = None) -> dict:
         }
     except Exception as e:
         return {"ok": False, "reason": f"{type(e).__name__}: {e}"}
+
+
+def oi_state_series(df: pd.DataFrame, cfg: dict | None = None) -> pd.Series:
+    """Per-day OI-crowding state (normal/elevated/stretched/declining) over full
+    history — the vectorised sibling of `_oi_state`. Drives the funding-INDEPENDENT
+    OI-crowding de-risk alert (the leg that was silent in June). Causal: percentile
+    uses a trailing rolling window incl. the current bar, no future leak. Returns an
+    empty Series if oi_mcap_ratio is missing. Never raises."""
+    try:
+        cfg = cfg if cfg is not None else (config.load().get("btc_leverage_cascade", {}) or {})
+        w = int(cfg.get("oi_top_decile_w", 252))
+        top = float(cfg.get("oi_top_decile_thresh", 0.90))
+        elev = float(cfg.get("oi_elev_thresh", 0.75))
+        if "oi_mcap_ratio" not in df.columns:
+            return pd.Series(dtype=object)
+        ratio = df["oi_mcap_ratio"]
+        pctile = ratio.rolling(w, min_periods=max(20, w // 4)).rank(pct=True)
+        oi_chg = df["oi_change"] if "oi_change" in df.columns else pd.Series(0.0, index=df.index)
+        building = oi_chg.fillna(0.0) >= 0
+        declining = oi_chg < 0
+        out = pd.Series("normal", index=df.index, dtype=object)
+        out = out.mask(pctile >= elev, "elevated")
+        out = out.mask((pctile >= top) & building, "stretched")
+        out = out.mask(declining, "declining")
+        out = out.mask(pctile.isna(), None)
+        return out
+    except Exception:  # noqa: BLE001 — additive, never fatal
+        return pd.Series(dtype=object)
