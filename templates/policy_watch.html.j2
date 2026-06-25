@@ -14,7 +14,7 @@
   ['mechanism','机制'],['read','解读'],['budget','预算'],['tariff','关税'],['ceasefire','停火'],
   ['conflict','冲突'],['oil','油价'],['deal','协议']
 ] %}
-{% set _THREAD  = {'fed':'美联储','treasury':'财政部','policy':'政策','rotation':'轮动','china':'中国','iran':'伊朗','nato':'北约','dollar':'美元'} %}
+{% set _THREAD  = {'fed':'美联储','treasury':'财政部','policy':'政策','rotation':'轮动','china':'中国','iran':'伊朗','nato':'北约','dollar':'美元','debasement':'去货币化'} %}
 {% set _TIER    = {'policy-action':'政策行动','market-outcome':'市场结果'} %}
 {% set _STATUS  = {'open':'未结','hit':'命中','miss':'落空','pending':'待定'} %}
 {% set _VERDICT = {'working':'达标','lagging':'落后','mixed':'混合'} %}
@@ -57,7 +57,7 @@
   .b-open { color:var(--muted); background:var(--panel2); }
   .b-hit  { color:#1f9a55; background:color-mix(in srgb,#1f9a55 13%,transparent); }
   .b-miss { color:#d23f3f; background:color-mix(in srgb,#d23f3f 13%,transparent); }
-  .th-fed{color:#c77dff}.th-treasury{color:#3fb6c0}.th-policy{color:#5b8def}.th-rotation{color:#46b87a}
+  .th-fed{color:#c77dff}.th-treasury{color:#3fb6c0}.th-policy{color:#5b8def}.th-rotation{color:#46b87a}.th-debasement{color:#e0973a}.th-dollar{color:#3fb6c0}
   .conf { font-size:11px; color:var(--muted); }
   /* task-force + lever cards */
   .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:12px 0; }
@@ -163,6 +163,14 @@
       <span class="b {{ scls }}">{{ bl(fed_stance.label_en, fed_stance.label_zh) }}</span>{% if fed_hist and fed_hist.days_in_stance is not none %} <span class="conf">{{ t('for', '已持续') }} {{ fed_hist.days_in_stance }}{{ t('d', '天') }} ({{ t('since', '自') }} {{ fed_hist.since }}){% if fed_hist.changed_recently %} <span class="b b-open">{{ t('recently shifted', '近期转变') }}</span>{% endif %}</span>{% endif %}</span>
     {% if fed_stance.drivers_en %}<span class="l-en">{{ fed_stance.drivers_en | join(' · ') }}</span><span class="l-zh">{{ fed_stance.drivers_zh | join(' · ') }}</span>. {% endif %}
     <span class="conf">{{ bl(fed_stance.note_en, fed_stance.note_zh) }}</span>
+  </div>
+  {% endif %}
+
+  {% if intel.fed.optionality_read %}
+  <div class="callout warn">
+    <span class="co-h">{{ t('Pivot infrastructure — the 6/24 read', '转向基础设施 —— 6/24 解读') }}
+      <span class="b b-inf">{{ tr(intel.fed.optionality_read.basis, _BASIS_TR) }}</span> <span class="conf">{{ tr(intel.fed.optionality_read.confidence, _CONF_TR) }}</span></span>
+    {{ bl(intel.fed.optionality_read.en, intel.fed.optionality_read.zh) }}
   </div>
   {% endif %}
 
