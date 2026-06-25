@@ -103,30 +103,34 @@ def grade(sig_df: pd.DataFrame | None = None) -> dict:
         rows = load()
         graded = 0
         for r in rows:
-            if r.get("outcome") is not None:
+            try:                              # one corrupt/hand-edited row must NOT abort
+                if r.get("outcome") is not None:  # grading of every other matured row
+                    continue
+                ts = pd.Timestamp(r["asof"])
+                if ts not in close.index:
+                    continue
+                pos = close.index.get_loc(ts)
+                if pos + LABEL_H >= len(close):
+                    continue  # not matured yet
+                base = float(close.iloc[pos])
+                fwd = close.iloc[pos + 1: pos + 1 + LABEL_H]
+                if fwd.empty or base <= 0:
+                    continue
+                fwd_min = float(fwd.min()) / base - 1.0
+                fwd_max = float(fwd.max()) / base - 1.0
+                down_fired = any(r.get("fires", {}).get(k) for k in ("d2", "d3"))
+                up_fired = bool(r.get("fires", {}).get("u1"))
+                r["outcome"] = {
+                    "matured": True,
+                    "fwd_min_pct": round(fwd_min * 100, 2),
+                    "fwd_max_pct": round(fwd_max * 100, 2),
+                    "down_hit": bool(down_fired and fwd_min <= -LABEL_THR),
+                    "up_hit": bool(up_fired and fwd_max >= LABEL_THR),
+                }
+                graded += 1
+            except Exception as e:  # noqa: BLE001 — skip the bad row, keep grading the rest
+                log.debug("impulse ledger: skipped a bad row (%s): %s", r.get("asof"), e)
                 continue
-            ts = pd.Timestamp(r["asof"])
-            if ts not in close.index:
-                continue
-            pos = close.index.get_loc(ts)
-            if pos + LABEL_H >= len(close):
-                continue  # not matured yet
-            base = float(close.iloc[pos])
-            fwd = close.iloc[pos + 1: pos + 1 + LABEL_H]
-            if fwd.empty or base <= 0:
-                continue
-            fwd_min = float(fwd.min()) / base - 1.0
-            fwd_max = float(fwd.max()) / base - 1.0
-            down_fired = any(r.get("fires", {}).get(k) for k in ("d2", "d3"))
-            up_fired = bool(r.get("fires", {}).get("u1"))
-            r["outcome"] = {
-                "matured": True,
-                "fwd_min_pct": round(fwd_min * 100, 2),
-                "fwd_max_pct": round(fwd_max * 100, 2),
-                "down_hit": bool(down_fired and fwd_min <= -LABEL_THR),
-                "up_hit": bool(up_fired and fwd_max >= LABEL_THR),
-            }
-            graded += 1
         if graded:
             _write(rows)
         return render_summary(rows)

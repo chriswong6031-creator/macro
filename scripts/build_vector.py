@@ -2223,6 +2223,14 @@ def main() -> int:
             except Exception as _le:  # noqa: BLE001 — context legs are optional
                 legs[_key] = {"ok": False, "reason": f"{type(_le).__name__}"}
         regime["context_legs"] = legs
+        _cvd = legs.get("intraday_cvd") or {}      # LOUD alarm if the hourly aggressor-CVD
+        if _cvd.get("ok") and _cvd.get("stale"):   # feed silently freezes (audit HIGH) — shows
+            log.warning("::warning:: intraday aggressor-CVD STALE — okx hourly lags %s h behind "  # in the daily run summary
+                        "the live reference; the feed has STOPPED accruing — check OKX rubik 1H",
+                        _cvd.get("hours_behind_ref"))
+        if _cvd.get("ok") and _cvd.get("gap_detected"):
+            log.warning("::warning:: intraday aggressor-CVD: unbackfillable >30d gap in the hourly "
+                        "history — cumsum restarted after the gap")
         try:                       # P3 forward-outcome ledger: stamp today + grade matured rows
             from engine import btc_impulse_ledger
             btc_impulse_ledger.stamp(legs.get("impulse_radar"), sig)
