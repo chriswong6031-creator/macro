@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-25T08:09:29.349820+00:00",
+  "generated_utc": "2026-06-25T09:41:10.086660+00:00",
   "as_of": "2026-06-25",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -5471,42 +5471,21 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 33061,
+      "rows": 33068,
       "last_seen": "2026-06-25",
       "recent": [
         {
-          "ticker": "DJT",
-          "owner_name": "HOLLENCREST CAPITAL MANAGEMENT",
+          "ticker": "DDOG",
+          "owner_name": "Cetera Investment Advisers",
           "owner_title": "Institution",
-          "shares": "1225",
+          "shares": "164000",
           "_collected": "2026-06-25"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "LAZARD ASSET MANAGEMENT LLC",
+          "owner_name": "Focus Partners Wealth",
           "owner_title": "Institution",
-          "shares": "7239349",
-          "_collected": "2026-06-25"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "CITADEL ADVISORS LLC",
-          "owner_title": "Institution",
-          "shares": "7692857",
-          "_collected": "2026-06-25"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "CANADA LIFE ASSURANCE Co",
-          "owner_title": "Institution",
-          "shares": "7657087",
-          "_collected": "2026-06-25"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "ALTAROCK PARTNERS LP",
-          "owner_title": "Institution",
-          "shares": "7567946",
+          "shares": "6893921",
           "_collected": "2026-06-25"
         },
         {
@@ -5539,16 +5518,16 @@
         },
         {
           "ticker": "AMZN",
-          "owner_name": "WINDACRE PARTNERSHIP LLC",
+          "owner_name": "LAZARD ASSET MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "7185100",
+          "shares": "7239349",
           "_collected": "2026-06-25"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "TWO SIGMA INVESTMENTS, LP",
+          "owner_name": "WINDACRE PARTNERSHIP LLC",
           "owner_title": "Institution",
-          "shares": "6335167",
+          "shares": "7185100",
           "_collected": "2026-06-25"
         },
         {
@@ -5560,16 +5539,16 @@
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Focus Partners Wealth",
+          "owner_name": "Mariner, LLC",
           "owner_title": "Institution",
-          "shares": "6893921",
+          "shares": "6681607",
           "_collected": "2026-06-25"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Mariner, LLC",
+          "owner_name": "ACADIAN ASSET MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "6681607",
+          "shares": "6136480",
           "_collected": "2026-06-25"
         },
         {
@@ -5602,6 +5581,48 @@
         },
         {
           "ticker": "AMZN",
+          "owner_name": "Alyeska Investment Group, L.P.",
+          "owner_title": "Institution",
+          "shares": "6351723",
+          "_collected": "2026-06-25"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "TWO SIGMA INVESTMENTS, LP",
+          "owner_title": "Institution",
+          "shares": "6335167",
+          "_collected": "2026-06-25"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "Grantham, Mayo, Van Otterloo & Co. LLC",
+          "owner_title": "Institution",
+          "shares": "6229375",
+          "_collected": "2026-06-25"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "ALTAROCK PARTNERS LP",
+          "owner_title": "Institution",
+          "shares": "7567946",
+          "_collected": "2026-06-25"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "CANADA LIFE ASSURANCE Co",
+          "owner_title": "Institution",
+          "shares": "7657087",
+          "_collected": "2026-06-25"
+        },
+        {
+          "ticker": "AMZN",
+          "owner_name": "CITADEL ADVISORS LLC",
+          "owner_title": "Institution",
+          "shares": "7692857",
+          "_collected": "2026-06-25"
+        },
+        {
+          "ticker": "AMZN",
           "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
           "owner_title": "Institution",
           "shares": "7863287",
@@ -5609,44 +5630,23 @@
         },
         {
           "ticker": "AMZN",
-          "owner_name": "PARNASSUS INVESTMENTS, LLC",
+          "owner_name": "AQR CAPITAL MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "7887228",
+          "shares": "8922824",
           "_collected": "2026-06-25"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
+          "owner_name": "Ensign Peak Advisors, Inc",
           "owner_title": "Institution",
-          "shares": "7964931",
+          "shares": "8837145",
           "_collected": "2026-06-25"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ProShare Advisors LLC",
+          "owner_name": "ROYAL LONDON ASSET MANAGEMENT LTD",
           "owner_title": "Institution",
-          "shares": "8030900",
-          "_collected": "2026-06-25"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "BROWN ADVISORY INC",
-          "owner_title": "Institution",
-          "shares": "9325106",
-          "_collected": "2026-06-25"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "ADAGE CAPITAL PARTNERS GP, L.L.C.",
-          "owner_title": "Institution",
-          "shares": "9156260",
-          "_collected": "2026-06-25"
-        },
-        {
-          "ticker": "AMZN",
-          "owner_name": "NATIXIS ADVISORS, LLC",
-          "owner_title": "Institution",
-          "shares": "9031292",
+          "shares": "8836266",
           "_collected": "2026-06-25"
         }
       ]
@@ -6414,49 +6414,49 @@
     ],
     "hf": [
       {
-        "ticker": "AAPL",
-        "downloads_30d": 6803501.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "AMZN",
-        "downloads_30d": 25457720.0,
-        "wow_pct": 0.0
+        "ticker": "GOOGL",
+        "downloads_30d": 208051472.0,
+        "wow_pct": -0.6
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 213916428.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "CRM",
-        "downloads_30d": 7096201.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "GOOGL",
-        "downloads_30d": 209250013.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "IBM",
-        "downloads_30d": 9968031.0,
-        "wow_pct": 0.0
+        "downloads_30d": 212310411.0,
+        "wow_pct": -0.8
       },
       {
         "ticker": "META",
-        "downloads_30d": 90644411.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "MSFT",
-        "downloads_30d": 29539120.0,
-        "wow_pct": 0.0
+        "downloads_30d": 89825519.0,
+        "wow_pct": -0.9
       },
       {
         "ticker": "NVDA",
-        "downloads_30d": 29289355.0,
-        "wow_pct": 0.0
+        "downloads_30d": 29038012.0,
+        "wow_pct": -0.9
+      },
+      {
+        "ticker": "MSFT",
+        "downloads_30d": 29026210.0,
+        "wow_pct": -1.7
+      },
+      {
+        "ticker": "CRM",
+        "downloads_30d": 6962765.0,
+        "wow_pct": -1.9
+      },
+      {
+        "ticker": "IBM",
+        "downloads_30d": 9777640.0,
+        "wow_pct": -1.9
+      },
+      {
+        "ticker": "AAPL",
+        "downloads_30d": 6612091.0,
+        "wow_pct": -2.8
+      },
+      {
+        "ticker": "AMZN",
+        "downloads_30d": 24619361.0,
+        "wow_pct": -3.3
       }
     ],
     "material_8k": [
@@ -13917,6 +13917,22 @@
       },
       {
         "ticker": "BHAGYANGR",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "NVRI",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "FDX",
         "category": "Spin-Offs",
         "confidence": "high",
         "activist": false,
@@ -34932,6 +34948,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "BSBR",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "ICON",
         "category": "Other",
         "confidence": "high",
@@ -35082,6 +35106,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "SSACW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "BLDC",
@@ -35308,6 +35340,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "HDRNW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "AMPGR",
         "category": "Delistings",
         "confidence": "high",
@@ -35373,11 +35413,11 @@
       },
       {
         "ticker": "BURUW",
-        "category": "Delistings",
+        "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Acquisitions"
       },
       {
         "ticker": "OLOX",
@@ -35540,6 +35580,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SOUL-UN",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "DFNSW",
         "category": "Delistings",
         "confidence": "high",
@@ -35570,6 +35618,14 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "IMAQW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "TETUF",
@@ -36162,6 +36218,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "WINVW",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "CALC",
@@ -37260,6 +37324,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "TDS-PV",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "PRTCY",
         "category": "Delistings",
         "confidence": "high",
@@ -37298,6 +37370,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "ADSEW",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "CRBD",
@@ -37532,6 +37612,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SLMT",
+        "category": "Activist Campaigns",
+        "confidence": "high",
+        "activist": true,
+        "filer": null,
+        "detail": "Activist Campaigns"
+      },
+      {
         "ticker": "BRKHU",
         "category": "SPACs",
         "confidence": "high",
@@ -37618,6 +37706,22 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "EAF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "BWMX",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "EDBLW",
@@ -37724,6 +37828,38 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "EMYB",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "EHC",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "FXACU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
+        "ticker": "FCPT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "HCACR",
         "category": "SPACs",
         "confidence": "high",
@@ -37732,12 +37868,92 @@
         "detail": "SPACs"
       },
       {
+        "ticker": "KRMN",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "KPEAD",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "NOG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "NUTR",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "ORLY",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "STEP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SSTPW",
+        "category": "Restructuring",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "TMQ",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "UFPI",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "VVX",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "VIASP",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "EPWKF",
@@ -37850,14 +38066,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "BWMX",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "ORXCF",
@@ -38518,11 +38726,11 @@
     ],
     "unusual_options": [
       {
-        "ticker": "CBRS",
-        "vol_oi": 1.717,
-        "mult": 4.43,
-        "put_call": 0.9,
-        "lean": "balanced",
+        "ticker": "BTDR",
+        "vol_oi": 0.157,
+        "mult": 4.46,
+        "put_call": 0.06,
+        "lean": "call-skew",
         "hot": true
       },
       {
@@ -38534,11 +38742,11 @@
         "hot": true
       },
       {
-        "ticker": "BTDR",
-        "vol_oi": 0.152,
+        "ticker": "CBRS",
+        "vol_oi": 1.671,
         "mult": 4.31,
-        "put_call": 0.06,
-        "lean": "call-skew",
+        "put_call": 0.86,
+        "lean": "balanced",
         "hot": true
       },
       {
@@ -38646,14 +38854,6 @@
         "hot": false
       },
       {
-        "ticker": "HD",
-        "vol_oi": 0.233,
-        "mult": 1.97,
-        "put_call": 0.48,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
         "ticker": "PCG",
         "vol_oi": 0.024,
         "mult": 1.96,
@@ -38662,11 +38862,11 @@
         "hot": false
       },
       {
-        "ticker": "MSTR",
-        "vol_oi": 0.931,
-        "mult": 1.9,
-        "put_call": 1.41,
-        "lean": "put-skew",
+        "ticker": "HD",
+        "vol_oi": 0.23,
+        "mult": 1.95,
+        "put_call": 0.49,
+        "lean": "call-skew",
         "hot": false
       },
       {
@@ -38675,6 +38875,14 @@
         "mult": 1.89,
         "put_call": 0.81,
         "lean": "balanced",
+        "hot": false
+      },
+      {
+        "ticker": "AZO",
+        "vol_oi": 0.453,
+        "mult": 1.83,
+        "put_call": 1.35,
+        "lean": "put-skew",
         "hot": false
       }
     ],
@@ -38955,6 +39163,12 @@
     ],
     "github": [
       {
+        "ticker": "NET",
+        "stars": 14625,
+        "wow_pct": 0.04,
+        "hot": true
+      },
+      {
         "ticker": "AMD",
         "stars": 6646,
         "wow_pct": 0.03,
@@ -38968,7 +39182,7 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77163,
+        "stars": 77164,
         "wow_pct": 0.03,
         "hot": true
       },
@@ -38979,26 +39193,32 @@
         "hot": true
       },
       {
-        "ticker": "NET",
-        "stars": 14624,
-        "wow_pct": 0.03,
+        "ticker": "MSFT",
+        "stars": 186880,
+        "wow_pct": 0.02,
         "hot": true
       },
       {
-        "ticker": "MSFT",
-        "stars": 186873,
+        "ticker": "NVDA",
+        "stars": 17554,
         "wow_pct": 0.02,
+        "hot": true
+      },
+      {
+        "ticker": "GOOGL",
+        "stars": 196043,
+        "wow_pct": 0.01,
         "hot": false
       },
       {
-        "ticker": "NVDA",
-        "stars": 17553,
-        "wow_pct": 0.02,
+        "ticker": "MDB",
+        "stars": 28393,
+        "wow_pct": 0.01,
         "hot": false
       },
       {
         "ticker": "META",
-        "stars": 246213,
+        "stars": 246214,
         "wow_pct": 0.01,
         "hot": false
       },
@@ -39015,20 +39235,8 @@
         "hot": false
       },
       {
-        "ticker": "GOOGL",
-        "stars": 196040,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
         "ticker": "GTLB",
         "stars": 24469,
-        "wow_pct": 0.0,
-        "hot": false
-      },
-      {
-        "ticker": "MDB",
-        "stars": 28392,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -42473,16 +42681,30 @@
     "convergence": [
       {
         "ticker": "NVDA",
-        "score": 5,
-        "weighted_score": 1.9,
+        "score": 6,
+        "weighted_score": 2.2,
         "channel_list": [
           "13f_add",
           "darkpool_accum",
+          "github_momentum",
           "patent_cluster",
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.02% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+      },
+      {
+        "ticker": "MSFT",
+        "score": 5,
+        "weighted_score": 1.95,
+        "channel_list": [
+          "13f_add",
+          "app_demand",
+          "github_momentum",
+          "gov_contract",
+          "patent_cluster"
+        ],
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,664,568 reviews \u00b7 github_momentum: +0.02% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
       },
       {
         "ticker": "BIIB",
@@ -42532,18 +42754,6 @@
           "special_situation"
         ],
         "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,604,622 reviews \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
-      },
-      {
-        "ticker": "MSFT",
-        "score": 4,
-        "weighted_score": 1.65,
-        "channel_list": [
-          "13f_add",
-          "app_demand",
-          "gov_contract",
-          "patent_cluster"
-        ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,664,568 reviews \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
       },
       {
         "ticker": "AAL",

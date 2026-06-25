@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "china",
-  "generated_at": "2026-06-25T07:34:41.538103+00:00",
+  "generated_at": "2026-06-25T09:07:00.909971+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -13,25 +13,25 @@
       "contaminated": false,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.037,
+          "cagr": 0.0373,
           "sharpe": 0.27,
           "max_dd": -0.3733,
           "calmar": 0.1,
           "n_months": 102,
-          "dsr": 0.223,
+          "dsr": 0.224,
           "worst_decile_ret": -0.0647
         },
         "top3_mom12_rel": {
-          "cagr": 0.0395,
+          "cagr": 0.0398,
           "sharpe": 0.28,
-          "max_dd": -0.4315,
+          "max_dd": -0.4303,
           "calmar": 0.09,
           "n_months": 90,
           "dsr": 0.206,
           "worst_decile_ret": -0.05
         },
         "top3_mom6_rel": {
-          "cagr": 0.0445,
+          "cagr": 0.0448,
           "sharpe": 0.29,
           "max_dd": -0.6617,
           "calmar": 0.07,
@@ -40,28 +40,28 @@
           "worst_decile_ret": -0.0554
         },
         "top3_mom12_dual": {
-          "cagr": -0.0322,
+          "cagr": -0.0319,
           "sharpe": -0.0,
-          "max_dd": -0.6427,
+          "max_dd": -0.642,
           "calmar": -0.05,
           "n_months": 90,
-          "dsr": 0.056,
+          "dsr": 0.057,
           "worst_decile_ret": -0.0409
         },
         "top4_mom12_dual": {
-          "cagr": 0.0031,
+          "cagr": 0.0034,
           "sharpe": 0.13,
           "max_dd": -0.5135,
           "calmar": 0.01,
           "n_months": 90,
-          "dsr": 0.109,
+          "dsr": 0.11,
           "worst_decile_ret": -0.0222
         }
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0223,
-          "ic_t_hac": 0.68,
+          "mean_ic": 0.0219,
+          "ic_t_hac": 0.668,
           "hit": 0.511,
           "n_steps": 90
         },
@@ -81,14 +81,14 @@
           "n": 632
         },
         "below_trend": {
-          "mean": 0.0061,
+          "mean": 0.0062,
           "std": 0.1098,
           "sharpe": 0.19,
           "p05": -0.1216,
           "n": 781
         },
         "mean_diff_t": -0.21,
-        "mean_diff_p": 0.8342
+        "mean_diff_p": 0.8318
       },
       "extension_drawdown": {
         "fwd_days": 63,

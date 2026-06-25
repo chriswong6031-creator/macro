@@ -106,6 +106,31 @@
 
 
     <div class="nav-links">
+    
+    <a class="nav-brand" href="index.html" aria-label="Market Intelligence — Home">
+      <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#5b9dff"/><stop offset=".42" stop-color="#3b82f6"/>
+            <stop offset=".74" stop-color="#6366f1"/><stop offset="1" stop-color="#7c5cff"/></linearGradient>
+          <linearGradient id="mbSheen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".34"/><stop offset=".55" stop-color="#ffffff" stop-opacity="0"/></linearGradient>
+          <radialGradient id="mbGlow" cx=".5" cy=".4" r=".65">
+            <stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+          <linearGradient id="mbInk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe7ff"/></linearGradient>
+        </defs>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbTile)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbGlow)"/>
+        <rect x="3" y="3" width="34" height="34" rx="10.5" fill="url(#mbSheen)"/>
+        <rect x="3.7" y="3.7" width="32.6" height="32.6" rx="9.9" fill="none" stroke="#ffffff" stroke-opacity=".28"/>
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.3">
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="#15205a" stroke-opacity=".30" transform="translate(0,1.1)"/>
+          <path d="M13 28 L13 14.5 L20 22 L27 12.5 L27 28" stroke="url(#mbInk)"/>
+        </g>
+      </svg>
+      <span class="brand-word">MASTERMIND</span>
+    </a>
     <a class="nav-link" href="index.html">🏠 <span class="l-en">Home</span><span class="l-zh">首页</span></a>
     <div class="nav-dd">
       <a class="nav-link" href="macro.html">🇺🇸 <span class="l-en">United States</span><span class="l-zh">美国</span> <span class="caret">▾</span></a>
@@ -236,10 +261,10 @@
   </div>
   <p class="lead" style="margin:10px 0 0"><span class="l-en">Six engines emit alerts on their own pages with their own severity scales. This board pulls the recent macro / cross-asset feeds into one place and answers the only questions that matter: how loud is it really (a TRUE cross-asset conviction, not each engine's local 'high'), how much should it grab attention now (a transparent priority score — its parts are shown), and what is the measured edge. On that last point we are strict: a hit-rate or Deflated-Sharpe appears ONLY where the validation layer actually measured this signal family; everywhere else we say 'documented, not backtested' rather than invent a number.</span><span class="l-zh">六个引擎在各自页面以各自的严重度标准发出警报。本看板把近期的宏观／跨资产信息流汇于一处，回答真正重要的问题：它到底有多响（真正的跨资产信念，而非各引擎本地的“高”）、此刻该给多少注意力（一个透明的优先级分数，其构成已公开），以及可测的边际是多少。最后一点我们很严格：只有当验证层确实测量过该信号族时，才显示命中率或去偏夏普；其余一律标注“有据可查，但未回测”，绝不编造数字。</span></p>
   <div class="chips">
-    <span class="chip"><span class="dot d-crit"></span><b>1</b> <span class="l-en">critical</span><span class="l-zh">关键</span></span>
-    <span class="chip"><span class="dot d-major"></span><b>59</b> <span class="l-en">major</span><span class="l-zh">重要</span></span>
+    <span class="chip"><span class="dot d-crit"></span><b>2</b> <span class="l-en">critical</span><span class="l-zh">关键</span></span>
+    <span class="chip"><span class="dot d-major"></span><b>58</b> <span class="l-en">major</span><span class="l-zh">重要</span></span>
     <span class="chip"><span class="dot d-minor"></span><b>0</b> <span class="l-en">minor</span><span class="l-zh">次要</span></span>
-    <span class="chip">⚡ <b>1</b> <span class="l-en">actionable (act-tier)</span><span class="l-zh">可执行（act级）</span></span>
+    <span class="chip">⚡ <b>3</b> <span class="l-en">actionable (act-tier)</span><span class="l-zh">可执行（act级）</span></span>
     <span class="chip">🔬 <b>1</b> <span class="l-en">backed by a validated signal</span><span class="l-zh">有已验证信号支撑</span><span class="help">?<span class="tip"><span class="l-en">A signal-family with a real Signal-Lab verdict (hit / IC / Deflated-Sharpe). The rest carry documented conviction only.</span><span class="l-zh">该信号族在信号实验室有真实结论（命中／IC／去偏夏普）。其余仅为有据可查的信念。</span></span></span></span>
   </div>
 </div>
@@ -297,6 +322,46 @@
 
   
   
+  <div class="ac crit" data-sev="critical" data-tier="act" data-src="vector">
+    <div class="rail">
+      <div class="pr">90</div>
+      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 40 (act) + severity 30 (critical) + recency 20 (fresh (<2d)) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 40 + 严重度 30 + 新鲜度 20 + 跨资产 0。</span></span></span></div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></span>
+        <span>·</span>
+        <span class="pill sev-crit"><span class="dot d-crit"></span><span class="l-en">critical</span><span class="l-zh">关键</span></span>
+        <span>·</span>
+        <span class="mono">2026-06-24 · <span class="l-en">1d ago</span><span class="l-zh">1天前</span></span>
+      </div>
+      <div class="hl"><span class="l-en">Down-impulse pressure: vol-of-vol jolt</span><span class="l-zh">下行脉冲压力：波动率跳升</span></div>
+      <div class="dt"><span class="l-en">DVOL intraday-range spike (z≥2) — the options market is repricing risk. BTC $60,983.</span><span class="l-zh">DVOL 日内振幅骤升（z≥2）— 期权市场正在重新定价风险。 BTC $60,983.</span></div>
+      <div class="row2">
+        
+        <span class="pill a-high">→ <span class="l-en">high-conviction</span><span class="l-zh">高信念</span></span>
+        <span class="tier"><span class="l-en">act</span><span class="l-zh">执行</span></span>
+        
+        <a class="lnk sm" href="vector.html#impulse"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
+      </div>
+      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
+      <div class="val">
+        
+        
+        <span class="vpill vp-calibrated"><span class="l-en">CALIBRATED</span><span class="l-zh">已校准</span></span>
+        
+        
+        
+        
+        <span class="muted">— <span class="l-en">Forward de-risk window from a verified LEADING precursor cross (impulse radar). Holdout-validated, leak-free; act early — the edge</span><span class="l-zh">来自经验证的领先前兆突破的前瞻减仓窗口（脉冲雷达）。已通过留出样本、无前视；应尽早行动 — 优势在约 2-4 天内衰减。对缓慢/期权平静式下跌无效（例如未能领先 2026-06-24 的下跌）。</span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Forward de-risk window from a verified LEADING precursor cross (impulse radar). Holdout-validated, leak-free; act early — the edge decays in ~2-4 days. BLIND to slow/options-calm flushes (e.g. it did NOT lead the 2026-06-24 cascade).  See Signal Lab for the full battery.</span><span class="l-zh">来自经验证的领先前兆突破的前瞻减仓窗口（脉冲雷达）。已通过留出样本、无前视；应尽早行动 — 优势在约 2-4 天内衰减。对缓慢/期权平静式下跌无效（例如未能领先 2026-06-24 的下跌）。  详见信号实验室。</span></span></span>
+        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
+      </div>
+    </div>
+  </div>
+
+  
+  
   <div class="ac crit" data-sev="critical" data-tier="act" data-src="macro">
     <div class="rail">
       <div class="pr">76</div>
@@ -337,6 +402,49 @@
 
   
   
+  <div class="ac major" data-sev="major" data-tier="watch" data-src="commodity">
+    <div class="rail">
+      <div class="pr">70</div>
+      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 20 (fresh (<2d)) + cross-asset 10 (confirm).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 20 + 跨资产 10。</span></span></span></div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>🛢 <span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品</span></span>
+        <span>·</span>
+        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
+        <span>·</span>
+        <span class="mono">2026-06-25 · <span class="l-en">today</span><span class="l-zh">今天</span></span>
+      </div>
+      <div class="hl"><span class="l-en">Gold: exogenous pressure detected</span><span class="l-zh">黄金：检测到外生压力</span></div>
+      <div class="dt"><span class="l-en">Gold moved beyond what its macro drivers explain (shock z -1.6). Historically PERSISTS (central-bank-style bids have carried forward). Gold 3,996.00 $/oz.</span><span class="l-zh">黄金的走势超出其宏观驱动可解释的范围（冲击 z -1.6）。历史上会持续（央行式买盘往往延续）。 黄金 3,996.00 美元/盎司。</span></div>
+      <div class="row2">
+        
+        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
+        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
+        
+        <span class="tier ca-confirm">
+          ✓ <span class="l-en">cross-asset confirm</span><span class="l-zh">跨资产佐证</span></span>
+        
+        <a class="lnk sm" href="commodities.html#timeline"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
+      </div>
+      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
+      <div class="val">
+        
+        
+        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
+        
+        
+        
+        
+        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
+        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
+      </div>
+    </div>
+  </div>
+
+  
+  
   <div class="ac major" data-sev="major" data-tier="watch" data-src="forex">
     <div class="rail">
       <div class="pr">60</div>
@@ -351,7 +459,7 @@
         <span class="mono">2026-06-25 · <span class="l-en">today</span><span class="l-zh">今天</span></span>
       </div>
       <div class="hl"><span class="l-en">USD/MXN risk turned Elevated</span><span class="l-zh">USD/MXN 风险转为升高</span></div>
-      <div class="dt"><span class="l-en">Risk Index rose through its threshold to 30. USD/MXN 17.6129.</span><span class="l-zh">风险指数上穿阈值至 30。USD/MXN 17.6129。</span></div>
+      <div class="dt"><span class="l-en">Risk Index rose through its threshold to 30. USD/MXN 17.6121.</span><span class="l-zh">风险指数上穿阈值至 30。USD/MXN 17.6121。</span></div>
       <div class="row2">
         
         <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
@@ -390,8 +498,88 @@
         <span>·</span>
         <span class="mono">2026-06-25 · <span class="l-en">today</span><span class="l-zh">今天</span></span>
       </div>
+      <div class="hl"><span class="l-en">🔗 7-channel convergence on NVDA</span><span class="l-zh">🔗 NVDA 7通道汇聚</span></div>
+      <div class="dt"><span class="l-en">NVDA lit up by 7 independent alt-data channels: 13f_add, affiliation, darkpool_accum, github_momentum, patent_cluster, retail_buzz, special_situation.</span><span class="l-zh">NVDA 被 7 个独立替代数据渠道同时触发：13f_add, affiliation, darkpool_accum, github_momentum, patent_cluster, retail_buzz, special_situation。</span></div>
+      <div class="row2">
+        
+        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
+        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
+        
+        <a class="lnk sm" href="alt_data.html#convergence"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
+      </div>
+      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
+      <div class="val">
+        
+        
+        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
+        
+        
+        
+        
+        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
+        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
+      </div>
+    </div>
+  </div>
+
+  
+  
+  <div class="ac major" data-sev="major" data-tier="watch" data-src="altdata">
+    <div class="rail">
+      <div class="pr">60</div>
+      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 20 (fresh (<2d)) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 20 + 跨资产 0。</span></span></span></div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span>
+        <span>·</span>
+        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
+        <span>·</span>
+        <span class="mono">2026-06-25 · <span class="l-en">today</span><span class="l-zh">今天</span></span>
+      </div>
       <div class="hl"><span class="l-en">🔗 5-channel convergence on AMD (Trump-linked)</span><span class="l-zh">🔗 AMD 5通道汇聚（特朗普关联）</span></div>
       <div class="dt"><span class="l-en">AMD lit up by 5 independent alt-data channels: congress_buy, github_momentum, retail_buzz, special_situation, trump. Includes a Donald Trump trade.</span><span class="l-zh">AMD 被 5 个独立替代数据渠道同时触发：congress_buy, github_momentum, retail_buzz, special_situation, trump。（含特朗普交易）</span></div>
+      <div class="row2">
+        
+        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
+        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
+        
+        <a class="lnk sm" href="alt_data.html#convergence"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
+      </div>
+      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
+      <div class="val">
+        
+        
+        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
+        
+        
+        
+        
+        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
+        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
+      </div>
+    </div>
+  </div>
+
+  
+  
+  <div class="ac major" data-sev="major" data-tier="watch" data-src="altdata">
+    <div class="rail">
+      <div class="pr">60</div>
+      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 20 (fresh (<2d)) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 20 + 跨资产 0。</span></span></span></div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span>
+        <span>·</span>
+        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
+        <span>·</span>
+        <span class="mono">2026-06-25 · <span class="l-en">today</span><span class="l-zh">今天</span></span>
+      </div>
+      <div class="hl"><span class="l-en">🔗 6-channel convergence on MSFT</span><span class="l-zh">🔗 MSFT 6通道汇聚</span></div>
+      <div class="dt"><span class="l-en">MSFT lit up by 6 independent alt-data channels: 13f_add, affiliation, app_demand, github_momentum, gov_contract, patent_cluster.</span><span class="l-zh">MSFT 被 6 个独立替代数据渠道同时触发：13f_add, affiliation, app_demand, github_momentum, gov_contract, patent_cluster。</span></div>
       <div class="row2">
         
         <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
@@ -518,46 +706,6 @@
         <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
         
         <a class="lnk sm" href="baskets.html#theme-ai_neoclouds"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
-      </div>
-      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
-      <div class="val">
-        
-        
-        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
-        
-        
-        
-        
-        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
-        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
-        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
-      </div>
-    </div>
-  </div>
-
-  
-  
-  <div class="ac major" data-sev="major" data-tier="watch" data-src="altdata">
-    <div class="rail">
-      <div class="pr">60</div>
-      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 20 (fresh (<2d)) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 20 + 跨资产 0。</span></span></span></div>
-    </div>
-    <div class="body">
-      <div class="meta">
-        <span>📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span>
-        <span>·</span>
-        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
-        <span>·</span>
-        <span class="mono">2026-06-24 · <span class="l-en">1d ago</span><span class="l-zh">1天前</span></span>
-      </div>
-      <div class="hl"><span class="l-en">🔗 8-channel convergence on NVDA</span><span class="l-zh">🔗 NVDA 8通道汇聚</span></div>
-      <div class="dt"><span class="l-en">NVDA lit up by 8 independent alt-data channels: 13f_add, affiliation, darkpool_accum, github_momentum, hf_model_momentum, patent_cluster, retail_buzz, special_situation.</span><span class="l-zh">NVDA 被 8 个独立替代数据渠道同时触发：13f_add, affiliation, darkpool_accum, github_momentum, hf_model_momentum, patent_cluster, retail_buzz, special_situation。</span></div>
-      <div class="row2">
-        
-        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        
-        <a class="lnk sm" href="alt_data.html#convergence"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
       </div>
       <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
       <div class="val">
@@ -990,46 +1138,6 @@
         <span>·</span>
         <span class="mono">2026-06-23 · 2<span class="l-en">d ago</span><span class="l-zh">天前</span></span>
       </div>
-      <div class="hl"><span class="l-en">🔗 6-channel convergence on MSFT</span><span class="l-zh">🔗 MSFT 6通道汇聚</span></div>
-      <div class="dt"><span class="l-en">MSFT lit up by 6 independent alt-data channels: 13f_add, affiliation, app_demand, github_momentum, gov_contract, patent_cluster.</span><span class="l-zh">MSFT 被 6 个独立替代数据渠道同时触发：13f_add, affiliation, app_demand, github_momentum, gov_contract, patent_cluster。</span></div>
-      <div class="row2">
-        
-        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        
-        <a class="lnk sm" href="alt_data.html#convergence"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
-      </div>
-      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
-      <div class="val">
-        
-        
-        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
-        
-        
-        
-        
-        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
-        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
-        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
-      </div>
-    </div>
-  </div>
-
-  
-  
-  <div class="ac major" data-sev="major" data-tier="watch" data-src="altdata">
-    <div class="rail">
-      <div class="pr">60</div>
-      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 20 (fresh (<2d)) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 20 + 跨资产 0。</span></span></span></div>
-    </div>
-    <div class="body">
-      <div class="meta">
-        <span>📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span>
-        <span>·</span>
-        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
-        <span>·</span>
-        <span class="mono">2026-06-23 · 2<span class="l-en">d ago</span><span class="l-zh">天前</span></span>
-      </div>
       <div class="hl"><span class="l-en">🔗 3-channel convergence on MU</span><span class="l-zh">🔗 MU 3通道汇聚</span></div>
       <div class="dt"><span class="l-en">MU lit up by 3 independent alt-data channels: affiliation, news_sentiment, patent_cluster.</span><span class="l-zh">MU 被 3 个独立替代数据渠道同时触发：affiliation, news_sentiment, patent_cluster。</span></div>
       <div class="row2">
@@ -1137,6 +1245,46 @@
 
   
   
+  <div class="ac major" data-sev="major" data-tier="act" data-src="vector">
+    <div class="rail">
+      <div class="pr">60</div>
+      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 40 (act) + severity 18 (major) + recency 2 (older) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 40 + 严重度 18 + 新鲜度 2 + 跨资产 0。</span></span></span></div>
+    </div>
+    <div class="body">
+      <div class="meta">
+        <span>₿ <span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span></span>
+        <span>·</span>
+        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
+        <span>·</span>
+        <span class="mono">2026-06-02 · 23<span class="l-en">d ago</span><span class="l-zh">天前</span></span>
+      </div>
+      <div class="hl"><span class="l-en">Capitulation wash-out — bounce setup</span><span class="l-zh">投降式洗盘 — 反弹布局</span></div>
+      <div class="dt"><span class="l-en">Aggregate SOPR capitulation (z≤−1.5) after a deep drop — reactive bounce setup. BTC $66,658.</span><span class="l-zh">深跌之后总体 SOPR 投降（z≤−1.5）— 反应式反弹布局。 BTC $66,658.</span></div>
+      <div class="row2">
+        
+        <span class="pill a-reduce">→ <span class="l-en">reduce risk</span><span class="l-zh">降低风险</span></span>
+        <span class="tier"><span class="l-en">act</span><span class="l-zh">执行</span></span>
+        
+        <a class="lnk sm" href="vector.html#impulse"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
+      </div>
+      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
+      <div class="val">
+        
+        
+        <span class="vpill vp-calibrated"><span class="l-en">CALIBRATED</span><span class="l-zh">已校准</span></span>
+        
+        
+        
+        
+        <span class="muted">— <span class="l-en">Capitulation wash-out (SOPR). REACTIVE — fires AFTER a deep drop and leads the BOUNCE by ~2d; it is NOT a pre-emptive bottom call.</span><span class="l-zh">投降式洗盘（SOPR）。反应式 — 在大幅下跌之后触发，领先反弹约 2 天；并非提前抄底信号。</span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Capitulation wash-out (SOPR). REACTIVE — fires AFTER a deep drop and leads the BOUNCE by ~2d; it is NOT a pre-emptive bottom call.  See Signal Lab for the full battery.</span><span class="l-zh">投降式洗盘（SOPR）。反应式 — 在大幅下跌之后触发，领先反弹约 2 天；并非提前抄底信号。  详见信号实验室。</span></span></span>
+        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
+      </div>
+    </div>
+  </div>
+
+  
+  
   <div class="ac major" data-sev="major" data-tier="watch" data-src="commodity">
     <div class="rail">
       <div class="pr">56</div>
@@ -1195,49 +1343,6 @@
       </div>
       <div class="hl"><span class="l-en">Silver: exogenous pressure detected</span><span class="l-zh">白银：检测到外生压力</span></div>
       <div class="dt"><span class="l-en">Silver moved beyond what its macro drivers explain (shock z -1.5). Washouts tend to bounce; upside shocks are noisier. Silver 63.88 $/oz.</span><span class="l-zh">白银的走势超出其宏观驱动可解释的范围（冲击 z -1.5）。急跌后往往反弹；上行冲击则更嘈杂。 白银 63.88 美元/盎司。</span></div>
-      <div class="row2">
-        
-        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        
-        <span class="tier ca-confirm">
-          ✓ <span class="l-en">cross-asset confirm</span><span class="l-zh">跨资产佐证</span></span>
-        
-        <a class="lnk sm" href="commodities.html#timeline"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
-      </div>
-      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
-      <div class="val">
-        
-        
-        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
-        
-        
-        
-        
-        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
-        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
-        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
-      </div>
-    </div>
-  </div>
-
-  
-  
-  <div class="ac major" data-sev="major" data-tier="watch" data-src="commodity">
-    <div class="rail">
-      <div class="pr">56</div>
-      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 6 (<21d) + cross-asset 10 (confirm).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 6 + 跨资产 10。</span></span></span></div>
-    </div>
-    <div class="body">
-      <div class="meta">
-        <span>🛢 <span class="l-en">Commodity Vector</span><span class="l-zh">大宗商品</span></span>
-        <span>·</span>
-        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
-        <span>·</span>
-        <span class="mono">2026-06-10 · 15<span class="l-en">d ago</span><span class="l-zh">天前</span></span>
-      </div>
-      <div class="hl"><span class="l-en">Gold: exogenous pressure detected</span><span class="l-zh">黄金：检测到外生压力</span></div>
-      <div class="dt"><span class="l-en">Gold moved beyond what its macro drivers explain (shock z -1.8). Historically PERSISTS (central-bank-style bids have carried forward). Gold 4,108.20 $/oz.</span><span class="l-zh">黄金的走势超出其宏观驱动可解释的范围（冲击 z -1.8）。历史上会持续（央行式买盘往往延续）。 黄金 4,108.20 美元/盎司。</span></div>
       <div class="row2">
         
         <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
@@ -2624,86 +2729,6 @@
     </div>
   </div>
 
-  
-  
-  <div class="ac major" data-sev="major" data-tier="watch" data-src="altdata">
-    <div class="rail">
-      <div class="pr">52</div>
-      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 12 (<7d) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 12 + 跨资产 0。</span></span></span></div>
-    </div>
-    <div class="body">
-      <div class="meta">
-        <span>📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span>
-        <span>·</span>
-        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
-        <span>·</span>
-        <span class="mono">2026-06-20 · 5<span class="l-en">d ago</span><span class="l-zh">天前</span></span>
-      </div>
-      <div class="hl"><span class="l-en">🔗 2-channel convergence on EFX (Trump-linked)</span><span class="l-zh">🔗 EFX 2通道汇聚（特朗普关联）</span></div>
-      <div class="dt"><span class="l-en">EFX lit up by 2 independent alt-data channels: gov_contract, trump. Includes a Donald Trump trade.</span><span class="l-zh">EFX 被 2 个独立替代数据渠道同时触发：gov_contract, trump。（含特朗普交易）</span></div>
-      <div class="row2">
-        
-        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        
-        <a class="lnk sm" href="alt_data.html#convergence"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
-      </div>
-      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
-      <div class="val">
-        
-        
-        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
-        
-        
-        
-        
-        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
-        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
-        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
-      </div>
-    </div>
-  </div>
-
-  
-  
-  <div class="ac major" data-sev="major" data-tier="watch" data-src="altdata">
-    <div class="rail">
-      <div class="pr">52</div>
-      <div class="prl"><span class="l-en">priority</span><span class="l-zh">优先级</span><span class="help">?<span class="tip"><span class="l-en">Triage priority 0-100 — how much this should grab attention NOW, not a probability it is right. = conviction 22 (watch) + severity 18 (major) + recency 12 (<7d) + cross-asset 0 (neutral).</span><span class="l-zh">分诊优先级 0-100 — 表示此刻该给多少注意力，并非判断正确的概率。= 信念 22 + 严重度 18 + 新鲜度 12 + 跨资产 0。</span></span></span></div>
-    </div>
-    <div class="body">
-      <div class="meta">
-        <span>📊 <span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span>
-        <span>·</span>
-        <span class="pill sev-major"><span class="dot d-major"></span><span class="l-en">major</span><span class="l-zh">重要</span></span>
-        <span>·</span>
-        <span class="mono">2026-06-20 · 5<span class="l-en">d ago</span><span class="l-zh">天前</span></span>
-      </div>
-      <div class="hl"><span class="l-en">🔗 2-channel convergence on CVNA (Trump-linked)</span><span class="l-zh">🔗 CVNA 2通道汇聚（特朗普关联）</span></div>
-      <div class="dt"><span class="l-en">CVNA lit up by 2 independent alt-data channels: retail_buzz, trump. Includes a Donald Trump trade.</span><span class="l-zh">CVNA 被 2 个独立替代数据渠道同时触发：retail_buzz, trump。（含特朗普交易）</span></div>
-      <div class="row2">
-        
-        <span class="pill a-watch">→ <span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        <span class="tier"><span class="l-en">watch</span><span class="l-zh">观察</span></span>
-        
-        <a class="lnk sm" href="alt_data.html#convergence"><span class="l-en">open →</span><span class="l-zh">打开 →</span></a>
-      </div>
-      <!-- validation: measured edge ONLY where it exists, else honest 'documented' -->
-      <div class="val">
-        
-        
-        <span class="vpill vp-documented"><span class="l-en">DOCUMENTED</span><span class="l-zh">有据可查</span></span>
-        
-        
-        
-        
-        <span class="muted">— <span class="l-en">Conviction is documented, not separately backtested as a timing signal.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。</span></span>
-        <span class="help">?<span class="tip"><span class="l-en">Conviction is documented, not separately backtested as a timing signal.  See Signal Lab for the full battery.</span><span class="l-zh">信念有据可查，但未作为择时信号单独回测。  详见信号实验室。</span></span></span>
-        <a class="lnk" href="signal_lab.html"><span class="l-en">Signal Lab →</span><span class="l-zh">信号实验室 →</span></a>
-      </div>
-    </div>
-  </div>
-
 </div>
 
 <div class="panel" style="margin-top:14px">
@@ -2724,7 +2749,7 @@
   <p class="src muted sm" style="margin:0">
     <span class="l-en">Assembler</span><span class="l-zh">汇编</span>: engine/alert_triage.py · <span class="l-en">feeds</span><span class="l-zh">数据源</span>: macro / bonds / forex / vector / commodity ·
     <span class="l-en">window</span><span class="l-zh">窗口</span> 30<span class="l-en">d</span><span class="l-zh">天</span> · <span class="l-en">as-of</span><span class="l-zh">截至</span> 2026-06-24 ·
-    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-06-25 07:22 UTC</p>
+    <span class="l-en">rendered</span><span class="l-zh">生成</span> 2026-06-25 08:54 UTC</p>
 </div>
 
 <script>
@@ -2750,6 +2775,5 @@
 })();
 </script>
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

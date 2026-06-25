@@ -1,5 +1,5 @@
 {
-  "cash": 0.184,
+  "cash": 0.186,
   "crash": false,
   "eligible": [
     "cn_ai_compute",
@@ -9,7 +9,8 @@
     "cn_metals",
     "cn_rare_earth",
     "cn_robotics",
-    "cn_semis"
+    "cn_semis",
+    "cn_solar"
   ],
   "held": [
     "cn_ai_compute",

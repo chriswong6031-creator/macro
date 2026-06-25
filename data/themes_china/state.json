@@ -11,7 +11,7 @@
     "label": "deteriorating",
     "name": "Home Appliances",
     "name_zh": "\u5bb6\u7535",
-    "rank": 14,
+    "rank": 13,
     "reco": "avoid",
     "score": 32
   },
@@ -27,9 +27,9 @@
     "label": "deteriorating",
     "name": "Baijiu / Liquor",
     "name_zh": "\u767d\u9152",
-    "rank": 18,
+    "rank": 15,
     "reco": "avoid",
-    "score": 24
+    "score": 28
   },
   "cn_banks": {
     "label": "deteriorating",
@@ -53,13 +53,13 @@
     "name_zh": "\u5238\u5546",
     "rank": 4,
     "reco": "accumulate",
-    "score": 70
+    "score": 71
   },
   "cn_coal": {
     "label": "deteriorating",
     "name": "Coal",
     "name_zh": "\u7164\u70ad",
-    "rank": 16,
+    "rank": 17,
     "reco": "avoid",
     "score": 28
   },
@@ -83,7 +83,7 @@
     "label": "deteriorating",
     "name": "Food & Beverage",
     "name_zh": "\u98df\u54c1\u996e\u6599",
-    "rank": 17,
+    "rank": 18,
     "reco": "avoid",
     "score": 27
   },
@@ -96,11 +96,11 @@
     "score": 18
   },
   "cn_insurers": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Insurers",
     "name_zh": "\u4fdd\u9669",
     "rank": 8,
-    "reco": "avoid",
+    "reco": "hold",
     "score": 49
   },
   "cn_med_devices": {
@@ -109,13 +109,13 @@
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
     "rank": 19,
     "reco": "avoid",
-    "score": 24
+    "score": 25
   },
   "cn_metals": {
     "label": "deteriorating",
     "name": "Industrial Metals",
     "name_zh": "\u6709\u8272\u91d1\u5c5e",
-    "rank": 15,
+    "rank": 16,
     "reco": "avoid",
     "score": 28
   },
@@ -133,7 +133,7 @@
     "name_zh": "\u7a00\u571f\u6c38\u78c1",
     "rank": 2,
     "reco": "accumulate",
-    "score": 75
+    "score": 76
   },
   "cn_robotics": {
     "label": "neutral",
@@ -157,7 +157,7 @@
     "name_zh": "\u4e2d\u7279\u4f30\u00b7\u592e\u4f01",
     "rank": 20,
     "reco": "avoid",
-    "score": 24
+    "score": 23
   },
   "cn_software": {
     "label": "deteriorating",
@@ -171,8 +171,8 @@
     "label": "deteriorating",
     "name": "Solar / Photovoltaics",
     "name_zh": "\u5149\u4f0f",
-    "rank": 13,
+    "rank": 14,
     "reco": "avoid",
-    "score": 32
+    "score": 29
   }
 }

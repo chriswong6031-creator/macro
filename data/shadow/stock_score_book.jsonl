@@ -743,3 +743,6 @@
 {"date": "2026-06-24", "ticker": "WING", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-24", "ticker": "CBRL", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-24", "ticker": "TGTX", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-24", "ticker": "TMP", "score": 50.0, "percentile": 50.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-24", "ticker": "YETI", "score": 98.0, "percentile": 98.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-24", "ticker": "PLNT", "score": 1.0, "percentile": 1.0, "regime": "mixed", "horizons": [21, 63, 126]}
