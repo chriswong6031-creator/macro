@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "asof": "2026-06-22",
+    "horizon_d": 63,
+    "dd_window_d": 63,
+    "split": "2015-01-01",
+    "holdout": "2020-01-01",
+    "n_candidates": 5,
+    "perm_B": 3000,
+    "note": "Credit-divergence de-risk leg falsification. Forward 63d S&P drawdown bar + FWER (rotation maxT) + FDR (BH) + >=2020 holdout + incremental IC beyond VIX & real-rate speed + from-calm lead test. scored_eligible requires ALL; risk_gate_pass is the display tier."
+  },
+  "legs": {
+    "hy_oas_chg20": {
+      "name": "hy_oas_chg20",
+      "n": 7607,
+      "span": "1997-01-28..2026-03-25",
+      "ic_full": 0.093,
+      "ic_pre": 0.085,
+      "ic_post": 0.111,
+      "ic_2020plus": 0.148,
+      "sign_stable_all": true,
+      "cv_robust": false,
+      "tercile_edge_pp": 8.4,
+      "tercile_ci": [
+        0.168,
+        0.243,
+        0.325
+      ],
+      "base": 0.159,
+      "ci_clears_base": true,
+      "cw_t": 1.08,
+      "oos_r2": -0.0945,
+      "incremental_ic_beyond_vix_rrspeed": 0.009,
+      "perm": {
+        "ic": 0.099,
+        "p_raw": 0.0813,
+        "p_fwer": 0.6531
+      },
+      "bh": {
+        "p": 0.0813,
+        "q": 0.1245,
+        "reject": false
+      },
+      "from_calm": {
+        "base_calm": 0.086,
+        "calm_low": 0.065,
+        "calm_high": 0.144,
+        "edge_pp": 5.8,
+        "n_hi": 1330,
+        "ci": [
+          0.067,
+          0.14,
+          0.233
+        ]
+      },
+      "scored_eligible": false,
+      "risk_gate_pass": false
+    },
+    "hy_oas_chg42": {
+      "name": "hy_oas_chg42",
+      "n": 7585,
+      "span": "1997-02-27..2026-03-25",
+      "ic_full": 0.131,
+      "ic_pre": 0.141,
+      "ic_post": 0.127,
+      "ic_2020plus": 0.153,
+      "sign_stable_all": true,
+      "cv_robust": true,
+      "tercile_edge_pp": 10.6,
+      "tercile_ci": [
+        0.18,
+        0.263,
+        0.352
+      ],
+      "base": 0.159,
+      "ci_clears_base": true,
+      "cw_t": 1.1,
+      "oos_r2": -0.1668,
+      "incremental_ic_beyond_vix_rrspeed": 0.005,
+      "perm": {
+        "ic": 0.134,
+        "p_raw": 0.0606,
+        "p_fwer": 0.4389
+      },
+      "bh": {
+        "p": 0.0606,
+        "q": 0.1245,
+        "reject": false
+      },
+      "from_calm": {
+        "base_calm": 0.086,
+        "calm_low": 0.046,
+        "calm_high": 0.157,
+        "edge_pp": 7.0,
+        "n_hi": 1322,
+        "ci": [
+          0.074,
+          0.153,
+          0.252
+        ]
+      },
+      "scored_eligible": false,
+      "risk_gate_pass": true
+    },
+    "hy_oas_chg63": {
+      "name": "hy_oas_chg63",
+      "n": 7564,
+      "span": "1997-03-28..2026-03-25",
+      "ic_full": 0.159,
+      "ic_pre": 0.192,
+      "ic_post": 0.117,
+      "ic_2020plus": 0.127,
+      "sign_stable_all": true,
+      "cv_robust": true,
+      "tercile_edge_pp": 12.8,
+      "tercile_ci": [
+        0.2,
+        0.286,
+        0.381
+      ],
+      "base": 0.159,
+      "ci_clears_base": true,
+      "cw_t": 2.04,
+      "oos_r2": -0.1735,
+      "incremental_ic_beyond_vix_rrspeed": -0.01,
+      "perm": {
+        "ic": 0.162,
+        "p_raw": 0.038,
+        "p_fwer": 0.2949
+      },
+      "bh": {
+        "p": 0.038,
+        "q": 0.1245,
+        "reject": false
+      },
+      "from_calm": {
+        "base_calm": 0.087,
+        "calm_low": 0.037,
+        "calm_high": 0.168,
+        "edge_pp": 8.1,
+        "n_hi": 1319,
+        "ci": [
+          0.077,
+          0.163,
+          0.277
+        ]
+      },
+      "scored_eligible": false,
+      "risk_gate_pass": true
+    },
+    "hy_oas_z504": {
+      "name": "hy_oas_z504",
+      "n": 7376,
+      "span": "1997-12-17..2026-03-25",
+      "ic_full": 0.235,
+      "ic_pre": 0.327,
+      "ic_post": 0.103,
+      "ic_2020plus": 0.019,
+      "sign_stable_all": true,
+      "cv_robust": true,
+      "tercile_edge_pp": 14.1,
+      "tercile_ci": [
+        0.211,
+        0.302,
+        0.406
+      ],
+      "base": 0.163,
+      "ci_clears_base": true,
+      "cw_t": -0.15,
+      "oos_r2": -0.1594,
+      "incremental_ic_beyond_vix_rrspeed": -0.024,
+      "perm": {
+        "ic": 0.235,
+        "p_raw": 0.0996,
+        "p_fwer": 0.0996
+      },
+      "bh": {
+        "p": 0.0996,
+        "q": 0.1245,
+        "reject": false
+      },
+      "from_calm": {
+        "base_calm": 0.089,
+        "calm_low": 0.048,
+        "calm_high": 0.136,
+        "edge_pp": 4.7,
+        "n_hi": 1280,
+        "ci": [
+          0.047,
+          0.131,
+          0.241
+        ]
+      },
+      "scored_eligible": false,
+      "risk_gate_pass": true
+    },
+    "ig_oas_chg63": {
+      "name": "ig_oas_chg63",
+      "n": 7564,
+      "span": "1997-03-28..2026-03-25",
+      "ic_full": 0.129,
+      "ic_pre": 0.156,
+      "ic_post": 0.085,
+      "ic_2020plus": 0.178,
+      "sign_stable_all": true,
+      "cv_robust": false,
+      "tercile_edge_pp": 9.6,
+      "tercile_ci": [
+        0.171,
+        0.253,
+        0.344
+      ],
+      "base": 0.159,
+      "ci_clears_base": true,
+      "cw_t": 5.3,
+      "oos_r2": -0.1232,
+      "incremental_ic_beyond_vix_rrspeed": -0.046,
+      "perm": {
+        "ic": 0.131,
+        "p_raw": 0.1703,
+        "p_fwer": 0.4575
+      },
+      "bh": {
+        "p": 0.1703,
+        "q": 0.1703,
+        "reject": false
+      },
+      "from_calm": {
+        "base_calm": 0.087,
+        "calm_low": 0.059,
+        "calm_high": 0.161,
+        "edge_pp": 7.4,
+        "n_hi": 1319,
+        "ci": [
+          0.072,
+          0.161,
+          0.265
+        ]
+      },
+      "scored_eligible": false,
+      "risk_gate_pass": false
+    }
+  }
+}

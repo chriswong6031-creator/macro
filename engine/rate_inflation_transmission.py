@@ -302,6 +302,145 @@ def inflation_decomposition(f: pd.DataFrame) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+# BREAKEVEN VELOCITY + CAUSAL DECOMPOSITION — display-only VISIBILITY layer.
+#
+# DISCIPLINE: this is NOT a forecast and NOT an early warning. The falsification
+# harness (scripts/calibrate_credit_divergence.py + exp_credit_*) proved it: a falling
+# breakeven is COINCIDENT-to-lagging with risk-asset cascades (daily lead-lag peaks at
+# k=0), breakeven velocity itself has ~0 forward-drawdown IC (be10y_chg63 ≈ −0.01), and
+# the credit/vol co-state adds ZERO forward-drawdown information beyond VIX (residualize
+# HY-OAS velocity on VIX → IC collapses to 0.00). What this DOES is disambiguate an
+# IN-PROGRESS move — is the breakeven falling because of oil, a real-rate/policy
+# repricing, a liquidity blowout, or a growth scare? The cause decides whether the move
+# matters. Leak-free: every read uses only data <= t (rolling windows ending at t).
+# --------------------------------------------------------------------------- #
+def _chg_bp(s: pd.Series, w: int):
+    cur, prev = _last(s), _last(s.shift(w))
+    return round((cur - prev) * 100, 0) if (cur is not None and prev is not None) else None
+
+
+def _pct_chg(s: pd.Series, w: int):
+    cur, prev = _last(s), _last(s.shift(w))
+    return round((cur / prev - 1.0) * 100, 1) if (cur is not None and prev not in (None, 0)) else None
+
+
+def _classify_cause(be_dir: str, oil_c, real_c, nom_c, hy_z, vix_pct, gold_c) -> dict:
+    """Classify WHY the breakeven is moving from the contemporaneous co-state. Fixed,
+    a-priori heuristics (not tuned on episodes) — it labels a move, it does not score it.
+    Priority: liquidity (the dangerous/coincident tell) > real-rate > oil > growth."""
+    hot_credit = (hy_z is not None and hy_z >= 1.0)
+    hot_vol = (vix_pct is not None and vix_pct >= 0.80)
+    if be_dir == "falling":
+        if hot_credit and hot_vol and (nom_c is not None and nom_c < 0):
+            return {"cause": "liquidity", **_bil(
+                "Liquidity / risk-off blowout — credit widening + vol spiking + nominals bid. "
+                "This is a liquidation in progress, COINCIDENT — not an early warning (VIX already prices it).",
+                "流动性/避险冲击——信用利差走阔＋波动率飙升＋名义债券获买盘。正在发生的清算，同步指标，并非领先预警（VIX已反映）。")}
+        if (real_c is not None and real_c >= 10) and (oil_c is None or abs(oil_c) < 5):
+            return {"cause": "real_rate", **_bil(
+                "Policy / real-rate disinflation — real yields rising while oil is stable (the 2022 fingerprint). "
+                "The one channel with mild lead, but slow (weeks–months) and sign-unstable. Watch, don't act.",
+                "政策/实际利率型反通胀——实际收益率上行而油价平稳（2022年特征）。唯一有微弱领先性的通道，但慢（数周至数月）且符号不稳。观察，勿据此行动。")}
+        if oil_c is not None and oil_c <= -8:
+            return {"cause": "oil", **_bil(
+                "Energy passthrough — oil falling drags headline-linked breakevens. Coincident and usually "
+                "benign / GDP-positive; not a risk-off tell on its own.",
+                "能源传导——油价下跌拖累与整体CPI挂钩的盈亏平衡。同步指标，通常良性/利于增长；本身并非避险信号。")}
+        return {"cause": "growth", **_bil(
+            "Growth / demand repricing — breakeven easing without a pure liquidity dislocation. Ambiguous; "
+            "confirm with breadth and credit, not with the breakeven alone.",
+            "增长/需求重定价——盈亏平衡回落但无纯流动性错位。含义模糊；用市场广度和信用确认，勿仅凭盈亏平衡判断。")}
+    if be_dir == "rising":
+        return {"cause": "reflation", **_bil(
+            "Reflation impulse — breakevens rising (oil/growth/fiscal). Inflation-tailwind for real assets, "
+            "headwind for duration. Coincident.",
+            "再通胀脉冲——盈亏平衡上行（油价/增长/财政）。对实物资产是顺风，对久期是逆风。同步指标。")}
+    return {"cause": "quiet", **_bil("Breakeven roughly stable — no actionable move.",
+                                     "盈亏平衡大致平稳——无可操作变动。")}
+
+
+def breakeven_decomposition(f: pd.DataFrame) -> dict | None:
+    """The breakeven-velocity panel: multi-horizon velocity, acceleration, fall-speed
+    percentile, trend state, a cleaner 5y5y cross-check, and the causal badge. All
+    display-only context — see the module note. None if breakeven data is absent."""
+    be = f.get("breakeven_10y")
+    if be is None or be.dropna().shape[0] < 130:
+        return None
+    be = be.astype(float)
+    be55 = f.get("breakeven_5y5y")
+
+    velocity = {f"chg_{w}d_bp": _chg_bp(be, w) for w in (5, 10, 20, 63)}
+    # acceleration = change in the 10d velocity over the last 10d (is the move speeding up?)
+    v_now = _last(be - be.shift(10))
+    v_prev = _last((be - be.shift(10)).shift(10))
+    accel_bp = round((v_now - v_prev) * 100, 0) if (v_now is not None and v_prev is not None) else None
+    # how UNUSUALLY fast is the current 20d move vs its own 1260d history of |20d moves|?
+    spd = (be - be.shift(20)).abs()
+    speed_pct = _pctile(spd)
+    # trend state
+    ma20, ma63 = be.rolling(20).mean(), be.rolling(63).mean()
+    be_l, m20_l, m63_l = _last(be), _last(ma20), _last(ma63)
+    m20_falling = (m20_l is not None and _last(ma20.shift(20)) is not None and m20_l < _last(ma20.shift(20)))
+    if None not in (be_l, m20_l, m63_l):
+        if be_l < m20_l < m63_l and m20_falling:
+            trend = "downtrend"
+        elif be_l > m20_l > m63_l and not m20_falling:
+            trend = "uptrend"
+        else:
+            trend = "choppy"
+    else:
+        trend = "n/a"
+    c20 = velocity.get("chg_20d_bp")
+    be_dir = "falling" if (c20 is not None and c20 <= -8) else "rising" if (c20 is not None and c20 >= 8) else "flat"
+
+    # co-state for the causal badge (all <= t)
+    oil_c = _pct_chg(f.get("oil", pd.Series(dtype=float)), 20) if "oil" in f else None
+    gold_c = _pct_chg(f.get("gold", pd.Series(dtype=float)), 20) if "gold" in f else None
+    real_c = _chg_bp(f["us10y_real"], 20) if "us10y_real" in f else None
+    nom_c = _chg_bp(f["us10y"], 20) if "us10y" in f else None
+    hy_z = _last(_z(f["hy_oas"])) if "hy_oas" in f else None
+    vix_pct = _pctile(f["vix_close"]) if "vix_close" in f else None
+    badge = _classify_cause(be_dir, oil_c, real_c, nom_c, hy_z, vix_pct, gold_c)
+
+    # 5y5y is less TIPS-liquidity-contaminated than the spot 10y. A 10y-faster-than-5y5y
+    # fall is only a LIQUIDITY-distortion tell when credit/vol are ALSO stressed — in calm
+    # regimes the same gap is just oil hitting near-term inflation, so gate on stress.
+    c20_55 = _chg_bp(be55, 20) if be55 is not None else None
+    stressed = (hy_z is not None and hy_z >= 0.5) or (vix_pct is not None and vix_pct >= 0.70)
+    contamination = None
+    if (c20 is not None and c20_55 is not None and c20 <= -8
+            and (c20 - c20_55) <= -8 and stressed):
+        contamination = _bil(
+            "10y breakeven is falling materially faster than 5y5y — consistent with a TIPS-liquidity "
+            "premium distortion (the spot series craters mechanically in a dash-for-cash), not a pure expectations move.",
+            "10年期盈亏平衡的下跌明显快于5年5年——符合TIPS流动性溢价扭曲（现券在抢现金时机械性暴跌），而非纯粹的预期变动。")
+
+    return {
+        "as_of": str(be.dropna().index[-1].date()),
+        "level": round(be_l, 2) if be_l is not None else None,
+        "level_5y5y": round(_last(be55), 2) if be55 is not None and _last(be55) is not None else None,
+        "velocity_bp": velocity,
+        "accel_10d_bp": accel_bp,
+        "fall_speed_pctile": speed_pct,
+        "is_fast": bool(speed_pct is not None and speed_pct >= 0.85),
+        "trend": trend,
+        "direction": be_dir,
+        "cross_check_5y5y_chg_20d_bp": c20_55,
+        "tips_liquidity_flag": contamination,
+        "cause_badge": badge,
+        "costate": {"oil_chg_20d_pct": oil_c, "real10y_chg_20d_bp": real_c,
+                    "nom10y_chg_20d_bp": nom_c, "hy_oas_z": round(hy_z, 2) if hy_z is not None else None,
+                    "vix_pctile": vix_pct},
+        "caveat": _bil(
+            "VISIBILITY ONLY — a falling breakeven is a thermometer, not a forecast. Across 2008 / 2014–15 / "
+            "2018 / 2020 / 2022 / 2023 it led the risk cascade in ~0 clean cases; breakeven velocity has ~0 "
+            "forward-drawdown edge and the credit/vol co-state adds nothing beyond VIX. Use this to disambiguate "
+            "an in-progress move (which kind of fall?), never to front-run one.",
+            "仅供观察——下行的盈亏平衡是温度计，不是预测。在2008/2014-15/2018/2020/2022/2023中，它几乎没有一次干净地领先风险资产的瀑布式下跌；盈亏平衡速度对前瞻回撤几乎没有预测力，信用/波动率联动相对VIX无增量。用它来辨别正在发生的变动（属于哪一类下跌），而非抢跑。"),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # current per-asset transmission (measured cells x current driver activation)
 # --------------------------------------------------------------------------- #
 def transmission_read(f: pd.DataFrame, cal: dict, cfg: dict) -> dict:
@@ -424,6 +563,7 @@ def snapshot(f: pd.DataFrame) -> dict | None:
     return {
         "asof": str(f.index[-1].date()),
         "state": state,
+        "breakeven_decomp": breakeven_decomposition(f),
         "inflation_decomposition": inflation_decomposition(f),
         "transmission": read,
         "headwinds": headwinds,
