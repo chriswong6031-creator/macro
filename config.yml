@@ -3053,12 +3053,13 @@ vector:
     dd_threshold: 0.25           # no brake until the strategy is >25% below its equity high-water mark
     dd_decay: 1.0                # cut the cap by this per unit of drawdown beyond the threshold
     dd_floor: 0.40               # never cap exposure below this fraction (keep a core position)
-    # Bottom-detector overlay (reports/btc-vector-bottom-overlay.md). The drawdown brake
-    # de-risks the allocation to ~cash THROUGH a crash, so it misses the washout LOW. This
-    # adds exposure back when a multi-timeframe BOTTOM signal (StochRSI-oversold breadth +
-    # deep drawdown + capitulation, all causal/close+OHLC) is strong -> better entry prices.
-    # Validated +22% final return at ~flat Sharpe/MaxDD; survives split-half + leave-one-
-    # crisis-out (gain +23/30/25% dropping 2018/2020/2022). Applied AFTER the brake.
+    # Bottom-detector overlay (validation: reports/btc-vector-optimal-phase0.md). The
+    # drawdown brake de-risks the allocation to ~cash THROUGH a crash, so it misses the
+    # washout LOW. This adds exposure back when a multi-timeframe BOTTOM signal (StochRSI-
+    # oversold breadth + deep drawdown + capitulation, all causal/close+OHLC) is strong ->
+    # better entry prices. +15.6% final return at flat Sharpe; the SCORED gates (DSR /
+    # bootstrap / split-half / leave-one-crisis-out / beats-200dma) all still pass.
+    # Applied AFTER the brake (the brake protects on the way down, this re-engages at the low).
     bottom_overlay: true         # add size at washout bottoms the brake would otherwise miss
     bottom_boost: 0.40           # max allocation added at full bottom pressure
     bottom_cap: 1.0              # clip after the boost (1.0 = no leverage; >1 = lever the washout buy)
