@@ -1,0 +1,46 @@
+{
+  "ok": true,
+  "asof": "2026-06-25",
+  "all_pass": true,
+  "holdout_start": "2024-01-01",
+  "label": "fwd(3d) +-5%",
+  "legs": {
+    "d2": {
+      "status": "leading",
+      "pass": true,
+      "dir": "down",
+      "label": "Vol-of-vol jolt (DVOL range)",
+      "floor": 1.5,
+      "lift_full": 2.312,
+      "lift_holdout": 4.417,
+      "perm_p": 0.001,
+      "n_fires_full": 117,
+      "n_fires_holdout": 56
+    },
+    "d3": {
+      "status": "leading",
+      "pass": true,
+      "dir": "down",
+      "label": "SOPR profit-take spike",
+      "floor": 1.3,
+      "lift_full": 2.598,
+      "lift_holdout": 2.66,
+      "perm_p": 0.0005,
+      "n_fires_full": 158,
+      "n_fires_holdout": 31
+    },
+    "u1": {
+      "status": "leading",
+      "pass": true,
+      "dir": "up",
+      "label": "SOPR capitulation (wash-out)",
+      "floor": 1.3,
+      "lift_full": 3.959,
+      "lift_holdout": 6.352,
+      "perm_p": 0.001,
+      "n_fires_full": 141,
+      "n_fires_holdout": 14
+    }
+  },
+  "note": "Pre-registered act-tier legs re-validated leak-free. A leg is DEMOTED (act points zeroed by the radar) if its 2024+ holdout lift falls below its floor or its permutation p>0.05."
+}

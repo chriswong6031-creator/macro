@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-06-25",
-  "generated_utc": "2026-06-25T02:50:49.122947+00:00",
+  "generated_utc": "2026-06-25T08:09:41.414781+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
   "regime_read": null,
   "brain_present": false,
@@ -11,7 +11,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 100,
+  "n_signals": 101,
   "signals": [
     {
       "ticker": "NVDA",
@@ -20,13 +20,12 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 2.7,
-      "convergence_score": 7,
+      "weighted_score": 2.4,
+      "convergence_score": 6,
       "channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
-        "github_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"

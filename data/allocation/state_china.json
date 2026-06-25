@@ -1,12 +1,11 @@
 {
-  "cash": 0.258,
+  "cash": 0.184,
   "crash": false,
   "eligible": [
     "cn_ai_compute",
     "cn_battery",
-    "cn_coal",
+    "cn_brokers",
     "cn_consumer_elec",
-    "cn_defense",
     "cn_metals",
     "cn_rare_earth",
     "cn_robotics",

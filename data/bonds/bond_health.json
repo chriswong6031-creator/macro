@@ -99,14 +99,14 @@
   },
   "fed_path": {
     "asof": "2026-06-24",
-    "built": "2026-06-25T02:21:27.971369+00:00",
+    "built": "2026-06-25T07:34:20.627887+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
     "target_mid": 3.62,
     "implied": {
       "now": 3.63,
-      "m1": 3.63,
+      "m1": null,
       "m3": 3.75,
       "m6": 3.93,
       "m12": 4.05
@@ -118,8 +118,8 @@
     "implied_cuts_6m": -1,
     "sofr_path": {
       "m1": null,
-      "m3": 3.82,
-      "m6": 3.99,
+      "m3": 3.81,
+      "m6": 3.98,
       "m12": 4.08
     },
     "dots": [
@@ -621,8 +621,8 @@
         "driver_key": "real_10y",
         "driver_en": "real 10y",
         "driver_zh": "10年实际利率",
-        "beta": -0.068,
-        "beta_disp": "-0.68%/+10bp",
+        "beta": -0.067,
+        "beta_disp": "-0.67%/+10bp",
         "corr": -0.08,
         "n": 614,
         "sign": "neg",

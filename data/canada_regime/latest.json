@@ -25,7 +25,7 @@
     {
       "ticker": "ZEB.TO",
       "name": "Banks",
-      "rs": 0.0021576981544377196,
+      "rs": 0.002157697426505565,
       "mom_20d_pct": 6.92,
       "mom_60d_pct": 20.23,
       "above_200d_trend": true,
@@ -35,9 +35,9 @@
     {
       "ticker": "XFN.TO",
       "name": "Financials",
-      "rs": 0.0026970507613265607,
+      "rs": 0.002697193934467045,
       "mom_20d_pct": 5.82,
-      "mom_60d_pct": 16.41,
+      "mom_60d_pct": 16.42,
       "above_200d_trend": true,
       "pctile_252d": 100.0,
       "rank": 2
@@ -45,7 +45,7 @@
     {
       "ticker": "XIT.TO",
       "name": "Information Technology",
-      "rs": 0.0020811208527126246,
+      "rs": 0.002081120150614983,
       "mom_20d_pct": 4.69,
       "mom_60d_pct": 9.72,
       "above_200d_trend": false,
@@ -55,7 +55,7 @@
     {
       "ticker": "XBM.TO",
       "name": "Base Metals",
-      "rs": 0.0009975216462688133,
+      "rs": 0.0009975213097397767,
       "mom_20d_pct": -10.65,
       "mom_60d_pct": 4.17,
       "above_200d_trend": true,
@@ -65,7 +65,7 @@
     {
       "ticker": "XRE.TO",
       "name": "Real Estate",
-      "rs": 0.0004908439410928206,
+      "rs": 0.0004908437754991824,
       "mom_20d_pct": 0.6,
       "mom_60d_pct": 3.43,
       "above_200d_trend": true,
@@ -75,7 +75,7 @@
     {
       "ticker": "XST.TO",
       "name": "Consumer Staples",
-      "rs": 0.001989861353350301,
+      "rs": 0.001989860682040434,
       "mom_20d_pct": 8.5,
       "mom_60d_pct": -1.6,
       "above_200d_trend": true,
@@ -85,7 +85,7 @@
     {
       "ticker": "XCD.TO",
       "name": "Communication Services",
-      "rs": 0.0016271261593346325,
+      "rs": 0.0016271256103989771,
       "mom_20d_pct": -4.29,
       "mom_60d_pct": -1.83,
       "above_200d_trend": false,
@@ -95,7 +95,7 @@
     {
       "ticker": "XUT.TO",
       "name": "Utilities",
-      "rs": 0.0010674777154782843,
+      "rs": 0.0010674773553485083,
       "mom_20d_pct": 0.37,
       "mom_60d_pct": -2.09,
       "above_200d_trend": true,
@@ -105,7 +105,7 @@
     {
       "ticker": "XCG.TO",
       "name": "Consumer Discretionary",
-      "rs": 0.0018623282796767005,
+      "rs": 0.0018623276513920473,
       "mom_20d_pct": -2.28,
       "mom_60d_pct": -5.36,
       "above_200d_trend": false,
@@ -115,7 +115,7 @@
     {
       "ticker": "XMA.TO",
       "name": "Materials",
-      "rs": 0.0011506764693578443,
+      "rs": 0.0011506760811597085,
       "mom_20d_pct": -10.49,
       "mom_60d_pct": -15.13,
       "above_200d_trend": false,
@@ -125,7 +125,7 @@
     {
       "ticker": "XGD.TO",
       "name": "Gold Miners",
-      "rs": 0.001367166019321302,
+      "rs": 0.0013671655580871373,
       "mom_20d_pct": -11.22,
       "mom_60d_pct": -17.93,
       "above_200d_trend": false,
@@ -135,7 +135,7 @@
     {
       "ticker": "XEG.TO",
       "name": "Energy",
-      "rs": 0.0006938029147747036,
+      "rs": 0.0006938026807097814,
       "mom_20d_pct": -9.9,
       "mom_60d_pct": -18.78,
       "above_200d_trend": true,
@@ -180,7 +180,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 5.27
+      "chg_20d_pct": 5.06
     }
   },
   "overlay": {
@@ -190,23 +190,23 @@
       {
         "key": "oil",
         "label": "WTI crude oil",
-        "z": -0.88,
+        "z": -0.84,
         "sign": 1.0,
         "risk": "off",
-        "level": 69.46
+        "level": 70.34
       },
       {
         "key": "gold",
         "label": "Gold",
-        "z": -1.91,
+        "z": -1.97,
         "sign": 1.0,
         "risk": "off",
-        "level": 4013.6001
+        "level": 3990.3
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 1.14,
+        "z": 1.11,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -238,10 +238,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 1.98,
+        "z": 2.04,
         "sign": -1,
         "risk": "off",
-        "level": 101.513
+        "level": 101.61
       }
     ],
     "terms_of_trade": "deteriorating",

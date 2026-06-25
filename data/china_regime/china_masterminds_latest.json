@@ -1,112 +1,130 @@
 {
   "schema": "china_masterminds.latest.v2",
   "n": 3,
-  "built": "2026-06-25 02:38 UTC",
-  "asof": "2026-06-24",
+  "built": "2026-06-25 07:54 UTC",
+  "asof": "2026-06-25",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "cnmm_conservative",
       "name": "China Mastermind \u2014 Conservative",
-      "cagr": 6.93,
+      "cagr": 6.89,
       "sharpe": 1.33,
       "maxdd": -6.4,
-      "asof": "2026-06-24",
-      "gross_now": 0.36,
+      "asof": "2026-06-25",
+      "gross_now": 0.48,
       "alloc": [
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 16.9
+          "weight": 23.6
         },
         {
           "asset": "510880.SS",
           "label_en": "SSE Dividend",
           "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 14.5
+          "weight": 17.0
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 3.3
+          "weight": 4.8
         },
         {
           "asset": "159915.SZ",
           "label_en": "ChiNext (growth)",
           "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-          "weight": 1.3
+          "weight": 1.4
+        },
+        {
+          "asset": "510300.SS",
+          "label_en": "CSI 300",
+          "label_zh": "\u6caa\u6df1300",
+          "weight": 1.0
         }
       ]
     },
     {
       "key": "cnmm_moderate",
       "name": "China Mastermind \u2014 Moderate",
-      "cagr": 9.96,
-      "sharpe": 1.15,
+      "cagr": 9.9,
+      "sharpe": 1.14,
       "maxdd": -11.6,
-      "asof": "2026-06-24",
-      "gross_now": 0.68,
+      "asof": "2026-06-25",
+      "gross_now": 0.89,
       "alloc": [
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 34.2
+          "weight": 47.1
         },
         {
           "asset": "510880.SS",
           "label_en": "SSE Dividend",
           "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 25.8
+          "weight": 29.6
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 5.9
+          "weight": 8.4
         },
         {
           "asset": "159915.SZ",
           "label_en": "ChiNext (growth)",
           "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-          "weight": 2.2
+          "weight": 2.4
+        },
+        {
+          "asset": "510300.SS",
+          "label_en": "CSI 300",
+          "label_zh": "\u6caa\u6df1300",
+          "weight": 1.7
         }
       ]
     },
     {
       "key": "cnmm_aggressive",
       "name": "China Mastermind \u2014 Aggressive",
-      "cagr": 14.03,
-      "sharpe": 1.08,
+      "cagr": 13.92,
+      "sharpe": 1.07,
       "maxdd": -20.3,
-      "asof": "2026-06-24",
-      "gross_now": 1.25,
+      "asof": "2026-06-25",
+      "gross_now": 1.61,
       "alloc": [
         {
           "asset": "511010.SS",
           "label_en": "China 5y Govt Bond",
           "label_zh": "5\u5e74\u56fd\u503a",
-          "weight": 69.7
+          "weight": 93.8
         },
         {
           "asset": "510880.SS",
           "label_en": "SSE Dividend",
           "label_zh": "\u4e0a\u8bc1\u7ea2\u5229",
-          "weight": 42.0
+          "weight": 47.2
         },
         {
           "asset": "518880.SS",
           "label_en": "Gold (onshore)",
           "label_zh": "\u9ec4\u91d1",
-          "weight": 9.5
+          "weight": 13.3
         },
         {
           "asset": "159915.SZ",
           "label_en": "ChiNext (growth)",
           "label_zh": "\u521b\u4e1a\u677f\uff08\u6210\u957f\uff09",
-          "weight": 3.6
+          "weight": 3.8
+        },
+        {
+          "asset": "510300.SS",
+          "label_en": "CSI 300",
+          "label_zh": "\u6caa\u6df1300",
+          "weight": 2.8
         }
       ]
     }
