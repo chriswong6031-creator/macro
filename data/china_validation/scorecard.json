@@ -1,7 +1,7 @@
 {
   "schema": "china_validation.v1",
   "is_context_only": true,
-  "generated_utc": "2026-06-25T09:15:37.395344+00:00",
+  "generated_utc": "2026-06-25T11:14:29.749924+00:00",
   "fdr_alpha": 0.1,
   "horizons": [
     5,

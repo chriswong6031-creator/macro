@@ -1,6 +1,6 @@
 {
   "n": 27,
-  "built": "2026-06-25 09:25 UTC",
+  "built": "2026-06-25 11:21 UTC",
   "cards": [
     {
       "key": "spvector",
@@ -185,7 +185,7 @@
     {
       "key": "oil_trend",
       "name": "Crude-Oil Trend",
-      "cagr": 2.59,
+      "cagr": 2.58,
       "sharpe": 0.23,
       "maxdd": -44.4,
       "income": 1.26,
@@ -194,7 +194,7 @@
     {
       "key": "copper_growth",
       "name": "Copper Growth Cyclical",
-      "cagr": 7.25,
+      "cagr": 7.26,
       "sharpe": 0.57,
       "maxdd": -32.9,
       "income": 1.26,

@@ -8,63 +8,63 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.137,
-      "chg": -2.1,
+      "quote": 1.1357,
+      "chg": -2.2,
       "action": "FLAT",
-      "score": -10.9
+      "score": -10.7
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3192,
-      "chg": -1.9,
+      "quote": 1.3175,
+      "chg": -2.1,
       "action": "FLAT",
-      "score": 13.7
+      "score": 13.9
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.789,
-      "chg": 1.3,
+      "quote": 161.819,
+      "chg": 1.4,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8106,
-      "chg": 3.1,
+      "quote": 0.8119,
+      "chg": 3.3,
       "action": "LONG",
-      "score": 27.8
+      "score": 28.6
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6907,
-      "chg": -3.6,
+      "quote": 0.6898,
+      "chg": -3.7,
       "action": "SHORT",
-      "score": -27.7
+      "score": -27.8
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4222,
-      "chg": 2.8,
+      "quote": 1.4237,
+      "chg": 2.9,
       "action": "FLAT",
-      "score": 19.1
+      "score": 19.5
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.5934,
-      "chg": 1.4,
+      "quote": 17.61,
+      "chg": 1.5,
       "action": "FLAT",
-      "score": -11.9
+      "score": -10.9
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1809,
-      "chg": 2.8,
+      "quote": 5.1982,
+      "chg": 3.2,
       "action": "FLAT",
-      "score": 8.0
+      "score": 7.7
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.769,
+      "quote": 6.7665,
       "chg": 0.1,
       "action": "FLAT",
       "score": 15.0
@@ -74,7 +74,7 @@
     "lean": "dollar-supportive backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.86,
-    "fed_path_bps": 42.0,
+    "fed_path_bps": 41.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
@@ -115,12 +115,12 @@
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 21.2,
+      "carry_unwind": 22.8,
       "dollar_wrecking_ball": 39.7,
       "em_crisis_capital_flight": 0.1,
-      "haven_flight_risk_off": 16.3,
+      "haven_flight_risk_off": 18.1,
       "reflation_risk_on": 0,
-      "intervention_risk": 22.5
+      "intervention_risk": 21.6
     }
   }
 }
