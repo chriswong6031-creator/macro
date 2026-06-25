@@ -30,7 +30,7 @@
        .site-nav .nav-brand in theme.css). Kept in sync with the landing-hub lockup
        in scripts/build_vector.py (_BRAND_MARK_SVG). Plain-text aria-label only — the
        bilingual t() macro emits <span> HTML that would corrupt the attribute. #}
-    <a class="nav-brand" href="{{ NP }}index.html" aria-label="Market Intelligence — Home">
+    <a class="nav-brand" href="{{ NP }}index.html" aria-label="MASTERMIND — Home">
       <svg class="brand-glyph" width="29" height="29" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
           <linearGradient id="mbTile" x1="0" y1="0" x2="1" y2="1">
@@ -54,7 +54,7 @@
       </svg>
       <span class="brand-word">MASTERMIND</span>
     </a>
-    <a class="nav-link" href="{{ NP }}index.html">🏠 {{ t('Home', '首页') }}</a>
+    {# Home link removed — the brand logomark above links Home (standard pattern). #}
     <div class="nav-dd">
       <a class="nav-link" href="{{ NP }}macro.html">🇺🇸 {{ t('United States', '美国') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">

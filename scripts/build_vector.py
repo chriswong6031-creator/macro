@@ -1194,9 +1194,9 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
     WITHOUT any rectangular scrim that would cut a line across the body */
  filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
 html[data-lang="zh"] .h h1{letter-spacing:0}
-/* ===== brand lockup — the crafted Mastermind “M” glyph + the Market-Intelligence
-   wordmark, standing in for the old plain-text title. The container drops the
-   gradient-text treatment (it would clip the SVG); the wordmark span keeps it. ===== */
+/* ===== brand lockup — the crafted Mastermind “M” glyph + the MASTERMIND wordmark,
+   standing in for the old plain-text title. The container drops the gradient-text
+   treatment (it would clip the SVG); the wordmark span keeps it. ===== */
 /* display:flex (block-level), NOT inline-flex — the preceding .eyebrow is itself
    inline-flex, so an inline-flex h1 would share its line and sit off-centre. A
    block-level flex takes its own line and centres the glyph+wordmark via justify. */
@@ -1204,7 +1204,7 @@ html[data-lang="zh"] .h h1{letter-spacing:0}
  background:none;-webkit-text-fill-color:currentColor;color:var(--text);filter:none}
 .h h1.hub-logo .brand-glyph{width:clamp(48px,6.4vw,66px);height:clamp(48px,6.4vw,66px);flex:none;
  filter:drop-shadow(0 6px 18px rgba(40,56,128,.42)) drop-shadow(0 1px 2px var(--bg))}
-.h h1.hub-logo .logo-word{-webkit-text-fill-color:transparent;
+.h h1.hub-logo .logo-word{font-family:Inter,-apple-system,"Segoe UI",sans-serif;font-weight:900;letter-spacing:.015em;-webkit-text-fill-color:transparent;
  background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
  -webkit-background-clip:text;background-clip:text;color:transparent;
  filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
@@ -1787,10 +1787,10 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
     head = (HUB_MARKER + "\n"
             '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            '<title>Market Intelligence</title>\n'
+            '<title>MASTERMIND</title>\n'
             "<script>try{var h=new Date().getHours(),tod=(h>=7&&h<19)?'light':'dark',t=localStorage.getItem('theme'),a=localStorage.getItem('themeAuto');if(!t||a){t=tod;localStorage.setItem('theme',t);localStorage.setItem('themeAuto','1');}document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>\n"
             '<link rel="stylesheet" href="theme.css">\n'
-            '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n'
+            '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">\n'
             + _GLOBE_HUB_CSS + "</head><body>")
 
     body = (
@@ -1824,7 +1824,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
         + _bi("Live · zero-cost data engine · updated " + built, "实时 · 零成本数据引擎 · 更新于 " + built)
         + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
-        + '<span class="logo-word">' + _bi("Market Intelligence", "市场情报") + '</span></h1>'
+        + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
                     "覆盖各大类资产的市场周期仪表盘——一套机械化、经回测的引擎。") + '</p></header>'
         + globe_deck + markets + vectors + alerts_html
