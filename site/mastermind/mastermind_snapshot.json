@@ -1,6 +1,6 @@
 {
   "schema": "mastermind_snapshot.v1",
-  "generated_at": "2026-06-25T12:25:00Z",
+  "generated_at": "2026-06-25T22:25:00Z",
   "default_book": "flagship",
   "live_url": "http://localhost:8000",
   "books": [
@@ -12,7 +12,7 @@
       "manager": "engine",
       "benchmark": "SPY",
       "as_of": "2026-06-24",
-      "market_status": "closed",
+      "market_status": "open",
       "gross": 0.7079,
       "cash": 0.2921,
       "regime": {
@@ -164,7 +164,7 @@
           "thesis_id": "2026-06-24-ACIW-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.333,
-          "entry_price": 46.39,
+          "entry_price": 45.89,
           "research": {
             "paper_id": "2026-06-24-ACIW",
             "mode": "engine",
@@ -199,11 +199,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. ACIW receives 0.5% (confluence +0.33 (2/3 lenses bullish = +0.33 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.333,
             "prob_correct": 0.68
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 46.39,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "ANET",
@@ -215,7 +211,7 @@
           "thesis_id": "2026-06-24-ANET-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.75,
-          "entry_price": 161.74,
+          "entry_price": 167.76,
           "research": {
             "paper_id": "2026-06-24-ANET",
             "mode": "engine",
@@ -256,11 +252,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. ANET receives 3.5% (confluence +0.75 (7/8 lenses bullish = +0.75 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.75,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 161.74,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "APH",
@@ -272,7 +264,7 @@
           "thesis_id": "2026-06-24-APH-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.667,
-          "entry_price": 162.78,
+          "entry_price": 166.15,
           "research": {
             "paper_id": "2026-06-24-APH",
             "mode": "engine",
@@ -311,11 +303,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. APH receives 2.9% (confluence +0.67 (5/6 lenses bullish = +0.67 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.667,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 162.78,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "BRC",
@@ -374,7 +362,7 @@
           "thesis_id": "2026-06-24-CSL-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.6,
-          "entry_price": 378.53,
+          "entry_price": 384.98,
           "research": {
             "paper_id": "2026-06-24-CSL",
             "mode": "engine",
@@ -410,11 +398,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. CSL receives 0.9% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.6,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 378.53,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "FSS",
@@ -512,11 +496,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. HWKN receives 1.6% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 165.33,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "MAS",
@@ -528,7 +508,7 @@
           "thesis_id": "2026-06-24-MAS-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.6,
-          "entry_price": 78.05,
+          "entry_price": 78.5,
           "research": {
             "paper_id": "2026-06-24-MAS",
             "mode": "engine",
@@ -565,11 +545,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. MAS receives 2.0% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.6,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 78.05,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "MTX",
@@ -581,7 +557,7 @@
           "thesis_id": "2026-06-24-MTX-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.5,
-          "entry_price": 78.67,
+          "entry_price": 78.77,
           "research": {
             "paper_id": "2026-06-24-MTX",
             "mode": "engine",
@@ -616,11 +592,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. MTX receives 1.1% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 78.67,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "PH",
@@ -681,7 +653,7 @@
           "thesis_id": "2026-06-24-RBA-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.6,
-          "entry_price": 112.55,
+          "entry_price": 112.0,
           "research": {
             "paper_id": "2026-06-24-RBA",
             "mode": "engine",
@@ -719,11 +691,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. RBA receives 1.5% (confluence +0.60 (4/5 lenses bullish = +0.60 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.6,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 112.55,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "SNA",
@@ -735,7 +703,7 @@
           "thesis_id": "2026-06-24-SNA-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.5,
-          "entry_price": 392.14,
+          "entry_price": 395.38,
           "research": {
             "paper_id": "2026-06-24-SNA",
             "mode": "engine",
@@ -771,11 +739,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. SNA receives 1.8% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 392.14,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "TT",
@@ -787,7 +751,7 @@
           "thesis_id": "2026-06-24-TT-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.667,
-          "entry_price": 483.15,
+          "entry_price": 489.91,
           "research": {
             "paper_id": "2026-06-24-TT",
             "mode": "engine",
@@ -826,11 +790,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. TT receives 1.6% (confluence +0.67 (5/6 lenses bullish = +0.67 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.667,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 483.15,
-          "fill_after": "2026-06-25"
+          }
         },
         {
           "ticker": "VSEC",
@@ -842,7 +802,7 @@
           "thesis_id": "2026-06-24-VSEC-conv",
           "time_stop_by": "2026-09-21",
           "confluence": 0.5,
-          "entry_price": 217.68,
+          "entry_price": 220.07,
           "research": {
             "paper_id": "2026-06-24-VSEC",
             "mode": "engine",
@@ -879,11 +839,7 @@
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. VSEC receives 0.7% (confluence +0.50 (3/4 lenses bullish = +0.50 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-09-21.",
             "confluence": 0.5,
             "prob_correct": 0.7
-          },
-          "pending": true,
-          "status": "pending_open",
-          "est_price": 217.68,
-          "fill_after": "2026-06-25"
+          }
         }
       ],
       "decisions": [
@@ -1448,140 +1404,7 @@
           "raw_prob_correct": 0.7
         }
       ],
-      "pending_orders": [
-        {
-          "id": "2026-06-24-ACIW-buy",
-          "ticker": "ACIW",
-          "side": "buy",
-          "shares": 47.0,
-          "est_price": 46.39,
-          "est_value": 2180.33,
-          "weight": 0.0054,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-ANET-buy",
-          "ticker": "ANET",
-          "side": "buy",
-          "shares": 46.0,
-          "est_price": 161.74,
-          "est_value": 7440.04,
-          "weight": 0.0352,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-APH-buy",
-          "ticker": "APH",
-          "side": "buy",
-          "shares": 21.0,
-          "est_price": 162.78,
-          "est_value": 3418.38,
-          "weight": 0.0289,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-CSL-buy",
-          "ticker": "CSL",
-          "side": "buy",
-          "shares": 24.0,
-          "est_price": 378.53,
-          "est_value": 9084.72,
-          "weight": 0.0092,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-HWKN-buy",
-          "ticker": "HWKN",
-          "side": "buy",
-          "shares": 95.0,
-          "est_price": 165.33,
-          "est_value": 15706.35,
-          "weight": 0.0158,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-MAS-buy",
-          "ticker": "MAS",
-          "side": "buy",
-          "shares": 160.0,
-          "est_price": 78.05,
-          "est_value": 12488.0,
-          "weight": 0.0204,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-MTX-buy",
-          "ticker": "MTX",
-          "side": "buy",
-          "shares": 137.0,
-          "est_price": 78.67,
-          "est_value": 10777.79,
-          "weight": 0.0108,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-RBA-buy",
-          "ticker": "RBA",
-          "side": "buy",
-          "shares": 131.0,
-          "est_price": 112.55,
-          "est_value": 14744.05,
-          "weight": 0.0148,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-SNA-buy",
-          "ticker": "SNA",
-          "side": "buy",
-          "shares": 45.0,
-          "est_price": 392.14,
-          "est_value": 17646.3,
-          "weight": 0.0177,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-TT-buy",
-          "ticker": "TT",
-          "side": "buy",
-          "shares": 33.0,
-          "est_price": 483.15,
-          "est_value": 15943.95,
-          "weight": 0.0163,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        },
-        {
-          "id": "2026-06-24-VSEC-buy",
-          "ticker": "VSEC",
-          "side": "buy",
-          "shares": 32.0,
-          "est_price": 217.68,
-          "est_value": 6965.76,
-          "weight": 0.007,
-          "placed_asof": "2026-06-24",
-          "fill_after": "2026-06-25",
-          "status": "pending"
-        }
-      ],
+      "pending_orders": [],
       "research_held": [
         {
           "ticker": "ADAM",
@@ -1946,13 +1769,13 @@
       "performance": {
         "inception_date": "2026-06-19",
         "starting_nav": 1000000.0,
-        "current_nav": 977829.36,
-        "cash": 163562.0,
-        "invested": 814267.36,
-        "total_return_pct": -2.2171,
-        "vs_spy_pct": -1.1752,
+        "current_nav": 1009965.86,
+        "cash": 46228.33,
+        "invested": 963737.53,
+        "total_return_pct": 0.9966,
+        "vs_spy_pct": 1.7362,
         "benchmark": "SPY",
-        "day_change_pct": 0.2039,
+        "day_change_pct": 3.2865,
         "max_drawdown_pct": -2.416,
         "realized_since": "2026-06-19",
         "series": [
@@ -3288,18 +3111,18 @@
       "kind": "autonomous",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-06-24",
+      "as_of": "2026-06-25",
       "market_status": {
-        "open": false,
-        "asof_et": "2026-06-25T02:21:44.020524-04:00",
+        "open": true,
+        "asof_et": "2026-06-25T11:00:25.974499-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-06-25T09:30:00-04:00",
-        "next_open_day": "2026-06-25",
+        "next_open": "2026-06-26T09:30:00-04:00",
+        "next_open_day": "2026-06-26",
         "prev_trading_day": "2026-06-24"
       },
-      "gross": 0.5729,
-      "cash": 0.4271,
+      "gross": 0.6352,
+      "cash": 0.3648,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -3310,17 +3133,17 @@
         {
           "ticker": "SMH",
           "sleeve": "brain",
-          "weight": 0.1294,
+          "weight": 0.1596,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "The book's spine and the cleanest vehicle for the confirmed top themes (Memory/HBM, Semicap WFE). Engine's #1 sector RS by a wide margin. The live overnight tape is direct confirmation, not noise: KOSPI +5.93% and Nikkei +4.64% are a loud semiconductor tell, NQ-100 futures lead the complex (+1.99%) and VIX fell -4.4% to 18.6. The Asia bid held all night vs. my last read, so I keep the press from ~13% to 16% as the highest-confidence leadership expression — but as a diversified ETF, not a single name, given the narrow breadth. Falsifier: loses 50dma or semis cede RS leadership to defensives over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
-          "cost_basis": 654.8381,
-          "current_price": 618.92,
-          "market_value": 128482.58,
-          "unrealized_pnl": -7456.29,
-          "unrealized_pct": -5.49,
+          "held_days": 4,
+          "cost_basis": 649.9106,
+          "current_price": 628.6,
+          "market_value": 160664.87,
+          "unrealized_pnl": -5446.81,
+          "unrealized_pct": -3.28,
           "thesis_full": {
             "summary": "The book's spine and the cleanest vehicle for the confirmed top themes (Memory/HBM, Semicap WFE). Engine's #1 sector RS by a wide margin. The live overnight tape is direct confirmation, not noise: KOSPI +5.93% and Nikkei +4.64% are a loud semiconductor tell, NQ-100 futures lead the complex (+1.99%) and VIX fell -4.4% to 18.6. The Asia bid held all night vs. my last read, so I keep the press from ~13% to 16% as the highest-confidence leadership expression — but as a diversified ETF, not a single name, given the narrow breadth. Falsifier: loses 50dma or semis cede RS leadership to defensives over 21 sessions.",
             "why_now": "The book's spine and the cleanest vehicle for the confirmed top themes (Memory/HBM, Semicap WFE). Engine's #1 sector RS by a wide margin. The live overnight tape is direct confirmation, not noise: KOSPI +5.93% and Nikkei +4.64% are a loud semiconductor tell, NQ-100 futures lead the complex (+1.99%) and VIX fell -4.4% to 18.6. The Asia bid held all night vs. my last read, so I keep the press from ~13% to 16% as the highest-confidence leadership expression — but as a diversified ETF, not a single name, given the narrow breadth. Falsifier: loses 50dma or semis cede RS leadership to defensives over 21 sessions.",
@@ -3331,17 +3154,17 @@
         {
           "ticker": "EME",
           "sleeve": "brain",
-          "weight": 0.0992,
+          "weight": 0.1002,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "Cleanest electrification pick-and-shovel / second-derivative AI-capex play. EMCOR gets paid to build the data-center and grid buildout regardless of which chip wins; decision matrix unambiguous (high confluence, EPS CAGR ~64%, confirmed uptrend), and it's tape-neutral so it diversifies the semis beta that is driving tonight's narrow move. Thesis intact; held at ~10%. Falsifier: power/grid theme rolls over or EME lags SPY >=5% over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 839.0062,
-          "current_price": 847.17,
-          "market_value": 98509.44,
-          "unrealized_pnl": 949.29,
-          "unrealized_pct": 0.97,
+          "current_price": 867.279,
+          "market_value": 100847.72,
+          "unrealized_pnl": 3287.58,
+          "unrealized_pct": 3.37,
           "thesis_full": {
             "summary": "Cleanest electrification pick-and-shovel / second-derivative AI-capex play. EMCOR gets paid to build the data-center and grid buildout regardless of which chip wins; decision matrix unambiguous (high confluence, EPS CAGR ~64%, confirmed uptrend), and it's tape-neutral so it diversifies the semis beta that is driving tonight's narrow move. Thesis intact; held at ~10%. Falsifier: power/grid theme rolls over or EME lags SPY >=5% over 21 sessions.",
             "why_now": "Cleanest electrification pick-and-shovel / second-derivative AI-capex play. EMCOR gets paid to build the data-center and grid buildout regardless of which chip wins; decision matrix unambiguous (high confluence, EPS CAGR ~64%, confirmed uptrend), and it's tape-neutral so it diversifies the semis beta that is driving tonight's narrow move. Thesis intact; held at ~10%. Falsifier: power/grid theme rolls over or EME lags SPY >=5% over 21 sessions.",
@@ -3352,17 +3175,17 @@
         {
           "ticker": "APH",
           "sleeve": "brain",
-          "weight": 0.0699,
+          "weight": 0.085,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "Amphenol — interconnect/connector content levered to the same AI servers as NVDA/AVGO at a less-extended multiple. AI-infra remains leadership and benefits directly from green NQ futures (+1.99%) and the overnight KOSPI/Nikkei tech surge. Holding the queued add from ~7% to 8.5% as a cleaner way to express AI-infra than stacking another semis single-name on top of SMH. Falsifier: AI-infra theme rolls over or APH lags SPY >=5% over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
-          "cost_basis": 164.2426,
-          "current_price": 162.78,
-          "market_value": 69368.57,
-          "unrealized_pnl": -623.27,
-          "unrealized_pct": -0.89,
+          "held_days": 4,
+          "cost_basis": 164.6575,
+          "current_price": 166.69,
+          "market_value": 85536.84,
+          "unrealized_pnl": 1042.98,
+          "unrealized_pct": 1.23,
           "thesis_full": {
             "summary": "Amphenol — interconnect/connector content levered to the same AI servers as NVDA/AVGO at a less-extended multiple. AI-infra remains leadership and benefits directly from green NQ futures (+1.99%) and the overnight KOSPI/Nikkei tech surge. Holding the queued add from ~7% to 8.5% as a cleaner way to express AI-infra than stacking another semis single-name on top of SMH. Falsifier: AI-infra theme rolls over or APH lags SPY >=5% over 21 sessions.",
             "why_now": "Amphenol — interconnect/connector content levered to the same AI servers as NVDA/AVGO at a less-extended multiple. AI-infra remains leadership and benefits directly from green NQ futures (+1.99%) and the overnight KOSPI/Nikkei tech surge. Holding the queued add from ~7% to 8.5% as a cleaner way to express AI-infra than stacking another semis single-name on top of SMH. Falsifier: AI-infra theme rolls over or APH lags SPY >=5% over 21 sessions.",
@@ -3373,17 +3196,17 @@
         {
           "ticker": "HWM",
           "sleeve": "brain",
-          "weight": 0.0651,
+          "weight": 0.065,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Howmet — confirmed Industrials uptrend leader with an event edge (SUE z~3.0, insider buying, positive revisions). Aerospace structural-content demand is a durable cycle DISTINCT from AI, diversifying the thematic risk concentrated in tonight's narrow semis bid. Extended ~24% above 200dma so hold rather than press. Falsifier: loses 50dma or lags SPY >=5% over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 277.66,
-          "current_price": 276.06,
-          "market_value": 64664.79,
-          "unrealized_pnl": -374.79,
-          "unrealized_pct": -0.58,
+          "current_price": 279.245,
+          "market_value": 65410.85,
+          "unrealized_pnl": 371.27,
+          "unrealized_pct": 0.57,
           "thesis_full": {
             "summary": "Howmet — confirmed Industrials uptrend leader with an event edge (SUE z~3.0, insider buying, positive revisions). Aerospace structural-content demand is a durable cycle DISTINCT from AI, diversifying the thematic risk concentrated in tonight's narrow semis bid. Extended ~24% above 200dma so hold rather than press. Falsifier: loses 50dma or lags SPY >=5% over 21 sessions.",
             "why_now": "Howmet — confirmed Industrials uptrend leader with an event edge (SUE z~3.0, insider buying, positive revisions). Aerospace structural-content demand is a durable cycle DISTINCT from AI, diversifying the thematic risk concentrated in tonight's narrow semis bid. Extended ~24% above 200dma so hold rather than press. Falsifier: loses 50dma or lags SPY >=5% over 21 sessions.",
@@ -3392,19 +3215,40 @@
           }
         },
         {
+          "ticker": "ANET",
+          "sleeve": "brain",
+          "weight": 0.0649,
+          "verdict": "hold",
+          "conviction": "medium",
+          "rationale": "Arista — the switching fabric of AI data centers, the systems layer complementing APH within AI-infra leadership. Down ~5% from cost and higher single-name vol, so sized below the ETF core, but the overnight semi/tech bid (KOSPI +5.93%, NQ +1.99%, VIX 18.6) is squarely supportive; held at the queued ~6.5%. Falsifier: AI-infra theme rolls over or ANET lags SPY >=5% over 21 sessions.",
+          "opened_at": "2026-06-21T14:26:56.050465+00:00",
+          "held_days": 4,
+          "cost_basis": 169.6278,
+          "current_price": 167.81,
+          "market_value": 65334.38,
+          "unrealized_pnl": -707.73,
+          "unrealized_pct": -1.07,
+          "thesis_full": {
+            "summary": "Arista — the switching fabric of AI data centers, the systems layer complementing APH within AI-infra leadership. Down ~5% from cost and higher single-name vol, so sized below the ETF core, but the overnight semi/tech bid (KOSPI +5.93%, NQ +1.99%, VIX 18.6) is squarely supportive; held at the queued ~6.5%. Falsifier: AI-infra theme rolls over or ANET lags SPY >=5% over 21 sessions.",
+            "why_now": "Arista — the switching fabric of AI data centers, the systems layer complementing APH within AI-infra leadership. Down ~5% from cost and higher single-name vol, so sized below the ETF core, but the overnight semi/tech bid (KOSPI +5.93%, NQ +1.99%, VIX 18.6) is squarely supportive; held at the queued ~6.5%. Falsifier: AI-infra theme rolls over or ANET lags SPY >=5% over 21 sessions.",
+            "bull": [],
+            "bear": []
+          }
+        },
+        {
           "ticker": "URI",
           "sleeve": "brain",
-          "weight": 0.0606,
+          "weight": 0.0627,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "United Rentals — reshoring / industrial-capex / mega-project rental play with operating leverage to non-residential construction, data-center and infrastructure buildout. Diversifies away from pure tech beta; Russell 2000 futures green overnight (+0.23%) and IWM sits at a top RS percentile. Thesis unbroken; held at ~6%. Falsifier: reshoring/industrial-capex momentum fades or URI lags SPY >=5% over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 1076.81,
-          "current_price": 1083.72,
-          "market_value": 60123.24,
-          "unrealized_pnl": 383.36,
-          "unrealized_pct": 0.64,
+          "current_price": 1136.96,
+          "market_value": 63076.92,
+          "unrealized_pnl": 3337.03,
+          "unrealized_pct": 5.59,
           "thesis_full": {
             "summary": "United Rentals — reshoring / industrial-capex / mega-project rental play with operating leverage to non-residential construction, data-center and infrastructure buildout. Diversifies away from pure tech beta; Russell 2000 futures green overnight (+0.23%) and IWM sits at a top RS percentile. Thesis unbroken; held at ~6%. Falsifier: reshoring/industrial-capex momentum fades or URI lags SPY >=5% over 21 sessions.",
             "why_now": "United Rentals — reshoring / industrial-capex / mega-project rental play with operating leverage to non-residential construction, data-center and infrastructure buildout. Diversifies away from pure tech beta; Russell 2000 futures green overnight (+0.23%) and IWM sits at a top RS percentile. Thesis unbroken; held at ~6%. Falsifier: reshoring/industrial-capex momentum fades or URI lags SPY >=5% over 21 sessions.",
@@ -3415,17 +3259,17 @@
         {
           "ticker": "MCY",
           "sleeve": "brain",
-          "weight": 0.0528,
+          "weight": 0.0521,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Deliberate diversifier and the only line uncorrelated to the AI-capex/electrification bet — P&C pricing-cycle tailwind plus rate-sensitive float. My ballast against the contracting-liquidity regime and the narrow breadth under tonight's tech bid (Hang Seng -1.61%, Europe red); already +4% in the book. Held flat at ~5.5%. Falsifier: loses its uptrend or lags SPY >=5% over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 102.6727,
-          "current_price": 106.99,
-          "market_value": 52397.56,
-          "unrealized_pnl": 2114.37,
-          "unrealized_pct": 4.2,
+          "current_price": 107.11,
+          "market_value": 52456.33,
+          "unrealized_pnl": 2173.14,
+          "unrealized_pct": 4.32,
           "thesis_full": {
             "summary": "Deliberate diversifier and the only line uncorrelated to the AI-capex/electrification bet — P&C pricing-cycle tailwind plus rate-sensitive float. My ballast against the contracting-liquidity regime and the narrow breadth under tonight's tech bid (Hang Seng -1.61%, Europe red); already +4% in the book. Held flat at ~5.5%. Falsifier: loses its uptrend or lags SPY >=5% over 21 sessions.",
             "why_now": "Deliberate diversifier and the only line uncorrelated to the AI-capex/electrification bet — P&C pricing-cycle tailwind plus rate-sensitive float. My ballast against the contracting-liquidity regime and the narrow breadth under tonight's tech bid (Hang Seng -1.61%, Europe red); already +4% in the book. Held flat at ~5.5%. Falsifier: loses its uptrend or lags SPY >=5% over 21 sessions.",
@@ -3434,40 +3278,19 @@
           }
         },
         {
-          "ticker": "ANET",
-          "sleeve": "brain",
-          "weight": 0.0519,
-          "verdict": "hold",
-          "conviction": "medium",
-          "rationale": "Arista — the switching fabric of AI data centers, the systems layer complementing APH within AI-infra leadership. Down ~5% from cost and higher single-name vol, so sized below the ETF core, but the overnight semi/tech bid (KOSPI +5.93%, NQ +1.99%, VIX 18.6) is squarely supportive; held at the queued ~6.5%. Falsifier: AI-infra theme rolls over or ANET lags SPY >=5% over 21 sessions.",
-          "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
-          "cost_basis": 170.0332,
-          "current_price": 161.74,
-          "market_value": 51487.58,
-          "unrealized_pnl": -2640.03,
-          "unrealized_pct": -4.88,
-          "thesis_full": {
-            "summary": "Arista — the switching fabric of AI data centers, the systems layer complementing APH within AI-infra leadership. Down ~5% from cost and higher single-name vol, so sized below the ETF core, but the overnight semi/tech bid (KOSPI +5.93%, NQ +1.99%, VIX 18.6) is squarely supportive; held at the queued ~6.5%. Falsifier: AI-infra theme rolls over or ANET lags SPY >=5% over 21 sessions.",
-            "why_now": "Arista — the switching fabric of AI data centers, the systems layer complementing APH within AI-infra leadership. Down ~5% from cost and higher single-name vol, so sized below the ETF core, but the overnight semi/tech bid (KOSPI +5.93%, NQ +1.99%, VIX 18.6) is squarely supportive; held at the queued ~6.5%. Falsifier: AI-infra theme rolls over or ANET lags SPY >=5% over 21 sessions.",
-            "bull": [],
-            "bear": []
-          }
-        },
-        {
           "ticker": "HUBB",
           "sleeve": "brain",
-          "weight": 0.044,
+          "weight": 0.0457,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Hubbell — electrical/grid infrastructure supplier expressing the same electrification/grid-buildout thesis as EME but at the equipment layer (utility T&D, electrical solutions). Reinforces the power-for-AI-and-reshoring bet with a different business model and customer base, away from the crowded semis trade. Held at ~4.4%. Falsifier: grid/electrification theme rolls over or HUBB lags SPY >=5% over 21 sessions.",
           "opened_at": "2026-06-21T14:26:56.050465+00:00",
-          "held_days": 3,
+          "held_days": 4,
           "cost_basis": 523.69,
-          "current_price": 518.18,
-          "market_value": 43677.46,
-          "unrealized_pnl": -464.44,
-          "unrealized_pct": -1.05,
+          "current_price": 545.7,
+          "market_value": 45997.12,
+          "unrealized_pnl": 1855.23,
+          "unrealized_pct": 4.2,
           "thesis_full": {
             "summary": "Hubbell — electrical/grid infrastructure supplier expressing the same electrification/grid-buildout thesis as EME but at the equipment layer (utility T&D, electrical solutions). Reinforces the power-for-AI-and-reshoring bet with a different business model and customer base, away from the crowded semis trade. Held at ~4.4%. Falsifier: grid/electrification theme rolls over or HUBB lags SPY >=5% over 21 sessions.",
             "why_now": "Hubbell — electrical/grid infrastructure supplier expressing the same electrification/grid-buildout thesis as EME but at the equipment layer (utility T&D, electrical solutions). Reinforces the power-for-AI-and-reshoring bet with a different business model and customer base, away from the crowded semis trade. Held at ~4.4%. Falsifier: grid/electrification theme rolls over or HUBB lags SPY >=5% over 21 sessions.",
@@ -3481,7 +3304,7 @@
           "subject": "Autonomous book",
           "lean": "OVERNIGHT REVIEW — hold the queued target; the live tape confirms it rather than changing it. Live overnight (06-25 06:20 UTC) is a narrow, semis-led risk-ON: NQ futures +1.99% lead while Dow is flat (+0.02%) and Russell +0.23%; the leadership tell is Asia semiconductors (KOSPI +5.93%, Nikkei +4.64%), with VIX -4.41% to 18.6 and the 10Y -0.27% to 4.45% confirming appetite. Nothing is selling off, so there is NO de-risk trigger — but breadth is thin (Hang Seng -1.61%, Shanghai/Europe red), and the in-house regime is Goldilocks with liquidity CONTRACTING, so I refuse to chase a gapped-up open. The book stays leaned into confirmed semis/AI-infra leadership (SMH pressed to 16% as the spine, APH to 8.5%, ANET to 6.5%) balanced by separate-cycle industrials (EME/HWM/HUBB/URI) and an uncorrelated ballast (MCY), with ~37% cash held deliberately as dry powder against the narrow breadth and contracting liquidity. Net gross ~63%.",
           "thesis": "No exits. This is an overnight-review reconsideration of an already-queued target, not fresh rotation. I held the queued presses (SMH 13→16%, APH 7→8.5%, ANET →6.5%) because the live tape confirmed the semis bid held overnight, and I declined to lean in further to avoid overpaying into a +2% NQ gap with narrow breadth.",
-          "logged_at": "2026-06-25T06:21:44.019612+00:00"
+          "logged_at": "2026-06-25T15:00:25.973289+00:00"
         }
       ],
       "pending_orders": [],
@@ -3496,13 +3319,13 @@
       "performance": {
         "inception_date": "2026-06-21",
         "starting_nav": 1000000.0,
-        "current_nav": 992554.32,
-        "cash": 423843.1,
-        "invested": 568711.22,
-        "total_return_pct": -0.7446,
-        "vs_spy_pct": 1.0633,
+        "current_nav": 1006578.8,
+        "cash": 367253.76,
+        "invested": 639325.04,
+        "total_return_pct": 0.6579,
+        "vs_spy_pct": 2.1912,
         "benchmark": "SPY",
-        "day_change_pct": 0.4241,
+        "day_change_pct": 1.413,
         "max_drawdown_pct": -2.1751,
         "realized_since": "2026-06-21",
         "series": [
@@ -4063,18 +3886,18 @@
       "kind": "etf_brain",
       "manager": "brain",
       "benchmark": "SPY",
-      "as_of": "2026-06-24",
+      "as_of": "2026-06-25",
       "market_status": {
-        "open": false,
-        "asof_et": "2026-06-25T02:22:53.145945-04:00",
+        "open": true,
+        "asof_et": "2026-06-25T11:00:26.263707-04:00",
         "trading_day": true,
         "holiday": false,
-        "next_open": "2026-06-25T09:30:00-04:00",
-        "next_open_day": "2026-06-25",
+        "next_open": "2026-06-26T09:30:00-04:00",
+        "next_open_day": "2026-06-26",
         "prev_trading_day": "2026-06-24"
       },
-      "gross": 0.6979,
-      "cash": 0.3021,
+      "gross": 0.6999,
+      "cash": 0.3001,
       "regime": {
         "quad": "Q1",
         "quad_name": "Goldilocks",
@@ -4086,17 +3909,17 @@
           "ticker": "SPY",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.1877,
+          "weight": 0.187,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "Benchmark and least-concentrated equity beta — the anchor I rotate around. Overnight tape is a narrow tech melt-up (NQ +1.99% vs Dow +0.02%, Russell +0.23%), the textbook thin advance the board's leading cross-asset-concentration fragility warns about. SPY at top weight is exactly what dilutes that semis/momentum cluster. Above 50d/200d, Goldilocks/mid-cycle, VIX -4.4% confirms a calm coincident read — but the leading fragility persists regardless of one risk-on session. Falsified if SPY loses its 50d on a breadth-divergence print.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 744.39,
-          "current_price": 733.24,
-          "market_value": 183039.87,
-          "unrealized_pnl": -2783.4,
-          "unrealized_pct": -1.5,
+          "current_price": 735.29,
+          "market_value": 183551.61,
+          "unrealized_pnl": -2271.66,
+          "unrealized_pct": -1.22,
           "thesis_full": {
             "summary": "Benchmark and least-concentrated equity beta — the anchor I rotate around. Overnight tape is a narrow tech melt-up (NQ +1.99% vs Dow +0.02%, Russell +0.23%), the textbook thin advance the board's leading cross-asset-concentration fragility warns about. SPY at top weight is exactly what dilutes that semis/momentum cluster. Above 50d/200d, Goldilocks/mid-cycle, VIX -4.4% confirms a calm coincident read — but the leading fragility persists regardless of one risk-on session. Falsified if SPY loses its 50d on a breadth-divergence print.",
             "why_now": "Benchmark and least-concentrated equity beta — the anchor I rotate around. Overnight tape is a narrow tech melt-up (NQ +1.99% vs Dow +0.02%, Russell +0.23%), the textbook thin advance the board's leading cross-asset-concentration fragility warns about. SPY at top weight is exactly what dilutes that semis/momentum cluster. Above 50d/200d, Goldilocks/mid-cycle, VIX -4.4% confirms a calm coincident read — but the leading fragility persists regardless of one risk-on session. Falsified if SPY loses its 50d on a breadth-divergence print.",
@@ -4108,17 +3931,17 @@
           "ticker": "QQQ",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.1279,
+          "weight": 0.1276,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Large-cap growth still leads (XLK #2 RS, +22% 60d). NQ futures +1.99% overnight will gap this up — and that strength is precisely why I hold rather than add: this is the extended AI/megacap one-factor bet (cross-asset correlation top 4%). A risk-on gap does not license re-levering the most-concentrated exposure into the open. Riding leadership at disciplined size.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 737.95,
-          "current_price": 710.62,
-          "market_value": 124735.15,
-          "unrealized_pnl": -4797.24,
-          "unrealized_pct": -3.7,
+          "current_price": 713.45,
+          "market_value": 125231.9,
+          "unrealized_pnl": -4300.49,
+          "unrealized_pct": -3.32,
           "thesis_full": {
             "summary": "Large-cap growth still leads (XLK #2 RS, +22% 60d). NQ futures +1.99% overnight will gap this up — and that strength is precisely why I hold rather than add: this is the extended AI/megacap one-factor bet (cross-asset correlation top 4%). A risk-on gap does not license re-levering the most-concentrated exposure into the open. Riding leadership at disciplined size.",
             "why_now": "Large-cap growth still leads (XLK #2 RS, +22% 60d). NQ futures +1.99% overnight will gap this up — and that strength is precisely why I hold rather than add: this is the extended AI/megacap one-factor bet (cross-asset correlation top 4%). A risk-on gap does not license re-levering the most-concentrated exposure into the open. Riding leadership at disciplined size.",
@@ -4130,17 +3953,17 @@
           "ticker": "SGOV",
           "sleeve": "brain",
           "group": "cash",
-          "weight": 0.1129,
+          "weight": 0.1122,
           "verdict": "hold",
           "conviction": "high",
           "rationale": "Defensive dry powder in T-bills, not duration — hawkish Fed, real 10y 2.29 and rising mean TLT/IEF aren't paid. Held rather than spent: tonight is risk-on (futures green, VIX -4.4%) but NARROW, and doctrine says don't deploy cash into a quiet/concentrated read while the leading cross-asset-concentration fragility is still lit. This is the powder I redeploy once the concentration warning clears, not into a tech gap-up.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 100.6,
-          "current_price": 100.62,
-          "market_value": 110123.45,
-          "unrealized_pnl": 21.89,
-          "unrealized_pct": 0.02,
+          "current_price": 100.6299,
+          "market_value": 110134.28,
+          "unrealized_pnl": 32.72,
+          "unrealized_pct": 0.03,
           "thesis_full": {
             "summary": "Defensive dry powder in T-bills, not duration — hawkish Fed, real 10y 2.29 and rising mean TLT/IEF aren't paid. Held rather than spent: tonight is risk-on (futures green, VIX -4.4%) but NARROW, and doctrine says don't deploy cash into a quiet/concentrated read while the leading cross-asset-concentration fragility is still lit. This is the powder I redeploy once the concentration warning clears, not into a tech gap-up.",
             "why_now": "Defensive dry powder in T-bills, not duration — hawkish Fed, real 10y 2.29 and rising mean TLT/IEF aren't paid. Held rather than spent: tonight is risk-on (futures green, VIX -4.4%) but NARROW, and doctrine says don't deploy cash into a quiet/concentrated read while the leading cross-asset-concentration fragility is still lit. This is the powder I redeploy once the concentration warning clears, not into a tech gap-up.",
@@ -4152,17 +3975,17 @@
           "ticker": "MTUM",
           "sleeve": "brain",
           "group": "factors",
-          "weight": 0.0944,
+          "weight": 0.0961,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Momentum factor, #3 RS, 99th pctile, +24% vs 200d, cleanly above 50d/200d — self-cleaning leadership. Held flat because MTUM/SMH/QQQ are substantially the same AI/liquidity exposure that the overnight tape just concentrated further (NQ +2%, breadth red abroad). I won't rebuild that one-factor bet into a narrow gap-up; trend intact, size disciplined.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 345.22,
-          "current_price": 328.41,
-          "market_value": 92024.88,
-          "unrealized_pnl": -4710.39,
-          "unrealized_pct": -4.87,
+          "current_price": 336.5675,
+          "market_value": 94310.72,
+          "unrealized_pnl": -2424.55,
+          "unrealized_pct": -2.51,
           "thesis_full": {
             "summary": "Momentum factor, #3 RS, 99th pctile, +24% vs 200d, cleanly above 50d/200d — self-cleaning leadership. Held flat because MTUM/SMH/QQQ are substantially the same AI/liquidity exposure that the overnight tape just concentrated further (NQ +2%, breadth red abroad). I won't rebuild that one-factor bet into a narrow gap-up; trend intact, size disciplined.",
             "why_now": "Momentum factor, #3 RS, 99th pctile, +24% vs 200d, cleanly above 50d/200d — self-cleaning leadership. Held flat because MTUM/SMH/QQQ are substantially the same AI/liquidity exposure that the overnight tape just concentrated further (NQ +2%, breadth red abroad). I won't rebuild that one-factor bet into a narrow gap-up; trend intact, size disciplined.",
@@ -4174,17 +3997,17 @@
           "ticker": "IWM",
           "sleeve": "brain",
           "group": "core_index",
-          "weight": 0.0679,
+          "weight": 0.0684,
           "verdict": "hold",
           "conviction": "low",
           "rationale": "Small caps confirm breadth (#4 RS, 100th pctile) but RTY futures only +0.23% overnight — they are NOT participating in the tech melt-up — and carry the most negative rate→equity transmission (-0.28) under restrictive policy (real 10y 2.29, rising; 10Y only -0.27% tonight). Held at a toehold: confirmed trend keeps me from cutting, restrictive regime keeps me from leaning in. Falsified if IWM rolls under its 50d as real yields rise.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 298.18,
-          "current_price": 296.69,
-          "market_value": 66247.58,
-          "unrealized_pnl": -332.7,
-          "unrealized_pct": -0.5,
+          "current_price": 300.53,
+          "market_value": 67105.01,
+          "unrealized_pnl": 524.73,
+          "unrealized_pct": 0.79,
           "thesis_full": {
             "summary": "Small caps confirm breadth (#4 RS, 100th pctile) but RTY futures only +0.23% overnight — they are NOT participating in the tech melt-up — and carry the most negative rate→equity transmission (-0.28) under restrictive policy (real 10y 2.29, rising; 10Y only -0.27% tonight). Held at a toehold: confirmed trend keeps me from cutting, restrictive regime keeps me from leaning in. Falsified if IWM rolls under its 50d as real yields rise.",
             "why_now": "Small caps confirm breadth (#4 RS, 100th pctile) but RTY futures only +0.23% overnight — they are NOT participating in the tech melt-up — and carry the most negative rate→equity transmission (-0.28) under restrictive policy (real 10y 2.29, rising; 10Y only -0.27% tonight). Held at a toehold: confirmed trend keeps me from cutting, restrictive regime keeps me from leaning in. Falsified if IWM rolls under its 50d as real yields rise.",
@@ -4196,17 +4019,17 @@
           "ticker": "SMH",
           "sleeve": "brain",
           "group": "sectors",
-          "weight": 0.0623,
+          "weight": 0.0628,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "#1 RS (+43% 60d, +49% vs 200d). Asia semis ripped overnight (KOSPI +5.93%, Nikkei +4.64%) so SMH gaps up — observed leadership I ride, not fade, but already most-extended with take-profit flags lit. Held flat: I won't chase the parabola into a gap (rank-IC≈0), and confirmed trend removes the case to cut a small position into churn. I sit.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 668.91,
-          "current_price": 618.92,
-          "market_value": 60704.95,
-          "unrealized_pnl": -4903.12,
-          "unrealized_pct": -7.47,
+          "current_price": 628.6,
+          "market_value": 61654.39,
+          "unrealized_pnl": -3953.69,
+          "unrealized_pct": -6.03,
           "thesis_full": {
             "summary": "#1 RS (+43% 60d, +49% vs 200d). Asia semis ripped overnight (KOSPI +5.93%, Nikkei +4.64%) so SMH gaps up — observed leadership I ride, not fade, but already most-extended with take-profit flags lit. Held flat: I won't chase the parabola into a gap (rank-IC≈0), and confirmed trend removes the case to cut a small position into churn. I sit.",
             "why_now": "#1 RS (+43% 60d, +49% vs 200d). Asia semis ripped overnight (KOSPI +5.93%, Nikkei +4.64%) so SMH gaps up — observed leadership I ride, not fade, but already most-extended with take-profit flags lit. Held flat: I won't chase the parabola into a gap (rank-IC≈0), and confirmed trend removes the case to cut a small position into churn. I sit.",
@@ -4218,17 +4041,17 @@
           "ticker": "XLI",
           "sleeve": "brain",
           "group": "sectors",
-          "weight": 0.0448,
+          "weight": 0.0458,
           "verdict": "hold",
           "conviction": "medium",
           "rationale": "Industrials are my cleanest non-cluster breadth diversifier — above 50d/200d (+10.5% vs 200d), #6 RS, +5.8% 20d. Held flat: it earns its place precisely because the dominant fragility is concentration and tonight's tape deepened it, so XLI broadens the confirmation base away from tech/AI. Falsified if 60d momentum (-2.1%) and the 200d trend roll over together.",
           "opened_at": "2026-06-23T01:19:49.774519+00:00",
           "held_days": 2,
           "cost_basis": 181.8,
-          "current_price": 180.21,
-          "market_value": 43714.66,
-          "unrealized_pnl": -385.7,
-          "unrealized_pct": -0.87,
+          "current_price": 185.28,
+          "market_value": 44944.52,
+          "unrealized_pnl": 844.16,
+          "unrealized_pct": 1.91,
           "thesis_full": {
             "summary": "Industrials are my cleanest non-cluster breadth diversifier — above 50d/200d (+10.5% vs 200d), #6 RS, +5.8% 20d. Held flat: it earns its place precisely because the dominant fragility is concentration and tonight's tape deepened it, so XLI broadens the confirmation base away from tech/AI. Falsified if 60d momentum (-2.1%) and the 200d trend roll over together.",
             "why_now": "Industrials are my cleanest non-cluster breadth diversifier — above 50d/200d (+10.5% vs 200d), #6 RS, +5.8% 20d. Held flat: it earns its place precisely because the dominant fragility is concentration and tonight's tape deepened it, so XLI broadens the confirmation base away from tech/AI. Falsified if 60d momentum (-2.1%) and the 200d trend roll over together.",
@@ -4242,7 +4065,7 @@
           "subject": "ETF book",
           "lean": "HOLD the queued book unchanged after the overnight review. The live tape is risk-on but textbook-narrow — S&P fut +0.62%, Nasdaq-100 fut +1.99%, but Dow +0.02% and Russell +0.23%, with Asia's rip concentrated in semis/tech (KOSPI +5.93%, Nikkei +4.64%) while Hang Seng -1.61%, DAX -0.62%, Euro Stoxx -0.25% are red. VIX -4.4%, 10Y -0.27%. This is a megacap/AI-semis melt-up on thin breadth — exactly the one-factor, cross-asset-concentrated regime the board's LEADING fragility flags (absorption 96th pctile). This is neither the selloff branch (de-risk to cash) nor a clean broad stabilization that licenses leaning back in. The temptation is to chase NQ +2% by adding QQQ/SMH/MTUM into the open; doctrine forbids spending cash into a narrow gap and buying the most-extended names. The book is already correctly built for this tape: SPY as the de-concentrating anchor at top weight, semis/momentum held flat at disciplined size, ~30% in SGOV/cash as powder to deploy when the concentration warning clears — not into it. ~70% gross, defensive tilt intact under elevated risk_state. Discipline over churn.",
           "thesis": "Nothing sold or added. Reviewed the queued target against the live overnight tape and confirmed it as-is. Explicitly declined to chase the overnight semis/tech melt-up (NQ +1.99%, KOSPI/Nikkei up big) by adding to QQQ/SMH/MTUM — that would re-lever the very one-factor AI-semis concentration the leading fragility note warns against, into a gap-up with thin breadth (Dow/Russell/Europe flat-to-red). SGOV powder held, not spent into the strength.",
-          "logged_at": "2026-06-25T06:22:53.141360+00:00"
+          "logged_at": "2026-06-25T15:00:26.229285+00:00"
         }
       ],
       "pending_orders": [],
@@ -4257,13 +4080,13 @@
       "performance": {
         "inception_date": "2026-06-22",
         "starting_nav": 1000000.0,
-        "current_nav": 975004.28,
+        "current_nav": 981346.16,
         "cash": 294413.74,
-        "invested": 680590.54,
-        "total_return_pct": -2.4996,
-        "vs_spy_pct": -1.0017,
+        "invested": 686932.42,
+        "total_return_pct": -1.8654,
+        "vs_spy_pct": -0.6429,
         "benchmark": "SPY",
-        "day_change_pct": 0.1428,
+        "day_change_pct": 0.6504,
         "max_drawdown_pct": -2.6386,
         "realized_since": "2026-06-22",
         "series": [
