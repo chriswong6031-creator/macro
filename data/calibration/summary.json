@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-06-24",
+  "as_of": "2026-06-25",
   "desks": [
     {
       "name": "AI Desk",
@@ -54,7 +54,7 @@
       "name": "Stock Desk",
       "slug": "stock_desk",
       "scored": 0,
-      "open": 37,
+      "open": 41,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,

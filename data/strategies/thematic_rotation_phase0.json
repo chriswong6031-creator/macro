@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-06-24T23:22:16.596824+00:00",
+  "generated_at": "2026-06-25T02:21:31.292320+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -130,7 +130,7 @@
           "dsr": 0.947
         },
         "top3_mom12_rel": {
-          "cagr": 1.317,
+          "cagr": 1.3163,
           "sharpe": 1.68,
           "max_dd": -0.2645,
           "calmar": 4.98,
@@ -146,7 +146,7 @@
           "dsr": 0.899
         },
         "top3_mom12_dual": {
-          "cagr": 1.2402,
+          "cagr": 1.2396,
           "sharpe": 1.68,
           "max_dd": -0.2645,
           "calmar": 4.69,
@@ -154,7 +154,7 @@
           "dsr": 0.825
         },
         "top4_mom12_dual": {
-          "cagr": 1.0822,
+          "cagr": 1.0818,
           "sharpe": 1.59,
           "max_dd": -0.2332,
           "calmar": 4.64,
@@ -192,7 +192,7 @@
           "n": 484
         },
         "mean_diff_t": -1.42,
-        "mean_diff_p": 0.1561
+        "mean_diff_p": 0.156
       },
       "extension_drawdown": {
         "fwd_days": 63,

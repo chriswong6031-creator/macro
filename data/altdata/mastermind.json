@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
-  "as_of": "2026-06-24",
-  "generated_utc": "2026-06-24T23:49:16.026396+00:00",
+  "as_of": "2026-06-25",
+  "generated_utc": "2026-06-25T02:50:49.122947+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
   "regime_read": null,
   "brain_present": false,
@@ -11,7 +11,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 101,
+  "n_signals": 100,
   "signals": [
     {
       "ticker": "NVDA",
@@ -20,14 +20,13 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 3.05,
-      "convergence_score": 8,
+      "weighted_score": 2.7,
+      "convergence_score": 7,
       "channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
         "github_momentum",
-        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -68,6 +67,32 @@
         }
       ],
       "n_affiliated_actors": 6,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "AMD",
+      "signal_score": 93,
+      "conviction": "high",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.8,
+      "convergence_score": 5,
+      "channels": [
+        "congress_buy",
+        "github_momentum",
+        "retail_buzz",
+        "special_situation",
+        "trump"
+      ],
+      "trump_linked": true,
+      "rs_vs_spy_60d": 141.7,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -126,14 +151,12 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 2.9,
-      "convergence_score": 7,
+      "weighted_score": 2.25,
+      "convergence_score": 5,
       "channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "github_momentum",
-        "hf_model_momentum",
         "material_8k",
         "special_situation"
       ],
@@ -190,13 +213,12 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 2.45,
-      "convergence_score": 6,
+      "weighted_score": 2.15,
+      "convergence_score": 5,
       "channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "github_momentum",
         "gov_contract",
         "patent_cluster"
       ],
@@ -222,31 +244,6 @@
       "clamped": null
     },
     {
-      "ticker": "AMD",
-      "signal_score": 83,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.5,
-      "convergence_score": 4,
-      "channels": [
-        "congress_buy",
-        "retail_buzz",
-        "special_situation",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": 141.7,
-      "extended": false,
-      "affiliations": [],
-      "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
       "ticker": "BIIB",
       "signal_score": 83,
       "conviction": "high",
@@ -266,42 +263,6 @@
       "extended": false,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "MSTR",
-      "signal_score": 81,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 2.1,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "material_8k",
-        "special_situation",
-        "unusual_options"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -40.9,
-      "extended": false,
-      "affiliations": [
-        {
-          "actor": "Michael Saylor",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        },
-        {
-          "actor": "Michael Saylor",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        }
-      ],
-      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -386,6 +347,41 @@
       "clamped": null
     },
     {
+      "ticker": "MSTR",
+      "signal_score": 62,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.45,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "material_8k",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Michael Saylor",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Michael Saylor",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        }
+      ],
+      "n_affiliated_actors": 2,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "AAL",
       "signal_score": 60,
       "conviction": "medium",
@@ -458,36 +454,6 @@
       "extended": false,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "UBER",
-      "signal_score": 59,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.4,
-      "convergence_score": 3,
-      "channels": [
-        "affiliation",
-        "app_demand",
-        "trump"
-      ],
-      "trump_linked": true,
-      "rs_vs_spy_60d": null,
-      "extended": false,
-      "affiliations": [
-        {
-          "actor": "Bill Ackman",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -680,6 +646,29 @@
       "clamped": null
     },
     {
+      "ticker": "LILA",
+      "signal_score": 57,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.4,
+      "convergence_score": 2,
+      "channels": [
+        "insider_cluster",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": null,
+      "extended": false,
+      "affiliations": [],
+      "n_affiliated_actors": 0,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "QNT",
       "signal_score": 57,
       "conviction": "medium",
@@ -703,45 +692,30 @@
       "clamped": null
     },
     {
-      "ticker": "META",
-      "signal_score": 57,
+      "ticker": "UBER",
+      "signal_score": 56,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.15,
+      "weighted_score": 1.4,
       "convergence_score": 3,
       "channels": [
         "affiliation",
-        "github_momentum",
-        "hf_model_momentum"
+        "app_demand",
+        "trump"
       ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": null,
+      "trump_linked": true,
+      "rs_vs_spy_60d": -8.9,
       "extended": false,
       "affiliations": [
-        {
-          "actor": "Mark Zuckerberg",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        },
-        {
-          "actor": "Mark Zuckerberg",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        },
-        {
-          "actor": "Dan Crenshaw",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
         {
           "actor": "Bill Ackman",
           "rel": "AFFILIATES_WITH",
           "kind": "fund"
         }
       ],
-      "n_affiliated_actors": 4,
+      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

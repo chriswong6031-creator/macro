@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-06-24T23:49:15.997262+00:00",
+  "generated_utc": "2026-06-25T02:50:49.094628+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,14 +749,13 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 8,
-      "alt_weighted": 3.05,
+      "alt_score": 7,
+      "alt_weighted": 2.7,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
         "github_momentum",
-        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -765,53 +764,6 @@
         "owner": "VANGUARD GROUP INC",
         "title": "Institution",
         "shares": 2266683275
-      }
-    },
-    {
-      "ticker": "META",
-      "actors": [
-        {
-          "actor": "Mark Zuckerberg",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Mark Zuckerberg",
-          "kind": "exec",
-          "rel": "CONTROLS",
-          "provenance": "FACT",
-          "qualitative": false
-        },
-        {
-          "actor": "Dan Crenshaw",
-          "kind": "politician",
-          "rel": "HOLDS_STAKE",
-          "provenance": "DISCLOSED",
-          "qualitative": false
-        },
-        {
-          "actor": "Bill Ackman",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 4,
-      "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.15,
-      "alt_channels": [
-        "affiliation",
-        "github_momentum",
-        "hf_model_momentum"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 199995630
       }
     },
     {
@@ -969,13 +921,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 2.1,
+      "alt_score": 3,
+      "alt_weighted": 1.45,
       "alt_channels": [
         "affiliation",
         "material_8k",
-        "special_situation",
-        "unusual_options"
+        "special_situation"
       ],
       "top_holder": null
     },
@@ -999,13 +950,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 6,
-      "alt_weighted": 2.45,
+      "alt_score": 5,
+      "alt_weighted": 2.15,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "github_momentum",
         "gov_contract",
         "patent_cluster"
       ],
@@ -1095,14 +1045,12 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.9,
+      "alt_score": 5,
+      "alt_weighted": 2.25,
       "alt_channels": [
         "13f_add",
         "affiliation",
         "app_demand",
-        "github_momentum",
-        "hf_model_momentum",
         "material_8k",
         "special_situation"
       ],
@@ -1388,6 +1336,51 @@
         "owner": "Fisher Asset Management, LLC",
         "title": "Institution",
         "shares": 66622798
+      }
+    },
+    {
+      "ticker": "META",
+      "actors": [
+        {
+          "actor": "Mark Zuckerberg",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Mark Zuckerberg",
+          "kind": "exec",
+          "rel": "CONTROLS",
+          "provenance": "FACT",
+          "qualitative": false
+        },
+        {
+          "actor": "Dan Crenshaw",
+          "kind": "politician",
+          "rel": "HOLDS_STAKE",
+          "provenance": "DISCLOSED",
+          "qualitative": false
+        },
+        {
+          "actor": "Bill Ackman",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 4,
+      "alt_corroborated": false,
+      "alt_score": 1,
+      "alt_weighted": 0.5,
+      "alt_channels": [
+        "affiliation"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 199995630
       }
     },
     {
