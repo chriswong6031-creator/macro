@@ -1,25 +1,83 @@
 {
   "schema": "stock_desk.v1",
   "as_of": "2026-06-25",
-  "generated_at": "2026-06-26T04:24:30.402324+00:00",
+  "generated_at": "2026-06-26T08:14:32.542131+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-06-25-CHE-1",
-      "ticker": "CHE",
-      "name": "Chemed Corp.",
+      "id": "2026-06-25-PBF-1",
+      "ticker": "PBF",
+      "name": "PBF Energy",
+      "lean": "cautious",
+      "conviction": "medium",
+      "horizon_d": 21,
+      "thesis": "Selection axis is strong (SUE + revisions), but the 'accounting watch' flag and deeply negative fundamentals (negative net income, poor accruals) caution against immediate conviction; wait for fundamental confirmation as the engine suggests.",
+      "evidence": [
+        "verdict: Leader \u00b7 accounting watch \u2014 confirm before adding",
+        "selection z 1.36, SUE 0.52, revisions 2.1",
+        "quality axis flags accounting watch, accruals z -0.697",
+        "fundamentals: net margin -0.5%, ROE -3%, NI growth -70.3%"
+      ],
+      "dissent": "Despite the selection edge, the stock's poor fundamentals and potential accounting irregularities could lead to a sharp re-rating lower, and the 'accounting watch' flag is a significant risk that could overwhelm any earnings momentum.",
+      "falsifier": {
+        "text": "If the company releases an earnings report that fails to beat estimates (SUE turns negative) or if insider selling emerges, invalidating the selection edge.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "PBF",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 21
+        }
+      },
+      "check_by": "2026-07-24",
+      "engine_verdict": "Leader \u00b7 accounting watch \u2014 confirm before adding"
+    },
+    {
+      "id": "2026-06-25-CHD-2",
+      "ticker": "CHD",
+      "name": "Church & Dwight",
+      "lean": "constructive",
+      "conviction": "medium",
+      "horizon_d": 30,
+      "thesis": "The engine sees a bottoming base with clean quality and constructive selection drivers; the event-edge (insider buying, revisions, SUE context) supports a relative edge as the base completes.",
+      "evidence": [
+        "verdict: Constructive \u2014 building a base",
+        "entry: TURN SIGNALED, off high -6.5%, RSI 55, ladder_action BUY SETUP",
+        "selection: revisions 0.27, alpha 0.65; quality clean",
+        "fundamentals: strong NI growth 25.9%, ROE 18.4%, CFO positive"
+      ],
+      "dissent": "The SUE leg is negative (-0.26), and the bigger picture is mixed with macro liquidity contraction, which could cause the base to fail and lead to a deeper drawdown.",
+      "falsifier": {
+        "text": "If CHD closes below the swing low of $92.89 (June 3 low) or the 10-day moving average rolls over, the base-building thesis is invalidated.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "CHD",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-08-06",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-06-25-WM-3",
+      "ticker": "WM",
+      "name": "Waste Management",
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Neutral as the selection axis is mixed (negative SUE and weak momentum offsetting a modest positive revision), and the \u2018no clear edge\u2019 verdict aligns with a lack of directional catalyst despite a bullish technical trend and high quality scores.",
+      "thesis": "The engine's verdict is 'Neutral \u2014 no clear edge' with a negative selection composite z (-0.206), despite quality and tailwind strengths; thus, no directional advantage relative to S&P 500 is expected.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis z -0.15 with SUE z -0.32, alpha z -0.74",
-        "Entry axis not blocked, price above 50/200 DMA, RSI 65"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z -0.206, SUE +0.47 vs revisions -0.47, alpha -0.13",
+        "cycle: left-translated prior top, a structural caution"
       ],
-      "dissent": "Strong quality (z=2.62) and a right-translated bullish cycle could attract flows, causing CHE to outperform if the earnings picture improves suddenly.",
+      "dissent": "The tailwind axis is robust (z 0.40, spotlight) and quality high, which could support a grind higher if earnings revisions turn positive, providing unseen upside.",
       "falsifier": {
-        "text": "A weekly close above $470 on volume > 1.5x the 20-day average, signaling a breakout, would prove the neutral stance too conservative.",
+        "text": "If WM stages a weekly close above $235 with a positive reversal in the revision z-score, the no-edge thesis would be proven wrong.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -29,105 +87,21 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-06-25-LQDT-2",
-      "ticker": "LQDT",
-      "name": "Liquidity Services, Inc.",
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Constructive based on a strong upward revision signal (z=1.63) and positive price momentum, with the stock building a base just off 52-week highs; the event-edge context suggests a tilt toward outperformance even though the standalone alpha is modest.",
-      "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection axis z=0.98 with revisions z=1.63, momentum z=0.53",
-        "Entry axis favorable: off-high -2%, RSI 59, no extension block"
-      ],
-      "dissent": "SUE is slightly negative (z=-0.23) and the investor cycle is late, while contracting macro liquidity could disproportionately hurt small-caps like LQDT.",
-      "falsifier": {
-        "text": "A daily close below the 50-day moving average (~$35.80) on increased volume would break the base and falsify the constructive lean.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "LQDT",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-23",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-06-25-EW-3",
-      "ticker": "EW",
-      "name": "Edwards Lifesciences",
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Constructive driven by a fresh buy signal, upward revisions, and bullish weekly alignment; the event-edge selection provides a narrow edge, though the negative SUE and weak earnings growth temper conviction.",
-      "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection axis z=0.47 with revisions z=0.71, momentum z=0.49",
-        "Entry axis strong: FRESH BUY, urgency 'now', at 52-week highs, RSI 61"
-      ],
-      "dissent": "Net income fell 74% YoY and SUE is negative, so if revisions stall or decline, the edge could evaporate quickly; also at highs there\u2019s limited room to squeeze.",
-      "falsifier": {
-        "text": "A daily close below the swing low of $82.97 (the recent cycle low) would invalidate the base and the constructive call.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "EW",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-23",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-06-25-HALO-4",
-      "ticker": "HALO",
-      "name": "Halozyme",
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Constructive on the margin from upward revisions and positive short-term momentum, though the absence of a SUE catalyst and a prior left-translated cycle flag structural fatigue, keeping conviction low.",
-      "evidence": [
-        "Verdict: Constructive \u2014 building a base",
-        "Selection axis z=0.31 with revisions z=0.28, momentum z=0.43",
-        "Entry axis not blocked, price above moving averages, RSI 62"
-      ],
-      "dissent": "The left-translated prior cycle and mixed weekly trend suggest the uptrend is tiring; without a fresh earnings surprise, the stock could stall or reverse near resistance.",
-      "falsifier": {
-        "text": "A close below the 50-day moving average (~$68.20) on above-average volume would break the uptrend and falsify the constructive lean.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "HALO",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 20
-        }
-      },
-      "check_by": "2026-07-23",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-06-25-PCRX-5",
-      "ticker": "PCRX",
-      "name": "Pacira BioSciences, Inc.",
+      "id": "2026-06-25-BDX-4",
+      "ticker": "BDX",
+      "name": "Becton Dickinson",
       "lean": "neutral",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Neutral because the selection edge is indecisive\u2014SUE is distinctly negative, momentum is weak, and the only positive leg is a moderate revision; the \u2018no clear edge\u2019 verdict accurately captures the lack of a reliable directional signal.",
+      "thesis": "Selection edge is absent (revision z -0.12, alpha -0.30, no SUE), and the stock is stuck below its 200-day average; the engine's neutral verdict matches a no-driver situation.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis z=0.16 with SUE z=-0.32, alpha z=-0.22",
-        "Entry axis favorable but insufficient to overcome mixed selection"
+        "verdict: Neutral \u2014 no clear edge",
+        "selection z -0.17, revisions negative, momentum negative",
+        "price below 200dma by -0.5%"
       ],
-      "dissent": "If revisions continue to rise and the stock breaks above recent range highs (~$26), the positive revision signal could dominate and PCRX could outperform.",
+      "dissent": "A bullish bigger-picture regime and early investor cycle phase could spark a catch-up trade if earnings momentum surprises, making the neutral stance vulnerable to a breakout.",
       "falsifier": {
-        "text": "A weekly close above $26.50 with expanding volume would indicate a breakout and prove the neutral stance too conservative.",
+        "text": "If BDX breaks above its 200-day moving average on above-average volume and the revision leg turns positive, the neutral call would be invalidated.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
@@ -137,28 +111,62 @@
       "engine_verdict": "Neutral \u2014 no clear edge"
     },
     {
-      "id": "2026-06-25-ICUI-6",
-      "ticker": "ICUI",
-      "name": "ICU Medical",
-      "lean": "neutral",
-      "conviction": "low",
-      "horizon_d": 20,
-      "thesis": "Neutral as the selection axis offers negligible edge (mildly positive revisions, negative momentum, no SUE), and the fresh buy signal is clouded by a left-translated prior cycle, making the risk/reward unclear.",
+      "id": "2026-06-25-VFC-5",
+      "ticker": "VFC",
+      "name": "VF Corporation",
+      "lean": "cautious",
+      "conviction": "medium",
+      "horizon_d": 15,
+      "thesis": "The engine labels the stock 'Constructive \u2014 building a base' but the entry is still WAIT (GET READY); the selection edge (revisions 0.86, alpha 0.51) is present but not yet actionable until the base is completed, warranting caution.",
       "evidence": [
-        "Verdict: Neutral \u2014 no clear edge",
-        "Selection axis z=0.09 with revisions z=0.29, alpha z=-0.27",
-        "Entry axis strong (FRESH BUY, off-high -6%) but cycle left-translated"
+        "verdict: Constructive \u2014 building a base with entry urgency 'later'",
+        "selection: revisions z 0.86, alpha 0.51",
+        "board: BOTTOM WATCH, still below 10dma, dir down",
+        "ladder_action: GET READY, entry_tag: WAIT"
       ],
-      "dissent": "A powerful entry setup and improving relative strength could spark a catch-up move, especially if momentum flips positive; mid-cap healthcare may rotate favorably.",
+      "dissent": "The selection drivers could lose momentum before the base completes, or the bearish bigger-picture regime could force a breakdown, turning the base into a failed pattern.",
       "falsifier": {
-        "text": "A daily close above $160 on heavy volume would signal a trend acceleration and falsify the neutral call.",
+        "text": "If VFC fails to reclaim its 10-day moving average and instead closes below the prior swing low, the base-building thesis and constructive expectation would be proven wrong.",
         "check": {
-          "kind": "soft",
-          "reason": "neutral lean \u2014 not scored"
+          "kind": "rel_return",
+          "subject_ticker": "VFC",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-07-23",
-      "engine_verdict": "Neutral \u2014 no clear edge"
+      "check_by": "2026-07-16",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-06-25-KMT-6",
+      "ticker": "KMT",
+      "name": "Kennametal",
+      "lean": "constructive",
+      "conviction": "medium",
+      "horizon_d": 30,
+      "thesis": "The stock is a high-confluence leader with strong selection z (1.09) driven by robust SUE (1.85) and momentum; entry is favorable with a pullback context, supporting relative outperformance.",
+      "evidence": [
+        "verdict: High-confluence leader (context)",
+        "selection: SUE 1.85, revisions 0.90, alpha 0.97, z 1.09",
+        "entry: off high -15.1%, RSI 56, pullback/extended flag",
+        "quality clean"
+      ],
+      "dissent": "The mixed bigger-picture regime, late investor cycle, and negative composite factor score (-0.156) could mean the stock's leadership fades if the cycle turns, and liquidity contraction adds risk.",
+      "falsifier": {
+        "text": "If KMT closes below its 50-day moving average (~$36.17) and the SUE z-score subsequently turns negative, the constructive thesis would be invalidated.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "KMT",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 30
+        }
+      },
+      "check_by": "2026-08-06",
+      "engine_verdict": "High-confluence leader (context)"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
