@@ -1072,7 +1072,10 @@ def home_alert_feed() -> list[dict]:
                 "link": link, "tier": v["tier"],
                 "edge": v["edge_en"], "edge_zh": v.get("edge_zh") or v["edge_en"],
                 "cta": "Open scorecard →", "cta_zh": "打开记分卡 →",
-                "dedupe": r["message"],
+                # dedupe on the plain-English CONCEPT (the headline), NOT the full message:
+                # two GEX-flip alerts that differ only by an embedded number (net -4bn vs
+                # -9bn) must collapse to one card, not stack as near-identical duplicates.
+                "dedupe": v["icon"] + " " + v["plain_en"],
             })
     except Exception as e:  # noqa: BLE001
         log.warning("home feed: macro alerts unavailable (%s)", e)
@@ -1189,19 +1192,25 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
  padding:22px 20px 56px;position:relative;overflow-x:hidden}
 .wrap{width:100%;max-width:1180px;display:flex;flex-direction:column}
 .hub-top{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:10px}
-.h{text-align:center;margin:6px 0 20px}
+.h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
+/* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
+   context via isolation) so the bright sun/moon disc never washes the headline
+   out. Radial + fully transparent edges = no hard rectangular line across the body. */
+.h::before{content:'';position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;
+ width:min(720px,94%);height:128%;
+ background:radial-gradient(58% 54% at 50% 50%,color-mix(in srgb,var(--bg) 74%,transparent),color-mix(in srgb,var(--bg) 32%,transparent) 52%,transparent 76%)}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted);
  background:color-mix(in srgb,var(--panel) 64%,transparent);border:1px solid var(--line);padding:6px 14px;border-radius:999px;
  margin-bottom:14px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .eyebrow .live{width:7px;height:7px;border-radius:50%;background:#22c55e;
  box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent);animation:livepulse 2.4s ease-out infinite}
 @keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,#22c55e 55%,transparent)}70%{box-shadow:0 0 0 8px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.h h1{font-size:clamp(30px,4.4vw,46px);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:0 0 9px;
- background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
+.h h1{font-size:clamp(31px,4.6vw,48px);font-weight:800;letter-spacing:-.035em;line-height:1.04;margin:0 0 10px;
+ background:linear-gradient(176deg,var(--text) 24%,color-mix(in srgb,var(--text) 56%,var(--muted)));
  -webkit-background-clip:text;background-clip:text;color:transparent;
- /* a soft --bg halo on the glyphs keeps the headline legible over the sun/moon
-    WITHOUT any rectangular scrim that would cut a line across the body */
- filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
+ /* legibility over the disc comes from BOTH the soft radial scrim on .h::before AND
+    this multi-layer --bg glyph halo — belt and braces, no hard scrim edge */
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 12px var(--bg)) drop-shadow(0 0 26px var(--bg)) drop-shadow(0 0 46px var(--bg))}
 html[data-lang="zh"] .h h1{letter-spacing:0}
 /* ===== brand lockup — the crafted Mastermind “M” glyph + the MASTERMIND wordmark,
    standing in for the old plain-text title. The container drops the gradient-text
@@ -1212,14 +1221,14 @@ html[data-lang="zh"] .h h1{letter-spacing:0}
 .h h1.hub-logo{display:flex;align-items:center;justify-content:center;gap:clamp(12px,1.7vw,19px);
  background:none;-webkit-text-fill-color:currentColor;color:var(--text);filter:none}
 .h h1.hub-logo .brand-glyph{width:clamp(48px,6.4vw,66px);height:clamp(48px,6.4vw,66px);flex:none;
- filter:drop-shadow(0 6px 18px rgba(40,56,128,.42)) drop-shadow(0 1px 2px var(--bg))}
+ filter:drop-shadow(0 6px 18px rgba(40,56,128,.42)) drop-shadow(0 1px 2px var(--bg)) drop-shadow(0 0 18px var(--bg)) drop-shadow(0 0 34px var(--bg))}
 .h h1.hub-logo .logo-word{font-family:Inter,-apple-system,"Segoe UI",sans-serif;font-weight:900;letter-spacing:.015em;-webkit-text-fill-color:transparent;
- background:linear-gradient(176deg,var(--text) 28%,color-mix(in srgb,var(--text) 52%,var(--muted)));
+ background:linear-gradient(176deg,var(--text) 24%,color-mix(in srgb,var(--text) 56%,var(--muted)));
  -webkit-background-clip:text;background-clip:text;color:transparent;
- filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 14px var(--bg)) drop-shadow(0 0 26px var(--bg))}
+ filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 12px var(--bg)) drop-shadow(0 0 26px var(--bg)) drop-shadow(0 0 46px var(--bg))}
 @media(max-width:520px){.h h1.hub-logo{gap:11px}.h h1.hub-logo .brand-glyph{width:44px;height:44px}}
-.h p{color:var(--muted);font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:560px;line-height:1.5;text-wrap:balance;
- text-shadow:0 1px 2px var(--bg),0 0 10px var(--bg),0 0 20px var(--bg)}
+.h p{color:color-mix(in srgb,var(--text) 72%,var(--muted));font-size:clamp(14px,2vw,16px);margin:0 auto;max-width:548px;line-height:1.55;text-wrap:balance;
+ text-shadow:0 1px 2px var(--bg),0 0 8px var(--bg),0 0 18px var(--bg),0 0 30px var(--bg)}
 
 /* ===== glass + accent primitives ===== */
 .glass{position:relative;border-radius:16px;overflow:hidden;isolation:isolate;
@@ -1230,39 +1239,14 @@ html[data-theme="light"] .glass{background:color-mix(in srgb,var(--panel) 90%,tr
  border-color:color-mix(in srgb,var(--line) 92%,transparent);
  box-shadow:0 1px 0 color-mix(in srgb,#fff 60%,transparent),0 6px 20px -14px rgba(20,30,50,.16)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:color-mix(in srgb,var(--panel) 96%,transparent)}}
+/* one radius for every glass surface on the hub — out-specifies theme.css's
+   `html body .card{border-radius:12px}` so cards match the clock, alerts + tooltip */
+.wrap .glass{border-radius:16px}
 .acc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;z-index:2;
  background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 22%,transparent));
  transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.2,.7,.3,1)}
 .acc::after{content:'';position:absolute;inset:0;z-index:-1;opacity:0;
  background:radial-gradient(360px 180px at 100% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 68%);transition:opacity .25s ease}
-
-/* ===== state band: compact risk pulse + synthesis (slim, one row) ===== */
-.state{--accent:#416aec;display:flex;align-items:center;gap:22px;padding:15px 20px;margin-bottom:22px;flex-wrap:wrap}
-.state-wash{position:absolute;inset:0;z-index:-1;background:radial-gradient(520px 200px at 0% 0%,color-mix(in srgb,#416aec 10%,transparent),transparent 70%)}
-.pulse{flex:0 0 auto;display:flex;flex-direction:column;gap:7px;min-width:230px}
-.pulse-head{display:flex;align-items:baseline;gap:9px}
-.pulse-eye{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-html[data-lang="zh"] .pulse-eye{letter-spacing:0}
-.pulse-num{font-size:26px;font-weight:800;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--text)}
-.pulse-band{font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:6px;
- color:color-mix(in srgb,var(--warn) 86%,var(--text));background:color-mix(in srgb,var(--warn) 14%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
-.pulse-band.tone-off{color:color-mix(in srgb,var(--act) 86%,var(--text));background:color-mix(in srgb,var(--act) 13%,var(--panel2));border-color:color-mix(in srgb,var(--act) 22%,transparent)}
-.pulse-band.tone-on{color:color-mix(in srgb,var(--ok) 86%,var(--text));background:color-mix(in srgb,var(--ok) 13%,var(--panel2));border-color:color-mix(in srgb,var(--ok) 22%,transparent)}
-.pulse-track{position:relative;height:8px;border-radius:999px;background:linear-gradient(90deg,var(--act),var(--warn) 42%,#14b8a6 72%,var(--ok));opacity:.92}
-.pulse-mark{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--text);border:3px solid var(--panel);
- transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.35)}
-.pulse-ticks{display:flex;justify-content:space-between;font-size:9.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-html[data-lang="zh"] .pulse-ticks{letter-spacing:0}
-.state-mid{flex:1;min-width:280px;display:flex;flex-direction:column;gap:6px;border-left:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-left:22px}
-.state-synth{font-size:13.5px;color:var(--muted);line-height:1.5}
-.state-synth b{color:var(--text);font-weight:700}
-.state-alert{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--text);text-decoration:none;width:fit-content}
-.state-alert .sa-dot{width:7px;height:7px;border-radius:50%;background:var(--act);flex:none}
-.state-alert .sa-txt{color:var(--muted)}
-.state-alert b{font-weight:600}
-.state-alert .sa-go{color:var(--link);font-weight:700;white-space:nowrap}
-.state-alert:hover .sa-go{text-decoration:underline}
-@media(max-width:760px){.state-mid{border-left:none;padding-left:0;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);padding-top:12px}}
 
 /* ===== section labels ===== */
 .band{display:flex;align-items:center;gap:11px;margin:0 2px 13px}
@@ -1344,9 +1328,6 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .ha-when{font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap}
 .ha-detail{padding:0 0 12px 22px;font-size:12.5px;color:var(--text);line-height:1.55}
 .ha-detail a{font-weight:700;color:var(--link)}
-.ha-what{margin:6px 0 7px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:12px;color:var(--muted);line-height:1.5}
-.ha-edge{margin:3px 0 7px;font-size:11.5px;color:var(--text)}
-.ha-edge b{color:var(--muted);font-weight:600}
 .al-more{display:block;text-align:center;padding:11px 0 6px;font-size:12.5px;font-weight:700;color:var(--link);text-decoration:none}
 .al-more:hover{text-decoration:underline}
 
@@ -1354,7 +1335,8 @@ html[data-lang="zh"] .sb-tx b{letter-spacing:0}
 .site-footer .made{display:block;font-size:13.5px;font-weight:700;color:var(--text);letter-spacing:.2px}
 .site-footer .dev{display:block;margin-top:1px;font-size:12px;color:var(--muted)}
 .foot{margin-top:18px;color:var(--muted);font-size:12px;text-align:center}
-a:focus-visible,.links a:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:8px}
+a:focus-visible,.links a:focus-visible,.ha-item summary:focus-visible{outline:2px solid var(--link);outline-offset:2px;border-radius:8px}
+::selection{background:color-mix(in srgb,var(--link) 26%,transparent)}
 
 @keyframes smReveal{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 .reveal{animation:smReveal .45s cubic-bezier(.2,.7,.3,1) both}
@@ -1525,6 +1507,11 @@ _GLOBE_DECK_DOM = r"""<section class="globe-deck command" aria-label="Global mac
 
 _GQUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
              "Growth scare": "增长恐慌", "Growth-scare": "增长恐慌", "Deflation": "通缩"}
+# regime name -> quadrant colour class, so the commodity pill is tinted by regime
+# (q1 growth+/infl- · q2 growth+/infl+ · q3 growth-/infl+ · q4 growth-/infl-) exactly
+# like the market cards, instead of the flat default accent.
+_GQUAD_CLS = {"Goldilocks": "q1", "Reflation": "q2", "Stagflation": "q3",
+              "Growth scare": "q4", "Growth-scare": "q4", "Deflation": "q4"}
 _GQCLS = {"Q1": "q1", "Q2": "q2", "Q3": "q3", "Q4": "q4"}
 _EZ_MEMBERS = ["AUT", "BEL", "CYP", "EST", "FIN", "FRA", "DEU", "GRC", "IRL", "ITA",
                "LVA", "LTU", "LUX", "MLT", "NLD", "PRT", "SVK", "SVN", "ESP", "HRV"]
@@ -1705,8 +1692,10 @@ def _g_vectors(vm, commodities, forex, bonds, crossasset, etf, strategies, watch
     bd_bar = ('<div class="bar b-health"><i style="width:' + str(b_score) + '%"></i></div>') if b_score is not None else ""
     bd_pill = (_bi("Health " + str(b_score) + " · " + (b_phase or "late"), "健康 " + str(b_score) + " · " + ("晚期" if str(b_phase).startswith("late") else b_phase))) if b_score is not None else _bi("Bond health", "债券健康")
     bd = bd_bar + '<div class="chips"><span class="pill">' + bd_pill + '</span></div>'
-    com_q = _quad_cls(name=(commodities or {}).get("label", "")) if "_quad_cls" in globals() else ""
-    com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi((commodities or {}).get("label", "—"), (commodities or {}).get("label", "—"))
+    com_label = (commodities or {}).get("label", "—")
+    com_q = _GQUAD_CLS.get(com_label, "")   # tint the pill by regime quadrant (was a no-op guard)
+    # zh users previously saw the English regime word ("Goldilocks") — translate it
+    com = ('<div class="chips"><span class="pill ' + com_q + '">' + _bi(com_label, _GQUAD_ZH.get(com_label, com_label))
            + '</span>' + ('<span class="pill">' + _bi("Favored: " + fav, "偏好：" + fav) + '</span>' if fav else "") + '</div>')
     fx = '<div class="chips"><span class="pill">' + _bi((forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else ""), (forex or {}).get("label", "—") + ((" · " + fx_risk) if fx_risk else "")) + '</span></div>'
     xa = '<div class="chips"><span class="pill">' + _bi((crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else ""), (crossasset or {}).get("regime", "—") + ((" · " + ca_corr) if ca_corr else "")) + '</span></div>'
