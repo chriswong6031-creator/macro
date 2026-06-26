@@ -2655,12 +2655,14 @@
           </div>
           {% set al = c.alignment %}
           {% if al and al.line %}
-          {# multi-timeframe bottoming-alignment: weekly not-falling + 3-day nearing cross +
-             daily just-crossed/about. 🟡 near-aligned = unconfirmed backfill (not a buy). #}
-          <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}">
+          {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
+             must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross
+             from oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed entry; 🟡
+             Approaching = early backfill (not yet a buy). The reason states WHY it qualifies. #}
+          <div class="nb-align{{ ' nba-near' if n.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
             <span class="nba-mark">{{ '🟡' if n.align_tier == 'near' else '🟢' }}</span>
-            <span class="nba-line"><span class="l-en">{{ al.line }}</span><span class="l-zh">{{ al.line_zh }}</span></span>
-            {% if n.align_tier == 'near' %}<span class="nba-tag">{{ t('near-aligned','临近共振') }}</span>{% endif %}
+            <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
+            {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
           </div>
           {% endif %}
           {% if es %}

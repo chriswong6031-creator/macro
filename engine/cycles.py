@@ -1633,25 +1633,59 @@ def _tf_turning_up(s: dict) -> bool:
 
 
 # ----- multi-timeframe BOTTOMING ALIGNMENT (the standout-strip selection gate) ----
-# The standout boards historically SELECTED on a momentum/edge/flow z-floor and only
-# *labelled* the cycle — so a name mid-way through its WEEKLY bear leg (still falling)
-# could be surfaced as a "buy" card: a falling knife. This screen makes multi-timeframe
-# alignment the SELECTION gate instead. It admits a name only when the weekly is NOT
-# still falling (basing / turning / rising) AND the 3-day is at/nearing a bullish cross
-# AND the daily has just crossed or is about to (or is already rising but not extended).
-# It composes the per-timeframe MACD posture the engine already computes; the one
-# missing primitive — "weekly histogram below zero AND still dropping", which
-# macd_approaching_dn / macd_curl_dn never flag (they only fire ABOVE zero) — is added
-# here as _hist_falling. Display-tier: this is a calibrated cycle read, not a validated
-# probability; it gates WHICH names a screen shows, ranked by alignment quality.
-_ALIGN_PHASE_VAL = {"rising": 1.0, "turning": 0.8, "basing": 0.4,
-                    "rolling": 0.2, "falling": 0.0, "unknown": 0.0}
+# This is the SELECTION gate for the standout boards (US/CA/CN/HK). Its job is a
+# low-risk SWING entry (1-3 month horizon), so it REWARDS EARLINESS + an OVERSOLD
+# ORIGIN and EXCLUDES the extended chase — the opposite of the prior version, whose
+# _ALIGN_PHASE_VAL peaked at `rising` (already-running) and so put the LATE, mid-rally
+# names at the top of the board. The states, ranked best-first:
+#   * PRIME (the prize): weekly STILL in its bear leg but RECOVERING (histogram curling
+#     back up from below zero = `bear_recovering`), OR basing/turning, + the 3-day just
+#     turning up FROM A LOW + the daily just crossing. The "best combination."
+#   * ARMED: a fresh 3-day turn-from-low + a daily trigger, but the weekly has already
+#     turned up (rising) — a good entry, just later than PRIME.
+#   * APPROACHING (= `near`, backfill only, never a confirmed buy): weekly OK and ONE
+#     lower timeframe turning, but not all three confirmed. Fills the strip when fresh
+#     entries are thin so it is never bare — clearly tagged, still no falling knife.
+#   * EXCLUDED -> watch: weekly still falling / a deep knife / a bad cycle state, or
+#     OVEREXTENDED (3D/daily StochRSI overbought, daily RSI hot, or far above the 200dma)
+#     — the "already ran" names, surfaced honestly as "wait for a pullback".
+# The 3-day "fresh from oversold" leg uses StochRSI crossing up from < stoch_oversold
+# (default 25, the user's line) recomputed from the 3-day spark_stoch — NOT the engine's
+# hardwired 20-line stoch_cross_up primitive, which other consumers depend on. Display-
+# tier: a calibrated cycle read, never a validated probability; it gates WHICH names show.
+
+# Tunables live in config.yml engine.entry_gate; the constants here are the fallbacks
+# (so a missing block can never crash a legacy caller). Read once at import.
+def _entry_gate_cfg() -> dict:
+    try:
+        return (config.load().get("engine") or {}).get("entry_gate") or {}
+    except Exception:  # noqa: BLE001 — config unavailable at import in some test paths
+        return {}
+
+
+_EG = _entry_gate_cfg()
+_EG_STOCH_OS = float(_EG.get("stoch_oversold", 25.0))               # 3D StochRSI "from oversold" line
+_EG_STOCH_OB = float(_EG.get("stoch_overbought", 80.0))            # 3D/daily StochRSI overbought = chase
+_EG_DAILY_RSI_MAX = float(_EG.get("daily_rsi_extension_cap", 62.0))  # daily RSI14 hotter than this = too late
+_EG_STRETCH_BLOCK = float(_EG.get("stretch_block_pct", 30.0))     # % over 200dma = overextended chase
+_EG_APPROACH_DAYS = int(_EG.get("approach_days", 2))               # 3D "about to cross" ETA cap (trading days)
+
+# how good each leg is, for the in-tier rank (earliness/oversold-origin weighted, NOT
+# lateness): a weekly bear-recovering + a 3D StochRSI-from-oversold turn score highest.
+_WEEKLY_PHASE_VAL = {"bear_recovering": 1.0, "basing": 0.85, "turning": 0.7,
+                     "rising": 0.35, "rolling": 0.1, "falling": 0.0, "unknown": 0.0}
+_T3_TRIG_VAL = {"stoch_os": 1.0, "macd_trough": 0.85, "approaching": 0.55, None: 0.0}
+_DAILY_TRIG_VAL = {"crossed": 1.0, "imminent": 0.8, "early": 0.45, None: 0.0}
+# tier offsets keep PRIME above ARMED above APPROACHING when sorting the strip by score
+_TIER_BASE = {"PRIME": 200.0, "ARMED": 100.0, "APPROACHING": 0.0}
+_WEEKLY_PRIME = {"bear_recovering", "basing", "turning"}            # early-enough for PRIME
+_WEEKLY_OK = {"bear_recovering", "basing", "turning", "rising"}     # eligible at all (not falling/topping)
 # ladder states that are structurally NOT a bottoming entry (a falling knife or a top)
 # — excluded from alignment regardless of a one-bar daily up-tick.
 _ALIGN_BAD_STATES = {"DECLINE", "ROLLING OVER", "TOP WATCH", "COUNTERTREND BOUNCE"}
 _ALIGN_KNIFE_BLOCK = 0.7        # washout knife severity that HARD-excludes a name
 _ALIGN_DAILY_MAX_DAYS = 2       # "daily about to cross in 1-2 days"
-_ALIGN_RSI_EXTENDED = 68.0      # a daily already this hot is a chase, not an early entry
+_ALIGN_RSI_EXTENDED = 68.0      # _daily_trigger "early" ceiling (overextension handled separately)
 
 
 def _hist_falling(spark, bars: int = 3) -> bool:
@@ -1666,18 +1700,39 @@ def _hist_falling(spark, bars: int = 3) -> bool:
     return all(seg[i] < seg[i - 1] for i in range(1, len(seg)))
 
 
-def _tf_phase(s: dict) -> str:
+def _weekly_bear_recovering(w: dict) -> bool:
+    """The user's "best combination" weekly leg: MACD STILL bearish (histogram below
+    zero) but RECOVERING — curling up off the trough, approaching the zero-cross, or the
+    histogram rising while still negative ("about to re-enter / already re-entering").
+    macd_curl_up / macd_approaching_up already encode "below zero and turning up"; the
+    spark arm catches a multi-bar recovery the single-bar flags can miss."""
+    if not w or w.get("macd_pos") or w.get("macd_cross_dn"):
+        return False
+    if w.get("macd_curl_up") or w.get("macd_approaching_up"):
+        return True
+    sp = [x for x in (w.get("spark_hist") or []) if x is not None]
+    return bool(len(sp) >= 3 and sp[-1] < 0 and sp[-1] > sp[-2] > sp[-3])
+
+
+def _tf_phase(s: dict, weekly: bool = False) -> str:
     """Classify one timeframe's MACD posture for the bottoming screen:
     ``rising`` (above zero, healthy) · ``rolling`` (above zero but topping) ·
     ``turning`` (below zero, first hint of an up-turn) · ``basing`` (below zero,
     flat near a low) · ``falling`` (below zero AND still dropping, or a fresh
-    down-cross) · ``unknown`` (no data)."""
+    down-cross) · ``unknown`` (no data).
+
+    With ``weekly=True`` a below-zero-but-RECOVERING weekly returns ``bear_recovering``
+    (the earliest, best swing-entry context — see _weekly_bear_recovering); every other
+    call is unchanged, so the daily/3-day classification and existing callers are byte-
+    identical."""
     if not s:
         return "unknown"
     if s.get("macd_pos"):
         return "rolling" if (s.get("macd_cross_dn") or s.get("macd_curl_dn")) else "rising"
     if s.get("macd_cross_dn"):
         return "falling"
+    if weekly and _weekly_bear_recovering(s):
+        return "bear_recovering"
     if (s.get("macd_cross_up") or s.get("macd_curl_up")
             or s.get("macd_approaching_up") or s.get("stoch_cross_up")):
         return "turning"
@@ -1705,58 +1760,137 @@ def _daily_trigger(d: dict) -> str | None:
     return None
 
 
+def _three_day_fresh(t3: dict) -> str | None:
+    """The 3-day ENTRY trigger — a fresh turn up FROM A LOW (the user's core rule).
+    Returns the strongest matching reason or None:
+      * ``macd_trough`` — MACD just crossed / curled up from below zero;
+      * ``stoch_os``    — StochRSI just popped up from < stoch_oversold (default 25),
+                          recomputed from the 3-day spark_stoch (NOT the 20-line primitive);
+      * ``approaching`` — MACD about to cross up (still below zero) — "right about to cross".
+    None when the 3-day is NOT turning up from a low (e.g. already rising mid-rally), so
+    an extended name can never read as a fresh entry."""
+    if not t3:
+        return None
+    if t3.get("macd_cross_up") or t3.get("macd_curl_up"):
+        return "macd_trough"
+    sp = [x for x in (t3.get("spark_stoch") or []) if x is not None]
+    if len(sp) >= 2 and sp[-1] >= _EG_STOCH_OS and any(v < _EG_STOCH_OS for v in sp[-4:-1]):
+        return "stoch_os"
+    if t3.get("macd_approaching_up") and not t3.get("macd_pos"):
+        return "approaching"
+    return None
+
+
+def _overextended(mtf: dict, ext_pct: float | None = None) -> bool:
+    """True when the move has ALREADY run — the "awful entry" the board must exclude:
+    3-day OR daily StochRSI overbought (> stoch_overbought), daily RSI14 hotter than the
+    extension cap, or price far above the 200-day (ext_pct >= stretch_block). ext_pct (%
+    over the 200dma) is supplied by analyze(); the oscillator legs work without it, so
+    callers that don't pass it still get the StochRSI/RSI brakes."""
+    d = mtf.get("D") or {}
+    for tf in (d, mtf.get("3D") or {}):
+        st = tf.get("stoch")
+        if st is not None and st > _EG_STOCH_OB:
+            return True
+    rsi = d.get("rsi14")
+    if rsi is not None and rsi > _EG_DAILY_RSI_MAX:
+        return True
+    return bool(ext_pct is not None and ext_pct >= _EG_STRETCH_BLOCK)
+
+
 def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
-                  wo: dict | None = None) -> dict:
+                  wo: dict | None = None, ext_pct: float | None = None) -> dict:
     """Weekly + 3-Day + Daily bottoming-ALIGNMENT verdict for the standout strip.
 
-    ``aligned`` (the HARD selection gate) is True when ALL hold:
-      * weekly is NOT still falling — phase in {basing, turning, rising};
-      * 3-day is at/nearing a bullish cross — phase in {turning, rising};
-      * daily has a trigger — just crossed / imminent (<=2d) / early-rising-not-extended;
-      * not a deep falling knife (washout < knife block) and not a structurally-bad
-        cycle state (DECLINE / ROLLING OVER / TOP WATCH / COUNTERTREND BOUNCE).
-    ``near`` (display-tagged BACKFILL only, never a confirmed buy): the weekly is fine
-    and ONE lower timeframe is turning, but not all three confirmed.
+    Tiers, best-first (``tier``; ``aligned``/``near`` kept for the existing
+    setups.alignment_gate contract — aligned == PRIME|ARMED, near == APPROACHING):
+      * ``PRIME`` — weekly bear_recovering/basing/turning + a FRESH 3-day turn from a low
+        (_three_day_fresh) + a daily trigger, not overextended/blocked. The best entry.
+      * ``ARMED`` — same fresh 3-day + daily, but the weekly has already turned up (rising).
+      * ``APPROACHING`` (=near, BACKFILL only) — weekly OK + one lower timeframe turning,
+        not all three confirmed; fills the strip when fresh entries are thin.
+      * excluded -> watch: weekly falling / deep knife / bad cycle state / OVEREXTENDED.
 
-    ``score`` (0-100) ranks survivors by alignment quality (weekly-heaviest, daily-
-    trigger fresh, knife-tempered). Returns {} when there is no daily timeframe."""
+    ``score`` = tier offset + a 0-100 ``quality`` (earliness/oversold-origin weighted,
+    knife-tempered) so PRIME > ARMED > APPROACHING when the strip sorts by score.
+    Returns {} when there is no daily timeframe."""
     D = mtf.get("D") or {}
     if not D:
         return {}
     W, T3 = mtf.get("W") or {}, mtf.get("3D") or {}
-    wph, t3ph, dph = _tf_phase(W), _tf_phase(T3), _tf_phase(D)
+    wph, t3ph, dph = _tf_phase(W, weekly=True), _tf_phase(T3), _tf_phase(D)
     have_tf = bool(W) and bool(T3)             # need weekly + 3-day to judge alignment
 
-    weekly_ok = wph in ("basing", "turning", "rising")
-    t3_ok = t3ph in ("turning", "rising")
+    t3_trig = _three_day_fresh(T3)             # fresh turn from a low (None = already running)
+    t3_fresh = t3_trig is not None
     trigger = _daily_trigger(D)
     daily_ok = trigger is not None
+    weekly_ok = wph in _WEEKLY_OK
+    over = _overextended(mtf, ext_pct)
 
     knife = float((wo or {}).get("knife", 0.0))
     state = (lad or {}).get("state")
     blocked = ((knife >= _ALIGN_KNIFE_BLOCK) or (state in _ALIGN_BAD_STATES)
                or (wph == "falling"))
 
-    aligned = bool(have_tf and weekly_ok and t3_ok and daily_ok and not blocked)
-    near = bool(have_tf and weekly_ok and not blocked and not aligned
-                and (t3_ok or daily_ok))
+    tier = None
+    if have_tf and not blocked and not over:
+        if weekly_ok and t3_fresh and daily_ok:
+            tier = "PRIME" if wph in _WEEKLY_PRIME else "ARMED"
+        elif weekly_ok and (t3_fresh or daily_ok):
+            tier = "APPROACHING"
+    aligned = tier in ("PRIME", "ARMED")
+    near = tier == "APPROACHING"
 
-    trig_val = {"crossed": 1.0, "imminent": 0.8, "early": 0.55, None: 0.0}[trigger]
-    raw = (0.42 * _ALIGN_PHASE_VAL[wph] + 0.30 * _ALIGN_PHASE_VAL[t3ph]
-           + 0.28 * trig_val)
-    score = round(100.0 * raw * (1.0 - 0.45 * min(knife, 1.0)), 1)
+    quality = round(100.0 * (0.42 * _WEEKLY_PHASE_VAL.get(wph, 0.0)
+                             + 0.30 * _T3_TRIG_VAL[t3_trig]
+                             + 0.28 * _DAILY_TRIG_VAL[trigger])
+                    * (1.0 - 0.45 * min(knife, 1.0)), 1)
+    score = round(_TIER_BASE.get(tier, 0.0) + quality, 1)
+
+    # human-readable entry label + a one-line "why" (EN + 中文)
+    _t3_en = {"stoch_os": "3D StochRSI crossed up from oversold",
+              "macd_trough": "3D MACD turned up from below zero",
+              "approaching": "3D MACD about to cross up", None: None}
+    _t3_zh = {"stoch_os": "3日 StochRSI 从超卖上穿",
+              "macd_trough": "3日 MACD 在零轴下方上拐", "approaching": "3日 MACD 临近上穿", None: None}
+    _wk_en = {"bear_recovering": "weekly histogram recovering (still bearish)",
+              "basing": "weekly basing", "turning": "weekly turning up",
+              "rising": "weekly uptrend", "rolling": "weekly rolling over",
+              "falling": "weekly still falling", "unknown": ""}
+    _wk_zh = {"bear_recovering": "周线柱状图回升（仍偏熊）", "basing": "周线筑底",
+              "turning": "周线转向", "rising": "周线上行", "rolling": "周线走弱",
+              "falling": "周线仍下行", "unknown": ""}
+    if over:
+        entry_tier, entry_tier_zh = "Extended — wait", "已过热 — 等回调"
+        reason = "Already extended (overbought / far above the 200-day) — wait for a pullback"
+        reason_zh = "已过热（超买／远高于200日均线）— 等待回调"
+    elif tier:
+        entry_tier = {"PRIME": "Prime entry", "ARMED": "Entry armed",
+                      "APPROACHING": "Approaching — early"}[tier]
+        entry_tier_zh = {"PRIME": "黄金入场", "ARMED": "入场就绪",
+                         "APPROACHING": "临近 — 偏早"}[tier]
+        reason = "; ".join(x for x in (_t3_en.get(t3_trig), _wk_en.get(wph)) if x) or None
+        reason_zh = "；".join(x for x in (_t3_zh.get(t3_trig), _wk_zh.get(wph)) if x) or None
+    else:
+        entry_tier = entry_tier_zh = reason = reason_zh = None
 
     dtxt = {"crossed": "crossed up", "imminent": "≈ cross", "early": "rising",
             None: "—"}[trigger]
-    line = (f"Weekly {wph} · 3-Day {'✓' if t3_ok else '·'} · Daily {dtxt}")
-    line_zh = (f"周线{ {'rising':'上行','turning':'转向','basing':'筑底','rolling':'走弱','falling':'下行','unknown':'—'}[wph] } · "
-               f"3日{'✓' if t3_ok else '·'} · "
+    t3txt = {"stoch_os": "oversold↑", "macd_trough": "turn↑",
+             "approaching": "≈cross", None: "·"}[t3_trig]
+    line = f"Weekly {wph.replace('_', ' ')} · 3-Day {t3txt} · Daily {dtxt}"
+    line_zh = (f"周线{_wk_zh.get(wph) or '—'} · "
+               f"3日{ {'stoch_os':'超卖上穿','macd_trough':'上拐','approaching':'临近','·':'·'}.get(t3txt, t3txt) } · "
                f"日线{ {'crossed up':'已上穿','≈ cross':'临近上穿','rising':'上行','—':'—'}[dtxt] }")
     return {
-        "aligned": aligned, "near": near, "score": score,
+        "aligned": aligned, "near": near, "tier": tier, "score": score, "quality": quality,
+        "entry_tier": entry_tier, "entry_tier_zh": entry_tier_zh,
+        "reason": reason, "reason_zh": reason_zh,
         "weekly": wph, "three_day": t3ph, "daily": dph,
-        "weekly_ok": weekly_ok, "three_day_ok": t3_ok, "daily_ok": daily_ok,
-        "daily_trigger": trigger, "days_to_cross": D.get("macd_days_to_cross"),
+        "weekly_ok": weekly_ok, "three_day_ok": t3_fresh, "three_day_trigger": t3_trig,
+        "daily_ok": daily_ok, "daily_trigger": trigger, "overextended": over,
+        "days_to_cross": D.get("macd_days_to_cross"),
         "knife": round(knife, 2), "have_tf": have_tf, "blocked": blocked,
         "line": line, "line_zh": line_zh,
     }
@@ -1927,9 +2061,16 @@ def analyze(close: pd.Series, high: pd.Series | None = None,
                 lad.update(bottom_confidence_fields(bc))
                 lad["bottom_confidence"] = bc["score"]
         # multi-timeframe bottoming-alignment gate — the standout-strip SELECTION
-        # filter (weekly not-falling + 3-day nearing cross + daily just-crossed/about),
-        # so a mid-weekly-bear falling knife can no longer be surfaced as a buy card.
-        lad["alignment"] = mtf_alignment(mtf, cyc, lad, wo=wo)
+        # filter (weekly bear-recovering/basing + 3-day fresh-from-oversold + daily just-
+        # crossed/about), excluding the overextended chase, so a mid-weekly-bear falling
+        # knife OR an already-run leader can no longer be surfaced as a buy card.
+        cc = close.dropna()
+        ext_pct = None
+        if len(cc) >= 200:
+            sma200 = float(cc.iloc[-200:].mean())
+            if sma200:
+                ext_pct = (float(cc.iloc[-1]) / sma200 - 1.0) * 100.0
+        lad["alignment"] = mtf_alignment(mtf, cyc, lad, wo=wo, ext_pct=ext_pct)
     return {"cycle": cyc, "mtf": mtf, "early": early, "ladder": lad}
 
 

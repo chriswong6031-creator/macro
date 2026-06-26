@@ -137,8 +137,19 @@ def dedupe_dual_class(rows: list[dict]) -> list[dict]:
 
 # minimum aligned names a standout strip shows before it backfills with NEAR-aligned
 # (clearly tagged) candidates — so the strip is never bare in thin tape but never pads
-# with falling knives (near-aligned still requires a not-falling weekly).
-ALIGN_MIN_KEEP = 6
+# with falling knives (near-aligned still requires a not-falling weekly). Sourced from
+# config.yml engine.entry_gate.align_min_keep (fallback 10) so it tunes with the gate;
+# config is imported lazily so this pure module stays import-light for tests.
+def _default_align_min_keep(fallback: int = 10) -> int:
+    try:
+        from lib import config
+        v = ((config.load().get("engine") or {}).get("entry_gate") or {}).get("align_min_keep")
+        return int(v) if v is not None else fallback
+    except Exception:  # noqa: BLE001 — config unavailable -> use the fallback
+        return fallback
+
+
+ALIGN_MIN_KEEP = _default_align_min_keep()
 
 
 def _align_tier(a: dict | None) -> str | None:

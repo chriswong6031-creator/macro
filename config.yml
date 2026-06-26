@@ -1552,6 +1552,18 @@ engine:
       Utilities: -0.29
       Health Care: -0.46
 
+  # --- Bottoming-ENTRY gate (engine.cycles.mtf_alignment): the standout-strip selection
+  # prerequisite. A name is only a BUY when its multi-timeframe MACD/StochRSI is turning
+  # up FROM A LOW (a low-risk SWING entry), never mid-rally. These tune that read; the
+  # engine carries the same values as fallbacks so a missing block can't break a build.
+  entry_gate:
+    stoch_oversold: 25            # 3D StochRSI must originate from < this (the "from the bottom" line)
+    stoch_overbought: 80          # 3D/daily StochRSI above this = already run (excluded -> watch)
+    daily_rsi_extension_cap: 62   # daily RSI14 hotter than this = too late for an early entry
+    approach_days: 2              # daily "about to cross" ETA cap (trading days)
+    stretch_block_pct: 30         # % over the 200dma = overextended chase (excluded -> watch)
+    align_min_keep: 10            # never-empty backfill floor: keep >= this many before relaxing to APPROACHING
+
   # --- Macro-risk overlay: make aggregate macro risk a DETERMINISTIC, risk-OFF-
   # only factor in sector heat + per-stock buy-setup conviction. MRS (macro-risk
   # score, 0..1) is a pure function of the already-persisted conditions/regime legs

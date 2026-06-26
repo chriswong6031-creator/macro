@@ -73,6 +73,15 @@
   .nb-cscore.band-neutral { color:var(--muted); }
   .nb-cscore.band-low { color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,var(--line)); }
   .nb-verdict { font-size:10.5px; font-weight:700; line-height:1.25; color:var(--text); }
+  /* multi-timeframe ENTRY-gate chip (engine.cycles.mtf_alignment) — mirrors US/CN/HK */
+  .nb-align { display:flex; align-items:center; gap:5px; margin:3px 0 1px; min-width:0;
+              font-size:9.5px; font-weight:700; letter-spacing:.01em; padding:2px 7px;
+              border-radius:7px; border:1px solid var(--line);
+              color:var(--up); background:color-mix(in srgb,var(--up) 9%,var(--panel)); }
+  .nb-align.nba-near { color:var(--warn); background:color-mix(in srgb,var(--warn) 9%,var(--panel)); }
+  .nb-align .nba-line { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .nb-align .nba-tag { margin-left:auto; flex:none; font-size:8px; font-weight:800;
+                       text-transform:uppercase; letter-spacing:.04em; opacity:.85; }
   .nb-axes { display:flex; gap:4px; margin-top:3px; }
   .nb-ax { flex:1; }
   .nb-ax .axl { font-size:8px; color:var(--muted); letter-spacing:.03em; }
@@ -362,6 +371,18 @@
         {% if c.score is not none %}<span class="nb-cscore band-{{ c.band }}" title="Unified Conviction score — within-market percentile (display skin, not a probability) · 统一确信度分 — 市场内百分位（展示，非概率）">{{ c.score }}</span>{% endif %}
         <span class="nb-verdict"><span class="l-en">{{ c.verdict }}</span><span class="l-zh">{{ c.verdict_zh }}</span></span>
       </div>
+      {% set al = c.alignment %}
+      {% if al and al.line %}
+      {# multi-timeframe ENTRY gate (engine.cycles.mtf_alignment): a low-risk SWING entry
+         must be a FRESH turn from a low — weekly bear-recovering/basing + 3-day cross from
+         oversold (<25) + daily just-crossed. 🟢 Prime/Armed = confirmed; 🟡 Approaching =
+         early backfill (not yet a buy). The reason states WHY it qualifies. #}
+      <div class="nb-align{{ ' nba-near' if s.align_tier == 'near' else '' }}" title="{{ al.line }} · {{ al.line_zh }}">
+        <span class="nba-mark">{{ '🟡' if s.align_tier == 'near' else '🟢' }}</span>
+        <span class="nba-line"><span class="l-en">{{ al.reason or al.line }}</span><span class="l-zh">{{ al.reason_zh or al.line_zh }}</span></span>
+        {% if al.entry_tier %}<span class="nba-tag">{{ t(al.entry_tier, al.entry_tier_zh) }}</span>{% endif %}
+      </div>
+      {% endif %}
       <div class="nb-axes">
         {% for ax, lbl, lbl_zh in [('selection','SEL','选股'),('entry','ENT','入场'),('tailwind','TWD','顺风'),('quality','QUAL','质量')] %}
         {% set a = c.axes[ax] %}
