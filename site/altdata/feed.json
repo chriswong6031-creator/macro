@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-26T08:06:31.957778+00:00",
+  "generated_utc": "2026-06-26T11:24:51.218616+00:00",
   "as_of": "2026-06-26",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -2022,27 +2022,331 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 23093,
+      "rows": 23110,
       "last_seen": "2026-06-26",
       "recent": [
         {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
+          "Ticker": "STVN",
+          "Date": "2026-06-15T00:00:00.000",
+          "Name": "Balachandran Madhavan",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "25075.0",
-          "PricePerShare": "127.37",
-          "SharesOwnedFollowing": "2864885.0",
-          "fileDate": "2026-06-26T01:56:01.000",
+          "Shares": "1493.0",
+          "PricePerShare": "17.09",
+          "SharesOwnedFollowing": "69458.0",
+          "fileDate": "2026-06-26T10:18:11.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
           "isTenPercentOwner": "False",
           "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:30:04.447",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "Balachandran Madhavan",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "70951.0",
+          "fileDate": "2026-06-26T10:18:11.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:30:04.447",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "Dal Lago Marco",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "2356.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "77356.0",
+          "fileDate": "2026-06-26T10:16:21.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:30:04.447",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "Dal Lago Marco",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "7997.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "85353.0",
+          "fileDate": "2026-06-26T10:16:21.000",
+          "officerTitle": "Chief Financial Officer",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:30:04.447",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "LIN SUE-JEAN",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "6975.0",
+          "fileDate": "2026-06-26T10:14:41.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:30:04.447",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "MOREL DONALD E JR",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "38917.0",
+          "fileDate": "2026-06-26T10:12:25.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-15T00:00:00.000",
+          "Name": "MOREL DONALD E JR",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "1493.0",
+          "PricePerShare": "17.09",
+          "SharesOwnedFollowing": "37424.0",
+          "fileDate": "2026-06-26T10:12:25.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "Santel Luciano",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "6762.0",
+          "fileDate": "2026-06-26T10:10:22.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "Magistretti Elisabetta",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "4975.0",
+          "fileDate": "2026-06-26T10:08:29.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-09T00:00:00.000",
+          "Name": "Stocchi Mauro",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "2101.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "407043.0",
+          "fileDate": "2026-06-26T10:07:17.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-09T00:00:00.000",
+          "Name": "Stocchi Mauro",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "M",
+          "Shares": "6586.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "413629.0",
+          "fileDate": "2026-06-26T10:07:17.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "Flynn Karen",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "7250.0",
+          "fileDate": "2026-06-26T10:05:44.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-15T00:00:00.000",
+          "Name": "Flynn Karen",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "1493.0",
+          "PricePerShare": "17.09",
+          "SharesOwnedFollowing": "5757.0",
+          "fileDate": "2026-06-26T10:05:44.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-12T00:00:00.000",
+          "Name": "FEDERICI WILLIAM J",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "4975.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "28484.0",
+          "fileDate": "2026-06-26T10:04:06.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-15T00:00:00.000",
+          "Name": "FEDERICI WILLIAM J",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "1493.0",
+          "PricePerShare": "17.09",
+          "SharesOwnedFollowing": "26991.0",
+          "fileDate": "2026-06-26T10:04:06.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "NAMI",
+          "Date": "2026-06-24T00:00:00.000",
+          "Name": "Jiang Jun Jason",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "2.0",
+          "PricePerShare": "0.197",
+          "SharesOwnedFollowing": "2788032.0",
+          "fileDate": "2026-06-26T10:01:46.000",
+          "officerTitle": "CFO and COO",
+          "isDirector": "True",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
           "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+        },
+        {
+          "Ticker": "GLND",
+          "Date": "2026-06-25T00:00:00.000",
+          "Name": "SWETS LARRY G JR",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "15000.0",
+          "PricePerShare": "2.5572",
+          "SharesOwnedFollowing": "585000.0",
+          "fileDate": "2026-06-26T10:00:20.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
         },
         {
           "Ticker": "KYMR",
@@ -2050,28 +2354,9 @@
           "Name": "Booth Bruce",
           "AcquiredDisposedCode": "D",
           "TransactionCode": "S",
-          "Shares": "337.0",
-          "PricePerShare": "129.61",
-          "SharesOwnedFollowing": "2862351.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "3507.0",
-          "PricePerShare": "127.37",
-          "SharesOwnedFollowing": "530069.0",
+          "Shares": "522.0",
+          "PricePerShare": "125.82",
+          "SharesOwnedFollowing": "533799.0",
           "fileDate": "2026-06-26T01:56:01.000",
           "officerTitle": null,
           "isDirector": "True",
@@ -2110,6 +2395,25 @@
           "Shares": "112299.0",
           "PricePerShare": "120.66",
           "SharesOwnedFollowing": "2963607.0",
+          "fileDate": "2026-06-26T01:56:01.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "I",
+          "uploaded": "2026-06-26T02:00:06.639",
+          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
+        },
+        {
+          "Ticker": "KYMR",
+          "Date": "2026-06-25T00:00:00.000",
+          "Name": "Booth Bruce",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "3716.0",
+          "PricePerShare": "125.82",
+          "SharesOwnedFollowing": "2891569.0",
           "fileDate": "2026-06-26T01:56:01.000",
           "officerTitle": null,
           "isDirector": "True",
@@ -2187,310 +2491,6 @@
           "PricePerShare": "123.62",
           "SharesOwnedFollowing": "2906996.0",
           "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "1609.0",
-          "PricePerShare": "126.71",
-          "SharesOwnedFollowing": "2889960.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "5144.0",
-          "PricePerShare": "119.71",
-          "SharesOwnedFollowing": "559524.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "3716.0",
-          "PricePerShare": "125.82",
-          "SharesOwnedFollowing": "2891569.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "522.0",
-          "PricePerShare": "125.82",
-          "SharesOwnedFollowing": "533799.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "1517.0",
-          "PricePerShare": "123.62",
-          "SharesOwnedFollowing": "535960.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "5689.0",
-          "PricePerShare": "121.38",
-          "SharesOwnedFollowing": "538175.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "2197.0",
-          "PricePerShare": "128.69",
-          "SharesOwnedFollowing": "2862688.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "46.0",
-          "PricePerShare": "129.61",
-          "SharesOwnedFollowing": "529718.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "305.0",
-          "PricePerShare": "128.69",
-          "SharesOwnedFollowing": "529764.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "698.0",
-          "PricePerShare": "122.67",
-          "SharesOwnedFollowing": "537477.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "15660.0",
-          "PricePerShare": "120.66",
-          "SharesOwnedFollowing": "543864.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "223.0",
-          "PricePerShare": "126.71",
-          "SharesOwnedFollowing": "533576.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "1639.0",
-          "PricePerShare": "124.61",
-          "SharesOwnedFollowing": "534321.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "24268.0",
-          "PricePerShare": "117.5",
-          "SharesOwnedFollowing": "3132174.0",
-          "fileDate": "2026-06-26T01:55:08.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "159.0",
-          "PricePerShare": "108.02",
-          "SharesOwnedFollowing": "3333190.0",
-          "fileDate": "2026-06-26T01:55:08.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "1915.0",
-          "PricePerShare": "110.3",
-          "SharesOwnedFollowing": "3316924.0",
-          "fileDate": "2026-06-26T01:55:08.000",
           "officerTitle": null,
           "isDirector": "True",
           "isOfficer": "False",
@@ -4460,9 +4460,36 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 369,
+      "rows": 373,
       "last_seen": "2026-06-26",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24AVAV+Given+%24248+Price+Target",
+          "time": "2026-06-26 10:20:12",
+          "headline": "New Analyst Forecast: $AVAV Given $248 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $AVAV. Clarke Jeffries from Piper Sandler set a price target of 248.0 for AVAV.</p><p>To track analyst ratings and price targets for $AVAV, check out Quiver Quant\u2026",
+          "image": "https://www.quiverquant.com/images/avav_rect_new.png",
+          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24TTWO+Given+%24293+Price+Target",
+          "time": "2026-06-26 10:20:12",
+          "headline": "New Analyst Forecast: $TTWO Given $293 Price Target",
+          "category": "forecasts_automated",
+          "summary": "<p>We just received data on a new analyst forecast for $TTWO. Clark Lampen from BTIG set a price target of 293.0 for TTWO.</p><p>To track analyst ratings and price targets for $TTWO, check out Quiver Quantitative's <a\u2026",
+          "image": "https://www.quiverquant.com/images/ttwo_rect_new.png",
+          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24STVN+Sells+1%2C493+Shares",
+          "time": "2026-06-26 10:16:06",
+          "headline": "Insider Sale: Director at $STVN Sells 1,493 Shares",
+          "category": "insiders_automated",
+          "summary": "<p>DONALD E JR MOREL, a director at <a href=\"https://www.quiverquant.com/stock/STVN/\">$STVN</a>, sold 1,493 shares of the company on 06-15-2026 for an estimated <strong>$25,515</strong>. We received data on the trade \u2026",
+          "image": "https://www.quiverquant.com/images/stvn_rect_new.png",
+          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Juan+Ciscomani+Applauds+House+Appropriations+Passage%2C+Cites+%2442M+for+AZ-06",
           "time": "2026-06-26 04:20:03",
@@ -4545,15 +4572,6 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Goodlander%2C+Pappas+Introduce+Bill+to+Block+Closure+of+Forest+Service+Research+Facilities",
-          "time": "2026-06-26 00:20:56",
-          "headline": "Press Release: Goodlander, Pappas Introduce Bill to Block Closure of Forest Service Research Facilities",
-          "category": "legislation_automated",
-          "summary": "<p>Goodlander and Pappas propose legislation to block Forest Service research facility closures without congressional approval.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
-          "image": "https://www.quiverquant.com/images/G000604_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Jimmy+Gomez+Condemns+Supreme+Court+Ruling+on+TPS+for+Haitians+and+Syrians",
           "time": "2026-06-26 00:20:56",
           "headline": "Press Release: Jimmy Gomez Condemns Supreme Court Ruling on TPS for Haitians and Syrians",
@@ -4569,6 +4587,15 @@
           "category": "legislation_automated",
           "summary": "<p>House Democrats reintroduce a bill to expand reproductive health training for clinicians in states with abortion restrictions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,1\u2026",
           "image": "https://www.quiverquant.com/images/B001287_congress.png",
+          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Goodlander%2C+Pappas+Introduce+Bill+to+Block+Closure+of+Forest+Service+Research+Facilities",
+          "time": "2026-06-26 00:20:56",
+          "headline": "Press Release: Goodlander, Pappas Introduce Bill to Block Closure of Forest Service Research Facilities",
+          "category": "legislation_automated",
+          "summary": "<p>Goodlander and Pappas propose legislation to block Forest Service research facility closures without congressional approval.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165\u2026",
+          "image": "https://www.quiverquant.com/images/G000604_congress.png",
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
@@ -4626,13 +4653,13 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Rick+W.+Allen%E2%80%99s+Bill+to+Expand+Care+Access+for+Energy+Workers+Advances+in+Committee",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pat+Harrigan+Introduces+American+Drone+Manufacturing+Bill",
           "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Rep. Rick W. Allen\u2019s Bill to Expand Care Access for Energy Workers Advances in Committee",
+          "headline": "Press Release: Pat Harrigan Introduces American Drone Manufacturing Bill",
           "category": "legislation_automated",
-          "summary": "<p>Committee advanced a bill expanding nurse practitioner and physician assistant authority for energy workers\u2019 care access.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/A000372_congress.png",
-          "_first_seen": "2026-06-26T07:11:41.346216+00:00"
+          "summary": "<p>Congressman Harrigan proposed legislation to reduce foreign drone dependence, boost U.S. manufacturing, and support law enforcement transitions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style\u2026",
+          "image": "https://www.quiverquant.com/images/H001101_congress.png",
+          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Christian+Menefee+Responds+to+Supreme+Court+Ruling+on+Temporary+Protected+Status",
@@ -4653,40 +4680,13 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pablo+Jos%C3%A9+Hern%C3%A1ndez+announces+%247.6+million+in+federal+funds+for+Puerto+Rico+public+health+programs",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Rick+W.+Allen%E2%80%99s+Bill+to+Expand+Care+Access+for+Energy+Workers+Advances+in+Committee",
           "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Pablo Jos\u00e9 Hern\u00e1ndez announces $7.6 million in federal funds for Puerto Rico public health programs",
+          "headline": "Press Release: Rep. Rick W. Allen\u2019s Bill to Expand Care Access for Energy Workers Advances in Committee",
           "category": "legislation_automated",
-          "summary": "<p>Pablo Jos\u00e9 Hern\u00e1ndez announced $7.65 million in federal HHS funding for Puerto Rico public health and emergency preparedness programs.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: r\u2026",
-          "image": "https://www.quiverquant.com/images/H001103_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Raul+Ruiz+and+Lawmakers+Oppose+H.R.+9237%2C+Call+for+Vote+on+Major+Richard+Star+Act",
-          "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Raul Ruiz and Lawmakers Oppose H.R. 9237, Call for Vote on Major Richard Star Act",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Ruiz and allies oppose H.R. 9237, arguing it would cut veterans\u2019 benefits and seeking passage of the Major Richard Star Act.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(18\u2026",
-          "image": "https://www.quiverquant.com/images/R000599_congress.png",
+          "summary": "<p>Committee advanced a bill expanding nurse practitioner and physician assistant authority for energy workers\u2019 care access.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
+          "image": "https://www.quiverquant.com/images/A000372_congress.png",
           "_first_seen": "2026-06-26T07:11:41.346216+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Maxwell+Frost+Criticizes+Supreme+Court+Ruling+on+Temporary+Protected+Status+for+Haitian+and+Syrian+Immigrants",
-          "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Maxwell Frost Criticizes Supreme Court Ruling on Temporary Protected Status for Haitian and Syrian Immigrants",
-          "category": "legislation_automated",
-          "summary": "<p>Congressman Frost condemns a Supreme Court ruling ending TPS protections for Haitian and Syrian immigrants.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Frost rea\u2026",
-          "image": "https://www.quiverquant.com/images/F000476_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Mariannette+Miller-Meeks+Introduces+Medicaid+Accountability+Bill",
-          "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Mariannette Miller-Meeks Introduces Medicaid Accountability Bill",
-          "category": "legislation_automated",
-          "summary": "<p>Bipartisan bill to strengthen Medicaid oversight, improve payment integrity, and reduce waste, fraud, and abuse.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Bill\u2026",
-          "image": "https://www.quiverquant.com/images/M001215_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         }
       ]
     },
@@ -6414,49 +6414,58 @@
     ],
     "hf": [
       {
-        "ticker": "AAPL",
-        "downloads_30d": 6612091.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "AMZN",
-        "downloads_30d": 24619431.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "BABA",
-        "downloads_30d": 211598669.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "CRM",
-        "downloads_30d": 6962765.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "GOOGL",
-        "downloads_30d": 207689645.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "IBM",
-        "downloads_30d": 9728748.0,
-        "wow_pct": 0.0
-      },
-      {
         "ticker": "META",
-        "downloads_30d": 89825519.0,
-        "wow_pct": 0.0
-      },
-      {
-        "ticker": "MSFT",
-        "downloads_30d": 29004139.0,
-        "wow_pct": 0.0
+        "downloads_30d": 90365730.0,
+        "wow_pct": 0.6,
+        "hot": true
       },
       {
         "ticker": "NVDA",
-        "downloads_30d": 28908370.0,
-        "wow_pct": 0.0
+        "downloads_30d": 29073198.0,
+        "wow_pct": 0.6,
+        "hot": true
+      },
+      {
+        "ticker": "GOOGL",
+        "downloads_30d": 208683112.0,
+        "wow_pct": 0.5,
+        "hot": false
+      },
+      {
+        "ticker": "BABA",
+        "downloads_30d": 211614927.0,
+        "wow_pct": 0.0,
+        "hot": false
+      },
+      {
+        "ticker": "IBM",
+        "downloads_30d": 9725589.0,
+        "wow_pct": -0.0,
+        "hot": false
+      },
+      {
+        "ticker": "MSFT",
+        "downloads_30d": 28880288.0,
+        "wow_pct": -0.4,
+        "hot": false
+      },
+      {
+        "ticker": "AMZN",
+        "downloads_30d": 24423932.0,
+        "wow_pct": -0.8,
+        "hot": false
+      },
+      {
+        "ticker": "AAPL",
+        "downloads_30d": 6523168.0,
+        "wow_pct": -1.3,
+        "hot": false
+      },
+      {
+        "ticker": "CRM",
+        "downloads_30d": 6847545.0,
+        "wow_pct": -1.7,
+        "hot": false
       }
     ],
     "material_8k": [
@@ -14748,6 +14757,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "SUI",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "6768",
         "category": "Divestitures",
         "confidence": "high",
@@ -15029,11 +15046,11 @@
       },
       {
         "ticker": "NFG",
-        "category": "Restructuring",
-        "confidence": "high",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Restructuring"
+        "detail": "Other"
       },
       {
         "ticker": "SQFT",
@@ -27349,11 +27366,11 @@
       },
       {
         "ticker": "PLUS",
-        "category": "Other Situations",
+        "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Other Situations"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "PAACU",
@@ -35348,6 +35365,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ALP",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "RNWWW",
         "category": "Going-Private",
         "confidence": "high",
@@ -36140,6 +36165,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "TXO",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "GDV-PK",
         "category": "Activist Campaigns",
         "confidence": "high",
@@ -36540,6 +36573,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "MBC",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "CELG-RI",
         "category": "Delistings",
         "confidence": "high",
@@ -36850,6 +36891,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "NUAIW",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
       },
       {
         "ticker": "NWTG",
@@ -37756,6 +37805,14 @@
         "detail": "Capital Returns"
       },
       {
+        "ticker": "RACC",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
+      },
+      {
         "ticker": "NFBK",
         "category": "Acquisitions",
         "confidence": "high",
@@ -37860,6 +37917,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "TBBB",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "PLRZ",
         "category": "Acquisitions",
         "confidence": "medium",
@@ -37956,6 +38021,38 @@
         "detail": "Other"
       },
       {
+        "ticker": "DUOT",
+        "category": "Divestitures",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "LOCO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "HNNAZ",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "H",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "LVLU",
         "category": "Delistings",
         "confidence": "high",
@@ -37964,12 +38061,76 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "NTAP",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "PD",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "PEB-PH",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "RR",
         "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "STX",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TFSL",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "TSCO",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "TBNRL",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "TMGI",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "EAF",
@@ -39262,162 +39423,162 @@
     ],
     "unusual_options": [
       {
-        "ticker": "NRG",
-        "vol_oi": 0.728,
-        "mult": 4.78,
-        "put_call": 0.05,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
-        "ticker": "KDP",
-        "vol_oi": 0.295,
-        "mult": 4.73,
-        "put_call": 0.07,
-        "lean": "call-skew",
+        "ticker": "HEI",
+        "vol_oi": 1.067,
+        "mult": 6.94,
+        "put_call": 14.73,
+        "lean": "put-skew",
         "hot": true
       },
       {
         "ticker": "BTDR",
-        "vol_oi": 0.181,
-        "mult": 4.56,
+        "vol_oi": 0.215,
+        "mult": 5.41,
         "put_call": 0.14,
         "lean": "call-skew",
         "hot": true
       },
       {
-        "ticker": "OLLI",
-        "vol_oi": 0.333,
-        "mult": 4.04,
+        "ticker": "KDP",
+        "vol_oi": 0.286,
+        "mult": 4.58,
         "put_call": 0.08,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "NRG",
+        "vol_oi": 0.609,
+        "mult": 4.0,
+        "put_call": 0.06,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "RCL",
-        "vol_oi": 0.241,
-        "mult": 3.74,
-        "put_call": 2.02,
+        "vol_oi": 0.233,
+        "mult": 3.62,
+        "put_call": 2.04,
         "lean": "put-skew",
         "hot": true
       },
       {
-        "ticker": "DNN",
-        "vol_oi": 0.024,
+        "ticker": "OLLI",
+        "vol_oi": 0.291,
+        "mult": 3.54,
+        "put_call": 0.08,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "CZR",
+        "vol_oi": 0.228,
         "mult": 2.9,
-        "put_call": 0.54,
+        "put_call": 0.09,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "CZR",
-        "vol_oi": 0.215,
-        "mult": 2.73,
-        "put_call": 0.08,
+        "ticker": "DNN",
+        "vol_oi": 0.024,
+        "mult": 2.89,
+        "put_call": 0.53,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "FLYW",
-        "vol_oi": 0.161,
-        "mult": 2.67,
+        "vol_oi": 0.157,
+        "mult": 2.61,
         "put_call": 0.06,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "ASO",
-        "vol_oi": 0.608,
-        "mult": 2.49,
-        "put_call": 0.44,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "HUBS",
-        "vol_oi": 0.301,
-        "mult": 2.38,
-        "put_call": 11.91,
-        "lean": "put-skew",
-        "hot": false
-      },
-      {
         "ticker": "AAPL",
-        "vol_oi": 0.292,
-        "mult": 2.14,
+        "vol_oi": 0.284,
+        "mult": 2.08,
         "put_call": 0.61,
         "lean": "call-skew",
         "hot": false
       },
       {
+        "ticker": "ASPI",
+        "vol_oi": 0.113,
+        "mult": 2.07,
+        "put_call": 0.44,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
         "ticker": "EXPE",
-        "vol_oi": 0.114,
-        "mult": 2.13,
-        "put_call": 2.86,
+        "vol_oi": 0.111,
+        "mult": 2.06,
+        "put_call": 2.92,
         "lean": "put-skew",
         "hot": false
       },
       {
         "ticker": "TXT",
-        "vol_oi": 0.379,
-        "mult": 2.1,
-        "put_call": 4.15,
+        "vol_oi": 0.367,
+        "mult": 2.03,
+        "put_call": 4.14,
+        "lean": "put-skew",
+        "hot": false
+      },
+      {
+        "ticker": "HUBS",
+        "vol_oi": 0.252,
+        "mult": 1.99,
+        "put_call": 11.81,
         "lean": "put-skew",
         "hot": false
       },
       {
         "ticker": "NNE",
-        "vol_oi": 0.268,
-        "mult": 2.03,
+        "vol_oi": 0.262,
+        "mult": 1.98,
         "put_call": 1.62,
         "lean": "put-skew",
         "hot": false
       },
       {
-        "ticker": "NXE",
-        "vol_oi": 0.051,
-        "mult": 1.98,
-        "put_call": 0.41,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
         "ticker": "MOH",
-        "vol_oi": 0.244,
-        "mult": 1.96,
-        "put_call": 1.88,
+        "vol_oi": 0.24,
+        "mult": 1.94,
+        "put_call": 1.9,
         "lean": "put-skew",
         "hot": false
       },
       {
         "ticker": "OC",
-        "vol_oi": 0.254,
-        "mult": 1.93,
-        "put_call": 0.6,
+        "vol_oi": 0.255,
+        "mult": 1.94,
+        "put_call": 0.62,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "ASPI",
-        "vol_oi": 0.104,
+        "ticker": "NXE",
+        "vol_oi": 0.05,
+        "mult": 1.93,
+        "put_call": 0.41,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "ASO",
+        "vol_oi": 0.462,
         "mult": 1.89,
         "put_call": 0.43,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "DLTR",
-        "vol_oi": 0.207,
-        "mult": 1.89,
-        "put_call": 0.32,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "USB",
-        "vol_oi": 0.161,
-        "mult": 1.73,
-        "put_call": 0.09,
+        "ticker": "AVAV",
+        "vol_oi": 0.38,
+        "mult": 1.75,
+        "put_call": 0.49,
         "lean": "call-skew",
         "hot": false
       }
@@ -39700,14 +39861,14 @@
     "github": [
       {
         "ticker": "NET",
-        "stars": 14641,
-        "wow_pct": 0.1,
+        "stars": 14644,
+        "wow_pct": 0.12,
         "hot": true
       },
       {
         "ticker": "NVDA",
-        "stars": 17563,
-        "wow_pct": 0.05,
+        "stars": 17564,
+        "wow_pct": 0.06,
         "hot": true
       },
       {
@@ -39718,33 +39879,33 @@
       },
       {
         "ticker": "AMD",
-        "stars": 6649,
-        "wow_pct": 0.02,
+        "stars": 6650,
+        "wow_pct": 0.03,
+        "hot": true
+      },
+      {
+        "ticker": "U",
+        "stars": 19515,
+        "wow_pct": 0.03,
         "hot": true
       },
       {
         "ticker": "CRM",
         "stars": 11242,
         "wow_pct": 0.02,
-        "hot": true
+        "hot": false
       },
       {
         "ticker": "MDB",
         "stars": 28401,
         "wow_pct": 0.02,
-        "hot": true
+        "hot": false
       },
       {
-        "ticker": "PLTR",
-        "stars": 21857,
-        "wow_pct": 0.02,
-        "hot": true
-      },
-      {
-        "ticker": "U",
-        "stars": 19514,
-        "wow_pct": 0.02,
-        "hot": true
+        "ticker": "ESTC",
+        "stars": 77171,
+        "wow_pct": 0.01,
+        "hot": false
       },
       {
         "ticker": "GTLB",
@@ -39753,14 +39914,14 @@
         "hot": false
       },
       {
-        "ticker": "DDOG",
-        "stars": 3655,
-        "wow_pct": 0.0,
+        "ticker": "PLTR",
+        "stars": 21856,
+        "wow_pct": 0.01,
         "hot": false
       },
       {
-        "ticker": "ESTC",
-        "stars": 77167,
+        "ticker": "DDOG",
+        "stars": 3655,
         "wow_pct": 0.0,
         "hot": false
       },
@@ -39784,19 +39945,19 @@
       },
       {
         "ticker": "META",
-        "stars": 246108,
+        "stars": 246113,
         "wow_pct": -0.04,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "stars": 186781,
+        "stars": 186789,
         "wow_pct": -0.05,
         "hot": false
       },
       {
         "ticker": "GOOGL",
-        "stars": 195909,
+        "stars": 195910,
         "wow_pct": -0.07,
         "hot": false
       }
@@ -41233,6 +41394,27 @@
     ],
     "news": [
       {
+        "headline": "New Analyst Forecast: $AVAV Given $248 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-26 10:20:12",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24AVAV+Given+%24248+Price+Target"
+      },
+      {
+        "headline": "New Analyst Forecast: $TTWO Given $293 Price Target",
+        "ticker": null,
+        "category": "forecasts_automated",
+        "time": "2026-06-26 10:20:12",
+        "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24TTWO+Given+%24293+Price+Target"
+      },
+      {
+        "headline": "Insider Sale: Director at $STVN Sells 1,493 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-06-26 10:16:06",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24STVN+Sells+1%2C493+Shares"
+      },
+      {
         "headline": "Press Release: Juan Ciscomani Applauds House Appropriations Passage, Cites $42M for AZ-06",
         "ticker": null,
         "category": "legislation_automated",
@@ -41296,13 +41478,6 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Takano+Introduces+Health+Data+Access%2C+Transparency+and+Affordability+Act"
       },
       {
-        "headline": "Press Release: Goodlander, Pappas Introduce Bill to Block Closure of Forest Service Research Facilities",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 00:20:56",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Goodlander%2C+Pappas+Introduce+Bill+to+Block+Closure+of+Forest+Service+Research+Facilities"
-      },
-      {
         "headline": "Press Release: Jimmy Gomez Condemns Supreme Court Ruling on TPS for Haitians and Syrians",
         "ticker": null,
         "category": "legislation_automated",
@@ -41315,6 +41490,13 @@
         "category": "legislation_automated",
         "time": "2026-06-26 00:20:56",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Bera%2C+Fletcher%2C+Schrier+and+Pocan+Reintroduce+Bill+to+Expand+Reproductive+Health+Training"
+      },
+      {
+        "headline": "Press Release: Goodlander, Pappas Introduce Bill to Block Closure of Forest Service Research Facilities",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-26 00:20:56",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Goodlander%2C+Pappas+Introduce+Bill+to+Block+Closure+of+Forest+Service+Research+Facilities"
       },
       {
         "headline": "Press Release: Rep. Jimmy Panetta Introduces Bill to Waive Overtime Cap for Federal Wildland Firefighters",
@@ -41350,27 +41532,6 @@
         "category": "press_release_summary",
         "time": "2026-06-25 23:00:25",
         "url": "https://www.quiverquant.com/news/Shoals+Technologies+Group+Wins+ITC+Patent+Infringement+Case+Against+Voltage%2C+LLC"
-      },
-      {
-        "headline": "Anterix Inc. ($ATEX) CEO 2026 Pay Revealed",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-25 22:25:16",
-        "url": "https://www.quiverquant.com/news/Anterix+Inc.+%28%24ATEX%29+CEO+2026+Pay+Revealed"
-      },
-      {
-        "headline": "Press Release: Rep. Rick W. Allen\u2019s Bill to Expand Care Access for Energy Workers Advances in Committee",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-25 22:22:27",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Rick+W.+Allen%E2%80%99s+Bill+to+Expand+Care+Access+for+Energy+Workers+Advances+in+Committee"
-      },
-      {
-        "headline": "Press Release: Rep. Christian Menefee Responds to Supreme Court Ruling on Temporary Protected Status",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-25 22:22:27",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Christian+Menefee+Responds+to+Supreme+Court+Ruling+on+Temporary+Protected+Status"
       }
     ],
     "wsb": [
@@ -43217,17 +43378,18 @@
     "convergence": [
       {
         "ticker": "NVDA",
-        "score": 6,
-        "weighted_score": 2.2,
+        "score": 7,
+        "weighted_score": 2.55,
         "channel_list": [
           "13f_add",
           "darkpool_accum",
           "github_momentum",
+          "hf_model_momentum",
           "patent_cluster",
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.05% stars \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.06% stars \u00b7 hf_model_momentum: +0.6% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "MSFT",
@@ -43277,7 +43439,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.02% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.03% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
       },
       {
         "ticker": "DELL",
@@ -43312,7 +43474,7 @@
           "special_situation",
           "unusual_options"
         ],
-        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01, 8.01) \u00b7 special_situation: Spin-Offs \u00b7 unusual_options: 4.73\u00d7 vol/OI, call-skew"
+        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01, 8.01) \u00b7 special_situation: Spin-Offs \u00b7 unusual_options: 4.58\u00d7 vol/OI, call-skew"
       },
       {
         "ticker": "AAL",

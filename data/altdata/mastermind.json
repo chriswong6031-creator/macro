@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-06-26",
-  "generated_utc": "2026-06-26T08:06:44.824802+00:00",
+  "generated_utc": "2026-06-26T11:25:01.456036+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties.",
   "regime_read": null,
   "brain_present": false,
@@ -11,7 +11,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 106,
+  "n_signals": 107,
   "signals": [
     {
       "ticker": "NVDA",
@@ -20,13 +20,14 @@
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 2.7,
-      "convergence_score": 7,
+      "weighted_score": 3.05,
+      "convergence_score": 8,
       "channels": [
         "13f_add",
         "affiliation",
         "darkpool_accum",
         "github_momentum",
+        "hf_model_momentum",
         "patent_cluster",
         "retail_buzz",
         "special_situation"
@@ -297,42 +298,6 @@
         }
       ],
       "n_affiliated_actors": 1,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "PLTR",
-      "signal_score": 66,
-      "conviction": "high",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 1.4,
-      "convergence_score": 4,
-      "channels": [
-        "affiliation",
-        "github_momentum",
-        "gov_contract",
-        "retail_buzz"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -38.2,
-      "extended": false,
-      "affiliations": [
-        {
-          "actor": "Marjorie Taylor Greene",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        },
-        {
-          "actor": "Cathie Wood",
-          "rel": "AFFILIATES_WITH",
-          "kind": "fund"
-        }
-      ],
-      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -708,32 +673,27 @@
       "clamped": null
     },
     {
-      "ticker": "TSLA",
-      "signal_score": 52,
+      "ticker": "PLTR",
+      "signal_score": 51,
       "conviction": "medium",
       "action": "WATCH",
       "direction": "neutral",
       "source": "deterministic",
-      "weighted_score": 1.05,
+      "weighted_score": 1.1,
       "convergence_score": 3,
       "channels": [
         "affiliation",
-        "retail_buzz",
-        "special_situation"
+        "gov_contract",
+        "retail_buzz"
       ],
       "trump_linked": false,
       "rs_vs_spy_60d": null,
       "extended": false,
       "affiliations": [
         {
-          "actor": "Elon Musk",
-          "rel": "CONTROLS",
-          "kind": "exec"
-        },
-        {
-          "actor": "Larry Ellison",
+          "actor": "Marjorie Taylor Greene",
           "rel": "HOLDS_STAKE",
-          "kind": "exec"
+          "kind": "politician"
         },
         {
           "actor": "Cathie Wood",
@@ -741,7 +701,7 @@
           "kind": "fund"
         }
       ],
-      "n_affiliated_actors": 3,
+      "n_affiliated_actors": 2,
       "thesis": null,
       "second_order": [],
       "falsifier": null,
@@ -863,6 +823,46 @@
         }
       ],
       "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
+      "ticker": "TSLA",
+      "signal_score": 48,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.05,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "retail_buzz",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -10.6,
+      "extended": false,
+      "affiliations": [
+        {
+          "actor": "Elon Musk",
+          "rel": "CONTROLS",
+          "kind": "exec"
+        },
+        {
+          "actor": "Larry Ellison",
+          "rel": "HOLDS_STAKE",
+          "kind": "exec"
+        },
+        {
+          "actor": "Cathie Wood",
+          "rel": "AFFILIATES_WITH",
+          "kind": "fund"
+        }
+      ],
+      "n_affiliated_actors": 3,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

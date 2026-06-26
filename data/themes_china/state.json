@@ -13,7 +13,7 @@
     "name_zh": "\u5bb6\u7535",
     "rank": 10,
     "reco": "avoid",
-    "score": 38
+    "score": 35
   },
   "cn_autos": {
     "label": "deteriorating",
@@ -21,7 +21,7 @@
     "name_zh": "\u6c7d\u8f66\u6574\u8f66",
     "rank": 22,
     "reco": "avoid",
-    "score": 17
+    "score": 15
   },
   "cn_baijiu": {
     "label": "deteriorating",
@@ -29,13 +29,13 @@
     "name_zh": "\u767d\u9152",
     "rank": 18,
     "reco": "avoid",
-    "score": 26
+    "score": 25
   },
   "cn_banks": {
     "label": "deteriorating",
     "name": "Banks",
     "name_zh": "\u94f6\u884c",
-    "rank": 9,
+    "rank": 8,
     "reco": "avoid",
     "score": 39
   },
@@ -43,7 +43,7 @@
     "label": "deteriorating",
     "name": "Battery & Lithium",
     "name_zh": "\u9502\u7535\u6c60",
-    "rank": 17,
+    "rank": 16,
     "reco": "avoid",
     "score": 26
   },
@@ -53,15 +53,15 @@
     "name_zh": "\u5238\u5546",
     "rank": 2,
     "reco": "hold",
-    "score": 61
+    "score": 60
   },
   "cn_coal": {
     "label": "deteriorating",
     "name": "Coal",
     "name_zh": "\u7164\u70ad",
-    "rank": 16,
+    "rank": 17,
     "reco": "avoid",
-    "score": 27
+    "score": 26
   },
   "cn_consumer_elec": {
     "label": "neutral",
@@ -75,9 +75,9 @@
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 8,
+    "rank": 9,
     "reco": "avoid",
-    "score": 40
+    "score": 38
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -101,7 +101,7 @@
     "name_zh": "\u4fdd\u9669",
     "rank": 12,
     "reco": "avoid",
-    "score": 34
+    "score": 33
   },
   "cn_med_devices": {
     "label": "deteriorating",
@@ -109,7 +109,7 @@
     "name_zh": "\u533b\u7597\u5668\u68b0\u4e0e\u4e2d\u836f",
     "rank": 20,
     "reco": "avoid",
-    "score": 23
+    "score": 20
   },
   "cn_metals": {
     "label": "deteriorating",
@@ -125,7 +125,7 @@
     "name_zh": "\u521b\u65b0\u836f\u4e0eCXO",
     "rank": 6,
     "reco": "hold",
-    "score": 56
+    "score": 55
   },
   "cn_rare_earth": {
     "label": "neutral",
@@ -141,7 +141,7 @@
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
     "rank": 7,
     "reco": "hold",
-    "score": 42
+    "score": 41
   },
   "cn_semis": {
     "label": "neutral",
@@ -149,7 +149,7 @@
     "name_zh": "\u534a\u5bfc\u4f53",
     "rank": 1,
     "reco": "hold",
-    "score": 65
+    "score": 63
   },
   "cn_soe_value": {
     "label": "deteriorating",
@@ -165,7 +165,7 @@
     "name_zh": "\u8f6f\u4ef6\u4e0eAI\u5e94\u7528",
     "rank": 15,
     "reco": "avoid",
-    "score": 27
+    "score": 26
   },
   "cn_solar": {
     "label": "deteriorating",
@@ -173,6 +173,6 @@
     "name_zh": "\u5149\u4f0f",
     "rank": 11,
     "reco": "avoid",
-    "score": 35
+    "score": 33
   }
 }

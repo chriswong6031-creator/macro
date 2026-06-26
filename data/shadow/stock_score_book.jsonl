@@ -928,3 +928,4 @@
 {"date": "2026-06-25", "ticker": "CSW", "score": 43.0, "percentile": 43.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-25", "ticker": "UBER", "score": 65.0, "percentile": 65.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-06-25", "ticker": "VRSK", "score": 100.0, "percentile": 100.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-06-25", "ticker": "LGND", "score": 2.0, "percentile": 2.0, "regime": "mixed", "horizons": [21, 63, 126]}

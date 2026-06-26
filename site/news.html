@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>News Feed - Macro Dashboard</title>
+<title>Market & Macro News — 2026-06-25</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -34,94 +34,105 @@
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
   .news-shell { max-width:1180px; margin:0 auto; }
-  .news-hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; align-items:stretch; margin:24px 0 16px; }
-  .hero-main, .hero-side, .news-card, .rail-card, .empty-state {
-    background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--card-shadow);
-  }
-  .hero-main { min-height:314px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; }
-  .hero-main:before { content:''; position:absolute; inset:0 0 auto; height:5px; background:linear-gradient(90deg,var(--link),var(--up),var(--warn)); }
-  .eyebrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 14px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; }
-  html[data-lang="zh"] .eyebrow { letter-spacing:0; }
-  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); }
-  .hero-main h1 { font-size:36px; line-height:1.04; margin:0 0 12px; max-width:920px; letter-spacing:0; }
-  .hero-main h1 a { color:var(--text); }
-  .hero-main h1 a:hover { color:var(--link); }
-  .hero-dek { color:var(--muted); font-size:14.5px; max-width:72ch; margin:0; }
-  .hero-meta { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:20px; }
-  .source-chip, .theme-chip, .soft-chip {
-    display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px;
-    padding:5px 10px; font-size:11.5px; color:var(--muted); background:var(--panel2);
-  }
-  .source-chip b { color:var(--text); font-weight:700; }
-  .theme-chip { --c:var(--link); color:color-mix(in srgb,var(--c) 82%,var(--text)); border-color:color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
-  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-labor{--c:#45b873}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-earnings{--c:#45b873}.th-guidance{--c:#e08b45}.th-analyst{--c:#7aa7e0}.th-deals{--c:#d45f88}.th-capital_return{--c:#e0a030}.th-stocks{--c:#5ab6b0}.th-macro{--c:var(--muted)}
-  .read-link { margin-left:auto; color:var(--link); font-size:12px; font-weight:700; }
-  .hero-side { padding:16px; display:grid; gap:12px; align-content:start; }
-  .ticker { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); }
-  .ticker .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
-  .ticker .v { font-size:18px; font-weight:750; margin-top:2px; }
-  .ticker .s { color:var(--muted); font-size:11.5px; margin-top:1px; }
-  .ticker .num { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .ticker.sent-pos .num { color:var(--up); }
-  .ticker.sent-neg .num { color:var(--down); }
-  .ticker.ndi-high .num { color:var(--warn); }
-  .ticker.ndi-elevated .num { color:var(--orange); }
-  .ticker.ndi-calm .num { color:var(--link); }
-  .intel-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-  .intel-pill { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:6px; padding:3px 7px; font-size:10.5px; color:var(--muted); background:var(--panel2); }
-  .intel-pill b { color:var(--text); }
-  .imp-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
-  .imp-medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
-  .imp-low { color:var(--muted); }
-  .tk-chip { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line)); }
 
-  .news-layout { display:grid; grid-template-columns:minmax(0,1fr) 328px; gap:18px; align-items:start; }
-  .feed-toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 14px; background:linear-gradient(180deg,var(--bg) 72%,transparent); }
-  .search-box { position:relative; flex:1 1 260px; min-width:210px; }
-  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
+  /* ---- header ---- */
+  .nx-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px 20px; margin:24px 0 16px; }
+  .nx-title { font-size:30px; font-weight:800; letter-spacing:-.02em; margin:0; line-height:1.05; }
+  html[data-lang="zh"] .nx-title { letter-spacing:0; }
+  .nx-sub { color:var(--muted); font-size:13.5px; margin:6px 0 0; max-width:66ch; line-height:1.5; }
+  .nx-stats { margin-left:auto; display:flex; gap:18px; flex-wrap:wrap; }
+  .nx-stat { text-align:right; }
+  .nx-stat .k { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:700; }
+  html[data-lang="zh"] .nx-stat .k { letter-spacing:0; }
+  .nx-stat .v { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .nx-stat.pos .v { color:var(--up); } .nx-stat.neg .v { color:var(--down); }
+  .nx-stat.warn .v { color:var(--warn); } .nx-stat.info .v { color:var(--link); }
+
+  .news-layout { display:grid; grid-template-columns:minmax(0,1fr) 326px; gap:20px; align-items:start; }
+
+  /* ---- toolbar ---- */
+  .feed-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 12px; }
+  .search-box { position:relative; flex:1 1 240px; min-width:200px; }
+  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
   .search-box input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
   .search-box .mag { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:13px; }
   .filter-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .filter-btn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:7px 10px; font-size:11.5px; cursor:pointer; }
+  .filter-btn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:6px 11px; font-size:11.5px; cursor:pointer; transition:color .15s,border-color .15s,background .15s; }
   .filter-btn:hover, .filter-btn.on { color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
   .feed-count { color:var(--muted); font-size:12px; margin-left:auto; white-space:nowrap; }
-  .feed { display:grid; gap:10px; }
-  .news-card { display:grid; grid-template-columns:86px minmax(0,1fr); gap:0; overflow:hidden; color:var(--text); transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
-  .news-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 50%,transparent); }
-  .news-date { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; background:var(--panel2); border-right:1px solid var(--line); color:var(--muted); min-height:112px; }
-  .news-date .rank { color:var(--link); font-size:11px; font-weight:800; letter-spacing:.08em; }
-  .news-date .label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
-  .news-body { padding:14px 16px; min-width:0; }
-  .news-top { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-bottom:8px; }
-  .news-title { font-size:17px; line-height:1.28; font-weight:730; margin:0; color:var(--text); }
-  .news-card:hover .news-title { color:var(--link); }
-  .news-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:11.5px; margin-top:10px; }
-  .rail { display:grid; gap:12px; position:sticky; top:12px; }
-  .rail-card { padding:15px; }
+
+  /* ---- the Market Summary accordion card ---- */
+  .summary-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--card-shadow); overflow:hidden; position:relative; }
+  .summary-card:before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,var(--link),var(--up),var(--warn)); }
+  .sc-head { display:flex; align-items:center; gap:10px; padding:16px 18px 12px; border-bottom:1px solid var(--line); }
+  .sc-head h2 { font-size:15px; font-weight:800; margin:0; text-transform:none; letter-spacing:0; color:var(--text); }
+  .sc-updated { margin-left:auto; color:var(--muted); font-size:12px; display:inline-flex; align-items:center; gap:7px; }
+  .sc-updated .live-dot { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); }
+
+  .na-item { border-bottom:1px solid var(--line); }
+  .na-item:last-of-type { border-bottom:0; }
+  .na-item[open] { background:color-mix(in srgb,var(--link) 5%,transparent); }
+  .na-sum { list-style:none; cursor:pointer; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:11px; padding:13px 18px; }
+  .na-sum::-webkit-details-marker { display:none; }
+  .na-sum:hover { background:color-mix(in srgb,var(--link) 6%,transparent); }
+  .na-theme { display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:800; white-space:nowrap;
+    --c:var(--link); color:color-mix(in srgb,var(--c) 84%,var(--text)); border:1px solid color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
+  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-labor{--c:#45b873}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-earnings{--c:#45b873}.th-guidance{--c:#e08b45}.th-analyst{--c:#7aa7e0}.th-deals{--c:#d45f88}.th-capital_return{--c:#e0a030}.th-stocks{--c:#5ab6b0}.th-macro{--c:var(--muted)}
+  .na-htitle { font-size:14.5px; font-weight:650; line-height:1.35; color:var(--text); min-width:0; }
+  .na-item[open] .na-htitle { color:var(--link); }
+  .na-right { display:inline-flex; align-items:center; gap:10px; white-space:nowrap; }
+  .na-src { color:var(--muted); font-size:11.5px; }
+  .na-imp { font-variant-numeric:tabular-nums; font-size:11px; font-weight:800; border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .na-imp.high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
+  .na-imp.medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
+  .na-chev { color:var(--muted); font-size:11px; transition:transform .2s ease; }
+  .na-item[open] .na-chev { transform:rotate(180deg); }
+  .na-body { padding:0 18px 16px 18px; display:grid; gap:10px; animation:naReveal .22s ease; }
+  @keyframes naReveal { from{ opacity:0; transform:translateY(-3px); } to{ opacity:1; transform:none; } }
+  @media(prefers-reduced-motion:reduce){ .na-body{ animation:none; } }
+  .na-summary { font-size:13.5px; line-height:1.55; color:var(--text); margin:0; max-width:74ch; }
+  .na-summary b { font-weight:700; }
+  .na-tags { display:flex; flex-wrap:wrap; gap:6px; }
+  .na-pill { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:6px; padding:3px 8px; font-size:10.5px; color:var(--muted); background:var(--panel2); }
+  .na-pill.tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
+  .na-read { justify-self:start; color:var(--link); font-size:12.5px; font-weight:700; }
+  .na-when { color:var(--muted); font-size:11px; }
+
+  .sc-foot { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 18px; border-top:1px solid var(--line); color:var(--muted); font-size:11.5px; }
+  .sc-srcs { display:inline-flex; align-items:center; gap:6px; }
+  .sc-srcs .dot { width:18px; height:18px; border-radius:50%; background:color-mix(in srgb,var(--link) 20%,var(--panel2)); border:1px solid var(--line); margin-left:-6px; }
+  .sc-srcs .dot:first-child { margin-left:0; }
+
+  .empty-state { padding:40px 28px; text-align:center; }
+  .empty-state h2 { font-size:20px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
+  .empty-state p { color:var(--muted); margin:0 auto; max-width:58ch; }
+  .hidden { display:none !important; }
+
+  /* ---- rail ---- */
+  .rail { display:grid; gap:14px; position:sticky; top:12px; }
+  .rail-card { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--card-shadow); padding:15px; }
   .rail-card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  html[data-lang="zh"] .rail-card h2 { letter-spacing:0; }
   .rail-line { display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line); }
   .rail-line:last-child { border-bottom:0; }
-  .rail-date { flex:0 0 70px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
-  .rail-main { min-width:0; font-size:12.5px; }
-  .rail-tag { display:inline-flex; align-items:center; justify-content:center; min-width:45px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
+  .rail-date { flex:0 0 64px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .rail-main { min-width:0; font-size:12.5px; line-height:1.4; }
+  .rail-tag { display:inline-flex; align-items:center; justify-content:center; min-width:42px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
   .odds-row { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:baseline; font-size:12px; padding:3px 0; }
   .odds-row .o { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .empty-state { padding:34px 28px; text-align:center; }
-  .empty-state h2 { font-size:21px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
-  .empty-state p { color:var(--muted); margin:0 auto; max-width:58ch; }
-  .disc { color:var(--muted); font-size:11.5px; line-height:1.55; margin:14px 0 0; }
-  .hidden { display:none !important; }
+  .r-pos { color:var(--up); font-size:11px; } .r-neg { color:var(--down); font-size:11px; }
+  .disc { color:var(--muted); font-size:11.5px; line-height:1.55; margin:16px 0 0; }
+  .mut { color:var(--muted); font-size:12px; }
+
   @media(max-width:900px){
-    .news-hero, .news-layout { grid-template-columns:1fr; }
-    .hero-main { min-height:0; }
-    .hero-main h1 { font-size:28px; }
+    .news-layout { grid-template-columns:1fr; }
+    .nx-stats { margin-left:0; }
     .rail { position:static; }
   }
   @media(max-width:560px){
-    .hero-main { padding:20px 16px; }
-    .news-card { grid-template-columns:1fr; }
-    .news-date { min-height:auto; flex-direction:row; justify-content:flex-start; padding:8px 14px; border-right:0; border-bottom:1px solid var(--line); }
-    .feed-toolbar { position:static; }
+    .nx-title { font-size:24px; }
+    .na-sum { grid-template-columns:auto minmax(0,1fr); }
+    .na-right { grid-column:1 / -1; justify-content:flex-start; }
   }
 
 </style>
@@ -167,6 +178,7 @@
         <a href="macro.html">📊 <span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">Regime · growth · inflation · nowcast</span><span class="l-zh">周期 · 增长 · 通胀 · 即时预测</span></span></a>
         <a href="news.html">📰 <span class="l-en">News Feed</span><span class="l-zh">新闻流</span><span class="d"><span class="l-en">Macro headlines · catalysts · sentiment</span><span class="l-zh">宏观头条 · 日程 · 情绪</span></span></a>
         <a href="us_stocks.html">📈 <span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Standouts · sectors · flows</span><span class="l-zh">精选 · 板块 · 资金</span></span></a>
+        <a href="sector_heatmap.html">🔥 <span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span><span class="d"><span class="l-en">All 503 names · market-cap treemap · click for our read</span><span class="l-zh">全部503只 · 市值树图 · 点击查看研判</span></span></a>
         <a href="baskets.html">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Equal-weight theme baskets vs S&P</span><span class="l-zh">等权主题篮子 vs 标普</span></span></a>
         <a href="allocation.html">🔄 <span class="l-en">Narrative Rotation</span><span class="l-zh">主题轮动</span><span class="d"><span class="l-en">Which theme to hold & when to rotate</span><span class="l-zh">持有哪个主题 · 何时轮动</span></span></a>
         <a href="news.html">🗞️ <span class="l-en">News</span><span class="l-zh">新闻</span><span class="d"><span class="l-en">Macro · markets · sectors · baskets · China</span><span class="l-zh">宏观 · 大盘 · 板块 · 篮子 · 中国</span></span></a>
@@ -286,60 +298,28 @@
 
 
 <main class="news-shell">
-  <section class="news-hero">
-    <article class="hero-main">
-      <div>
-        <p class="eyebrow"><span class="live-dot"></span><span class="l-en">Stock & Market News Feed</span><span class="l-zh">股票与市场新闻流</span><span>2026-06-25</span></p>
-        
-        <h1><a href="https://www.cnbc.com/2026/06/25/micron-stock-3q-earnings-memory.html" target="_blank" rel="noopener"><span class="l-en">Micron soars 15% after blockbuster earnings, lifting some chip stocks</span><span class="l-zh">美光科技财报亮眼，股价飙升15%，带动部分芯片股上涨</span></a></h1>
-        <p class="hero-dek"><span class="l-en">Qualitative stock and market headlines: earnings, guidance, analyst moves, deals, buybacks and company-specific catalysts, tagged for tickers and transmission channels.</span><span class="l-zh">定性股票与市场新闻：业绩、指引、分析师动作、并购、回购与个股催化，并标注相关标的与传导通道。</span></p>
-        
+  <header class="nx-head">
+    <div>
+      <h1 class="nx-title"><span class="l-en">Market &amp; Macro News</span><span class="l-zh">市场与宏观新闻</span></h1>
+      <p class="nx-sub"><span class="l-en">Reputable, macro-relevant headlines — earnings, guidance, deals, policy, inflation and growth — filtered, theme-tagged and ranked by impact. Press any story to open a condensed read. Context only; never a trade signal.</span><span class="l-zh">可靠、与宏观相关的头条 — 业绩、指引、并购、政策、通胀与增长 — 经筛选、标注主题并按影响力排序。点按任意条目展开精简解读。仅供背景，绝非交易信号。</span></p>
+    </div>
+    <div class="nx-stats">
+      <div class="nx-stat pos">
+        <span class="k"><span class="l-en">Tone</span><span class="l-zh">基调</span></span>
+        <span class="v"><span class="l-en">Optimistic</span><span class="l-zh">乐观</span></span>
       </div>
-      <div class="hero-meta">
-        
-        <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-        <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-        <span class="intel-pill imp-high"><b>81</b>/100 high</span>
-        <a class="read-link" href="https://www.cnbc.com/2026/06/25/micron-stock-3q-earnings-memory.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读来源</span></a>
-        
+      <div class="nx-stat warn">
+        <span class="k"><span class="l-en">Narrative</span><span class="l-zh">叙事</span></span>
+        <span class="v">83.7</span>
       </div>
-      
-      <div class="intel-row">
-        <span class="intel-pill">earnings</span>
-        <span class="intel-pill tk-chip">XLK</span><span class="intel-pill tk-chip">MU</span>
+      <div class="nx-stat info">
+        <span class="k"><span class="l-en">Stories</span><span class="l-zh">条目</span></span>
+        <span class="v">18</span>
       </div>
-      
-    </article>
+    </div>
+  </header>
 
-    <aside class="hero-side" aria-label="News context">
-      <div class="ticker sent-pos">
-        <div><div class="k"><span class="l-en">SF-Fed News Sentiment</span><span class="l-zh">旧金山联储新闻情绪</span></div>
-          <div class="v"><span class="l-en">Optimistic</span><span class="l-zh">乐观</span></div>
-          <div class="s"><span class="l-en">quant series, not headline AI</span><span class="l-zh">量化序列，非逐条AI</span></div></div>
-        <div class="num">+1.0</div>
-      </div>
-      <div class="ticker ndi-high">
-        <div><div class="k"><span class="l-en">Narrative Dominance</span><span class="l-zh">叙事主导</span></div>
-          <div class="v"><span class="l-en">High</span><span class="l-zh">高</span></div>
-          <div class="s"><span class="l-en">display-only risk texture</span><span class="l-zh">仅展示风险纹理</span></div></div>
-        <div class="num">83.7</div>
-      </div>
-      <div class="ticker">
-        <div><div class="k"><span class="l-en">Filtered Headlines</span><span class="l-zh">筛选头条</span></div>
-          <div class="v">18 <span class="l-en">kept</span><span class="l-zh">保留</span></div>
-          <div class="s">168 <span class="l-en">official</span><span class="l-zh">官方</span> · 167 RSS · 0 GDELT</div></div>
-        <div class="num">18</div>
-      </div>
-      <div class="ticker">
-        <div><div class="k"><span class="l-en">Intelligence Mix</span><span class="l-zh">情报结构</span></div>
-          <div class="v">4 <span class="l-en">high impact</span><span class="l-zh">高影响</span></div>
-          <div class="s">earnings</div></div>
-        <div class="num">62</div>
-      </div>
-    </aside>
-  </section>
-
-  <section class="news-layout">
+  <div class="news-layout">
     <div>
       <div class="feed-toolbar">
         <div class="search-box">
@@ -381,428 +361,503 @@
         <span class="feed-count" id="feedCount"></span>
       </div>
 
-      
-      <div class="feed" id="newsFeed">
+      <section class="summary-card">
+        <div class="sc-head">
+          <h2><span class="l-en">Market Summary</span><span class="l-zh">市场摘要</span></h2>
+          <span class="sc-updated"><span class="live-dot"></span><span data-ts="2026-06-26T10:48:34.359660+00:00" class="rel-time"><span class="l-en">Updated</span><span class="l-zh">更新于</span></span></span>
+        </div>
+
         
-        <a class="news-card" href="https://www.cnbc.com/2026/06/25/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="high" data-search="micron earnings, oil prices fall, the newest meme stock and more in morning squawk 美光财报、油价下跌、最新热门meme股等更多内容，尽在morning squawk cnbc.com stocks inflation earnings energy uso mu">
-          <div class="news-date">
-            <span class="rank">#2</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>81</b>/100</span>
+        <div id="newsFeed">
+          
+          <details class="na-item" open
+            data-theme="stocks" data-importance="high"
+            data-search="micron soars 15% after blockbuster earnings, lifting some chip stocks 美光科技财报亮眼，股价飙升15%，带动部分芯片股上涨 cnbc.com cnbc - tech stocks earnings xlk mu">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Micron soars 15% after blockbuster earnings, lifting some chip stocks</span><span class="l-zh">美光科技财报亮眼，股价飙升15%，带动部分芯片股上涨</span></span>
+              <span class="na-right">
+                <span class="na-src">CNBC - Tech</span>
+                <span class="na-imp high">81</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline in focus on XLK, MU, touching earnings. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>CNBC - Tech</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，聚焦 XLK、MU，涉及 earnings。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>CNBC - Tech</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">earnings</span>
+                <span class="na-pill tk">XLK</span><span class="na-pill tk">MU</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/06/25/micron-stock-3q-earnings-memory.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-25T20:31:40+00:00"></span>
+              </div>
             </div>
-            <h2 class="news-title"><span class="l-en">Micron earnings, oil prices fall, the newest meme stock and more in Morning Squawk</span><span class="l-zh">美光财报、油价下跌、最新热门meme股等更多内容，尽在Morning Squawk</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">inflation</span><span class="intel-pill">earnings</span><span class="intel-pill">energy</span>
-              <span class="intel-pill tk-chip">USO</span><span class="intel-pill tk-chip">MU</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">tier-1 macro term</span>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="high"
+            data-search="micron earnings, oil prices fall, the newest meme stock and more in morning squawk 美光财报、油价下跌、最新热门meme股等更多内容，尽在morning squawk cnbc.com cnbc - tech stocks inflation earnings energy uso mu">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Micron earnings, oil prices fall, the newest meme stock and more in Morning Squawk</span><span class="l-zh">美光财报、油价下跌、最新热门meme股等更多内容，尽在Morning Squawk</span></span>
+              <span class="na-right">
+                <span class="na-src">CNBC - Tech</span>
+                <span class="na-imp high">81</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline in focus on USO, MU, touching inflation, earnings, energy. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>CNBC - Tech</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，聚焦 USO、MU，涉及 inflation、earnings、energy。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>CNBC - Tech</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">inflation</span><span class="na-pill">earnings</span><span class="na-pill">energy</span>
+                <span class="na-pill tk">USO</span><span class="na-pill tk">MU</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/06/25/5-things-to-know-before-the-stock-market-opens.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-25T12:32:39+00:00"></span>
+              </div>
             </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="high"
+            data-search="cerebras ceo says margin forecast was 'misunderstood' as stock plummets after earnings cerebras首席执行官称利润率预测被“误解”，财报后股价暴跌 cnbc.com cnbc - tech stocks earnings guidance ">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Cerebras CEO says margin forecast was 'misunderstood' as stock plummets after earnings</span><span class="l-zh">Cerebras首席执行官称利润率预测被“误解”，财报后股价暴跌</span></span>
+              <span class="na-right">
+                <span class="na-src">CNBC - Tech</span>
+                <span class="na-imp high">81</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline, touching earnings, guidance. Flagged because: stock-focused news source; tier-1 macro term. Reported by <b>CNBC - Tech</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，涉及 earnings、guidance。 入选原因：stock-focused news source；tier-1 macro term。 来源：<b>CNBC - Tech</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">earnings</span><span class="na-pill">guidance</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/06/24/cerebras-cbrs-stock-earnings.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-24T20:01:14+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="high"
+            data-search="nvidia's stock struggles as kalshi traders bet chip prices are coming down 英伟达股价承压，kalshi交易员押注芯片价格将下跌 cnbc.com cnbc - investing stocks inflation fiscal_trade xlk nvda">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Nvidia's stock struggles as Kalshi traders bet chip prices are coming down</span><span class="l-zh">英伟达股价承压，Kalshi交易员押注芯片价格将下跌</span></span>
+              <span class="na-right">
+                <span class="na-src">CNBC - Investing</span>
+                <span class="na-imp high">74</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>high</b>-impact <b>Stocks</b> headline in focus on XLK, NVDA, touching inflation, fiscal trade. Flagged because: stock-focused news source; market-sensitive term. Reported by <b>CNBC - Investing</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>high</b>影响级的<b>个股</b>新闻，聚焦 XLK、NVDA，涉及 inflation、fiscal trade。 入选原因：stock-focused news source；market-sensitive term。 来源：<b>CNBC - Investing</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">inflation</span><span class="na-pill">fiscal trade</span>
+                <span class="na-pill tk">XLK</span><span class="na-pill tk">NVDA</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.cnbc.com/2026/06/22/nvidias-stock-struggles-as-kalshi-traders-bet-chip-prices-are-coming-down.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-22T20:09:04+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="medium"
+            data-search="fedex freight expects $605m-$645m in adjusted operating income on 4%-6% revenue growth through dec. 31, 2026 联邦快递货运预计截至2026年12月31日，以4%-6%营收增长为基础，调整后运营收入在6.05亿至6.45亿美元之间 seekingalpha.com seeking alpha - market currents stocks growth earnings analyst ">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">FedEx Freight expects $605M-$645M in adjusted operating income on 4%-6% revenue growth through Dec. 31, 2026</span><span class="l-zh">联邦快递货运预计截至2026年12月31日，以4%-6%营收增长为基础，调整后运营收入在6.05亿至6.45亿美元之间</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-imp medium">67</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline, touching growth, earnings, analyst. Flagged because: stock-focused news source; market-sensitive term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，涉及 growth、earnings、analyst。 入选原因：stock-focused news source；market-sensitive term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">growth</span><span class="na-pill">earnings</span><span class="na-pill">analyst</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4607621-fedex-freight-expects-605m-645m-in-adjusted-operating-income-on-4-percentminus-6-percent?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-26T00:33:22+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="medium"
+            data-search="capstone energy+ expects sg&a to trend to the high teens over 12 to 18 months as it targets 5 ppm liner delivery by year-end capstone energy+预计未来12至18个月sg&a（销售、一般及行政费用）将逐步攀升至接近20%，目标是年底前交付5 ppm（百万分之五）衬板 seekingalpha.com seeking alpha - market currents stocks energy sg uso xle">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Capstone Energy+ expects SG&A to trend to the high teens over 12 to 18 months as it targets 5 ppm liner delivery by year-end</span><span class="l-zh">Capstone Energy+预计未来12至18个月SG&A（销售、一般及行政费用）将逐步攀升至接近20%，目标是年底前交付5 ppm（百万分之五）衬板</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-imp medium">60</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline in focus on SG, USO, XLE, touching energy. Flagged because: stock-focused news source; stock catalyst theme. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，聚焦 SG、USO、XLE，涉及 energy。 入选原因：stock-focused news source；stock catalyst theme。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">energy</span>
+                <span class="na-pill tk">SG</span><span class="na-pill tk">USO</span><span class="na-pill tk">XLE</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4607622-capstone-energy-expects-sg-and-a-to-trend-to-the-high-teens-over-12-to-18-months-as-it?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-26T01:32:52+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="medium"
+            data-search="quantum anticipates $75m +/- $2m q1 revenue amid $45m backlog and no outstanding debt quantum预计第一季度营收为7500万美元±200万美元，在手订单4500万美元，且无未偿债务 seekingalpha.com seeking alpha - market currents stocks earnings ">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">Quantum anticipates $75M +/- $2M Q1 revenue amid $45M backlog and no outstanding debt</span><span class="l-zh">Quantum预计第一季度营收为7500万美元±200万美元，在手订单4500万美元，且无未偿债务</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-imp medium">67</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline, touching earnings. Flagged because: stock-focused news source; market-sensitive term. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，涉及 earnings。 入选原因：stock-focused news source；market-sensitive term。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">earnings</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4607619-quantum-anticipates-75m-2m-q1-revenue-amid-45m-backlog-and-no-outstanding-debt?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-25T23:32:51+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="stocks" data-importance="medium"
+            data-search="american outdoor projects fiscal 2027 net sales of $200m-$210m while targeting 6.5%-7.5% adjusted ebitda margin american outdoor预计2027财年净销售额为2亿至2.1亿美元，目标是调整后ebitda利润率达到6.5%至7.5% seekingalpha.com seeking alpha - market currents stocks fiscal_trade earnings ">
+            <summary class="na-sum">
+              <span class="na-theme th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
+              <span class="na-htitle"><span class="l-en">American Outdoor projects fiscal 2027 net sales of $200M-$210M while targeting 6.5%-7.5% adjusted EBITDA margin</span><span class="l-zh">American Outdoor预计2027财年净销售额为2亿至2.1亿美元，目标是调整后EBITDA利润率达到6.5%至7.5%</span></span>
+              <span class="na-right">
+                <span class="na-src">Seeking Alpha - Market Currents</span>
+                <span class="na-imp medium">60</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Stocks</b> headline, touching fiscal trade, earnings. Flagged because: stock-focused news source; stock catalyst theme. Reported by <b>Seeking Alpha - Market Currents</b> (stock_wire source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>个股</b>新闻，涉及 fiscal trade、earnings。 入选原因：stock-focused news source；stock catalyst theme。 来源：<b>Seeking Alpha - Market Currents</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">fiscal trade</span><span class="na-pill">earnings</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://seekingalpha.com/news/4607620-american-outdoor-projects-fiscal-2027-net-sales-of-200m-210m-while-targeting-6_5-percentminus?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-26T00:02:59+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="deals" data-importance="medium"
+            data-search="this stock had its ipo the same month as palantir. its price action has been wildly different, but you should buy the dip here. 这只股票与palantir同月上市，股价走势却截然不同，但此处应逢低买入 yahoo.com yahoo finance - top stories deals equities deals pltr">
+            <summary class="na-sum">
+              <span class="na-theme th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="na-htitle"><span class="l-en">This Stock Had Its IPO the Same Month as Palantir. Its Price Action Has Been Wildly Different, But You Should Buy the Dip Here.</span><span class="l-zh">这只股票与Palantir同月上市，股价走势却截然不同，但此处应逢低买入</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">56</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Deals</b> headline in focus on PLTR, touching equities, deals. Flagged because: quality source; market-sensitive term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>并购/IPO</b>新闻，聚焦 PLTR，涉及 equities、deals。 入选原因：quality source；market-sensitive term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">equities</span><span class="na-pill">deals</span>
+                <span class="na-pill tk">PLTR</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/stock-had-ipo-same-month-160226919.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-24T16:02:26Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings" data-importance="medium"
+            data-search="cerebras stock plunges on earnings. even an openai deal can’t calm the margin panic. cerebras股价因财报暴跌，即使有openai合作也无法平息市场对其利润率的担忧 yahoo.com yahoo finance - top stories earnings earnings ">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">Cerebras Stock Plunges on Earnings. Even an OpenAI Deal Can’t Calm the Margin Panic.</span><span class="l-zh">Cerebras股价因财报暴跌，即使有OpenAI合作也无法平息市场对其利润率的担忧</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">63</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Earnings</b> headline, touching earnings. Flagged because: quality source; tier-1 macro term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>业绩</b>新闻，涉及 earnings。 入选原因：quality source；tier-1 macro term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">earnings</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/cerebras-stock-plunges-earnings-even-154955333.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-24T15:49:55Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="deals" data-importance="medium"
+            data-search="ai chip company sets $29 billion u.s. offering in another big-time ipo ai芯片公司计划以290亿美元规模美国上市，又一重磅ipo yahoo.com yahoo finance - top stories deals equities deals qqq xlk">
+            <summary class="na-sum">
+              <span class="na-theme th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="na-htitle"><span class="l-en">AI Chip Company Sets $29 Billion U.S. Offering In Another Big-Time IPO</span><span class="l-zh">AI芯片公司计划以290亿美元规模美国上市，又一重磅IPO</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">49</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Deals</b> headline in focus on QQQ, XLK, touching equities, deals. Flagged because: quality source; market-sensitive term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>并购/IPO</b>新闻，聚焦 QQQ、XLK，涉及 equities、deals。 入选原因：quality source；market-sensitive term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">equities</span><span class="na-pill">deals</span>
+                <span class="na-pill tk">QQQ</span><span class="na-pill tk">XLK</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.investors.com/news/sk-hynix-ai-chip-company-ipo/?src=A00220&yptr=yahoo" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-24T16:15:24Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="earnings" data-importance="medium"
+            data-search="here’s why i’m selling micron before earnings. it’s a matter of risk control, not lack of conviction. 这就是为什么我将在财报前卖出美光——这是风险控制，而非缺乏信心 yahoo.com yahoo finance - top stories earnings earnings mu">
+            <summary class="na-sum">
+              <span class="na-theme th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="na-htitle"><span class="l-en">Here’s Why I’m Selling Micron Before Earnings. It’s a Matter of Risk Control, Not Lack of Conviction.</span><span class="l-zh">这就是为什么我将在财报前卖出美光——这是风险控制，而非缺乏信心</span></span>
+              <span class="na-right">
+                <span class="na-src">Yahoo Finance - Top Stories</span>
+                <span class="na-imp medium">56</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Earnings</b> headline in focus on MU, touching earnings. Flagged because: quality source; tier-1 macro term. Reported by <b>Yahoo Finance - Top Stories</b> (quality source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>业绩</b>新闻，聚焦 MU，涉及 earnings。 入选原因：quality source；tier-1 macro term。 来源：<b>Yahoo Finance - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">earnings</span>
+                <span class="na-pill tk">MU</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://finance.yahoo.com/markets/stocks/articles/why-m-selling-micron-earnings-155422477.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-24T15:54:22Z"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="deals" data-importance="medium"
+            data-search="after losing my son, would it be a mistake to sell my recently purchased house and move to my hometown? 失去了儿子，卖掉刚买的房子搬回老家，会是错误的决定吗？ marketwatch.com marketwatch - top stories deals deals ">
+            <summary class="na-sum">
+              <span class="na-theme th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
+              <span class="na-htitle"><span class="l-en">After losing my son, would it be a mistake to sell my recently purchased house and move to my hometown?</span><span class="l-zh">失去了儿子，卖掉刚买的房子搬回老家，会是错误的决定吗？</span></span>
+              <span class="na-right">
+                <span class="na-src">MarketWatch - Top Stories</span>
+                <span class="na-imp medium">57</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Deals</b> headline, touching deals. Flagged because: tier-1 news source; market-sensitive term. Reported by <b>MarketWatch - Top Stories</b> (tier1 source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>并购/IPO</b>新闻，涉及 deals。 入选原因：tier-1 news source；market-sensitive term。 来源：<b>MarketWatch - Top Stories</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">deals</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.marketwatch.com/story/my-son-passed-away-am-i-crazy-to-move-to-my-former-home-and-sell-a-house-i-bought-in-september-f1f5f41a?mod=mw_rss_topstories" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-25T20:54:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="growth" data-importance="medium"
+            data-search="gdp, (third estimate), industries, corporate profits, state gdp, and state personal income, 1st quarter 2026 2026年第一季度gdp（第三次估算）、行业、企业利润、州gdp及州个人收入数据 apps.bea.gov bea - news releases growth rates growth earnings consumer ">
+            <summary class="na-sum">
+              <span class="na-theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="na-htitle"><span class="l-en">GDP, (Third Estimate), Industries, Corporate Profits, State GDP, and State Personal Income, 1st Quarter 2026</span><span class="l-zh">2026年第一季度GDP（第三次估算）、行业、企业利润、州GDP及州个人收入数据</span></span>
+              <span class="na-right">
+                <span class="na-src">BEA - News Releases</span>
+                <span class="na-imp medium">60</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Growth</b> headline, touching rates, growth, earnings. Flagged because: first-party macro release; tier-1 macro term. Reported by <b>BEA - News Releases</b> (official source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>增长</b>新闻，涉及 rates、growth、earnings。 入选原因：first-party macro release；tier-1 macro term。 来源：<b>BEA - News Releases</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">rates</span><span class="na-pill">growth</span><span class="na-pill">earnings</span><span class="na-pill">consumer</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.bea.gov/news/2026/gdp-third-estimate-industries-corporate-profits-state-gdp-and-state-personal-income-1st" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-25T12:30:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="monetary" data-importance="medium"
+            data-search="will ai lower interest rates? 人工智能会降低利率吗？ economist.com the economist - finance & economics monetary rates qqq">
+            <summary class="na-sum">
+              <span class="na-theme th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="na-htitle"><span class="l-en">Will AI lower interest rates?</span><span class="l-zh">人工智能会降低利率吗？</span></span>
+              <span class="na-right">
+                <span class="na-src">The Economist - Finance & Economics</span>
+                <span class="na-imp medium">56</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Fed</b> headline in focus on QQQ, touching rates. Flagged because: tier-1 news source; tier-1 macro term. Reported by <b>The Economist - Finance & Economics</b> (tier1 source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>美联储</b>新闻，聚焦 QQQ，涉及 rates。 入选原因：tier-1 news source；tier-1 macro term。 来源：<b>The Economist - Finance & Economics</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">rates</span>
+                <span class="na-pill tk">QQQ</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/06/25/will-ai-lower-interest-rates" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-25T09:39:49+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="fiscal" data-importance="medium"
+            data-search="waiving sanctions on iranian oil is a huge concession by america 豁免伊朗石油制裁是美国做出的巨大让步 economist.com the economist - finance & economics fiscal fiscal_trade energy uso">
+            <summary class="na-sum">
+              <span class="na-theme th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
+              <span class="na-htitle"><span class="l-en">Waiving sanctions on Iranian oil is a huge concession by America</span><span class="l-zh">豁免伊朗石油制裁是美国做出的巨大让步</span></span>
+              <span class="na-right">
+                <span class="na-src">The Economist - Finance & Economics</span>
+                <span class="na-imp medium">48</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Fiscal</b> headline in focus on USO, touching fiscal trade, energy. Flagged because: tier-1 news source; tier-1 macro term. Reported by <b>The Economist - Finance & Economics</b> (tier1 source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>财政</b>新闻，聚焦 USO，涉及 fiscal trade、energy。 入选原因：tier-1 news source；tier-1 macro term。 来源：<b>The Economist - Finance & Economics</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">fiscal trade</span><span class="na-pill">energy</span>
+                <span class="na-pill tk">USO</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.economist.com/finance-and-economics/2026/06/23/waiving-sanctions-on-iranian-oil-is-a-huge-concession-by-america" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-23T19:52:15+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="growth" data-importance="medium"
+            data-search="gdp & personal income mapping gdp与个人收入分布图 bea.gov bea - current releases growth growth consumer ">
+            <summary class="na-sum">
+              <span class="na-theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="na-htitle"><span class="l-en">GDP & Personal Income Mapping</span><span class="l-zh">GDP与个人收入分布图</span></span>
+              <span class="na-right">
+                <span class="na-src">BEA - Current Releases</span>
+                <span class="na-imp medium">53</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>medium</b>-impact <b>Growth</b> headline, touching growth, consumer. Flagged because: first-party macro release; tier-1 macro term. Reported by <b>BEA - Current Releases</b> (official source).</span>
+<span class="l-zh">一条<b>medium</b>影响级的<b>增长</b>新闻，涉及 growth、consumer。 入选原因：first-party macro release；tier-1 macro term。 来源：<b>BEA - Current Releases</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">growth</span><span class="na-pill">consumer</span>
+                
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://apps.bea.gov/itable/?ReqID=99&step=1" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                
+              </div>
+            </div>
+          </details>
+          
+          <details class="na-item"
+            data-theme="growth" data-importance="low"
+            data-search="manufacturing and trade inventories and sales 制造业与贸易库存及销售数据 census.gov census - economic indicators growth growth fiscal_trade xli">
+            <summary class="na-sum">
+              <span class="na-theme th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
+              <span class="na-htitle"><span class="l-en">Manufacturing and Trade Inventories and Sales</span><span class="l-zh">制造业与贸易库存及销售数据</span></span>
+              <span class="na-right">
+                <span class="na-src">Census - Economic Indicators</span>
+                <span class="na-imp low">46</span>
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary"><span class="l-en">A <b>low</b>-impact <b>Growth</b> headline in focus on XLI, touching growth, fiscal trade. Flagged because: first-party macro release; market-sensitive term. Reported by <b>Census - Economic Indicators</b> (official source).</span>
+<span class="l-zh">一条<b>low</b>影响级的<b>增长</b>新闻，聚焦 XLI，涉及 growth、fiscal trade。 入选原因：first-party macro release；market-sensitive term。 来源：<b>Census - Economic Indicators</b>。</span></p>
+              <div class="na-tags">
+                <span class="na-pill">growth</span><span class="na-pill">fiscal trade</span>
+                <span class="na-pill tk">XLI</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="https://www.census.gov/mtis/index.html" target="_blank" rel="noopener"><span class="l-en">Read source</span><span class="l-zh">阅读原文</span> →</a>
+                <span class="na-when rel-time" data-ts="2026-06-17T14:00:00+00:00"></span>
+              </div>
+            </div>
+          </details>
+          
+        </div>
+        <div class="empty-state hidden" id="noFiltered">
+          <h2><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h2>
+          <p><span class="l-en">Clear the search or switch back to All themes.</span><span class="l-zh">清空搜索或切回全部主题。</span></p>
+        </div>
         
-        <a class="news-card" href="https://www.cnbc.com/2026/06/24/cerebras-cbrs-stock-earnings.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="high" data-search="cerebras ceo says margin forecast was 'misunderstood' as stock plummets after earnings cerebras首席执行官称利润率预测被“误解”，财报后股价暴跌 cnbc.com stocks earnings guidance ">
-          <div class="news-date">
-            <span class="rank">#3</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Tech</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>81</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Cerebras CEO says margin forecast was 'misunderstood' as stock plummets after earnings</span><span class="l-zh">Cerebras首席执行官称利润率预测被“误解”，财报后股价暴跌</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">earnings</span><span class="intel-pill">guidance</span>
-              
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.cnbc.com/2026/06/22/nvidias-stock-struggles-as-kalshi-traders-bet-chip-prices-are-coming-down.html" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="high" data-search="nvidia's stock struggles as kalshi traders bet chip prices are coming down 英伟达股价承压，kalshi交易员押注芯片价格将下跌 cnbc.com stocks inflation fiscal_trade xlk nvda">
-          <div class="news-date">
-            <span class="rank">#4</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>CNBC - Investing</b> · stock_wire</span>
-              <span class="intel-pill imp-high"><b>74</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Nvidia's stock struggles as Kalshi traders bet chip prices are coming down</span><span class="l-zh">英伟达股价承压，Kalshi交易员押注芯片价格将下跌</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">inflation</span><span class="intel-pill">fiscal_trade</span>
-              <span class="intel-pill tk-chip">XLK</span><span class="intel-pill tk-chip">NVDA</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://seekingalpha.com/news/4607621-fedex-freight-expects-605m-645m-in-adjusted-operating-income-on-4-percentminus-6-percent?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="fedex freight expects $605m-$645m in adjusted operating income on 4%-6% revenue growth through dec. 31, 2026 联邦快递货运预计截至2026年12月31日，以4%-6%营收增长为基础，调整后运营收入在6.05亿至6.45亿美元之间 seekingalpha.com stocks growth earnings analyst ">
-          <div class="news-date">
-            <span class="rank">#5</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">FedEx Freight expects $605M-$645M in adjusted operating income on 4%-6% revenue growth through Dec. 31, 2026</span><span class="l-zh">联邦快递货运预计截至2026年12月31日，以4%-6%营收增长为基础，调整后运营收入在6.05亿至6.45亿美元之间</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">growth</span><span class="intel-pill">earnings</span><span class="intel-pill">analyst</span>
-              
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://seekingalpha.com/news/4607622-capstone-energy-expects-sg-and-a-to-trend-to-the-high-teens-over-12-to-18-months-as-it?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="capstone energy+ expects sg&a to trend to the high teens over 12 to 18 months as it targets 5 ppm liner delivery by year-end capstone energy+预计未来12至18个月sg&a（销售、一般及行政费用）将逐步攀升至接近20%，目标是年底前交付5 ppm（百万分之五）衬板 seekingalpha.com stocks energy sg uso xle">
-          <div class="news-date">
-            <span class="rank">#6</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>60</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Capstone Energy+ expects SG&A to trend to the high teens over 12 to 18 months as it targets 5 ppm liner delivery by year-end</span><span class="l-zh">Capstone Energy+预计未来12至18个月SG&A（销售、一般及行政费用）将逐步攀升至接近20%，目标是年底前交付5 ppm（百万分之五）衬板</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">energy</span>
-              <span class="intel-pill tk-chip">SG</span><span class="intel-pill tk-chip">USO</span><span class="intel-pill tk-chip">XLE</span>
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://seekingalpha.com/news/4607619-quantum-anticipates-75m-2m-q1-revenue-amid-45m-backlog-and-no-outstanding-debt?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="quantum anticipates $75m +/- $2m q1 revenue amid $45m backlog and no outstanding debt quantum预计第一季度营收为7500万美元±200万美元，在手订单4500万美元，且无未偿债务 seekingalpha.com stocks earnings ">
-          <div class="news-date">
-            <span class="rank">#7</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>67</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Quantum anticipates $75M +/- $2M Q1 revenue amid $45M backlog and no outstanding debt</span><span class="l-zh">Quantum预计第一季度营收为7500万美元±200万美元，在手订单4500万美元，且无未偿债务</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">earnings</span>
-              
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://seekingalpha.com/news/4607620-american-outdoor-projects-fiscal-2027-net-sales-of-200m-210m-while-targeting-6_5-percentminus?utm_source=feed_news_all&utm_medium=referral&feed_item_type=news" target="_blank" rel="noopener"
-           data-theme="stocks" data-importance="medium" data-search="american outdoor projects fiscal 2027 net sales of $200m-$210m while targeting 6.5%-7.5% adjusted ebitda margin american outdoor预计2027财年净销售额为2亿至2.1亿美元，目标是调整后ebitda利润率达到6.5%至7.5% seekingalpha.com stocks fiscal_trade earnings ">
-          <div class="news-date">
-            <span class="rank">#8</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-stocks"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="source-chip"><b>Seeking Alpha - Market Currents</b> · stock_wire</span>
-              <span class="intel-pill imp-medium"><b>60</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">American Outdoor projects fiscal 2027 net sales of $200M-$210M while targeting 6.5%-7.5% adjusted EBITDA margin</span><span class="l-zh">American Outdoor预计2027财年净销售额为2亿至2.1亿美元，目标是调整后EBITDA利润率达到6.5%至7.5%</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">fiscal_trade</span><span class="intel-pill">earnings</span>
-              
-              <span class="intel-pill">stock-focused news source</span><span class="intel-pill">stock catalyst theme</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://finance.yahoo.com/markets/stocks/articles/stock-had-ipo-same-month-160226919.html" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="medium" data-search="this stock had its ipo the same month as palantir. its price action has been wildly different, but you should buy the dip here. 这只股票与palantir同月上市，股价走势却截然不同，但此处应逢低买入 yahoo.com deals equities deals pltr">
-          <div class="news-date">
-            <span class="rank">#9</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>Yahoo Finance - Top Stories</b> · quality</span>
-              <span class="intel-pill imp-medium"><b>56</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">This Stock Had Its IPO the Same Month as Palantir. Its Price Action Has Been Wildly Different, But You Should Buy the Dip Here.</span><span class="l-zh">这只股票与Palantir同月上市，股价走势却截然不同，但此处应逢低买入</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">equities</span><span class="intel-pill">deals</span>
-              <span class="intel-pill tk-chip">PLTR</span>
-              <span class="intel-pill">quality source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://finance.yahoo.com/markets/stocks/articles/cerebras-stock-plunges-earnings-even-154955333.html" target="_blank" rel="noopener"
-           data-theme="earnings" data-importance="medium" data-search="cerebras stock plunges on earnings. even an openai deal can’t calm the margin panic. cerebras股价因财报暴跌，即使有openai合作也无法平息市场对其利润率的担忧 yahoo.com earnings earnings ">
-          <div class="news-date">
-            <span class="rank">#10</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="source-chip"><b>Yahoo Finance - Top Stories</b> · quality</span>
-              <span class="intel-pill imp-medium"><b>63</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Cerebras Stock Plunges on Earnings. Even an OpenAI Deal Can’t Calm the Margin Panic.</span><span class="l-zh">Cerebras股价因财报暴跌，即使有OpenAI合作也无法平息市场对其利润率的担忧</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">earnings</span>
-              
-              <span class="intel-pill">quality source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.investors.com/news/sk-hynix-ai-chip-company-ipo/?src=A00220&yptr=yahoo" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="medium" data-search="ai chip company sets $29 billion u.s. offering in another big-time ipo ai芯片公司计划以290亿美元规模美国上市，又一重磅ipo yahoo.com deals equities deals qqq xlk">
-          <div class="news-date">
-            <span class="rank">#11</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>Yahoo Finance - Top Stories</b> · quality</span>
-              <span class="intel-pill imp-medium"><b>49</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">AI Chip Company Sets $29 Billion U.S. Offering In Another Big-Time IPO</span><span class="l-zh">AI芯片公司计划以290亿美元规模美国上市，又一重磅IPO</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">equities</span><span class="intel-pill">deals</span>
-              <span class="intel-pill tk-chip">QQQ</span><span class="intel-pill tk-chip">XLK</span>
-              <span class="intel-pill">quality source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://finance.yahoo.com/markets/stocks/articles/why-m-selling-micron-earnings-155422477.html" target="_blank" rel="noopener"
-           data-theme="earnings" data-importance="medium" data-search="here’s why i’m selling micron before earnings. it’s a matter of risk control, not lack of conviction. 这就是为什么我将在财报前卖出美光——这是风险控制，而非缺乏信心 yahoo.com earnings earnings mu">
-          <div class="news-date">
-            <span class="rank">#12</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-earnings"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="source-chip"><b>Yahoo Finance - Top Stories</b> · quality</span>
-              <span class="intel-pill imp-medium"><b>56</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Here’s Why I’m Selling Micron Before Earnings. It’s a Matter of Risk Control, Not Lack of Conviction.</span><span class="l-zh">这就是为什么我将在财报前卖出美光——这是风险控制，而非缺乏信心</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">earnings</span>
-              <span class="intel-pill tk-chip">MU</span>
-              <span class="intel-pill">quality source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.marketwatch.com/story/my-son-passed-away-am-i-crazy-to-move-to-my-former-home-and-sell-a-house-i-bought-in-september-f1f5f41a?mod=mw_rss_topstories" target="_blank" rel="noopener"
-           data-theme="deals" data-importance="medium" data-search="after losing my son, would it be a mistake to sell my recently purchased house and move to my hometown? 失去了儿子，卖掉刚买的房子搬回老家，会是错误的决定吗？ marketwatch.com deals deals ">
-          <div class="news-date">
-            <span class="rank">#13</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-deals"><span class="l-en">Deals</span><span class="l-zh">并购/IPO</span></span>
-              <span class="source-chip"><b>MarketWatch - Top Stories</b> · tier1</span>
-              <span class="intel-pill imp-medium"><b>57</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">After losing my son, would it be a mistake to sell my recently purchased house and move to my hometown?</span><span class="l-zh">失去了儿子，卖掉刚买的房子搬回老家，会是错误的决定吗？</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">deals</span>
-              
-              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.bea.gov/news/2026/gdp-third-estimate-industries-corporate-profits-state-gdp-and-state-personal-income-1st" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="medium" data-search="gdp, (third estimate), industries, corporate profits, state gdp, and state personal income, 1st quarter 2026 2026年第一季度gdp（第三次估算）、行业、企业利润、州gdp及州个人收入数据 apps.bea.gov growth rates growth earnings consumer ">
-          <div class="news-date">
-            <span class="rank">#14</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="source-chip"><b>BEA - News Releases</b> · official</span>
-              <span class="intel-pill imp-medium"><b>60</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">GDP, (Third Estimate), Industries, Corporate Profits, State GDP, and State Personal Income, 1st Quarter 2026</span><span class="l-zh">2026年第一季度GDP（第三次估算）、行业、企业利润、州GDP及州个人收入数据</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">rates</span><span class="intel-pill">growth</span><span class="intel-pill">earnings</span><span class="intel-pill">consumer</span>
-              
-              <span class="intel-pill">first-party macro release</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.economist.com/finance-and-economics/2026/06/25/will-ai-lower-interest-rates" target="_blank" rel="noopener"
-           data-theme="monetary" data-importance="medium" data-search="will ai lower interest rates? 人工智能会降低利率吗？ economist.com monetary rates qqq">
-          <div class="news-date">
-            <span class="rank">#15</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-monetary"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="source-chip"><b>The Economist - Finance & Economics</b> · tier1</span>
-              <span class="intel-pill imp-medium"><b>56</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Will AI lower interest rates?</span><span class="l-zh">人工智能会降低利率吗？</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">rates</span>
-              <span class="intel-pill tk-chip">QQQ</span>
-              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.economist.com/finance-and-economics/2026/06/23/waiving-sanctions-on-iranian-oil-is-a-huge-concession-by-america" target="_blank" rel="noopener"
-           data-theme="fiscal" data-importance="medium" data-search="waiving sanctions on iranian oil is a huge concession by america 豁免伊朗石油制裁是美国做出的巨大让步 economist.com fiscal fiscal_trade energy uso">
-          <div class="news-date">
-            <span class="rank">#16</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-fiscal"><span class="l-en">Fiscal</span><span class="l-zh">财政</span></span>
-              <span class="source-chip"><b>The Economist - Finance & Economics</b> · tier1</span>
-              <span class="intel-pill imp-medium"><b>48</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Waiving sanctions on Iranian oil is a huge concession by America</span><span class="l-zh">豁免伊朗石油制裁是美国做出的巨大让步</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">fiscal_trade</span><span class="intel-pill">energy</span>
-              <span class="intel-pill tk-chip">USO</span>
-              <span class="intel-pill">tier-1 news source</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://apps.bea.gov/itable/?ReqID=99&step=1" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="medium" data-search="gdp & personal income mapping gdp与个人收入分布图 bea.gov growth growth consumer ">
-          <div class="news-date">
-            <span class="rank">#17</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="source-chip"><b>BEA - Current Releases</b> · official</span>
-              <span class="intel-pill imp-medium"><b>53</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">GDP & Personal Income Mapping</span><span class="l-zh">GDP与个人收入分布图</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">growth</span><span class="intel-pill">consumer</span>
-              
-              <span class="intel-pill">first-party macro release</span><span class="intel-pill">tier-1 macro term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-        <a class="news-card" href="https://www.census.gov/mtis/index.html" target="_blank" rel="noopener"
-           data-theme="growth" data-importance="low" data-search="manufacturing and trade inventories and sales 制造业与贸易库存及销售数据 census.gov growth growth fiscal_trade xli">
-          <div class="news-date">
-            <span class="rank">#18</span>
-            <span class="label"><span class="l-en">story</span><span class="l-zh">条目</span></span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-growth"><span class="l-en">Growth</span><span class="l-zh">增长</span></span>
-              <span class="source-chip"><b>Census - Economic Indicators</b> · official</span>
-              <span class="intel-pill imp-low"><b>46</b>/100</span>
-            </div>
-            <h2 class="news-title"><span class="l-en">Manufacturing and Trade Inventories and Sales</span><span class="l-zh">制造业与贸易库存及销售数据</span></h2>
-            <div class="intel-row">
-              <span class="intel-pill">growth</span><span class="intel-pill">fiscal_trade</span>
-              <span class="intel-pill tk-chip">XLI</span>
-              <span class="intel-pill">first-party macro release</span><span class="intel-pill">market-sensitive term</span>
-            </div>
-            <div class="news-meta"><span><span class="l-en">Context-only macro headline</span><span class="l-zh">仅供背景的宏观头条</span></span><span><span class="l-en">Open source</span><span class="l-zh">打开来源</span></span></div>
-          </div>
-        </a>
-        
-      </div>
-      <div class="empty-state hidden" id="noFiltered">
-        <h2><span class="l-en">No stories match that view.</span><span class="l-zh">没有符合当前视图的新闻。</span></h2>
-        <p><span class="l-en">Clear the search or switch back to All themes.</span><span class="l-zh">清空搜索或切回全部主题。</span></p>
-      </div>
-      
+
+        <div class="sc-foot">
+          <span class="sc-srcs"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+          <span><b>8</b> <span class="l-en">sources</span><span class="l-zh">来源</span> · 335 <span class="l-en">scanned</span><span class="l-zh">已扫描</span> · 18 <span class="l-en">kept</span><span class="l-zh">保留</span></span>
+          <span style="margin-left:auto">168 <span class="l-en">official</span><span class="l-zh">官方</span> · 167 RSS · 0 GDELT</span>
+        </div>
+      </section>
+
       
       <p class="disc"><span class="l-en">Context only — not a signal. These headlines are filtered (reputable sources, macro themes only) and shown as background; the “sentiment” gauge is the SF-Fed Daily News Sentiment Index (a quantitative series), NOT a per-headline AI judgement. Nothing here is an input to any score, signal or allocation, and the mechanical model never sees it. Upcoming-catalyst dates are scheduling information, not forecasts.</span><span class="l-zh">仅作背景，非信号。以下头条已经过筛选（仅可靠来源、仅宏观主题）；“情绪”指标采用旧金山联储每日新闻情绪指数（一个量化序列），并非逐条新闻的 AI 判断。这里没有任何内容会进入任何评分、信号或配置，机械模型也从不读取它们。即将到来的催化日期为日程信息，而非预测。</span></p>
       
     </div>
 
     <aside class="rail">
-      <section class="rail-card">
-        <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
-        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main">4 high-impact items; dominant channel earnings; source mix stock_wire:8, quality:4, tier1:3</div></div>
-        <div class="rail-line">
-          <div class="rail-date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div>
-          <div class="rail-main">
-            <span class="rail-tag">earnings</span><span class="rail-tag">fiscal_trade</span><span class="rail-tag">growth</span><span class="rail-tag">energy</span><span class="rail-tag">deals</span>
-          </div>
-        </div>
-        <div class="rail-line">
-          <div class="rail-date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div>
-          <div class="rail-main">
-            <span class="rail-tag">XLK</span><span class="rail-tag">MU</span><span class="rail-tag">USO</span><span class="rail-tag">QQQ</span><span class="rail-tag">NVDA</span><span class="rail-tag">SG</span>
-          </div>
-        </div>
-        <div class="rail-line">
-          <div class="rail-date"><span class="l-en">Sources</span><span class="l-zh">来源</span></div>
-          <div class="rail-main">
-            <span class="rail-tag">stock_wire 8</span><span class="rail-tag">quality 4</span><span class="rail-tag">tier1 3</span><span class="rail-tag">official 3</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="rail-card">
-        <h2><span class="l-en">High-impact calendar</span><span class="l-zh">高影响日程</span></h2>
-        
-        <div class="rail-line">
-          <div class="rail-date">Thu Jul 2<br>08:30 ET</div>
-          <div class="rail-main"><span class="rail-tag">NFP</span>Jobs report (nonfarm payrolls)</div>
-        </div>
-        
-      </section>
-
       <section class="rail-card">
         <h2><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化</span></h2>
         
@@ -833,6 +888,16 @@
         
       </section>
 
+      <section class="rail-card">
+        <h2><span class="l-en">High-impact calendar</span><span class="l-zh">高影响日程</span></h2>
+        
+        <div class="rail-line">
+          <div class="rail-date">Thu Jul 2<br>08:30 ET</div>
+          <div class="rail-main"><span class="rail-tag">NFP</span>Jobs report (nonfarm payrolls)</div>
+        </div>
+        
+      </section>
+
       
       <section class="rail-card">
         <h2><span class="l-en">Market-implied odds</span><span class="l-zh">市场隐含概率</span></h2>
@@ -840,7 +905,7 @@
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Next Fed decision</span><span class="l-zh">下次美联储决议</span></div>
           
-          <div class="odds-row"><span class="o">No change</span><b>81.5%</b><span class="r-pos">+6.0</span></div>
+          <div class="odds-row"><span class="o">No change</span><b>80.5%</b><span class="r-pos">+5.0</span></div>
           
           <div class="odds-row"><span class="o">25 bps increase</span><b>17.4%</b><span class="r-neg">-5.8</span></div>
           
@@ -851,30 +916,45 @@
         <div class="rail-line" style="display:block">
           <div class="rail-main" style="font-weight:700;margin-bottom:4px"><span class="l-en">Fed cuts this year</span><span class="l-zh">今年降息次数</span></div>
           
-          <div class="odds-row"><span class="o">0 (0 bps)</span><b>79.8%</b><span class="r-pos">+0.7</span></div>
+          <div class="odds-row"><span class="o">0 (0 bps)</span><b>79.1%</b><span></span></div>
           
           <div class="odds-row"><span class="o">1 (25 bps)</span><b>12.5%</b><span></span></div>
           
-          <div class="odds-row"><span class="o">2 (50 bps)</span><b>3.5%</b><span class="r-pos">+0.5</span></div>
+          <div class="odds-row"><span class="o">2 (50 bps)</span><b>3.5%</b><span class="r-pos">+0.4</span></div>
           
         </div>
         
+        <p class="mut" style="font-size:10px;margin:4px 0 0"><span class="l-en">Crowd expectation, not a forecast.</span><span class="l-zh">群体预期，非预测。</span></p>
       </section>
       
+
+      <section class="rail-card">
+        <h2><span class="l-en">Feed intelligence</span><span class="l-zh">新闻情报</span></h2>
+        <div class="rail-line"><div class="rail-date"><span class="l-en">Read</span><span class="l-zh">读数</span></div><div class="rail-main">4 high-impact items; dominant channel earnings; source mix stock_wire:8, quality:4, tier1:3</div></div>
+        <div class="rail-line">
+          <div class="rail-date"><span class="l-en">Channels</span><span class="l-zh">通道</span></div>
+          <div class="rail-main"><span class="rail-tag">earnings</span><span class="rail-tag">fiscal_trade</span><span class="rail-tag">growth</span><span class="rail-tag">energy</span><span class="rail-tag">deals</span></div>
+        </div>
+        <div class="rail-line">
+          <div class="rail-date"><span class="l-en">Tickers</span><span class="l-zh">标的</span></div>
+          <div class="rail-main"><span class="rail-tag">XLK</span><span class="rail-tag">MU</span><span class="rail-tag">USO</span><span class="rail-tag">QQQ</span><span class="rail-tag">NVDA</span><span class="rail-tag">SG</span></div>
+        </div>
+        
+        <div class="rail-line"><div class="rail-date"><span class="l-en">SF-Fed</span><span class="l-zh">旧金山联储</span></div><div class="rail-main"><span class="l-en">Daily News Sentiment</span><span class="l-zh">每日新闻情绪</span>: <b class="r-pos"><span class="l-en">optimistic</span><span class="l-zh">乐观</span></b> · z +1.0</div></div>
+        
+      </section>
 
       
       <section class="rail-card">
         <h2><span class="l-en">Narrative texture</span><span class="l-zh">叙事纹理</span></h2>
+        <div class="rail-line"><div class="rail-date">NDI</div><div class="rail-main"><b>83.7/100</b> · <span class="l-en">High</span><span class="l-zh">高</span> <span class="mut">(<span class="l-en">display-only</span><span class="l-zh">仅展示</span>)</span></div></div>
         <div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">99.2<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
         <div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">96.0<span class="l-en">th pct</span><span class="l-zh">百分位</span> · <span class="l-en">led by</span><span class="l-zh">主导</span> <span class="l-en">threats</span><span class="l-zh">威胁</span></div></div>
         <div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">55.8<span class="l-en">th pct</span><span class="l-zh">百分位</span></div></div>
-        
-        <div class="rail-line"><div class="rail-date"><span class="l-en">Bus</span><span class="l-zh">总线</span></div><div class="rail-main">6 <span class="l-en">events</span><span class="l-zh">事件</span>/7d · 100% <span class="l-en">unscheduled</span><span class="l-zh">非排程</span></div></div>
-        
       </section>
       
     </aside>
-  </section>
+  </div>
 </main>
 
 
@@ -885,7 +965,7 @@
 <script>
 (function(){
   var feed=document.getElementById('newsFeed');
-  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.news-card')) : [];
+  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.na-item')) : [];
   var search=document.getElementById('newsSearch');
   var filters=document.getElementById('themeFilters');
   var count=document.getElementById('feedCount');
@@ -909,13 +989,10 @@
     if(none) none.classList.toggle('hidden', shown>0 || rows.length===0);
     if(count) count.textContent=isZh() ? (shown + ' 条') : (shown + (shown===1 ? ' story' : ' stories'));
   }
-  if(search){
-    search.addEventListener('input', function(){ q=(search.value||'').trim().toLowerCase(); apply(); });
-  }
+  if(search){ search.addEventListener('input', function(){ q=(search.value||'').trim().toLowerCase(); apply(); }); }
   if(filters){
     filters.addEventListener('click', function(e){
-      var btn=e.target.closest('.filter-btn');
-      if(!btn) return;
+      var btn=e.target.closest('.filter-btn'); if(!btn) return;
       Array.prototype.forEach.call(filters.querySelectorAll('.filter-btn'), function(b){ b.classList.remove('on'); });
       btn.classList.add('on');
       theme=btn.getAttribute('data-theme')||'all';
@@ -923,13 +1000,27 @@
       apply();
     });
   }
-  document.addEventListener('langchange', function(){ syncLang(); apply(); });
-  syncLang();
-  apply();
+  // relative-time stamps ("Updated 3 min ago", "2h ago")
+  function rel(ts){
+    var d=new Date(ts); if(isNaN(d)) return '';
+    var s=Math.max(0,(Date.now()-d.getTime())/1000), zh=isZh();
+    if(s<90) return zh?'刚刚':'just now';
+    var m=Math.round(s/60); if(m<60) return zh?(m+' 分钟前'):(m+' min ago');
+    var h=Math.round(m/60); if(h<48) return zh?(h+' 小时前'):(h+' h ago');
+    var dd=Math.round(h/24); return zh?(dd+' 天前'):(dd+' d ago');
+  }
+  function stamps(){
+    Array.prototype.forEach.call(document.querySelectorAll('.rel-time[data-ts]'), function(el){
+      var ts=el.getAttribute('data-ts'); if(!ts) return;
+      var r=rel(ts); if(!r) return;
+      el.textContent=(el.classList.contains('na-when')?'':(isZh()?'更新于 ':'Updated '))+r;
+    });
+  }
+  document.addEventListener('langchange', function(){ syncLang(); apply(); stamps(); });
+  syncLang(); apply(); stamps();
 })();
 </script>
 
 <script src="theme.js"></script>
-<script defer data-whb data-root="" src="wh_banner.js"></script>
 </body>
 </html>

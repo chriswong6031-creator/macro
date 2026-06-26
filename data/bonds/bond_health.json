@@ -56,8 +56,8 @@
       "hedge_working": false
     },
     "sovereign": {
-      "euro_frag": 0.3753069299999998,
-      "bund_10y": 2.9379971807,
+      "euro_frag": 0.3780943206999998,
+      "bund_10y": 2.9160405586,
       "frag_state": "calm",
       "frag_direction": "widening",
       "jgb_2s10s": 1.264,
@@ -99,7 +99,7 @@
   },
   "fed_path": {
     "asof": "2026-06-25",
-    "built": "2026-06-26T07:32:40.765572+00:00",
+    "built": "2026-06-26T10:57:30.584946+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -109,11 +109,11 @@
       "m1": 3.63,
       "m3": 3.73,
       "m6": 3.9,
-      "m12": 3.97
+      "m12": 3.96
     },
     "implied_source_en": "ZQ fed-funds futures",
     "implied_source_zh": "ZQ 联邦基金期货",
-    "implied_bp_12m": 34,
+    "implied_bp_12m": 33,
     "implied_cuts_12m": -1,
     "implied_cuts_6m": -1,
     "sofr_path": {
@@ -148,8 +148,8 @@
     "ntfs": 0.56,
     "curve_tp_adj": 1.06,
     "rate_exp_proxy": 0.48,
-    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.63% → 3.97%)",
-    "headline_zh": "市场为未来12个月定价约加息1次（基金利率 3.63% → 3.97%）",
+    "headline_en": "Market prices ~1 hike over the next 12m (funds 3.63% → 3.96%)",
+    "headline_zh": "市场为未来12个月定价约加息1次（基金利率 3.63% → 3.96%）",
     "read_en": "At end-2026 the market implies 3.90% vs the Fed's 3.80% median dot (+10bp — market ≈ the Fed). The near-term forward spread is positive — no cuts priced near-term (+0.56pp).",
     "read_zh": "在end-2026，市场隐含 3.90% 对比美联储 3.80% 的中位点（+10基点 — 市场与美联储基本一致）。近端远期利差为正——近端未为降息定价（+0.56个百分点）。",
     "note_en": "Display / LLM-context only. The implied path is a market PRICE (the futures-implied funds rate), not a forecast edge, and repricing is REACTIVE — it moves after data and the Fed, it does not lead. Never scored, never an MRS leg. ZQ/SR3 = keyless CME futures; dots = FRED FEDTARMD (FOMC SEP median). Cite the CME/FRED.",
@@ -167,8 +167,8 @@
     },
     "us_vs_world": {
       "us_10y": 4.41,
-      "exus_10y": 3.27,
-      "us_premium_bp": 114.0,
+      "exus_10y": 3.26,
+      "us_premium_bp": 115.0,
       "premium_direction": "stable"
     },
     "countries": [
@@ -200,16 +200,16 @@
         "cadence": "daily",
         "stale": false,
         "gdp_w": 0.22,
-        "y10": 2.94,
-        "y2": 2.49,
-        "slope": 0.45,
+        "y10": 2.92,
+        "y2": 2.48,
+        "slope": 0.44,
         "slope_basis": "2s10s",
         "slope_state": "normal",
-        "chg_63d_bp": -16.0,
+        "chg_63d_bp": -18.0,
         "direction": "falling",
-        "z1y": 0.35,
-        "z5y": 0.85,
-        "diff_vs_us_bp": -147.0,
+        "z1y": 0.19,
+        "z5y": 0.83,
+        "diff_vs_us_bp": -149.0,
         "real_10y": null
       },
       {
@@ -320,11 +320,11 @@
       "emb_trend": "up",
       "emb_chg_63d_pct": 3.6
     },
-    "verdict_en": "Global 10y avg 3.77% and stable (+4bp/3m) — a stable global cost of capital. US 10y is 114bp above the GDP-weighted rest of the world and stable — the dollar's rate-differential anchor. EM hard-currency OAS 1.46% (falling).",
-    "verdict_zh": "全球10年期均值 3.77%，3个月 +4基点 — 全球资金成本平稳。美国10年期较GDP加权的世界其余高114基点，利差平稳 — 美元的利差之锚。新兴市场硬通货利差 1.46%（收窄）。",
+    "verdict_en": "Global 10y avg 3.77% and stable (+4bp/3m) — a stable global cost of capital. US 10y is 115bp above the GDP-weighted rest of the world and stable — the dollar's rate-differential anchor. EM hard-currency OAS 1.46% (falling).",
+    "verdict_zh": "全球10年期均值 3.77%，3个月 +4基点 — 全球资金成本平稳。美国10年期较GDP加权的世界其余高115基点，利差平稳 — 美元的利差之锚。新兴市场硬通货利差 1.46%（收窄）。",
     "drivers_for": {
       "forex": {
-        "us_premium_bp": 114.0,
+        "us_premium_bp": 115.0,
         "premium_direction": "stable",
         "note_en": "A widening US-vs-world 10y premium is a USD tailwind (rate-differential / carry channel); a narrowing premium pressures the dollar."
       }
