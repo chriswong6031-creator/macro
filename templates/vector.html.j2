@@ -21,26 +21,45 @@
   --r4:{{C.r4}}; --r5:{{C.r5}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
   --faint:{{C.faint}}; --red:{{C.red}}; --redfill:{{C.redfill}}; --amber:{{C.amber}};
   --grid:{{C.grid}}; --card:{{C.card}}; --bg:{{C.bg}};
-  /* DIVERGING tone semantic: bull=blue (brand), bear=red, caution=amber, neutral=grey.
-     --r3 is remapped to red above so every legacy bear/down/risk element flips to red. */
+  /* DIVERGING tone semantic: bull=blue, bear=red, caution=amber, neutral=grey.
+     --r3 is remapped to red above so every legacy bear/down/risk element flips to red.
+     In zh mode the direction/risk poles invert to the Asia convention (red=up,
+     green=down) — see the html[data-lang="zh"] block below. --brand / --hot / --cold
+     are the deliberate non-swapping exceptions. */
   --bull:var(--blue); --bull-soft:{{C.bull_soft}}; --bear:{{C.bear}}; --bear-soft:{{C.bear_soft}};
   --warn:{{C.warn}}; --neutral:var(--muted);
+  /* --brand: nav / links / category accent — always blue, never swapped by zh.
+     --hot / --cold: RSI & StochRSI over/oversold HEAT zones (not price direction),
+     so they stay red>70 / blue<30 in both languages (keeps the card legend honest). */
+  --brand:{{C.blue}}; --hot:{{C.bear}}; --cold:{{C.blue}};
 }
 *{box-sizing:border-box}
-/* language toggle: dual-emit text, hide the inactive language (blue/red palette
-   is kept in zh mode — it encodes risk, not price direction). */
+/* language toggle: dual-emit text, hide the inactive language. */
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB",
   "Microsoft YaHei","Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;
   font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none}
+a{color:var(--brand);text-decoration:none}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px 60px}
 .brand{font-weight:800;font-size:20px;color:var(--ink);letter-spacing:-.02em}
-.brand .gn{color:var(--blue)}
-html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r1:#1b2740;--r2:#243352;--r3:{{C.bear_dk}};--bear:{{C.bear_dk}};--bear-soft:#3a1c1c;--bull-soft:#14233f}
+.brand .gn{color:var(--brand)}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280;--r1:#1b2740;--r2:#243352;--r3:{{C.bear_dk}};--bear:{{C.bear_dk}};--bear-soft:#3a1c1c;--bull-soft:#14233f;--hot:{{C.bear_dk}}}
 html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
+/* ---- Chinese mode: Asia colour convention ----------------------------------
+   In Asia red = up/bullish, green = down/bearish (the inverse of the West), so in
+   zh we invert the direction/risk poles: the bull/up/risk-on pole (--blue, and
+   --bull which aliases it) -> red, and the bear/down/risk-off pole (--r3 / --bear)
+   -> green. This matches macro.html (theme.css swaps --up/--down the same way).
+   Brand/nav (--brand) and the RSI/StochRSI heat gauge (--hot/--cold) are pinned —
+   they don't encode price direction. NOTE: server-rendered Plotly charts bake
+   C.blue/C.bear at build time, so they keep blue/red even in zh (recolouring a
+   static chart on the client-side toggle isn't feasible). The greens/reds mirror
+   theme.css's zh values for cross-page consistency. Specificity: the dual-attr
+   light/dark+zh selectors (0,2,0) win over the single-attr theme/lang blocks. */
+html[data-lang="zh"]{--blue:#cf4040;--r3:#1f9a55;--bear:#1f9a55;--bull-soft:#fbe0e0;--bear-soft:#e2f5e9}
+html[data-theme="dark"][data-lang="zh"]{--blue:#e06464;--r3:#45b873;--bear:#45b873;--bull-soft:#3a1c1c;--bear-soft:#14331f}
 /* layout */
 .grid{display:grid;gap:18px}
 .cols-2{grid-template-columns:1.15fr .85fr}
@@ -91,7 +110,7 @@ html[data-theme="dark"] body{-webkit-font-smoothing:antialiased}
 .chip{display:inline-block;padding:6px 14px;border-radius:10px;font-weight:700;font-size:14px}
 .chip-bull{background:var(--bull);color:#fff} .chip-bear{background:var(--bear);color:#fff}
 .chip-ghost{background:var(--grid);color:var(--muted)}
-.chip-strategic{background:var(--blue);color:#fff} .chip-tactical{background:var(--redfill);color:var(--red)}
+.chip-strategic{background:var(--brand);color:#fff} .chip-tactical{background:var(--redfill);color:var(--red)}
 /* probability bar */
 .prob{display:flex;align-items:center;gap:10px;margin:8px 0}
 .prob .lab{width:54px} .prob .track{flex:1;height:10px;border-radius:6px;background:var(--grid);overflow:hidden}
@@ -119,7 +138,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .variant-tabs{display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap}
 .variant-tabs .t{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
   font-weight:700;font-size:13px;cursor:pointer;border:none}
-.variant-tabs .t.active{background:var(--blue);color:#fff}
+.variant-tabs .t.active{background:var(--brand);color:#fff}
 /* badges / verdict */
 .verdict{display:inline-block;padding:3px 9px;border-radius:7px;font-size:12px;font-weight:700}
 .v-conf{background:#E3F5E9;color:#1a7f43} .v-dir{background:#FFF2D9;color:#9a6a00}
@@ -185,7 +204,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .tl-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .tlf{padding:6px 14px;border-radius:9px;background:var(--grid);color:var(--muted);
  font-weight:700;font-size:13px;cursor:pointer;border:none}
-.tlf.active{background:var(--blue);color:#fff}
+.tlf.active{background:var(--brand);color:#fff}
 .timeline{position:relative}
 .tl-day{margin-bottom:20px}
 .tl-date{font-size:12px;font-weight:700;color:var(--faint);text-transform:uppercase;
@@ -196,12 +215,12 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .tl-item summary::-webkit-details-marker{display:none}
 .tl-node{position:absolute;left:-7px;top:15px;width:12px;height:12px;border-radius:50%;
  background:var(--faint);border:2px solid var(--card)}
-.tl-node.n-high{background:var(--red)} .tl-node.n-medium{background:var(--blue)} .tl-node.n-info{background:var(--r3)}
+.tl-node.n-high{background:var(--red)} .tl-node.n-medium{background:var(--brand)} .tl-node.n-info{background:var(--r3)}
 .tl-node.n-flash_crash{background:var(--red)} .tl-node.n-momentum_trigger{background:var(--indigo)}
 .tl-chip{font-size:11px;font-weight:700;padding:2px 9px;border-radius:7px;background:var(--grid);color:var(--muted)}
 .tl-chip.f-flash{background:var(--redfill);color:var(--red)}
 .tl-chip.f-risk{background:#FDEBEB;color:var(--red)}
-.tl-chip.f-structure{background:#E8EEFF;color:var(--blue)}
+.tl-chip.f-structure{background:#E8EEFF;color:var(--brand)}
 .tl-chip.f-momentum{background:#ECE9FB;color:var(--indigo)}
 .tl-head{font-weight:600;color:var(--ink);font-size:14px;flex:1;min-width:200px}
 .tl-time{font-size:12px;color:var(--faint);font-weight:600}
@@ -231,7 +250,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 .vtm-asof{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .vtm-date{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
 .vtm-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:2px 9px;border-radius:9px}
-.vtm-tag.is-live{color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,var(--card))}
+.vtm-tag.is-live{color:var(--brand);background:color-mix(in srgb,var(--brand) 14%,var(--card))}
 .vtm-tag.is-hist{color:var(--muted);background:var(--grid)}
 .vtm-price{margin-left:auto;font-size:17px;font-weight:800;color:var(--ink)}
 .vtm-badges{display:flex;align-items:center;gap:9px 16px;flex-wrap:wrap;margin-top:13px;font-size:13px;color:var(--muted)}
@@ -892,13 +911,13 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         {% for r in mtf_rows %}
         <tr style="border-top:1px solid var(--grid)">
           <td style="padding:7px 4px;font-weight:600;color:var(--ink)">{{ t(tlab.get(r.key,[r.key,r.key])[0], tlab.get(r.key,[r.key,r.key])[1]) }}</td>
-          <td style="text-align:right;color:{{ 'var(--r3)' if r.rsi14 and r.rsi14>=70 else ('var(--blue)' if r.rsi14 and r.rsi14<=30 else 'var(--text)') }}">{{ r.rsi14 if r.rsi14 is not none else '—' }}</td>
-          <td style="text-align:right;color:{{ 'var(--r3)' if r.stoch and r.stoch>=80 else ('var(--blue)' if r.stoch and r.stoch<=20 else 'var(--text)') }}">{{ r.stoch if r.stoch is not none else '—' }}</td>
+          <td style="text-align:right;color:{{ 'var(--hot)' if r.rsi14 and r.rsi14>=70 else ('var(--cold)' if r.rsi14 and r.rsi14<=30 else 'var(--text)') }}">{{ r.rsi14 if r.rsi14 is not none else '—' }}</td>
+          <td style="text-align:right;color:{{ 'var(--hot)' if r.stoch and r.stoch>=80 else ('var(--cold)' if r.stoch and r.stoch<=20 else 'var(--text)') }}">{{ r.stoch if r.stoch is not none else '—' }}</td>
           <td style="text-align:right;color:{{ 'var(--blue)' if r.macd in ('up','pos') else 'var(--r3)' }}">{{ t(r.macd|capitalize, mz.get(r.macd, r.macd)) }}</td>
           <td style="text-align:right"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:{{ tfc.get(r.trend,'var(--muted)') }}"></i></td>
         </tr>{% endfor %}
       </table>
-      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('RSI red >70 / blue <30; StochRSI red >80 / blue <20. The trend dot is each timeframe’s MACD-trend direction — when short timeframes turn up while long ones stay red, it is an unconfirmed turn (a counter-trend bounce).', 'RSI 红 >70 / 蓝 <30；StochRSI 红 >80 / 蓝 <20。趋势圆点为各周期 MACD 趋势方向 — 当短周期转多而长周期仍为红时，即为未确认转向（逆势反弹）。') }}</div>
+      <div class="sub faint" style="margin-top:8px;font-size:12px">{{ t('RSI red >70 / blue <30; StochRSI red >80 / blue <20. The trend dot is each timeframe’s MACD-trend direction — when short timeframes turn up while long ones stay red, it is an unconfirmed turn (a counter-trend bounce).', 'RSI 红 >70 / 蓝 <30；StochRSI 红 >80 / 蓝 <20。趋势圆点为各周期 MACD 趋势方向 — 当短周期转多而长周期仍为绿时，即为未确认转向（逆势反弹）。') }}</div>
     </div>
   </div>{% endif %}
 
@@ -1425,8 +1444,12 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
 })();
 </script>
 <script>
-/* Vector charts keep their blue/red palette in zh mode (risk semantics, no green),
-   so colours don't swap — only the axis titles + legend names translate. */
+/* Vector charts keep their blue/red palette in zh mode — only axis titles + legend
+   names translate. The CSS direction/risk colours DO invert in zh (red=up/green=down,
+   see the html[data-lang="zh"] block), but the charts can't follow: most are single
+   blue data-lines (inversion is meaningless) and chart_i18n only supports SYMMETRIC
+   colour swaps, which can't express the blue->red / red->green remap (red is both a
+   pole and a target). So charts stay descriptive blue/red. */
 window.__CHART_SWAP__ = {
   colors: {},
   labels: {"BTC Price":"BTC 价格","Optimal strategy":"最优策略","Allocation":"仓位",
