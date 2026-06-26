@@ -3460,6 +3460,26 @@ china:
       node: hs_a                    # Hu-Shen A-share board (Shanghai + Shenzhen; excludes Beijing)
       page_size: 80                 # Sina max rows/page
       referer: https://finance.sina.com.cn/
+    # Manually-added individual A-shares to keep searchable. These fall BELOW the Sina
+    # top-800 market-cap cutoff (~270亿) AND aren't CSI 300/1000 members, so they'd never
+    # appear otherwise. The China mirror of stock_search.extra_tickers/extra_names — kept
+    # OUT of china.constituents so the calibrated breadth/regime engine is never perturbed.
+    # The seeded name_en/name_zh/sector win over yfinance get_info (which mislabels small
+    # caps); a name only needs >=300 trading days of close history to actually build.
+    extra_tickers:
+      - "301531.SZ"                 # 春光集团 (very recent IPO — gated out until >=300d history)
+      - "688508.SS"                 # 芯朋微 Wuxi Chipown Micro-electronics
+      - "300580.SZ"                 # 贝斯特 Wuxi Best Precision Machinery
+      - "688049.SS"                 # 炬芯科技 Actions Technology
+      - "300470.SZ"                 # 中密控股 Sinoseal Holding
+      - "688609.SS"                 # 九联科技 Unionman Technology
+    extra_names:
+      "301531.SZ": {name_en: "Shandong Chunguang Technology Group", name_zh: "春光集团", sector: "Industrials", mktcap_yi: 148}
+      "688508.SS": {name_en: "Wuxi Chipown Micro-electronics", name_zh: "芯朋微", sector: "Technology", mktcap_yi: 108}
+      "300580.SZ": {name_en: "Wuxi Best Precision Machinery", name_zh: "贝斯特", sector: "Industrials", mktcap_yi: 92}
+      "688049.SS": {name_en: "Actions Technology", name_zh: "炬芯科技", sector: "Technology", mktcap_yi: 75}
+      "300470.SZ": {name_en: "Sinoseal Holding", name_zh: "中密控股", sector: "Industrials", mktcap_yi: 59}
+      "688609.SS": {name_en: "Unionman Technology", name_zh: "九联科技", sector: "Technology", mktcap_yi: 56}
 
   # -- Engine tunables (mirror of `engine:`, China inputs) ---------------------
   engine:
