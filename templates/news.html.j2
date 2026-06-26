@@ -3,176 +3,157 @@
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
 {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
+{% set CH = {'rates':['rates','利率'],'inflation':['inflation','通胀'],'labor':['labor','就业'],'growth':['growth','增长'],'credit':['credit','信用'],'liquidity':['liquidity','流动性'],'fiscal':['fiscal','财政'],'dollar':['the dollar','美元'],'energy':['energy','能源'],'china':['China','中国'],'ai':['AI / semis','AI/半导体']} %}
 {% set heads = (macro_news.headlines if macro_news and macro_news.headlines else []) %}
 {% set SYN = (macro_news.synthesis if macro_news and macro_news.synthesis else {}) %}
 {% set SYN_CHANNELS = (SYN.top_channels if SYN.top_channels else []) %}
 {% set SYN_TICKERS = (SYN.top_tickers if SYN.top_tickers else []) %}
 {% set SYN_SOURCES = (SYN.source_mix if SYN.source_mix else []) %}
-{% set feature = heads[0] if heads else none %}
-{% set rest = heads[1:] if heads else [] %}
 {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
 {% set L = (ndi.legs if ndi else {}) or {} %}
+{% set n_src = (heads|map(attribute='domain')|reject('none')|unique|list|length) if heads else 0 %}
 
-{% block title %}News Feed - Macro Dashboard{% endblock %}
+{# ---- condensed, HONEST summary synthesised from the headline's tags (no article
+   body exists in the feed, so we surface theme + transmission channels + tickers +
+   why it cleared the filter, never fabricated prose). ---- #}
+{% macro summ(h) -%}
+<span class="l-en">{% set tl = TL.get(h.theme, [h.theme, h.theme]) %}A <b>{{ h.importance }}</b>-impact <b>{{ tl[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}.{% if h.importance_reasons %} Flagged because: {{ h.importance_reasons[:2]|join('; ') }}.{% endif %} Reported by <b>{{ h.source_name or h.domain }}</b>{% if h.source_tier %} ({{ h.source_tier }} source){% endif %}.</span>
+<span class="l-zh">{% set tl = TL.get(h.theme, [h.theme, h.theme]) %}一条<b>{{ h.importance }}</b>影响级的<b>{{ tl[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {{ (h.channels[:3]|map('replace','_',' ')|list)|join('、') }}{% endif %}。{% if h.importance_reasons %} 入选原因：{{ h.importance_reasons[:2]|join('；') }}。{% endif %} 来源：<b>{{ h.source_name or h.domain }}</b>。</span>
+{%- endmacro %}
+
+{% block title %}Market & Macro News — {{ latest.date }}{% endblock %}
 
 {% block base_css %}
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
   .news-shell { max-width:1180px; margin:0 auto; }
-  .news-hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; align-items:stretch; margin:24px 0 16px; }
-  .hero-main, .hero-side, .news-card, .rail-card, .empty-state {
-    background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--card-shadow);
-  }
-  .hero-main { min-height:314px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; }
-  .hero-main:before { content:''; position:absolute; inset:0 0 auto; height:5px; background:linear-gradient(90deg,var(--link),var(--up),var(--warn)); }
-  .eyebrow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:0 0 14px; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:700; }
-  html[data-lang="zh"] .eyebrow { letter-spacing:0; }
-  .live-dot { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); }
-  .hero-main h1 { font-size:36px; line-height:1.04; margin:0 0 12px; max-width:920px; letter-spacing:0; }
-  .hero-main h1 a { color:var(--text); }
-  .hero-main h1 a:hover { color:var(--link); }
-  .hero-dek { color:var(--muted); font-size:14.5px; max-width:72ch; margin:0; }
-  .hero-meta { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:20px; }
-  .source-chip, .theme-chip, .soft-chip {
-    display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:999px;
-    padding:5px 10px; font-size:11.5px; color:var(--muted); background:var(--panel2);
-  }
-  .source-chip b { color:var(--text); font-weight:700; }
-  .theme-chip { --c:var(--link); color:color-mix(in srgb,var(--c) 82%,var(--text)); border-color:color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
-  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-labor{--c:#45b873}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-earnings{--c:#45b873}.th-guidance{--c:#e08b45}.th-analyst{--c:#7aa7e0}.th-deals{--c:#d45f88}.th-capital_return{--c:#e0a030}.th-stocks{--c:#5ab6b0}.th-macro{--c:var(--muted)}
-  .read-link { margin-left:auto; color:var(--link); font-size:12px; font-weight:700; }
-  .hero-side { padding:16px; display:grid; gap:12px; align-content:start; }
-  .ticker { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:8px; background:var(--panel2); }
-  .ticker .k { color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
-  .ticker .v { font-size:18px; font-weight:750; margin-top:2px; }
-  .ticker .s { color:var(--muted); font-size:11.5px; margin-top:1px; }
-  .ticker .num { font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; }
-  .ticker.sent-pos .num { color:var(--up); }
-  .ticker.sent-neg .num { color:var(--down); }
-  .ticker.ndi-high .num { color:var(--warn); }
-  .ticker.ndi-elevated .num { color:var(--orange); }
-  .ticker.ndi-calm .num { color:var(--link); }
-  .intel-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-  .intel-pill { display:inline-flex; align-items:center; gap:5px; border:1px solid var(--line); border-radius:6px; padding:3px 7px; font-size:10.5px; color:var(--muted); background:var(--panel2); }
-  .intel-pill b { color:var(--text); }
-  .imp-high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
-  .imp-medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
-  .imp-low { color:var(--muted); }
-  .tk-chip { color:var(--link); border-color:color-mix(in srgb,var(--link) 42%,var(--line)); }
 
-  .news-layout { display:grid; grid-template-columns:minmax(0,1fr) 328px; gap:18px; align-items:start; }
-  .feed-toolbar { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:12px 0 14px; background:linear-gradient(180deg,var(--bg) 72%,transparent); }
-  .search-box { position:relative; flex:1 1 260px; min-width:210px; }
-  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:8px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
+  /* ---- header ---- */
+  .nx-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px 20px; margin:24px 0 16px; }
+  .nx-title { font-size:30px; font-weight:800; letter-spacing:-.02em; margin:0; line-height:1.05; }
+  html[data-lang="zh"] .nx-title { letter-spacing:0; }
+  .nx-sub { color:var(--muted); font-size:13.5px; margin:6px 0 0; max-width:66ch; line-height:1.5; }
+  .nx-stats { margin-left:auto; display:flex; gap:18px; flex-wrap:wrap; }
+  .nx-stat { text-align:right; }
+  .nx-stat .k { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); font-weight:700; }
+  html[data-lang="zh"] .nx-stat .k { letter-spacing:0; }
+  .nx-stat .v { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .nx-stat.pos .v { color:var(--up); } .nx-stat.neg .v { color:var(--down); }
+  .nx-stat.warn .v { color:var(--warn); } .nx-stat.info .v { color:var(--link); }
+
+  .news-layout { display:grid; grid-template-columns:minmax(0,1fr) 326px; gap:20px; align-items:start; }
+
+  /* ---- toolbar ---- */
+  .feed-toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:0 0 12px; }
+  .search-box { position:relative; flex:1 1 240px; min-width:200px; }
+  .search-box input { width:100%; background:var(--panel); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:10px 12px 10px 34px; outline:none; font-size:13px; }
   .search-box input:focus { border-color:var(--link); box-shadow:0 0 0 3px color-mix(in srgb,var(--link) 16%,transparent); }
   .search-box .mag { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:13px; }
   .filter-row { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-  .filter-btn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:7px 10px; font-size:11.5px; cursor:pointer; }
+  .filter-btn { border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px; padding:6px 11px; font-size:11.5px; cursor:pointer; transition:color .15s,border-color .15s,background .15s; }
   .filter-btn:hover, .filter-btn.on { color:var(--text); border-color:var(--link); background:color-mix(in srgb,var(--link) 10%,var(--panel)); }
   .feed-count { color:var(--muted); font-size:12px; margin-left:auto; white-space:nowrap; }
-  .feed { display:grid; gap:10px; }
-  .news-card { display:grid; grid-template-columns:86px minmax(0,1fr); gap:0; overflow:hidden; color:var(--text); transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
-  .news-card:hover { transform:translateY(-2px); border-color:color-mix(in srgb,var(--link) 45%,var(--line)); box-shadow:0 14px 30px -18px color-mix(in srgb,var(--link) 50%,transparent); }
-  .news-date { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:2px; background:var(--panel2); border-right:1px solid var(--line); color:var(--muted); min-height:112px; }
-  .news-date .rank { color:var(--link); font-size:11px; font-weight:800; letter-spacing:.08em; }
-  .news-date .label { font-size:10px; text-transform:uppercase; letter-spacing:.08em; }
-  .news-body { padding:14px 16px; min-width:0; }
-  .news-top { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-bottom:8px; }
-  .news-title { font-size:17px; line-height:1.28; font-weight:730; margin:0; color:var(--text); }
-  .news-card:hover .news-title { color:var(--link); }
-  .news-meta { display:flex; flex-wrap:wrap; gap:10px; color:var(--muted); font-size:11.5px; margin-top:10px; }
-  .rail { display:grid; gap:12px; position:sticky; top:12px; }
-  .rail-card { padding:15px; }
+
+  /* ---- the Market Summary accordion card ---- */
+  .summary-card { background:var(--panel); border:1px solid var(--line); border-radius:12px; box-shadow:var(--card-shadow); overflow:hidden; position:relative; }
+  .summary-card:before { content:''; position:absolute; inset:0 0 auto; height:4px; background:linear-gradient(90deg,var(--link),var(--up),var(--warn)); }
+  .sc-head { display:flex; align-items:center; gap:10px; padding:16px 18px 12px; border-bottom:1px solid var(--line); }
+  .sc-head h2 { font-size:15px; font-weight:800; margin:0; text-transform:none; letter-spacing:0; color:var(--text); }
+  .sc-updated { margin-left:auto; color:var(--muted); font-size:12px; display:inline-flex; align-items:center; gap:7px; }
+  .sc-updated .live-dot { width:7px; height:7px; border-radius:50%; background:var(--up); box-shadow:0 0 0 4px color-mix(in srgb,var(--up) 14%,transparent); }
+
+  .na-item { border-bottom:1px solid var(--line); }
+  .na-item:last-of-type { border-bottom:0; }
+  .na-item[open] { background:color-mix(in srgb,var(--link) 5%,transparent); }
+  .na-sum { list-style:none; cursor:pointer; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:11px; padding:13px 18px; }
+  .na-sum::-webkit-details-marker { display:none; }
+  .na-sum:hover { background:color-mix(in srgb,var(--link) 6%,transparent); }
+  .na-theme { display:inline-flex; align-items:center; padding:3px 9px; border-radius:999px; font-size:10.5px; font-weight:800; white-space:nowrap;
+    --c:var(--link); color:color-mix(in srgb,var(--c) 84%,var(--text)); border:1px solid color-mix(in srgb,var(--c) 40%,var(--line)); background:color-mix(in srgb,var(--c) 12%,var(--panel)); }
+  .th-monetary{--c:#7aa7e0}.th-inflation{--c:#e08b45}.th-labor{--c:#45b873}.th-growth{--c:#9cbf5a}.th-credit{--c:#a78bfa}.th-fiscal{--c:#e0a030}.th-earnings{--c:#45b873}.th-guidance{--c:#e08b45}.th-analyst{--c:#7aa7e0}.th-deals{--c:#d45f88}.th-capital_return{--c:#e0a030}.th-stocks{--c:#5ab6b0}.th-macro{--c:var(--muted)}
+  .na-htitle { font-size:14.5px; font-weight:650; line-height:1.35; color:var(--text); min-width:0; }
+  .na-item[open] .na-htitle { color:var(--link); }
+  .na-right { display:inline-flex; align-items:center; gap:10px; white-space:nowrap; }
+  .na-src { color:var(--muted); font-size:11.5px; }
+  .na-imp { font-variant-numeric:tabular-nums; font-size:11px; font-weight:800; border:1px solid var(--line); border-radius:6px; padding:1px 6px; color:var(--muted); }
+  .na-imp.high { color:var(--up); border-color:color-mix(in srgb,var(--up) 48%,var(--line)); }
+  .na-imp.medium { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 48%,var(--line)); }
+  .na-chev { color:var(--muted); font-size:11px; transition:transform .2s ease; }
+  .na-item[open] .na-chev { transform:rotate(180deg); }
+  .na-body { padding:0 18px 16px 18px; display:grid; gap:10px; animation:naReveal .22s ease; }
+  @keyframes naReveal { from{ opacity:0; transform:translateY(-3px); } to{ opacity:1; transform:none; } }
+  @media(prefers-reduced-motion:reduce){ .na-body{ animation:none; } }
+  .na-summary { font-size:13.5px; line-height:1.55; color:var(--text); margin:0; max-width:74ch; }
+  .na-summary b { font-weight:700; }
+  .na-tags { display:flex; flex-wrap:wrap; gap:6px; }
+  .na-pill { display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line); border-radius:6px; padding:3px 8px; font-size:10.5px; color:var(--muted); background:var(--panel2); }
+  .na-pill.tk { color:var(--link); border-color:color-mix(in srgb,var(--link) 40%,var(--line)); }
+  .na-read { justify-self:start; color:var(--link); font-size:12.5px; font-weight:700; }
+  .na-when { color:var(--muted); font-size:11px; }
+
+  .sc-foot { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:12px 18px; border-top:1px solid var(--line); color:var(--muted); font-size:11.5px; }
+  .sc-srcs { display:inline-flex; align-items:center; gap:6px; }
+  .sc-srcs .dot { width:18px; height:18px; border-radius:50%; background:color-mix(in srgb,var(--link) 20%,var(--panel2)); border:1px solid var(--line); margin-left:-6px; }
+  .sc-srcs .dot:first-child { margin-left:0; }
+
+  .empty-state { padding:40px 28px; text-align:center; }
+  .empty-state h2 { font-size:20px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
+  .empty-state p { color:var(--muted); margin:0 auto; max-width:58ch; }
+  .hidden { display:none !important; }
+
+  /* ---- rail ---- */
+  .rail { display:grid; gap:14px; position:sticky; top:12px; }
+  .rail-card { background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:var(--card-shadow); padding:15px; }
   .rail-card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
+  html[data-lang="zh"] .rail-card h2 { letter-spacing:0; }
   .rail-line { display:flex; gap:9px; align-items:flex-start; padding:8px 0; border-bottom:1px solid var(--line); }
   .rail-line:last-child { border-bottom:0; }
-  .rail-date { flex:0 0 70px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
-  .rail-main { min-width:0; font-size:12.5px; }
-  .rail-tag { display:inline-flex; align-items:center; justify-content:center; min-width:45px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
+  .rail-date { flex:0 0 64px; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+  .rail-main { min-width:0; font-size:12.5px; line-height:1.4; }
+  .rail-tag { display:inline-flex; align-items:center; justify-content:center; min-width:42px; padding:2px 7px; border-radius:6px; border:1px solid var(--line); color:var(--link); font-size:10.5px; font-weight:800; margin-right:5px; }
   .odds-row { display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:baseline; font-size:12px; padding:3px 0; }
   .odds-row .o { color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .empty-state { padding:34px 28px; text-align:center; }
-  .empty-state h2 { font-size:21px; color:var(--text); text-transform:none; letter-spacing:0; margin:0 0 8px; }
-  .empty-state p { color:var(--muted); margin:0 auto; max-width:58ch; }
-  .disc { color:var(--muted); font-size:11.5px; line-height:1.55; margin:14px 0 0; }
-  .hidden { display:none !important; }
+  .r-pos { color:var(--up); font-size:11px; } .r-neg { color:var(--down); font-size:11px; }
+  .disc { color:var(--muted); font-size:11.5px; line-height:1.55; margin:16px 0 0; }
+  .mut { color:var(--muted); font-size:12px; }
+
   @media(max-width:900px){
-    .news-hero, .news-layout { grid-template-columns:1fr; }
-    .hero-main { min-height:0; }
-    .hero-main h1 { font-size:28px; }
+    .news-layout { grid-template-columns:1fr; }
+    .nx-stats { margin-left:0; }
     .rail { position:static; }
   }
   @media(max-width:560px){
-    .hero-main { padding:20px 16px; }
-    .news-card { grid-template-columns:1fr; }
-    .news-date { min-height:auto; flex-direction:row; justify-content:flex-start; padding:8px 14px; border-right:0; border-bottom:1px solid var(--line); }
-    .feed-toolbar { position:static; }
+    .nx-title { font-size:24px; }
+    .na-sum { grid-template-columns:auto minmax(0,1fr); }
+    .na-right { grid-column:1 / -1; justify-content:flex-start; }
   }
 {% endblock %}
 
 {% block content %}
 <main class="news-shell">
-  <section class="news-hero">
-    <article class="hero-main">
-      <div>
-        <p class="eyebrow"><span class="live-dot"></span>{{ t('Stock & Market News Feed', '股票与市场新闻流') }}<span>{{ latest.date }}</span></p>
-        {% if feature %}
-        <h1><a href="{{ feature.url }}" target="_blank" rel="noopener"><span class="l-en">{{ feature.title }}</span><span class="l-zh">{{ feature.title_zh or feature.title }}</span></a></h1>
-        <p class="hero-dek">{{ t('Qualitative stock and market headlines: earnings, guidance, analyst moves, deals, buybacks and company-specific catalysts, tagged for tickers and transmission channels.',
-          '定性股票与市场新闻：业绩、指引、分析师动作、并购、回购与个股催化，并标注相关标的与传导通道。') }}</p>
-        {% else %}
-        <h1>{{ t('The macro tape is quiet right now.', '当前宏观新闻流较安静。') }}</h1>
-        <p class="hero-dek">{{ t('The feed is ready, but the current headline pull returned no kept stories. Catalysts, sentiment and narrative context remain live below.',
-          '新闻流已就绪，但本次头条抓取没有保留条目。下方的日程、情绪与叙事背景仍保持更新。') }}</p>
-        {% endif %}
+  <header class="nx-head">
+    <div>
+      <h1 class="nx-title">{{ t('Market &amp; Macro News', '市场与宏观新闻') }}</h1>
+      <p class="nx-sub">{{ t('Reputable, macro-relevant headlines — earnings, guidance, deals, policy, inflation and growth — filtered, theme-tagged and ranked by impact. Press any story to open a condensed read. Context only; never a trade signal.',
+        '可靠、与宏观相关的头条 — 业绩、指引、并购、政策、通胀与增长 — 经筛选、标注主题并按影响力排序。点按任意条目展开精简解读。仅供背景，绝非交易信号。') }}</p>
+    </div>
+    <div class="nx-stats">
+      <div class="nx-stat {{ 'pos' if RA.get('news_sentiment_state') == 'optimistic' else 'neg' if RA.get('news_sentiment_state') else '' }}">
+        <span class="k">{{ t('Tone', '基调') }}</span>
+        <span class="v">{% if RA.get('news_sentiment_state') %}{{ t('Optimistic', '乐观') if RA.get('news_sentiment_state') == 'optimistic' else t('Pessimistic', '悲观') }}{% else %}—{% endif %}</span>
       </div>
-      <div class="hero-meta">
-        {% if feature %}
-        <span class="theme-chip th-{{ feature.theme }}">{{ t(TL.get(feature.theme, [feature.theme,feature.theme])[0], TL.get(feature.theme, [feature.theme,feature.theme])[1]) }}</span>
-        <span class="source-chip"><b>{{ feature.source_name or feature.domain }}</b>{% if feature.source_tier %} · {{ feature.source_tier }}{% endif %}</span>
-        <span class="intel-pill imp-{{ feature.importance }}"><b>{{ feature.importance_score }}</b>/100 {{ feature.importance }}</span>
-        <a class="read-link" href="{{ feature.url }}" target="_blank" rel="noopener">{{ t('Read source', '阅读来源') }}</a>
-        {% else %}
-        <span class="soft-chip"><span>{{ t('Status', '状态') }}:</span> <span>{{ macro_news.degraded_reason if macro_news and macro_news.degraded_reason else t('waiting for headlines', '等待头条') }}</span></span>
-        {% endif %}
+      <div class="nx-stat {{ 'warn' if ndi and ndi.band in ('elevated','high') else 'info' }}">
+        <span class="k">{{ t('Narrative', '叙事') }}</span>
+        <span class="v">{% if ndi and ndi.ndi is not none %}{{ ndi.ndi }}{% else %}—{% endif %}</span>
       </div>
-      {% if feature and (feature.channels or feature.tickers) %}
-      <div class="intel-row">
-        {% for c in feature.channels[:5] %}<span class="intel-pill">{{ c }}</span>{% endfor %}
-        {% for tk in feature.tickers[:6] %}<span class="intel-pill tk-chip">{{ tk }}</span>{% endfor %}
+      <div class="nx-stat info">
+        <span class="k">{{ t('Stories', '条目') }}</span>
+        <span class="v">{{ heads|length }}</span>
       </div>
-      {% endif %}
-    </article>
+    </div>
+  </header>
 
-    <aside class="hero-side" aria-label="News context">
-      <div class="ticker {{ 'sent-pos' if RA.get('news_sentiment_state') == 'optimistic' else 'sent-neg' if RA.get('news_sentiment_state') else '' }}">
-        <div><div class="k">{{ t('SF-Fed News Sentiment', '旧金山联储新闻情绪') }}</div>
-          <div class="v">{% if RA.get('news_sentiment_state') %}{{ t('Optimistic', '乐观') if RA.get('news_sentiment_state') == 'optimistic' else t('Pessimistic', '悲观') }}{% else %}{{ t('Unavailable', '暂无') }}{% endif %}</div>
-          <div class="s">{{ t('quant series, not headline AI', '量化序列，非逐条AI') }}</div></div>
-        <div class="num">{% if RA.get('news_sentiment_z') is not none %}{{ '%+.1f'|format(RA.get('news_sentiment_z')) }}{% else %}-{% endif %}</div>
-      </div>
-      <div class="ticker ndi-{{ ndi.band if ndi and ndi.band else 'calm' }}">
-        <div><div class="k">{{ t('Narrative Dominance', '叙事主导') }}</div>
-          <div class="v">{% if ndi and ndi.band %}{{ t(ndi.band|title, {'calm':'平静','elevated':'偏高','high':'高'}.get(ndi.band, ndi.band)) }}{% else %}{{ t('Context', '背景') }}{% endif %}</div>
-          <div class="s">{{ t('display-only risk texture', '仅展示风险纹理') }}</div></div>
-        <div class="num">{% if ndi and ndi.ndi is not none %}{{ ndi.ndi }}{% else %}-{% endif %}</div>
-      </div>
-      <div class="ticker">
-        <div><div class="k">{{ t('Filtered Headlines', '筛选头条') }}</div>
-          <div class="v">{{ heads|length }} {{ t('kept', '保留') }}</div>
-          <div class="s">{% if macro_news and macro_news.n_raw %}{{ macro_news.n_official or 0 }} {{ t('official', '官方') }} · {{ macro_news.n_news_rss or 0 }} RSS · {{ macro_news.n_gdelt or 0 }} GDELT{% else %}{{ t('provider quiet or limited', '来源安静或受限') }}{% endif %}</div></div>
-        <div class="num">{{ heads|length }}</div>
-      </div>
-      <div class="ticker">
-        <div><div class="k">{{ t('Intelligence Mix', '情报结构') }}</div>
-          <div class="v">{{ SYN.high_impact_count or 0 }} {{ t('high impact', '高影响') }}</div>
-          <div class="s">{% if SYN.dominant_channel %}{{ SYN.dominant_channel }}{% elif SYN.dominant_theme %}{{ SYN.dominant_theme }}{% else %}{{ t('awaiting signal', '等待信号') }}{% endif %}</div></div>
-        <div class="num">{% if SYN.avg_importance %}{{ SYN.avg_importance|round|int }}{% else %}-{% endif %}</div>
-      </div>
-    </aside>
-  </section>
-
-  <section class="news-layout">
+  <div class="news-layout">
     <div>
       <div class="feed-toolbar">
         <div class="search-box">
@@ -190,48 +171,60 @@
         <span class="feed-count" id="feedCount"></span>
       </div>
 
-      {% if heads %}
-      <div class="feed" id="newsFeed">
-        {% for h in rest %}
-        <a class="news-card" href="{{ h.url }}" target="_blank" rel="noopener"
-           data-theme="{{ h.theme }}" data-importance="{{ h.importance }}" data-search="{{ (h.title ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.domain ~ ' ' ~ h.theme ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
-          <div class="news-date">
-            <span class="rank">#{{ loop.index + 1 }}</span>
-            <span class="label">{{ t('story', '条目') }}</span>
-          </div>
-          <div class="news-body">
-            <div class="news-top">
-              <span class="theme-chip th-{{ h.theme }}">{{ t(TL.get(h.theme, [h.theme,h.theme])[0], TL.get(h.theme, [h.theme,h.theme])[1]) }}</span>
-              <span class="source-chip"><b>{{ h.source_name or h.domain }}</b>{% if h.source_tier %} · {{ h.source_tier }}{% endif %}</span>
-              <span class="intel-pill imp-{{ h.importance }}"><b>{{ h.importance_score }}</b>/100</span>
+      <section class="summary-card">
+        <div class="sc-head">
+          <h2>{{ t('Market Summary', '市场摘要') }}</h2>
+          <span class="sc-updated"><span class="live-dot"></span><span data-ts="{{ macro_news.fetched_at if macro_news else '' }}" class="rel-time">{{ t('Updated', '更新于') }}</span></span>
+        </div>
+
+        {% if heads %}
+        <div id="newsFeed">
+          {% for h in heads %}
+          <details class="na-item"{% if loop.first %} open{% endif %}
+            data-theme="{{ h.theme }}" data-importance="{{ h.importance }}"
+            data-search="{{ (h.title ~ ' ' ~ (h.title_zh or '') ~ ' ' ~ h.domain ~ ' ' ~ (h.source_name or '') ~ ' ' ~ h.theme ~ ' ' ~ h.channels|join(' ') ~ ' ' ~ h.tickers|join(' '))|lower }}">
+            <summary class="na-sum">
+              <span class="na-theme th-{{ h.theme }}">{{ t(TL.get(h.theme, [h.theme,h.theme])[0], TL.get(h.theme, [h.theme,h.theme])[1]) }}</span>
+              <span class="na-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
+              <span class="na-right">
+                <span class="na-src">{{ h.source_name or h.domain }}</span>
+                {% if h.importance_score %}<span class="na-imp {{ h.importance }}">{{ h.importance_score }}</span>{% endif %}
+                <span class="na-chev">▾</span>
+              </span>
+            </summary>
+            <div class="na-body">
+              <p class="na-summary">{{ summ(h) }}</p>
+              <div class="na-tags">
+                {% for c in h.channels[:5] %}<span class="na-pill">{{ c|replace('_',' ') }}</span>{% endfor %}
+                {% for tk in h.tickers[:6] %}<span class="na-pill tk">{{ tk }}</span>{% endfor %}
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <a class="na-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source', '阅读原文') }} →</a>
+                {% if h.seendate %}<span class="na-when rel-time" data-ts="{{ h.seendate }}"></span>{% endif %}
+              </div>
             </div>
-            <h2 class="news-title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></h2>
-            <div class="intel-row">
-              {% for c in h.channels[:4] %}<span class="intel-pill">{{ c }}</span>{% endfor %}
-              {% for tk in h.tickers[:5] %}<span class="intel-pill tk-chip">{{ tk }}</span>{% endfor %}
-              {% for r in h.importance_reasons[:2] %}<span class="intel-pill">{{ r }}</span>{% endfor %}
-            </div>
-            <div class="news-meta"><span>{{ t('Context-only macro headline', '仅供背景的宏观头条') }}</span><span>{{ t('Open source', '打开来源') }}</span></div>
-          </div>
-        </a>
+          </details>
+          {% endfor %}
+        </div>
+        <div class="empty-state hidden" id="noFiltered">
+          <h2>{{ t('No stories match that view.', '没有符合当前视图的新闻。') }}</h2>
+          <p>{{ t('Clear the search or switch back to All themes.', '清空搜索或切回全部主题。') }}</p>
+        </div>
         {% else %}
         <div class="empty-state">
-          <h2>{{ t('Only one headline passed the filter.', '仅一条头条通过筛选。') }}</h2>
-          <p>{{ t('The lead story above is the full filtered feed for this run.', '上方主新闻即本次完整筛选结果。') }}</p>
+          <h2>{{ t('The macro tape is quiet right now.', '当前宏观新闻流较安静。') }}</h2>
+          <p>{{ t('No reputable macro headlines passed the filter on this pull — the fetch may be off, the provider rate-limited, or the window simply quiet. Catalysts and context remain live in the rail.',
+            '本次抓取没有可靠宏观头条通过筛选 — 可能抓取关闭、来源限流，或窗口本就平静。右侧的日程与背景仍保持更新。') }}</p>
         </div>
-        {% endfor %}
-      </div>
-      <div class="empty-state hidden" id="noFiltered">
-        <h2>{{ t('No stories match that view.', '没有符合当前视图的新闻。') }}</h2>
-        <p>{{ t('Clear the search or switch back to All themes.', '清空搜索或切回全部主题。') }}</p>
-      </div>
-      {% else %}
-      <div class="empty-state">
-        <h2>{{ t('No filtered headlines on this pull.', '本次抓取暂无筛选头条。') }}</h2>
-        <p>{{ t('This usually means the fetch is off, the provider is rate-limited, or the tape did not produce reputable macro matches in the window.',
-          '这通常表示抓取关闭、来源限流，或窗口内没有可靠宏观匹配。') }}</p>
-      </div>
-      {% endif %}
+        {% endif %}
+
+        <div class="sc-foot">
+          <span class="sc-srcs"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+          <span><b>{{ n_src }}</b> {{ t('sources', '来源') }}{% if macro_news and macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned', '已扫描') }} · {{ macro_news.n_kept or heads|length }} {{ t('kept', '保留') }}{% endif %}</span>
+          {% if macro_news and (macro_news.n_official or macro_news.n_news_rss or macro_news.n_gdelt) %}<span style="margin-left:auto">{{ macro_news.n_official or 0 }} {{ t('official','官方') }} · {{ macro_news.n_news_rss or 0 }} RSS · {{ macro_news.n_gdelt or 0 }} GDELT</span>{% endif %}
+        </div>
+      </section>
+
       {% if macro_news_disclaimer %}
       <p class="disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
       {% endif %}
@@ -239,26 +232,15 @@
 
     <aside class="rail">
       <section class="rail-card">
-        <h2>{{ t('Feed intelligence', '新闻情报') }}</h2>
-        {% if SYN.read %}<div class="rail-line"><div class="rail-date">{{ t('Read', '读数') }}</div><div class="rail-main">{{ SYN.read }}</div></div>{% endif %}
+        <h2>{{ t('Upcoming catalysts', '即将到来的催化') }}</h2>
+        {% for c in macro_catalysts[:8] %}
         <div class="rail-line">
-          <div class="rail-date">{{ t('Channels', '通道') }}</div>
-          <div class="rail-main">
-            {% for c in SYN_CHANNELS[:5] %}<span class="rail-tag">{{ c.name }}</span>{% else %}{{ t('No channel cluster yet', '暂无通道聚类') }}{% endfor %}
-          </div>
+          <div class="rail-date">{{ c.date }}{% if c.time_et %}<br>{{ c.time_et }} ET{% endif %}</div>
+          <div class="rail-main"><span class="rail-tag">{{ c.type }}</span>{{ c.label }}</div>
         </div>
-        <div class="rail-line">
-          <div class="rail-date">{{ t('Tickers', '标的') }}</div>
-          <div class="rail-main">
-            {% for tk in SYN_TICKERS[:6] %}<span class="rail-tag">{{ tk.ticker }}</span>{% else %}{{ t('No proxy tags yet', '暂无代理标的') }}{% endfor %}
-          </div>
-        </div>
-        <div class="rail-line">
-          <div class="rail-date">{{ t('Sources', '来源') }}</div>
-          <div class="rail-main">
-            {% for s in SYN_SOURCES[:4] %}<span class="rail-tag">{{ s.tier }} {{ s.count }}</span>{% else %}{{ t('No source mix yet', '暂无来源结构') }}{% endfor %}
-          </div>
-        </div>
+        {% else %}
+        <p class="mut">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
+        {% endfor %}
       </section>
 
       <section class="rail-card">
@@ -273,18 +255,6 @@
         {% endfor %}
       </section>
 
-      <section class="rail-card">
-        <h2>{{ t('Upcoming catalysts', '即将到来的催化') }}</h2>
-        {% for c in macro_catalysts[:8] %}
-        <div class="rail-line">
-          <div class="rail-date">{{ c.date }}{% if c.time_et %}<br>{{ c.time_et }} ET{% endif %}</div>
-          <div class="rail-main"><span class="rail-tag">{{ c.type }}</span>{{ c.label }}</div>
-        </div>
-        {% else %}
-        <p class="mut">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
-        {% endfor %}
-      </section>
-
       {% if prediction_markets and prediction_markets.events %}
       <section class="rail-card">
         <h2>{{ t('Market-implied odds', '市场隐含概率') }}</h2>
@@ -296,22 +266,37 @@
           {% endfor %}
         </div>
         {% endfor %}
+        <p class="mut" style="font-size:10px;margin:4px 0 0">{{ t('Crowd expectation, not a forecast.', '群体预期，非预测。') }}</p>
       </section>
       {% endif %}
+
+      <section class="rail-card">
+        <h2>{{ t('Feed intelligence', '新闻情报') }}</h2>
+        {% if SYN.read %}<div class="rail-line"><div class="rail-date">{{ t('Read', '读数') }}</div><div class="rail-main">{{ SYN.read }}</div></div>{% endif %}
+        <div class="rail-line">
+          <div class="rail-date">{{ t('Channels', '通道') }}</div>
+          <div class="rail-main">{% for c in SYN_CHANNELS[:5] %}<span class="rail-tag">{{ c.name }}</span>{% else %}<span class="mut">{{ t('No channel cluster yet', '暂无通道聚类') }}</span>{% endfor %}</div>
+        </div>
+        <div class="rail-line">
+          <div class="rail-date">{{ t('Tickers', '标的') }}</div>
+          <div class="rail-main">{% for tk in SYN_TICKERS[:6] %}<span class="rail-tag">{{ tk.ticker }}</span>{% else %}<span class="mut">{{ t('No proxy tags yet', '暂无代理标的') }}</span>{% endfor %}</div>
+        </div>
+        {% if RA.get('news_sentiment_state') %}
+        <div class="rail-line"><div class="rail-date">{{ t('SF-Fed', '旧金山联储') }}</div><div class="rail-main">{{ t('Daily News Sentiment', '每日新闻情绪') }}: <b class="{{ 'r-pos' if RA.get('news_sentiment_state')=='optimistic' else 'r-neg' }}">{{ t('optimistic','乐观') if RA.get('news_sentiment_state')=='optimistic' else t('pessimistic','悲观') }}</b>{% if RA.get('news_sentiment_z') is not none %} · z {{ '%+.1f'|format(RA.get('news_sentiment_z')) }}{% endif %}</div></div>
+        {% endif %}
+      </section>
 
       {% if ndi %}
       <section class="rail-card">
         <h2>{{ t('Narrative texture', '叙事纹理') }}</h2>
+        {% if ndi.ndi is not none %}<div class="rail-line"><div class="rail-date">NDI</div><div class="rail-main"><b>{{ ndi.ndi }}/100</b> · {{ t(ndi.band|title if ndi.band else 'context', {'calm':'平静','elevated':'偏高','high':'高'}.get(ndi.band, ndi.band or '背景')) }} <span class="mut">({{ t('display-only','仅展示') }})</span></div></div>{% endif %}
         {% if L.epu and L.epu.pct is not none %}<div class="rail-line"><div class="rail-date">EPU</div><div class="rail-main">{{ L.epu.pct }}{{ t('th pct', '百分位') }}</div></div>{% endif %}
         {% if L.gpr_threat and L.gpr_threat.pct is not none %}<div class="rail-line"><div class="rail-date">GPR</div><div class="rail-main">{{ L.gpr_threat.pct }}{{ t('th pct', '百分位') }}{% if L.gpr_threat.lean and L.gpr_threat.lean != 'balanced' %} · {{ t('led by', '主导') }} {{ t('threats', '威胁') if L.gpr_threat.lean == 'threat' else t('acts', '行动') }}{% endif %}</div></div>{% endif %}
         {% if L.vix and L.vix.pct is not none %}<div class="rail-line"><div class="rail-date">VIX</div><div class="rail-main">{{ L.vix.pct }}{{ t('th pct', '百分位') }}</div></div>{% endif %}
-        {% if narrative_regime and narrative_regime.events and narrative_regime.events.n_recent %}
-        <div class="rail-line"><div class="rail-date">{{ t('Bus', '总线') }}</div><div class="rail-main">{{ narrative_regime.events.n_recent }} {{ t('events', '事件') }}/{{ narrative_regime.window_days }}d{% if narrative_regime.events.unscheduled_share is not none %} · {{ (narrative_regime.events.unscheduled_share * 100) | round | int }}% {{ t('unscheduled', '非排程') }}{% endif %}</div></div>
-        {% endif %}
       </section>
       {% endif %}
     </aside>
-  </section>
+  </div>
 </main>
 {% endblock %}
 
@@ -319,7 +304,7 @@
 <script>
 (function(){
   var feed=document.getElementById('newsFeed');
-  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.news-card')) : [];
+  var rows=feed ? Array.prototype.slice.call(feed.querySelectorAll('.na-item')) : [];
   var search=document.getElementById('newsSearch');
   var filters=document.getElementById('themeFilters');
   var count=document.getElementById('feedCount');
@@ -343,13 +328,10 @@
     if(none) none.classList.toggle('hidden', shown>0 || rows.length===0);
     if(count) count.textContent=isZh() ? (shown + ' 条') : (shown + (shown===1 ? ' story' : ' stories'));
   }
-  if(search){
-    search.addEventListener('input', function(){ q=(search.value||'').trim().toLowerCase(); apply(); });
-  }
+  if(search){ search.addEventListener('input', function(){ q=(search.value||'').trim().toLowerCase(); apply(); }); }
   if(filters){
     filters.addEventListener('click', function(e){
-      var btn=e.target.closest('.filter-btn');
-      if(!btn) return;
+      var btn=e.target.closest('.filter-btn'); if(!btn) return;
       Array.prototype.forEach.call(filters.querySelectorAll('.filter-btn'), function(b){ b.classList.remove('on'); });
       btn.classList.add('on');
       theme=btn.getAttribute('data-theme')||'all';
@@ -357,9 +339,24 @@
       apply();
     });
   }
-  document.addEventListener('langchange', function(){ syncLang(); apply(); });
-  syncLang();
-  apply();
+  // relative-time stamps ("Updated 3 min ago", "2h ago")
+  function rel(ts){
+    var d=new Date(ts); if(isNaN(d)) return '';
+    var s=Math.max(0,(Date.now()-d.getTime())/1000), zh=isZh();
+    if(s<90) return zh?'刚刚':'just now';
+    var m=Math.round(s/60); if(m<60) return zh?(m+' 分钟前'):(m+' min ago');
+    var h=Math.round(m/60); if(h<48) return zh?(h+' 小时前'):(h+' h ago');
+    var dd=Math.round(h/24); return zh?(dd+' 天前'):(dd+' d ago');
+  }
+  function stamps(){
+    Array.prototype.forEach.call(document.querySelectorAll('.rel-time[data-ts]'), function(el){
+      var ts=el.getAttribute('data-ts'); if(!ts) return;
+      var r=rel(ts); if(!r) return;
+      el.textContent=(el.classList.contains('na-when')?'':(isZh()?'更新于 ':'Updated '))+r;
+    });
+  }
+  document.addEventListener('langchange', function(){ syncLang(); apply(); stamps(); });
+  syncLang(); apply(); stamps();
 })();
 </script>
 {% endblock %}

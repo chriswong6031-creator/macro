@@ -1007,12 +1007,225 @@
   {% if mode != 'stocks' %}
   <!-- ======================= HEADER ======================= -->
   <div class="panel span12" id="regime-radar">
+  <input type="checkbox" id="ms-alerts-toggle" class="ms-drawer-cb" hidden aria-hidden="true">
+  <style id="ms-css">
+  /* ===== MARKET STATE — fused command-center (DISPLAY-ONLY synthesis) ===== */
+  body.page-macro .ms-green{--ms-c:var(--up)}
+  body.page-macro .ms-yellow{--ms-c:var(--warn)}
+  body.page-macro .ms-red{--ms-c:var(--down)}
+  body.page-macro .ms-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px}
+  body.page-macro .ms-eyebrow{font-family:var(--num);font-size:10.5px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:8px}
+  body.page-macro .ms-eyebrow .num{color:var(--ink-2)}
+  body.page-macro .ms-live{width:7px;height:7px;border-radius:50%;background:var(--ms-c,var(--ink-3));
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--ms-c,var(--ink-3)) 20%,transparent)}
+  body.page-macro .ms-alerts-btn{margin-left:auto;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    border:var(--rule) solid var(--hair-strong);background:var(--tile);color:var(--ink-1);border-radius:9px;
+    padding:7px 13px;font-size:12.5px;font-weight:700;transition:border-color .16s,box-shadow .16s,transform .16s}
+  body.page-macro .ms-alerts-btn:hover{border-color:color-mix(in srgb,var(--link) 55%,var(--hair));
+    box-shadow:0 5px 16px -7px color-mix(in srgb,var(--link) 50%,transparent);transform:translateY(-1px)}
+  body.page-macro .ms-ab-ico{font-size:14px;line-height:1}
+  body.page-macro .ms-ab-count{font-family:var(--num);font-size:11px;font-weight:800;min-width:19px;height:19px;
+    padding:0 5px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;background:var(--act);color:#fff}
+  body.page-macro .ms-ab-count.is-zero{background:var(--tile);color:var(--ink-3);border:var(--rule) solid var(--hair)}
+
+  body.page-macro .ms-hero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
+  @media(max-width:680px){body.page-macro .ms-hero{grid-template-columns:1fr;gap:18px;justify-items:center;text-align:center}}
+  body.page-macro .ms-dial{--p:50;position:relative;width:142px;height:142px;border-radius:50%;display:grid;place-items:center;flex:none;
+    background:conic-gradient(var(--ms-c) calc(var(--p)*1%), color-mix(in srgb,var(--ms-c) 13%, var(--tile)) 0);
+    box-shadow:0 0 0 1px var(--hair),0 0 34px -6px color-mix(in srgb,var(--ms-c) 52%,transparent);animation:msPulse 4.8s ease-in-out infinite}
+  body.page-macro .ms-dial::before{content:"";position:absolute;inset:13px;border-radius:50%;background:var(--panel);box-shadow:inset 0 0 0 1px var(--hair)}
+  body.page-macro .ms-dial-in{position:relative;text-align:center;line-height:1}
+  body.page-macro .ms-score{font-family:var(--num);font-size:42px;font-weight:800;letter-spacing:-.03em;color:var(--ink-1)}
+  body.page-macro .ms-score-sub{display:block;font-family:var(--num);font-size:9.5px;font-weight:700;letter-spacing:.08em;
+    color:var(--ink-3);text-transform:uppercase;margin-top:3px}
+  @keyframes msPulse{0%,100%{box-shadow:0 0 0 1px var(--hair),0 0 28px -8px color-mix(in srgb,var(--ms-c) 48%,transparent)}
+    50%{box-shadow:0 0 0 1px var(--hair),0 0 42px -2px color-mix(in srgb,var(--ms-c) 60%,transparent)}}
+  @media(prefers-reduced-motion:reduce){body.page-macro .ms-dial{animation:none}}
+  body.page-macro .ms-verdict{display:flex;flex-direction:column;gap:7px;min-width:0}
+  body.page-macro .ms-verdict-word{font-size:36px;font-weight:800;letter-spacing:-.025em;line-height:1;color:var(--ms-c)}
+  html[data-lang="zh"] body.page-macro .ms-verdict-word{letter-spacing:0}
+  body.page-macro .ms-says{font-size:14px;color:var(--ink-2);line-height:1.5;max-width:64ch;margin:0}
+  body.page-macro .ms-flip{font-family:var(--num);font-size:11.5px;color:var(--ink-3);line-height:1.45;letter-spacing:.01em}
+  body.page-macro .ms-override{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--warn);
+    background:color-mix(in srgb,var(--warn) 12%,var(--tile));border:var(--rule) solid color-mix(in srgb,var(--warn) 34%,var(--hair));
+    border-radius:6px;padding:3px 9px;width:max-content;max-width:100%}
+  body.page-macro .ms-backdrop{display:flex;align-items:center;gap:10px;margin-top:4px;padding-top:10px;border-top:var(--rule) solid var(--hair)}
+  body.page-macro .ms-bd-mini{display:grid;grid-template-columns:repeat(2,13px);grid-template-rows:repeat(2,13px);gap:2.5px;flex:none}
+  body.page-macro .ms-bd-mini i{border-radius:3px;background:color-mix(in srgb,var(--qc) 15%,var(--tile));border:var(--rule) solid color-mix(in srgb,var(--qc) 26%,var(--hair))}
+  body.page-macro .ms-bd-mini i.on{background:var(--qc);box-shadow:0 0 8px color-mix(in srgb,var(--qc) 55%,transparent)}
+  body.page-macro .ms-bd-txt{font-size:12px;color:var(--ink-2)}
+  body.page-macro .ms-bd-txt b{color:var(--ink-1);font-weight:700}
+
+  /* factor rail — the multi-factor early-warning read, condensed */
+  body.page-macro .ms-factors{display:grid;grid-template-columns:repeat(6,1fr);gap:9px;margin-top:18px}
+  @media(max-width:1080px){body.page-macro .ms-factors{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:560px){body.page-macro .ms-factors{grid-template-columns:repeat(2,1fr)}}
+  body.page-macro .ms-fac{background:var(--tile);border:var(--rule) solid var(--hair);border-radius:10px;overflow:hidden}
+  body.page-macro .ms-fac>summary{list-style:none;cursor:pointer;padding:10px 11px;display:grid;gap:5px;border-left:3px solid var(--ft,var(--ink-3))}
+  body.page-macro .ms-fac>summary::-webkit-details-marker{display:none}
+  body.page-macro .ms-tone-good{--ft:var(--up)}
+  body.page-macro .ms-tone-bad{--ft:var(--down)}
+  body.page-macro .ms-tone-warn{--ft:var(--warn)}
+  body.page-macro .ms-tone-flat{--ft:var(--ink-3)}
+  body.page-macro .ms-fac-top{display:flex;align-items:baseline;gap:6px}
+  body.page-macro .ms-fac-arrow{font-size:12px;color:var(--ft);font-weight:700;line-height:1}
+  body.page-macro .ms-fac-score{margin-left:auto;font-family:var(--num);font-size:15px;font-weight:800;color:var(--ink-1)}
+  body.page-macro .ms-fac-lbl{font-size:10.5px;font-weight:700;color:var(--ink-2)}
+  body.page-macro .ms-fac-read{font-size:11px;color:var(--ink-3);line-height:1.4;margin:0}
+  body.page-macro .ms-fac[open]>summary{border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro .ms-fac-body{padding:8px 11px 9px}
+  body.page-macro .ms-mrow{display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:3px 0;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro .ms-mrow:last-child{border-bottom:0}
+  body.page-macro .ms-mrow span{color:var(--ink-3)}
+  body.page-macro .ms-mrow b{color:var(--ink-1);font-family:var(--num);font-weight:700}
+
+  /* multi-timeframe tape — the technical monitor, redrawn as arrows */
+  body.page-macro .ms-tape{margin-top:14px;background:var(--tile);border:var(--rule) solid var(--hair);border-radius:10px;padding:11px 14px}
+  body.page-macro .ms-tape-h{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--ink-3);margin-bottom:9px}
+  body.page-macro .ms-tape-row{display:grid;grid-template-columns:120px minmax(0,1fr) 92px;align-items:center;gap:12px;
+    padding:5px 0;border-top:var(--rule) solid var(--hair)}
+  body.page-macro .ms-tape-row.hdr{border-top:0;padding:0 0 2px}
+  body.page-macro .ms-tape-name{font-size:12px;font-weight:700;color:var(--ink-1)}
+  body.page-macro .ms-tape-cells{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-width:300px}
+  body.page-macro .ms-tape-row.hdr .ms-tape-cells>span{font-family:var(--num);font-size:9px;font-weight:700;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--ink-3);text-align:center}
+  body.page-macro .ms-cell{display:flex;flex-direction:column;align-items:center;gap:1px;border-radius:7px;padding:5px 0;
+    background:color-mix(in srgb,var(--cc,var(--ink-3)) 11%,var(--panel));border:var(--rule) solid color-mix(in srgb,var(--cc,var(--ink-3)) 26%,var(--hair))}
+  body.page-macro .ms-cell .a{font-size:13px;font-weight:800;color:var(--cc);line-height:1}
+  body.page-macro .ms-cell .r{font-family:var(--num);font-size:8.5px;color:var(--ink-3)}
+  body.page-macro .ms-cell.ms-good{--cc:var(--up)}
+  body.page-macro .ms-cell.ms-bad{--cc:var(--down)}
+  body.page-macro .ms-cell.ms-flat{--cc:var(--ink-3)}
+  body.page-macro .ms-tape-conf{font-size:11px;font-weight:700;text-align:right;color:var(--ft,var(--ink-3))}
+
+  body.page-macro .ms-divider{display:flex;align-items:center;gap:12px;margin:20px 0 6px;font-family:var(--num);
+    font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+  body.page-macro .ms-divider::after{content:"";flex:1;height:1px;background:var(--hair)}
+  html[data-lang="zh"] body.page-macro .ms-divider,html[data-lang="zh"] body.page-macro .ms-tape-h,
+  html[data-lang="zh"] body.page-macro .ms-eyebrow{letter-spacing:0}
+
+  /* ===== fired-alerts drawer (pure-CSS toggle via #ms-alerts-toggle) ===== */
+  body.page-macro .ms-drawer{display:none}
+  body.page-macro #ms-alerts-toggle:checked~.ms-drawer{display:block}
+  body.page-macro .ms-drawer-scrim{position:fixed;inset:0;z-index:80;background:color-mix(in srgb,#05070b 58%,transparent);
+    -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);cursor:pointer;animation:msFade .2s ease}
+  body.page-macro .ms-drawer-panel{position:fixed;top:0;right:0;bottom:0;z-index:81;width:min(470px,94vw);background:var(--panel);
+    border-left:var(--rule) solid var(--hair-strong);box-shadow:-22px 0 64px -22px rgba(0,0,0,.6);display:flex;flex-direction:column;
+    animation:msSlide .26s cubic-bezier(.2,.7,.3,1)}
+  @keyframes msSlide{from{transform:translateX(100%)}to{transform:translateX(0)}}
+  @keyframes msFade{from{opacity:0}to{opacity:1}}
+  @media(prefers-reduced-motion:reduce){body.page-macro .ms-drawer-panel,body.page-macro .ms-drawer-scrim{animation:none}}
+  body.page-macro .ms-drawer-head{display:flex;align-items:flex-start;gap:10px;padding:18px 20px;border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro .ms-drawer-title{font-size:15px;font-weight:800;color:var(--ink-1)}
+  body.page-macro .ms-drawer-sub{font-size:11.5px;color:var(--ink-3);line-height:1.45;margin-top:3px;max-width:38ch}
+  body.page-macro .ms-drawer-close{margin-left:auto;cursor:pointer;width:30px;height:30px;border-radius:8px;flex:none;
+    border:var(--rule) solid var(--hair);background:var(--tile);color:var(--ink-2);display:grid;place-items:center;font-size:17px;line-height:1}
+  body.page-macro .ms-drawer-close:hover{color:var(--ink-1);border-color:var(--link)}
+  body.page-macro .ms-drawer-body{padding:14px 16px 28px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+  body.page-macro .ms-sig{display:block;border:var(--rule) solid var(--hair);border-left:3px solid var(--sgc,var(--ink-3));
+    border-radius:10px;background:var(--tile);padding:12px 14px;color:var(--ink-1);transition:transform .12s,box-shadow .12s}
+  body.page-macro a.ms-sig:hover{transform:translateX(-2px);box-shadow:0 4px 16px -8px rgba(0,0,0,.4)}
+  body.page-macro .ms-sig.sev-act{--sgc:var(--act)}
+  body.page-macro .ms-sig.sev-warn{--sgc:var(--warn)}
+  body.page-macro .ms-sig.sev-info{--sgc:var(--info)}
+  body.page-macro .ms-sig-head{display:flex;align-items:baseline;gap:9px}
+  body.page-macro .ms-sig-ico{font-size:16px;line-height:1;flex:none}
+  body.page-macro .ms-sig-title{font-size:13.5px;font-weight:700;color:var(--ink-1);line-height:1.3}
+  body.page-macro .ms-sig-jump{margin-left:auto;font-size:11px;font-weight:700;color:var(--link);white-space:nowrap;flex:none}
+  body.page-macro .ms-sig-detail{font-family:var(--num);font-size:12px;color:var(--ink-2);margin:8px 0 0;line-height:1.4}
+  body.page-macro .ms-sig-what{font-size:11.5px;color:var(--ink-3);line-height:1.5;margin:8px 0 0;padding-top:8px;border-top:var(--rule) solid var(--hair)}
+  body.page-macro .ms-sig-edge{font-size:11.5px;color:var(--ink-2);margin:6px 0 0;line-height:1.45}
+  body.page-macro .ms-sig-edge b{color:var(--ink-3);font-weight:600}
+  body.page-macro .ms-drawer-empty{text-align:center;color:var(--ink-3);padding:46px 22px;font-size:13px;line-height:1.55}
+  body.page-macro .ms-drawer-empty .big{font-size:38px;display:block;margin-bottom:10px;color:var(--up);opacity:.7}
+  </style>
     {% set _ol = {
       'Q1': ('Falling inflation with steady growth — the friendliest backdrop for tech &amp; quality. Trust the radar, not just the label.', '通胀回落、增长平稳 — 对科技与质量最友好的环境。盯住雷达，而非仅看标签。'),
       'Q2': ('Growth and inflation both firming — favour cyclicals, energy and banks.', '增长与通胀同步走强 — 偏好周期股、能源与银行。'),
       'Q3': ('Sticky inflation into slowing growth — the dangerous regime; defend capital first.', '通胀粘性叠加增长放缓 — 最危险的周期；优先保住本金。'),
       'Q4': ('A growth scare with cooling inflation — lean defensive, bonds over stocks.', '增长恐慌伴随通胀降温 — 偏防御，债优于股。')
     } %}
+    {% if market_state %}
+    {% set MS = market_state %}
+    {# ===== MARKET STATE command-center — the first read: what kind of market is this? ===== #}
+    <div class="ms-head">
+      <span class="ms-eyebrow ms-{{ MS.color }}"><span class="ms-live"></span>{{ t('MARKET STATE','市场状态') }} <span class="num">· {{ MS.asof }}</span></span>
+      {{ help("What kind of market is this RIGHT NOW — a single risk-on/off read that BLENDS the broad-market tape across timeframes, cross-asset risk appetite, the volatility regime, market breadth, Fed liquidity & credit, and the downturn-risk guards into one 0-100 score. GREEN risk-on (≥60) · YELLOW mixed/transition (42–59) · RED risk-off (<42). Confirmation over prediction: every leg reads what has ALREADY turned, not a forecast. A handful of early-warning overrides (an act-level alert, a fresh regime flip, a high/extreme drawdown or acute systemic-stress band) can cap or force the verdict. DISPLAY-ONLY — a synthesis of signals shown elsewhere on this page; it never scores, sizes or feeds the regime engine.", "当前是什么样的市场 — 一个把多周期大盘趋势、跨资产风险偏好、波动率环境、市场广度、联储流动性与信用，以及下行风险护栏融合为一个 0-100 评分的风险偏好读数。绿色＝风险偏好（≥60）·黄色＝混合/转换（42–59）·红色＝避险（<42）。确认优于预测：每条腿读取的是已经转向的东西，而非预测。少数早期预警可封顶或强制结论。仅供展示 — 它是本页其他信号的综合，绝不评分、定仓或进入周期引擎。") }}
+      {% set _nalerts = (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) %}
+      <label class="ms-alerts-btn" for="ms-alerts-toggle" title="{{ t('Open fired-alerts signals','打开已触发警报') }}">
+        <span class="ms-ab-ico">⚠</span>{{ t('Fired alerts','已触发警报') }}
+        <span class="ms-ab-count{{ ' is-zero' if _nalerts == 0 }}">{{ _nalerts }}</span>
+      </label>
+    </div>
+
+    <div class="ms-hero ms-{{ MS.color }}">
+      <div class="ms-dial" style="--p:{{ MS.score }}">
+        <div class="ms-dial-in"><span class="ms-score">{{ MS.score }}</span><span class="ms-score-sub">/ 100 · {{ t('risk-on','偏好') }}</span></div>
+      </div>
+      <div class="ms-verdict">
+        <span class="ms-verdict-word">{{ t(MS.label_en, MS.label_zh) }}</span>
+        <p class="ms-says">{{ t(MS.headline_en, MS.headline_zh) }}</p>
+        {% for o in MS.overrides %}<span class="ms-override">⚠ {{ t(o.note_en, o.note_zh) }}</span>{% endfor %}
+        {% if MS.flip_en %}<span class="ms-flip">{{ t(MS.flip_en, MS.flip_zh) }}</span>{% endif %}
+        <div class="ms-backdrop">
+          <span class="ms-bd-mini" title="{{ t('Macro regime quadrant','宏观周期象限') }}">
+            <i class="{{ 'on' if latest.quad=='Q1' }}" style="--qc:var(--q1)"></i>
+            <i class="{{ 'on' if latest.quad=='Q2' }}" style="--qc:var(--q2)"></i>
+            <i class="{{ 'on' if latest.quad=='Q4' }}" style="--qc:var(--q4)"></i>
+            <i class="{{ 'on' if latest.quad=='Q3' }}" style="--qc:var(--q3)"></i>
+          </span>
+          <span class="ms-bd-txt">{{ t('Macro backdrop','宏观背景') }}: <b>{{ td(latest.quad_name) }}</b> · {{ td(latest.cycle_tag) }}-{{ t('cycle','周期') }} · {{ t('liquidity','流动性') }} {{ td(latest.liquidity_overlay) }}</span>
+        </div>
+      </div>
+    </div>
+
+    {# the six factors behind the verdict — click any to expand its metrics (absorbs the old vol-shock / signal-stack / internals reads) #}
+    <div class="ms-factors">
+      {% for c in MS.components %}
+      <details class="ms-fac ms-tone-{{ c.tone }}">
+        <summary>
+          <div class="ms-fac-top"><span class="ms-fac-arrow">{{ c.arrow }}</span><span class="ms-fac-lbl">{{ t(c.label_en, c.label_zh) }}</span><span class="ms-fac-score">{{ c.score }}</span></div>
+          <p class="ms-fac-read">{{ t(c.read_en, c.read_zh) }}</p>
+        </summary>
+        {% if c.metrics %}
+        <div class="ms-fac-body">
+          {% for m in c.metrics %}<div class="ms-mrow"><span>{{ t(m.k_en, m.k_zh) }}</span><b>{{ m.v }}</b></div>{% endfor %}
+        </div>
+        {% endif %}
+      </details>
+      {% endfor %}
+    </div>
+
+    {% if MS.mtf and MS.mtf.indices %}
+    {# the multi-timeframe technical monitor — redrawn from a dense table into arrows #}
+    <div class="ms-tape">
+      <div class="ms-tape-h">{{ t('Multi-timeframe tape · the broad US market','多周期趋势 · 美股大盘') }}
+        {{ help("How the broad US market is trending across four timeframes — Daily, 3-Day, Weekly and Monthly — for the S&P 500, Nasdaq 100 and Russell 2000. ▲ = up (MACD positive and RSI ≥ 50), ▼ = down, ▶ = mixed. The right-hand verdict is the confluence across timeframes. When short timeframes turn up while long ones stay down, it is an unconfirmed turn — confirmation comes when the weekly aligns.", "美股大盘在四个周期（日、3日、周、月）上的趋势 — 标普500、纳指100、罗素2000。▲＝上行（MACD 为正且 RSI ≥ 50），▼＝下行，▶＝分化。右侧为多周期合流结论。当短周期转强而长周期仍弱时，是未确认的转向 — 待周线对齐方为确认。") }}
+      </div>
+      <div class="ms-tape-row hdr">
+        <span class="ms-tape-name"></span>
+        <span class="ms-tape-cells"><span>{{ t('Daily','日') }}</span><span>3D</span><span>{{ t('Weekly','周') }}</span><span>{{ t('Monthly','月') }}</span></span>
+        <span></span>
+      </div>
+      {% for r in MS.mtf.indices %}
+      <div class="ms-tape-row">
+        <span class="ms-tape-name">{{ t(r.label_en, r.label_zh) }}</span>
+        <span class="ms-tape-cells">
+          {% for tf in ['D','3D','W','M'] %}{% set cell = r.cells[tf] %}
+          {% if cell %}<span class="ms-cell ms-{{ cell.tone }}" title="{{ tf }} · RSI {{ cell.rsi|round|int if cell.rsi is not none else '—' }} · MACD {{ 'positive' if cell.macd_pos else 'negative' }}"><span class="a">{{ cell.arrow }}</span><span class="r">{{ cell.rsi|round|int if cell.rsi is not none else '·' }}</span></span>
+          {% else %}<span class="ms-cell ms-flat"><span class="a">·</span><span class="r"></span></span>{% endif %}{% endfor %}
+        </span>
+        <span class="ms-tape-conf ms-tone-{{ r.tone }}">{{ t(r.confluence_en, r.confluence_zh) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="ms-divider">{{ t('Macro backdrop — the growth × inflation regime','宏观背景 — 增长 × 通胀周期') }}</div>
+    {% endif %}{# /market_state #}
+
     <div class="hero-bar">
       <!-- LEFT — 2×2 quadrant locator (growth ↑ top, inflation → right; lit cell = today) -->
       <div class="hero-loc">
@@ -1205,6 +1418,50 @@
         </span>
       </div>
     </details>
+
+    {# ===== fired-alerts drawer — opened by the command-center button ===== #}
+    <div class="ms-drawer">
+      <label class="ms-drawer-scrim" for="ms-alerts-toggle" aria-label="{{ t('Close','关闭') }}"></label>
+      <aside class="ms-drawer-panel" role="dialog" aria-modal="true" aria-label="{{ t('Fired alerts','已触发警报') }}">
+        <div class="ms-drawer-head">
+          <div>
+            <div class="ms-drawer-title">⚠ {{ t('Fired alerts','已触发警报') }}</div>
+            <div class="ms-drawer-sub">{{ t('Alerts are rare by design — they fire only on a change: a level escalating, a crossing, a sign flip. Read every one.','警报刻意稀少 — 仅在发生变化时触发：级别升级、出现交叉、符号翻转。每条都要读。') }}</div>
+          </div>
+          <label class="ms-drawer-close" for="ms-alerts-toggle" aria-label="{{ t('Close','关闭') }}" title="{{ t('Close','关闭') }}">×</label>
+        </div>
+        <div class="ms-drawer-body">
+          {% if latest.dislocation and latest.dislocation.dislocation_active %}
+          <a class="ms-sig sev-act" data-ms-jump href="#dislocation">
+            <div class="ms-sig-head"><span class="ms-sig-ico">🚦</span><span class="ms-sig-title">{{ t('Dislocation Gate-1 is ACTIVE','错位一道闸已激活') }}</span><span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span></div>
+            <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).','压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
+          </a>
+          {% endif %}
+          {% if alerts %}{% for a in alerts %}
+          <a class="ms-sig sev-{{ a.severity }}"{% if a.anchor %} data-ms-jump href="#{{ a.anchor }}"{% endif %}>
+            <div class="ms-sig-head"><span class="ms-sig-ico">{{ a.icon }}</span><span class="ms-sig-title"><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></span>{% if a.anchor %}<span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span>{% endif %}</div>
+            <div class="ms-sig-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
+            {% if a.what_en %}<div class="ms-sig-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>{% endif %}
+            {% if a.edge_en %}<div class="ms-sig-edge"><b>{{ t('Conviction:','可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
+          </a>
+          {% endfor %}{% elif not (latest.dislocation and latest.dislocation.dislocation_active) %}
+          <div class="ms-drawer-empty"><span class="big">✓</span>{{ t('No alerts fired today. Alerts are rare by design — they fire only on a change.','今日无警报触发。警报刻意稀少 — 仅在发生变化时触发。') }}</div>
+          {% endif %}
+        </div>
+      </aside>
+    </div>
+    <script>
+    (function(){
+      var cb=document.getElementById('ms-alerts-toggle');
+      if(!cb) return;
+      document.addEventListener('click',function(e){
+        if(e.target.closest('[data-ms-jump]')) cb.checked=false;
+      });
+      document.addEventListener('keydown',function(e){
+        if(e.key==='Escape'&&cb.checked) cb.checked=false;
+      });
+    })();
+    </script>
   </div>
 
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
@@ -1296,38 +1553,7 @@
   </div>
   {% endif %}
 
-  <!-- ===================== SIGNAL STACK — consolidated cross-subsystem read ===================== -->
-  {% if signal_stack %}
-  <div class="panel span12" id="signal-stack">
-    <h2>{{ t('Signal stack — where the evidence agrees & disagrees', '信号堆栈 — 证据在何处一致、在何处分歧') }}
-      {{ help("Institutions don't ask 'is it bullish?' — they ask 'which parts of the evidence disagree?'. This collapses the dashboard's subsystem reads into one stack: each leg's lean, the regime-core agreement, and the single biggest contradiction. It re-presents signals detailed below — it invents nothing and is never scored. SCORED legs drive the regime / allocation; CONTEXT legs are positioning colour only.", "机构不会问'是不是看多？'，而是问'证据的哪些部分相互矛盾？'。这把仪表盘各子系统读数汇聚为一个堆栈：每条腿的倾向、周期核心一致度，以及最大的那条矛盾。它只是对下方详述信号的再呈现 — 不创造新信号，也从不计入评分。已评分腿驱动周期／仓位；背景腿仅为仓位色彩。") }}
-    </h2>
-    <div class="sstack-grid">
-      <div class="sstack-legs">
-        {% for leg in signal_stack.legs %}
-        <div class="sstack-leg">
-          <span class="sstack-dot tone-{{ leg.tone }}"></span>
-          <span class="sstack-name">{{ t(leg.label_en, leg.label_zh) }}{% if leg.tier == 'context' %}<span class="sstack-tier">{{ t('context', '背景') }}</span>{% endif %}</span>
-          <span class="sstack-state tone-{{ leg.tone }}">{{ t(leg.state_en, leg.state_zh) }}</span>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="sstack-verdict">
-        <div class="sstack-final tone-{{ signal_stack.anchor_tone }}">{{ t('Final', '结论') }}: <b>{{ t(signal_stack.final_en, signal_stack.final_zh) }}</b></div>
-        {% if signal_stack.agreement_pct is not none %}
-        <div class="sstack-agree">{{ t('Regime agreement', '周期一致度') }} <b>{{ signal_stack.agreement_pct }}%</b>{% if signal_stack.quality_en %} — {{ t(signal_stack.quality_en, signal_stack.quality_zh) }}{% endif %}</div>
-        {% endif %}
-        <div class="sstack-tally"><b class="tone-up">{{ signal_stack.n_bull }}</b> {{ t('constructive', '建设性') }} · <b>{{ signal_stack.n_flat }}</b> {{ t('neutral', '中性') }} · <b class="tone-down">{{ signal_stack.n_bear }}</b> {{ t('cautionary', '谨慎') }} {{ t('of', '／共') }} {{ signal_stack.n }}</div>
-        {% if signal_stack.contradiction_en %}
-        <div class="sstack-contra">⚠ {{ t('Main contradiction', '主要矛盾') }}: {{ t(signal_stack.contradiction_en, signal_stack.contradiction_zh) }}</div>
-        {% else %}
-        <div class="sstack-contra ok">✓ {{ t('Broad agreement — no leg is fighting the regime', '广泛一致 — 没有腿与周期相左') }}</div>
-        {% endif %}
-      </div>
-    </div>
-    <p class="muted sm" style="margin:10px 0 0">{{ t('Display-only consolidation of the signals detailed below — it changes no score. The agreement % is the validated regime-core read; the legs are context.', '仅为下方详述信号的展示性汇总 — 不改变任何评分。一致度为经验证的周期核心读数；各腿为背景。') }}</p>
-  </div>
-  {% endif %}
+  {# signal-stack retired — folded into the Market State command-center #}
 
   <!-- ===================== RATE & INFLATION TRANSMISSION (compact; full page = transmission.html) ===================== -->
   {% if latest.rate_inflation_transmission and latest.rate_inflation_transmission.state %}
@@ -1488,75 +1714,9 @@
     {% endif %}
   </div>
 
-  <!-- ===================== MARKET SNAPSHOT TILES ===================== -->
-  {% if market_tiles %}
-  <div class="panel span12" id="market-tiles">
-    <h2>{{ t('Market snapshot', '市场快照') }}
-      {{ help("The headline cross-asset levels in one glance — equities, volatility, the Treasury curve, the dollar and oil — each with its 1-day move. A quick orientation; the read and the why live in the panels below.", "一眼看尽跨资产的关键水平 — 股票、波动率、国债收益率曲线、美元与原油 — 各附其单日变动。用于快速定位；解读与原因见下方面板。") }}
-    </h2>
-    <div class="mtiles">
-      {% for tl in market_tiles %}
-      <div class="mtile">
-        <div class="mtile-top"><span class="mtile-lbl">{{ tl.label }}</span><span class="mtile-tag">{{ tl.tag }}</span></div>
-        <div class="mtile-val{% if tl.sym %} nb-px{% endif %}"{% if tl.sym %} data-sym="{{ tl.sym }}" data-mkt="{{ tl.mkt }}"{% endif %}>{{ tl.level }}</div>
-        {% if tl.sym %}
-        <div class="mtile-chg {{ tl.tone }}"><span class="nb-chg" data-sym="{{ tl.sym }}">{{ tl.pct }}</span></div>
-        {% else %}
-        <div class="mtile-chg {{ tl.tone }}">{{ tl.chg }} <span class="muted">({{ tl.pct }})</span></div>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
+  {# market-tiles retired — folded into the Market State command-center #}
 
-  <!-- ===================== REGIME TIME MACHINE ===================== -->
-  <div class="panel span12" id="time-machine">
-    <h2>{{ t('⏳ Regime time machine', '⏳ 周期时光机') }}
-      {{ help("Drag the playhead across ~28 years of history and the readout below rewinds the regime CORE to that day — quadrant, growth/inflation scores, signal agreement, liquidity, business-cycle position and the warning flags that were firing. (Sector, holdings & playbook panels lower down aren't stored historically, so they always show today.) Hit ▶ to play the regime forward through time and watch the quad ribbon flip at every major turn — 2008, 2020, 2022.", "拖动播放头横扫约 28 年历史，下方读数会把周期核心回退到那一天 — 象限、增长／通胀分数、信号一致度、流动性、商业周期位置，以及当天触发的预警旗。（下方的板块、持仓与剧本面板不作历史存储，故始终显示今日。）点击 ▶ 让周期随时间向前播放，看周期色带在每个重大转折处翻转 — 2008、2020、2022。") }}
-    </h2>
-    <div class="tm-wrap">
-      <canvas id="tm-canvas" class="tm-canvas"></canvas>
-      <input id="tm-range" class="tm-range" type="range" min="0" max="0" value="0"
-             aria-label="Scrub regime history">
-    </div>
-    <div class="tm-controls">
-      <button class="tm-btn tm-play" id="tm-play" aria-label="play/pause"
-              title="Play / pause through time">
-        <span class="tm-play-ico"></span>
-      </button>
-      <span class="tm-presets">
-        <button class="tm-btn" data-tm-jump="now">{{ t('Now', '现在') }}</button>
-        <button class="tm-btn" data-tm-jump="2022-06-16">{{ t('2022 bear', '2022 熊市') }}</button>
-        <button class="tm-btn" data-tm-jump="2020-03-23">{{ t('2020 COVID', '2020 疫情') }}</button>
-        <button class="tm-btn" data-tm-jump="2008-11-20">{{ t('2008 GFC', '2008 金融危机') }}</button>
-      </span>
-    </div>
-    <div class="tm-readout">
-      <div class="tm-asof">
-        <span class="tm-date" id="tm-date">—</span>
-        <span class="tm-state-tag is-live" id="tm-tag">—</span>
-      </div>
-      <div class="tm-badges">
-        <span class="badge" id="tm-quad">—</span>
-        <span class="badge" id="tm-trans">—</span>
-        <span class="kv">{{ t('agreement', '一致度') }} <b id="tm-conf">—</b></span>
-        <span class="kv">{{ t('cycle', '商业周期') }} <b id="tm-cyc">—</b></span>
-        <span class="kv">{{ t('liquidity', '流动性') }} <b id="tm-liq">—</b></span>
-      </div>
-      <div class="tm-gauges">
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Growth', '增长') }}</span><span class="muted" id="tm-g-v">—</span></div>
-          <div class="gauge"><i id="tm-g-i" style="left:50%"></i></div>
-        </div>
-        <div class="tm-gauge">
-          <div class="tm-glabel"><span>{{ t('Inflation', '通胀') }}</span><span class="muted" id="tm-i-v">—</span></div>
-          <div class="gauge"><i id="tm-i-i" style="left:50%"></i></div>
-        </div>
-      </div>
-      <div class="tm-flags" id="tm-flags"></div>
-    </div>
-  </div>
+  {# time-machine retired — folded into the Market State command-center #}
 
   {# Fired alerts moved into the combined "Now" board (alerts · news · relief radar) below. #}
 
@@ -1641,45 +1801,7 @@
   </div>
   {% endif %}
 
-  <!-- ============ MULTI-TIMEFRAME TECHNICAL MONITOR (engine/mtf_monitor.py) ============ -->
-  {% if mode == 'macro' and mtf and mtf.groups %}
-  {% set PCOL = {'falling':'var(--act)','rolling':'var(--warn)','basing':'var(--muted)','turning':'var(--up)','rising':'var(--up)','unknown':'var(--muted)'} %}
-  {% set TCOL = {'breakdown':'var(--act)','rolling-over':'var(--warn)','weakening':'var(--orange)','bottoming':'var(--up)','firm':'var(--up)','neutral':'var(--muted)'} %}
-  {% set TZH = {'breakdown':'破位','rolling-over':'走弱','weakening':'转弱','bottoming':'筑底','firm':'稳健','neutral':'中性'} %}
-  <div class="panel span12" id="mtf-monitor">
-    <h2>🕸️ {{ t('Multi-timeframe technical monitor', '多周期技术监测') }}
-      {{ help('Monthly / weekly / daily (/ 4h) MACD-RSI posture across the major indexes, asset classes and ALL sector ETFs (engine/mtf_monitor.py, reusing the leak-aware cycles.py toolkit). Watches for breakdowns, momentum rolls and bearish RSI divergences — the TOP-side mirror of the bottoming-alignment engine. Phases describe MOMENTUM, not price targets; the major-index breakdown read feeds the risk state. A narrow tape shows up here as firm indexes over breaking-down sectors.', '在主要指数、大类资产与全部行业ETF上做月线/周线/日线（/4小时）的 MACD-RSI 态势监测（engine/mtf_monitor.py，复用 cycles.py 无前视工具）。监测破位、动能走弱与看跌RSI背离 —— 是筑底对齐引擎的“顶部”镜像。相位描述的是动能而非价格目标；主要指数的破位读数会喂入风险状态。窄幅行情会表现为指数稳健而行业破位。') }}
-    </h2>
-    <p class="muted sm" style="margin:-2px 0 10px">{{ t('Breakdowns', '破位') }} <b style="color:var(--act)">{{ mtf.breakdown_count }}</b> · {{ t('rolling over', '走弱') }} <b style="color:var(--warn)">{{ mtf.rolling_count }}</b>{% if mtf.technical_intensity is not none %} · {{ t('index technical stress', '指数技术压力') }} <b>{{ (mtf.technical_intensity*100)|round|int }}%</b>{% endif %}{% if not mtf.has_4h %} · <span class="muted">{{ t('4h shown when intraday store present', '有日内数据时显示4小时') }}</span>{% endif %}</p>
-    {% for grp in [('indexes','Indexes','指数'),('assets','Asset classes','大类资产'),('sectors','Sector ETFs','行业ETF')] %}
-    {% if mtf.groups[grp[0]] %}
-    <div class="sm" style="font-weight:700;margin:10px 0 4px">{{ t(grp[1], grp[2]) }}</div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead><tr style="text-align:left;color:var(--muted)">
-          <th style="padding:3px 6px">{{ t('Name', '名称') }}</th>
-          <th style="padding:3px 6px">M</th><th style="padding:3px 6px">W</th>
-          <th style="padding:3px 6px">3D</th><th style="padding:3px 6px">D</th>
-          {% if mtf.has_4h %}<th style="padding:3px 6px">4H</th>{% endif %}
-          <th style="padding:3px 6px">{{ t('Read', '判定') }}</th>
-        </tr></thead>
-        <tbody>
-        {% for r in mtf.groups[grp[0]] %}
-        <tr style="border-top:1px solid var(--line)">
-          <td style="padding:3px 6px"><b>{{ r.ticker }}</b> <span class="muted">{{ t(r.en, r.zh) }}</span>{% if r.flags %} <span class="muted" style="font-size:10px">· {{ r.flags|join(', ') }}</span>{% endif %}</td>
-          {% for tf in ['M','W','3D','D'] %}<td style="padding:3px 6px;color:{{ PCOL[r.tfs[tf].phase] }}">{{ t(r.tfs[tf].phase_en, r.tfs[tf].phase_zh) }}</td>{% endfor %}
-          {% if mtf.has_4h %}<td style="padding:3px 6px;color:{{ PCOL[r.tfs['4H'].phase] if '4H' in r.tfs else 'var(--muted)' }}">{% if '4H' in r.tfs %}{{ t(r.tfs['4H'].phase_en, r.tfs['4H'].phase_zh) }}{% else %}—{% endif %}</td>{% endif %}
-          <td style="padding:3px 6px;font-weight:700;color:{{ TCOL[r.tag] }}">{{ t(r.tag, TZH[r.tag]) }}</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% endif %}
-    {% endfor %}
-    <div class="muted" style="font-size:11px;margin-top:8px">{{ t(mtf.disclaimer, mtf.disclaimer) }}</div>
-  </div>
-  {% endif %}
+  {# mtf-monitor (Multi-timeframe technical monitor) retired — folded into the Market State command-center #}
 
   <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
   {% if latest.dislocation %}
@@ -1818,8 +1940,6 @@
     <h2>🛰️ {{ t('Macro nowcast · conditions · risk appetite', '宏观即时预测 · 金融条件 · 风险偏好') }}
       {{ help("A complementary lens that runs ALONGSIDE the price-based quad and never alters it: the Fed-research feeds and option-implied risk that a markets-only model misses. Financial conditions (Chicago Fed NFCI — 105 inputs in one z-score), a 0–100 recession-risk score (Sahm rule + smoothed probability + Excess Bond Premium + a term-premium-ADJUSTED curve that strips the 2022–24 false inversion), real-time growth (Weekly Economic Index, GDPNow) and inflation (Atlanta sticky vs flexible CPI) nowcasts, and a cross-asset risk-appetite read (equity vol-risk-premium, VIX term structure, CBOE SKEW, the stock-bond correlation regime, a RORO composite). Free Fed/CBOE data — see research/QUANT_FACTOR_EXPANSION.md.", "一个与价格象限并行、绝不改变象限的补充视角：纯市场模型遗漏的美联储研究数据与期权隐含风险。金融条件（芝加哥联储 NFCI — 105 项输入合成一个 z 分数）、0–100 衰退风险评分（Sahm 法则 + 平滑概率 + 超额债券溢价 + 期限溢价调整后的收益率曲线，剔除 2022–24 的假性倒挂）、实时增长（周度经济指数、GDPNow）与通胀（亚特兰大黏性对弹性 CPI）即时预测，以及跨资产风险偏好（股票波动率风险溢价、VIX 期限结构、CBOE SKEW、股债相关性状态、RORO 综合）。免费美联储／CBOE 数据。") }}
     </h2>
-    <p class="muted sm" style="margin:-4px 0 10px">{{ t('Complementary to the quad above — it does not change the regime label; agreement strengthens conviction, divergence is a heads-up.', '与上方象限互补 — 不改变周期标签；一致则增强信心，背离则为提醒。') }}</p>
-    <p class="sm" style="margin:-4px 0 12px">📈 {{ t('These macro-risk signals drive the', '这些宏观风险信号驱动') }} <a href="spvector.html" style="font-weight:700">{{ t('S&P / Macro Vector allocation', '标普／宏观向量配置') }} →</a> {{ t('— when to hold the broad US index vs T-bills.', '——何时持有美国大盘指数、何时转入短债。') }}</p>
     <div class="grid">
 
       <!-- Financial conditions -->
@@ -2030,6 +2150,8 @@
         {% endif %}
       </div>
 
+      <details class="span12" style="background:transparent;border:0;padding:0"><summary style="cursor:pointer;color:var(--link);font-weight:600;padding:6px 0">{{ t('More — what\'s driving markets, factor leadership & scenario odds','更多 — 市场驱动、因子领先与情景概率') }}</summary>
+
       <!-- What's driving markets — daily cross-asset driver attribution (DISPLAY-ONLY) -->
       {% if latest.market_drivers and latest.market_drivers.verdict not in [none, 'unknown'] %}
       {% set MD = latest.market_drivers %}
@@ -2138,277 +2260,99 @@
       </div>
       {% endif %}
 
+      </details>
+
     </div>
   </div>
   {% endif %}
 
-  <!-- ======================= MACRO NEWS, SENTIMENT & CATALYSTS ======================= -->
-  <style>
-  #macro-news .mn-cols{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;margin-top:10px}
-  #macro-news .section-title{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
-  #macro-news .mn-sent{display:flex;gap:8px;align-items:baseline;font-size:14px;margin:2px 0 4px}
-  #macro-news .mn-brief{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:11px 13px;font-size:13.5px;line-height:1.55;margin:8px 0 4px}
-  #macro-news .mn-item{display:block;padding:9px 8px;margin:0 -8px;border-bottom:1px solid var(--line);border-radius:7px;color:var(--text);text-decoration:none;font-size:14.5px;line-height:1.5;transition:background .12s ease}
-  #macro-news .mn-item:hover{background:var(--panel2)}
-  #macro-news .mn-title{font-weight:500}
-  #macro-news .mn-item:hover .mn-title{color:var(--up)}
-  #macro-news .mn-src{font-size:11.5px;color:var(--muted);white-space:nowrap}
-  #macro-news .mn-theme,#macro-news .cat-type{display:inline-block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:5px;background:var(--line);color:var(--muted)}
-  #macro-news .mn-theme{margin-right:8px;vertical-align:1px}
-  #macro-news .mn-t-monetary{background:#22324f;color:#9cc4ff}#macro-news .mn-t-inflation{background:#4f2c22;color:#ffb499}
-  #macro-news .mn-t-labor{background:#1f4733;color:#a0ffc4}#macro-news .mn-t-growth{background:#2c3f1f;color:#cfe89a}
-  #macro-news .mn-t-credit{background:#3a2f5f;color:#c4b0ff}#macro-news .mn-t-fiscal{background:#4f3a1f;color:#ffd79a}
-  #macro-news .mn-t-macro{background:#2a3340;color:#a9c0d6}
-  #macro-news .cat-row{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--panel2);font-size:13.5px}
-  #macro-news .cat-date{color:var(--muted);font-variant-numeric:tabular-nums;min-width:118px}
-  #macro-news .cat-imp{width:7px;height:7px;border-radius:50%;flex:0 0 auto;align-self:center;background:var(--muted)}
-  #macro-news .imp-high{background:var(--warn)} #macro-news .imp-med{background:var(--muted)}
-  #macro-news .ct-FOMC{background:#3a2f5f;color:#c4b0ff}#macro-news .ct-NFP,#macro-news .ct-CLAIMS{background:#1f4733;color:#a0ffc4}
-  #macro-news .ct-CPI,#macro-news .ct-PPI{background:#4f2c22;color:#ffb499}#macro-news .ct-PCE{background:#4f3a1f;color:#ffd79a}
-  #macro-news .ct-GDP,#macro-news .ct-ISM_MFG,#macro-news .ct-ISM_SVC{background:#2c3f1f;color:#cfe89a}
-  #macro-news .ct-OPEX{background:#22324f;color:#9cc4ff}#macro-news .ct-AUCTION{background:#33305a;color:#b9b0ff}
-  /* compact "US high-impact next 14 days" glance strip (display/context only) */
-  #macro-news .ev-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 4px;padding:9px 11px;background:var(--panel2);border:1px solid var(--line);border-radius:8px}
-  #macro-news .ev-strip-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-right:2px}
-  #macro-news .ev-chip{display:inline-flex;align-items:baseline;gap:5px;font-size:12px;padding:3px 9px;border-radius:6px;background:var(--panel);border:1px solid var(--line);white-space:nowrap}
-  #macro-news .ev-chip b{font-size:11px;letter-spacing:.02em}
-  #macro-news .ev-chip .ev-when{color:var(--muted);font-variant-numeric:tabular-nums}
-  #macro-news .ev-chip.ec-FOMC{border-color:#5a4a8f}#macro-news .ev-chip.ec-FOMC b{color:#c4b0ff}
-  #macro-news .ev-chip.ec-CPI b,#macro-news .ev-chip.ec-PPI b{color:#ffb499}
-  #macro-news .ev-chip.ec-NFP b,#macro-news .ev-chip.ec-CLAIMS b{color:#a0ffc4}
-  #macro-news .ev-chip.ec-GDP b{color:#cfe89a}#macro-news .ev-chip.ec-PCE b{color:#ffd79a}
-  #macro-news .ev-strip-none{font-size:12px;color:var(--muted)}
-  #macro-news .mn-disc{color:var(--muted);font-size:11px;margin-top:12px;border-top:1px solid var(--line);padding-top:8px;line-height:1.5}
-  @media(max-width:760px){ #macro-news .mn-cols{grid-template-columns:1fr} }
+  {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
+  <style id="nb-css">
+  body.page-macro #now-board .nb-strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:2px 0 14px;font-size:11px}
+  body.page-macro #now-board .nb-strip-h{font-family:var(--num);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-right:4px}
+  body.page-macro #now-board .nb-ev{display:inline-flex;align-items:center;gap:5px;border:var(--rule) solid var(--hair);border-radius:7px;padding:3px 8px;background:var(--tile);color:var(--ink-2)}
+  body.page-macro #now-board .nb-ev b{color:var(--ink-1);font-family:var(--num);font-size:10px}
+  body.page-macro #now-board .nb-relief{display:flex;align-items:center;gap:8px;border-radius:9px;padding:9px 12px;margin:0 0 12px;font-size:12.5px;font-weight:600;border:var(--rule) solid color-mix(in srgb,var(--rc,var(--ink-3)) 40%,var(--hair));background:color-mix(in srgb,var(--rc,var(--ink-3)) 10%,var(--tile));color:var(--ink-1)}
+  body.page-macro #now-board .nb-relief.firing{--rc:var(--up)}
+  body.page-macro #now-board .nb-relief.building{--rc:var(--warn)}
+  body.page-macro #now-board .nb-acc{display:grid;gap:0;border:var(--rule) solid var(--hair);border-radius:11px;overflow:hidden;background:var(--tile)}
+  body.page-macro #now-board .nb-item{border-bottom:var(--rule) solid var(--hair)}
+  body.page-macro #now-board .nb-item:last-child{border-bottom:0}
+  body.page-macro #now-board .nb-item[open]{background:color-mix(in srgb,var(--link) 5%,transparent)}
+  body.page-macro #now-board .nb-sum{list-style:none;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:11px 14px}
+  body.page-macro #now-board .nb-sum::-webkit-details-marker{display:none}
+  body.page-macro #now-board .nb-sum:hover{background:color-mix(in srgb,var(--link) 6%,transparent)}
+  body.page-macro #now-board .nb-theme{font-family:var(--num);font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;color:var(--ink-2);border:var(--rule) solid var(--hair);background:var(--panel)}
+  body.page-macro #now-board .nb-htitle{font-size:13.5px;font-weight:650;color:var(--ink-1);line-height:1.3;min-width:0}
+  body.page-macro #now-board .nb-item[open] .nb-htitle{color:var(--link)}
+  body.page-macro #now-board .nb-meta{display:inline-flex;align-items:center;gap:8px;white-space:nowrap;color:var(--ink-3);font-size:11px;font-family:var(--num)}
+  body.page-macro #now-board .nb-chev{transition:transform .2s}
+  body.page-macro #now-board .nb-item[open] .nb-chev{transform:rotate(180deg)}
+  body.page-macro #now-board .nb-body{padding:0 14px 13px;display:grid;gap:9px}
+  body.page-macro #now-board .nb-sumtext{font-size:12.5px;line-height:1.5;color:var(--ink-2);margin:0}
+  body.page-macro #now-board .nb-sumtext b{color:var(--ink-1);font-weight:700}
+  body.page-macro #now-board .nb-tags{display:flex;flex-wrap:wrap;gap:5px}
+  body.page-macro #now-board .nb-pill{font-size:10px;border:var(--rule) solid var(--hair);border-radius:6px;padding:2px 7px;color:var(--ink-3);background:var(--panel)}
+  body.page-macro #now-board .nb-pill.tk{color:var(--link);border-color:color-mix(in srgb,var(--link) 38%,var(--hair))}
+  body.page-macro #now-board .nb-read{color:var(--link);font-size:12px;font-weight:700}
+  body.page-macro #now-board .nb-foot{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-top:12px;font-size:11.5px;color:var(--ink-3)}
+  body.page-macro #now-board .nb-cat b{color:var(--ink-2);font-family:var(--num);font-size:10.5px}
+  html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
   </style>
-  {% set _has_alerts = alerts or (latest.dislocation and latest.dislocation.dislocation_active) %}
   <div class="panel span12" id="now-board">
-    <h2>📡 {{ t('Now — alerts, news &amp; relief radar', '当前 — 警报、新闻与反弹雷达') }}
-      {{ help("Three related 'right now' reads, consolidated into one board: today's FIRED ALERTS (they fire only on a CHANGE — a level escalating, a crossing, a sign flip — so read every one), filtered MACRO NEWS + sentiment + the US event calendar + market-implied odds (all CONTEXT — never scored, the mechanical model never reads it), and the RELIEF RADAR (a coincident detector for a fast risk-on snap out of a washout — an attention radar, never a buy signal). Switch tabs to read each.", "三个相关的'当前'读数，汇总为一个面板：今日已触发警报（仅在发生变化时触发 — 级别升级、出现交叉、符号翻转 — 故每条都要读）、已筛选的宏观新闻＋情绪＋美国事件日历＋市场隐含概率（全部为背景 — 从不评分，机械模型也从不读取），以及反弹雷达（从清洗中快速转向风险偏好的同步探测器 — 注意力雷达，绝非买入信号）。切换标签分别查看。") }}
+    <h2>📰 {{ t('Market news &amp; catalysts','市场新闻与日程') }}
+      {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
+      <a href="news.html" style="float:right;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
     </h2>
-    <div class="cb-tabs">
-      {% if _has_alerts %}<input class="cb-radio" type="radio" name="nowtab" id="cb-alerts" checked><label class="cb-tab" for="cb-alerts">⚠ {{ t('Fired alerts', '已触发警报') }} <span class="cb-count">{{ (alerts|length if alerts else 0) + (1 if (latest.dislocation and latest.dislocation.dislocation_active) else 0) }}</span></label>{% endif %}
-      <input class="cb-radio" type="radio" name="nowtab" id="cb-news"{% if not _has_alerts %} checked{% endif %}><label class="cb-tab" for="cb-news">📰 {{ t('News &amp; catalysts', '新闻与日程') }}</label>
-      <input class="cb-radio" type="radio" name="nowtab" id="cb-relief"><label class="cb-tab" for="cb-relief">⚡ {{ t('Relief radar', '反弹雷达') }}{% if regime_snap and regime_snap.status == 'firing' %} <span class="cb-live" title="firing"></span>{% endif %}</label>
 
-      {% if _has_alerts %}
-      <div class="cb-pane cb-p-alerts">
-        {% if latest.dislocation and latest.dislocation.dislocation_active %}
-        <a class="alert alert-dislocation" href="#dislocation">
-          <div class="alert-head"><span class="alert-ico">🚦</span>
-            <b>{{ t('Dislocation Gate-1 is ACTIVE', '错位一道闸已激活') }}</b>
-            <span class="alert-jump">{{ t('View gate ↓', '查看一道闸 ↓') }}</span></div>
-          <div class="alert-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.', '压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).', '压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.', '急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
-        </a>
-        {% endif %}
-        {% if alerts %}{% for a in alerts %}
-        <a class="alert alert-{{ a.severity }}" {% if a.anchor %}href="#{{ a.anchor }}"{% endif %}>
-          <div class="alert-head">
-            <span class="alert-ico">{{ a.icon }}</span>
-            <b><span class="l-en">{{ a.plain_en }}</span><span class="l-zh">{{ a.plain_zh }}</span></b>
-            {% if a.anchor %}<span class="alert-jump">{{ t('View scorecard ↓', '查看计分卡 ↓') }}</span>{% endif %}
-          </div>
-          <div class="alert-detail"><span class="l-en">{{ a.message }}</span><span class="l-zh">{{ a.message_zh or a.message }}</span></div>
-          <div class="alert-what"><span class="l-en">{{ a.what_en }}</span><span class="l-zh">{{ a.what_zh }}</span></div>
-          {% if a.edge_en %}<div class="alert-edge"><b>{{ t('Conviction:', '可信度：') }}</b> <span class="l-en">{{ a.edge_en }}</span><span class="l-zh">{{ a.edge_zh or a.edge_en }}</span></div>{% endif %}
-        </a>
-        {% endfor %}{% else %}<p class="muted sm" style="margin-top:6px">{{ t('No alerts fired today — alerts are rare by design (they fire only on a change).', '今日无警报触发 —— 警报刻意设计得稀少（仅在发生变化时触发）。') }}</p>{% endif %}
-      </div>
-      {% endif %}
+    <div class="nb-strip">
+      <span class="nb-strip-h">{{ t('Next 14d','未来14天') }}</span>
+      {% for s in event_strip[:8] %}<span class="nb-ev" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> {{ s.dow }} {{ s.md }}</span>
+      {% else %}<span class="muted">{{ t('Clear — no top-tier US prints in the window.','空窗 — 窗口内无一线美国数据。') }}</span>{% endfor %}
+    </div>
 
-      <div class="cb-pane cb-p-news" id="macro-news">
-        <div class="cb-sub">📰 {{ t('Macro news, sentiment &amp; catalysts', '宏观新闻、情绪与日程') }}
-      {{ help("Filtered macro news (reputable sources, macro themes only — each headline tagged by theme), the SF-Fed Daily News Sentiment Index (a quantitative series, NOT per-headline AI), and a unified US event calendar (FOMC, CPI/PPI, jobs report, GDP, PCE, jobless claims, ISM, options-expiry and Treasury auctions). All CONTEXT — none of it feeds any score, signal or allocation, and the mechanical model never sees it. There is deliberately NO event-risk dampener: pre-FOMC drift died after 2016 and the announcement premium is positive, so cutting exposure into prints would be wrong-signed. Dates are scheduling info, not forecasts.", "已筛选的宏观新闻（仅可靠来源、仅宏观主题，每条按主题标注）、旧金山联储每日新闻情绪指数（量化序列，而非逐条新闻 AI），以及统一的美国事件日历（FOMC、CPI/PPI、就业报告、GDP、PCE、初请失业金、ISM、期权到期与国债拍卖）。全部为背景 —— 不进入任何评分、信号或配置，机械模型也从不读取。我们刻意不做事件风险衰减：2016 年后 FOMC 前漂移已消失、公告溢价为正，因此在数据公布前削减仓位方向是错的。日期为日程信息，而非预测。") }}</div>
-    {# compact US high-impact catalyst strip (next 14 days) — glanceable scheduling
-       context. DISPLAY ONLY: it never feeds a score, signal or allocation. #}
-    <div class="ev-strip">
-      <span class="ev-strip-h">{{ t('US high-impact · next 14 days', '美国高影响 · 未来14天') }}</span>
-      {% for s in event_strip %}
-      <span class="ev-chip ec-{{ s.type }}" title="{{ s.label }}{% if s.time_et %} · {{ s.time_et }} ET{% endif %}"><b>{{ s.type }}</b> <span class="ev-when">{{ s.dow }} {{ s.md }}</span></span>
-      {% else %}
-      <span class="ev-strip-none">{{ t('Clear — no top-tier US prints in the window.', '空窗 —— 窗口内无一线美国数据。') }}</span>
-      {% endfor %}
-    </div>
-    {# Narrative-regime banner — the Narrative-Dominance Index (NDI): a 0-100 blend of
-       policy uncertainty (EPU), geopolitical-threat risk (GPR-threat) and the vol
-       regime (VIX), + the news-vector PIT bus texture. DISPLAY/CONTEXT ONLY: Gate A
-       (reports/narrative-regime-phase0.md) showed text-uncertainty is redundant with
-       VIX for forward vol, so the gate is pinned OFF — never a score. Neutral colors. #}
-    {% if ndi or (narrative_regime and narrative_regime.events) %}
-    {% set L = (ndi.legs if ndi else {}) or {} %}
-    <div class="mn-sent" style="flex-wrap:wrap;gap:6px 16px">
-      <span class="muted">{{ t('Narrative regime (context):', '叙事环境（背景）：') }}
-        {{ help("How policy/geopolitical-narrative-driven the tape is right now. The Narrative-Dominance Index (NDI) is a 0-100 blend of three percentiles: EPU = US daily news-based Economic Policy Uncertainty (Baker-Bloom-Davis); GPR-threat = the THREAT component of daily Geopolitical Risk (Caldara-Iacoviello) — threat-led spikes tend to revert (~3 months) while realized acts persist; and VIX. CONTEXT ONLY: a Phase-0 test on 36 years showed text-uncertainty adds NO forward-volatility content beyond VIX (if anything it is mildly contrarian once VIX is controlled), so the NDI is shown as a regime read and the gate that would let it down-weight momentum conviction is pinned OFF. It is never an input to any score, signal or allocation, and it reads forward VOLATILITY / risk, not market direction.", "当前行情受政策／地缘叙事驱动的程度。叙事主导指数（NDI）是三个百分位的 0-100 合成：EPU＝美国每日新闻型经济政策不确定性（Baker-Bloom-Davis）；GPR-威胁＝每日地缘政治风险（Caldara-Iacoviello）的“威胁”分量——以威胁为主的飙升往往在约3个月内回落，而已发生的行动更持久；以及 VIX。仅供背景：对36年的 Phase-0 检验显示，在控制 VIX 后文本不确定性对前瞻波动率没有任何增量信息（若有则略偏反向），因此 NDI 仅作环境读数显示，允许其下调动量信心的闸门保持关闭。它绝不进入任何评分、信号或配置，且度量的是前瞻波动率／风险，而非市场方向。") }}
-      </span>
-      {% if ndi and ndi.ndi is not none %}<span><b>{{ t('NDI', '叙事主导') }} {{ ndi.ndi }}/100</b> <span class="muted">· {{ t(ndi.band, {'calm':'平静','elevated':'偏高','high':'高'}.get(ndi.band, ndi.band)) }} · {{ t('gate off (display-only)', '闸门关闭（仅显示）') }}</span></span>{% endif %}
-      {% if L.epu and L.epu.pct is not none %}<span class="muted">EPU {{ L.epu.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}
-      {% if L.gpr_threat and L.gpr_threat.pct is not none %}<span class="muted">GPR-{{ t('threat', '威胁') }} {{ L.gpr_threat.pct }}{{ t('th pct', '百分位') }}{% if L.gpr_threat.lean and L.gpr_threat.lean != 'balanced' %} <span title="{{ 'threat-led tends to revert (~3mo); act-led tends to persist · 以威胁为主往往回落（约3个月）；以行动为主则更持久' }}">({{ t('led by', '主导') }} {{ t('threats', '威胁') if L.gpr_threat.lean == 'threat' else t('acts', '行动') }})</span>{% endif %}</span>{% endif %}
-      {% if L.vix and L.vix.pct is not none %}<span class="muted">VIX {{ L.vix.pct }}{{ t('th pct', '百分位') }}</span>{% endif %}
-      {% if narrative_regime and narrative_regime.events and narrative_regime.events.n_recent %}<span class="muted">· {{ t('news-bus', '新闻总线') }}: {{ narrative_regime.events.n_recent }} {{ t('events', '事件') }}/{{ narrative_regime.window_days }}d{% if narrative_regime.events.unscheduled_share is not none %} · {{ (narrative_regime.events.unscheduled_share * 100) | round | int }}% {{ t('unscheduled', '非排程') }}{% endif %}</span>{% endif %}
-    </div>
-    {% endif %}
-    {% set RA = (latest.conditions or {}).get('risk_appetite') or {} %}
-    {% if RA.get('news_sentiment_state') %}
-    {% set nz = RA.get('news_sentiment_z') %}
-    <div class="mn-sent">
-      <span class="muted">{{ t('News sentiment (SF-Fed index):', '新闻情绪（旧金山联储指数）：') }}</span>
-      <span class="{{ 'pos' if RA.get('news_sentiment_state') == 'optimistic' else 'neg' }}"><b>{{ t('optimistic', '乐观') if RA.get('news_sentiment_state') == 'optimistic' else t('pessimistic', '悲观') }}</b>{% if nz is not none %} · z {{ '%+.1f'|format(nz) }}{% endif %}</span>
-    </div>
-    {% endif %}
-    {% if macro_brief and macro_brief.text %}
-    <div class="mn-brief">🤖 <b>{{ t('AI brief (context)', 'AI 摘要（背景）') }}:</b> {{ macro_brief.text }}</div>
-    {% endif %}
-    {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
-    {% set MNS = (macro_news.synthesis if macro_news and macro_news.synthesis else {}) %}
-    <div class="mn-cols">
-      <div class="mn-news">
-        <div class="section-title">{{ t('Filtered macro headlines', '已筛选的宏观头条') }}{% if macro_news and macro_news.n_raw %} <span class="muted">({{ macro_news.n_kept }}/{{ macro_news.n_raw }} · {{ macro_news.n_official or 0 }} official · {{ macro_news.n_news_rss or 0 }} RSS · {{ macro_news.n_high_impact or 0 }} high)</span>{% endif %}{% if MNS.dominant_channel %} <span class="muted">· {{ MNS.dominant_channel }}</span>{% endif %} <span class="muted" style="text-transform:none">· <a href="news.html">{{ t('open full feed →', '打开完整新闻流 →') }}</a></span></div>
-        {% if macro_news and macro_news.headlines %}
-          {% for h in macro_news.headlines %}
-          <a class="mn-item" href="{{ h.url }}" target="_blank" rel="noopener"><span class="mn-theme mn-t-{{ h.theme }}">{{ t(TL.get(h.theme, [h.theme,h.theme])[0], TL.get(h.theme, [h.theme,h.theme])[1]) }}</span><span class="mn-title"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span> <span class="mn-src">{{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}/100{% endif %}{% if h.tickers %} · {{ h.tickers[:3]|join(', ') }}{% endif %}</span></a>
-          {% endfor %}
-        {% else %}
-          <p class="muted sm">{{ t('No macro headlines right now — the news fetch is off (default) or the tape is quiet.', '暂无宏观头条 —— 新闻抓取已关闭（默认）或行情平静。') }}</p>
-        {% endif %}
-      </div>
-      <div class="mn-cats">
-        <div class="section-title">{{ t('Upcoming catalysts', '即将到来的催化') }}</div>
-        {% if macro_catalysts %}
-          {% for c in macro_catalysts %}
-          <div class="cat-row"><span class="cat-imp imp-{{ c.get('impact','med') }}" title="{{ 'high impact · 高影响' if c.get('impact')=='high' else 'scheduled · 日程' }}"></span><span class="cat-date">{{ c.date }}{% if c.time_et %} · {{ c.time_et }} ET{% endif %}</span><span class="cat-type ct-{{ c.type }}">{{ c.type }}</span><span class="cat-label">{{ c.label }}</span></div>
-          {% endfor %}
-        {% else %}
-          <p class="muted sm">{{ t('No scheduled catalysts in the window.', '窗口内无排定催化。') }}</p>
-        {% endif %}
-        {% if prediction_markets and prediction_markets.events %}
-        <div class="section-title" style="margin-top:16px">{{ t('Market-implied odds', '市场隐含概率') }} <span class="muted" style="font-weight:400;text-transform:none">· {{ prediction_markets.source }}</span></div>
-        {% for e in prediction_markets.events %}
-        <div style="margin-bottom:9px">
-          <div class="sm" style="margin-bottom:2px"><b>{{ t(e.label_en, e.label_zh) }}</b>{% if e.end_date %} <span class="muted">{{ e.end_date }}</span>{% endif %}</div>
-          {% for o in e.outcomes[:3] %}
-          <div style="display:flex;align-items:baseline;gap:6px;font-size:12px;padding:1px 0">
-            <span style="flex:1;color:var(--muted)">{{ o.outcome }}</span>
-            <b>{{ o.prob }}%</b>{% if o.chg_pp is not none and o.chg_pp != 0 %}<span class="{{ 'pos' if o.chg_pp > 0 else 'neg' }}" style="font-size:11px">{{ '%+.1f'|format(o.chg_pp) }}</span>{% endif %}
-          </div>
-          {% endfor %}
-        </div>
-        {% endfor %}
-        <p class="muted" style="font-size:10px;margin:2px 0 0">{{ t('Crowd expectation, not a forecast.', '群体预期，非预测。') }}</p>
-        {% endif %}
-      </div>
-    </div>
-    <p class="mn-disc">{{ t(macro_news_disclaimer, macro_news_disclaimer_zh) }}</p>
-      </div>
-
-      <div class="cb-pane cb-p-relief" id="relief-radar">
-        <div class="cb-sub">⚡ {{ t('Relief radar: regime-snap detector', '反弹雷达：周期急转探测器') }}
-      {{ help("A fast 'is the regime snapping risk-on RIGHT NOW' radar — the velocity complement to the Fear↔Euphoria level read below. It fires when the cross-asset RORO complex flips risk-on hard and broadly (RORO velocity in its top decile AND several legs flipping together) coming OUT of a capitulation washout — the relief-rally fingerprint. VERIFIED on 55 years: it lights up on every canonical relief (COVID, the 2022 CPI relief, SVB, the 2024 carry-unwind snapback, the 2026-06 relief) but its forward returns are about the base rate — it is COINCIDENT, not predictive. So it is an ATTENTION radar that compresses reaction time (you see the snap on day 1, before slow technicals confirm), NEVER a buy/size signal. Zero new data, never scored — nothing in the quad, macro-risk or any axis reads it.", "一个'周期此刻是否正急转向风险偏好'的快速雷达 — 是下方恐惧↔欣喜水平读数的速度补充。当跨资产 RORO 综合急速且广泛地转向风险偏好（RORO 速度处于最高十分位 且 多项分量同时转向），且发生在一次投降清洗之后时触发 — 这是反弹行情的指纹。经 55 年验证：它在每一次标志性反弹（新冠、2022 年 CPI 反弹、SVB、2024 年套利平仓反弹、2026 年 6 月反弹）都会亮起，但其前瞻收益约等于基准 — 它是同步的，而非预测性的。因此它是压缩反应时间的注意力雷达（第一天就看到急转，先于滞后的技术指标），绝非买入／仓位信号。零新增数据、从不评分 — 象限、宏观风险与任何轴都不读取它。") }}
-      <a href="#fear-euphoria" class="muted" style="font-size:12px;font-weight:400">{{ t('regime level →', '周期水平 →') }}</a>
-        </div>
-    <p class="muted sm" style="margin:-4px 0 10px">{{ t('An attention radar, not a buy signal — verified coincident (forward returns about the base rate). It flags a fast risk-on snap out of a washout; it does not predict the snap will last.', '这是注意力雷达而非买入信号 — 经验证为同步（前瞻收益约等于基准）。它标记从清洗中快速转向风险偏好的急转；并不预测急转能否持续。') }}</p>
-    {% if regime_snap %}
+    {% if regime_snap and regime_snap.status in ('firing','building') %}
     {% set RS = regime_snap %}
-    {% set _velp = ((RS.vel_pctile*100)|round|int) if RS.vel_pctile is not none else '—' %}
-    <div class="grid">
-
-      <!-- status banner -->
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        {% if RS.status == 'firing' %}
-        <div style="font-weight:700">
-          <span style="font-size:18px">⚡ {{ t('Relief snap FIRING', '反弹急转 触发中') }}</span>
-          {% if RS.relief_magnitude is not none %}<span class="badge" style="font-size:11px;vertical-align:middle;background:var(--panel)">{{ t('premium unwinding', '溢价释放') }} {{ RS.relief_magnitude }}/100</span>{% endif %}
-          {% if RS.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(RS.roro) }}</span>{% endif %}
-        </div>
-        <div class="muted sm" style="margin-top:3px">{{ RS.legs_up }}/{{ RS.legs_total }} {{ t('cross-asset legs flipped risk-on', '项跨资产分量转向风险偏好') }} · {{ t('velocity', '速度') }} {{ _velp }}%ile · {{ t('out of a capitulation washout', '发生在投降清洗之后') if RS.cap_recent else t('no recent washout — lower quality', '近期无清洗 — 质量较低') }}</div>
-        {% elif RS.status == 'building' %}
-        <div style="font-weight:700">{{ t('Snap building — watch', '急转酝酿 — 留意') }}{% if RS.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(RS.roro) }}</span>{% endif %}</div>
-        <div class="muted sm" style="margin-top:3px">{{ t('Velocity in the top decile', '速度处于最高十分位') }} ({{ _velp }}%ile) · {{ RS.legs_up }}/{{ RS.legs_total }} {{ t('legs flipping', '项分量转向') }} · {{ t('full trigger not yet met', '完整触发尚未满足') }}</div>
-        {% else %}
-        <div style="font-weight:700">{{ t('No snap — quiet', '无急转 — 平静') }}{% if RS.roro is not none %}<span class="muted sm" style="float:right">RORO {{ '%+.2f'|format(RS.roro) }}</span>{% endif %}</div>
-        <div class="muted sm" style="margin-top:3px">{{ t('velocity', '速度') }} {{ _velp }}%ile{% if RS.days_since_last_snap is not none %} · {{ t('last snap', '上次急转') }} {{ RS.days_since_last_snap }} {{ t('sessions ago', '个交易日前') }}{% endif %}</div>
-        {% endif %}
-      </div>
-
-      <!-- trigger checklist (all four required) -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Trigger checklist', '触发条件') }} <span class="muted sm">{{ t('all four required', '需四项齐备') }}</span></div>
-        {% set G = RS.gates %}
-        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.velocity else '·' }} {{ t('RORO velocity in top decile', 'RORO 速度处于最高十分位') }}</div>
-        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.legs else '·' }} {{ t('at least', '至少') }} {{ RS.min_legs }}/{{ RS.legs_total }} {{ t('legs flip risk-on', '项分量转向风险偏好') }} <span class="muted">({{ t('now', '当前') }} {{ RS.legs_up }})</span></div>
-        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.fear else '·' }} {{ t('comes out of a fear context', '处于恐惧环境之中') }}</div>
-        <div class="muted sm" style="margin:4px 0">{{ '✓' if G.washout else '·' }} {{ t('a capitulation washout printed (within ~1 month)', '近一个月内出现投降清洗') }}</div>
-      </div>
-
-      <!-- legs flipping risk-on -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Legs flipping risk-on', '正在转向风险偏好的分量') }} <span class="muted sm">{{ RS.legs_up }}/{{ RS.legs_total }}</span></div>
-        {% if RS.flipped_legs_named %}
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          {% for leg in RS.flipped_legs_named %}<span class="pill" style="background:var(--panel)">{{ t(leg.en, leg.zh) }}</span>{% endfor %}
-        </div>
-        {% else %}
-        <div class="muted sm">{{ t('none today', '今日无') }}</div>
-        {% endif %}
-        {% if RS.relief_magnitude is not none %}
-        <div class="muted sm" style="margin-top:8px">{{ t('Relief magnitude', '反弹幅度') }} {{ RS.relief_magnitude }}/100 — {{ t('the fear premium being unwound (a descriptor, NOT an expected return)', '正在释放的恐惧溢价（描述性指标，并非预期收益）') }}</div>
-        {% endif %}
-      </div>
-
+    <div class="nb-relief {{ RS.status }}">⚡ <b>{{ t('Relief radar','反弹雷达') }}:</b>
+      {% if RS.status == 'firing' %}{{ t('a risk-on snap is FIRING','风险偏好急转 触发中') }}{% else %}{{ t('a snap is building — watch','急转酝酿 — 留意') }}{% endif %}
+      <span class="muted" style="font-weight:400">· {{ RS.legs_up }}/{{ RS.legs_total }} {{ t('legs risk-on','项转向') }} · {{ t('velocity','速度') }} {{ ((RS.vel_pctile*100)|round|int) if RS.vel_pctile is not none else '—' }}%ile · {{ t('coincident, not a buy signal','同步信号，非买入') }}</span>
     </div>
-      {% if RS.status != 'dormant' %}
-      <!-- pre-decided playbook — response scaffold (firing/building only) -->
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:10px">
-        <div style="font-weight:700;margin-bottom:6px">📋 {{ t('Pre-decided playbook', '预设行动方案') }} <span class="muted sm">{{ t('decide now, not in the gap-up', '此刻决定，而非急涨当下') }}</span></div>
-        <div class="muted sm" style="margin-bottom:8px">
-          {% if RS.status == 'firing' %}{{ t('Snap confirmed — execute your pre-decided response, but durability is unverified; run the checks before sizing up.', '急转确认 — 执行你预设的应对，但持续性未验证；加仓前先做检查。') }}
-          {% else %}{{ t('Snap building (full trigger not met) — decide your response now, so the next gap-up is execution, not deliberation.', '急转酝酿（完整触发未满）— 现在就决定应对，让下一个急涨成为执行而非临场决策。') }}{% endif %}
-        </div>
-        <div class="grid">
-          <div class="span6">
-            <div style="font-weight:500;margin-bottom:4px">{{ t('This read fades if', '以下情况则读数失效') }}</div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('RORO velocity turns negative', 'RORO 速度转负') }}{% if RS.roro_velocity is not none %} <span class="muted">({{ t('now', '当前') }} {{ '%+.2f'|format(RS.roro_velocity) }})</span>{% endif %}</div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('legs un-flip below', '分量回落至') }} {{ RS.min_legs }} <span class="muted">({{ t('now', '当前') }} {{ RS.legs_up }}/{{ RS.legs_total }})</span></div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('fear re-builds', '恐惧重新累积') }}{% if RS.fear_rebuilding %} — ⚠ {{ t('already ticking up', '已在回升') }}{% endif %}</div>
-            {% if RS.vix_term is not none %}<div class="muted sm" style="margin:3px 0">· {{ t('VIX term back to backwardation', 'VIX 期限重回逆价') }} <span class="muted">(&gt;1.0; {{ t('now', '当前') }} {{ '%.2f'|format(RS.vix_term) }})</span></div>{% endif %}
-          </div>
-          <div class="span6">
-            <div style="font-weight:500;margin-bottom:4px">{{ t('Before sizing — durability checks', '加仓前 — 持续性检查') }} <span class="muted sm">{{ t('next: AI knife-vs-dip veto', '下一步：AI 真假反弹否决') }}</span></div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('Catalyst structural (signed / policy) or just verbal?', '催化是结构性（签署／政策）还是仅口头？') }}</div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('How much premium already unwound vs left?', '溢价已释放多少、还剩多少？') }}</div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('Out of a real washout, or a shallow dip?', '源于真正清洗，还是浅回调？') }}</div>
-            <div class="muted sm" style="margin:3px 0">· {{ t('Does the cross-asset confirmation hold next session?', '跨资产确认能否延续到下一交易日？') }}</div>
-          </div>
-        </div>
-        {% if RS.veto %}
-        {% set V = RS.veto %}
-        {% set _leanzh = {'durable': '较持久', 'fragile': '脆弱', 'unclear': '不明朗'} %}
-        <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)">
-          <div style="font-weight:600">🤖 {{ t('AI durability read', 'AI 持续性研判') }} <span class="muted sm">{{ t('knife vs dip', '真假反弹') }}</span>
-            <span class="badge" style="font-size:11px;background:var(--panel);float:right">{{ t(V.lean, _leanzh.get(V.lean, V.lean)) }}{% if V.confidence %} · {{ V.confidence }}{% endif %}</span>
-          </div>
-          {% if V.read %}<div class="muted sm" style="margin:4px 0">{{ V.read }}</div>{% endif %}
-          {% if V.checks %}
-          <div class="muted sm" style="margin-top:2px">
-            {% if V.checks.catalyst %}· {{ t('catalyst', '催化') }}: {{ V.checks.catalyst }}<br>{% endif %}
-            {% if V.checks.premium %}· {{ t('premium', '溢价') }}: {{ V.checks.premium }}<br>{% endif %}
-            {% if V.checks.washout %}· {{ t('washout', '清洗') }}: {{ V.checks.washout }}<br>{% endif %}
-            {% if V.checks.follow_through %}· {{ t('follow-through', '延续') }}: {{ V.checks.follow_through }}{% endif %}
+    {% endif %}
+
+    {% if macro_news and macro_news.headlines %}
+    <div class="nb-acc">
+      {% for h in macro_news.headlines[:6] %}
+      {% set tl = TL.get(h.theme, [h.theme, h.theme]) %}
+      <details class="nb-item"{% if loop.first %} open{% endif %}>
+        <summary class="nb-sum">
+          <span class="nb-theme">{{ t(tl[0], tl[1]) }}</span>
+          <span class="nb-htitle"><span class="l-en">{{ h.title }}</span><span class="l-zh">{{ h.title_zh or h.title }}</span></span>
+          <span class="nb-meta">{{ h.source_name or h.domain }}{% if h.importance_score %} · {{ h.importance_score }}{% endif %} <span class="nb-chev">▾</span></span>
+        </summary>
+        <div class="nb-body">
+          <p class="nb-sumtext">
+            <span class="l-en">A <b>{{ h.importance }}</b>-impact <b>{{ tl[0] }}</b> headline{% if h.tickers %} in focus on {{ h.tickers[:3]|join(', ') }}{% endif %}{% if h.channels %}, touching {{ (h.channels[:3]|map('replace','_',' ')|list)|join(', ') }}{% endif %}.{% if h.importance_reasons %} Flagged: {{ h.importance_reasons[:2]|join('; ') }}.{% endif %} — {{ h.source_name or h.domain }}</span>
+            <span class="l-zh">一条<b>{{ h.importance }}</b>影响级的<b>{{ tl[1] }}</b>新闻{% if h.tickers %}，聚焦 {{ h.tickers[:3]|join('、') }}{% endif %}{% if h.channels %}，涉及 {{ (h.channels[:3]|map('replace','_',' ')|list)|join('、') }}{% endif %}。{% if h.importance_reasons %} 入选：{{ h.importance_reasons[:2]|join('；') }}。{% endif %} — {{ h.source_name or h.domain }}</span>
+          </p>
+          {% if h.channels or h.tickers %}
+          <div class="nb-tags">
+            {% for c in h.channels[:4] %}<span class="nb-pill">{{ c|replace('_',' ') }}</span>{% endfor %}
+            {% for tk in h.tickers[:5] %}<span class="nb-pill tk">{{ tk }}</span>{% endfor %}
           </div>
           {% endif %}
-          <div class="muted sm" style="margin-top:4px;opacity:.7">{{ t('Context only — a fallible AI judgement, never scored or sized.', '仅供参考 — AI 的可错判断，从不评分或决定仓位。') }}</div>
+          <a class="nb-read" href="{{ h.url }}" target="_blank" rel="noopener">{{ t('Read source','阅读原文') }} →</a>
         </div>
-        {% endif %}
-        <div class="muted sm" style="margin-top:8px">{{ t('Where relief concentrates historically: modestly in high-beta and growth at about 1 month — NOT cyclical / small-cap, NOT the first week. Weak and unverified; do not assume a dash-for-trash.', '历史上反弹的集中处：约一个月维度略偏高贝塔与成长 — 并非周期／小盘，也不在第一周。微弱且未验证；勿臆断"垃圾普涨"。') }}</div>
-        <div class="muted sm" style="margin-top:4px;opacity:.75">{{ t('A decision scaffold, not a trade recommendation — the radar is coincident; size and instrument are your call (and the AI veto, next).', '决策脚手架，而非交易建议 — 雷达是同步的；仓位与标的由你（及下一步的 AI 否决）决定。') }}</div>
-      </div>
-      {% endif %}
-
-    <div class="muted sm" style="margin-top:8px">{{ t('Display-only · never scored. Verified on 55y: fires on every relief episode but forward returns about the base rate (coincident, not predictive). The durability call — relief vs dead-cat — is a separate step.', '纯展示 · 从不评分。经 55 年验证：在每一次反弹事件都会触发，但前瞻收益约等于基准（同步，而非预测）。持续性判断 — 真反弹还是死猫跳 — 是单独的步骤。') }}</div>
-    {% else %}
-    <p class="muted">{{ t('Building…', '构建中…') }}</p>
-    {% endif %}
-      </div>
+      </details>
+      {% endfor %}
     </div>
+    <div class="nb-foot">
+      <a href="news.html" style="color:var(--link);font-weight:700">{{ t('Open the full news feed','打开完整新闻流') }} →</a>
+      {% if macro_news.n_kept %}<span>{{ macro_news.n_kept }} {{ t('stories kept','保留条目') }}{% if macro_news.n_raw %} · {{ macro_news.n_raw }} {{ t('scanned','已扫描') }}{% endif %}</span>{% endif %}
+      {% if macro_catalysts %}<span class="nb-cat" style="margin-left:auto">{{ t('Next catalyst','下个催化') }}: <b>{{ macro_catalysts[0].date }}</b> {{ macro_catalysts[0].type }} {{ macro_catalysts[0].label }}</span>{% endif %}
+    </div>
+    {% else %}
+    <p class="muted sm">{{ t('No macro headlines right now — the fetch is off or the tape is quiet. Catalysts above remain live.','暂无宏观头条 — 抓取关闭或行情平静。上方日程仍保持更新。') }}</p>
+    {% endif %}
   </div>
   {% endif %}{# /mode != stocks — combined Now board (alerts · news · relief) #}
 
@@ -2960,22 +2904,7 @@
     {% endif %}
   </div>
 
-  <!-- ======================= INTERNALS ======================= -->
-  <div class="panel span6">
-    <h2>{{ t('Market internals — risk appetite gauges', '市场内部结构 — 风险偏好计') }}
-      {{ help("Simple ratios between two assets; each answers a question about investor mood. Direction over the last 20 days matters more than the level. Green = moved in the risk-friendly direction.", "两类资产之间的简单比率；每一个都回答一个关于投资者情绪的问题。过去 20 天的方向比绝对水平更重要。绿色 = 朝风险友好的方向移动。") }}
-    </h2>
-    <table>
-      <tr><th class="l">{{ t('gauge', '指标') }}</th><th>{{ t('past month', '过去一月') }}</th><th class="l">{{ t("what it's saying", '它在说什么') }}</th></tr>
-      {% for r in internals %}
-      <tr>
-        <td class="l">{{ r.label }} {{ help(r.tip) }}</td>
-        <td class="{{ 'pos' if r.good else 'neg' }}">{{ "%+.2f" | format(r.chg) }}%</td>
-        <td class="l muted">{{ r.verdict }}</td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
+  {# market internals — risk appetite gauges retired — folded into the Market State command-center #}
 
   {% endif %}{# /mode != stocks — two dials + internals #}
 
@@ -3053,6 +2982,7 @@
     <h2>{{ t('Advanced breadth — the market internals under the tape', '高级广度 — 盘面之下的市场内部结构') }}
       {{ help("The classic 'market internals' a desk watches beyond today's %-above-MA snapshot: the McClellan Oscillator & Summation Index (breadth momentum), the Zweig Breadth Thrust gauge, the High-Low Index, whether the advance/decline line confirms price, and where participation sits in its own multi-decade history. Computed on the DEEP S&P 500 breadth series (1962-). These are SECOND-DERIVATIVE reads of the same breadth — they describe the QUALITY of the move (broad vs narrow, accelerating vs rolling over). Display-only: breadth internals are a function of price, so they're coincident with it by construction — this explains the tape, it does not forecast it. Survivorship caveat: the deep series is rebuilt from today's members, so the percentile context is taken over the mature-universe window only.", "盘面之下、超越「高于均线占比」快照的经典「市场内部结构」：麦克莱伦振荡指标与累积指标（广度动量）、兹威格广度脉冲、新高—新低指数、腾落线是否确认价格，以及当前参与度在其数十年历史中的分位。基于标普500深度广度序列（1962年起）计算。这些是同一广度的二阶读数 — 描述走势的「质量」（广泛或狭窄、加速或回落）。仅作展示：内部结构是价格的函数、与价格同步，用于解释盘面而非预测。幸存者偏差提示：深度序列以当前成分股重建，故分位背景仅取成熟样本区间。") }}
     </h2>
+    <details class="jarg"><summary>{{ t('Show market internals — McClellan, breadth thrust, highs/lows, divergence','展开市场内部 — 麦克莱伦、广度推力、新高新低、背离') }}</summary>
     <p class="{{ adv_breadth.headline.tone }}" style="margin:0 2px 14px; font-size:14px; line-height:1.5">
       {{ t('The internals read', '内部结构读数为') }} <b>{{ adv_breadth.headline.label }}</b> —
       <span class="muted">{{ adv_breadth.headline.verdict }}.</span>
@@ -3167,6 +3097,7 @@
 
     </div>
     <p class="muted" style="margin:10px 2px 0; font-size:11px">{{ t('As of', '截至') }} {{ adv_breadth.asof }} · {{ t('computed on the deep S&P 500 breadth series', '基于标普500深度广度序列计算') }} ({{ adv_breadth.deep_from }}–) · {{ t('display-only market internals, never scored', '仅作展示的市场内部结构，不计入评分') }}</p>
+    </details>
   </div>
   {% endif %}
 
