@@ -1147,3 +1147,4 @@
 {"date":"2026-06-26","kind":"ticker","subject":"PH","ticker":"PH","edge_score":2,"state":"CONFIRMED_UP"}
 {"date":"2026-06-26","kind":"ticker","subject":"CAT","ticker":"CAT","edge_score":2,"state":"CONFIRMED_UP"}
 {"date":"2026-06-26","kind":"ticker","subject":"DE","ticker":"DE","edge_score":2,"state":"CONFIRMED_UP"}
+{"date":"2026-06-26","kind":"ticker","subject":"PLTR","ticker":"PLTR","edge_score":75,"state":"POSITIVE_DIVERGENCE"}

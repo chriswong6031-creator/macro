@@ -1,5 +1,5 @@
 {
-  "date": "Jun 25, 2026",
+  "date": "Jun 26, 2026",
   "regime": "Goldilocks",
   "favored": [
     "Gold",
@@ -8,8 +8,8 @@
   "assets": {
     "gold": {
       "label": "Gold",
-      "price": 4002.7,
-      "chg": -12.2,
+      "price": 4039.2,
+      "chg": -9.7,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
@@ -18,33 +18,33 @@
     },
     "silver": {
       "label": "Silver",
-      "price": 55.89,
-      "chg": -26.1,
+      "price": 57.44,
+      "chg": -23.4,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -17.4
+      "conviction": -17.8
     },
     "copper": {
       "label": "Copper",
-      "price": 6.04,
-      "chg": -5.0,
+      "price": 6.07,
+      "chg": -7.0,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": 4.9
+      "conviction": 2.2
     },
     "oil": {
       "label": "Oil \u00b7 WTI",
-      "price": 70.88,
-      "chg": -18.9,
+      "price": 70.49,
+      "chg": -23.5,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -10.8
+      "conviction": -9.2
     }
   }
 }

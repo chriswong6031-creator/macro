@@ -26,7 +26,7 @@
     {
       "ticker": "ZEB.TO",
       "name": "Banks",
-      "rs": 0.002164405846508394,
+      "rs": 0.002164406574312871,
       "mom_20d_pct": 9.16,
       "mom_60d_pct": 20.77,
       "above_200d_trend": true,
@@ -36,7 +36,7 @@
     {
       "ticker": "XFN.TO",
       "name": "Financials",
-      "rs": 0.0026941013228881103,
+      "rs": 0.0026941022288083224,
       "mom_20d_pct": 7.14,
       "mom_60d_pct": 16.48,
       "above_200d_trend": true,
@@ -46,7 +46,7 @@
     {
       "ticker": "XIT.TO",
       "name": "Information Technology",
-      "rs": 0.0020484811273503768,
+      "rs": 0.0020484818161739344,
       "mom_20d_pct": 0.7,
       "mom_60d_pct": 5.94,
       "above_200d_trend": false,
@@ -56,7 +56,7 @@
     {
       "ticker": "XRE.TO",
       "name": "Real Estate",
-      "rs": 0.0004895235640477931,
+      "rs": 0.000489523728655296,
       "mom_20d_pct": 0.86,
       "mom_60d_pct": 4.68,
       "above_200d_trend": true,
@@ -66,7 +66,7 @@
     {
       "ticker": "XBM.TO",
       "name": "Base Metals",
-      "rs": 0.0009999939035267452,
+      "rs": 0.0009999942397853267,
       "mom_20d_pct": -11.92,
       "mom_60d_pct": 0.12,
       "above_200d_trend": true,
@@ -76,7 +76,7 @@
     {
       "ticker": "XST.TO",
       "name": "Consumer Staples",
-      "rs": 0.001979901932982382,
+      "rs": 0.0019799025987454564,
       "mom_20d_pct": 8.46,
       "mom_60d_pct": -0.0,
       "above_200d_trend": true,
@@ -86,7 +86,7 @@
     {
       "ticker": "XUT.TO",
       "name": "Utilities",
-      "rs": 0.0010648429266871366,
+      "rs": 0.0010648432847518918,
       "mom_20d_pct": 1.05,
       "mom_60d_pct": -0.33,
       "above_200d_trend": true,
@@ -96,7 +96,7 @@
     {
       "ticker": "XCD.TO",
       "name": "Communication Services",
-      "rs": 0.0015890865385989525,
+      "rs": 0.0015890870729461956,
       "mom_20d_pct": -6.42,
       "mom_60d_pct": -3.96,
       "above_200d_trend": false,
@@ -106,7 +106,7 @@
     {
       "ticker": "XCG.TO",
       "name": "Consumer Discretionary",
-      "rs": 0.0018788983364939954,
+      "rs": 0.0018788989682935367,
       "mom_20d_pct": -2.24,
       "mom_60d_pct": -5.99,
       "above_200d_trend": false,
@@ -116,7 +116,7 @@
     {
       "ticker": "XEG.TO",
       "name": "Energy",
-      "rs": 0.0006886615419069154,
+      "rs": 0.0006886617734766805,
       "mom_20d_pct": -9.33,
       "mom_60d_pct": -16.76,
       "above_200d_trend": true,
@@ -126,7 +126,7 @@
     {
       "ticker": "XMA.TO",
       "name": "Materials",
-      "rs": 0.00115781217354708,
+      "rs": 0.0011578125628737327,
       "mom_20d_pct": -11.36,
       "mom_60d_pct": -17.58,
       "above_200d_trend": false,
@@ -136,7 +136,7 @@
     {
       "ticker": "XGD.TO",
       "name": "Gold Miners",
-      "rs": 0.0013718712193459307,
+      "rs": 0.0013718716806522134,
       "mom_20d_pct": -11.48,
       "mom_60d_pct": -20.77,
       "above_200d_trend": false,
@@ -172,7 +172,7 @@
       "chg_20d_pct": -11.08
     },
     "tsx_spx": {
-      "level": 47.4605,
+      "level": 47.4604,
       "chg_20d_pct": 3.49
     },
     "usdcad": {
@@ -181,7 +181,7 @@
     },
     "copper_gold": {
       "level": 0.0015,
-      "chg_20d_pct": 6.18
+      "chg_20d_pct": 5.95
     }
   },
   "overlay": {
@@ -191,23 +191,23 @@
       {
         "key": "oil",
         "label": "WTI crude oil",
-        "z": -1.12,
+        "z": -1.06,
         "sign": 1.0,
         "risk": "off",
-        "level": 70.88
+        "level": 71.92
       },
       {
         "key": "gold",
         "label": "Gold",
-        "z": -1.68,
+        "z": -1.57,
         "sign": 1.0,
         "risk": "off",
-        "level": 4002.7
+        "level": 4030.5
       },
       {
         "key": "copper_gold",
         "label": "Copper / Gold",
-        "z": 0.59,
+        "z": 0.55,
         "sign": 1.0,
         "risk": "on",
         "level": 0.0015
@@ -239,10 +239,10 @@
       {
         "key": "dxy",
         "label": "US Dollar (DXY)",
-        "z": 1.79,
+        "z": 1.7,
         "sign": -1,
         "risk": "off",
-        "level": 101.544
+        "level": 101.43
       }
     ],
     "terms_of_trade": "deteriorating",

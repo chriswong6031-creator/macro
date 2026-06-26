@@ -8,74 +8,74 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.1364,
-      "chg": -2.5,
+      "quote": 1.1378,
+      "chg": -2.4,
       "action": "FLAT",
-      "score": -9.6
+      "score": -10.3
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3187,
+      "quote": 1.3197,
       "chg": -2.0,
       "action": "FLAT",
-      "score": 14.4
+      "score": 13.4
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.731,
+      "quote": 161.702,
       "chg": 1.1,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8104,
-      "chg": 2.8,
+      "quote": 0.809,
+      "chg": 2.6,
       "action": "LONG",
-      "score": 28.9
+      "score": 28.5
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6882,
-      "chg": -4.1,
+      "quote": 0.69,
+      "chg": -3.8,
       "action": "SHORT",
-      "score": -29.6
+      "score": -30.2
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4203,
-      "chg": 2.6,
+      "quote": 1.4193,
+      "chg": 2.5,
       "action": "FLAT",
-      "score": 19.5
+      "score": 18.5
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.5449,
-      "chg": 1.1,
+      "quote": 17.525,
+      "chg": 1.0,
       "action": "FLAT",
-      "score": -13.5
+      "score": -15.1
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1752,
-      "chg": 3.1,
+      "quote": 5.1614,
+      "chg": 2.8,
       "action": "FLAT",
-      "score": 5.4
+      "score": 4.9
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.772,
+      "quote": 6.7705,
       "chg": 0.2,
       "action": "FLAT",
       "score": 15.0
     }
   },
   "dollar_desk": {
-    "lean": "dollar-supportive backdrop",
+    "lean": "mixed backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.71,
-    "fed_path_bps": 37.0,
-    "fed_path_lean": "hawkish_repricing",
+    "fed_path_bps": 34.0,
+    "fed_path_lean": "steady",
     "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
     "usd_reer_gap_pct": 0.4,
@@ -115,12 +115,12 @@
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 12.2,
-      "dollar_wrecking_ball": 36.6,
-      "em_crisis_capital_flight": 35.3,
-      "haven_flight_risk_off": 10.9,
+      "carry_unwind": 12.5,
+      "dollar_wrecking_ball": 39.0,
+      "em_crisis_capital_flight": 5.2,
+      "haven_flight_risk_off": 7.6,
       "reflation_risk_on": 0,
-      "intervention_risk": 4.0
+      "intervention_risk": 10.2
     }
   }
 }
