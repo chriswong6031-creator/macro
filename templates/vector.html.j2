@@ -369,21 +369,32 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     html[data-theme="dark"] .rchip{background:var(--grid)}
     .rchip i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
     .rchip i.bull{background:var(--bull)} .rchip i.bear{background:var(--bear)} .rchip i.neutral{background:var(--neutral)}
-    /* FORECAST CONES */
-    .cone-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--grid)}
+    /* FORWARD-RETURN CONES */
+    .cone-sub{color:var(--muted);font-size:12.5px;line-height:1.55;margin:8px 0 2px}
+    .cone-legend{display:flex;flex-wrap:wrap;gap:16px;font-size:11px;color:var(--muted);margin:10px 0 12px}
+    .cone-legend i{display:inline-block;vertical-align:middle;margin-right:6px}
+    .cl-med{width:9px;height:9px;border-radius:50%;background:var(--muted);border:2px solid var(--card)}
+    .cl-box{width:18px;height:9px;border-radius:3px;background:color-mix(in srgb,var(--muted) 30%,var(--card));border:1px solid var(--grid)}
+    .cl-wh{width:18px;height:2px;background:color-mix(in srgb,var(--muted) 45%,var(--grid))}
+    .cone-head{display:flex;align-items:center;gap:12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);padding-bottom:4px;border-bottom:1px solid var(--grid)}
+    .cone-head .ch-bar{flex:1}
+    .cone-head .ch-s{width:84px;flex:none;text-align:right}
+    .cone-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--grid)}
     .cone-row:first-of-type{border-top:none}
     .cone-h{width:34px;font-size:13px;font-weight:800;color:var(--ink);flex:none}
     .cone-bar{position:relative;flex:1;height:22px}
     .cone-axis{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--grid);transform:translateY(-50%)}
-    .cone-zero{position:absolute;top:2px;bottom:2px;width:1px;background:var(--muted);opacity:.55}
+    .cone-zero{position:absolute;top:1px;bottom:1px;width:1px;background:var(--muted);opacity:.6}
     .cone-whisk{position:absolute;top:50%;height:2px;transform:translateY(-50%);border-radius:2px}
-    .cone-box{position:absolute;top:50%;height:13px;transform:translateY(-50%);border-radius:4px;opacity:.85}
-    .cone-box.bull{background:color-mix(in srgb,var(--bull) 60%,var(--card))} .cone-whisk.bull{background:color-mix(in srgb,var(--bull) 35%,var(--grid))}
-    .cone-box.bear{background:color-mix(in srgb,var(--bear) 55%,var(--card))} .cone-whisk.bear{background:color-mix(in srgb,var(--bear) 35%,var(--grid))}
-    .cone-med{position:absolute;top:50%;width:11px;height:11px;margin-left:-5.5px;transform:translateY(-50%);border-radius:50%;border:2px solid var(--card)}
-    .cone-med.bull{background:var(--bull)} .cone-med.bear{background:var(--bear)}
-    .cone-pup{width:118px;flex:none;text-align:right;font-size:11.5px;color:var(--muted)}
-    .cone-pup b{font-weight:800}
+    .cone-box{position:absolute;top:50%;height:13px;transform:translateY(-50%);border-radius:4px;opacity:.9}
+    .cone-box.bull{background:color-mix(in srgb,var(--bull) 60%,var(--card))} .cone-whisk.bull{background:color-mix(in srgb,var(--bull) 38%,var(--grid))}
+    .cone-box.bear{background:color-mix(in srgb,var(--bear) 55%,var(--card))} .cone-whisk.bear{background:color-mix(in srgb,var(--bear) 38%,var(--grid))}
+    .cone-box.flat{background:color-mix(in srgb,var(--muted) 30%,var(--card))} .cone-whisk.flat{background:color-mix(in srgb,var(--muted) 36%,var(--grid))}
+    .cone-med{position:absolute;top:50%;width:11px;height:11px;margin-left:-5.5px;transform:translateY(-50%);border-radius:50%;border:2px solid var(--card);box-shadow:0 0 0 1px var(--grid)}
+    .cone-med.bull{background:var(--bull)} .cone-med.bear{background:var(--bear)} .cone-med.flat{background:var(--muted)}
+    .cone-stat{width:84px;flex:none;text-align:right;font-size:10.5px;color:var(--faint);line-height:1.3}
+    .cone-stat b{display:block;font-size:14px;font-weight:800;color:var(--ink)}
+    .cone-stat b.bull{color:var(--bull)} .cone-stat b.bear{color:var(--bear)}
   </style>
   {% set tone_col = {'bull':'var(--blue)','bear':'var(--r3)','neutral':'var(--muted)'} %}
   {% set mcol = tone_col.get(master.tone,'var(--muted)') %}
@@ -583,39 +594,61 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
   </div>
   {% endif %}
 
-  {# ---------------- FORWARD OUTLOOK CONES (regime-conditioned distribution) ---------------- #}
+  {# ---------------- FORWARD-RETURN CONES (what happened next, on days like today) ---------------- #}
   {% if cones and cones.ok and cones.horizons %}
   {% set ch = cones.horizons %}
   {% set cvals = [] %}
   {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and _h.p95 is not none and _h.p5 is not none %}{% set _ = cvals.append(_h.p95|abs) %}{% set _ = cvals.append(_h.p5|abs) %}{% endif %}{% endfor %}
   {% set cscale = (cvals|max) if cvals else 50 %}
   {% macro cpct(v) %}{{ [[(50 + 50*v/cscale), 2]|max, 98]|min }}{% endmacro %}
-  {# does any horizon fall back off the live regime cell, or run thin? surface it honestly #}
+  {# which horizons couldn't fill the live-regime cell (thin, or fell back to a wider sample)? surface it honestly #}
   {% set degraded = [] %}
   {% for k in ['7d','30d','90d'] %}{% set _h = ch.get(k) %}{% if _h and (_h.thin or (_h.cond and _h.cond != cones.regime)) %}{% set _ = degraded.append(k) %}{% endif %}{% endfor %}
   <div class="card" style="margin-top:14px;padding:18px 22px">
     <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px">
-      <h3 style="margin:0">{{ t('Forward outlook · regime-conditioned cones','前瞻展望 · 按格局的收益锥') }}</h3>
-      <span class="faint" style="font-size:12px">{{ t('empirical, given regime:','基于历史，当前格局：') }} <b style="color:var(--ink)">{{ cones.regime or '—' }}</b></span>
+      <h3 style="margin:0">{{ t('What BTC did next · on days like today','类似今日的历史日 · BTC 后续走势') }}</h3>
+      <span class="faint" style="font-size:12px">{{ t('history matched to regime:','匹配格局：') }} <b style="color:var(--ink)">{{ cones.regime or t('all history','全历史') }}</b></span>
     </div>
-    <div style="margin-top:10px">
+    <div class="cone-sub">{{ t('Look back at every past day whose regime matched today, then read what BTC actually returned over the next 7 / 30 / 90 days. The bars are the realized spread of those outcomes — history, not a forecast, with zero fitted weights.','回看历史上每一个与今日格局相同的交易日，统计 BTC 在随后 7 / 30 / 90 天的实际收益。柱体为这些结果的真实分布 —— 是历史，不是预测，且无任何拟合权重。') }}</div>
+    <div class="cone-legend">
+      <span><i class="cl-wh"></i>{{ t('5th–95th percentile','5–95 百分位') }}</span>
+      <span><i class="cl-box"></i>{{ t('middle 50% of outcomes','中间 50% 的结果') }}</span>
+      <span><i class="cl-med"></i>{{ t('median','中位数') }}</span>
+    </div>
+    <div class="cone-head">
+      <span class="cone-h"></span>
+      <span class="ch-bar">{{ t('range of next-period returns','下一周期收益区间') }}</span>
+      <span class="ch-s">{{ t('typical','典型') }}</span>
+      <span class="ch-s">{{ t('odds ↑','上涨概率') }}</span>
+    </div>
     {% for k in ['7d','30d','90d'] %}{% set h = ch.get(k) %}{% if h and h.p50 is not none %}
-      {% set ht = 'bull' if h.p50 >= 0 else 'bear' %}
-      <div class="cone-row" {% if h.thin %}style="opacity:.6"{% endif %}>
+      {% set edge = ((h.p_up - h.base_up) * 100) if (h.p_up is not none and h.base_up is not none) else 0 %}
+      {% set tilt = 'flat' if (h.thin or edge|abs < 5) else ('bull' if edge >= 5 else 'bear') %}
+      {% set edgecol = 'var(--muted)' if tilt == 'flat' else ('var(--bull)' if tilt == 'bull' else 'var(--bear)') %}
+      <div class="cone-row" {% if h.thin %}style="opacity:.62"{% endif %}>
         <span class="cone-h">{{ k }}</span>
         <div class="cone-bar">
           <div class="cone-axis"></div>
           <div class="cone-zero" style="left:{{ cpct(0) }}%"></div>
-          <div class="cone-whisk {{ ht }}" style="left:{{ cpct(h.p5) }}%;width:{{ cpct(h.p95)|float - cpct(h.p5)|float }}%"></div>
-          <div class="cone-box {{ ht }}" style="left:{{ cpct(h.p25) }}%;width:{{ cpct(h.p75)|float - cpct(h.p25)|float }}%"></div>
-          <div class="cone-med {{ ht }}" style="left:{{ cpct(h.p50) }}%"></div>
+          <div class="cone-whisk {{ tilt }}" style="left:{{ cpct(h.p5) }}%;width:{{ cpct(h.p95)|float - cpct(h.p5)|float }}%"></div>
+          <div class="cone-box {{ tilt }}" style="left:{{ cpct(h.p25) }}%;width:{{ cpct(h.p75)|float - cpct(h.p25)|float }}%"></div>
+          <div class="cone-med {{ tilt }}" style="left:{{ cpct(h.p50) }}%"></div>
         </div>
-        <span class="cone-pup">P↑ <b style="color:{{ 'var(--muted)' if h.thin else ('var(--bull)' if h.p_up>=h.base_up else 'var(--bear)') }}">{{ (h.p_up*100)|round|int }}%</b> <span class="faint">/ {{ (h.base_up*100)|round|int }}%{% if h.cond and h.cond != cones.regime %} · {{ h.cond }}{% endif %}{% if h.thin %} · {{ t('thin','样本少') }} n={{ h.n }}{% endif %}</span></span>
+        <div class="cone-stat">
+          <b class="{{ tilt }}">{{ '%+.1f'|format(h.p50) }}%</b>
+          {{ '%+.0f'|format(h.p25) }}…{{ '%+.0f'|format(h.p75) }}%
+        </div>
+        <div class="cone-stat">
+          <b style="color:{{ edgecol }}">{{ (h.p_up*100)|round|int }}%</b>
+          {{ t('base','基准') }} {{ (h.base_up*100)|round|int }}%
+        </div>
       </div>
     {% endif %}{% endfor %}
+    <div class="exp-scale" style="margin-top:6px"><span>−{{ cscale|round|int }}%</span><span>0</span><span>+{{ cscale|round|int }}%</span></div>
+    <div class="sub faint" style="margin-top:10px;font-size:11.5px">
+      {{ t('“Typical” is the median outcome; the smaller numbers under it are the middle-50% range (p25→p75). “Odds ↑” is how often BTC was higher this far out, against the all-history base rate — when the two are close the direction is a coin-flip and only the size of the move matters; a gap beyond ±5 pts is the only honest directional read (it tints the bar).','“典型”为收益中位数，其下小字为中间 50% 区间（p25→p75）。“上涨概率”为该周期 BTC 收高的频率，对比全样本基准 —— 二者接近即方向近乎抛硬币、只看幅度；差距超过 ±5 个百分点才算可信的方向信号（并会为柱体着色）。') }}
+      {% if degraded %}<br>{{ t('Limited regime-matched history — using a wider sample:','格局匹配样本有限 —— 已采用更宽样本：') }} {% for k in degraded %}{% set _h = ch.get(k) %}<b>{{ k }}</b> {{ _h.cond }} (n={{ _h.n }}){{ ' · ' if not loop.last }}{% endfor %}{% endif %}
     </div>
-    <div class="exp-scale" style="margin-top:2px"><span>−{{ cscale|round|int }}%</span><span>0</span><span>+{{ cscale|round|int }}%</span></div>
-    <div class="sub faint" style="margin-top:10px;font-size:12px">{{ t('Each bar is the EMPIRICAL forward-return distribution on days that shared the current regime — box = p25→p75, whiskers p5→p95, dot = median, P↑ = hit-rate vs the all-history base rate. Zero fitted weights; it shows the realized spread of outcomes, not a point forecast. Drawdown leads tactically; direction is only a call at the measured extremes.', '每根柱为历史上处于当前格局之日的实测前瞻收益分布 — 方框 = p25→p75，须线 p5→p95，圆点 = 中位数，P↑ = 上涨胜率对比全样本基准。无拟合权重；展示的是结果的实测分布，而非点预测。战术上以回撤为先；方向仅在实测极值处才作判断。') }}</div>
   </div>
   {% endif %}
 
