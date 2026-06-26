@@ -3632,6 +3632,29 @@ china:
     min_mktcap_yi: 30               # liquidity floor (亿 RMB total market cap)
     history_period: "5y"            # yfinance close history per name (engine needs >=300 rows)
     enrich_per_run: 120             # max NEW yfinance get_info name/sector lookups per nightly run
+    # Hand-picked individual A-shares kept SEARCHABLE even though they sit BELOW the Sina
+    # top-800 / CSI300+CSI1000 cutoff (small/mid-caps a user explicitly wants in the
+    # analyzer). The China mirror of stock_search.extra_tickers/extra_names — kept OUT of
+    # china.constituents so the calibrated breadth/regime engine is never perturbed. The
+    # seeded name_en/name_zh/sector win over (and skip) yfinance get_info, which mislabels
+    # small caps — e.g. it tags 旗天科技 "Healthcare" from its stale 华谊嘉信 marketing
+    # identity. A name needs >=300 trading days of close history to actually build.
+    extra_tickers:
+      - "300061.SZ"                 # 旗天科技 Qitian Technology — digital marketing + fintech (ChiNext)
+      - "688508.SS"                 # 芯朋微 Wuxi Chipown Micro-electronics
+      - "300580.SZ"                 # 贝斯特 Wuxi Best Precision Machinery
+      - "688049.SS"                 # 炬芯科技 Actions Technology
+      - "300470.SZ"                 # 中密控股 Sinoseal Holding
+      - "688609.SS"                 # 九联科技 Unionman Technology
+      - "301531.SZ"                 # 春光集团 (very recent IPO — gated out until >=300d history)
+    extra_names:                    # ticker: {name_en, name_zh, sector, mktcap_yi(亿, optional)}
+      "300061.SZ": {name_en: "Qitian Technology Group Co., Ltd.", name_zh: "旗天科技", sector: "Technology", mktcap_yi: 47}
+      "688508.SS": {name_en: "Wuxi Chipown Micro-electronics", name_zh: "芯朋微", sector: "Technology", mktcap_yi: 108}
+      "300580.SZ": {name_en: "Wuxi Best Precision Machinery", name_zh: "贝斯特", sector: "Industrials", mktcap_yi: 92}
+      "688049.SS": {name_en: "Actions Technology", name_zh: "炬芯科技", sector: "Technology", mktcap_yi: 75}
+      "300470.SZ": {name_en: "Sinoseal Holding", name_zh: "中密控股", sector: "Industrials", mktcap_yi: 59}
+      "688609.SS": {name_en: "Unionman Technology", name_zh: "九联科技", sector: "Technology", mktcap_yi: 56}
+      "301531.SZ": {name_en: "Shandong Chunguang Technology Group", name_zh: "春光集团", sector: "Industrials", mktcap_yi: 148}
     # CSI index constituent lists unioned into the search universe (via akshare).
     # Stocks already in the Sina top-800 are deduplicated; extras get mktcap_yi=30 placeholder.
     index_constituents:
