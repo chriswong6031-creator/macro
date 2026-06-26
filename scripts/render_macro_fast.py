@@ -52,6 +52,11 @@ def main() -> int:
     out = site / "news.html"
     out.write_text(env.get_template("news.html.j2").render(**vm))
     print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
+    # sector heatmap page: pure template re-render (the data JSON in
+    # site/marketdata/ is owned by scripts.build_sp500_heatmap, not rebuilt here)
+    out = site / "sector_heatmap.html"
+    out.write_text(env.get_template("sector_heatmap.html.j2").render())
+    print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
     return 0
 
 
