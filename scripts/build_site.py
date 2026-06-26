@@ -28,6 +28,7 @@ from collectors.sponsors import flows_table  # noqa: E402
 from engine.i18n import t as T  # noqa: E402
 from engine.i18n import tr as TR  # noqa: E402
 from engine.inputs import build_features  # noqa: E402
+from engine.market_gamma import view as market_gamma_view  # noqa: E402 — SHARED deriver: FE banner + contract (engine/run.py) call the SAME function so they can't drift
 from lib import config, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -1071,10 +1072,10 @@ def nowcast_history(f: "pd.DataFrame") -> dict:
     sticky = col("sticky_cpi")
     flex = col("flex_cpi")
     if sticky is not None:
-        pack("sticky", _ann_monthly_pct(sticky, sm), "var(--orange)", 2.0, 84, 12,
+        pack("sticky", _ann_monthly_pct(sticky, sm), "var(--orange)", 2.0, 10, 12,
              "inflation", 3, 0.10, monthly=True)
     if flex is not None:
-        pack("flexible", _ann_monthly_pct(flex, sm), "var(--orange)", 2.0, 84, 12,
+        pack("flexible", _ann_monthly_pct(flex, sm), "var(--orange)", 2.0, 10, 12,
              "inflation", 3, 0.30, monthly=True)
     return out
 
@@ -1104,14 +1105,83 @@ def regime_stance(latest: dict, pb: dict | None) -> dict | None:
             "age_word": age_word, "n_warn": n_warn}
 
 
-def action_board(sector_timing: dict, notable: list[dict]) -> dict:
-    """Bucket sector + standout-stock cycle signals into an at-a-glance
-    'what to act on now' board for the front page."""
+def basket_action_items(site) -> dict:
+    """Narrative-basket action items for the UNIFIED 'what to act on now' board, so the
+    page acts on the narrative resolution (Memory/Storage vs Non-AI Software) and not just
+    the 11 blurry GICS sectors. Sourced from the live theme-scoring recos
+    (site/basketdata/baskets.json → theme_intel) and enriched with the allocation model's
+    absolute-trend gate + durability + model-book weight (site/allocationdata/allocation.json).
+
+    HONEST framing carried per item: the BUY side (enter/accumulate) is the descriptive
+    leadership LENS (cross-sectional rank-IC ~0 on the clean sector backtest); the REDUCE
+    side (trim/avoid) rides the VALIDATED absolute-trend / fading-deteriorating drawdown gate
+    (the one multi-decade-backtested edge). `validated` flags which is which. Each item is
+    badged kind='theme'. Graceful: empty buckets if the artifacts are absent."""
+    buckets = {"buy_now": [], "buy_soon": [], "take_profits": [], "hold": [], "avoid": []}
+    try:
+        ti = (json.loads((site / "basketdata" / "baskets.json").read_text())
+              .get("theme_intel") or {})
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("basket action: baskets.json unreadable (%s)", e)
+        return buckets
+    themes = ti.get("themes") or []
+    if not themes:
+        return buckets
+    alloc, book_wt = {}, {}
+    try:
+        aj = json.loads((site / "allocationdata" / "allocation.json").read_text())
+        alloc = {r["id"]: r for r in (aj.get("ranks") or [])}
+        book_wt = {w["id"]: w.get("weight")
+                   for w in ((aj.get("allocation") or {}).get("weights") or [])}
+    except Exception as e:  # noqa: BLE001 — enrichment only
+        log.warning("basket action: allocation.json unreadable (%s)", e)
+    # 'enter' (emerging, fresh) → SETTING UP; 'accumulate' (confirmed leader) → BUY ZONE.
+    reco_bucket = {"enter": "buy_soon", "accumulate": "buy_now",
+                   "hold": "hold", "trim": "take_profits", "avoid": "avoid"}
+    for th in themes:
+        reco = (th.get("reco") or "").lower()
+        bkt = reco_bucket.get(reco)
+        if not bkt:
+            continue
+        a = alloc.get(th.get("id")) or {}
+        gate = a.get("gate") or {}
+        buckets[bkt].append({
+            "kind": "theme",
+            "ticker": th.get("id"), "slug": th.get("id"),
+            "href": "basket/" + str(th.get("id")) + ".html",
+            "name": th.get("name"), "name_zh": th.get("name_zh"),
+            "label": th.get("reco_en") or reco.upper(),
+            "label_zh": th.get("reco_zh") or reco,
+            "score": th.get("score"),
+            "alloc_rank": a.get("rank"),
+            "above_trend": bool(gate.get("above_200dma")) if gate else None,
+            "eligible": a.get("eligible"),
+            "durability": (a.get("durability") or {}).get("bar"),
+            "book_wt": book_wt.get(th.get("id")),
+            "validated": reco in ("trim", "avoid"),   # the trend-gate / drawdown risk side
+            "signal_grade": (th.get("signal_strength") or {}).get("grade"),
+        })
+    buckets["buy_now"].sort(key=lambda x: -(x.get("score") or 0))   # leaders first
+    buckets["buy_soon"].sort(key=lambda x: -(x.get("score") or 0))
+    buckets["take_profits"].sort(key=lambda x: (x.get("score") or 0))  # weakest first
+    buckets["avoid"].sort(key=lambda x: (x.get("score") or 0))
+    for k in buckets:                                # cap so baskets don't crowd the board
+        buckets[k] = buckets[k][:8]
+    return buckets
+
+
+def action_board(sector_timing: dict, notable: list[dict],
+                 basket_items: dict | None = None) -> dict:
+    """Bucket sector + narrative-basket + standout-stock cycle signals into an at-a-glance
+    'what to act on now' board. Sectors and baskets are UNIFIED (each item carries
+    kind='sector'|'theme' + an href) so the board acts on narrative resolution, not just the
+    11 GICS sectors."""
     from engine.playbook import SECTOR_NAMES
     buy_now, buy_soon, take_profits, hold, avoid = [], [], [], [], []
     for fund, tm in sector_timing.items():
         e = tm.get("entry") or {}
         item = {"ticker": fund, "name": SECTOR_NAMES.get(fund, fund),
+                "kind": "sector", "href": "sectors/" + fund + ".html",
                 "label": tm["label"], "tag": e.get("tag", ""),
                 "text": e.get("text", ""), "days": e.get("days_hi"),
                 "age_short": tm.get("age_short"), "age_short_zh": tm.get("age_short_zh"),
@@ -1192,8 +1262,15 @@ def action_board(sector_timing: dict, notable: list[dict]) -> dict:
         else:
             overflow.append(n)
     notable_clean = (picked + overflow)[:CAP]
-    return {"buy_now": buy_now, "buy_soon": buy_soon, "take_profits": take_profits,
-            "hold": hold, "avoid": avoid, "notable": notable_clean[:CAP]}
+    # UNIFY: narrative baskets lead each lane (the resolution the user acts on), GICS
+    # sectors follow. 'hold' carries themes then both sector hold + avoid lists.
+    bi = basket_items or {}
+    return {"buy_now": (bi.get("buy_now") or []) + buy_now,
+            "buy_soon": (bi.get("buy_soon") or []) + buy_soon,
+            "take_profits": (bi.get("take_profits") or []) + take_profits,
+            "hold": (bi.get("hold") or []) + hold,
+            "avoid": (bi.get("avoid") or []) + avoid,
+            "notable": notable_clean[:CAP]}
 
 
 def sector_rows(playbook: dict | None, timing: dict | None = None) -> list[dict]:
@@ -1662,6 +1739,20 @@ def regime_snap_view(cf: pd.DataFrame) -> dict | None:
         return snap
     except Exception as e:  # noqa: BLE001 — additive panel, never fatal
         log.warning("regime-snap view failed: %s", e)
+        return None
+
+
+def market_state_view(latest: dict, f: pd.DataFrame) -> dict | None:
+    """DISPLAY-ONLY 'what kind of market is this?' command-center payload: wraps
+    engine.market_state.market_state_snapshot, blending the index multi-timeframe
+    tape (read off the in-memory feature frame) with the live cross-asset / vol /
+    breadth / liquidity / downturn-risk legs into a 0-100 risk-on score and a
+    Green/Yellow/Red verdict. Zero new data, never scored. None on shortfall."""
+    try:
+        from engine import market_state as _ms
+        return _ms.market_state_snapshot(latest, f, latest.get("alerts") or [])
+    except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+        log.warning("market_state view failed: %s", e)
         return None
 
 
@@ -2296,31 +2387,6 @@ def build_advanced_page(env: Environment, site: Path, generated: str, latest: di
     return cross_asset
 
 
-def market_gamma_view(gex) -> dict | None:
-    """Market-wide dealer-gamma vol regime from the VALIDATED index dealer-gamma read
-    (SPX, data/cboe/gex via engine.gex_engine — the same that drives the dealer-gamma
-    board). ABOVE the gamma-flip strike dealers are net long gamma and hedge AGAINST
-    moves (pinning / vol suppressed); BELOW it they're short gamma and hedge WITH moves
-    (amplifying). A whole-market vol CONTEXT for the per-stock setups — not a per-stock
-    signal. Graceful: None if the store is missing/empty (the note simply won't render).
-    Uses the flip side (spot vs flip), the engine's authoritative regime, NOT the coarse
-    net-$ sign the ETF-flows board flags — they answer different questions."""
-    if gex is None or not len(gex):
-        return None
-    g = gex.iloc[-1]
-    svf = g.get("spot_vs_flip_pct")
-    if svf is None or pd.isna(svf):
-        return None
-    return {
-        "regime": "short" if float(svf) < 0 else "long",
-        "spot_vs_flip_pct": round(float(svf), 1),
-        "net_gex_bn": round(float(g.get("net_gex_bn") or 0), 0),
-        "flip": int(round(float(g.get("flip_strike") or 0))),
-        "spot": int(round(float(g.get("spot") or 0))),
-        "asof": str(gex.index.max().date()),
-    }
-
-
 def index_health_rows() -> list[dict]:
     """Health snapshot for the four major US indexes — the 'how is the market
     itself doing' read that leads the macro page (people open it for the index
@@ -2567,11 +2633,26 @@ def main() -> int:
                   "stockdata.js", "watchlist.js", "factor_exposure.js", "auth.js",
                   "tablesort.js", "charts.js",
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
+                  "stockview.js",
                   "lightweight-charts.js",
-                  "allocation_scorecard.js"):
+                  "allocation_scorecard.js", "live.js", "heatmap.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
+    # Cycle Intelligence — bespoke cross-cycle dashboard (its own SVG engine, not
+    # Plotly). Additive + graceful: a failure never blocks the rest of the build.
+    try:
+        from scripts.build_cycle import main as build_cycle
+        build_cycle()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("cycle intelligence page failed: %s", e)
+    # live-price progressive enhancement config (Worker URL + cadence from config.yml);
+    # live.js no-ops when the URL is empty, so this is safe on the static deploy.
+    try:
+        from scripts.build_live_overlay import write_live_config
+        write_live_config(site)
+    except Exception as e:  # noqa: BLE001 — additive, never block the build
+        log.warning("live_config.js skipped: %s", e)
     # per-ticker factor betas for the watchlist's Portfolio Exposure panel — the
     # client aggregates these against the user's holdings (engine/factor_exposure.py;
     # validated in reports/factor-exposure-phase0.md). Additive + graceful.
@@ -2752,7 +2833,7 @@ def main() -> int:
         month_name=calendar.month_name[pd.Timestamp(latest["date"]).month],
         commodities=(latest.get("playbook") or {}).get("commodities", []),
         sector_timing=sector_timing,
-        action_board=action_board(sector_timing, notable),
+        action_board=action_board(sector_timing, notable, basket_action_items(site)),
         top_setups=top_setups,
         us_standouts=us_standouts,
         market_gamma=market_gamma,
@@ -2789,7 +2870,8 @@ def main() -> int:
         chart_vix_term=chart_vix_term(f, _cf),     # VIX level + term-structure ratio
         cross_asset=cross_asset_snap,
         fear_euphoria=fear_euphoria_synthesis(latest, f),
-        regime_snap=_rs_view,                     # velocity complement + triggered AI veto (display-only)
+        regime_snap=_rs_view,
+        market_state=market_state_view(latest, f),                     # velocity complement + triggered AI veto (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
         vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
     )
@@ -2815,6 +2897,12 @@ def main() -> int:
     out.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="macro"))
     log.info("wrote %s (%.0f KB)", out, out.stat().st_size / 1024)
 
+    # Dedicated macro news feed. Uses the same context-only news/catalyst/sentiment
+    # view model as the dashboard tab, but gives it a first-class reading surface.
+    out_news = site / "news.html"
+    out_news.write_text(env.get_template("news.html.j2").render(**vm))
+    log.info("wrote %s (%.0f KB)", out_news, out_news.stat().st_size / 1024)
+
     # US Stock Dashboard — same VM, the "looking for stocks" half of the split.
     out_st = site / "us_stocks.html"
     out_st.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
@@ -2829,6 +2917,19 @@ def main() -> int:
     usdir.mkdir(parents=True, exist_ok=True)
     (usdir / "latest.json").write_text(json.dumps(
         {"date": latest.get("date", ""), "label": _us_label, "n_setups": _n}, indent=2))
+
+    # --- S&P 500 sector treemap heatmap (Finviz/Perplexity-style) --------------
+    # Builds marketdata/sp500_heatmap.json (offline-safe from the close cache; a
+    # fresh 15-min Polygon snapshot is spliced in when a key is present) and the
+    # standalone page that renders it. Additive — never fatal to the daily run.
+    try:
+        from scripts.build_sp500_heatmap import build as build_sp500_heatmap
+        build_sp500_heatmap(site, generated_utc=generated)
+        out_hm = site / "sector_heatmap.html"
+        out_hm.write_text(env.get_template("sector_heatmap.html.j2").render())
+        log.info("wrote %s (%.0f KB)", out_hm, out_hm.stat().st_size / 1024)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("sector heatmap failed: %s", e)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
