@@ -1721,6 +1721,20 @@ def regime_snap_view(cf: pd.DataFrame) -> dict | None:
         return None
 
 
+def market_state_view(latest: dict, f: pd.DataFrame) -> dict | None:
+    """DISPLAY-ONLY 'what kind of market is this?' command-center payload: wraps
+    engine.market_state.market_state_snapshot, blending the index multi-timeframe
+    tape (read off the in-memory feature frame) with the live cross-asset / vol /
+    breadth / liquidity / downturn-risk legs into a 0-100 risk-on score and a
+    Green/Yellow/Red verdict. Zero new data, never scored. None on shortfall."""
+    try:
+        from engine import market_state as _ms
+        return _ms.market_state_snapshot(latest, f, latest.get("alerts") or [])
+    except Exception as e:  # noqa: BLE001 — additive panel, never fatal
+        log.warning("market_state view failed: %s", e)
+        return None
+
+
 def _fmt_money_mn(v: float) -> str:
     """$ millions -> human string: 1234 -> +$1.2B, -87 -> -$87M."""
     if pd.isna(v):
@@ -2855,6 +2869,7 @@ def main() -> int:
         cross_asset=cross_asset_snap,
         fear_euphoria=fear_euphoria_synthesis(latest, f),
         regime_snap=_rs_view,                     # velocity complement + triggered AI veto (display-only)
+        market_state=market_state_view(latest, f),  # Green/Yellow/Red market-state command-center (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
