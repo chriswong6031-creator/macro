@@ -78,6 +78,10 @@ class ChinaUniverseAdapter(Adapter):
     def __init__(self) -> None:
         cn = config.load()["china"]
         self.cfg = cn["search_universe"]
+        # Manually-added individual names (config extra_tickers/extra_names): kept
+        # searchable even though they sit below the Sina/CSI cutoff. See fetch()/_enrich().
+        self.extra_tickers = list(self.cfg.get("extra_tickers", []) or [])
+        self.extra_names = dict(self.cfg.get("extra_names", {}) or {})
         self.ycfg = cn["yahoo"]                 # batch_size / retries / backoff_base_s
         self.dir = config.data_dir() / "china_search"
         self.closes_path = self.dir / "closes.parquet"
@@ -151,9 +155,15 @@ class ChinaUniverseAdapter(Adapter):
         return wide.sort_index()
 
     # -- English name + sector (yfinance get_info, cached + bounded) ----------
-    def _enrich(self, members: pd.DataFrame, prev: pd.DataFrame | None) -> pd.DataFrame:
+    def _enrich(self, members: pd.DataFrame, prev: pd.DataFrame | None,
+                seed: dict | None = None) -> pd.DataFrame:
         """Fill name_en / sector from a cached prior members table; look up at most
-        enrich_per_run NEW tickers via yfinance get_info so nightly stays fast."""
+        enrich_per_run NEW tickers via yfinance get_info so nightly stays fast.
+
+        `seed` (config extra_names) curates name_en / name_zh / sector for the
+        manually-added small caps BEFORE the yfinance pass and only when still empty,
+        so a mislabeled get_info can't override the hand-picked sector — and so the
+        seeded names drop out of the lookup queue entirely (no wasted lookup)."""
         members = members.copy()
         members["name_en"] = ""
         members["sector"] = ""
@@ -161,6 +171,13 @@ class ChinaUniverseAdapter(Adapter):
             for col in ("name_en", "sector"):
                 if col in prev.columns:
                     members[col] = members.index.map(prev[col]).fillna("")
+        for t, meta in (seed or {}).items():
+            if t not in members.index or not isinstance(meta, dict):
+                continue
+            for col in ("name_en", "sector", "name_zh"):
+                val = str(meta.get(col, "") or "").strip()
+                if val and not str(members.at[t, col]).strip():
+                    members.at[t, col] = val
         missing = [t for t in members.index
                    if not str(members.at[t, "name_en"]).strip()
                    or not str(members.at[t, "sector"]).strip()]
@@ -255,6 +272,20 @@ class ChinaUniverseAdapter(Adapter):
                 uni = pd.concat([uni, extra_df])
                 log.info("china_universe: +%d CSI index extras (total %d)", len(extra_df), len(uni))
 
+        # Manually-added individual names (config extra_tickers): unioned last so a
+        # name below the Sina top-800 / CSI cutoff stays searchable. Real mktcap from
+        # extra_names when provided, else the same 30亿 placeholder as the CSI extras.
+        extra_t = [t for t in self.extra_tickers if t not in uni.index]
+        if extra_t:
+            rows = [{"ticker": t,
+                     "name_zh": str((self.extra_names.get(t) or {}).get("name_zh", "") or "").strip(),
+                     "mktcap_yi": float((self.extra_names.get(t) or {}).get("mktcap_yi", 30.0) or 30.0)}
+                    for t in extra_t]
+            cfg_df = pd.DataFrame(rows).set_index("ticker")
+            cfg_df = cfg_df[~cfg_df.index.duplicated(keep="first")]
+            uni = pd.concat([uni, cfg_df])
+            log.info("china_universe: +%d config extra_tickers (total %d)", len(cfg_df), len(uni))
+
         tickers = uni.index.tolist()
 
         prev_closes = pd.read_parquet(self.closes_path) if self.closes_path.exists() else None
@@ -281,7 +312,7 @@ class ChinaUniverseAdapter(Adapter):
             raise RuntimeError(f"china_universe closes too sparse: {live}/{len(tickers)}")
 
         prev_members = pd.read_parquet(self.members_path) if self.members_path.exists() else None
-        members = self._enrich(uni, prev_members)
+        members = self._enrich(uni, prev_members, seed=self.extra_names)
         members = members.loc[[t for t in members.index if t in closes.columns]]
 
         if not full_history:
