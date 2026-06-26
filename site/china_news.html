@@ -34,9 +34,9 @@
   body { padding-bottom:52px; }
   @media(min-width:1180px){ body{ padding-left:max(18px,calc((100vw - 1216px)/2)); padding-right:max(18px,calc((100vw - 1216px)/2)); } }
   .shell { max-width:1180px; margin:0 auto; }
-  .hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; margin:24px 0 16px; }
+  .hero { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(300px,.65fr); gap:18px; margin:24px 0 16px; align-items:start; }
   .hero-main,.side,.card,.rail-card,.empty { background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--card-shadow); }
-  .hero-main { min-height:314px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; position:relative; overflow:hidden; }
+  .hero-main { min-height:0; padding:24px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
   .hero-main:before { content:''; position:absolute; inset:0 0 auto; height:5px; background:linear-gradient(90deg,#d04545,var(--warn),var(--link)); }
   .eyebrow { display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.12em; font-weight:800; margin:0 0 14px; }
   html[data-lang="zh"] .eyebrow { letter-spacing:0; }
