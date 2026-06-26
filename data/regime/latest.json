@@ -421,15 +421,28 @@
     "kind": "fomc_statement",
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
-    "tone_score": 0.0,
-    "guidance_direction": "unknown",
-    "risk_delta": 0.0,
+    "tone_score": 0.3,
+    "guidance_direction": "on_hold",
+    "risk_delta": 0.3,
     "shock_reversible": "unknown",
-    "confidence": "low",
+    "confidence": "medium",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [],
-    "degraded_reason": "stop_max_tokens",
+    "evidence": [
+      {
+        "field": "tone_score",
+        "quote_span": "Inflation remains elevated relative to the Committee's 2 percent goal"
+      },
+      {
+        "field": "guidance_direction",
+        "quote_span": "decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
+      },
+      {
+        "field": "risk_delta",
+        "quote_span": "elevated uncertainty that owes, in part, to the conflict in the Middle East"
+      }
+    ],
+    "degraded_reason": null,
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -929,7 +942,7 @@
   },
   "fed_path": {
     "asof": "2026-06-25",
-    "built": "2026-06-26T10:45:54.630069+00:00",
+    "built": "2026-06-26T12:00:34.110349+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -991,16 +1004,18 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -1.0,
-    "guidance": "unknown",
+    "guidance": "on_hold",
     "market_vs_fed_bp": 10.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
       "market prices ~1.0 hike(s) over 12m",
+      "statement guidance on-hold",
       "market \u2248 the Fed (+10bp)"
     ],
     "drivers_zh": [
       "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
+      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8",
       "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4\uff08+10bp\uff09"
     ],
     "is_context_only": true,
@@ -3230,7 +3245,7 @@
     "state": "caution",
     "label_en": "Caution",
     "label_zh": "\u7559\u610f",
-    "headline_en": "Caution: fragility building (40/100). Drivers: SPX: dealers short gamma; net GEX -19.9bn; spot below gamma flip, complacency=watch (steep contango, HY widening), HY OAS +5bp/21d; HYG/TLT -2.5%/20d.",
+    "headline_en": "Caution: fragility building (40/100). Drivers: SPX: dealers short gamma; net GEX -17.8bn; spot below gamma flip, complacency=watch (steep contango, HY widening), HY OAS +5bp/21d; HYG/TLT -2.5%/20d.",
     "headline_zh": "\u7559\u610f\uff1a\u8106\u5f31\u6027\u4e0a\u5347\uff0840/100\uff09\u3002",
     "drivers": [
       {
@@ -3238,7 +3253,7 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -19.9bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -17.8bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       {
@@ -3320,7 +3335,7 @@
         "intensity": 1.0,
         "weight": 0.9,
         "contribution": 0.9,
-        "detail_en": "SPX: dealers short gamma; net GEX -19.9bn; spot below gamma flip",
+        "detail_en": "SPX: dealers short gamma; net GEX -17.8bn; spot below gamma flip",
         "detail_zh": "\u505a\u5e02\u5546Gamma"
       },
       "technical": {
@@ -4884,52 +4899,52 @@
       {
         "ticker": "GC=F",
         "name": "Gold",
-        "price": 4062.9,
+        "price": 4066.7,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -8.8,
+        "pct_vs_50dma": -8.7,
         "pct_vs_200dma": -8.8,
         "rsi14": 36.0,
         "macd_pos": false,
-        "off_52w_high_pct": -23.6,
+        "off_52w_high_pct": -23.5,
         "season_this": "Jun: -0.9% avg, up 42% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.9%\uff0c42% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -12.8
+        "mom_60d_pct": -12.7
       },
       {
         "ticker": "CL=F",
         "name": "Crude Oil",
-        "price": 69.11,
+        "price": 69.7,
         "above50": false,
         "above200": false,
-        "pct_vs_50dma": -24.3,
-        "pct_vs_200dma": -6.8,
+        "pct_vs_50dma": -23.6,
+        "pct_vs_200dma": -6.0,
         "rsi14": 27.0,
         "macd_pos": false,
-        "off_52w_high_pct": -38.8,
+        "off_52w_high_pct": -38.3,
         "season_this": "Jun: +2.1% avg, up 65% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 +2.1%\uff0c65% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": -38.5
+        "mom_60d_pct": -38.0
       },
       {
         "ticker": "HG=F",
         "name": "Copper",
-        "price": 6.13,
+        "price": 6.18,
         "above50": false,
         "above200": true,
-        "pct_vs_50dma": -2.1,
-        "pct_vs_200dma": 8.6,
-        "rsi14": 43.0,
+        "pct_vs_50dma": -1.3,
+        "pct_vs_200dma": 9.5,
+        "rsi14": 46.0,
         "macd_pos": false,
-        "off_52w_high_pct": -7.9,
+        "off_52w_high_pct": -7.1,
         "season_this": "Jun: -0.6% avg, up 54% of years (n=26)",
         "season_this_zh": "6\u6708\uff1a\u5e73\u5747 -0.6%\uff0c54% \u7684\u5e74\u4efd\u4e0a\u6da8\uff08n=26\uff09",
-        "mom_60d_pct": 9.7
+        "mom_60d_pct": 10.6
       },
       {
         "ticker": "DX-Y.NYB",
         "name": "US Dollar",
-        "price": 101.19,
+        "price": 101.2,
         "above50": true,
         "above200": true,
         "pct_vs_50dma": 1.9,
@@ -5015,7 +5030,7 @@
   },
   "freshness": {
     "asof": "2026-06-25",
-    "built_at": "2026-06-26T10:45:56Z",
+    "built_at": "2026-06-26T12:00:36Z",
     "age_days": 1,
     "age_sessions": 1,
     "max_age_sessions": 1,

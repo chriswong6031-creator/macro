@@ -1,5 +1,5 @@
 {
-  "total": 1063,
+  "total": 1064,
   "n_categories": 17,
   "cross_border": 550,
   "top_categories": [
@@ -9,7 +9,7 @@
     },
     {
       "category": "Capital Returns",
-      "n": 162
+      "n": 163
     },
     {
       "category": "Other",
@@ -17,5 +17,5 @@
     }
   ],
   "floor_musd": 100.0,
-  "built": "2026-06-26 11:04 UTC"
+  "built": "2026-06-26 12:20 UTC"
 }

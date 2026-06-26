@@ -15,29 +15,29 @@
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3219,
+      "quote": 1.3222,
       "chg": -1.8,
       "action": "FLAT",
       "score": 13.3
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.594,
+      "quote": 161.624,
       "chg": 1.0,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8082,
+      "quote": 0.8083,
       "chg": 2.5,
       "action": "LONG",
       "score": 28.0
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6904,
-      "chg": -3.8,
+      "quote": 0.6907,
+      "chg": -3.7,
       "action": "SHORT",
       "score": -30.3
     },
@@ -50,21 +50,21 @@
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.517,
+      "quote": 17.5099,
       "chg": 0.9,
       "action": "FLAT",
-      "score": -15.5
+      "score": -15.8
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1808,
+      "quote": 5.1816,
       "chg": 3.2,
       "action": "FLAT",
-      "score": 4.5
+      "score": 4.6
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.766,
+      "quote": 6.768,
       "chg": 0.1,
       "action": "FLAT",
       "score": 15.0
@@ -118,9 +118,9 @@
       "carry_unwind": 13.3,
       "dollar_wrecking_ball": 39.0,
       "em_crisis_capital_flight": 5.2,
-      "haven_flight_risk_off": 6.7,
+      "haven_flight_risk_off": 6.0,
       "reflation_risk_on": 0,
-      "intervention_risk": 8.7
+      "intervention_risk": 9.3
     }
   }
 }

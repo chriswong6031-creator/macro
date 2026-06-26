@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-26T11:24:51.218616+00:00",
+  "generated_utc": "2026-06-26T12:42:37.813613+00:00",
   "as_of": "2026-06-26",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -2022,27 +2022,27 @@
       "emoji": "\ud83d\udc54",
       "label_en": "Insider trading",
       "label_zh": "\u5185\u90e8\u4eba\u4ea4\u6613",
-      "rows": 23110,
+      "rows": 23111,
       "last_seen": "2026-06-26",
       "recent": [
         {
-          "Ticker": "STVN",
-          "Date": "2026-06-15T00:00:00.000",
-          "Name": "Balachandran Madhavan",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "1493.0",
-          "PricePerShare": "17.09",
-          "SharesOwnedFollowing": "69458.0",
-          "fileDate": "2026-06-26T10:18:11.000",
-          "officerTitle": null,
+          "Ticker": "BZUN",
+          "Date": "2026-06-24T00:00:00.000",
+          "Name": "Wu Junhua",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "P",
+          "Shares": "29000.0",
+          "PricePerShare": "2.85",
+          "SharesOwnedFollowing": "253770.0",
+          "fileDate": "2026-06-26T11:39:27.000",
+          "officerTitle": "Chief Strategy Officer",
           "isDirector": "True",
-          "isOfficer": "False",
+          "isOfficer": "True",
           "isTenPercentOwner": "False",
           "isOther": "False",
           "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-26T10:30:04.447",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "uploaded": "2026-06-26T11:45:03.099",
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2061,7 +2061,26 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:30:04.447",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-15T00:00:00.000",
+          "Name": "Balachandran Madhavan",
+          "AcquiredDisposedCode": "D",
+          "TransactionCode": "S",
+          "Shares": "1493.0",
+          "PricePerShare": "17.09",
+          "SharesOwnedFollowing": "69458.0",
+          "fileDate": "2026-06-26T10:18:11.000",
+          "officerTitle": null,
+          "isDirector": "True",
+          "isOfficer": "False",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:30:04.447",
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2080,7 +2099,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:30:04.447",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2099,7 +2118,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:30:04.447",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2118,7 +2137,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:30:04.447",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2137,7 +2156,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2156,7 +2175,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2175,7 +2194,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2194,26 +2213,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
-        },
-        {
-          "Ticker": "STVN",
-          "Date": "2026-06-09T00:00:00.000",
-          "Name": "Stocchi Mauro",
-          "AcquiredDisposedCode": "A",
-          "TransactionCode": "A",
-          "Shares": "2101.0",
-          "PricePerShare": "0.0",
-          "SharesOwnedFollowing": "407043.0",
-          "fileDate": "2026-06-26T10:07:17.000",
-          "officerTitle": "See Remarks",
-          "isDirector": "False",
-          "isOfficer": "True",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "D",
-          "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2232,7 +2232,26 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
+        },
+        {
+          "Ticker": "STVN",
+          "Date": "2026-06-09T00:00:00.000",
+          "Name": "Stocchi Mauro",
+          "AcquiredDisposedCode": "A",
+          "TransactionCode": "A",
+          "Shares": "2101.0",
+          "PricePerShare": "0.0",
+          "SharesOwnedFollowing": "407043.0",
+          "fileDate": "2026-06-26T10:07:17.000",
+          "officerTitle": "See Remarks",
+          "isDirector": "False",
+          "isOfficer": "True",
+          "isTenPercentOwner": "False",
+          "isOther": "False",
+          "directOrIndirectOwnership": "D",
+          "uploaded": "2026-06-26T10:15:06.481",
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2251,7 +2270,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2270,7 +2289,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2289,7 +2308,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "STVN",
@@ -2308,7 +2327,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "NAMI",
@@ -2318,7 +2337,7 @@
           "TransactionCode": "S",
           "Shares": "2.0",
           "PricePerShare": "0.197",
-          "SharesOwnedFollowing": "2788032.0",
+          "SharesOwnedFollowing": "2793032.0",
           "fileDate": "2026-06-26T10:01:46.000",
           "officerTitle": "CFO and COO",
           "isDirector": "True",
@@ -2327,7 +2346,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "I",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "GLND",
@@ -2346,7 +2365,7 @@
           "isOther": "False",
           "directOrIndirectOwnership": "D",
           "uploaded": "2026-06-26T10:15:06.481",
-          "_first_seen": "2026-06-26T10:35:14.282189+00:00"
+          "_first_seen": "2026-06-26T11:51:39.502256+00:00"
         },
         {
           "Ticker": "KYMR",
@@ -2471,25 +2490,6 @@
           "Shares": "37179.0",
           "PricePerShare": "119.71",
           "SharesOwnedFollowing": "3075906.0",
-          "fileDate": "2026-06-26T01:56:01.000",
-          "officerTitle": null,
-          "isDirector": "True",
-          "isOfficer": "False",
-          "isTenPercentOwner": "False",
-          "isOther": "False",
-          "directOrIndirectOwnership": "I",
-          "uploaded": "2026-06-26T02:00:06.639",
-          "_first_seen": "2026-06-26T03:28:06.019277+00:00"
-        },
-        {
-          "Ticker": "KYMR",
-          "Date": "2026-06-25T00:00:00.000",
-          "Name": "Booth Bruce",
-          "AcquiredDisposedCode": "D",
-          "TransactionCode": "S",
-          "Shares": "10860.0",
-          "PricePerShare": "123.62",
-          "SharesOwnedFollowing": "2906996.0",
           "fileDate": "2026-06-26T01:56:01.000",
           "officerTitle": null,
           "isDirector": "True",
@@ -4460,9 +4460,36 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 373,
+      "rows": 376,
       "last_seen": "2026-06-26",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Fluke+Corporation+Earns+Multiple+Industry+Honors+for+CalStudio%2C+RotAlign+and+Other+Innovation-Driven+Products",
+          "time": "2026-06-26 11:30:22",
+          "headline": "Fluke Corporation Earns Multiple Industry Honors for CalStudio, RotAlign and Other Innovation-Driven Products",
+          "category": "press_release_summary",
+          "summary": "<p>Fluke Corporation wins multiple industry awards for innovative products enhancing safety, productivity, and reliability in electrical and industrial applications.</p><div class='ai_summary'><h2>Quiver AI Summary</h\u2026",
+          "image": "https://www.quiverquant.com/images/ftv_rect_new.png",
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/APOGEE+ENTERPRISES+%28%24APOG%29+Releases+Q1+2027+Earnings",
+          "time": "2026-06-26 10:55:07",
+          "headline": "APOGEE ENTERPRISES ($APOG) Releases Q1 2027 Earnings",
+          "category": "earnings_automated",
+          "summary": "<p>APOGEE ENTERPRISES (<a href=\"https://www.quiverquant.com/stock/APOG/\">$APOG</a>) posted quarterly earnings results for Q1 2027 on Friday, June 26th. The company reported earnings of $0.57 per share, beating estimat\u2026",
+          "image": "https://www.quiverquant.com/images/apog_rect_new.png",
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Kanzhun+Limited+Announces+Near+RMB34+Million+Share+Repurchase%2C+Bringing+2026+Year-to-Date+Buybacks+to+Over+RMB1.99+Billion",
+          "time": "2026-06-26 10:50:20",
+          "headline": "Kanzhun Limited Announces Near RMB34 Million Share Repurchase, Bringing 2026 Year-to-Date Buybacks to Over RMB1.99 Billion",
+          "category": "press_release_summary",
+          "summary": "<p>KANZHUN LIMITED continues its share repurchase program, spending RMB34 million to buy 777,884 shares on June 25, 2026.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p>KANZHUN LIMITED announced the execution\u2026",
+          "image": "https://www.quiverquant.com/images/bz_rect_new.png",
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24AVAV+Given+%24248+Price+Target",
           "time": "2026-06-26 10:20:12",
@@ -4470,7 +4497,7 @@
           "category": "forecasts_automated",
           "summary": "<p>We just received data on a new analyst forecast for $AVAV. Clarke Jeffries from Piper Sandler set a price target of 248.0 for AVAV.</p><p>To track analyst ratings and price targets for $AVAV, check out Quiver Quant\u2026",
           "image": "https://www.quiverquant.com/images/avav_rect_new.png",
-          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/New+Analyst+Forecast%3A+%24TTWO+Given+%24293+Price+Target",
@@ -4479,7 +4506,7 @@
           "category": "forecasts_automated",
           "summary": "<p>We just received data on a new analyst forecast for $TTWO. Clark Lampen from BTIG set a price target of 293.0 for TTWO.</p><p>To track analyst ratings and price targets for $TTWO, check out Quiver Quantitative's <a\u2026",
           "image": "https://www.quiverquant.com/images/ttwo_rect_new.png",
-          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24STVN+Sells+1%2C493+Shares",
@@ -4488,7 +4515,7 @@
           "category": "insiders_automated",
           "summary": "<p>DONALD E JR MOREL, a director at <a href=\"https://www.quiverquant.com/stock/STVN/\">$STVN</a>, sold 1,493 shares of the company on 06-15-2026 for an estimated <strong>$25,515</strong>. We received data on the trade \u2026",
           "image": "https://www.quiverquant.com/images/stvn_rect_new.png",
-          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
         },
         {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Juan+Ciscomani+Applauds+House+Appropriations+Passage%2C+Cites+%2442M+for+AZ-06",
@@ -4518,21 +4545,21 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Director+at+%24SCM+Buys+9%2C000+Shares",
-          "time": "2026-06-26 01:45:43",
-          "headline": "Insider Purchase: Director at $SCM Buys 9,000 Shares",
-          "category": "insiders_automated",
-          "summary": "<p>J Tim Arnoult, a director at <a href=\"https://www.quiverquant.com/stock/SCM/\">$SCM</a>, bought 9,000 shares of the company on 05-19-2026 for an estimated <strong>$81,450</strong>. This trade was reported by Quiver \u2026",
-          "image": "https://www.quiverquant.com/images/scm_rect_new.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Legal+Officer+of+%24ILMN+Sells+615+Shares",
           "time": "2026-06-26 01:45:43",
           "headline": "Insider Sale: Chief Legal Officer of $ILMN Sells 615 Shares",
           "category": "insiders_automated",
           "summary": "<p>Scott M Davies, the Chief Legal Officer of <a href=\"https://www.quiverquant.com/stock/ILMN/\">$ILMN</a>, sold 615 shares of the company on 06-25-2026 for an estimated <strong>$110,700</strong>. We received data on t\u2026",
           "image": "https://www.quiverquant.com/images/ilmn_rect_new.png",
+          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Director+at+%24SCM+Buys+9%2C000+Shares",
+          "time": "2026-06-26 01:45:43",
+          "headline": "Insider Purchase: Director at $SCM Buys 9,000 Shares",
+          "category": "insiders_automated",
+          "summary": "<p>J Tim Arnoult, a director at <a href=\"https://www.quiverquant.com/stock/SCM/\">$SCM</a>, bought 9,000 shares of the company on 05-19-2026 for an estimated <strong>$81,450</strong>. This trade was reported by Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/scm_rect_new.png",
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
@@ -4563,30 +4590,12 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Takano+Introduces+Health+Data+Access%2C+Transparency+and+Affordability+Act",
-          "time": "2026-06-26 00:20:56",
-          "headline": "Press Release: Takano Introduces Health Data Access, Transparency and Affordability Act",
-          "category": "legislation_automated",
-          "summary": "<p>Takano proposes a bill requiring greater health pricing transparency and penalties for noncompliance by service providers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
-          "image": "https://www.quiverquant.com/images/T000472_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Jimmy+Gomez+Condemns+Supreme+Court+Ruling+on+TPS+for+Haitians+and+Syrians",
           "time": "2026-06-26 00:20:56",
           "headline": "Press Release: Jimmy Gomez Condemns Supreme Court Ruling on TPS for Haitians and Syrians",
           "category": "legislation_automated",
           "summary": "<p>Gomez criticizes a Supreme Court ruling ending TPS protections for Haitians and Syrians, warning of broader immigration uncertainty.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb\u2026",
           "image": "https://www.quiverquant.com/images/G000585_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Bera%2C+Fletcher%2C+Schrier+and+Pocan+Reintroduce+Bill+to+Expand+Reproductive+Health+Training",
-          "time": "2026-06-26 00:20:56",
-          "headline": "Press Release: Bera, Fletcher, Schrier and Pocan Reintroduce Bill to Expand Reproductive Health Training",
-          "category": "legislation_automated",
-          "summary": "<p>House Democrats reintroduce a bill to expand reproductive health training for clinicians in states with abortion restrictions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,1\u2026",
-          "image": "https://www.quiverquant.com/images/B001287_congress.png",
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
@@ -4599,6 +4608,15 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Gabe+Evans+Helps+Advance+Three+Homeland+Security+and+Public+Safety+Bills+in+Committee",
+          "time": "2026-06-26 00:20:56",
+          "headline": "Press Release: Gabe Evans Helps Advance Three Homeland Security and Public Safety Bills in Committee",
+          "category": "legislation_automated",
+          "summary": "<p>A press release on Evans advancing bipartisan homeland security and public safety bills focused on law enforcement coordination, threat guidance, and airport security funding.</p><div class='ai_summary'><h2>Quiver \u2026",
+          "image": "https://www.quiverquant.com/images/E000300_congress.png",
+          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Jimmy+Panetta+Introduces+Bill+to+Waive+Overtime+Cap+for+Federal+Wildland+Firefighters",
           "time": "2026-06-26 00:20:56",
           "headline": "Press Release: Rep. Jimmy Panetta Introduces Bill to Waive Overtime Cap for Federal Wildland Firefighters",
@@ -4608,12 +4626,21 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Gabe+Evans+Helps+Advance+Three+Homeland+Security+and+Public+Safety+Bills+in+Committee",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Takano+Introduces+Health+Data+Access%2C+Transparency+and+Affordability+Act",
           "time": "2026-06-26 00:20:56",
-          "headline": "Press Release: Gabe Evans Helps Advance Three Homeland Security and Public Safety Bills in Committee",
+          "headline": "Press Release: Takano Introduces Health Data Access, Transparency and Affordability Act",
           "category": "legislation_automated",
-          "summary": "<p>A press release on Evans advancing bipartisan homeland security and public safety bills focused on law enforcement coordination, threat guidance, and airport security funding.</p><div class='ai_summary'><h2>Quiver \u2026",
-          "image": "https://www.quiverquant.com/images/E000300_congress.png",
+          "summary": "<p>Takano proposes a bill requiring greater health pricing transparency and penalties for noncompliance by service providers.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,2\u2026",
+          "image": "https://www.quiverquant.com/images/T000472_congress.png",
+          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Bera%2C+Fletcher%2C+Schrier+and+Pocan+Reintroduce+Bill+to+Expand+Reproductive+Health+Training",
+          "time": "2026-06-26 00:20:56",
+          "headline": "Press Release: Bera, Fletcher, Schrier and Pocan Reintroduce Bill to Expand Reproductive Health Training",
+          "category": "legislation_automated",
+          "summary": "<p>House Democrats reintroduce a bill to expand reproductive health training for clinicians in states with abortion restrictions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,1\u2026",
+          "image": "https://www.quiverquant.com/images/B001287_congress.png",
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
@@ -4653,40 +4680,13 @@
           "_first_seen": "2026-06-26T03:31:57.216659+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Pat+Harrigan+Introduces+American+Drone+Manufacturing+Bill",
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Dan+Newhouse+Holds+Hearing+on+National+Forest+System+Partnerships",
           "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Pat Harrigan Introduces American Drone Manufacturing Bill",
+          "headline": "Press Release: Dan Newhouse Holds Hearing on National Forest System Partnerships",
           "category": "legislation_automated",
-          "summary": "<p>Congressman Harrigan proposed legislation to reduce foreign drone dependence, boost U.S. manufacturing, and support law enforcement transitions.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style\u2026",
-          "image": "https://www.quiverquant.com/images/H001101_congress.png",
-          "_first_seen": "2026-06-26T10:35:28.352450+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Christian+Menefee+Responds+to+Supreme+Court+Ruling+on+Temporary+Protected+Status",
-          "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Rep. Christian Menefee Responds to Supreme Court Ruling on Temporary Protected Status",
-          "category": "legislation_automated",
-          "summary": "<p>Menefee condemns a Supreme Court ruling permitting TPS terminations, warning of humanitarian and economic harms.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Mene\u2026",
-          "image": "https://www.quiverquant.com/images/M001245_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Stansbury%2C+Vasquez+and+Leger+Fern%C3%A1ndez+Seek+Answers+on+DEA+Fentanyl+Enforcement+in+New+Mexico",
-          "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Stansbury, Vasquez and Leger Fern\u00e1ndez Seek Answers on DEA Fentanyl Enforcement in New Mexico",
-          "category": "legislation_automated",
-          "summary": "<p>New Mexico lawmakers question DEA tactics, seeking answers about alleged fentanyl \u201cwalking\u201d in Albuquerque and other communities.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(18\u2026",
-          "image": "https://www.quiverquant.com/images/S001218_congress.png",
-          "_first_seen": "2026-06-26T03:31:57.216659+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Rick+W.+Allen%E2%80%99s+Bill+to+Expand+Care+Access+for+Energy+Workers+Advances+in+Committee",
-          "time": "2026-06-25 22:22:27",
-          "headline": "Press Release: Rep. Rick W. Allen\u2019s Bill to Expand Care Access for Energy Workers Advances in Committee",
-          "category": "legislation_automated",
-          "summary": "<p>Committee advanced a bill expanding nurse practitioner and physician assistant authority for energy workers\u2019 care access.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/A000372_congress.png",
-          "_first_seen": "2026-06-26T07:11:41.346216+00:00"
+          "summary": "<p>Congressman Dan Newhouse held a hearing on National Forest System management partnerships and stakeholder roles.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Hear\u2026",
+          "image": "https://www.quiverquant.com/images/N000189_congress.png",
+          "_first_seen": "2026-06-26T11:51:53.988367+00:00"
         }
       ]
     },
@@ -34877,6 +34877,14 @@
         "detail": "Issuer Tenders"
       },
       {
+        "ticker": "CIGI",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "BLIN",
         "category": "Delistings",
         "confidence": "high",
@@ -35925,6 +35933,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "SSYS",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "VOXR",
         "category": "Divestitures",
         "confidence": "high",
@@ -36075,6 +36091,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "DBRG-PJ",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "SWDR",
@@ -36299,6 +36323,14 @@
         "activist": false,
         "filer": null,
         "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "SUNFF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "AZTR",
@@ -36774,11 +36806,11 @@
       },
       {
         "ticker": "RKTO",
-        "category": "Delistings",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "AEON",
@@ -37925,12 +37957,44 @@
         "detail": "Other"
       },
       {
+        "ticker": "IMOS",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "DETX",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "PASW",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "PLRZ",
         "category": "Acquisitions",
         "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "SMXWW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "ASPCR",
@@ -37941,12 +38005,36 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ABXL",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "APLE",
+        "category": "Capital Returns",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "CCZ",
         "category": "Capital Returns",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "KMT",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
       },
       {
         "ticker": "OHACR",
@@ -39503,14 +39591,6 @@
         "hot": false
       },
       {
-        "ticker": "ASPI",
-        "vol_oi": 0.113,
-        "mult": 2.07,
-        "put_call": 0.44,
-        "lean": "call-skew",
-        "hot": false
-      },
-      {
         "ticker": "EXPE",
         "vol_oi": 0.111,
         "mult": 2.06,
@@ -39571,6 +39651,14 @@
         "vol_oi": 0.462,
         "mult": 1.89,
         "put_call": 0.43,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "ASPI",
+        "vol_oi": 0.099,
+        "mult": 1.82,
+        "put_call": 0.42,
         "lean": "call-skew",
         "hot": false
       },
@@ -39903,7 +39991,7 @@
       },
       {
         "ticker": "ESTC",
-        "stars": 77171,
+        "stars": 77173,
         "wow_pct": 0.01,
         "hot": false
       },
@@ -39945,19 +40033,19 @@
       },
       {
         "ticker": "META",
-        "stars": 246113,
+        "stars": 246115,
         "wow_pct": -0.04,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "stars": 186789,
+        "stars": 186790,
         "wow_pct": -0.05,
         "hot": false
       },
       {
         "ticker": "GOOGL",
-        "stars": 195910,
+        "stars": 195912,
         "wow_pct": -0.07,
         "hot": false
       }
@@ -41394,6 +41482,27 @@
     ],
     "news": [
       {
+        "headline": "Fluke Corporation Earns Multiple Industry Honors for CalStudio, RotAlign and Other Innovation-Driven Products",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-26 11:30:22",
+        "url": "https://www.quiverquant.com/news/Fluke+Corporation+Earns+Multiple+Industry+Honors+for+CalStudio%2C+RotAlign+and+Other+Innovation-Driven+Products"
+      },
+      {
+        "headline": "APOGEE ENTERPRISES ($APOG) Releases Q1 2027 Earnings",
+        "ticker": null,
+        "category": "earnings_automated",
+        "time": "2026-06-26 10:55:07",
+        "url": "https://www.quiverquant.com/news/APOGEE+ENTERPRISES+%28%24APOG%29+Releases+Q1+2027+Earnings"
+      },
+      {
+        "headline": "Kanzhun Limited Announces Near RMB34 Million Share Repurchase, Bringing 2026 Year-to-Date Buybacks to Over RMB1.99 Billion",
+        "ticker": null,
+        "category": "press_release_summary",
+        "time": "2026-06-26 10:50:20",
+        "url": "https://www.quiverquant.com/news/Kanzhun+Limited+Announces+Near+RMB34+Million+Share+Repurchase%2C+Bringing+2026+Year-to-Date+Buybacks+to+Over+RMB1.99+Billion"
+      },
+      {
         "headline": "New Analyst Forecast: $AVAV Given $248 Price Target",
         "ticker": null,
         "category": "forecasts_automated",
@@ -41436,18 +41545,18 @@
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24ARX+Sells+35%2C000+Shares"
       },
       {
-        "headline": "Insider Purchase: Director at $SCM Buys 9,000 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 01:45:43",
-        "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Director+at+%24SCM+Buys+9%2C000+Shares"
-      },
-      {
         "headline": "Insider Sale: Chief Legal Officer of $ILMN Sells 615 Shares",
         "ticker": null,
         "category": "insiders_automated",
         "time": "2026-06-26 01:45:43",
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Legal+Officer+of+%24ILMN+Sells+615+Shares"
+      },
+      {
+        "headline": "Insider Purchase: Director at $SCM Buys 9,000 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-06-26 01:45:43",
+        "url": "https://www.quiverquant.com/news/Insider+Purchase%3A+Director+at+%24SCM+Buys+9%2C000+Shares"
       },
       {
         "headline": "Insider Sale: Co-Founder of $ARX Sells 80,000 Shares",
@@ -41471,25 +41580,11 @@
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Executive+Officer+of+%24YOU+Sells+15%2C962+Shares"
       },
       {
-        "headline": "Press Release: Takano Introduces Health Data Access, Transparency and Affordability Act",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 00:20:56",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Takano+Introduces+Health+Data+Access%2C+Transparency+and+Affordability+Act"
-      },
-      {
         "headline": "Press Release: Jimmy Gomez Condemns Supreme Court Ruling on TPS for Haitians and Syrians",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-26 00:20:56",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Jimmy+Gomez+Condemns+Supreme+Court+Ruling+on+TPS+for+Haitians+and+Syrians"
-      },
-      {
-        "headline": "Press Release: Bera, Fletcher, Schrier and Pocan Reintroduce Bill to Expand Reproductive Health Training",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 00:20:56",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Bera%2C+Fletcher%2C+Schrier+and+Pocan+Reintroduce+Bill+to+Expand+Reproductive+Health+Training"
       },
       {
         "headline": "Press Release: Goodlander, Pappas Introduce Bill to Block Closure of Forest Service Research Facilities",
@@ -41499,13 +41594,6 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Goodlander%2C+Pappas+Introduce+Bill+to+Block+Closure+of+Forest+Service+Research+Facilities"
       },
       {
-        "headline": "Press Release: Rep. Jimmy Panetta Introduces Bill to Waive Overtime Cap for Federal Wildland Firefighters",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 00:20:56",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Jimmy+Panetta+Introduces+Bill+to+Waive+Overtime+Cap+for+Federal+Wildland+Firefighters"
-      },
-      {
         "headline": "Press Release: Gabe Evans Helps Advance Three Homeland Security and Public Safety Bills in Committee",
         "ticker": null,
         "category": "legislation_automated",
@@ -41513,25 +41601,25 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Gabe+Evans+Helps+Advance+Three+Homeland+Security+and+Public+Safety+Bills+in+Committee"
       },
       {
-        "headline": "Insider Sale: 10% owner at $ADTX Sells 3,420,439 Shares",
+        "headline": "Press Release: Rep. Jimmy Panetta Introduces Bill to Waive Overtime Cap for Federal Wildland Firefighters",
         "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-25 23:15:52",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+10%25+owner+at+%24ADTX+Sells+3%2C420%2C439+Shares"
+        "category": "legislation_automated",
+        "time": "2026-06-26 00:20:56",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Rep.+Jimmy+Panetta+Introduces+Bill+to+Waive+Overtime+Cap+for+Federal+Wildland+Firefighters"
       },
       {
-        "headline": "Insider Sale: Chief Scientific Officer of $NRIX Sells 5,394 Shares",
+        "headline": "Press Release: Takano Introduces Health Data Access, Transparency and Affordability Act",
         "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-25 23:01:24",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Chief+Scientific+Officer+of+%24NRIX+Sells+5%2C394+Shares"
+        "category": "legislation_automated",
+        "time": "2026-06-26 00:20:56",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Takano+Introduces+Health+Data+Access%2C+Transparency+and+Affordability+Act"
       },
       {
-        "headline": "Shoals Technologies Group Wins ITC Patent Infringement Case Against Voltage, LLC",
+        "headline": "Press Release: Bera, Fletcher, Schrier and Pocan Reintroduce Bill to Expand Reproductive Health Training",
         "ticker": null,
-        "category": "press_release_summary",
-        "time": "2026-06-25 23:00:25",
-        "url": "https://www.quiverquant.com/news/Shoals+Technologies+Group+Wins+ITC+Patent+Infringement+Case+Against+Voltage%2C+LLC"
+        "category": "legislation_automated",
+        "time": "2026-06-26 00:20:56",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Bera%2C+Fletcher%2C+Schrier+and+Pocan+Reintroduce+Bill+to+Expand+Reproductive+Health+Training"
       }
     ],
     "wsb": [
