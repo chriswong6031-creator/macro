@@ -1464,6 +1464,12 @@
     </script>
   </div>
 
+  {# Market heatmap — compact "at a glance" scorecard; the Expand button opens the
+     full S&P 500 treemap in an in-page overlay (rendered by heatmap.js). #}
+  {% if mode != 'stocks' %}
+  <div class="panel span12" id="heatmap-scorecard"></div>
+  {% endif %}
+
   {# AI Daily Brief — the single in-page doorway to the cross-asset LLM synthesis
      (aibrief.html). Replaces the old inline AI Master Brief panel. #}
   <a class="panel span12 aibrief-card" href="aibrief.html">
@@ -3505,6 +3511,7 @@ window.__CHART_SWAP__ = {
 <script src="timemachine.js"></script>
 <script src="tablesort.js"></script>
 <script src="charts.js"></script>
+<script src="heatmap.js"></script>
 <footer class="site-footer">
   <span class="made">Made with ❤️ in Canada</span>
   <span class="dev">Developed by Chris Wong</span>

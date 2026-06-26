@@ -2629,7 +2629,7 @@ def main() -> int:
                   "masterbrief.js", "aibrief.js", "stockbrief.js", "aidesk_lean.js",
                   "stockview.js",
                   "lightweight-charts.js",
-                  "allocation_scorecard.js", "live.js", "wh_banner.js"):
+                  "allocation_scorecard.js", "live.js", "wh_banner.js", "heatmap.js"):
         src = config.ROOT / "templates" / asset
         if src.exists():
             (site / asset).write_text(src.read_text())
@@ -2914,6 +2914,19 @@ def main() -> int:
     usdir.mkdir(parents=True, exist_ok=True)
     (usdir / "latest.json").write_text(json.dumps(
         {"date": latest.get("date", ""), "label": _us_label, "n_setups": _n}, indent=2))
+
+    # --- S&P 500 sector treemap heatmap (Finviz/Perplexity-style) --------------
+    # Builds marketdata/sp500_heatmap.json (offline-safe from the close cache; a
+    # fresh 15-min Polygon snapshot is spliced in when a key is present) and the
+    # standalone page that renders it. Additive — never fatal to the daily run.
+    try:
+        from scripts.build_sp500_heatmap import build as build_sp500_heatmap
+        build_sp500_heatmap(site, generated_utc=generated)
+        out_hm = site / "sector_heatmap.html"
+        out_hm.write_text(env.get_template("sector_heatmap.html.j2").render())
+        log.info("wrote %s (%.0f KB)", out_hm, out_hm.stat().st_size / 1024)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("sector heatmap failed: %s", e)
 
     # --- history page: the longer-window charts + lifespan base rates ----------
     from engine.playbook import QUAD_SHORT, next_quads_line, transition_stats
