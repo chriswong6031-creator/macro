@@ -1,12 +1,11 @@
 {
-  "cash": 0.265,
+  "cash": 0.37,
   "crash": false,
   "eligible": [
     "ai_infra",
     "ai_neoclouds",
     "ai_semiconductors",
     "big_pharma",
-    "critical_minerals",
     "crypto",
     "cybersecurity",
     "data_center_power",
@@ -31,7 +30,7 @@
   "held": [
     "memory_storage",
     "ai_neoclouds",
-    "critical_minerals",
+    "managed_care",
     "non_ai_tech"
   ],
   "leader": "memory_storage",

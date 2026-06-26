@@ -1,17 +1,17 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-06-25 12:44 UTC",
-  "asof": "2026-06-24",
+  "built": "2026-06-26 04:07 UTC",
+  "asof": "2026-06-25",
   "stale_after_min": 1440,
   "cards": [
     {
       "key": "mm_conservative",
       "name": "Mastermind \u2014 Conservative",
-      "cagr": 7.87,
+      "cagr": 7.89,
       "sharpe": 1.12,
       "maxdd": -17.3,
-      "asof": "2026-06-24",
+      "asof": "2026-06-25",
       "gross_now": 0.83,
       "alloc": [
         {
@@ -61,10 +61,10 @@
     {
       "key": "mm_moderate",
       "name": "Mastermind \u2014 Moderate",
-      "cagr": 11.42,
+      "cagr": 11.44,
       "sharpe": 1.06,
       "maxdd": -24.1,
-      "asof": "2026-06-24",
+      "asof": "2026-06-25",
       "gross_now": 1.49,
       "alloc": [
         {
@@ -114,10 +114,10 @@
     {
       "key": "mm_aggressive",
       "name": "Mastermind \u2014 Aggressive",
-      "cagr": 17.23,
+      "cagr": 17.27,
       "sharpe": 1.0,
       "maxdd": -34.9,
-      "asof": "2026-06-24",
+      "asof": "2026-06-25",
       "gross_now": 2.5,
       "alloc": [
         {

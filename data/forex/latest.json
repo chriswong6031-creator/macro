@@ -1,5 +1,5 @@
 {
-  "date": "Jun 25, 2026",
+  "date": "Jun 26, 2026",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -8,63 +8,63 @@
   "pairs": {
     "EURUSD": {
       "label": "EUR/USD",
-      "quote": 1.134,
-      "chg": -2.4,
+      "quote": 1.1364,
+      "chg": -2.5,
       "action": "FLAT",
-      "score": -10.4
+      "score": -9.6
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.316,
-      "chg": -2.2,
+      "quote": 1.3187,
+      "chg": -2.0,
       "action": "FLAT",
-      "score": 14.1
+      "score": 14.4
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.919,
-      "chg": 1.4,
+      "quote": 161.731,
+      "chg": 1.1,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8129,
-      "chg": 3.4,
+      "quote": 0.8104,
+      "chg": 2.8,
       "action": "LONG",
-      "score": 29.2
+      "score": 28.9
     },
     "AUDUSD": {
       "label": "AUD/USD",
-      "quote": 0.6893,
-      "chg": -3.8,
+      "quote": 0.6882,
+      "chg": -4.1,
       "action": "SHORT",
-      "score": -27.8
+      "score": -29.6
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4245,
-      "chg": 2.9,
+      "quote": 1.4203,
+      "chg": 2.6,
       "action": "FLAT",
-      "score": 19.8
+      "score": 19.5
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.633,
-      "chg": 1.7,
+      "quote": 17.5449,
+      "chg": 1.1,
       "action": "FLAT",
-      "score": -9.7
+      "score": -13.5
     },
     "USDBRL": {
       "label": "USD/BRL",
-      "quote": 5.1991,
-      "chg": 3.2,
+      "quote": 5.1752,
+      "chg": 3.1,
       "action": "FLAT",
-      "score": 7.6
+      "score": 5.4
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.7695,
+      "quote": 6.772,
       "chg": 0.2,
       "action": "FLAT",
       "score": 15.0
@@ -73,8 +73,8 @@
   "dollar_desk": {
     "lean": "dollar-supportive backdrop",
     "real_rate_regime": "Restrictive real yields",
-    "real_rate_z": 0.86,
-    "fed_path_bps": 42.0,
+    "real_rate_z": 0.71,
+    "fed_path_bps": 37.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 75.0,
     "usd_pos_state": "neutral",
@@ -111,16 +111,16 @@
     "unstable": []
   },
   "regime_radar": {
-    "as_of": "2026-06-25",
+    "as_of": "2026-06-26",
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 23.3,
-      "dollar_wrecking_ball": 39.7,
-      "em_crisis_capital_flight": 0.1,
-      "haven_flight_risk_off": 19.4,
+      "carry_unwind": 12.2,
+      "dollar_wrecking_ball": 36.6,
+      "em_crisis_capital_flight": 35.3,
+      "haven_flight_risk_off": 10.9,
       "reflation_risk_on": 0,
-      "intervention_risk": 22.6
+      "intervention_risk": 4.0
     }
   }
 }

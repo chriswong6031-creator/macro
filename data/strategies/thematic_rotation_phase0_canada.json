@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-06-25T12:26:20.617905+00:00",
+  "generated_at": "2026-06-26T03:50:50.890962+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -22,12 +22,12 @@
           "worst_decile_ret": -0.0571
         },
         "top3_mom12_rel": {
-          "cagr": 0.1357,
+          "cagr": 0.1359,
           "sharpe": 0.83,
           "max_dd": -0.4332,
           "calmar": 0.31,
           "n_months": 272,
-          "dsr": 0.985,
+          "dsr": 0.986,
           "worst_decile_ret": -0.0568
         },
         "top3_mom6_rel": {
@@ -40,21 +40,21 @@
           "worst_decile_ret": -0.0585
         },
         "top3_mom12_dual": {
-          "cagr": 0.1128,
+          "cagr": 0.113,
           "sharpe": 0.82,
           "max_dd": -0.2426,
           "calmar": 0.47,
           "n_months": 272,
-          "dsr": 0.984,
+          "dsr": 0.985,
           "worst_decile_ret": -0.0489
         },
         "top4_mom12_dual": {
-          "cagr": 0.1081,
+          "cagr": 0.1083,
           "sharpe": 0.9,
           "max_dd": -0.2032,
           "calmar": 0.53,
           "n_months": 272,
-          "dsr": 0.993,
+          "dsr": 0.994,
           "worst_decile_ret": -0.0434
         }
       },
@@ -81,14 +81,14 @@
           "n": 1464
         },
         "below_trend": {
-          "mean": 0.0118,
+          "mean": 0.0117,
           "std": 0.0788,
           "sharpe": 0.52,
           "p05": -0.1048,
           "n": 742
         },
-        "mean_diff_t": -0.8,
-        "mean_diff_p": 0.4262
+        "mean_diff_t": -0.79,
+        "mean_diff_p": 0.4314
       },
       "extension_drawdown": {
         "fwd_days": 63,
@@ -96,7 +96,7 @@
           "normal": {
             "mean_fwd_maxdd": -0.0669,
             "p05_fwd_maxdd": -0.2228,
-            "n": 32786
+            "n": 32794
           },
           "stretched": {
             "mean_fwd_maxdd": -0.0565,
@@ -104,9 +104,9 @@
             "n": 8550
           },
           "parabolic": {
-            "mean_fwd_maxdd": -0.0659,
+            "mean_fwd_maxdd": -0.066,
             "p05_fwd_maxdd": -0.2069,
-            "n": 2306
+            "n": 2307
           }
         },
         "spearman_ez_vs_fwd_maxdd": 0.06

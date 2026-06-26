@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-06-25",
+  "as_of": "2026-06-26",
   "desks": [
     {
       "name": "AI Desk",
@@ -30,7 +30,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 94,
+      "open": 98,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,
@@ -42,7 +42,7 @@
       "name": "Divergence Radar",
       "slug": "radar",
       "scored": 0,
-      "open": 44,
+      "open": 54,
       "hit_rate": null,
       "dir_accuracy": null,
       "conviction_monotone": null,

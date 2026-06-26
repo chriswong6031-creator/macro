@@ -1,1 +1,2 @@
 {"asof": "2026-06-25", "down_score": 54, "down_ladder": "warning", "down_act": true, "up_score": 0, "up_ladder": "quiet", "up_act": false, "fires": {"d2": false, "d3": false, "u1": false}, "btc_close": 61634.68, "outcome": null}
+{"asof": "2026-06-26", "down_score": 28, "down_ladder": "coiled", "down_act": true, "up_score": 0, "up_ladder": "quiet", "up_act": false, "fires": {"d2": false, "d3": false, "u1": false}, "btc_close": 59004.01, "outcome": null}
