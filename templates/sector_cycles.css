@@ -108,10 +108,31 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 .sc-lead-rs.neg { color: var(--down); }
 
 /* scorecard header: keep the (sometimes long) phase badge from overlapping the
-   (sometimes 2-line) sector name — let the name column flex/shrink, badge stays top-right */
+   (sometimes 2-line) sector name — let the name column flex/shrink, tags stay top-right */
 .sc-page .cc-id { flex: 1 1 auto; min-width: 0; }
 .sc-page .cc-nm { overflow-wrap: anywhere; }
-.sc-page .cc-phase { align-self: flex-start; font-size: 10px; }
+.cc-tags { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex: none; }
+.sc-page .cc-phase { font-size: 10px; }
+
+/* Cards read by CYCLE PHASE, not by the (rainbow) per-ETF accent — only the small
+   identity dot keeps the ETF colour, so the grid groups visually by where each
+   sector sits. --ph = phase hue, --c = ETF accent. */
+.sc-page .cyc-card::before { background: var(--ph, var(--c)); }
+.sc-page .cyc-card::after { background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--ph, var(--c)) 13%, transparent), transparent 55%); }
+.sc-page .cyc-card:hover { border-color: color-mix(in srgb, var(--ph) 48%, var(--line));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--ph) 18%, transparent); }
+.sc-page .cyc-card.lit { border-color: var(--ph);
+  box-shadow: 0 0 0 1px var(--ph), 0 14px 38px color-mix(in srgb, var(--ph) 26%, transparent); }
+.sc-page .cc-leg-bar i { background: linear-gradient(90deg, color-mix(in srgb, var(--ph) 48%, transparent), var(--ph)); }
+
+/* BUY / SELL transition badge — washed-out + curling up = BUY, stretched + rolling = SELL */
+.cc-sig { font-size: 11px; font-weight: 800; letter-spacing: .07em; padding: 2px 9px; border-radius: 6px; color: #fff; line-height: 1.45; }
+.cc-sig.buy { background: var(--up); box-shadow: 0 2px 9px color-mix(in srgb, var(--up) 48%, transparent); }
+.cc-sig.sell { background: var(--down); box-shadow: 0 2px 9px color-mix(in srgb, var(--down) 48%, transparent); }
+
+/* keep the detail underbar a stable height so clicking a scorecard (which swaps the
+   default↔focus panel above it) never shifts the page / the cards below it */
+@media (min-width: 881px) { .sc-page .cyc-detail { min-height: 366px; } }
 
 /* ---- thematic baskets rail (Phase 2) — collapsible, category-grouped ----- */
 .sc-baskets { margin: 0 2px 12px; }

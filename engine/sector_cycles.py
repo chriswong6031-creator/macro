@@ -42,17 +42,27 @@ log = logging.getLogger(__name__)
 # name = GICS sector; group = cyclical nature (drives the cross-sector grouping);
 # accent = a distinct, dark-bg-legible hue per line (no two adjacent in the wheel).
 SECTORS: dict[str, dict] = {
-    "XLK":  {"name": "Technology",             "short": "Tech",        "group": "Growth",    "accent": "#38bdf8"},
-    "XLC":  {"name": "Communication Services",  "short": "Comm",        "group": "Growth",    "accent": "#818cf8"},
-    "XLY":  {"name": "Consumer Discretionary",  "short": "Discretionary","group": "Cyclical", "accent": "#f472b6"},
-    "XLF":  {"name": "Financials",              "short": "Financials",  "group": "Cyclical",  "accent": "#34d399"},
-    "XLI":  {"name": "Industrials",             "short": "Industrials", "group": "Cyclical",  "accent": "#fbbf24"},
-    "XLB":  {"name": "Materials",               "short": "Materials",   "group": "Cyclical",  "accent": "#a3e635"},
-    "XLE":  {"name": "Energy",                  "short": "Energy",      "group": "Cyclical",  "accent": "#fb923c"},
-    "XLV":  {"name": "Health Care",             "short": "Health",      "group": "Defensive", "accent": "#2dd4bf"},
-    "XLP":  {"name": "Consumer Staples",        "short": "Staples",     "group": "Defensive", "accent": "#94a3b8"},
-    "XLU":  {"name": "Utilities",               "short": "Utilities",   "group": "Defensive", "accent": "#c084fc"},
-    "XLRE": {"name": "Real Estate",             "short": "Real Estate", "group": "Rate-sens", "accent": "#f87171"},
+    "XLK":  {"name": "Technology",             "short": "Tech",        "group": "Growth",    "accent": "#38bdf8", "name_zh": "科技",       "short_zh": "科技"},
+    "XLC":  {"name": "Communication Services",  "short": "Comm",        "group": "Growth",    "accent": "#818cf8", "name_zh": "通讯服务",   "short_zh": "通讯"},
+    "XLY":  {"name": "Consumer Discretionary",  "short": "Discretionary","group": "Cyclical", "accent": "#f472b6", "name_zh": "非必需消费", "short_zh": "非必需"},
+    "XLF":  {"name": "Financials",              "short": "Financials",  "group": "Cyclical",  "accent": "#34d399", "name_zh": "金融",       "short_zh": "金融"},
+    "XLI":  {"name": "Industrials",             "short": "Industrials", "group": "Cyclical",  "accent": "#fbbf24", "name_zh": "工业",       "short_zh": "工业"},
+    "XLB":  {"name": "Materials",               "short": "Materials",   "group": "Cyclical",  "accent": "#a3e635", "name_zh": "原材料",     "short_zh": "原材料"},
+    "XLE":  {"name": "Energy",                  "short": "Energy",      "group": "Cyclical",  "accent": "#fb923c", "name_zh": "能源",       "short_zh": "能源"},
+    "XLV":  {"name": "Health Care",             "short": "Health",      "group": "Defensive", "accent": "#2dd4bf", "name_zh": "医疗保健",   "short_zh": "医疗"},
+    "XLP":  {"name": "Consumer Staples",        "short": "Staples",     "group": "Defensive", "accent": "#94a3b8", "name_zh": "必需消费",   "short_zh": "必需"},
+    "XLU":  {"name": "Utilities",               "short": "Utilities",   "group": "Defensive", "accent": "#c084fc", "name_zh": "公用事业",   "short_zh": "公用"},
+    "XLRE": {"name": "Real Estate",             "short": "Real Estate", "group": "Rate-sens", "accent": "#f87171", "name_zh": "房地产",     "short_zh": "房地产"},
+}
+
+GROUP_ZH = {"Growth": "成长", "Cyclical": "周期", "Defensive": "防御", "Rate-sens": "利率敏感", "Thematic": "主题"}
+CATEGORY_ZH = {
+    "AI & Technology": "AI 与科技", "Artificial Intelligence": "人工智能",
+    "Consumer Cyclical": "周期性消费", "Consumer Defensive": "防御性消费",
+    "Crypto & Digital Assets": "加密与数字资产", "Energy & Power": "能源与电力",
+    "Financials": "金融", "Healthcare": "医疗保健", "Industrials": "工业",
+    "Industrials & Defense": "工业与国防", "Materials & Mining": "材料与矿业",
+    "Semiconductors": "半导体", "Semiconductors & Hardware": "半导体与硬件", "Software": "软件",
 }
 
 # Phase taxonomy — identical hues/labels to site/cycle_data.js CYCLE_PHASES so this
@@ -285,12 +295,16 @@ def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp
     last_peak = next((s["t"] for s in reversed(swings) if s["k"] == "peak"), None)
     proj = _project_next(swings_all, last_ts)
     ret_win = round((float(win.iloc[-1]) / base - 1.0) * 100.0, 1)
+    # actionable transition badge: washed-out + curling UP = BUY; stretched + rolling
+    # DOWN = SELL (the extremes turning, e.g. Utilities buy / Tech sell)
+    signal = ("BUY" if pos_now <= 45 and osc_slope > 0.5
+              else "SELL" if pos_now >= 55 and osc_slope < -0.5 else None)
     return {
         "price": price_pts, "osc": osc_pts, "turns": swings, "proj": proj,
         "n_turns_all": len(swings_all),
         "now": {
             "phase": phase, "phaseLabel": phase_label, "pos": round(pos_now, 1),
-            "osc_slope": round(osc_slope, 1),
+            "signal": signal, "osc_slope": round(osc_slope, 1),
             "timing_state": lad.get("state") or "", "action": lad.get("action") or "",
             "w_macd_up": bool((mtf.get("W") or {}).get("macd_pos")),
             "t3_macd_up": bool((mtf.get("3D") or {}).get("macd_pos")),
@@ -333,7 +347,9 @@ def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
     rec = dict(core)
     rec.update({"id": ticker.lower(), "ticker": ticker, "kind": "sector",
                 "name": meta["name"], "short": meta["short"],
-                "group": meta["group"], "accent": meta["accent"]})
+                "name_zh": meta.get("name_zh"), "short_zh": meta.get("short_zh"),
+                "group": meta["group"], "group_zh": GROUP_ZH.get(meta["group"], meta["group"]),
+                "accent": meta["accent"]})
     _apply_leadership(rec, _leadership(closes, ticker))
     return rec
 
@@ -373,11 +389,15 @@ def build_basket(bid: str, bmeta: dict, win_start: pd.Timestamp, last_ts: pd.Tim
     core = _record_core(full, win_start, last_ts, pct=_zz_pct_for(full))
     if core is None:
         return None
+    cat = bmeta.get("category") or "Thematic"
+    nm_zh = bmeta.get("name_zh") or bmeta.get("name") or bid
     rec = dict(core)
     rec.update({"id": "b-" + bid, "ticker": bmeta.get("etf_proxy") or "", "kind": "basket",
                 "name": bmeta.get("name") or bid, "short": bmeta.get("name") or bid,
-                "group": bmeta.get("category") or "Thematic", "accent": accent,
-                "theme": bmeta.get("theme"), "etf_proxy": bmeta.get("etf_proxy"),
+                "name_zh": nm_zh, "short_zh": nm_zh,
+                "group": cat, "group_zh": CATEGORY_ZH.get(cat, cat), "accent": accent,
+                "theme": bmeta.get("theme"), "theme_zh": bmeta.get("theme_zh"),
+                "etf_proxy": bmeta.get("etf_proxy"),
                 "coverage": (cmeta or {}).get("coverage_pct"),
                 "n_members": (cmeta or {}).get("n_live")})
     _apply_leadership(rec, _basket_rs(full, spy))

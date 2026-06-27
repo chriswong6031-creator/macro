@@ -42,7 +42,18 @@
     return curLang() === "zh" ? (p[0] + "年" + m + "月") : (MONTHS[m - 1] + " ’" + yy);
   }
   function phaseHue(ph) { return (PHASES[ph] || {}).hue || "var(--muted)"; }
-  function phaseLabel(s) { return s.now.phaseLabel || (PHASES[s.now.phase] || {}).short || s.now.phase; }
+  // bilingual phase label keyed by the phase bucket (engine sends English phaseLabel)
+  var PHASE_LAB = {
+    Peak: ["Topping", "见顶"], Expansion: ["Trending", "上行"], Downturn: ["Rolling over", "回落"],
+    Recovery: ["Prime entry", "入场良机"], Trough: ["Bottoming", "筑底"]
+  };
+  function phaseLabel(s) { var p = PHASE_LAB[s.now.phase]; return p ? L(p[0], p[1]) : (s.now.phaseLabel || s.now.phase); }
+  // bilingual name helpers — fall back to English when no zh provided
+  function nm(s) { return curLang() === "zh" && s.name_zh ? s.name_zh : s.name; }
+  function shortNm(s) { return curLang() === "zh" ? (s.short_zh || s.name_zh || s.short) : s.short; }
+  function grpName(s) { return curLang() === "zh" && s.group_zh ? s.group_zh : s.group; }
+  // narrative field with zh fallback (title/body/now/drivers get a _zh sibling once translated)
+  function nz(o, f) { return (curLang() === "zh" && o && o[f + "_zh"]) ? o[f + "_zh"] : (o ? o[f] : ""); }
 
   // tilt presentation
   var TILT = {
@@ -209,8 +220,9 @@
     var s = byId[state.focus]; if (!s) return [];
     return legsOf(s).filter(function (g) { return g.narr; }).map(function (g) {
       var col = g.dir === "up" ? "var(--up)" : "var(--down)";
+      var t = nz(g.narr, "title");
       return { x0: g.x0, x1: g.x1, cx: (g.x0 + g.x1) / 2, color: col, opacity: 0.06,
-               label: g.narr.title ? trim(g.narr.title, 22) : null, labelY: 11, title: g.narr.title || "" };
+               label: t ? trim(t, 22) : null, labelY: 11, title: t || "" };
     });
   }
   function trim(t, n) { return t.length > n ? t.slice(0, n - 1) + "…" : t; }
@@ -348,7 +360,7 @@
       var b = el("button", "cyc-chip");
       b.setAttribute("data-id", s.id);
       b.style.setProperty("--c", s.accent);
-      b.innerHTML = '<span class="dot"></span><span class="nm">' + s.short + '</span>';
+      b.innerHTML = '<span class="dot"></span><span class="nm">' + shortNm(s) + '</span>';
       b.addEventListener("click", function () { toggleFocus(s.id); });
       wrap.appendChild(b);
     });
@@ -358,7 +370,7 @@
      default — selecting a basket adds its line to the chart and focuses it ---- */
   function basketChipHTML(b) {
     return '<button class="sc-bchip' + (basketShown[b.id] ? " on" : "") + '" data-id="' + b.id + '" style="--c:' + b.accent + '">' +
-      '<span class="dot"></span><span class="nm">' + b.short + '</span>' +
+      '<span class="dot"></span><span class="nm">' + shortNm(b) + '</span>' +
       '<span class="sc-bdot" style="background:' + phaseHue(b.now.phase) + '" title="' + phaseLabel(b) + '"></span></button>';
   }
   function mountBaskets() {
@@ -377,7 +389,7 @@
         '<span class="sc-bask-caret">▾</span></button>' +
       '<div class="sc-bask-panel" id="sc-bask-panel">' +
         cats.map(function (c) {
-          return '<div class="sc-bask-cat"><div class="sc-bask-cath">' + c + '</div>' +
+          return '<div class="sc-bask-cat"><div class="sc-bask-cath">' + grpName(byCat[c][0]) + '</div>' +
             '<div class="sc-bask-chips">' + byCat[c].map(basketChipHTML).join("") + '</div></div>';
         }).join("") +
       '</div>';
@@ -429,25 +441,36 @@
       if (sparks[s.id]) { try { sparks[s.id].update(sparkSpec(s)); } catch (e) {} }
     });
   }
+  // cards run the cycle order bottoming -> prime entry -> trending -> topping -> rolling over
+  var PHASE_ORDER = { Trough: 0, Recovery: 1, Expansion: 2, Peak: 3, Downturn: 4 };
+  function sortedSectors() {
+    return SECTORS.slice().sort(function (a, b) {
+      var pa = PHASE_ORDER[a.now.phase], pb = PHASE_ORDER[b.now.phase];
+      return pa !== pb ? pa - pb : a.now.pos - b.now.pos;
+    });
+  }
   function mountCards() {
     var grid = document.getElementById("sc-cards");
     if (!grid) return;
     Object.keys(sparks).forEach(function (k) { try { sparks[k].destroy(); } catch (e) {} });
     sparks = {};
     grid.innerHTML = "";
-    SECTORS.forEach(function (s) {
+    sortedSectors().forEach(function (s) {
       var nw = s.now, tilt = tiltOf(s);
       var card = el("article", "cyc-card");
       card.setAttribute("data-id", s.id);
-      card.style.setProperty("--c", s.accent);
+      card.style.setProperty("--c", s.accent);           // ETF identity dot
+      card.style.setProperty("--ph", phaseHue(nw.phase)); // card chrome reads by CYCLE PHASE
       var rs = nw.rs_63d;
       var rsTxt = rs == null ? "" : ('<span class="cc-tilt ' + (rs >= 0 ? "t-up" : "t-down") + '">RS #' + (nw.rs_rank || "—") + '</span>');
       var nextTxt = s.proj ? (L("Next ", "下次") + (s.proj.nextTurn === "peak" ? "▲ " : "▼ ") + fmtMon(s.proj.central)) : L("—", "—");
+      var sigHTML = nw.signal === "BUY" ? '<span class="cc-sig buy">' + L("BUY", "买入") + '</span>'
+        : nw.signal === "SELL" ? '<span class="cc-sig sell">' + L("SELL", "卖出") + '</span>' : "";
       card.innerHTML =
         '<div class="cc-top">' +
-          '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + s.name + '</div>' +
-          '<div class="cc-px">' + s.ticker + ' · ' + L(s.group, s.group) + '</div></div></div>' +
-          '<div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' +
+          '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + nm(s) + '</div>' +
+          '<div class="cc-px">' + s.ticker + ' · ' + grpName(s) + '</div></div></div>' +
+          '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + sigHTML + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
         '<div class="cc-meta">' +
@@ -511,7 +534,7 @@
     var lenVal = s.proj && s.proj.period_yrs ? (s.proj.period_yrs.median + L(" yr", " 年")) : "—";
     var rsVal = nw.rs_63d == null ? "—" : ((nw.rs_63d >= 0 ? "+" : "") + nw.rs_63d + "% · #" + (nw.rs_rank || "—"));
     var isB = s.kind === "basket", noun = isB ? "Basket" : "Sector", nounZh = isB ? "篮子" : "板块";
-    var read = (NARR[s.id] || {}).now || nw.read;
+    var read = nz(NARR[s.id], "now") || nw.read;
     var readHTML = read ? ('<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p>' + read + '</p></div>')
       : ('<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p class="sc-leg-pending">' +
          L("This " + noun.toLowerCase() + " is " + phaseLabel(s).toLowerCase() + " — cycle position " + Math.round(nw.pos) + "/100, " +
@@ -519,13 +542,13 @@
            "该" + nounZh + phaseLabel(s) + " — 周期位置 " + Math.round(nw.pos) + "/100，" + (nw.above200d ? "位于" : "低于") + "200日均线。解读研究待补充。") + '</p></div>');
     var subtitle = isB
       ? (L("Basket", "篮子") + (s.n_members ? " · " + s.n_members + " " + L("names", "只成分") : "") + (s.etf_proxy ? " · " + L("proxy ", "对标 ") + s.etf_proxy : ""))
-      : (s.ticker + " · " + L(s.group, s.group));
+      : (s.ticker + " · " + grpName(s));
 
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<button class="cyc-back">' + L("← All sectors", "← 全部板块") + '</button>' +
         '<div class="cyc-fhead" style="--c:' + s.accent + '">' +
-          '<div class="cyc-ftitle">' + s.name + '</div>' +
+          '<div class="cyc-ftitle">' + nm(s) + '</div>' +
           '<div class="cyc-fsub">' + subtitle + (nw.above200d ? L(" · above 200d", " · 200日上") : L(" · below 200d", " · 200日下")) + '</div>' +
           '<div class="cyc-fchips">' +
             '<span class="cyc-pchip" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseLabel(s) + '</span>' +
@@ -565,7 +588,7 @@
       var sign = g.dir === "up" ? "+" : "−";
       var verb = g.dir === "up" ? L("Rally", "上涨") : L("Selloff", "下跌");
       var dt = fmtMon(g.start.t) + " → " + fmtMon(g.end.t);
-      var title = g.narr && g.narr.title ? g.narr.title : (verb + " " + (g.mag != null ? sign + g.mag + "%" : ""));
+      var title = g.narr && nz(g.narr, "title") ? nz(g.narr, "title") : (verb + " " + (g.mag != null ? sign + g.mag + "%" : ""));
       return '<div class="sc-leg" data-i="' + g.i + '" style="--c:' + s.accent + ';--lc:' + lc + '">' +
         '<span class="sc-leg-k ' + g.dir + '">' + verb + '</span>' +
         '<span class="sc-leg-t">' + title + ' <span class="sc-leg-dt">· ' + dt + '</span></span>' +
@@ -576,8 +599,9 @@
   }
   function legBody(g) {
     if (!g.narr) return '<span class="sc-leg-pending">' + L("What drove this move — research pending.", "推动这一走势的原因 — 研究待补充。") + '</span>';
-    var drv = (g.narr.drivers || []).map(function (d) { return "<span>" + d + "</span>"; }).join("");
-    return (g.narr.body || "") + (drv ? '<div class="sc-drv">' + drv + '</div>' : "");
+    var drivers = (curLang() === "zh" && g.narr.drivers_zh) ? g.narr.drivers_zh : (g.narr.drivers || []);
+    var drv = drivers.map(function (d) { return "<span>" + d + "</span>"; }).join("");
+    return (nz(g.narr, "body") || "") + (drv ? '<div class="sc-drv">' + drv + '</div>' : "");
   }
   function openLeg(s, i, rowEl) {
     var foc = document.getElementById("sc-panel-focus");
@@ -604,7 +628,7 @@
     function row(title, list, note) {
       if (!list.length) return "";
       var chips = list.map(function (s) {
-        return '<button class="mini-chip" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + s.short + '</button>';
+        return '<button class="mini-chip" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + shortNm(s) + '</button>';
       }).join("");
       return '<div class="xc-row"><div class="xc-rh">' + title + '<span>' + note + '</span></div><div class="xc-chips">' + chips + '</div></div>';
     }
@@ -612,7 +636,7 @@
     var leadRows = lead.map(function (s) {
       var rs = s.now.rs_63d;
       return '<div class="sc-lead-row"><span class="sc-lead-rk">' + s.now.rs_rank + '</span>' +
-        '<span class="sc-lead-nm" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + s.name + '</span>' +
+        '<span class="sc-lead-nm" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + nm(s) + '</span>' +
         '<span class="sc-lead-rs ' + (rs >= 0 ? "pos" : "neg") + '">' + (rs >= 0 ? "+" : "") + rs + '%</span></div>';
     }).join("");
 
