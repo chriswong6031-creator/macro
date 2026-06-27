@@ -388,6 +388,17 @@ def run() -> dict:
         latest["freshness"] = freshness_stamp(asof, max_age_sessions=max_age)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("freshness stamp failed: %s", e)
+    # MTF confluence buy-filter (entry-QUALITY / RISK signal) — DISPLAY-ONLY leaf for the
+    # Mastermind brain. NOT alpha; see research/signal_engine/CHARTER.md (§2, §7). Loads the
+    # precomputed snapshot from scripts/build_signal_quality.py so heavy compute never slows
+    # this build. The brain (engine/master_brain.py) consumes it as an entry-quality breadth
+    # calibration check; validated buy-filter cut avg maxDD -23.7%->-15.5% across 110 names.
+    try:
+        _sq = config.data_dir() / "signal_archive" / "mtf_signals_latest.json"
+        latest["mtf_signals"] = json.loads(_sq.read_text()) if _sq.exists() else None
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("mtf-signals leaf failed: %s", e)
+        latest["mtf_signals"] = None
     with open(p / "latest.json", "w") as fh:
         json.dump(latest, fh, indent=2, default=str)
     log.info("regime %s (%s) conf=%.2f liq=%s cycle=%s transition=%s",
