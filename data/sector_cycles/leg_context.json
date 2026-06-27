@@ -1,0 +1,4164 @@
+{
+ "xlk": {
+  "ticker": "XLK",
+  "name": "Technology",
+  "phase": "Topping",
+  "pos": 83.5,
+  "rs_rank": 1,
+  "now_ctx": {
+   "this_ret": 24.3,
+   "this_rank": 1,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2021-12-27": {
+    "end": "2022-03-14",
+    "dir": "selloff",
+    "mag_pct": 20.0,
+    "ctx": {
+     "this_ret": -20.0,
+     "this_rank": 10,
+     "leaders": [
+      "Energy 32.9%",
+      "Utilities 0.4%",
+      "Staples -5.6%"
+     ],
+     "laggards": [
+      "Comm -19.3%",
+      "Tech -20.0%",
+      "Discretionary -20.1%"
+     ],
+     "defensives_avg": -4.3,
+     "cyclicals_avg": -4.7,
+     "spy": -12.6,
+     "semis_smh": -24.6,
+     "highbeta_minus_lowvol": -8.6,
+     "growth_minus_value": -14.9,
+     "breadth_rsp_minus_spy": 4.4,
+     "credit_hyg_minus_lqd": 3.0,
+     "vix": [
+      18,
+      32
+     ],
+     "tlt_ret": -11.3,
+     "dxy_ret": 3.1,
+     "oil_ret": 36.3,
+     "copper_gold": -7.3,
+     "quad": "stagflation-ish",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -11.3%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.1% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +4.4% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals -4.7% vs defensives -4.3%; oil 36.3%, copper-gold -7.3)"
+     ]
+    }
+   },
+   "2022-03-14": {
+    "end": "2022-03-29",
+    "dir": "rally",
+    "mag_pct": 15.9,
+    "ctx": {
+     "this_ret": 15.9,
+     "this_rank": 2,
+     "leaders": [
+      "Discretionary 17.0%",
+      "Tech 15.9%",
+      "Comm 11.3%"
+     ],
+     "laggards": [
+      "Staples 6.3%",
+      "Utilities 5.8%",
+      "Energy 3.7%"
+     ],
+     "defensives_avg": 6.3,
+     "cyclicals_avg": 10.2,
+     "spy": 11.0,
+     "semis_smh": 18.8,
+     "highbeta_minus_lowvol": 9.7,
+     "growth_minus_value": 8.7,
+     "breadth_rsp_minus_spy": -2.4,
+     "credit_hyg_minus_lqd": 1.5,
+     "vix": [
+      32,
+      19
+     ],
+     "tlt_ret": -0.8,
+     "dxy_ret": -0.7,
+     "oil_ret": 1.2,
+     "copper_gold": 6.9,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +18.8%, growth>value (8.7), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Tech ranked #2/11 in a risk-on tape",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -2.4% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 10.2% vs defensives 6.3%; oil 1.2%, copper-gold 6.9)"
+     ]
+    }
+   },
+   "2022-03-29": {
+    "end": "2022-06-16",
+    "dir": "selloff",
+    "mag_pct": 24.5,
+    "ctx": {
+     "this_ret": -24.5,
+     "this_rank": 9,
+     "leaders": [
+      "Energy 1.5%",
+      "Staples -9.1%",
+      "Utilities -11.4%"
+     ],
+     "laggards": [
+      "Tech -24.5%",
+      "Comm -24.8%",
+      "Discretionary -29.7%"
+     ],
+     "defensives_avg": -11.2,
+     "cyclicals_avg": -18.2,
+     "spy": -20.6,
+     "semis_smh": -28.1,
+     "highbeta_minus_lowvol": -15.0,
+     "growth_minus_value": -10.4,
+     "breadth_rsp_minus_spy": 1.8,
+     "credit_hyg_minus_lqd": -0.7,
+     "vix": [
+      19,
+      33
+     ],
+     "tlt_ret": -14.1,
+     "dxy_ret": 5.3,
+     "oil_ret": 12.8,
+     "copper_gold": -9.3,
+     "quad": "stagflation-ish",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-11.2% vs cyclicals -18.2%) with VIX 19->33 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -14.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (5.3% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: stagflation-ish (cyclicals -18.2% vs defensives -11.2%; oil 12.8%, copper-gold -9.3)"
+     ]
+    }
+   },
+   "2022-06-16": {
+    "end": "2022-08-15",
+    "dir": "rally",
+    "mag_pct": 23.0,
+    "ctx": {
+     "this_ret": 23.0,
+     "this_rank": 2,
+     "leaders": [
+      "Discretionary 27.4%",
+      "Tech 23.0%",
+      "Utilities 19.1%"
+     ],
+     "laggards": [
+      "Staples 11.2%",
+      "Materials 8.8%",
+      "Energy 0.1%"
+     ],
+     "defensives_avg": 14.2,
+     "cyclicals_avg": 15.4,
+     "spy": 17.5,
+     "semis_smh": 20.8,
+     "highbeta_minus_lowvol": 12.5,
+     "growth_minus_value": 9.2,
+     "breadth_rsp_minus_spy": -0.7,
+     "credit_hyg_minus_lqd": 2.6,
+     "vix": [
+      33,
+      20
+     ],
+     "tlt_ret": 3.7,
+     "dxy_ret": 2.8,
+     "oil_ret": -24.0,
+     "copper_gold": -8.3,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +20.8%, growth>value (9.2), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Tech ranked #2/11 in a risk-on tape",
+      "DOLLAR STRONGER (2.8% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 15.4% vs defensives 14.2%; oil -24.0%, copper-gold -8.3)"
+     ]
+    }
+   },
+   "2022-08-15": {
+    "end": "2022-10-12",
+    "dir": "selloff",
+    "mag_pct": 22.9,
+    "ctx": {
+     "this_ret": -22.9,
+     "this_rank": 10,
+     "leaders": [
+      "Energy 5.3%",
+      "Health -8.9%",
+      "Staples -10.7%"
+     ],
+     "laggards": [
+      "Comm -20.1%",
+      "Tech -22.9%",
+      "Real Estate -25.0%"
+     ],
+     "defensives_avg": -13.2,
+     "cyclicals_avg": -13.4,
+     "spy": -16.5,
+     "semis_smh": -28.8,
+     "highbeta_minus_lowvol": -6.4,
+     "growth_minus_value": -4.7,
+     "breadth_rsp_minus_spy": 1.2,
+     "credit_hyg_minus_lqd": 2.6,
+     "vix": [
+      20,
+      34
+     ],
+     "tlt_ret": -12.7,
+     "dxy_ret": 6.4,
+     "oil_ret": -2.4,
+     "copper_gold": 1.2,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -12.7%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (6.4% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -13.4% vs defensives -13.2%; oil -2.4%, copper-gold 1.2)"
+     ]
+    }
+   },
+   "2022-10-12": {
+    "end": "2024-07-10",
+    "dir": "rally",
+    "mag_pct": 107.0,
+    "ctx": {
+     "this_ret": 107.0,
+     "this_rank": 1,
+     "leaders": [
+      "Tech 107.0%",
+      "Comm 87.5%",
+      "Industrials 48.0%"
+     ],
+     "laggards": [
+      "Staples 20.1%",
+      "Utilities 19.6%",
+      "Energy 18.7%"
+     ],
+     "defensives_avg": 21.0,
+     "cyclicals_avg": 48.4,
+     "spy": 61.6,
+     "semis_smh": 226.2,
+     "highbeta_minus_lowvol": 35.0,
+     "growth_minus_value": 52.9,
+     "breadth_rsp_minus_spy": -28.7,
+     "credit_hyg_minus_lqd": 5.1,
+     "vix": [
+      34,
+      13
+     ],
+     "tlt_ret": -1.9,
+     "dxy_ret": -7.3,
+     "oil_ret": -5.9,
+     "copper_gold": -8.3,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +226.2%, growth>value (52.9), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Tech ranked #1/11 in a risk-on tape",
+      "DOLLAR WEAKER (-7.3% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -28.7% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 48.4% vs defensives 21.0%; oil -5.9%, copper-gold -8.3)"
+     ]
+    }
+   },
+   "2024-07-10": {
+    "end": "2024-08-07",
+    "dir": "selloff",
+    "mag_pct": 17.0,
+    "ctx": {
+     "this_ret": -17.0,
+     "this_rank": 11,
+     "leaders": [
+      "Real Estate 6.7%",
+      "Utilities 5.5%",
+      "Staples 1.2%"
+     ],
+     "laggards": [
+      "Comm -5.6%",
+      "Discretionary -11.2%",
+      "Tech -17.0%"
+     ],
+     "defensives_avg": 2.2,
+     "cyclicals_avg": -5.5,
+     "spy": -7.6,
+     "semis_smh": -24.8,
+     "highbeta_minus_lowvol": -13.8,
+     "growth_minus_value": -12.6,
+     "breadth_rsp_minus_spy": 6.6,
+     "credit_hyg_minus_lqd": -0.5,
+     "vix": [
+      13,
+      28
+     ],
+     "tlt_ret": 3.9,
+     "dxy_ret": -1.8,
+     "oil_ret": -8.4,
+     "copper_gold": -15.3,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+2.2% vs cyclicals -5.5%) with VIX 13->28 — risk-off rotation into safety, not sector strength",
+      "BROADENING: equal-weight beat cap-weight by +6.6% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals -5.5% vs defensives 2.2%; oil -8.4%, copper-gold -15.3)"
+     ]
+    }
+   },
+   "2024-08-07": {
+    "end": "2025-02-19",
+    "dir": "rally",
+    "mag_pct": 23.1,
+    "ctx": {
+     "this_ret": 23.1,
+     "this_rank": 4,
+     "leaders": [
+      "Discretionary 33.6%",
+      "Comm 27.4%",
+      "Financials 26.6%"
+     ],
+     "laggards": [
+      "Real Estate 4.4%",
+      "Materials 4.0%",
+      "Health 1.1%"
+     ],
+     "defensives_avg": 5.9,
+     "cyclicals_avg": 18.3,
+     "spy": 18.9,
+     "semis_smh": 22.2,
+     "highbeta_minus_lowvol": 13.4,
+     "growth_minus_value": 12.1,
+     "breadth_rsp_minus_spy": -6.2,
+     "credit_hyg_minus_lqd": 4.9,
+     "vix": [
+      28,
+      15
+     ],
+     "tlt_ret": -6.1,
+     "dxy_ret": 3.8,
+     "oil_ret": -4.0,
+     "copper_gold": -6.4,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +22.2%, growth>value (12.1), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RATE-REGIME MOVE: yields SURGED (TLT -6.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.8% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -6.2% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 18.3% vs defensives 5.9%; oil -4.0%, copper-gold -6.4)"
+     ]
+    }
+   },
+   "2025-02-19": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 25.7,
+    "ctx": {
+     "this_ret": -25.7,
+     "this_rank": 11,
+     "leaders": [
+      "Staples -5.9%",
+      "Utilities -8.3%",
+      "Health -8.8%"
+     ],
+     "laggards": [
+      "Comm -17.7%",
+      "Discretionary -21.8%",
+      "Tech -25.7%"
+     ],
+     "defensives_avg": -7.7,
+     "cyclicals_avg": -18.7,
+     "spy": -18.8,
+     "semis_smh": -30.1,
+     "highbeta_minus_lowvol": -22.8,
+     "growth_minus_value": -8.4,
+     "breadth_rsp_minus_spy": 2.8,
+     "credit_hyg_minus_lqd": -2.7,
+     "vix": [
+      15,
+      52
+     ],
+     "tlt_ret": 0.8,
+     "dxy_ret": -3.9,
+     "oil_ret": -17.5,
+     "copper_gold": -11.1,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-7.7% vs cyclicals -18.7%) with VIX 15->52 — risk-off rotation into safety, not sector strength",
+      "DOLLAR WEAKER (-3.9% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +2.8% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals -18.7% vs defensives -7.7%; oil -17.5%, copper-gold -11.1)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2025-10-29",
+    "dir": "rally",
+    "mag_pct": 69.7,
+    "ctx": {
+     "this_ret": 69.7,
+     "this_rank": 1,
+     "leaders": [
+      "Tech 69.7%",
+      "Discretionary 36.1%",
+      "Comm 35.8%"
+     ],
+     "laggards": [
+      "Real Estate 11.5%",
+      "Health 9.3%",
+      "Staples 1.7%"
+     ],
+     "defensives_avg": 12.0,
+     "cyclicals_avg": 32.5,
+     "spy": 39.2,
+     "semis_smh": 104.8,
+     "highbeta_minus_lowvol": 68.1,
+     "growth_minus_value": 29.9,
+     "breadth_rsp_minus_spy": -15.1,
+     "credit_hyg_minus_lqd": 1.0,
+     "vix": [
+      52,
+      17
+     ],
+     "tlt_ret": 5.4,
+     "dxy_ret": -3.6,
+     "oil_ret": 1.5,
+     "copper_gold": -7.4,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +104.8%, growth>value (29.9), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Tech ranked #1/11 in a risk-on tape",
+      "DOLLAR WEAKER (-3.6% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -15.1% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 32.5% vs defensives 12.0%; oil 1.5%, copper-gold -7.4)"
+     ]
+    }
+   },
+   "2025-10-29": {
+    "end": "2026-03-30",
+    "dir": "selloff",
+    "mag_pct": 15.9,
+    "ctx": {
+     "this_ret": -15.9,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 42.9%",
+      "Materials 13.5%",
+      "Staples 8.4%"
+     ],
+     "laggards": [
+      "Comm -6.6%",
+      "Discretionary -11.3%",
+      "Tech -15.9%"
+     ],
+     "defensives_avg": 4.2,
+     "cyclicals_avg": 4.1,
+     "spy": -7.5,
+     "semis_smh": -1.3,
+     "highbeta_minus_lowvol": -7.9,
+     "growth_minus_value": -19.5,
+     "breadth_rsp_minus_spy": 8.2,
+     "credit_hyg_minus_lqd": 1.5,
+     "vix": [
+      17,
+      31
+     ],
+     "tlt_ret": -3.0,
+     "dxy_ret": 1.3,
+     "oil_ret": 70.1,
+     "copper_gold": -9.0,
+     "quad": "stagflation-ish",
+     "signals": [
+      "BROADENING: equal-weight beat cap-weight by +8.2% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals 4.1% vs defensives 4.2%; oil 70.1%, copper-gold -9.0)"
+     ]
+    }
+   },
+   "2026-03-30": {
+    "end": "2026-06-02",
+    "dir": "rally",
+    "mag_pct": 55.3,
+    "ctx": {
+     "this_ret": 55.3,
+     "this_rank": 1,
+     "leaders": [
+      "Tech 55.3%",
+      "Discretionary 11.1%",
+      "Industrials 11.0%"
+     ],
+     "laggards": [
+      "Staples -0.7%",
+      "Utilities -5.0%",
+      "Energy -7.1%"
+     ],
+     "defensives_avg": -1.5,
+     "cyclicals_avg": 13.5,
+     "spy": 19.9,
+     "semis_smh": 74.4,
+     "highbeta_minus_lowvol": 38.8,
+     "growth_minus_value": 10.9,
+     "breadth_rsp_minus_spy": -8.6,
+     "credit_hyg_minus_lqd": 1.2,
+     "vix": [
+      31,
+      16
+     ],
+     "tlt_ret": -0.2,
+     "dxy_ret": -1.3,
+     "oil_ret": -8.9,
+     "copper_gold": 22.2,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +74.4%, growth>value (10.9), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Tech ranked #1/11 in a risk-on tape",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -8.6% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 13.5% vs defensives -1.5%; oil -8.9%, copper-gold 22.2)"
+     ]
+    }
+   }
+  }
+ },
+ "xlc": {
+  "ticker": "XLC",
+  "name": "Communication Services",
+  "phase": "Bottoming",
+  "pos": 0.9,
+  "rs_rank": 10,
+  "now_ctx": {
+   "this_ret": -9.6,
+   "this_rank": 11,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2021-09-01": {
+    "end": "2022-11-03",
+    "dir": "selloff",
+    "mag_pct": 46.7,
+    "ctx": {
+     "this_ret": -46.7,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 100.4%",
+      "Staples 0.9%",
+      "Utilities -0.4%"
+     ],
+     "laggards": [
+      "Tech -24.4%",
+      "Discretionary -25.1%",
+      "Comm -46.7%"
+     ],
+     "defensives_avg": -0.5,
+     "cyclicals_avg": 3.2,
+     "spy": -16.4,
+     "semis_smh": -32.0,
+     "highbeta_minus_lowvol": -15.5,
+     "growth_minus_value": -19.5,
+     "breadth_rsp_minus_spy": 5.1,
+     "credit_hyg_minus_lqd": 9.9,
+     "vix": [
+      16,
+      25
+     ],
+     "tlt_ret": -34.1,
+     "dxy_ret": 22.2,
+     "oil_ret": 28.5,
+     "copper_gold": -8.7,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -34.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (22.2% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +5.1% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals 3.2% vs defensives -0.5%; oil 28.5%, copper-gold -8.7)"
+     ]
+    }
+   },
+   "2022-11-03": {
+    "end": "2025-02-14",
+    "dir": "rally",
+    "mag_pct": 137.2,
+    "ctx": {
+     "this_ret": 137.2,
+     "this_rank": 1,
+     "leaders": [
+      "Comm 137.2%",
+      "Tech 105.7%",
+      "Discretionary 69.8%"
+     ],
+     "laggards": [
+      "Staples 20.7%",
+      "Health 15.5%",
+      "Energy 7.9%"
+     ],
+     "defensives_avg": 21.2,
+     "cyclicals_avg": 54.5,
+     "spy": 69.7,
+     "semis_smh": 182.3,
+     "highbeta_minus_lowvol": 33.8,
+     "growth_minus_value": 62.4,
+     "breadth_rsp_minus_spy": -31.3,
+     "credit_hyg_minus_lqd": 8.3,
+     "vix": [
+      25,
+      15
+     ],
+     "tlt_ret": 1.1,
+     "dxy_ret": -5.6,
+     "oil_ret": -19.8,
+     "copper_gold": -42.5,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +182.3%, growth>value (62.4), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-5.6% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -31.3% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 54.5% vs defensives 21.2%; oil -19.8%, copper-gold -42.5)"
+     ]
+    }
+   },
+   "2025-02-14": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 18.0,
+    "ctx": {
+     "this_ret": -18.0,
+     "this_rank": 9,
+     "leaders": [
+      "Staples -4.8%",
+      "Utilities -6.9%",
+      "Health -7.8%"
+     ],
+     "laggards": [
+      "Comm -18.0%",
+      "Discretionary -22.1%",
+      "Tech -25.0%"
+     ],
+     "defensives_avg": -6.5,
+     "cyclicals_avg": -18.1,
+     "spy": -18.3,
+     "semis_smh": -28.8,
+     "highbeta_minus_lowvol": -22.3,
+     "growth_minus_value": -9.1,
+     "breadth_rsp_minus_spy": 3.2,
+     "credit_hyg_minus_lqd": -2.4,
+     "vix": [
+      15,
+      52
+     ],
+     "tlt_ret": -0.2,
+     "dxy_ret": -3.4,
+     "oil_ret": -15.8,
+     "copper_gold": -14.3,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-6.5% vs cyclicals -18.1%) with VIX 15->52 — risk-off rotation into safety, not sector strength",
+      "DOLLAR WEAKER (-3.4% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +3.2% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals -18.1% vs defensives -6.5%; oil -15.8%, copper-gold -14.3)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-01-30",
+    "dir": "rally",
+    "mag_pct": 40.7,
+    "ctx": {
+     "this_ret": 40.7,
+     "this_rank": 3,
+     "leaders": [
+      "Tech 60.8%",
+      "Industrials 43.6%",
+      "Comm 40.7%"
+     ],
+     "laggards": [
+      "Health 18.0%",
+      "Real Estate 14.8%",
+      "Staples 11.8%"
+     ],
+     "defensives_avg": 16.9,
+     "cyclicals_avg": 39.5,
+     "spy": 40.6,
+     "semis_smh": 124.9,
+     "highbeta_minus_lowvol": 71.0,
+     "growth_minus_value": 12.2,
+     "breadth_rsp_minus_spy": -9.5,
+     "credit_hyg_minus_lqd": 3.2,
+     "vix": [
+      52,
+      17
+     ],
+     "tlt_ret": 2.0,
+     "dxy_ret": -5.8,
+     "oil_ret": 9.4,
+     "copper_gold": -15.9,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +124.9%, growth>value (12.2), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-5.8% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -9.5% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 39.5% vs defensives 16.9%; oil 9.4%, copper-gold -15.9)"
+     ]
+    }
+   }
+  }
+ },
+ "xly": {
+  "ticker": "XLY",
+  "name": "Consumer Discretionary",
+  "phase": "Bottoming",
+  "pos": 31.0,
+  "rs_rank": 6,
+  "now_ctx": {
+   "this_ret": -5.2,
+   "this_rank": 10,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2021-11-19": {
+    "end": "2022-03-07",
+    "dir": "selloff",
+    "mag_pct": 22.7,
+    "ctx": {
+     "this_ret": -22.7,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 41.4%",
+      "Utilities 7.5%",
+      "Staples 4.1%"
+     ],
+     "laggards": [
+      "Tech -15.6%",
+      "Comm -19.2%",
+      "Discretionary -22.7%"
+     ],
+     "defensives_avg": 3.3,
+     "cyclicals_avg": -3.4,
+     "spy": -10.2,
+     "semis_smh": -21.9,
+     "highbeta_minus_lowvol": -15.3,
+     "growth_minus_value": -16.1,
+     "breadth_rsp_minus_spy": 4.0,
+     "credit_hyg_minus_lqd": 3.4,
+     "vix": [
+      18,
+      36
+     ],
+     "tlt_ret": -5.7,
+     "dxy_ret": 3.4,
+     "oil_ret": 56.9,
+     "copper_gold": -0.6,
+     "quad": "stagflation-ish",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+3.3% vs cyclicals -3.4%) with VIX 18->36 — risk-off rotation into safety, not sector strength",
+      "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +4.0% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals -3.4% vs defensives 3.3%; oil 56.9%, copper-gold -0.6)"
+     ]
+    }
+   },
+   "2022-03-07": {
+    "end": "2022-03-29",
+    "dir": "rally",
+    "mag_pct": 17.5,
+    "ctx": {
+     "this_ret": 17.5,
+     "this_rank": 1,
+     "leaders": [
+      "Discretionary 17.5%",
+      "Tech 13.5%",
+      "Materials 12.2%"
+     ],
+     "laggards": [
+      "Utilities 3.6%",
+      "Staples 2.5%",
+      "Energy 1.3%"
+     ],
+     "defensives_avg": 4.2,
+     "cyclicals_avg": 10.4,
+     "spy": 10.4,
+     "semis_smh": 16.9,
+     "highbeta_minus_lowvol": 10.8,
+     "growth_minus_value": 7.2,
+     "breadth_rsp_minus_spy": -2.0,
+     "credit_hyg_minus_lqd": 2.2,
+     "vix": [
+      36,
+      19
+     ],
+     "tlt_ret": -6.1,
+     "dxy_ret": -0.9,
+     "oil_ret": -12.7,
+     "copper_gold": 4.0,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +16.9%, growth>value (7.2), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Discretionary ranked #1/11 in a risk-on tape",
+      "RATE-REGIME MOVE: yields SURGED (TLT -6.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -2.0% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 10.4% vs defensives 4.2%; oil -12.7%, copper-gold 4.0)"
+     ]
+    }
+   },
+   "2022-03-29": {
+    "end": "2022-05-24",
+    "dir": "selloff",
+    "mag_pct": 28.0,
+    "ctx": {
+     "this_ret": -28.0,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 10.0%",
+      "Utilities 0.2%",
+      "Staples -3.5%"
+     ],
+     "laggards": [
+      "Tech -19.2%",
+      "Comm -19.6%",
+      "Discretionary -28.0%"
+     ],
+     "defensives_avg": -2.8,
+     "cyclicals_avg": -11.9,
+     "spy": -14.7,
+     "semis_smh": -21.0,
+     "highbeta_minus_lowvol": -17.0,
+     "growth_minus_value": -13.5,
+     "breadth_rsp_minus_spy": 3.0,
+     "credit_hyg_minus_lqd": -0.3,
+     "vix": [
+      19,
+      29
+     ],
+     "tlt_ret": -8.8,
+     "dxy_ret": 3.5,
+     "oil_ret": 5.3,
+     "copper_gold": -5.8,
+     "quad": "stagflation-ish",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-2.8% vs cyclicals -11.9%) with VIX 19->29 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -8.8%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.5% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +3.0% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals -11.9% vs defensives -2.8%; oil 5.3%, copper-gold -5.8)"
+     ]
+    }
+   },
+   "2022-05-24": {
+    "end": "2022-06-02",
+    "dir": "rally",
+    "mag_pct": 14.4,
+    "ctx": {
+     "this_ret": 14.4,
+     "this_rank": 1,
+     "leaders": [
+      "Discretionary 14.4%",
+      "Tech 8.6%",
+      "Comm 7.3%"
+     ],
+     "laggards": [
+      "Staples 1.7%",
+      "Utilities 0.9%",
+      "Health 0.0%"
+     ],
+     "defensives_avg": 0.9,
+     "cyclicals_avg": 7.0,
+     "spy": 6.0,
+     "semis_smh": 11.2,
+     "highbeta_minus_lowvol": 11.5,
+     "growth_minus_value": 5.6,
+     "breadth_rsp_minus_spy": -0.6,
+     "credit_hyg_minus_lqd": 2.7,
+     "vix": [
+      29,
+      25
+     ],
+     "tlt_ret": -2.0,
+     "dxy_ret": -0.1,
+     "oil_ret": 6.5,
+     "copper_gold": 5.2,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Discretionary ranked #1/11 in a risk-on tape",
+      "QUAD read: reflation/growth-up (cyclicals 7.0% vs defensives 0.9%; oil 6.5%, copper-gold 5.2)"
+     ]
+    }
+   },
+   "2022-06-02": {
+    "end": "2022-06-16",
+    "dir": "selloff",
+    "mag_pct": 14.6,
+    "ctx": {
+     "this_ret": -14.6,
+     "this_rank": 11,
+     "leaders": [
+      "Staples -7.4%",
+      "Health -8.7%",
+      "Industrials -10.6%"
+     ],
+     "laggards": [
+      "Tech -13.9%",
+      "Materials -14.2%",
+      "Discretionary -14.6%"
+     ],
+     "defensives_avg": -9.5,
+     "cyclicals_avg": -13.0,
+     "spy": -12.2,
+     "semis_smh": -18.1,
+     "highbeta_minus_lowvol": -8.7,
+     "growth_minus_value": -2.2,
+     "breadth_rsp_minus_spy": -0.6,
+     "credit_hyg_minus_lqd": -3.0,
+     "vix": [
+      25,
+      33
+     ],
+     "tlt_ret": -3.9,
+     "dxy_ret": 1.8,
+     "oil_ret": 0.6,
+     "copper_gold": -8.6,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-9.5% vs cyclicals -13.0%) with VIX 25->33 — risk-off rotation into safety, not sector strength",
+      "QUAD read: slowdown/deflation-scare (cyclicals -13.0% vs defensives -9.5%; oil 0.6%, copper-gold -8.6)"
+     ]
+    }
+   },
+   "2022-06-16": {
+    "end": "2022-08-16",
+    "dir": "rally",
+    "mag_pct": 28.8,
+    "ctx": {
+     "this_ret": 28.8,
+     "this_rank": 1,
+     "leaders": [
+      "Discretionary 28.8%",
+      "Tech 22.7%",
+      "Utilities 19.4%"
+     ],
+     "laggards": [
+      "Health 12.1%",
+      "Materials 9.4%",
+      "Energy -0.2%"
+     ],
+     "defensives_avg": 14.7,
+     "cyclicals_avg": 15.9,
+     "spy": 17.7,
+     "semis_smh": 19.5,
+     "highbeta_minus_lowvol": 11.9,
+     "growth_minus_value": 8.8,
+     "breadth_rsp_minus_spy": -0.6,
+     "credit_hyg_minus_lqd": 2.5,
+     "vix": [
+      33,
+      20
+     ],
+     "tlt_ret": 4.2,
+     "dxy_ret": 2.8,
+     "oil_ret": -26.4,
+     "copper_gold": -7.6,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +19.5%, growth>value (8.8), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Discretionary ranked #1/11 in a risk-on tape",
+      "DOLLAR STRONGER (2.8% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 15.9% vs defensives 14.7%; oil -26.4%, copper-gold -7.6)"
+     ]
+    }
+   },
+   "2022-08-16": {
+    "end": "2022-12-28",
+    "dir": "selloff",
+    "mag_pct": 26.7,
+    "ctx": {
+     "this_ret": -26.7,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 14.5%",
+      "Health 1.5%",
+      "Staples -1.9%"
+     ],
+     "laggards": [
+      "Tech -19.2%",
+      "Comm -21.7%",
+      "Discretionary -26.7%"
+     ],
+     "defensives_avg": -2.7,
+     "cyclicals_avg": -7.0,
+     "spy": -11.6,
+     "semis_smh": -18.1,
+     "highbeta_minus_lowvol": -12.2,
+     "growth_minus_value": -12.1,
+     "breadth_rsp_minus_spy": 3.8,
+     "credit_hyg_minus_lqd": 0.7,
+     "vix": [
+      20,
+      22
+     ],
+     "tlt_ret": -13.1,
+     "dxy_ret": -1.9,
+     "oil_ret": -8.7,
+     "copper_gold": 3.4,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-2.7% vs cyclicals -7.0%) with VIX 20->22 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -13.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "BROADENING: equal-weight beat cap-weight by +3.8% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals -7.0% vs defensives -2.7%; oil -8.7%, copper-gold 3.4)"
+     ]
+    }
+   },
+   "2022-12-28": {
+    "end": "2023-07-19",
+    "dir": "rally",
+    "mag_pct": 40.9,
+    "ctx": {
+     "this_ret": 40.9,
+     "this_rank": 3,
+     "leaders": [
+      "Tech 48.7%",
+      "Comm 45.4%",
+      "Discretionary 40.9%"
+     ],
+     "laggards": [
+      "Health -0.8%",
+      "Energy -2.1%",
+      "Utilities -4.8%"
+     ],
+     "defensives_avg": -1.4,
+     "cyclicals_avg": 19.1,
+     "spy": 21.8,
+     "semis_smh": 60.8,
+     "highbeta_minus_lowvol": 33.6,
+     "growth_minus_value": 27.7,
+     "breadth_rsp_minus_spy": -10.2,
+     "credit_hyg_minus_lqd": 2.1,
+     "vix": [
+      22,
+      14
+     ],
+     "tlt_ret": 5.0,
+     "dxy_ret": -4.0,
+     "oil_ret": -4.6,
+     "copper_gold": -10.2,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +60.8%, growth>value (27.7), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Discretionary ranked #3/11 in a risk-on tape",
+      "DOLLAR WEAKER (-4.0% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -10.2% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 19.1% vs defensives -1.4%; oil -4.6%, copper-gold -10.2)"
+     ]
+    }
+   },
+   "2023-07-19": {
+    "end": "2023-10-26",
+    "dir": "selloff",
+    "mag_pct": 16.2,
+    "ctx": {
+     "this_ret": -16.2,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 5.8%",
+      "Health -5.2%",
+      "Comm -6.0%"
+     ],
+     "laggards": [
+      "Industrials -10.8%",
+      "Real Estate -14.1%",
+      "Discretionary -16.2%"
+     ],
+     "defensives_avg": -7.7,
+     "cyclicals_avg": -8.4,
+     "spy": -9.0,
+     "semis_smh": -13.3,
+     "highbeta_minus_lowvol": -13.8,
+     "growth_minus_value": -0.8,
+     "breadth_rsp_minus_spy": -2.8,
+     "credit_hyg_minus_lqd": 4.4,
+     "vix": [
+      14,
+      21
+     ],
+     "tlt_ret": -17.0,
+     "dxy_ret": 6.3,
+     "oil_ret": 10.4,
+     "copper_gold": -6.6,
+     "quad": "stagflation-ish",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -17.0%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (6.3% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -2.8% — a mega-cap-led tape",
+      "QUAD read: stagflation-ish (cyclicals -8.4% vs defensives -7.7%; oil 10.4%, copper-gold -6.6)"
+     ]
+    }
+   },
+   "2023-10-26": {
+    "end": "2024-12-17",
+    "dir": "rally",
+    "mag_pct": 63.1,
+    "ctx": {
+     "this_ret": 63.1,
+     "this_rank": 1,
+     "leaders": [
+      "Discretionary 63.1%",
+      "Comm 60.6%",
+      "Financials 55.8%"
+     ],
+     "laggards": [
+      "Materials 19.6%",
+      "Health 12.9%",
+      "Energy 3.3%"
+     ],
+     "defensives_avg": 23.1,
+     "cyclicals_avg": 39.2,
+     "spy": 48.5,
+     "semis_smh": 82.9,
+     "highbeta_minus_lowvol": 22.1,
+     "growth_minus_value": 30.7,
+     "breadth_rsp_minus_spy": -13.1,
+     "credit_hyg_minus_lqd": 2.7,
+     "vix": [
+      21,
+      16
+     ],
+     "tlt_ret": 12.0,
+     "dxy_ret": 0.3,
+     "oil_ret": -15.8,
+     "copper_gold": -18.4,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +82.9%, growth>value (30.7), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Discretionary ranked #1/11 in a risk-on tape",
+      "RATE-REGIME MOVE: yields FELL (TLT +12.0%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -13.1% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 39.2% vs defensives 23.1%; oil -15.8%, copper-gold -18.4)"
+     ]
+    }
+   },
+   "2024-12-17": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 26.0,
+    "ctx": {
+     "this_ret": -26.0,
+     "this_rank": 11,
+     "leaders": [
+      "Utilities -3.2%",
+      "Health -3.7%",
+      "Staples -5.1%"
+     ],
+     "laggards": [
+      "Materials -14.7%",
+      "Tech -24.9%",
+      "Discretionary -26.0%"
+     ],
+     "defensives_avg": -4.0,
+     "cyclicals_avg": -16.6,
+     "spy": -17.3,
+     "semis_smh": -27.7,
+     "highbeta_minus_lowvol": -23.7,
+     "growth_minus_value": -11.8,
+     "breadth_rsp_minus_spy": 2.9,
+     "credit_hyg_minus_lqd": -0.9,
+     "vix": [
+      16,
+      52
+     ],
+     "tlt_ret": -1.1,
+     "dxy_ret": -3.7,
+     "oil_ret": -15.0,
+     "copper_gold": -11.4,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-4.0% vs cyclicals -16.6%) with VIX 16->52 — risk-off rotation into safety, not sector strength",
+      "DOLLAR WEAKER (-3.7% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals -16.6% vs defensives -4.0%; oil -15.0%, copper-gold -11.4)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-01-12",
+    "dir": "rally",
+    "mag_pct": 42.1,
+    "ctx": {
+     "this_ret": 42.1,
+     "this_rank": 2,
+     "leaders": [
+      "Tech 64.1%",
+      "Discretionary 42.1%",
+      "Industrials 41.6%"
+     ],
+     "laggards": [
+      "Utilities 19.0%",
+      "Real Estate 12.6%",
+      "Staples 7.3%"
+     ],
+     "defensives_avg": 15.4,
+     "cyclicals_avg": 38.7,
+     "spy": 41.2,
+     "semis_smh": 117.8,
+     "highbeta_minus_lowvol": 76.4,
+     "growth_minus_value": 17.1,
+     "breadth_rsp_minus_spy": -10.3,
+     "credit_hyg_minus_lqd": 3.2,
+     "vix": [
+      52,
+      15
+     ],
+     "tlt_ret": 2.6,
+     "dxy_ret": -4.0,
+     "oil_ret": -0.1,
+     "copper_gold": -10.1,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +117.8%, growth>value (17.1), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Discretionary ranked #2/11 in a risk-on tape",
+      "DOLLAR WEAKER (-4.0% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -10.3% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 38.7% vs defensives 15.4%; oil -0.1%, copper-gold -10.1)"
+     ]
+    }
+   },
+   "2026-01-12": {
+    "end": "2026-03-30",
+    "dir": "selloff",
+    "mag_pct": 15.0,
+    "ctx": {
+     "this_ret": -15.0,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 34.6%",
+      "Utilities 8.6%",
+      "Staples 2.7%"
+     ],
+     "laggards": [
+      "Financials -12.1%",
+      "Tech -13.0%",
+      "Discretionary -15.0%"
+     ],
+     "defensives_avg": 1.0,
+     "cyclicals_avg": -1.3,
+     "spy": -8.8,
+     "semis_smh": -7.2,
+     "highbeta_minus_lowvol": -11.0,
+     "growth_minus_value": -10.4,
+     "breadth_rsp_minus_spy": 4.3,
+     "credit_hyg_minus_lqd": -0.5,
+     "vix": [
+      15,
+      31
+     ],
+     "tlt_ret": -0.3,
+     "dxy_ret": 1.7,
+     "oil_ret": 72.9,
+     "copper_gold": -6.8,
+     "quad": "stagflation-ish",
+     "signals": [
+      "BROADENING: equal-weight beat cap-weight by +4.3% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals -1.3% vs defensives 1.0%; oil 72.9%, copper-gold -6.8)"
+     ]
+    }
+   },
+   "2026-03-30": {
+    "end": "2026-05-28",
+    "dir": "rally",
+    "mag_pct": 15.3,
+    "ctx": {
+     "this_ret": 15.3,
+     "this_rank": 2,
+     "leaders": [
+      "Tech 46.4%",
+      "Discretionary 15.3%",
+      "Industrials 10.7%"
+     ],
+     "laggards": [
+      "Staples 2.4%",
+      "Utilities -3.4%",
+      "Energy -8.7%"
+     ],
+     "defensives_avg": 1.1,
+     "cyclicals_avg": 12.3,
+     "spy": 19.1,
+     "semis_smh": 65.5,
+     "highbeta_minus_lowvol": 32.3,
+     "growth_minus_value": 10.3,
+     "breadth_rsp_minus_spy": -8.8,
+     "credit_hyg_minus_lqd": 1.1,
+     "vix": [
+      31,
+      16
+     ],
+     "tlt_ret": -0.4,
+     "dxy_ret": -1.5,
+     "oil_ret": -13.6,
+     "copper_gold": 17.4,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +65.5%, growth>value (10.3), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Discretionary ranked #2/11 in a risk-on tape",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -8.8% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 12.3% vs defensives 1.1%; oil -13.6%, copper-gold 17.4)"
+     ]
+    }
+   }
+  }
+ },
+ "xlf": {
+  "ticker": "XLF",
+  "name": "Financials",
+  "phase": "Trending",
+  "pos": 51.4,
+  "rs_rank": 5,
+  "now_ctx": {
+   "this_ret": -2.7,
+   "this_rank": 9,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2020-06-26": {
+    "end": "2022-01-12",
+    "dir": "rally",
+    "mag_pct": 88.7,
+    "ctx": {
+     "this_ret": 88.7,
+     "this_rank": 1,
+     "leaders": [
+      "Financials 88.7%",
+      "Energy 87.1%",
+      "Materials 70.3%"
+     ],
+     "laggards": [
+      "Health 43.1%",
+      "Staples 39.7%",
+      "Utilities 32.2%"
+     ],
+     "defensives_avg": 38.3,
+     "cyclicals_avg": 73.8,
+     "spy": 60.4,
+     "semis_smh": 109.7,
+     "highbeta_minus_lowvol": 69.4,
+     "growth_minus_value": -0.8,
+     "breadth_rsp_minus_spy": 8.5,
+     "credit_hyg_minus_lqd": 12.9,
+     "vix": [
+      35,
+      18
+     ],
+     "tlt_ret": -11.5,
+     "dxy_ret": -2.6,
+     "oil_ret": 114.7,
+     "copper_gold": 67.7,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Financials ranked #1/11 in a risk-on tape",
+      "RATE-REGIME MOVE: yields SURGED (TLT -11.5%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR WEAKER (-2.6% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +8.5% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals 73.8% vs defensives 38.3%; oil 114.7%, copper-gold 67.7)"
+     ]
+    }
+   },
+   "2022-01-12": {
+    "end": "2022-06-16",
+    "dir": "selloff",
+    "mag_pct": 25.3,
+    "ctx": {
+     "this_ret": -25.3,
+     "this_rank": 8,
+     "leaders": [
+      "Energy 23.9%",
+      "Utilities -5.2%",
+      "Staples -9.6%"
+     ],
+     "laggards": [
+      "Tech -26.7%",
+      "Comm -30.9%",
+      "Discretionary -33.1%"
+     ],
+     "defensives_avg": -8.9,
+     "cyclicals_avg": -16.1,
+     "spy": -21.9,
+     "semis_smh": -33.3,
+     "highbeta_minus_lowvol": -16.6,
+     "growth_minus_value": -12.3,
+     "breadth_rsp_minus_spy": 2.7,
+     "credit_hyg_minus_lqd": 2.0,
+     "vix": [
+      18,
+      33
+     ],
+     "tlt_ret": -21.3,
+     "dxy_ret": 9.1,
+     "oil_ret": 42.3,
+     "copper_gold": -10.9,
+     "quad": "stagflation-ish",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-8.9% vs cyclicals -16.1%) with VIX 18->33 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -21.3%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (9.1% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +2.7% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals -16.1% vs defensives -8.9%; oil 42.3%, copper-gold -10.9)"
+     ]
+    }
+   },
+   "2022-06-16": {
+    "end": "2022-08-16",
+    "dir": "rally",
+    "mag_pct": 16.7,
+    "ctx": {
+     "this_ret": 16.7,
+     "this_rank": 6,
+     "leaders": [
+      "Discretionary 28.8%",
+      "Tech 22.7%",
+      "Utilities 19.4%"
+     ],
+     "laggards": [
+      "Health 12.1%",
+      "Materials 9.4%",
+      "Energy -0.2%"
+     ],
+     "defensives_avg": 14.7,
+     "cyclicals_avg": 15.9,
+     "spy": 17.7,
+     "semis_smh": 19.5,
+     "highbeta_minus_lowvol": 11.9,
+     "growth_minus_value": 8.8,
+     "breadth_rsp_minus_spy": -0.6,
+     "credit_hyg_minus_lqd": 2.5,
+     "vix": [
+      33,
+      20
+     ],
+     "tlt_ret": 4.2,
+     "dxy_ret": 2.8,
+     "oil_ret": -26.4,
+     "copper_gold": -7.6,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +19.5%, growth>value (8.8), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR STRONGER (2.8% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 15.9% vs defensives 14.7%; oil -26.4%, copper-gold -7.6)"
+     ]
+    }
+   },
+   "2022-08-16": {
+    "end": "2022-10-12",
+    "dir": "selloff",
+    "mag_pct": 15.0,
+    "ctx": {
+     "this_ret": -15.0,
+     "this_rank": 4,
+     "leaders": [
+      "Energy 5.5%",
+      "Health -8.6%",
+      "Staples -11.7%"
+     ],
+     "laggards": [
+      "Comm -20.3%",
+      "Tech -22.7%",
+      "Real Estate -24.7%"
+     ],
+     "defensives_avg": -13.5,
+     "cyclicals_avg": -13.7,
+     "spy": -16.7,
+     "semis_smh": -28.0,
+     "highbeta_minus_lowvol": -6.0,
+     "growth_minus_value": -4.3,
+     "breadth_rsp_minus_spy": 1.1,
+     "credit_hyg_minus_lqd": 2.7,
+     "vix": [
+      20,
+      34
+     ],
+     "tlt_ret": -13.0,
+     "dxy_ret": 6.4,
+     "oil_ret": 0.9,
+     "copper_gold": 0.5,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -13.0%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (6.4% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -13.7% vs defensives -13.5%; oil 0.9%, copper-gold 0.5)"
+     ]
+    }
+   },
+   "2022-10-12": {
+    "end": "2023-02-07",
+    "dir": "rally",
+    "mag_pct": 22.9,
+    "ctx": {
+     "this_ret": 22.9,
+     "this_rank": 3,
+     "leaders": [
+      "Tech 23.5%",
+      "Comm 23.3%",
+      "Financials 22.9%"
+     ],
+     "laggards": [
+      "Health 9.4%",
+      "Discretionary 9.3%",
+      "Staples 9.0%"
+     ],
+     "defensives_avg": 10.2,
+     "cyclicals_avg": 18.6,
+     "spy": 17.0,
+     "semis_smh": 45.3,
+     "highbeta_minus_lowvol": 20.6,
+     "growth_minus_value": -2.5,
+     "breadth_rsp_minus_spy": 3.3,
+     "credit_hyg_minus_lqd": -1.0,
+     "vix": [
+      34,
+      19
+     ],
+     "tlt_ret": 5.7,
+     "dxy_ret": -8.7,
+     "oil_ret": -11.6,
+     "copper_gold": 6.6,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Financials ranked #3/11 in a risk-on tape",
+      "DOLLAR WEAKER (-8.7% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +3.3% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals 18.6% vs defensives 10.2%; oil -11.6%, copper-gold 6.6)"
+     ]
+    }
+   },
+   "2023-02-07": {
+    "end": "2023-03-17",
+    "dir": "selloff",
+    "mag_pct": 16.3,
+    "ctx": {
+     "this_ret": -16.3,
+     "this_rank": 11,
+     "leaders": [
+      "Tech -0.1%",
+      "Staples -1.5%",
+      "Utilities -2.2%"
+     ],
+     "laggards": [
+      "Real Estate -10.6%",
+      "Energy -12.9%",
+      "Financials -16.3%"
+     ],
+     "defensives_avg": -3.0,
+     "cyclicals_avg": -8.6,
+     "spy": -5.7,
+     "semis_smh": -0.7,
+     "highbeta_minus_lowvol": -7.7,
+     "growth_minus_value": 6.3,
+     "breadth_rsp_minus_spy": -4.3,
+     "credit_hyg_minus_lqd": -2.2,
+     "vix": [
+      19,
+      26
+     ],
+     "tlt_ret": 2.0,
+     "dxy_ret": 0.3,
+     "oil_ret": -13.5,
+     "copper_gold": -9.5,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-3.0% vs cyclicals -8.6%) with VIX 19->26 — risk-off rotation into safety, not sector strength",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -4.3% — a mega-cap-led tape",
+      "QUAD read: slowdown/deflation-scare (cyclicals -8.6% vs defensives -3.0%; oil -13.5%, copper-gold -9.5)"
+     ]
+    }
+   },
+   "2023-03-17": {
+    "end": "2025-02-19",
+    "dir": "rally",
+    "mag_pct": 74.4,
+    "ctx": {
+     "this_ret": 74.4,
+     "this_rank": 2,
+     "leaders": [
+      "Comm 94.7%",
+      "Financials 74.4%",
+      "Tech 71.4%"
+     ],
+     "laggards": [
+      "Materials 23.8%",
+      "Health 20.1%",
+      "Staples 19.4%"
+     ],
+     "defensives_avg": 22.4,
+     "cyclicals_avg": 51.5,
+     "spy": 61.0,
+     "semis_smh": 107.8,
+     "highbeta_minus_lowvol": 19.6,
+     "growth_minus_value": 40.5,
+     "breadth_rsp_minus_spy": -24.1,
+     "credit_hyg_minus_lqd": 13.6,
+     "vix": [
+      26,
+      15
+     ],
+     "tlt_ret": -11.2,
+     "dxy_ret": 3.3,
+     "oil_ret": 8.3,
+     "copper_gold": -31.8,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +107.8%, growth>value (40.5), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Financials ranked #2/11 in a risk-on tape",
+      "RATE-REGIME MOVE: yields SURGED (TLT -11.2%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.3% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -24.1% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 51.5% vs defensives 22.4%; oil 8.3%, copper-gold -31.8)"
+     ]
+    }
+   },
+   "2025-02-19": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 15.5,
+    "ctx": {
+     "this_ret": -15.5,
+     "this_rank": 5,
+     "leaders": [
+      "Staples -5.9%",
+      "Utilities -8.3%",
+      "Health -8.8%"
+     ],
+     "laggards": [
+      "Comm -17.7%",
+      "Discretionary -21.8%",
+      "Tech -25.7%"
+     ],
+     "defensives_avg": -7.7,
+     "cyclicals_avg": -18.7,
+     "spy": -18.8,
+     "semis_smh": -30.1,
+     "highbeta_minus_lowvol": -22.8,
+     "growth_minus_value": -8.4,
+     "breadth_rsp_minus_spy": 2.8,
+     "credit_hyg_minus_lqd": -2.7,
+     "vix": [
+      15,
+      52
+     ],
+     "tlt_ret": 0.8,
+     "dxy_ret": -3.9,
+     "oil_ret": -17.5,
+     "copper_gold": -11.1,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-7.7% vs cyclicals -18.7%) with VIX 15->52 — risk-off rotation into safety, not sector strength",
+      "DOLLAR WEAKER (-3.9% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +2.8% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals -18.7% vs defensives -7.7%; oil -17.5%, copper-gold -11.1)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-01-06",
+    "dir": "rally",
+    "mag_pct": 29.7,
+    "ctx": {
+     "this_ret": 29.7,
+     "this_rank": 6,
+     "leaders": [
+      "Tech 63.9%",
+      "Industrials 40.6%",
+      "Discretionary 38.1%"
+     ],
+     "laggards": [
+      "Utilities 19.9%",
+      "Real Estate 12.8%",
+      "Staples 3.7%"
+     ],
+     "defensives_avg": 14.7,
+     "cyclicals_avg": 37.5,
+     "spy": 40.6,
+     "semis_smh": 116.1,
+     "highbeta_minus_lowvol": 78.1,
+     "growth_minus_value": 17.3,
+     "breadth_rsp_minus_spy": -10.1,
+     "credit_hyg_minus_lqd": 3.0,
+     "vix": [
+      52,
+      15
+     ],
+     "tlt_ret": 2.1,
+     "dxy_ret": -4.3,
+     "oil_ret": -4.1,
+     "copper_gold": -5.4,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +116.1%, growth>value (17.3), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-4.3% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -10.1% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 37.5% vs defensives 14.7%; oil -4.1%, copper-gold -5.4)"
+     ]
+    }
+   },
+   "2026-01-06": {
+    "end": "2026-03-27",
+    "dir": "selloff",
+    "mag_pct": 14.8,
+    "ctx": {
+     "this_ret": -14.8,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 38.0%",
+      "Utilities 7.0%",
+      "Staples 6.2%"
+     ],
+     "laggards": [
+      "Tech -11.3%",
+      "Discretionary -12.5%",
+      "Financials -14.8%"
+     ],
+     "defensives_avg": 1.4,
+     "cyclicals_avg": 0.2,
+     "spy": -8.1,
+     "semis_smh": -3.4,
+     "highbeta_minus_lowvol": -9.4,
+     "growth_minus_value": -10.5,
+     "breadth_rsp_minus_spy": 4.2,
+     "credit_hyg_minus_lqd": 0.1,
+     "vix": [
+      15,
+      31
+     ],
+     "tlt_ret": -1.2,
+     "dxy_ret": 1.6,
+     "oil_ret": 74.4,
+     "copper_gold": -9.3,
+     "quad": "stagflation-ish",
+     "signals": [
+      "BROADENING: equal-weight beat cap-weight by +4.2% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals 0.2% vs defensives 1.4%; oil 74.4%, copper-gold -9.3)"
+     ]
+    }
+   }
+  }
+ },
+ "xli": {
+  "ticker": "XLI",
+  "name": "Industrials",
+  "phase": "Trending",
+  "pos": 46.8,
+  "rs_rank": 2,
+  "now_ctx": {
+   "this_ret": 15.8,
+   "this_rank": 3,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2022-01-04": {
+    "end": "2022-06-17",
+    "dir": "selloff",
+    "mag_pct": 19.8,
+    "ctx": {
+     "this_ret": -19.8,
+     "this_rank": 6,
+     "leaders": [
+      "Energy 25.3%",
+      "Utilities -7.6%",
+      "Staples -10.9%"
+     ],
+     "laggards": [
+      "Tech -28.1%",
+      "Comm -30.8%",
+      "Discretionary -34.8%"
+     ],
+     "defensives_avg": -10.4,
+     "cyclicals_avg": -16.3,
+     "spy": -22.8,
+     "semis_smh": -34.5,
+     "highbeta_minus_lowvol": -14.7,
+     "growth_minus_value": -13.8,
+     "breadth_rsp_minus_spy": 3.0,
+     "credit_hyg_minus_lqd": 2.7,
+     "vix": [
+      17,
+      31
+     ],
+     "tlt_ret": -21.4,
+     "dxy_ret": 8.7,
+     "oil_ret": 42.3,
+     "copper_gold": -11.2,
+     "quad": "stagflation-ish",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-10.4% vs cyclicals -16.3%) with VIX 17->31 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -21.4%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (8.7% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +3.0% — broad participation",
+      "QUAD read: stagflation-ish (cyclicals -16.3% vs defensives -10.4%; oil 42.3%, copper-gold -11.2)"
+     ]
+    }
+   },
+   "2022-06-17": {
+    "end": "2022-08-16",
+    "dir": "rally",
+    "mag_pct": 18.0,
+    "ctx": {
+     "this_ret": 18.0,
+     "this_rank": 4,
+     "leaders": [
+      "Discretionary 27.4%",
+      "Tech 21.6%",
+      "Utilities 20.6%"
+     ],
+     "laggards": [
+      "Comm 11.5%",
+      "Materials 9.6%",
+      "Energy 5.6%"
+     ],
+     "defensives_avg": 15.2,
+     "cyclicals_avg": 16.4,
+     "spy": 17.4,
+     "semis_smh": 18.5,
+     "highbeta_minus_lowvol": 9.4,
+     "growth_minus_value": 7.2,
+     "breadth_rsp_minus_spy": -0.6,
+     "credit_hyg_minus_lqd": 2.4,
+     "vix": [
+      31,
+      20
+     ],
+     "tlt_ret": 3.8,
+     "dxy_ret": 1.7,
+     "oil_ret": -21.0,
+     "copper_gold": -6.1,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +18.5%, growth>value (7.2), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 16.4% vs defensives 15.2%; oil -21.0%, copper-gold -6.1)"
+     ]
+    }
+   },
+   "2022-08-16": {
+    "end": "2022-09-30",
+    "dir": "selloff",
+    "mag_pct": 17.2,
+    "ctx": {
+     "this_ret": -17.2,
+     "this_rank": 7,
+     "leaders": [
+      "Energy -5.2%",
+      "Health -9.2%",
+      "Staples -12.9%"
+     ],
+     "laggards": [
+      "Comm -19.9%",
+      "Real Estate -20.2%",
+      "Tech -21.2%"
+     ],
+     "defensives_avg": -12.4,
+     "cyclicals_avg": -15.3,
+     "spy": -16.5,
+     "semis_smh": -24.0,
+     "highbeta_minus_lowvol": -7.0,
+     "growth_minus_value": -3.0,
+     "breadth_rsp_minus_spy": 0.4,
+     "credit_hyg_minus_lqd": 1.1,
+     "vix": [
+      20,
+      32
+     ],
+     "tlt_ret": -11.4,
+     "dxy_ret": 5.3,
+     "oil_ret": -8.1,
+     "copper_gold": 0.9,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -11.4%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (5.3% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -15.3% vs defensives -12.4%; oil -8.1%, copper-gold 0.9)"
+     ]
+    }
+   },
+   "2022-09-30": {
+    "end": "2024-11-29",
+    "dir": "rally",
+    "mag_pct": 79.5,
+    "ctx": {
+     "this_ret": 79.5,
+     "this_rank": 3,
+     "leaders": [
+      "Comm 109.6%",
+      "Tech 100.1%",
+      "Industrials 79.5%"
+     ],
+     "laggards": [
+      "Real Estate 34.1%",
+      "Staples 31.6%",
+      "Health 25.7%"
+     ],
+     "defensives_avg": 30.7,
+     "cyclicals_avg": 66.9,
+     "spy": 73.7,
+     "semis_smh": 166.2,
+     "highbeta_minus_lowvol": 29.1,
+     "growth_minus_value": 38.9,
+     "breadth_rsp_minus_spy": -21.2,
+     "credit_hyg_minus_lqd": 9.3,
+     "vix": [
+      32,
+      14
+     ],
+     "tlt_ret": -1.0,
+     "dxy_ret": -5.7,
+     "oil_ret": -14.5,
+     "copper_gold": -41.3,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +166.2%, growth>value (38.9), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RISK-ON LEADERSHIP: Industrials ranked #3/11 in a risk-on tape",
+      "DOLLAR WEAKER (-5.7% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -21.2% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 66.9% vs defensives 30.7%; oil -14.5%, copper-gold -41.3)"
+     ]
+    }
+   },
+   "2024-11-29": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 18.5,
+    "ctx": {
+     "this_ret": -18.5,
+     "this_rank": 7,
+     "leaders": [
+      "Staples -7.1%",
+      "Health -9.0%",
+      "Utilities -10.5%"
+     ],
+     "laggards": [
+      "Discretionary -20.3%",
+      "Materials -20.9%",
+      "Tech -22.8%"
+     ],
+     "defensives_avg": -8.9,
+     "cyclicals_avg": -19.2,
+     "spy": -17.1,
+     "semis_smh": -25.4,
+     "highbeta_minus_lowvol": -19.0,
+     "growth_minus_value": -3.7,
+     "breadth_rsp_minus_spy": -0.7,
+     "credit_hyg_minus_lqd": -0.1,
+     "vix": [
+      14,
+      52
+     ],
+     "tlt_ret": -4.3,
+     "dxy_ret": -2.6,
+     "oil_ret": -12.4,
+     "copper_gold": -10.6,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-8.9% vs cyclicals -19.2%) with VIX 14->52 — risk-off rotation into safety, not sector strength",
+      "DOLLAR WEAKER (-2.6% DXY) — tailwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -19.2% vs defensives -8.9%; oil -12.4%, copper-gold -10.6)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-06-25",
+    "dir": "rally",
+    "mag_pct": 60.3,
+    "ctx": {
+     "this_ret": 60.3,
+     "this_rank": 2,
+     "leaders": [
+      "Tech 106.6%",
+      "Industrials 60.3%",
+      "Energy 46.1%"
+     ],
+     "laggards": [
+      "Financials 23.6%",
+      "Health 19.1%",
+      "Staples 13.0%"
+     ],
+     "defensives_avg": 20.4,
+     "cyclicals_avg": 51.4,
+     "spy": 49.6,
+     "semis_smh": 255.0,
+     "highbeta_minus_lowvol": 118.3,
+     "growth_minus_value": -1.1,
+     "breadth_rsp_minus_spy": -8.8,
+     "credit_hyg_minus_lqd": 3.3,
+     "vix": [
+      52,
+      19
+     ],
+     "tlt_ret": 4.1,
+     "dxy_ret": -1.5,
+     "oil_ret": 20.7,
+     "copper_gold": 11.3,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Industrials ranked #2/11 in a risk-on tape",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -8.8% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 51.4% vs defensives 20.4%; oil 20.7%, copper-gold 11.3)"
+     ]
+    }
+   }
+  }
+ },
+ "xlb": {
+  "ticker": "XLB",
+  "name": "Materials",
+  "phase": "Rolling over",
+  "pos": 49.8,
+  "rs_rank": 7,
+  "now_ctx": {
+   "this_ret": 13.3,
+   "this_rank": 4,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2022-04-20": {
+    "end": "2022-07-14",
+    "dir": "selloff",
+    "mag_pct": 21.1,
+    "ctx": {
+     "this_ret": -21.1,
+     "this_rank": 10,
+     "leaders": [
+      "Utilities -8.6%",
+      "Health -9.0%",
+      "Staples -9.1%"
+     ],
+     "laggards": [
+      "Real Estate -19.6%",
+      "Materials -21.1%",
+      "Discretionary -21.4%"
+     ],
+     "defensives_avg": -8.9,
+     "cyclicals_avg": -17.5,
+     "spy": -14.7,
+     "semis_smh": -15.2,
+     "highbeta_minus_lowvol": -7.9,
+     "growth_minus_value": -1.1,
+     "breadth_rsp_minus_spy": -1.0,
+     "credit_hyg_minus_lqd": -3.4,
+     "vix": [
+      20,
+      26
+     ],
+     "tlt_ret": -4.5,
+     "dxy_ret": 8.1,
+     "oil_ret": -6.8,
+     "copper_gold": -18.3,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-8.9% vs cyclicals -17.5%) with VIX 20->26 — risk-off rotation into safety, not sector strength",
+      "DOLLAR STRONGER (8.1% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -17.5% vs defensives -8.9%; oil -6.8%, copper-gold -18.3)"
+     ]
+    }
+   },
+   "2022-07-14": {
+    "end": "2022-08-16",
+    "dir": "rally",
+    "mag_pct": 14.9,
+    "ctx": {
+     "this_ret": 14.9,
+     "this_rank": 5,
+     "leaders": [
+      "Discretionary 21.3%",
+      "Industrials 17.6%",
+      "Financials 16.5%"
+     ],
+     "laggards": [
+      "Comm 10.9%",
+      "Staples 6.1%",
+      "Health 5.3%"
+     ],
+     "defensives_avg": 7.6,
+     "cyclicals_avg": 16.7,
+     "spy": 13.7,
+     "semis_smh": 16.3,
+     "highbeta_minus_lowvol": 12.8,
+     "growth_minus_value": 3.1,
+     "breadth_rsp_minus_spy": 0.6,
+     "credit_hyg_minus_lqd": 2.9,
+     "vix": [
+      26,
+      20
+     ],
+     "tlt_ret": 0.6,
+     "dxy_ret": -1.9,
+     "oil_ret": -9.7,
+     "copper_gold": 9.2,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +16.3%, growth>value (3.1), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "QUAD read: reflation/growth-up (cyclicals 16.7% vs defensives 7.6%; oil -9.7%, copper-gold 9.2)"
+     ]
+    }
+   },
+   "2022-08-16": {
+    "end": "2022-09-26",
+    "dir": "selloff",
+    "mag_pct": 17.0,
+    "ctx": {
+     "this_ret": -17.0,
+     "this_rank": 8,
+     "leaders": [
+      "Health -8.9%",
+      "Utilities -9.1%",
+      "Staples -9.4%"
+     ],
+     "laggards": [
+      "Tech -18.5%",
+      "Comm -19.2%",
+      "Real Estate -19.3%"
+     ],
+     "defensives_avg": -9.1,
+     "cyclicals_avg": -15.1,
+     "spy": -14.9,
+     "semis_smh": -22.0,
+     "highbeta_minus_lowvol": -8.7,
+     "growth_minus_value": -2.0,
+     "breadth_rsp_minus_spy": -0.4,
+     "credit_hyg_minus_lqd": 0.5,
+     "vix": [
+      20,
+      32
+     ],
+     "tlt_ret": -10.4,
+     "dxy_ret": 7.1,
+     "oil_ret": -11.3,
+     "copper_gold": -0.4,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-9.1% vs cyclicals -15.1%) with VIX 20->32 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -10.4%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (7.1% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -15.1% vs defensives -9.1%; oil -11.3%, copper-gold -0.4)"
+     ]
+    }
+   },
+   "2022-09-26": {
+    "end": "2024-10-18",
+    "dir": "rally",
+    "mag_pct": 51.0,
+    "ctx": {
+     "this_ret": 51.0,
+     "this_rank": 5,
+     "leaders": [
+      "Comm 92.7%",
+      "Tech 91.1%",
+      "Industrials 71.5%"
+     ],
+     "laggards": [
+      "Health 30.1%",
+      "Staples 25.0%",
+      "Utilities 24.8%"
+     ],
+     "defensives_avg": 26.6,
+     "cyclicals_avg": 59.2,
+     "spy": 65.2,
+     "semis_smh": 169.2,
+     "highbeta_minus_lowvol": 30.5,
+     "growth_minus_value": 33.4,
+     "breadth_rsp_minus_spy": -18.9,
+     "credit_hyg_minus_lqd": 9.3,
+     "vix": [
+      32,
+      18
+     ],
+     "tlt_ret": -2.6,
+     "dxy_ret": -9.3,
+     "oil_ret": -9.8,
+     "copper_gold": -36.0,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +169.2%, growth>value (33.4), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-9.3% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -18.9% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 59.2% vs defensives 26.6%; oil -9.8%, copper-gold -36.0)"
+     ]
+    }
+   },
+   "2024-10-18": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 23.2,
+    "ctx": {
+     "this_ret": -23.2,
+     "this_rank": 11,
+     "leaders": [
+      "Comm -5.1%",
+      "Staples -6.0%",
+      "Financials -7.0%"
+     ],
+     "laggards": [
+      "Industrials -15.7%",
+      "Tech -21.9%",
+      "Materials -23.2%"
+     ],
+     "defensives_avg": -9.3,
+     "cyclicals_avg": -15.5,
+     "spy": -14.5,
+     "semis_smh": -28.1,
+     "highbeta_minus_lowvol": -19.7,
+     "growth_minus_value": -3.1,
+     "breadth_rsp_minus_spy": -0.7,
+     "credit_hyg_minus_lqd": 0.5,
+     "vix": [
+      18,
+      52
+     ],
+     "tlt_ret": -3.9,
+     "dxy_ret": -0.5,
+     "oil_ret": -13.9,
+     "copper_gold": -14.4,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-9.3% vs cyclicals -15.5%) with VIX 18->52 — risk-off rotation into safety, not sector strength",
+      "QUAD read: slowdown/deflation-scare (cyclicals -15.5% vs defensives -9.3%; oil -13.9%, copper-gold -14.4)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-02-11",
+    "dir": "rally",
+    "mag_pct": 46.6,
+    "ctx": {
+     "this_ret": 46.6,
+     "this_rank": 4,
+     "leaders": [
+      "Tech 59.8%",
+      "Industrials 51.8%",
+      "Energy 47.5%"
+     ],
+     "laggards": [
+      "Health 19.1%",
+      "Real Estate 18.6%",
+      "Staples 18.3%"
+     ],
+     "defensives_avg": 20.7,
+     "cyclicals_avg": 43.6,
+     "spy": 40.6,
+     "semis_smh": 131.2,
+     "highbeta_minus_lowvol": 73.9,
+     "growth_minus_value": 6.7,
+     "breadth_rsp_minus_spy": -5.9,
+     "credit_hyg_minus_lqd": 2.9,
+     "vix": [
+      52,
+      18
+     ],
+     "tlt_ret": 3.4,
+     "dxy_ret": -6.0,
+     "oil_ret": 8.5,
+     "copper_gold": -26.7,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +131.2%, growth>value (6.7), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-6.0% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -5.9% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 43.6% vs defensives 20.7%; oil 8.5%, copper-gold -26.7)"
+     ]
+    }
+   }
+  }
+ },
+ "xle": {
+  "ticker": "XLE",
+  "name": "Energy",
+  "phase": "Rolling over",
+  "pos": 35.8,
+  "rs_rank": 11,
+  "now_ctx": {
+   "this_ret": 21.5,
+   "this_rank": 2,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2020-10-28": {
+    "end": "2021-06-15",
+    "dir": "rally",
+    "mag_pct": 107.7,
+    "ctx": {
+     "this_ret": 107.7,
+     "this_rank": 1,
+     "leaders": [
+      "Energy 107.7%",
+      "Financials 59.3%",
+      "Industrials 39.2%"
+     ],
+     "laggards": [
+      "Discretionary 19.1%",
+      "Staples 14.7%",
+      "Utilities 7.5%"
+     ],
+     "defensives_avg": 14.9,
+     "cyclicals_avg": 48.7,
+     "spy": 30.9,
+     "semis_smh": 46.5,
+     "highbeta_minus_lowvol": 68.9,
+     "growth_minus_value": -15.9,
+     "breadth_rsp_minus_spy": 12.3,
+     "credit_hyg_minus_lqd": 7.6,
+     "vix": [
+      40,
+      17
+     ],
+     "tlt_ret": -11.4,
+     "dxy_ret": -3.1,
+     "oil_ret": 92.9,
+     "copper_gold": 43.1,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Energy ranked #1/11 in a risk-on tape",
+      "RATE-REGIME MOVE: yields SURGED (TLT -11.4%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR WEAKER (-3.1% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +12.3% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals 48.7% vs defensives 14.9%; oil 92.9%, copper-gold 43.1)"
+     ]
+    }
+   },
+   "2021-06-15": {
+    "end": "2021-08-19",
+    "dir": "selloff",
+    "mag_pct": 17.7,
+    "ctx": {
+     "this_ret": -17.7,
+     "this_rank": 11,
+     "leaders": [
+      "Health 9.0%",
+      "Tech 8.1%",
+      "Utilities 4.8%"
+     ],
+     "laggards": [
+      "Industrials -0.8%",
+      "Materials -1.4%",
+      "Energy -17.7%"
+     ],
+     "defensives_avg": 5.7,
+     "cyclicals_avg": -1.4,
+     "spy": 4.0,
+     "semis_smh": 1.0,
+     "highbeta_minus_lowvol": -12.6,
+     "growth_minus_value": 6.9,
+     "breadth_rsp_minus_spy": -3.3,
+     "credit_hyg_minus_lqd": -1.6,
+     "vix": [
+      17,
+      22
+     ],
+     "tlt_ret": 6.9,
+     "dxy_ret": 3.3,
+     "oil_ret": -11.7,
+     "copper_gold": -2.9,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+5.7% vs cyclicals -1.4%) with VIX 17->22 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields FELL (TLT +6.9%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.3% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -3.3% — a mega-cap-led tape",
+      "QUAD read: slowdown/deflation-scare (cyclicals -1.4% vs defensives 5.7%; oil -11.7%, copper-gold -2.9)"
+     ]
+    }
+   },
+   "2021-08-19": {
+    "end": "2022-06-08",
+    "dir": "rally",
+    "mag_pct": 108.6,
+    "ctx": {
+     "this_ret": 108.6,
+     "this_rank": 1,
+     "leaders": [
+      "Energy 108.6%",
+      "Utilities 9.0%",
+      "Materials 5.0%"
+     ],
+     "laggards": [
+      "Tech -8.4%",
+      "Discretionary -12.5%",
+      "Comm -26.2%"
+     ],
+     "defensives_avg": 3.1,
+     "cyclicals_avg": 13.4,
+     "spy": -5.6,
+     "semis_smh": -6.0,
+     "highbeta_minus_lowvol": -3.3,
+     "growth_minus_value": -14.8,
+     "breadth_rsp_minus_spy": 3.8,
+     "credit_hyg_minus_lqd": 7.5,
+     "vix": [
+      22,
+      24
+     ],
+     "tlt_ret": -23.1,
+     "dxy_ret": 9.6,
+     "oil_ret": 91.7,
+     "copper_gold": 6.4,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -23.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (9.6% DXY) — headwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +3.8% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals 13.4% vs defensives 3.1%; oil 91.7%, copper-gold 6.4)"
+     ]
+    }
+   },
+   "2022-06-08": {
+    "end": "2022-07-14",
+    "dir": "selloff",
+    "mag_pct": 26.0,
+    "ctx": {
+     "this_ret": -26.0,
+     "this_rank": 11,
+     "leaders": [
+      "Staples -0.1%",
+      "Health -2.2%",
+      "Utilities -4.7%"
+     ],
+     "laggards": [
+      "Financials -10.7%",
+      "Materials -17.2%",
+      "Energy -26.0%"
+     ],
+     "defensives_avg": -2.3,
+     "cyclicals_avg": -13.0,
+     "spy": -7.7,
+     "semis_smh": -12.3,
+     "highbeta_minus_lowvol": -9.6,
+     "growth_minus_value": 2.9,
+     "breadth_rsp_minus_spy": -1.7,
+     "credit_hyg_minus_lqd": -2.5,
+     "vix": [
+      24,
+      26
+     ],
+     "tlt_ret": 1.4,
+     "dxy_ret": 5.9,
+     "oil_ret": -21.6,
+     "copper_gold": -20.0,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-2.3% vs cyclicals -13.0%) with VIX 24->26 — risk-off rotation into safety, not sector strength",
+      "DOLLAR STRONGER (5.9% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -13.0% vs defensives -2.3%; oil -21.6%, copper-gold -20.0)"
+     ]
+    }
+   },
+   "2022-07-14": {
+    "end": "2022-08-29",
+    "dir": "rally",
+    "mag_pct": 24.6,
+    "ctx": {
+     "this_ret": 24.6,
+     "this_rank": 1,
+     "leaders": [
+      "Energy 24.6%",
+      "Discretionary 11.4%",
+      "Industrials 11.2%"
+     ],
+     "laggards": [
+      "Staples 2.2%",
+      "Comm 1.3%",
+      "Health -0.6%"
+     ],
+     "defensives_avg": 3.6,
+     "cyclicals_avg": 11.9,
+     "spy": 6.5,
+     "semis_smh": 4.3,
+     "highbeta_minus_lowvol": 6.2,
+     "growth_minus_value": 0.3,
+     "breadth_rsp_minus_spy": 0.9,
+     "credit_hyg_minus_lqd": 2.0,
+     "vix": [
+      26,
+      26
+     ],
+     "tlt_ret": -2.3,
+     "dxy_ret": 0.3,
+     "oil_ret": 1.3,
+     "copper_gold": 11.1,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "QUAD read: reflation/growth-up (cyclicals 11.9% vs defensives 3.6%; oil 1.3%, copper-gold 11.1)"
+     ]
+    }
+   },
+   "2022-08-29": {
+    "end": "2022-09-26",
+    "dir": "selloff",
+    "mag_pct": 17.4,
+    "ctx": {
+     "this_ret": -17.4,
+     "this_rank": 11,
+     "leaders": [
+      "Health -3.4%",
+      "Staples -6.0%",
+      "Utilities -7.2%"
+     ],
+     "laggards": [
+      "Materials -12.8%",
+      "Real Estate -13.7%",
+      "Energy -17.4%"
+     ],
+     "defensives_avg": -5.5,
+     "cyclicals_avg": -11.4,
+     "spy": -9.1,
+     "semis_smh": -13.0,
+     "highbeta_minus_lowvol": -4.5,
+     "growth_minus_value": 0.1,
+     "breadth_rsp_minus_spy": -0.7,
+     "credit_hyg_minus_lqd": 1.2,
+     "vix": [
+      26,
+      32
+     ],
+     "tlt_ret": -7.8,
+     "dxy_ret": 4.8,
+     "oil_ret": -20.9,
+     "copper_gold": -2.1,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-5.5% vs cyclicals -11.4%) with VIX 26->32 — risk-off rotation into safety, not sector strength",
+      "RATE-REGIME MOVE: yields SURGED (TLT -7.8%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (4.8% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -11.4% vs defensives -5.5%; oil -20.9%, copper-gold -2.1)"
+     ]
+    }
+   },
+   "2022-09-26": {
+    "end": "2022-11-15",
+    "dir": "rally",
+    "mag_pct": 36.8,
+    "ctx": {
+     "this_ret": 36.8,
+     "this_rank": 1,
+     "leaders": [
+      "Energy 36.8%",
+      "Materials 20.4%",
+      "Industrials 18.8%"
+     ],
+     "laggards": [
+      "Comm 4.7%",
+      "Discretionary -0.9%",
+      "Utilities -2.9%"
+     ],
+     "defensives_avg": 4.2,
+     "cyclicals_avg": 16.6,
+     "spy": 9.4,
+     "semis_smh": 18.7,
+     "highbeta_minus_lowvol": 12.9,
+     "growth_minus_value": -7.1,
+     "breadth_rsp_minus_spy": 4.0,
+     "credit_hyg_minus_lqd": 2.4,
+     "vix": [
+      32,
+      25
+     ],
+     "tlt_ret": -3.8,
+     "dxy_ret": -6.7,
+     "oil_ret": 13.3,
+     "copper_gold": 6.6,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Energy ranked #1/11 in a risk-on tape",
+      "DOLLAR WEAKER (-6.7% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +4.0% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals 16.6% vs defensives 4.2%; oil 13.3%, copper-gold 6.6)"
+     ]
+    }
+   },
+   "2022-11-15": {
+    "end": "2023-03-17",
+    "dir": "selloff",
+    "mag_pct": 17.3,
+    "ctx": {
+     "this_ret": -17.3,
+     "this_rank": 11,
+     "leaders": [
+      "Comm 9.1%",
+      "Tech 7.7%",
+      "Utilities -0.7%"
+     ],
+     "laggards": [
+      "Materials -6.2%",
+      "Financials -12.0%",
+      "Energy -17.3%"
+     ],
+     "defensives_avg": -2.3,
+     "cyclicals_avg": -5.4,
+     "spy": -1.3,
+     "semis_smh": 12.2,
+     "highbeta_minus_lowvol": -0.4,
+     "growth_minus_value": 8.2,
+     "breadth_rsp_minus_spy": -3.7,
+     "credit_hyg_minus_lqd": -3.3,
+     "vix": [
+      25,
+      26
+     ],
+     "tlt_ret": 8.7,
+     "dxy_ret": -2.5,
+     "oil_ret": -23.2,
+     "copper_gold": -9.1,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields FELL (TLT +8.7%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR WEAKER (-2.5% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -3.7% — a mega-cap-led tape",
+      "QUAD read: slowdown/deflation-scare (cyclicals -5.4% vs defensives -2.3%; oil -23.2%, copper-gold -9.1)"
+     ]
+    }
+   },
+   "2023-03-17": {
+    "end": "2024-11-22",
+    "dir": "rally",
+    "mag_pct": 34.2,
+    "ctx": {
+     "this_ret": 34.2,
+     "this_rank": 6,
+     "leaders": [
+      "Comm 79.3%",
+      "Financials 68.8%",
+      "Tech 65.1%"
+     ],
+     "laggards": [
+      "Utilities 28.6%",
+      "Staples 18.9%",
+      "Health 17.8%"
+     ],
+     "defensives_avg": 21.7,
+     "cyclicals_avg": 50.9,
+     "spy": 55.9,
+     "semis_smh": 96.6,
+     "highbeta_minus_lowvol": 14.4,
+     "growth_minus_value": 30.3,
+     "breadth_rsp_minus_spy": -17.4,
+     "credit_hyg_minus_lqd": 11.8,
+     "vix": [
+      26,
+      15
+     ],
+     "tlt_ret": -10.0,
+     "dxy_ret": 3.6,
+     "oil_ret": 6.7,
+     "copper_gold": -33.5,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +96.6%, growth>value (30.3), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RATE-REGIME MOVE: yields SURGED (TLT -10.0%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.6% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -17.4% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 50.9% vs defensives 21.7%; oil 6.7%, copper-gold -33.5)"
+     ]
+    }
+   },
+   "2024-11-22": {
+    "end": "2024-12-19",
+    "dir": "selloff",
+    "mag_pct": 14.3,
+    "ctx": {
+     "this_ret": -14.3,
+     "this_rank": 11,
+     "leaders": [
+      "Discretionary 4.7%",
+      "Comm 0.6%",
+      "Tech -0.5%"
+     ],
+     "laggards": [
+      "Real Estate -9.1%",
+      "Materials -10.2%",
+      "Energy -14.3%"
+     ],
+     "defensives_avg": -5.3,
+     "cyclicals_avg": -5.6,
+     "spy": -1.6,
+     "semis_smh": -2.4,
+     "highbeta_minus_lowvol": 1.2,
+     "growth_minus_value": 9.2,
+     "breadth_rsp_minus_spy": -4.5,
+     "credit_hyg_minus_lqd": 0.2,
+     "vix": [
+      15,
+      24
+     ],
+     "tlt_ret": -2.1,
+     "dxy_ret": 0.9,
+     "oil_ret": -1.9,
+     "copper_gold": 3.0,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "NARROW BREADTH: equal-weight lagged cap-weight by -4.5% — a mega-cap-led tape",
+      "QUAD read: slowdown/deflation-scare (cyclicals -5.6% vs defensives -5.3%; oil -1.9%, copper-gold 3.0)"
+     ]
+    }
+   },
+   "2024-12-19": {
+    "end": "2025-04-02",
+    "dir": "rally",
+    "mag_pct": 14.8,
+    "ctx": {
+     "this_ret": 14.8,
+     "this_rank": 1,
+     "leaders": [
+      "Energy 14.8%",
+      "Utilities 7.2%",
+      "Real Estate 6.9%"
+     ],
+     "laggards": [
+      "Comm -0.0%",
+      "Tech -9.6%",
+      "Discretionary -10.5%"
+     ],
+     "defensives_avg": 5.9,
+     "cyclicals_avg": 1.0,
+     "spy": -3.1,
+     "semis_smh": -10.0,
+     "highbeta_minus_lowvol": -17.1,
+     "growth_minus_value": -12.5,
+     "breadth_rsp_minus_spy": 4.3,
+     "credit_hyg_minus_lqd": -1.0,
+     "vix": [
+      24,
+      22
+     ],
+     "tlt_ret": 5.2,
+     "dxy_ret": -4.2,
+     "oil_ret": 2.6,
+     "copper_gold": 3.8,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "DOLLAR WEAKER (-4.2% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +4.3% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals 1.0% vs defensives 5.9%; oil 2.6%, copper-gold 3.8)"
+     ]
+    }
+   },
+   "2025-04-02": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 18.8,
+    "ctx": {
+     "this_ret": -18.8,
+     "this_rank": 11,
+     "leaders": [
+      "Staples -6.4%",
+      "Health -7.8%",
+      "Utilities -8.0%"
+     ],
+     "laggards": [
+      "Tech -14.2%",
+      "Materials -14.6%",
+      "Energy -18.8%"
+     ],
+     "defensives_avg": -7.4,
+     "cyclicals_avg": -14.3,
+     "spy": -12.1,
+     "semis_smh": -15.9,
+     "highbeta_minus_lowvol": -7.2,
+     "growth_minus_value": -0.9,
+     "breadth_rsp_minus_spy": -0.5,
+     "credit_hyg_minus_lqd": -0.6,
+     "vix": [
+      22,
+      52
+     ],
+     "tlt_ret": -3.4,
+     "dxy_ret": -0.8,
+     "oil_ret": -16.9,
+     "copper_gold": -12.4,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-7.4% vs cyclicals -14.3%) with VIX 22->52 — risk-off rotation into safety, not sector strength",
+      "QUAD read: slowdown/deflation-scare (cyclicals -14.3% vs defensives -7.4%; oil -16.9%, copper-gold -12.4)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-03-27",
+    "dir": "rally",
+    "mag_pct": 68.9,
+    "ctx": {
+     "this_ret": 68.9,
+     "this_rank": 1,
+     "leaders": [
+      "Energy 68.9%",
+      "Tech 45.4%",
+      "Industrials 38.6%"
+     ],
+     "laggards": [
+      "Financials 10.5%",
+      "Staples 10.1%",
+      "Health 9.7%"
+     ],
+     "defensives_avg": 16.0,
+     "cyclicals_avg": 36.4,
+     "spy": 29.2,
+     "semis_smh": 108.6,
+     "highbeta_minus_lowvol": 61.7,
+     "growth_minus_value": 1.2,
+     "breadth_rsp_minus_spy": -3.9,
+     "credit_hyg_minus_lqd": 3.1,
+     "vix": [
+      52,
+      31
+     ],
+     "tlt_ret": 0.9,
+     "dxy_ret": -2.7,
+     "oil_ret": 67.2,
+     "copper_gold": -18.9,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RISK-ON LEADERSHIP: Energy ranked #1/11 in a risk-on tape",
+      "DOLLAR WEAKER (-2.7% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -3.9% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 36.4% vs defensives 16.0%; oil 67.2%, copper-gold -18.9)"
+     ]
+    }
+   },
+   "2026-03-27": {
+    "end": "2026-06-18",
+    "dir": "selloff",
+    "mag_pct": 14.7,
+    "ctx": {
+     "this_ret": -14.7,
+     "this_rank": 11,
+     "leaders": [
+      "Tech 47.2%",
+      "Industrials 13.4%",
+      "Financials 11.7%"
+     ],
+     "laggards": [
+      "Staples 1.2%",
+      "Utilities -2.4%",
+      "Energy -14.7%"
+     ],
+     "defensives_avg": 0.8,
+     "cyclicals_avg": 12.3,
+     "spy": 17.8,
+     "semis_smh": 76.3,
+     "highbeta_minus_lowvol": 35.0,
+     "growth_minus_value": 4.1,
+     "breadth_rsp_minus_spy": -6.8,
+     "credit_hyg_minus_lqd": 0.6,
+     "vix": [
+      31,
+      16
+     ],
+     "tlt_ret": 2.5,
+     "dxy_ret": 0.7,
+     "oil_ret": -23.1,
+     "copper_gold": 22.6,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +76.3%, growth>value (4.1), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -6.8% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 12.3% vs defensives 0.8%; oil -23.1%, copper-gold 22.6)"
+     ]
+    }
+   }
+  }
+ },
+ "xlv": {
+  "ticker": "XLV",
+  "name": "Health Care",
+  "phase": "Trending",
+  "pos": 54.5,
+  "rs_rank": 4,
+  "now_ctx": {
+   "this_ret": 3.3,
+   "this_rank": 8,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2022-04-08": {
+    "end": "2022-06-17",
+    "dir": "selloff",
+    "mag_pct": 16.1,
+    "ctx": {
+     "this_ret": -16.1,
+     "this_rank": 6,
+     "leaders": [
+      "Energy -7.6%",
+      "Staples -12.6%",
+      "Industrials -14.1%"
+     ],
+     "laggards": [
+      "Comm -20.9%",
+      "Real Estate -21.3%",
+      "Discretionary -24.2%"
+     ],
+     "defensives_avg": -14.8,
+     "cyclicals_avg": -16.3,
+     "spy": -17.9,
+     "semis_smh": -16.7,
+     "highbeta_minus_lowvol": -5.3,
+     "growth_minus_value": -6.1,
+     "breadth_rsp_minus_spy": 1.5,
+     "credit_hyg_minus_lqd": -0.8,
+     "vix": [
+      21,
+      31
+     ],
+     "tlt_ret": -10.1,
+     "dxy_ret": 4.9,
+     "oil_ret": 11.5,
+     "copper_gold": -9.4,
+     "quad": "stagflation-ish",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -10.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (4.9% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: stagflation-ish (cyclicals -16.3% vs defensives -14.8%; oil 11.5%, copper-gold -9.4)"
+     ]
+    }
+   },
+   "2022-06-17": {
+    "end": "2024-09-16",
+    "dir": "rally",
+    "mag_pct": 36.0,
+    "ctx": {
+     "this_ret": 36.0,
+     "this_rank": 6,
+     "leaders": [
+      "Tech 79.8%",
+      "Comm 66.6%",
+      "Industrials 59.3%"
+     ],
+     "laggards": [
+      "Staples 30.3%",
+      "Energy 28.2%",
+      "Real Estate 25.8%"
+     ],
+     "defensives_avg": 32.5,
+     "cyclicals_avg": 49.1,
+     "spy": 58.5,
+     "semis_smh": 131.3,
+     "highbeta_minus_lowvol": 20.7,
+     "growth_minus_value": 36.3,
+     "breadth_rsp_minus_spy": -18.7,
+     "credit_hyg_minus_lqd": 9.1,
+     "vix": [
+      31,
+      17
+     ],
+     "tlt_ret": -2.5,
+     "dxy_ret": -3.8,
+     "oil_ret": -36.0,
+     "copper_gold": -35.7,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "DEFENSIVES STARVED: Health lagged while risk-on led (SMH 131.3%, high-beta-low-vol 20.7, VIX 31->17) — nothing wrong with the defensive, money simply rotated to tech/cyclicals",
+      "TECH/SEMIS-LED RISK-ON: semis +131.3%, growth>value (36.3), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-3.8% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -18.7% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 49.1% vs defensives 32.5%; oil -36.0%, copper-gold -35.7)"
+     ]
+    }
+   },
+   "2024-09-16": {
+    "end": "2025-05-14",
+    "dir": "selloff",
+    "mag_pct": 17.1,
+    "ctx": {
+     "this_ret": -17.1,
+     "this_rank": 11,
+     "leaders": [
+      "Comm 15.7%",
+      "Financials 14.3%",
+      "Discretionary 13.2%"
+     ],
+     "laggards": [
+      "Materials -7.5%",
+      "Real Estate -8.0%",
+      "Health -17.1%"
+     ],
+     "defensives_avg": -6.2,
+     "cyclicals_avg": 6.1,
+     "spy": 5.4,
+     "semis_smh": 6.5,
+     "highbeta_minus_lowvol": 4.8,
+     "growth_minus_value": 8.3,
+     "breadth_rsp_minus_spy": -4.0,
+     "credit_hyg_minus_lqd": 7.0,
+     "vix": [
+      17,
+      19
+     ],
+     "tlt_ret": -13.4,
+     "dxy_ret": 0.3,
+     "oil_ret": -9.9,
+     "copper_gold": -13.8,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -13.4%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -4.0% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 6.1% vs defensives -6.2%; oil -9.9%, copper-gold -13.8)"
+     ]
+    }
+   },
+   "2025-05-14": {
+    "end": "2026-06-26",
+    "dir": "rally",
+    "mag_pct": 26.7,
+    "ctx": {
+     "this_ret": 26.7,
+     "this_rank": 4,
+     "leaders": [
+      "Tech 55.6%",
+      "Industrials 30.6%",
+      "Energy 30.4%"
+     ],
+     "laggards": [
+      "Financials 6.8%",
+      "Comm 6.8%",
+      "Discretionary 6.7%"
+     ],
+     "defensives_avg": 18.7,
+     "cyclicals_avg": 25.6,
+     "spy": 25.5,
+     "semis_smh": 147.4,
+     "highbeta_minus_lowvol": 60.0,
+     "growth_minus_value": -12.2,
+     "breadth_rsp_minus_spy": -4.4,
+     "credit_hyg_minus_lqd": -0.9,
+     "vix": [
+      19,
+      18
+     ],
+     "tlt_ret": 7.5,
+     "dxy_ret": 0.3,
+     "oil_ret": 11.2,
+     "copper_gold": 5.4,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RATE-REGIME MOVE: yields FELL (TLT +7.5%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -4.4% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 25.6% vs defensives 18.7%; oil 11.2%, copper-gold 5.4)"
+     ]
+    }
+   }
+  }
+ },
+ "xlp": {
+  "ticker": "XLP",
+  "name": "Consumer Staples",
+  "phase": "Rolling over",
+  "pos": 40.9,
+  "rs_rank": 8,
+  "now_ctx": {
+   "this_ret": 8.8,
+   "this_rank": 6,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2022-04-20": {
+    "end": "2022-10-07",
+    "dir": "selloff",
+    "mag_pct": 16.3,
+    "ctx": {
+     "this_ret": -16.3,
+     "this_rank": 5,
+     "leaders": [
+      "Energy 3.7%",
+      "Health -11.9%",
+      "Industrials -15.7%"
+     ],
+     "laggards": [
+      "Materials -22.3%",
+      "Comm -24.3%",
+      "Real Estate -30.6%"
+     ],
+     "defensives_avg": -14.6,
+     "cyclicals_avg": -15.5,
+     "spy": -17.7,
+     "semis_smh": -23.6,
+     "highbeta_minus_lowvol": -1.6,
+     "growth_minus_value": -2.6,
+     "breadth_rsp_minus_spy": 0.4,
+     "credit_hyg_minus_lqd": 1.5,
+     "vix": [
+      20,
+      31
+     ],
+     "tlt_ret": -16.0,
+     "dxy_ret": 12.4,
+     "oil_ret": -9.8,
+     "copper_gold": -13.7,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -16.0%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (12.4% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -15.5% vs defensives -14.6%; oil -9.8%, copper-gold -13.7)"
+     ]
+    }
+   },
+   "2022-10-07": {
+    "end": "2026-02-27",
+    "dir": "rally",
+    "mag_pct": 47.8,
+    "ctx": {
+     "this_ret": 47.8,
+     "this_rank": 9,
+     "leaders": [
+      "Comm 150.8%",
+      "Tech 135.5%",
+      "Industrials 118.8%"
+     ],
+     "laggards": [
+      "Staples 47.8%",
+      "Real Estate 42.4%",
+      "Health 37.9%"
+     ],
+     "defensives_avg": 50.4,
+     "cyclicals_avg": 86.4,
+     "spy": 97.6,
+     "semis_smh": 341.8,
+     "highbeta_minus_lowvol": 66.4,
+     "growth_minus_value": 42.4,
+     "breadth_rsp_minus_spy": -31.3,
+     "credit_hyg_minus_lqd": 10.3,
+     "vix": [
+      31,
+      20
+     ],
+     "tlt_ret": 2.3,
+     "dxy_ret": -13.5,
+     "oil_ret": -27.7,
+     "copper_gold": -131.6,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "DEFENSIVES STARVED: Staples lagged while risk-on led (SMH 341.8%, high-beta-low-vol 66.4, VIX 31->20) — nothing wrong with the defensive, money simply rotated to tech/cyclicals",
+      "TECH/SEMIS-LED RISK-ON: semis +341.8%, growth>value (42.4), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR WEAKER (-13.5% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -31.3% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 86.4% vs defensives 50.4%; oil -27.7%, copper-gold -131.6)"
+     ]
+    }
+   }
+  }
+ },
+ "xlu": {
+  "ticker": "XLU",
+  "name": "Utilities",
+  "phase": "Bottoming",
+  "pos": 11.2,
+  "rs_rank": 9,
+  "now_ctx": {
+   "this_ret": 8.5,
+   "this_rank": 7,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2022-04-08": {
+    "end": "2022-06-17",
+    "dir": "selloff",
+    "mag_pct": 15.7,
+    "ctx": {
+     "this_ret": -15.7,
+     "this_rank": 5,
+     "leaders": [
+      "Energy -7.6%",
+      "Staples -12.6%",
+      "Industrials -14.1%"
+     ],
+     "laggards": [
+      "Comm -20.9%",
+      "Real Estate -21.3%",
+      "Discretionary -24.2%"
+     ],
+     "defensives_avg": -14.8,
+     "cyclicals_avg": -16.3,
+     "spy": -17.9,
+     "semis_smh": -16.7,
+     "highbeta_minus_lowvol": -5.3,
+     "growth_minus_value": -6.1,
+     "breadth_rsp_minus_spy": 1.5,
+     "credit_hyg_minus_lqd": -0.8,
+     "vix": [
+      21,
+      31
+     ],
+     "tlt_ret": -10.1,
+     "dxy_ret": 4.9,
+     "oil_ret": 11.5,
+     "copper_gold": -9.4,
+     "quad": "stagflation-ish",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -10.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (4.9% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: stagflation-ish (cyclicals -16.3% vs defensives -14.8%; oil 11.5%, copper-gold -9.4)"
+     ]
+    }
+   },
+   "2022-06-17": {
+    "end": "2022-09-12",
+    "dir": "rally",
+    "mag_pct": 21.4,
+    "ctx": {
+     "this_ret": 21.4,
+     "this_rank": 2,
+     "leaders": [
+      "Discretionary 22.7%",
+      "Utilities 21.4%",
+      "Energy 12.9%"
+     ],
+     "laggards": [
+      "Staples 8.7%",
+      "Materials 5.9%",
+      "Comm 4.1%"
+     ],
+     "defensives_avg": 13.4,
+     "cyclicals_avg": 13.1,
+     "spy": 12.3,
+     "semis_smh": 5.7,
+     "highbeta_minus_lowvol": 5.8,
+     "growth_minus_value": 4.2,
+     "breadth_rsp_minus_spy": 0.4,
+     "credit_hyg_minus_lqd": 4.5,
+     "vix": [
+      31,
+      24
+     ],
+     "tlt_ret": -3.6,
+     "dxy_ret": 3.5,
+     "oil_ret": -19.9,
+     "copper_gold": -3.9,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "DOLLAR STRONGER (3.5% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals 13.1% vs defensives 13.4%; oil -19.9%, copper-gold -3.9)"
+     ]
+    }
+   },
+   "2022-09-12": {
+    "end": "2022-10-12",
+    "dir": "selloff",
+    "mag_pct": 20.7,
+    "ctx": {
+     "this_ret": -20.7,
+     "this_rank": 10,
+     "leaders": [
+      "Energy -1.3%",
+      "Health -6.8%",
+      "Staples -8.3%"
+     ],
+     "laggards": [
+      "Discretionary -16.4%",
+      "Utilities -20.7%",
+      "Real Estate -20.9%"
+     ],
+     "defensives_avg": -12.0,
+     "cyclicals_avg": -11.6,
+     "spy": -12.9,
+     "semis_smh": -19.3,
+     "highbeta_minus_lowvol": -3.9,
+     "growth_minus_value": -2.4,
+     "breadth_rsp_minus_spy": 0.3,
+     "credit_hyg_minus_lqd": 0.7,
+     "vix": [
+      24,
+      34
+     ],
+     "tlt_ret": -6.4,
+     "dxy_ret": 4.6,
+     "oil_ret": -0.6,
+     "copper_gold": -1.6,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -6.4%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (4.6% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals -11.6% vs defensives -12.0%; oil -0.6%, copper-gold -1.6)"
+     ]
+    }
+   },
+   "2022-10-12": {
+    "end": "2022-12-13",
+    "dir": "rally",
+    "mag_pct": 18.1,
+    "ctx": {
+     "this_ret": 18.1,
+     "this_rank": 3,
+     "leaders": [
+      "Materials 20.8%",
+      "Industrials 19.3%",
+      "Utilities 18.1%"
+     ],
+     "laggards": [
+      "Energy 7.9%",
+      "Comm 6.4%",
+      "Discretionary 0.6%"
+     ],
+     "defensives_avg": 15.4,
+     "cyclicals_avg": 13.4,
+     "spy": 12.7,
+     "semis_smh": 29.7,
+     "highbeta_minus_lowvol": 2.6,
+     "growth_minus_value": -4.4,
+     "breadth_rsp_minus_spy": 2.2,
+     "credit_hyg_minus_lqd": -1.9,
+     "vix": [
+      34,
+      23
+     ],
+     "tlt_ret": 7.8,
+     "dxy_ret": -8.2,
+     "oil_ret": -13.6,
+     "copper_gold": 2.9,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields FELL (TLT +7.8%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR WEAKER (-8.2% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +2.2% — broad participation",
+      "QUAD read: slowdown/deflation-scare (cyclicals 13.4% vs defensives 15.4%; oil -13.6%, copper-gold 2.9)"
+     ]
+    }
+   },
+   "2022-12-13": {
+    "end": "2023-10-02",
+    "dir": "selloff",
+    "mag_pct": 20.2,
+    "ctx": {
+     "this_ret": -20.2,
+     "this_rank": 11,
+     "leaders": [
+      "Comm 31.6%",
+      "Tech 23.6%",
+      "Discretionary 16.4%"
+     ],
+     "laggards": [
+      "Staples -8.4%",
+      "Real Estate -12.2%",
+      "Utilities -20.2%"
+     ],
+     "defensives_avg": -11.7,
+     "cyclicals_avg": 6.4,
+     "spy": 8.0,
+     "semis_smh": 29.9,
+     "highbeta_minus_lowvol": 13.7,
+     "growth_minus_value": 19.9,
+     "breadth_rsp_minus_spy": -11.1,
+     "credit_hyg_minus_lqd": 5.7,
+     "vix": [
+      23,
+      18
+     ],
+     "tlt_ret": -17.1,
+     "dxy_ret": 2.8,
+     "oil_ret": 17.8,
+     "copper_gold": -6.3,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "DEFENSIVES STARVED: Utilities lagged while risk-on led (SMH 29.9%, high-beta-low-vol 13.7, VIX 23->18) — nothing wrong with the defensive, money simply rotated to tech/cyclicals",
+      "TECH/SEMIS-LED RISK-ON: semis +29.9%, growth>value (19.9), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RATE-REGIME MOVE: yields SURGED (TLT -17.1%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (2.8% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -11.1% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 6.4% vs defensives -11.7%; oil 17.8%, copper-gold -6.3)"
+     ]
+    }
+   },
+   "2023-10-02": {
+    "end": "2026-02-27",
+    "dir": "rally",
+    "mag_pct": 82.0,
+    "ctx": {
+     "this_ret": 82.0,
+     "this_rank": 3,
+     "leaders": [
+      "Comm 83.3%",
+      "Industrials 82.5%",
+      "Utilities 82.0%"
+     ],
+     "laggards": [
+      "Staples 40.2%",
+      "Energy 36.1%",
+      "Health 29.4%"
+     ],
+     "defensives_avg": 50.5,
+     "cyclicals_avg": 57.1,
+     "spy": 65.2,
+     "semis_smh": 181.7,
+     "highbeta_minus_lowvol": 39.7,
+     "growth_minus_value": 12.9,
+     "breadth_rsp_minus_spy": -13.4,
+     "credit_hyg_minus_lqd": 4.1,
+     "vix": [
+      18,
+      20
+     ],
+     "tlt_ret": 15.2,
+     "dxy_ret": -8.7,
+     "oil_ret": -24.5,
+     "copper_gold": -120.5,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +181.7%, growth>value (12.9), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RATE-REGIME MOVE: yields FELL (TLT +15.2%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR WEAKER (-8.7% DXY) — tailwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -13.4% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 57.1% vs defensives 50.5%; oil -24.5%, copper-gold -120.5)"
+     ]
+    }
+   }
+  }
+ },
+ "xlre": {
+  "ticker": "XLRE",
+  "name": "Real Estate",
+  "phase": "Topping",
+  "pos": 80.6,
+  "rs_rank": 3,
+  "now_ctx": {
+   "this_ret": 12.1,
+   "this_rank": 5,
+   "leaders": [
+    "Tech 24.3%",
+    "Energy 21.5%",
+    "Industrials 15.8%"
+   ],
+   "laggards": [
+    "Financials -2.7%",
+    "Discretionary -5.2%",
+    "Comm -9.6%"
+   ],
+   "defensives_avg": 6.9,
+   "cyclicals_avg": 11.2,
+   "spy": 6.3,
+   "semis_smh": 67.9,
+   "highbeta_minus_lowvol": 20.7,
+   "growth_minus_value": -15.2,
+   "breadth_rsp_minus_spy": 2.9,
+   "credit_hyg_minus_lqd": 0.8,
+   "vix": [
+    14,
+    18
+   ],
+   "tlt_ret": 1.1,
+   "dxy_ret": 3.4,
+   "oil_ret": 20.9,
+   "copper_gold": 18.0,
+   "quad": "reflation/growth-up",
+   "signals": [
+    "DOLLAR STRONGER (3.4% DXY) — headwind for Materials/Energy/multinationals",
+    "BROADENING: equal-weight beat cap-weight by +2.9% — broad participation",
+    "QUAD read: reflation/growth-up (cyclicals 11.2% vs defensives 6.9%; oil 20.9%, copper-gold 18.0)"
+   ]
+  },
+  "legs": {
+   "2021-12-31": {
+    "end": "2022-02-23",
+    "dir": "selloff",
+    "mag_pct": 15.1,
+    "ctx": {
+     "this_ret": -15.1,
+     "this_rank": 8,
+     "leaders": [
+      "Energy 21.9%",
+      "Financials -1.8%",
+      "Staples -3.0%"
+     ],
+     "laggards": [
+      "Tech -15.3%",
+      "Comm -15.6%",
+      "Discretionary -17.4%"
+     ],
+     "defensives_avg": -7.4,
+     "cyclicals_avg": -5.4,
+     "spy": -11.2,
+     "semis_smh": -16.5,
+     "highbeta_minus_lowvol": -0.8,
+     "growth_minus_value": -11.0,
+     "breadth_rsp_minus_spy": 3.1,
+     "credit_hyg_minus_lqd": 2.7,
+     "vix": [
+      17,
+      31
+     ],
+     "tlt_ret": -7.6,
+     "dxy_ret": 0.5,
+     "oil_ret": 22.5,
+     "copper_gold": -3.9,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -7.6%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "BROADENING: equal-weight beat cap-weight by +3.1% — broad participation",
+      "QUAD read: reflation/growth-up (cyclicals -5.4% vs defensives -7.4%; oil 22.5%, copper-gold -3.9)"
+     ]
+    }
+   },
+   "2022-02-23": {
+    "end": "2022-04-20",
+    "dir": "rally",
+    "mag_pct": 15.7,
+    "ctx": {
+     "this_ret": 15.7,
+     "this_rank": 3,
+     "leaders": [
+      "Energy 20.4%",
+      "Utilities 18.9%",
+      "Real Estate 15.7%"
+     ],
+     "laggards": [
+      "Tech 1.9%",
+      "Financials -0.8%",
+      "Comm -1.2%"
+     ],
+     "defensives_avg": 12.7,
+     "cyclicals_avg": 7.9,
+     "spy": 5.7,
+     "semis_smh": -4.2,
+     "highbeta_minus_lowvol": -8.9,
+     "growth_minus_value": -2.7,
+     "breadth_rsp_minus_spy": 0.9,
+     "credit_hyg_minus_lqd": 3.9,
+     "vix": [
+      31,
+      20
+     ],
+     "tlt_ret": -10.7,
+     "dxy_ret": 4.4,
+     "oil_ret": 11.6,
+     "copper_gold": 1.5,
+     "quad": "stagflation-ish",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -10.7%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (4.4% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: stagflation-ish (cyclicals 7.9% vs defensives 12.7%; oil 11.6%, copper-gold 1.5)"
+     ]
+    }
+   },
+   "2022-04-20": {
+    "end": "2022-06-16",
+    "dir": "selloff",
+    "mag_pct": 23.2,
+    "ctx": {
+     "this_ret": -23.2,
+     "this_rank": 10,
+     "leaders": [
+      "Energy -3.6%",
+      "Staples -14.3%",
+      "Health -14.5%"
+     ],
+     "laggards": [
+      "Financials -18.6%",
+      "Real Estate -23.2%",
+      "Discretionary -25.9%"
+     ],
+     "defensives_avg": -14.5,
+     "cyclicals_avg": -16.4,
+     "spy": -17.6,
+     "semis_smh": -17.4,
+     "highbeta_minus_lowvol": -6.6,
+     "growth_minus_value": -4.9,
+     "breadth_rsp_minus_spy": -0.1,
+     "credit_hyg_minus_lqd": -2.9,
+     "vix": [
+      20,
+      33
+     ],
+     "tlt_ret": -7.8,
+     "dxy_ret": 3.2,
+     "oil_ret": 14.4,
+     "copper_gold": -6.1,
+     "quad": "stagflation-ish",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -7.8%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (3.2% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: stagflation-ish (cyclicals -16.4% vs defensives -14.5%; oil 14.4%, copper-gold -6.1)"
+     ]
+    }
+   },
+   "2022-06-16": {
+    "end": "2022-08-15",
+    "dir": "rally",
+    "mag_pct": 18.7,
+    "ctx": {
+     "this_ret": 18.7,
+     "this_rank": 4,
+     "leaders": [
+      "Discretionary 27.4%",
+      "Tech 23.0%",
+      "Utilities 19.1%"
+     ],
+     "laggards": [
+      "Staples 11.2%",
+      "Materials 8.8%",
+      "Energy 0.1%"
+     ],
+     "defensives_avg": 14.2,
+     "cyclicals_avg": 15.4,
+     "spy": 17.5,
+     "semis_smh": 20.8,
+     "highbeta_minus_lowvol": 12.5,
+     "growth_minus_value": 9.2,
+     "breadth_rsp_minus_spy": -0.7,
+     "credit_hyg_minus_lqd": 2.6,
+     "vix": [
+      33,
+      20
+     ],
+     "tlt_ret": 3.7,
+     "dxy_ret": 2.8,
+     "oil_ret": -24.0,
+     "copper_gold": -8.3,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +20.8%, growth>value (9.2), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "DOLLAR STRONGER (2.8% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 15.4% vs defensives 14.2%; oil -24.0%, copper-gold -8.3)"
+     ]
+    }
+   },
+   "2022-08-15": {
+    "end": "2022-10-14",
+    "dir": "selloff",
+    "mag_pct": 25.5,
+    "ctx": {
+     "this_ret": -25.5,
+     "this_rank": 11,
+     "leaders": [
+      "Energy 5.5%",
+      "Health -7.4%",
+      "Staples -10.9%"
+     ],
+     "laggards": [
+      "Discretionary -20.8%",
+      "Tech -22.7%",
+      "Real Estate -25.5%"
+     ],
+     "defensives_avg": -12.5,
+     "cyclicals_avg": -13.4,
+     "spy": -16.3,
+     "semis_smh": -29.8,
+     "highbeta_minus_lowvol": -8.4,
+     "growth_minus_value": -5.9,
+     "breadth_rsp_minus_spy": 1.0,
+     "credit_hyg_minus_lqd": 3.2,
+     "vix": [
+      20,
+      32
+     ],
+     "tlt_ret": -14.2,
+     "dxy_ret": 6.3,
+     "oil_ret": -4.3,
+     "copper_gold": 2.9,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -14.2%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (6.3% DXY) — headwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -13.4% vs defensives -12.5%; oil -4.3%, copper-gold 2.9)"
+     ]
+    }
+   },
+   "2022-10-14": {
+    "end": "2023-02-02",
+    "dir": "rally",
+    "mag_pct": 25.3,
+    "ctx": {
+     "this_ret": 25.3,
+     "this_rank": 2,
+     "leaders": [
+      "Materials 25.4%",
+      "Real Estate 25.3%",
+      "Comm 24.1%"
+     ],
+     "laggards": [
+      "Staples 9.9%",
+      "Energy 8.4%",
+      "Health 7.9%"
+     ],
+     "defensives_avg": 10.1,
+     "cyclicals_avg": 19.0,
+     "spy": 17.1,
+     "semis_smh": 48.1,
+     "highbeta_minus_lowvol": 25.1,
+     "growth_minus_value": -0.7,
+     "breadth_rsp_minus_spy": 4.3,
+     "credit_hyg_minus_lqd": -2.8,
+     "vix": [
+      32,
+      19
+     ],
+     "tlt_ret": 11.0,
+     "dxy_ret": -10.2,
+     "oil_ret": -11.4,
+     "copper_gold": 1.9,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "RATE-REGIME MOVE: yields FELL (TLT +11.0%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR WEAKER (-10.2% DXY) — tailwind for Materials/Energy/multinationals",
+      "BROADENING: equal-weight beat cap-weight by +4.3% — broad participation",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 19.0% vs defensives 10.1%; oil -11.4%, copper-gold 1.9)"
+     ]
+    }
+   },
+   "2023-02-02": {
+    "end": "2023-10-25",
+    "dir": "selloff",
+    "mag_pct": 21.1,
+    "ctx": {
+     "this_ret": -21.1,
+     "this_rank": 11,
+     "leaders": [
+      "Tech 15.0%",
+      "Comm 9.7%",
+      "Energy 4.2%"
+     ],
+     "laggards": [
+      "Financials -11.2%",
+      "Utilities -12.4%",
+      "Real Estate -21.1%"
+     ],
+     "defensives_avg": -7.4,
+     "cyclicals_avg": -1.8,
+     "spy": 1.3,
+     "semis_smh": 9.4,
+     "highbeta_minus_lowvol": -9.2,
+     "growth_minus_value": 17.2,
+     "breadth_rsp_minus_spy": -12.7,
+     "credit_hyg_minus_lqd": 6.2,
+     "vix": [
+      19,
+      20
+     ],
+     "tlt_ret": -21.3,
+     "dxy_ret": 4.7,
+     "oil_ret": 12.5,
+     "copper_gold": -16.3,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "RATE-REGIME MOVE: yields SURGED (TLT -21.3%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "DOLLAR STRONGER (4.7% DXY) — headwind for Materials/Energy/multinationals",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -12.7% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals -1.8% vs defensives -7.4%; oil 12.5%, copper-gold -16.3)"
+     ]
+    }
+   },
+   "2023-10-25": {
+    "end": "2024-11-27",
+    "dir": "rally",
+    "mag_pct": 45.4,
+    "ctx": {
+     "this_ret": 45.4,
+     "this_rank": 5,
+     "leaders": [
+      "Financials 62.3%",
+      "Comm 52.8%",
+      "Industrials 48.8%"
+     ],
+     "laggards": [
+      "Staples 25.3%",
+      "Health 18.0%",
+      "Energy 12.6%"
+     ],
+     "defensives_avg": 29.2,
+     "cyclicals_avg": 40.5,
+     "spy": 45.4,
+     "semis_smh": 72.8,
+     "highbeta_minus_lowvol": 14.4,
+     "growth_minus_value": 12.4,
+     "breadth_rsp_minus_spy": -5.1,
+     "credit_hyg_minus_lqd": 1.9,
+     "vix": [
+      20,
+      14
+     ],
+     "tlt_ret": 16.3,
+     "dxy_ret": -0.4,
+     "oil_ret": -19.5,
+     "copper_gold": -19.2,
+     "quad": "goldilocks/growth-up-disinflation",
+     "signals": [
+      "TECH/SEMIS-LED RISK-ON: semis +72.8%, growth>value (12.4), calm VIX — a melt-up that pulls flows OUT of defensives",
+      "RATE-REGIME MOVE: yields FELL (TLT +16.3%); rate-sensitive XLU/XLRE/REITs move inversely to yields",
+      "NARROW BREADTH: equal-weight lagged cap-weight by -5.1% — a mega-cap-led tape",
+      "QUAD read: goldilocks/growth-up-disinflation (cyclicals 40.5% vs defensives 29.2%; oil -19.5%, copper-gold -19.2)"
+     ]
+    }
+   },
+   "2024-11-27": {
+    "end": "2025-04-08",
+    "dir": "selloff",
+    "mag_pct": 16.6,
+    "ctx": {
+     "this_ret": -16.6,
+     "this_rank": 6,
+     "leaders": [
+      "Staples -6.6%",
+      "Health -8.7%",
+      "Utilities -10.5%"
+     ],
+     "laggards": [
+      "Discretionary -19.5%",
+      "Materials -20.5%",
+      "Tech -22.1%"
+     ],
+     "defensives_avg": -8.6,
+     "cyclicals_avg": -18.7,
+     "spy": -16.6,
+     "semis_smh": -24.1,
+     "highbeta_minus_lowvol": -18.8,
+     "growth_minus_value": -3.3,
+     "breadth_rsp_minus_spy": -1.0,
+     "credit_hyg_minus_lqd": -0.5,
+     "vix": [
+      14,
+      52
+     ],
+     "tlt_ret": -3.3,
+     "dxy_ret": -2.9,
+     "oil_ret": -13.3,
+     "copper_gold": -11.0,
+     "quad": "slowdown/deflation-scare",
+     "signals": [
+      "FLIGHT-TO-SAFETY: defensives led (+-8.6% vs cyclicals -18.7%) with VIX 14->52 — risk-off rotation into safety, not sector strength",
+      "DOLLAR WEAKER (-2.9% DXY) — tailwind for Materials/Energy/multinationals",
+      "QUAD read: slowdown/deflation-scare (cyclicals -18.7% vs defensives -8.6%; oil -13.3%, copper-gold -11.0)"
+     ]
+    }
+   },
+   "2025-04-08": {
+    "end": "2026-06-26",
+    "dir": "rally",
+    "mag_pct": 26.2,
+    "ctx": {
+     "this_ret": 26.2,
+     "this_rank": 7,
+     "leaders": [
+      "Tech 102.7%",
+      "Industrials 57.7%",
+      "Energy 45.4%"
+     ],
+     "laggards": [
+      "Financials 23.9%",
+      "Health 22.7%",
+      "Staples 14.0%"
+     ],
+     "defensives_avg": 22.3,
+     "cyclicals_avg": 50.3,
+     "spy": 48.5,
+     "semis_smh": 240.9,
+     "highbeta_minus_lowvol": 111.3,
+     "growth_minus_value": 1.1,
+     "breadth_rsp_minus_spy": -8.7,
+     "credit_hyg_minus_lqd": 3.2,
+     "vix": [
+      52,
+      18
+     ],
+     "tlt_ret": 4.2,
+     "dxy_ret": -1.5,
+     "oil_ret": 17.9,
+     "copper_gold": 11.9,
+     "quad": "reflation/growth-up",
+     "signals": [
+      "NARROW BREADTH: equal-weight lagged cap-weight by -8.7% — a mega-cap-led tape",
+      "QUAD read: reflation/growth-up (cyclicals 50.3% vs defensives 22.3%; oil 17.9%, copper-gold 11.9)"
+     ]
+    }
+   }
+  }
+ }
+}

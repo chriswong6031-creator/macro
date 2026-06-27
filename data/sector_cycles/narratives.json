@@ -1,1574 +1,1656 @@
 {
- "version": "2026-06-27-zh+baskets",
+ "version": "2026-06-27-rotation",
  "note": "Researched 'what happened & why' narratives for each sector's auto-detected cycle legs, keyed by the START turn's date (the page also accepts a YYYY-MM key). `now` is the current focus-panel read. Web-researched 2026-06-27 via per-sector history agents against the real dated turns engine/sector_cycles surfaces; 2026 reads follow the site's house macro timeline (Iran/Hormuz oil shock -> mid-June ceasefire). Bilingual: each leg + now read carries a _zh (Simplified Chinese) translation.",
  "sectors": {
   "xlk": {
-   "now": "Technology sits late-cycle: RS rank #1 and cycle position ~84/100, riding above its 200-day on a powerful AI-capex melt-up, but the tape is now TOPPING with narrowing breadth as leadership concentrates in a handful of AI names. Broadcom's early-June refusal to raise its AI outlook triggered a $1T+ semis wipeout — the classic distribution signature of a maturing leg.",
+   "now": "Tech is the undisputed #1 sector (RS rank 1, +24.3% vs SPY +6.3%) and cycle position ~84/100. The tape is goldilocks/reflation risk-on, led by semis (SMH +67.9%) and high-beta (+20.7% vs low-vol), which kept defensives lagging (+6.9% vs cyclicals +11.2%) — but importantly this is NOT a narrow melt-up: equal-weight quietly beat cap-weight by +2.9%, so participation has broadened underneath the leaders. The leg is TOPPING: Broadcom's early-June refusal to raise its AI outlook triggered a $1T+ semis wipeout, the classic distribution signature of a maturing, mega-cap-led melt-up now broadening into late-cycle.",
    "legs": {
     "2021-12-27": {
      "title": "Rate-shock duration de-rating",
-     "body": "As the Fed pivoted hawkish into a 9% CPI print, the discount-rate spike crushed long-duration tech, where rich multiples hung on far-future earnings. Unprofitable growth and high-multiple software led the unwind, with the Russia-Ukraine invasion in February adding a risk-off bid.",
+     "body": "As the Fed pivoted hawkish into a 9% CPI print, a rate-regime selloff (TLT -11.3%, yields surging) crushed long-duration tech, where rich multiples hung on far-future earnings. XLK finished dead last (rank 10/11, -20.0%) as a strong dollar (+3.1% DXY) and the Russia-Ukraine invasion added a stagflationary risk-off bid; only Energy (+32.9%) escaped the duration unwind.",
      "drivers": [
-      "rate shock",
+      "rate regime",
       "duration de-rating",
-      "stretched valuations"
+      "stretched valuations",
+      "strong dollar"
      ],
-     "title_zh": "利率冲击下的久期估值重定价",
-     "body_zh": "随着美联储在9%的CPI数据下转向鹰派，贴现率飙升重创了长久期科技股，这些股票的高估值依赖于遥远的未来盈利。不盈利的成长股和高估值软件股领跌这轮去杠杆，2月的俄乌战争又增添了避险买盘。",
+     "title_zh": "利率冲击下的久期重定价",
+     "body_zh": "美联储在9%的CPI数据中转向鹰派，利率象限的抛售（TLT -11.3%、收益率飙升）重创长久期科技股——其高估值依赖于遥远的未来盈利。XLK垫底（排名10/11，-20.0%），强美元（+3.1% DXY）和俄乌战争叠加出滞胀式的避险买盘；只有能源（+32.9%）逃过了这场久期重定价。",
      "drivers_zh": [
-      "利率冲击",
-      "久期估值重定价",
-      "估值过高"
+      "利率象限",
+      "久期重定价",
+      "估值过高",
+      "强美元"
      ]
     },
     "2022-03-14": {
      "title": "Oversold relief bounce",
-     "body": "A sharp counter-trend rally as the market digested the first Fed hike and an oversold growth complex snapped back. Beaten-down megacaps and semis led a ~16% relief rip, but nothing in the inflation or rates picture had actually turned.",
+     "body": "A sharp tech/semis-led risk-on rip (SMH +18.8%, growth>value +8.7, VIX 32→19) as the market digested the first Fed hike and an oversold growth complex snapped back. Tech ranked #2/11 in a narrow, mega-cap-led tape (equal-weight lagged by -2.4%) — but nothing in the inflation or rates picture had actually turned.",
      "drivers": [
       "oversold bounce",
-      "first hike priced",
+      "tech-led risk-on",
+      "narrow breadth",
       "short cover"
      ],
-     "title_zh": "超卖反弹",
-     "body_zh": "市场消化首次加息后，超卖的成长股集群强劲反弹，形成一波急促的逆势上涨。被打压的大型科技股和半导体领涨约16%的反弹行情，但通胀和利率的实质格局并未真正扭转。",
+     "title_zh": "超卖后的反弹",
+     "body_zh": "一波由科技/半导体引领的风险偏好急涨（SMH +18.8%、成长跑赢价值 +8.7、VIX 32→19），市场消化了首次加息、超卖的成长板块强力反弹。在狭窄、大盘股主导的盘面中（等权落后 -2.4%）科技排名第2/11——但通胀和利率的格局实际上并未转向。",
      "drivers_zh": [
       "超卖反弹",
-      "首次加息已被定价",
+      "科技引领风险偏好",
+      "市场广度狭窄",
       "空头回补"
      ]
     },
     "2022-03-29": {
      "title": "Hiking-cycle bear leg",
-     "body": "The Fed accelerated to 50-75bp hikes and QT as inflation stayed near 9%, sending real yields and the dollar surging and re-crushing long-duration tech. Semiconductors broke down on demand fears and software multiples kept compressing into the June bear low.",
+     "body": "The Fed accelerated to 50-75bp hikes and QT as inflation stayed near 9%, a rate-regime move (TLT -14.1%, +5.3% DXY) that re-crushed long-duration tech to dead last (rank 9, -24.5%). This was a genuine flight-to-safety — defensives (-11.2%) far outperformed cyclicals (-18.2%) with VIX 19→33 — as semis broke down (SMH -28.1%) into the June bear low.",
      "drivers": [
       "aggressive hikes",
-      "real-yield surge",
-      "multiple compression"
+      "rate regime",
+      "flight-to-safety",
+      "strong dollar"
      ],
-     "title_zh": "加息周期熊市段",
-     "body_zh": "通胀维持在约9%，美联储加速至50-75个基点加息并推进缩表，推动实际收益率和美元飙升，再度重创长久期科技股。半导体因需求担忧而跌破支撑，软件股估值持续压缩，直至6月熊市低点。",
+     "title_zh": "加息周期的熊市腿",
+     "body_zh": "通胀维持在9%附近，美联储加速至50-75个基点加息并缩表，这一利率象限的move（TLT -14.1%、+5.3% DXY）将长久期科技股再度打到垫底（排名9，-24.5%）。这是真正的避险——防御板块（-11.2%）远超周期板块（-18.2%），VIX 19→33——半导体崩溃（SMH -28.1%），跌向6月熊市低点。",
      "drivers_zh": [
       "激进加息",
-      "实际收益率飙升",
-      "估值压缩"
+      "利率象限",
+      "避险",
+      "强美元"
      ]
     },
     "2022-06-16": {
      "title": "Peak-inflation hope rally",
-     "body": "Tech bounced ~23% on hopes that inflation had peaked and the Fed would soon pivot, with falling yields lifting the most rate-sensitive growth names. Mega-cap tech and semis led the summer squeeze before Powell's hawkish Jackson Hole killed it.",
+     "body": "Tech ripped ~23% on a tech/semis-led risk-on melt-up (SMH +20.8%, growth>value +9.2, VIX 33→20) as the market bet inflation had peaked and the Fed would soon pivot. Falling yields lifted rate-sensitive growth and money edged out of safety — Tech ranked #2/11 in a goldilocks tape — before Powell's hawkish Jackson Hole killed it.",
      "drivers": [
       "peak-inflation hope",
-      "yield pullback",
-      "pivot bet"
+      "tech-led risk-on",
+      "pivot bet",
+      "goldilocks quad"
      ],
-     "title_zh": "通胀见顶预期反弹",
-     "body_zh": "科技股反弹约23%，押注通胀已见顶、美联储即将转向，收益率回落提振了最具利率敏感性的成长股。大型科技股和半导体领涨这波夏季逼空，直至鲍威尔鹰派的杰克逊霍尔讲话终结了行情。",
+     "title_zh": "通胀见顶预期下的反弹",
+     "body_zh": "科技急涨约23%，源于科技/半导体引领的风险偏好飙升（SMH +20.8%、成长跑赢价值 +9.2、VIX 33→20），市场押注通胀已见顶、美联储即将转向。收益率回落提振了对利率敏感的成长股，资金撤出防御——在金发姑娘式盘面中科技排名第2/11——直到鲍威尔在杰克逊霍尔的鹰派讲话终结了这轮反弹。",
      "drivers_zh": [
       "通胀见顶预期",
-      "收益率回落",
-      "押注政策转向"
+      "科技引领风险偏好",
+      "转向押注",
+      "金发姑娘象限"
      ]
     },
     "2022-08-15": {
      "title": "Jackson Hole hawkish reset",
-     "body": "Powell's Jackson Hole vow to hold rates 'higher for longer' repriced terminal-rate expectations, slamming long-duration tech as yields and the dollar pushed to new highs. A hot September CPI sealed the move into the October bear-market bottom.",
+     "body": "Powell's Jackson Hole vow to hold rates 'higher for longer' was a rate-regime move (TLT -12.7%, +6.4% DXY pushing the dollar to new highs) that slammed long-duration tech to near the bottom (rank 10, -22.9%). A hot September CPI sealed the deflation-scare selloff and the SMH -28.8% breakdown into the October bear-market low.",
      "drivers": [
       "Jackson Hole",
-      "higher-for-longer",
-      "yields/dollar high"
+      "rate regime",
+      "strong dollar",
+      "deflation-scare quad"
      ],
      "title_zh": "杰克逊霍尔鹰派重置",
-     "body_zh": "鲍威尔在杰克逊霍尔承诺将利率维持\"更高更久\"，重新定价了终端利率预期，在收益率和美元创新高之际重挫长久期科技股。9月偏热的CPI将走势推向10月的熊市底部。",
+     "body_zh": "鲍威尔在杰克逊霍尔誓言将利率维持\"更高更久\"，这是一记利率象限的move（TLT -12.7%、+6.4% DXY将美元推至新高），把长久期科技股打到接近垫底（排名10，-22.9%）。火热的9月CPI坐实了通缩恐慌式抛售，以及SMH -28.8%的崩溃，跌向10月熊市低点。",
      "drivers_zh": [
       "杰克逊霍尔",
-      "更高更久",
-      "收益率/美元高位"
+      "利率象限",
+      "强美元",
+      "通缩恐慌象限"
      ]
     },
     "2022-10-12": {
      "title": "The genAI bull run",
-     "body": "A softer October CPI marked the rate-peak inflection, and ChatGPT's late-2022 launch ignited a generative-AI super-cycle that made hyperscaler and semiconductor capex the dominant equity theme. Nvidia became the face of the boom as Fed cuts began in Sep-2024; surviving the Oct-2023 yield scare, XLK more than doubled on AI demand and soft-landing optimism.",
+     "body": "A softer October CPI marked the rate-peak inflection, and ChatGPT's launch ignited a generative-AI super-cycle that made the semis the dominant theme (SMH +226.2%) in a goldilocks risk-on melt-up (growth>value +52.9, VIX 34→13, -7.3% DXY tailwind). XLK ranked #1/11 and more than doubled (+107%) — but this was the narrowest of tapes, with equal-weight lagging cap-weight by a staggering -28.7%.",
      "drivers": [
       "genAI super-cycle",
-      "NVDA/hyperscaler capex",
-      "rate-peak + cuts"
+      "tech-led risk-on",
+      "narrow breadth",
+      "goldilocks quad"
      ],
      "title_zh": "生成式AI牛市",
-     "body_zh": "10月偏软的CPI标志着利率见顶的拐点，而ChatGPT在2022年底的发布点燃了一轮生成式AI超级周期，使超大规模云厂商和半导体资本开支成为股市的主导主题。英伟达成为这轮繁荣的代表，美联储于2024年9月开始降息；在挺过2023年10月的收益率惊吓后，XLK凭借AI需求和软着陆乐观情绪上涨逾一倍。",
+     "body_zh": "更温和的10月CPI标志着利率见顶拐点，ChatGPT的发布点燃了生成式AI超级周期，使半导体成为主导主题（SMH +226.2%），处于金发姑娘式的风险偏好飙升中（成长跑赢价值 +52.9、VIX 34→13、-7.3% DXY 顺风）。XLK排名第1/11并翻倍有余（+107%）——但这是极度狭窄的盘面，等权指数落后市值加权高达 -28.7%。",
      "drivers_zh": [
       "生成式AI超级周期",
-      "英伟达/超大规模云厂商资本开支",
-      "利率见顶+降息"
+      "科技引领风险偏好",
+      "市场广度狭窄",
+      "金发姑娘象限"
      ]
     },
     "2024-07-10": {
      "title": "Yen-carry air-pocket",
-     "body": "A BoJ rate hike and a weak US jobs report violently unwound the yen-carry trade, hitting the most crowded momentum and AI longs hardest. Semis and the Magnificent-7 air-pocketed ~17% in a fast, technical deleveraging rather than a fundamental break.",
+     "body": "A BoJ rate hike and a weak US jobs report violently unwound the yen-carry trade, hitting the most crowded AI longs hardest — Tech air-pocketed ~17% (dead last, rank 11) as semis cratered (SMH -24.8%). This was a flight-to-safety: defensives (+2.2%) led cyclicals (-5.5%) with VIX 13→28, a fast technical deleveraging, not a fundamental break.",
      "drivers": [
       "yen-carry unwind",
+      "flight-to-safety",
       "crowded momentum",
       "growth-scare jobs print"
      ],
-     "title_zh": "日元套息平仓气穴",
-     "body_zh": "日本央行加息叠加美国疲软的就业报告，猛烈平仓了日元套息交易，对最拥挤的动量和AI多头打击最重。半导体和\"七巨头\"快速气穴下跌约17%，这是技术性去杠杆，而非基本面破裂。",
+     "title_zh": "日元套息交易的瞬间真空",
+     "body_zh": "日本央行加息与疲软的美国就业报告剧烈瓦解了日元套息交易，对最拥挤的AI多头打击最重——科技瞬间真空约17%（垫底，排名11），半导体暴跌（SMH -24.8%）。这是一次避险：防御板块（+2.2%）领先周期板块（-5.5%），VIX 13→28，属于快速的技术性去杠杆，而非基本面破裂。",
      "drivers_zh": [
-      "日元套息交易平仓",
+      "日元套息瓦解",
+      "避险",
       "拥挤动量",
-      "增长惊吓就业数据"
+      "增长恐慌就业数据"
      ]
     },
     "2024-08-07": {
      "title": "Soft-landing AI recovery",
-     "body": "Tech rebounded as the carry-unwind panic faded, the Fed delivered its first cut in September, and the November election fueled deregulation and growth bets. Nvidia-led AI enthusiasm and resilient hyperscaler spending carried XLK back to new highs into early 2025.",
+     "body": "Tech rebounded +23% as the carry-unwind panic faded into a tech/semis-led risk-on melt-up (SMH +22.2%, growth>value +12.1, VIX 28→15), with the Fed's September cut and post-election deregulation bets fueling Nvidia-led AI enthusiasm. Leadership stayed narrow and mega-cap (equal-weight lagged by -6.2%), even as a rate-regime backup (TLT -6.1%) and strong dollar (+3.8% DXY) built underneath.",
      "drivers": [
       "Fed cuts begin",
-      "AI demand",
-      "election risk-on"
+      "tech-led risk-on",
+      "narrow breadth",
+      "rate regime"
      ],
-     "title_zh": "软着陆AI复苏",
-     "body_zh": "随着套息平仓恐慌消退，美联储9月首次降息，11月大选点燃了放松监管和增长押注，科技股回升。英伟达引领的AI热情和稳健的超大规模云厂商支出，推动XLK在2025年初重回新高。",
+     "title_zh": "软着陆下的AI复苏",
+     "body_zh": "随着套息瓦解的恐慌消退，科技反弹 +23%，演变为科技/半导体引领的风险偏好飙升（SMH +22.2%、成长跑赢价值 +12.1、VIX 28→15），美联储9月降息与大选后放松监管的押注助燃了英伟达领涨的AI热情。领涨保持狭窄且集中于大盘股（等权落后 -6.2%），尽管底层正酝酿利率象限回升（TLT -6.1%）与强美元（+3.8% DXY）。",
      "drivers_zh": [
-      "美联储开始降息",
-      "AI需求",
-      "大选风险偏好"
+      "美联储开启降息",
+      "科技引领风险偏好",
+      "市场广度狭窄",
+      "利率象限"
      ]
     },
     "2025-02-19": {
      "title": "DeepSeek + tariff shock",
-     "body": "The late-January DeepSeek cheap-AI scare had already cracked the AI-capex thesis (Nvidia's record one-day value loss), and April's 'Liberation Day' reciprocal tariffs detonated a broad crash. Semis and hardware bore the brunt on supply-chain and demand-destruction fears, bottoming around April 8.",
+     "body": "The late-January DeepSeek cheap-AI scare cracked the capex thesis (Nvidia's record one-day value loss), and April's 'Liberation Day' reciprocal tariffs detonated a broad crash that sent Tech dead last (rank 11, -25.7%, SMH -30.1%). This was a violent flight-to-safety — defensives (-7.7%) far outran cyclicals (-18.7%) as VIX exploded 15→52 — bottoming around April 8.",
      "drivers": [
       "DeepSeek scare",
       "reciprocal tariffs",
+      "flight-to-safety",
       "capex-thesis doubt"
      ],
-     "title_zh": "DeepSeek+关税冲击",
-     "body_zh": "1月底DeepSeek廉价AI惊吓已经动摇了AI资本开支逻辑（英伟达创下单日市值最大跌幅），4月的\"解放日\"对等关税引爆了一轮全面崩盘。半导体和硬件因供应链和需求破坏担忧首当其冲，于4月8日前后见底。",
+     "title_zh": "DeepSeek叠加关税冲击",
+     "body_zh": "1月底DeepSeek廉价AI恐慌击碎了资本开支逻辑（英伟达创纪录的单日市值蒸发），4月\"解放日\"对等关税引爆了一场全面崩盘，将科技打到垫底（排名11，-25.7%，SMH -30.1%）。这是一次剧烈的避险——防御板块（-7.7%）远超周期板块（-18.7%），VIX 暴涨 15→52——在4月8日附近见底。",
      "drivers_zh": [
-      "DeepSeek惊吓",
+      "DeepSeek恐慌",
       "对等关税",
-      "资本开支逻辑存疑"
+      "避险",
+      "资本开支逻辑动摇"
      ]
     },
     "2025-04-08": {
      "title": "Tariff-pause AI melt-up",
-     "body": "Trump's tariff pause and tech-device exemptions detonated a relief rally that turned into a full AI-capex melt-up, with hyperscaler spend estimates ballooning past $400B. Nvidia and Broadcom led semis to fresh records on insatiable AI-infrastructure demand through year-end.",
+     "body": "Trump's tariff pause and device exemptions detonated a tech/semis-led risk-on melt-up (SMH +104.8%, growth>value +29.9, VIX 52→17, -3.6% DXY tailwind) with hyperscaler spend estimates past $400B. XLK ranked #1/11 (+69.7%) on Nvidia/Broadcom records, but it was the textbook narrow tape — equal-weight lagged cap-weight by -15.1% as money concentrated in a handful of AI names.",
      "drivers": [
       "tariff de-escalation",
-      "AI-capex melt-up",
-      "NVDA/AVGO records"
+      "tech-led risk-on",
+      "narrow breadth",
+      "AI-capex melt-up"
      ],
-     "title_zh": "关税暂缓AI飙升",
-     "body_zh": "特朗普暂缓关税并对科技设备豁免，引爆了一轮反弹，继而演变为全面的AI资本开支飙升，超大规模云厂商支出预期膨胀至逾4000亿美元。英伟达和博通引领半导体凭借AI基础设施的旺盛需求，在年底前创下新高。",
+     "title_zh": "关税暂停下的AI飙升",
+     "body_zh": "特朗普暂停关税并豁免设备，引爆了科技/半导体引领的风险偏好飙升（SMH +104.8%、成长跑赢价值 +29.9、VIX 52→17、-3.6% DXY 顺风），云厂商资本开支预期突破4000亿美元。XLK排名第1/11（+69.7%），由英伟达/博通创纪录推动，但这是教科书式的狭窄盘面——资金集中于少数几只AI龙头，等权落后市值加权 -15.1%。",
      "drivers_zh": [
       "关税降级",
-      "AI资本开支飙升",
-      "英伟达/博通创新高"
+      "科技引领风险偏好",
+      "市场广度狭窄",
+      "AI资本开支飙升"
      ]
     },
     "2025-10-29": {
      "title": "Hawkish valuation reset",
-     "body": "A hawkish Fed turn repriced borrowing costs just as hyperscalers committed to the most expensive build-out in a generation, sparking an AI-complex valuation reset. Megacap spenders and the semis (NVDA, AVGO) de-rated together on capex-first-revenue-later and bubble worries.",
+     "body": "A hawkish Fed turn repriced borrowing costs just as hyperscalers committed to the most expensive build-out in a generation, sparking an AI-complex valuation reset that sent Tech dead last (rank 11, -15.9%). Unusually, this wasn't a risk-off panic — defensives and cyclicals fell roughly in line — it was a stagflation-ish rotation OUT of crowded megacap growth (growth-value -19.5) into Energy (+42.9%, oil +70.1%), with equal-weight beating cap-weight by +8.2% as breadth finally broadened.",
      "drivers": [
       "hawkish Fed",
       "AI valuation reset",
-      "capex-vs-revenue fear"
+      "rotation out of megacap",
+      "broadening breadth"
      ],
-     "title_zh": "鹰派估值重置",
-     "body_zh": "在超大规模云厂商承诺进行一代人以来最昂贵的基础设施建设之际，美联储转向鹰派重新定价了借贷成本，引发AI板块估值重置。大型支出方与半导体（英伟达、博通）因\"资本开支先行、营收滞后\"和泡沫担忧而一同估值下修。",
+     "title_zh": "鹰派下的估值重置",
+     "body_zh": "美联储转鹰重新定价了借贷成本，恰逢云厂商承诺一代人以来最昂贵的建设，引发AI板块的估值重置，将科技打到垫底（排名11，-15.9%）。不同寻常的是，这并非避险恐慌——防御与周期板块跌幅大体相当——而是一次滞胀式轮动，资金撤出拥挤的大盘成长（成长-价值 -19.5），转入能源（+42.9%，油价 +70.1%），等权跑赢市值加权 +8.2%，市场广度终于扩散。",
      "drivers_zh": [
-      "鹰派美联储",
+      "美联储鹰派",
       "AI估值重置",
-      "资本开支与营收之忧"
+      "撤出大盘股",
+      "市场广度扩散"
      ]
     },
     "2026-03-30": {
      "title": "Oil-fade AI rip",
-     "body": "Tech ripped ~55% as the Iran-war oil tail began to fade toward the mid-June ceasefire and the AI-capex trade roared back — the SOX gained 100%+ over the run. The leg crested into early June as Broadcom's refusal to raise its full-year AI outlook detonated a $1T+ semis wipeout, marking the late-cycle top.",
+     "body": "Tech ripped ~55% (rank #1) as the Iran-war oil tail faded toward the mid-June ceasefire and the AI-capex trade roared back in a reflation/risk-on melt-up (SMH +74.4%, growth>value +10.9, VIX 31→16). It was again narrow and mega-cap-led (equal-weight lagged by -8.6%); the leg crested into early June as Broadcom's refusal to raise its full-year AI outlook detonated a $1T+ semis wipeout — the late-cycle top.",
      "drivers": [
       "oil-tail unwind",
-      "AI-capex revival",
+      "tech-led risk-on",
+      "narrow breadth",
       "AVGO outlook top"
      ],
-     "title_zh": "油价消退AI飙涨",
-     "body_zh": "随着伊朗战争的油价尾部风险在6月中旬停火前逐渐消退，AI资本开支交易卷土重来，科技股飙升约55%——SOX半导体指数在此期间涨幅超过100%。该上涨段在6月初见顶，博通拒绝上调全年AI展望引爆了超过1万亿美元的半导体市值蒸发，标志着周期晚期的顶部。",
+     "title_zh": "油价消退下的AI急涨",
+     "body_zh": "随着伊朗战争的油价尾部风险消退、临近6月中停火，AI资本开支交易强势回归，科技在再通胀/风险偏好的飙升中急涨约55%（排名第1，SMH +74.4%、成长跑赢价值 +10.9、VIX 31→16）。盘面再度狭窄并由大盘股主导（等权落后 -8.6%）；该上涨腿在6月初见顶，博通拒绝上调全年AI展望引爆超过1万亿美元的半导体市值蒸发——这就是周期晚期的顶部。",
      "drivers_zh": [
       "油价尾部风险消退",
-      "AI资本开支复兴",
+      "科技引领风险偏好",
+      "市场广度狭窄",
       "博通展望见顶"
      ]
     }
    },
-   "now_zh": "科技板块处于周期晚期：相对强度排名第1、周期位置约84/100，凭借强劲的AI资本开支飙升站稳200日均线之上，但当前盘面正在筑顶，市场广度收窄，领涨集中于少数几只AI龙头。6月初博通拒绝上调其AI业绩展望，引发超过1万亿美元的半导体市值蒸发——这是周期成熟阶段典型的派发信号。"
+   "now_zh": "科技是无可争议的第一板块（相对强度排名第1，+24.3% 对 SPY +6.3%），周期位置约84/100。盘面处于金发姑娘/再通胀的风险偏好状态，由半导体（SMH +67.9%）和高贝塔（+20.7% 对低波）引领，使得防御板块落后（+6.9% 对周期 +11.2%）——但重要的是，这并非狭窄的飙升：等权指数已悄然跑赢市值加权 +2.9%，领涨之下参与度正在扩散。该上涨腿正在筑顶：6月初博通拒绝上调其AI展望，引发超过1万亿美元的半导体市值蒸发——这是成熟、由大盘股主导的飙升行情典型的派发信号，如今正向周期晚期扩散。"
   },
   "xle": {
-   "now": "Energy is rolling over as of mid-2026 — RS rank #11, the weakest sector, as the post-ceasefire oil-tail unwind drains the Iran/Strait-of-Hormuz war premium out of crude and integrated/E&P cash flows normalize back toward pre-war levels.",
+   "now": "Energy is rolling over as of mid-2026 — RS rank #11, the weakest sector — even though it still sits #2 over the trailing window (+21.5%). The 2026 tape is a tech/semis melt-up (SMH +67.9%, high-beta over low-vol +20.7), and money is rotating into AI growth, not the post-ceasefire oil-tail unwind that is draining the Iran/Strait-of-Hormuz war premium out of crude. The one nuance: oil itself is +20.9% and copper−gold +18.0 with reflation cyclicals (+11.2%) leading defensives (+6.9%) — a reflation-quad backdrop that could re-bid Energy if the AI trade narrows further. For now a strong dollar (+3.4% DXY) is a headwind and XLE is a value-quality income play out of favor in a growth-led tape.",
    "legs": {
     "2020-10-28": {
-     "title": "Vaccine reflation lifts energy",
-     "body": "XLE roared off pandemic lows as the November 2020 vaccine news ignited the reopening/reflation trade in the most beaten-down, deepest-discounted sector. WTI climbed from the low-$30s past $70 by June 2021 on rebounding travel and refining demand, OPEC+ supply discipline, and the February 2021 Texas freeze that shut in production.",
+     "title": "Vaccine reflation, energy leads the reopening",
+     "body": "XLE roared off pandemic lows as the November 2020 vaccine news ignited the reopening/reflation trade in the most beaten-down sector — Energy ranked #1/11 (+107.7%) in a reflation quad with cyclicals (+48.7%) trouncing defensives (+14.9%), oil +92.9% and copper−gold +43.1. A weaker dollar (−3.1% DXY) was a tailwind and broad participation (equal-weight beat cap-weight by +12.3%) confirmed the rotation. WTI climbed from the low-$30s past $70 by June 2021 on rebounding travel, OPEC+ supply discipline, and the February 2021 Texas freeze that shut in production.",
      "drivers": [
-      "vaccine reflation",
-      "reopening demand",
-      "OPEC+ discipline",
-      "low-base snapback"
+      "reflation quad",
+      "risk-on leadership",
+      "weak dollar tailwind",
+      "OPEC+ discipline"
      ],
-     "title_zh": "疫苗再通胀提振能源",
-     "body_zh": "随着2020年11月的疫苗消息在跌幅最深、折价最大的板块点燃复工/再通胀交易，XLE从疫情低点强劲反弹。WTI原油在出行和炼化需求回升、OPEC+供应纪律以及2021年2月得州寒潮导致停产的推动下，到2021年6月从30美元出头攀升至70美元上方。",
+     "title_zh": "疫苗再通胀，能源领涨复工",
+     "body_zh": "随着2020年11月疫苗消息在跌幅最深的板块点燃复工/再通胀交易，XLE从疫情低点强劲反弹——能源在再通胀象限中排名第1/11（+107.7%），周期板块（+48.7%）大幅跑赢防御板块（+14.9%），原油+92.9%、铜金比+43.1。美元走弱（−3.1% DXY）形成顺风，市场广度宽阔（等权跑赢市值加权+12.3%）印证了这轮轮动。WTI在出行回升、OPEC+供应纪律以及2021年2月得州寒潮停产推动下，到2021年6月从30美元出头攀升至70美元上方。",
      "drivers_zh": [
-      "疫苗再通胀",
-      "复工需求",
-      "OPEC+供应纪律",
-      "低基数反弹"
+      "再通胀象限",
+      "风险偏好领涨",
+      "弱美元顺风",
+      "OPEC+供应纪律"
      ]
     },
     "2021-06-15": {
-     "title": "Delta scare, OPEC+ supply hike",
-     "body": "Crude reversed as OPEC+ agreed in July 2021 to add back 400,000 b/d per month while the Delta variant sparked fresh global demand fears, dragging WTI from the mid-$70s toward the high-$60s. The pullback was a sentiment-driven repricing rather than a fundamental glut, with U.S. inventories still drawing.",
+     "title": "Delta scare, OPEC+ hike — Energy worst as defensives bid",
+     "body": "Crude reversed as OPEC+ agreed in July 2021 to add back 400,000 b/d per month while the Delta variant sparked demand fears, dragging WTI from the mid-$70s toward the high-$60s and making Energy the worst sector (−17.7%, #11). This was a flight-to-safety wobble — defensives (+5.7%) led cyclicals (−1.4%) with VIX 17→22 and yields falling (TLT +6.9%) — plus a strong-dollar headwind (+3.3% DXY); a sentiment repricing, not a fundamental glut, with U.S. inventories still drawing.",
      "drivers": [
-      "Delta demand scare",
-      "OPEC+ output increase",
-      "growth fears"
+      "flight-to-safety",
+      "rate regime (yields fell)",
+      "strong dollar",
+      "OPEC+ output increase"
      ],
-     "title_zh": "Delta惊吓与OPEC+增产",
-     "body_zh": "OPEC+于2021年7月同意每月增产40万桶/日，叠加Delta变异株引发全球需求担忧，原油转跌，WTI从75美元中段跌向60美元后段。这轮回调是情绪驱动的重新定价，而非基本面过剩，美国库存仍在去化。",
+     "title_zh": "Delta惊吓与OPEC+增产——防御被买入，能源垫底",
+     "body_zh": "OPEC+于2021年7月同意每月增产40万桶/日，叠加Delta变异株引发需求担忧，原油转跌，WTI从75美元中段跌向60美元后段，能源成为最弱板块（−17.7%，第11）。这是一次避险式震荡——防御板块（+5.7%）跑赢周期板块（−1.4%），VIX 17→22、收益率回落（TLT +6.9%）——叠加强美元逆风（+3.3% DXY）；属情绪重新定价，而非基本面过剩，美国库存仍在去化。",
      "drivers_zh": [
-      "Delta需求惊吓",
-      "OPEC+增产",
-      "增长担忧"
+      "避险",
+      "利率环境（收益率回落）",
+      "强美元",
+      "OPEC+增产"
      ]
     },
     "2021-08-19": {
-     "title": "Energy crisis, Russia oil spike",
-     "body": "A global energy crunch — tight supply, surging European gas, OPEC+ producing below target — pushed crude higher, then Russia's February 2022 invasion of Ukraine sent Brent above $120 and WTI to ~$127 by March. Sanctions risk, record LNG exports and chronic shale discipline starved the market; XLE was the top sector of 2022.",
+     "title": "Energy crisis + Russia spike — Energy alone vs a rate-regime selloff",
+     "body": "A global energy crunch and then Russia's February 2022 invasion of Ukraine sent Brent above $120 and WTI to ~$127, making Energy the sole leader (+108.6%, #1) while the broad tape was a rate-regime selloff (TLT −23.1% as yields surged) and a strong-dollar (+9.6% DXY) headwind crushed everything else — Tech −8.4%, Comm −26.2%. Sanctions risk, record LNG exports and chronic shale discipline starved the market; XLE was the top sector of 2022 precisely because it inversely benefited from the inflation/rate shock punishing growth.",
      "drivers": [
+      "rate regime (yields surged)",
       "Russia-Ukraine invasion",
-      "energy crisis",
-      "European natgas crunch",
+      "strong dollar",
       "capex discipline + buybacks"
      ],
-     "title_zh": "能源危机俄油飙升",
-     "body_zh": "供应紧张、欧洲天然气飙升、OPEC+产量低于目标共同造成全球能源紧缺，推高原油；随后2022年2月俄罗斯入侵乌克兰，使布伦特原油到3月升破120美元、WTI升至约127美元。制裁风险、创纪录的LNG出口和长期的页岩气供应纪律使市场供应紧张；XLE是2022年表现最佳的板块。",
+     "title_zh": "能源危机+俄油飙升——能源独涨，对抗利率环境抛售",
+     "body_zh": "全球能源紧缺，继而2022年2月俄罗斯入侵乌克兰，使布伦特升破120美元、WTI升至约127美元，能源成为唯一领涨者（+108.6%，第1）；而大盘是一轮利率环境抛售（收益率飙升，TLT −23.1%），强美元（+9.6% DXY）逆风压垮其他一切——科技−8.4%、通信−26.2%。制裁风险、创纪录LNG出口和长期页岩气供应纪律使市场供应紧张；XLE恰因从惩罚成长的通胀/利率冲击中反向受益，而成为2022年最强板块。",
      "drivers_zh": [
+      "利率环境（收益率飙升）",
       "俄乌战争",
-      "能源危机",
-      "欧洲天然气紧缺",
+      "强美元",
       "资本开支纪律+回购"
      ]
     },
     "2022-06-08": {
-     "title": "Recession fears crush oil peak",
-     "body": "From the June 8 peak crude rolled over hard as aggressive Fed hikes stoked recession and demand-destruction fears, knocking ~$30/bbl off WTI by mid-July. Coordinated SPR releases — the largest ever — added supply and cooled prices, dragging energy equities down even as physical fundamentals stayed tight.",
+     "title": "Recession scare crushes the oil peak",
+     "body": "From the June 8 peak crude rolled over hard as aggressive Fed hikes and the largest-ever SPR releases stoked recession and demand-destruction fears, knocking ~$30/bbl off WTI and making Energy the worst sector (−26.0%, #11). This was a slowdown/deflation-scare quad — cyclicals (−13.0%) and Energy itself led the decline while defensives held up far better (−2.3%) in a flight-to-safety — compounded by a strong-dollar (+5.9% DXY) headwind, even as physical fundamentals stayed tight.",
      "drivers": [
-      "recession fears",
-      "demand destruction",
-      "SPR releases",
-      "Fed hikes"
+      "deflation-scare quad",
+      "flight-to-safety",
+      "strong dollar",
+      "Fed hikes + SPR releases"
      ],
-     "title_zh": "衰退担忧压垮油价顶部",
-     "body_zh": "从6月8日的高点起，随着美联储激进加息加剧衰退和需求破坏担忧，原油大幅回落，到7月中旬WTI下跌约30美元/桶。史上最大规模的协同释放战略石油储备增加了供应并压低价格，即便实物基本面仍紧张，也拖累能源股下跌。",
+     "title_zh": "衰退恐慌压垮油价顶部",
+     "body_zh": "从6月8日高点起，美联储激进加息与史上最大规模释放战略石油储备加剧衰退和需求破坏担忧，原油大幅回落，WTI下跌约30美元/桶，能源成为最弱板块（−26.0%，第11）。这是放缓/通缩恐慌象限——周期板块（−13.0%）与能源自身领跌，而防御板块在避险中表现稳健得多（−2.3%）——叠加强美元（+5.9% DXY）逆风，即便实物基本面仍紧张。",
      "drivers_zh": [
-      "衰退担忧",
-      "需求破坏",
-      "释放战略石油储备",
-      "美联储加息"
+      "通缩恐慌象限",
+      "避险",
+      "强美元",
+      "美联储加息+释放储备"
      ]
     },
     "2022-07-14": {
-     "title": "Tight supply sparks rebound",
-     "body": "Energy bounced as the market refocused on tight supply: OPEC+ delivered only a token 100,000 b/d September hike, Russia throttled then shut Nord Stream gas, and the alliance's shortfall underscored the deficit. Resilient cash flows and buybacks supported XLE even as crude stayed choppy below its June highs.",
+     "title": "Tight supply sparks a reflation-quad rebound",
+     "body": "Energy bounced back to #1 (+24.6%) as the market refocused on tight supply: OPEC+ delivered only a token 100,000 b/d September hike and Russia throttled then shut Nord Stream gas. The rebound came in a clean reflation/growth-up quad — cyclicals (+11.9%) led defensives (+3.6%), copper−gold +11.1 — with the dollar flat and no flight-to-safety, so Energy led on its own merits rather than as a hedge. Resilient cash flows and buybacks supported XLE even as crude stayed choppy below its June highs.",
      "drivers": [
+      "reflation quad",
+      "sector-led (not hedge)",
       "tight supply",
-      "token OPEC+ hike",
-      "Nord Stream cuts",
-      "buybacks"
+      "Nord Stream cuts"
      ],
-     "title_zh": "供应紧张引发反弹",
-     "body_zh": "市场重新聚焦供应紧张，能源反弹：OPEC+仅象征性地宣布9月增产10万桶/日，俄罗斯先限气后切断北溪天然气，联盟的供应缺口凸显了短缺。稳健的现金流和回购支撑XLE，即便原油在6月高点下方震荡。",
+     "title_zh": "供应紧张引发再通胀象限反弹",
+     "body_zh": "市场重新聚焦供应紧张，能源反弹回到第1（+24.6%）：OPEC+仅象征性宣布9月增产10万桶/日，俄罗斯先限气后切断北溪天然气。这轮反弹处于干净的再通胀/增长上行象限——周期板块（+11.9%）跑赢防御板块（+3.6%），铜金比+11.1——美元持平、无避险情绪，因此能源是凭自身基本面领涨，而非作为对冲。稳健的现金流和回购支撑XLE，即便原油在6月高点下方震荡。",
      "drivers_zh": [
+      "再通胀象限",
+      "板块自身领涨（非对冲）",
       "供应紧张",
-      "OPEC+象征性增产",
-      "北溪减供",
-      "回购"
+      "北溪减供"
      ]
     },
     "2022-08-29": {
-     "title": "Strong dollar, hikes hit oil",
-     "body": "Energy gave back gains as oil slid on a soaring dollar, the most aggressive Fed tightening in decades, and global recession fears that overwhelmed tight supply. Continued SPR releases and softening Chinese demand under COVID lockdowns added pressure, pulling WTI toward the mid-$70s.",
+     "title": "Strong dollar + rate regime hit oil",
+     "body": "Energy gave back gains as oil slid on a soaring dollar (+4.8% DXY), the most aggressive Fed tightening in decades (TLT −7.8% as yields surged), and recession fears that overwhelmed tight supply — Energy was worst (−17.4%, #11). It was a slowdown/deflation-scare quad with a flight-to-safety tilt: defensives (−5.5%) held up far better than cyclicals (−11.4%) and Energy. Continued SPR releases and softening Chinese demand under COVID lockdowns added pressure, pulling WTI toward the mid-$70s.",
      "drivers": [
+      "rate regime (yields surged)",
       "strong dollar",
-      "Fed hikes",
-      "recession fears",
-      "SPR releases"
+      "flight-to-safety",
+      "Fed hikes + SPR releases"
      ],
-     "title_zh": "强美元加息打压油价",
-     "body_zh": "在美元飙升、数十年来最激进的美联储紧缩以及压倒供应紧张的全球衰退担忧下，油价下滑，能源回吐涨幅。持续释放战略石油储备以及中国新冠封控下需求走软增添了压力，将WTI拉向70美元中段。",
+     "title_zh": "强美元+利率环境打压油价",
+     "body_zh": "在美元飙升（+4.8% DXY）、数十年来最激进的美联储紧缩（收益率飙升，TLT −7.8%）以及压倒供应紧张的衰退担忧下，油价下滑，能源回吐涨幅并垫底（−17.4%，第11）。这是放缓/通缩恐慌象限并带避险倾向：防御板块（−5.5%）远比周期板块（−11.4%）和能源稳健。持续释放战略石油储备以及中国新冠封控下需求走软增添了压力，将WTI拉向70美元中段。",
      "drivers_zh": [
+      "利率环境（收益率飙升）",
       "强美元",
-      "美联储加息",
-      "衰退担忧",
-      "释放战略石油储备"
+      "避险",
+      "美联储加息+释放储备"
      ]
     },
     "2022-09-26": {
-     "title": "OPEC+ 2mb/d cut, China hopes",
-     "body": "Energy rallied after OPEC+ announced its biggest cut since 2020 — a headline 2 million b/d reduction — to defend prices, putting a floor under crude. Hopes that China would reopen and unwind demand destruction added fuel, lifting WTI and powering a sharp XLE recovery into mid-November.",
+     "title": "OPEC+ 2mb/d cut, weak dollar power a reflation bounce",
+     "body": "Energy rallied back to #1 (+36.8%) after OPEC+ announced its biggest cut since 2020 — a headline 2 million b/d reduction — to defend prices. The setup was textbook for the sector: a reflation/growth-up quad (cyclicals +16.6% over defensives +4.2%), a weakening dollar (−6.7% DXY) tailwind, and broadening participation (equal-weight beat cap-weight +4.0%). China-reopening hopes added fuel, lifting WTI and powering a sharp XLE recovery into mid-November.",
      "drivers": [
-      "OPEC+ 2mb/d cut",
-      "China reopening hopes",
-      "price defense"
+      "reflation quad",
+      "weak dollar tailwind",
+      "broadening breadth",
+      "OPEC+ 2mb/d cut"
      ],
-     "title_zh": "OPEC+减产200万桶，中国预期",
-     "body_zh": "OPEC+宣布2020年以来最大幅度减产——名义上削减200万桶/日以捍卫价格，为原油托底，能源随之反弹。对中国重新开放并扭转需求破坏的预期火上浇油，推升WTI，推动XLE在11月中旬前强劲复苏。",
+     "title_zh": "OPEC+减产200万桶、弱美元推动再通胀反弹",
+     "body_zh": "OPEC+宣布2020年以来最大幅度减产——名义上削减200万桶/日以捍卫价格，能源反弹回到第1（+36.8%）。这一组合对该板块堪称教科书：再通胀/增长上行象限（周期+16.6%跑赢防御+4.2%）、美元走弱（−6.7% DXY）的顺风，以及市场广度扩张（等权跑赢市值加权+4.0%）。中国重启预期火上浇油，推升WTI，推动XLE在11月中旬前强劲复苏。",
      "drivers_zh": [
-      "OPEC+减产200万桶",
-      "中国重启预期",
-      "价格防御"
+      "再通胀象限",
+      "弱美元顺风",
+      "市场广度扩张",
+      "OPEC+减产200万桶"
      ]
     },
     "2022-11-15": {
-     "title": "Demand worry, SVB banking crash",
-     "body": "Energy faded into early 2023 as weak-demand worries capped crude, then crashed in mid-March when the SVB collapse and Credit Suisse turmoil routed risk assets — WTI tumbled ~12% to near $66, its lowest since December 2021. The credit-instability shock, not a supply story, drove energy equities down.",
+     "title": "Demand worry, SVB shock, rate regime flips",
+     "body": "Energy faded into early 2023 as weak-demand worries capped crude, then crashed in mid-March when the SVB collapse and Credit Suisse turmoil routed risk assets — WTI tumbled ~12% to near $66, its lowest since December 2021, leaving Energy worst (−17.3%, #11). The rate regime flipped: yields fell hard (TLT +8.7%) on a flight to Treasuries, which rotated money toward duration-sensitive growth (Tech +7.7%, Comm +9.1%) and away from value-cyclical Energy. A credit-instability shock, not a supply story, drove the move.",
      "drivers": [
-      "weak demand",
-      "SVB banking crisis",
-      "recession fears",
-      "credit shock"
+      "credit shock / risk-off",
+      "rate regime (yields fell)",
+      "growth over value rotation",
+      "SVB banking crisis"
      ],
-     "title_zh": "需求担忧，硅谷银行崩盘",
-     "body_zh": "需求疲软担忧压制原油，能源在进入2023年初时回落，随后在3月中旬硅谷银行倒闭和瑞信动荡冲击风险资产时崩盘——WTI暴跌约12%至接近66美元，为2021年12月以来最低。驱动能源股下跌的是信用不稳定冲击，而非供应因素。",
+     "title_zh": "需求担忧、硅谷银行冲击、利率环境反转",
+     "body_zh": "需求疲软担忧压制原油，能源进入2023年初回落，随后在3月中旬硅谷银行倒闭和瑞信动荡冲击风险资产时崩盘——WTI暴跌约12%至接近66美元，为2021年12月以来最低，能源垫底（−17.3%，第11）。利率环境反转：避险买入国债使收益率大幅回落（TLT +8.7%），资金随之轮动进入对久期敏感的成长板块（科技+7.7%、通信+9.1%），离开价值-周期的能源。驱动此轮的是信用不稳定冲击，而非供应因素。",
      "drivers_zh": [
-      "需求疲软",
-      "硅谷银行危机",
-      "衰退担忧",
-      "信用冲击"
+      "信用冲击/风险规避",
+      "利率环境（收益率回落）",
+      "成长跑赢价值轮动",
+      "硅谷银行危机"
      ]
     },
     "2023-03-17": {
-     "title": "Range-bound crude, record payouts",
-     "body": "Energy ground higher over a long, choppy stretch as OPEC+ — led by Saudi voluntary cuts — defended a ~$70-90 Brent band against soft Chinese demand and rising non-OPEC supply. U.S. operators held capital discipline and majors returned record cash (Big Oil paid out ~$114bn in 2023), rewarding shareholders through a flat-tape oil market into late 2024.",
+     "title": "Range-bound crude lags the AI melt-up",
+     "body": "Energy ground higher only +34.2% (#6) over a long stretch — a laggard not because it was broken but because it was starved: this was the tech/semis-led AI melt-up (SMH +96.6%, growth over value +30.3) where Comm +79.3%, Financials +68.8% and Tech +65.1% soaked up the flows, and the dollar firmed (+3.6% DXY) against Energy. OPEC+ Saudi voluntary cuts defended a ~$70-90 Brent band while majors returned record cash (~$114bn in 2023), but a flat oil tape simply couldn't compete with AI for capital.",
      "drivers": [
-      "OPEC+ Saudi cuts",
-      "range-bound crude",
-      "capital discipline",
-      "record buybacks"
+      "tech-led risk-on",
+      "starved (out of favor)",
+      "strong dollar headwind",
+      "OPEC+ Saudi cuts + record buybacks"
      ],
-     "title_zh": "区间震荡，创纪录派息",
-     "body_zh": "在沙特自愿减产领衔的OPEC+对抗中国需求疲软和非OPEC供应上升、捍卫约70-90美元布伦特区间的过程中，能源在漫长震荡中缓步走高。美国生产商保持资本纪律，巨头返还创纪录现金（石油巨头2023年派息约1140亿美元），在油价横盘的市场中持续回报股东直至2024年底。",
+     "title_zh": "区间震荡的原油跑输AI逼空上涨",
+     "body_zh": "能源在漫长阶段中仅缓涨+34.2%（第6）——跑输不是因为它坏了，而是被冷落：这是科技/半导体主导的AI逼空上涨（SMH +96.6%，成长跑赢价值+30.3），通信+79.3%、金融+68.8%、科技+65.1%吸走了资金，美元走强（+3.6% DXY）也对能源不利。沙特自愿减产领衔的OPEC+捍卫约70-90美元布伦特区间，巨头返还创纪录现金（2023年约1140亿美元），但横盘的油价根本无法在资本争夺中与AI抗衡。",
      "drivers_zh": [
-      "OPEC+沙特减产",
-      "区间震荡原油",
-      "资本纪律",
-      "创纪录回购"
+      "科技主导的风险偏好",
+      "被冷落（失宠）",
+      "强美元逆风",
+      "OPEC+沙特减产+创纪录回购"
      ]
     },
     "2024-11-22": {
-     "title": "Soft oil, OPEC+ delay, dollar",
-     "body": "Crude drifted in a narrow ~$73 Brent range as weak Chinese demand and a looming non-OPEC surplus capped prices, while OPEC+ delayed unwinding cuts again. A post-election surge in the dollar plus a hawkish December Fed cut pressured crude, and 'drill baby drill' added an oversupply overhang on energy equities.",
+     "title": "Soft oil, OPEC+ delay — narrow mega-cap tape leaves Energy behind",
+     "body": "Crude drifted in a narrow ~$73 Brent range as weak Chinese demand and a looming non-OPEC surplus capped prices and OPEC+ delayed unwinding cuts again, leaving Energy worst (−14.3%, #11). The broad tape was narrow and mega-cap-led (equal-weight lagged cap-weight by −4.5%) with growth over value (+9.2), so even as the index barely moved (SPY −1.6%), unloved value-cyclical Energy was left behind. A hawkish December Fed cut added to the overhang.",
      "drivers": [
-      "weak demand",
-      "OPEC+ delay",
-      "strong dollar",
+      "narrow breadth",
+      "growth over value",
+      "weak demand / OPEC+ delay",
       "hawkish Fed"
      ],
-     "title_zh": "油价疲软，OPEC+推迟，美元",
-     "body_zh": "中国需求疲软和迫近的非OPEC过剩压制价格，原油在约73美元布伦特的窄幅区间徘徊，而OPEC+再度推迟解除减产。大选后美元飙升加上12月美联储鹰派降息施压原油，\"加大钻探力度\"也为能源股增添了供应过剩的隐忧。",
+     "title_zh": "油价疲软、OPEC+推迟——巨头主导的窄幅盘面把能源甩在后面",
+     "body_zh": "中国需求疲软和迫近的非OPEC过剩压制价格、OPEC+再度推迟解除减产，原油在约73美元布伦特窄幅区间徘徊，能源垫底（−14.3%，第11）。大盘狭窄且由巨头主导（等权跑输市值加权−4.5%），成长跑赢价值（+9.2），因此即便指数几乎未动（SPY −1.6%），不受待见的价值-周期能源仍被甩在后面。12月美联储鹰派降息加重了隐忧。",
      "drivers_zh": [
-      "需求疲软",
-      "OPEC+推迟",
-      "强美元",
+      "市场广度狭窄",
+      "成长跑赢价值",
+      "需求疲软/OPEC+推迟",
       "鹰派美联储"
      ]
     },
     "2024-12-19": {
-     "title": "New-year crude rally lifts energy",
-     "body": "Oil rallied to start 2025, Brent jumping toward a five-month high above $80 on cold-weather demand, fresh Russia sanctions, China-stimulus hopes and inventory draws. Despite 'drill baby drill' rhetoric, producers held discipline, and the firmer tape supported XLE's dividends and buybacks into early April.",
+     "title": "New-year crude rally — Energy leads as growth wobbles",
+     "body": "Oil rallied to start 2025, Brent jumping toward a five-month high above $80 on cold-weather demand, fresh Russia sanctions, China-stimulus hopes and inventory draws, and Energy led at #1 (+14.8%) even as SPY fell −3.1%. The rotation favored value: defensives (+5.9%) and Energy beat cyclicals (+1.0%) while growth cracked (semis −10.0%, growth−value −12.5), aided by a falling dollar (−4.2% DXY) tailwind. Producer discipline kept the firmer tape supporting XLE's dividends and buybacks into early April.",
      "drivers": [
-      "winter demand",
-      "Russia sanctions",
-      "capital discipline",
-      "inventory draws"
+      "value over growth rotation",
+      "weak dollar tailwind",
+      "broadening breadth",
+      "winter demand + Russia sanctions"
      ],
-     "title_zh": "新年原油上涨提振能源",
-     "body_zh": "2025年开年油价上涨，布伦特在寒冷天气需求、新一轮对俄制裁、中国刺激预期和库存去化的推动下跳升至80美元上方的五个月高点。尽管有\"加大钻探力度\"的言论，生产商仍保持纪律，坚挺的盘面支撑XLE的分红和回购直至4月初。",
+     "title_zh": "新年原油上涨——成长摇摆，能源领涨",
+     "body_zh": "2025年开年油价上涨，布伦特在寒冷天气需求、新一轮对俄制裁、中国刺激预期和库存去化推动下跳升至80美元上方的五个月高点；即便SPY下跌−3.1%，能源仍以第1领涨（+14.8%）。轮动偏向价值：防御板块（+5.9%）和能源跑赢周期板块（+1.0%），而成长走弱（半导体−10.0%、成长减价值−12.5），美元下行（−4.2% DXY）形成顺风。生产商纪律使坚挺的盘面支撑XLE的分红和回购直至4月初。",
      "drivers_zh": [
-      "冬季需求",
-      "对俄制裁",
-      "资本纪律",
-      "库存去化"
+      "价值跑赢成长轮动",
+      "弱美元顺风",
+      "市场广度扩张",
+      "冬季需求+对俄制裁"
      ]
     },
     "2025-04-02": {
-     "title": "Liberation Day tariff oil crash",
-     "body": "Trump's April 2 'reciprocal tariff' shock triggered a global growth and demand scare that slammed crude, with WTI plunging toward $57-60 by April 8 — its lowest since 2021. The rout was amplified when OPEC+ stunned the market by tripling its planned May output hike, piling supply onto collapsing demand expectations.",
+     "title": "Liberation Day tariff crash — Energy worst in a panic",
+     "body": "Trump's April 2 'reciprocal tariff' shock triggered a global growth and demand scare that slammed crude, with WTI plunging toward $57-60 by April 8 and Energy worst (−18.8%, #11). It was a violent flight-to-safety: VIX spiked 22→52 and defensives (−7.4%) sharply outperformed cyclicals (−14.3%) and Energy as everything sold off. The rout was amplified when OPEC+ stunned the market by tripling its planned May output hike, piling supply onto collapsing demand expectations.",
      "drivers": [
-      "tariff shock",
-      "demand scare",
-      "OPEC+ accelerated unwind",
-      "WTI sub-$60"
+      "flight-to-safety (VIX 22→52)",
+      "deflation-scare quad",
+      "tariff demand shock",
+      "OPEC+ accelerated unwind"
      ],
-     "title_zh": "解放日关税油价崩盘",
-     "body_zh": "特朗普4月2日的\"对等关税\"冲击引发全球增长和需求恐慌，猛烈打压原油，到4月8日WTI暴跌至57-60美元——为2021年以来最低。当OPEC+出人意料地将其计划中的5月增产幅度增至三倍、向崩塌的需求预期上叠加供应时，这轮暴跌被进一步放大。",
+     "title_zh": "解放日关税崩盘——恐慌中能源垫底",
+     "body_zh": "特朗普4月2日的“对等关税”冲击引发全球增长和需求恐慌，猛烈打压原油，到4月8日WTI暴跌至57-60美元，能源垫底（−18.8%，第11）。这是一次剧烈的避险：VIX飙升22→52，普跌之中防御板块（−7.4%）大幅跑赢周期板块（−14.3%）和能源。当OPEC+出人意料地将其计划中的5月增产幅度增至三倍、向崩塌的需求预期叠加供应时，这轮暴跌被进一步放大。",
      "drivers_zh": [
-      "关税冲击",
-      "需求恐慌",
-      "OPEC+加速解除减产",
-      "WTI跌破60美元"
+      "避险（VIX 22→52）",
+      "通缩恐慌象限",
+      "关税需求冲击",
+      "OPEC+加速解除减产"
      ]
     },
     "2025-04-08": {
-     "title": "Iran war Hormuz oil supershock",
-     "body": "From the tariff low, energy stormed higher as crude recovered through 2025 and then exploded in early 2026 when the Iran-Israel war erupted: Brent rocketed from ~$72 toward ~$120 by mid-March 2026 as disruption of the Strait of Hormuz threatened ~20% of world oil flows. The war-risk premium handed integrated oil and E&P names windfall cash flows that powered XLE's massive rally into late March (2026 = house view).",
+     "title": "Iran-Hormuz supershock — Energy leads its own war rally",
+     "body": "From the tariff low, crude recovered through 2025 and then exploded in early 2026 when the Iran-Israel war erupted: Brent rocketed from ~$72 toward ~$120 by mid-March 2026 as a Strait-of-Hormuz threat to ~20% of world oil flows handed Energy the #1 spot (+68.9%). This was the rare leg where Energy led not as a hedge but as the catalyst — a reflation quad (oil +67.2%) with a weak-dollar (−2.7% DXY) tailwind, even as semis (+108.6%) and a narrow mega-cap tape ran alongside. War-risk windfall cash flows powered XLE's massive rally into late March (2026 = house view).",
      "drivers": [
-      "Iran war",
-      "Hormuz risk premium",
-      "Brent ~$120",
+      "reflation quad / sector catalyst",
+      "weak dollar tailwind",
+      "Iran war + Hormuz risk premium",
       "windfall cash flows"
      ],
-     "title_zh": "伊朗战争霍尔木兹油价超级冲击",
-     "body_zh": "从关税低点起，原油在2025年逐步复苏，随后在2026年初伊朗-以色列战争爆发时暴涨，能源凶猛上行：由于霍尔木兹海峡受扰威胁到全球约20%的石油流动，布伦特到2026年3月中旬从约72美元飙升至约120美元。战争风险溢价为综合油企和勘探开采企业带来超额现金流，推动XLE在3月底前大幅上涨（2026年为本站观点）。",
+     "title_zh": "伊朗-霍尔木兹超级冲击——能源主导自己的战争行情",
+     "body_zh": "从关税低点起，原油在2025年逐步复苏，随后在2026年初伊朗-以色列战争爆发时暴涨：霍尔木兹海峡威胁到全球约20%的石油流动，使布伦特到2026年3月中旬从约72美元飙升至约120美元，能源因此登上第1（+68.9%）。这是少见的一段——能源不是作为对冲、而是作为催化剂领涨——处于再通胀象限（原油+67.2%）并伴随弱美元（−2.7% DXY）顺风，尽管同期半导体（+108.6%）与狭窄的巨头盘面并行。战争风险带来的超额现金流推动XLE在3月底前大幅上涨（2026年为本站观点）。",
      "drivers_zh": [
-      "伊朗战争",
-      "霍尔木兹风险溢价",
-      "布伦特约120美元",
+      "再通胀象限/板块催化",
+      "弱美元顺风",
+      "伊朗战争+霍尔木兹风险溢价",
       "超额现金流"
      ]
     },
     "2026-03-27": {
-     "title": "Ceasefire unwinds oil premium",
-     "body": "Energy rolled over as the war-risk premium drained out of crude: a mid-June 2026 ceasefire and hopes the Strait of Hormuz would fully reopen sent oil tumbling and WTI back below ~$70. With the 'oil tail' priced out and Middle East supply returning, XLE gave back its war-driven gains to the weakest sector RS rank (house view).",
+     "title": "Ceasefire unwinds the oil premium as semis melt up",
+     "body": "Energy rolled over to worst (−14.7%, #11) as the war-risk premium drained out of crude — a mid-June 2026 ceasefire and Hormuz-reopening hopes sent oil tumbling (oil −23.1%) and WTI back below ~$70. The pain was doubled by where the money went: a tech/semis-led risk-on melt-up (SMH +76.3%, Tech +47.2%) in a narrow, mega-cap tape (equal-weight lagged by −6.8%) pulled flows into AI growth and out of value-cyclical Energy. With the 'oil tail' priced out and Middle East supply returning, XLE gave back its war-driven gains (house view).",
      "drivers": [
-      "ceasefire unwind",
-      "Hormuz reopening",
-      "risk-premium drain",
-      "rising supply"
+      "tech-led risk-on",
+      "starved (out of favor)",
+      "narrow breadth",
+      "ceasefire / risk-premium drain"
      ],
-     "title_zh": "停火解除油价溢价",
-     "body_zh": "随着战争风险溢价从原油中抽干，能源见顶回落：2026年6月中旬的停火以及对霍尔木兹海峡完全重新开放的预期，使油价大跌，WTI回落至约70美元下方。在\"油价尾部风险\"被定价剔除、中东供应回归的情况下，XLE回吐了战争驱动的涨幅，沦为相对强度排名最弱的板块（本站观点）。",
+     "title_zh": "停火解除油价溢价，半导体逼空上涨",
+     "body_zh": "随着战争风险溢价从原油中抽干，能源见顶垫底（−14.7%，第11）——2026年6月中旬的停火以及霍尔木兹重新开放预期使油价大跌（原油−23.1%），WTI回落至约70美元下方。资金去向令痛苦加倍：科技/半导体主导的风险偏好逼空上涨（SMH +76.3%、科技+47.2%）发生在狭窄的巨头盘面中（等权跑输−6.8%），将资金拉入AI成长、抽离价值-周期的能源。在“油价尾部风险”被定价剔除、中东供应回归的情况下，XLE回吐了战争驱动的涨幅（本站观点）。",
      "drivers_zh": [
-      "停火解除",
-      "霍尔木兹重新开放",
-      "风险溢价抽干",
-      "供应上升"
+      "科技主导的风险偏好",
+      "被冷落（失宠）",
+      "市场广度狭窄",
+      "停火/风险溢价抽干"
      ]
     }
    },
-   "now_zh": "截至2026年年中，能源板块正在见顶回落——相对强度排名第11，为最弱板块，因停火后油价尾部风险解除，正从原油中抽干伊朗/霍尔木兹海峡的战争溢价，综合油企和勘探开采企业的现金流向战前水平回归。"
+   "now_zh": "截至2026年年中，能源板块正在见顶回落——相对强度排名第11，为最弱板块——尽管在过去窗口仍排名第2（+21.5%）。2026年的盘面是科技/半导体的逼空式上涨（SMH +67.9%，高贝塔跑赢低波动+20.7），资金正轮动进入AI成长，而非源于停火后油价尾部风险解除、正从原油中抽干伊朗/霍尔木兹海峡战争溢价。一个细微之处：原油本身+20.9%、铜金比+18.0，再通胀型周期板块（+11.2%）跑赢防御板块（+6.9%）——这是一个再通胀象限的背景，若AI交易进一步收窄、市场广度变窄，可能重新青睐能源。眼下强美元（+3.4% DXY）构成逆风，在成长主导的盘面里，XLE是被冷落的价值-质量型分红资产。"
   },
   "xlf": {
-   "now": "Mid-cycle expanding, RS#5 (pos~51) — banks lean on deregulation, capital-markets revival, M&A reopening and stable NIM, though a 2026 hiking bias and credit-cost watch cap the upside.",
+   "now": "Trending, RS#5 (pos~51) but a near-term laggard at -2.7% (rank 9/11) — the leadership is a narrow, semis-led tape (SMH +67.9%) where capital flows into Tech/Energy/Industrials and leave cyclical-value banks behind. The macro is constructive underneath: a reflation/growth-up quad (cyclicals +11.2% vs defensives +6.9%, copper-gold +18.0, oil +20.9%), broadening participation (equal-weight +2.9% over cap-weight) and growth-minus-value -15.2% — a value-friendly backdrop banks usually lead in. Deregulation, the M&A/capital-markets revival and stable NIM are the bull case; a 2026 hiking bias, a stronger dollar (+3.4% DXY) and credit-cost watch cap the upside. XLF isn't broken — it's out of favor in a mega-cap melt-up, and a rotation back to value/breadth is the turn to watch.",
    "legs": {
     "2020-06-26": {
-     "title": "Reflation rally lifts banks",
-     "body": "Financials rode the post-COVID reopening: a steepening yield curve and rising 10-year yield widened net interest margins while reserve releases and resumed buybacks boosted EPS. Loan growth, stimulus and the no-recession reflation trade made banks a leading recovery sector into early 2022.",
+     "title": "Reflation rally — banks lead the cycle",
+     "body": "Financials rode the post-COVID reopening to the #1 spot of all 11 sectors (+88.7%) in a textbook reflation/growth-up quad — cyclicals +73.8% vs defensives +38.3%, oil +114.7%, copper-gold +67.7. A steepening curve and surging long yields (TLT -11.5%) widened net interest margins while reserve releases and buybacks lifted EPS; a weak dollar (-2.6% DXY) and broad participation (equal-weight +8.5% over cap-weight, VIX 35→18) confirmed banks were leading risk-on, not riding it.",
      "drivers": [
-      "steepening curve",
-      "NIM expansion",
-      "reserve releases",
-      "buybacks"
+      "reflation quad",
+      "risk-on leader #1",
+      "steepening curve / NIM",
+      "broad participation"
      ],
-     "title_zh": "再通胀上涨提振银行",
-     "body_zh": "金融板块乘着疫情后复工东风：收益率曲线变陡和10年期收益率上升扩大了净息差，而准备金释放和回购重启提振了每股收益。贷款增长、刺激政策和无衰退的再通胀交易，使银行成为复苏的领涨板块，直至2022年初。",
+     "title_zh": "再通胀上涨——银行领跑周期",
+     "body_zh": "金融板块乘着疫情后复工东风，在标准的再通胀/增长上行象限中登上全部11个板块的第1名（+88.7%）——周期股+73.8% vs 防御股+38.3%，油价+114.7%，铜金比+67.7。曲线变陡和长端收益率飙升（TLT -11.5%）扩大了净息差，准备金释放和回购提振每股收益；弱势美元（-2.6% DXY）和广泛参与（等权重领先市值加权+8.5%，VIX 35→18）印证了银行在领涨风险偏好，而非被动跟涨。",
      "drivers_zh": [
-      "曲线变陡",
-      "净息差扩张",
-      "准备金释放",
-      "回购"
+      "再通胀象限",
+      "风险偏好领涨第1",
+      "曲线变陡/净息差",
+      "广泛参与"
      ]
     },
     "2022-01-12": {
-     "title": "Recession fear hits banks",
-     "body": "As the Fed pivoted hawkish into 9% CPI, banks sold off on hard-landing fears despite improving margins. Investors looked past higher NIM to peaking margins, slowing loan growth and rising credit-loss provisions, plus a capital-markets/IPO freeze that gutted investment-banking fees.",
+     "title": "Hawkish pivot — flight-to-safety hits banks",
+     "body": "As the Fed pivoted hawkish into 9% CPI, the tape flipped to flight-to-safety (defensives -8.9% vs cyclicals -16.1%, VIX 18→33) inside a stagflation-ish quad. Banks fell -25.3% but only ranked #8/11 — geared to growth and credit, they held up far better than Tech (-26.7%) and Discretionary (-33.1%). A violent rate-regime move (TLT -21.3%) and a +9.1% DXY spike were the macro drivers; investors looked past higher NIM to peaking margins and a frozen IPO/IB-fee pipeline.",
      "drivers": [
-      "recession fear",
-      "credit provisions",
-      "Fed hiking",
+      "flight-to-safety",
+      "rate regime (TLT -21%)",
+      "strong dollar",
       "IB fee drought"
      ],
-     "title_zh": "衰退担忧打击银行",
-     "body_zh": "随着美联储在9% CPI下转向鹰派，尽管息差改善，银行仍因硬着陆担忧而抛售。投资者越过更高的净息差，看到息差见顶、贷款增长放缓和信用损失计提上升，以及扼杀投行手续费的资本市场/IPO冻结。",
+     "title_zh": "鹰派转向——避险情绪打击银行",
+     "body_zh": "随着美联储在9% CPI下转向鹰派，行情切换为避险（防御股-8.9% vs 周期股-16.1%，VIX 18→33），处于偏滞胀象限。银行下跌-25.3%，但仅排名11档中第8——与增长和信用挂钩的它们远比科技（-26.7%）和可选消费（-33.1%）抗跌。剧烈的利率象限切换（TLT -21.3%）和美元跳升+9.1%是宏观驱动；投资者越过更高的净息差，看到息差见顶和冻结的IPO/投行手续费管道。",
      "drivers_zh": [
-      "衰退担忧",
-      "信用计提",
-      "美联储加息",
+      "避险",
+      "利率象限切换(TLT -21%)",
+      "强势美元",
       "投行手续费枯竭"
      ]
     },
     "2022-06-16": {
-     "title": "Oversold bear-market bounce",
-     "body": "Banks rebounded with the broad market as a softer inflation print and peak-hawkishness hopes sparked a summer relief rally. Higher rates kept NIM tailwinds intact, but the move was a bear-market bounce, not a credit all-clear.",
+     "title": "Tech-led bounce — banks a follower",
+     "body": "Banks rebounded +16.7% with the broad market as a softer inflation print sparked a summer relief rally, but this was a tech/semis-led risk-on move (SMH +19.5%, growth>value +8.8, VIX 33→20) and XLF only ranked #6/11 — a follower, not a leader. Long yields actually eased back over the leg (TLT +4.2%), so the move was a growth-led rebound, not a rate-driven NIM story; a +2.8% DXY and the goldilocks/disinflation flavor favored growth names over value banks. It was a bear-market bounce, not a credit all-clear.",
      "drivers": [
+      "tech-led risk-on",
       "relief rally",
-      "NIM tailwind",
-      "peak-hawk hopes"
+      "yields eased (TLT +4%)",
+      "follower not leader"
      ],
-     "title_zh": "超卖熊市反弹",
-     "body_zh": "随着偏软的通胀数据和鹰派见顶预期点燃夏季纾解上涨，银行与大盘一同反弹。更高的利率使净息差顺风得以维持，但这一走势是熊市反弹，而非信用风险解除。",
+     "title_zh": "科技领涨反弹——银行跟随",
+     "body_zh": "随着偏软的通胀数据点燃夏季纾解上涨，银行随大盘反弹+16.7%，但这是由科技/半导体主导的风险偏好行情（SMH +19.5%，成长>价值+8.8，VIX 33→20），XLF仅排名11档中第6——是跟随者而非领涨者。这一段长端收益率实际回落（TLT +4.2%），因此这是成长主导的反弹，而非利率驱动的净息差行情；+2.8% DXY和金发姑娘/去通胀的味道更利好成长股而非价值类银行。这是熊市反弹，而非信用风险解除。",
      "drivers_zh": [
+      "科技领涨风险偏好",
       "纾解反弹",
-      "净息差顺风",
-      "鹰派见顶预期"
+      "收益率回落(TLT +4%)",
+      "跟随非领涨"
      ]
     },
     "2022-08-16": {
-     "title": "Jackson Hole hawkish reset",
-     "body": "Powell's hawkish Jackson Hole message and a renewed yield surge ended the summer bounce. Recession and credit-cost fears returned as provisions and loan-loss reserves climbed to multi-year highs into year-end.",
+     "title": "Jackson Hole reset — rate-regime selloff",
+     "body": "Powell's hawkish Jackson Hole message ended the summer bounce and reignited a rate-regime selloff: long yields surged again (TLT -13.0%) and the dollar ripped +6.4% inside a slowdown/deflation-scare quad (VIX 20→34). Banks fell -15.0% but ranked #4/11 — recession and credit-cost fears returned as provisions climbed, yet financials held up better than rate-sensitive names like Real Estate (-24.7%) and Tech (-22.7%).",
      "drivers": [
-      "hawkish Powell",
-      "yield surge",
+      "rate regime (TLT -13%)",
+      "strong dollar",
+      "deflation-scare quad",
       "rising provisions"
      ],
-     "title_zh": "杰克逊霍尔鹰派重置",
-     "body_zh": "鲍威尔鹰派的杰克逊霍尔信息和新一轮收益率飙升终结了夏季反弹。随着计提和贷款损失准备金在年底前升至多年高位，衰退和信用成本担忧卷土重来。",
+     "title_zh": "杰克逊霍尔重置——利率象限抛售",
+     "body_zh": "鲍威尔鹰派的杰克逊霍尔信息终结了夏季反弹，重新点燃利率象限抛售：长端收益率再度飙升（TLT -13.0%），美元在放缓/通缩恐慌象限中飙升+6.4%（VIX 20→34）。银行下跌-15.0%，但排名11档中第4——随着计提攀升，衰退和信用成本担忧卷土重来，但金融板块比房地产（-24.7%）、科技（-22.7%）等利率敏感板块更抗跌。",
      "drivers_zh": [
-      "鹰派鲍威尔",
-      "收益率飙升",
+      "利率象限(TLT -13%)",
+      "强势美元",
+      "通缩恐慌象限",
       "计提上升"
      ]
     },
     "2022-10-12": {
-     "title": "Peak-rate rally, earnings beats",
-     "body": "Banks rallied off the October low as cooling CPI and peak-Fed hopes lifted risk assets. Resilient NIM and better-than-feared Q3/Q4 earnings supported financials even as recession worries lingered.",
+     "title": "Peak-rate rally — value-friendly reflation",
+     "body": "Banks rallied +22.9% off the October low to rank #3/11 as cooling CPI and peak-Fed hopes lifted risk assets in a reflation/growth-up quad (cyclicals +18.6% vs defensives +10.2%). A sharply weaker dollar (-8.7% DXY) and broad participation (equal-weight +3.3%, VIX 34→19) made this a value-friendly turn financials could lead, with resilient NIM and better-than-feared Q3/Q4 earnings adding fuel.",
      "drivers": [
-      "disinflation hopes",
-      "NIM resilience",
+      "reflation quad",
+      "weak dollar tailwind",
+      "broad participation",
       "earnings beats"
      ],
-     "title_zh": "利率见顶上涨，业绩超预期",
-     "body_zh": "随着降温的CPI和美联储见顶预期提振风险资产，银行从10月低点反弹。即便衰退担忧挥之不去，稳健的净息差和好于担忧的三/四季度业绩仍支撑了金融板块。",
+     "title_zh": "利率见顶上涨——利好价值的再通胀",
+     "body_zh": "随着降温的CPI和美联储见顶预期在再通胀/增长上行象限中提振风险资产（周期股+18.6% vs 防御股+10.2%），银行从10月低点反弹+22.9%，排名11档中第3。大幅走弱的美元（-8.7% DXY）和广泛参与（等权重+3.3%，VIX 34→19）让这成为银行能够领涨的利好价值拐点，稳健的净息差和好于担忧的三/四季度业绩添柴加薪。",
      "drivers_zh": [
-      "去通胀预期",
-      "净息差韧性",
+      "再通胀象限",
+      "弱势美元顺风",
+      "广泛参与",
       "业绩超预期"
      ]
     },
     "2023-02-07": {
-     "title": "SVB regional-bank crisis",
-     "body": "The collapse of Silicon Valley Bank and Signature in March 2023 triggered the worst bank panic since 2008, sparking deposit flight from regionals and contagion fears across XLF. Unrealized bond losses and funding stress crushed the sector before the Fed's BTFP and rescues stemmed the run.",
+     "title": "SVB crisis — XLF the lone casualty",
+     "body": "The collapse of Silicon Valley Bank and Signature triggered the worst bank panic since 2008. This was idiosyncratic, not a macro de-risk: XLF fell -16.3% and ranked dead last #11/11 while Tech was essentially flat (-0.1%) and the broad selloff was mild (SPY -5.7%). Defensives outperformed (-3.0% vs cyclicals -8.6%) and breadth narrowed (-4.3%) as deposit flight, unrealized bond losses and funding stress crushed regionals — until the Fed's BTFP and rescues stemmed the run.",
      "drivers": [
-      "bank failures",
-      "deposit flight",
-      "unrealized losses",
-      "contagion"
+      "sector-specific shock",
+      "worst sector #11",
+      "deposit flight / unrealized losses",
+      "narrow breadth"
      ],
-     "title_zh": "硅谷银行区域银行危机",
-     "body_zh": "2023年3月硅谷银行和签名银行的倒闭引发了2008年以来最严重的银行恐慌，触发区域银行的存款外流和遍及XLF的传染担忧。在美联储的BTFP工具和救助遏制挤兑之前，未实现债券损失和融资压力压垮了该板块。",
+     "title_zh": "硅谷银行危机——XLF独自受灾",
+     "body_zh": "硅谷银行和签名银行的倒闭引发2008年以来最严重的银行恐慌。这是特异性事件而非宏观去风险：XLF下跌-16.3%，垫底排名11档中第11，而科技基本持平（-0.1%），大盘抛售温和（SPY -5.7%）。防御股跑赢（-3.0% vs 周期股-8.6%），市场广度收窄（-4.3%），存款外流、未实现债券损失和融资压力压垮区域银行——直到美联储的BTFP工具和救助遏制挤兑。",
      "drivers_zh": [
-      "银行倒闭",
-      "存款外流",
-      "未实现损失",
-      "传染"
+      "板块特异冲击",
+      "最差板块第11",
+      "存款外流/未实现损失",
+      "市场广度收窄"
      ]
     },
     "2023-03-17": {
-     "title": "Crisis fades, deregulation trade",
-     "body": "Once contagion was contained, financials embarked on a long rally as deposits stabilized and NIM held up. The 2024 soft landing, the Fed's September cut, and the Trump-election deregulation/M&A 'bank trade' powered big banks and capital-markets names into early 2025.",
+     "title": "Crisis fades — deregulation trade, banks #2",
+     "body": "Once contagion was contained, financials embarked on a +74.4% rally to rank #2/11 even inside a narrow, mega-cap melt-up (semis +107.8%, equal-weight lagged cap-weight by -24.1%). Banks rode a rate-regime tailwind — long yields surged (TLT -11.2%), supporting NIM — alongside a stronger dollar (+3.3% DXY) and the reflation quad. The 2024 soft landing, the Fed's September cut and the Trump-election deregulation/M&A 'bank trade' powered the move into early 2025.",
      "drivers": [
-      "crisis contained",
-      "Trump deregulation",
-      "M&A revival",
-      "rate cuts"
+      "risk-on leader #2",
+      "rate regime (TLT -11%)",
+      "Trump deregulation / M&A",
+      "narrow breadth backdrop"
      ],
-     "title_zh": "危机消退，放松监管交易",
-     "body_zh": "在传染得到遏制后，随着存款企稳、净息差顶住，金融板块开启了一轮长期上涨。2024年的软着陆、美联储9月降息以及特朗普当选的放松监管/并购\"银行交易\"，推动大型银行和资本市场龙头直至2025年初。",
+     "title_zh": "危机消退——放松监管交易，银行排名第2",
+     "body_zh": "在传染得到遏制后，金融板块开启+74.4%的上涨，即便在狭窄的大型股熔涨中（半导体+107.8%，等权重落后市值加权-24.1%）仍排名11档中第2。银行借力利率象限顺风——长端收益率飙升（TLT -11.2%）支撑净息差——以及更强的美元（+3.3% DXY）和再通胀象限。2024年的软着陆、美联储9月降息以及特朗普当选的放松监管/并购\"银行交易\"，推动行情直至2025年初。",
      "drivers_zh": [
-      "危机遏制",
-      "特朗普放松监管",
-      "并购复兴",
-      "降息"
+      "风险偏好领涨第2",
+      "利率象限(TLT -11%)",
+      "特朗普放松监管/并购",
+      "狭窄广度背景"
      ]
     },
     "2025-02-19": {
-     "title": "Tariff-crash risk-off",
-     "body": "Financials slid into the April reciprocal-tariff crash as recession and credit fears spiked alongside the broad market's record two-day loss. Banks, geared to growth and credit cycles, sold off hard before the April-8/9 tariff-pause low.",
+     "title": "Tariff-crash risk-off — banks hold up",
+     "body": "Financials slid -15.5% into the April reciprocal-tariff crash, a sharp flight-to-safety event (defensives -7.7% vs cyclicals -18.7%, VIX spiking 15→52) inside a slowdown/deflation-scare quad. Yet XLF ranked #5/11 — geared to growth and credit, banks held up better than Tech (-25.7%) as breadth actually broadened (+2.8%) and the dollar weakened (-3.9% DXY), before the April-8/9 tariff-pause low.",
      "drivers": [
-      "tariff shock",
-      "recession fear",
-      "credit risk",
-      "risk-off"
+      "flight-to-safety",
+      "VIX 15→52",
+      "deflation-scare quad",
+      "relative resilience #5"
      ],
-     "title_zh": "关税崩盘风险规避",
-     "body_zh": "随着衰退和信用担忧与大盘创纪录的两日跌幅一同飙升，金融板块滑入4月的对等关税崩盘。与增长和信用周期高度挂钩的银行在4月8/9日关税暂缓低点之前大幅抛售。",
+     "title_zh": "关税崩盘风险规避——银行抗跌",
+     "body_zh": "金融板块下滑-15.5%，滑入4月的对等关税崩盘，这是放缓/通缩恐慌象限中的剧烈避险事件（防御股-7.7% vs 周期股-18.7%，VIX从15飙升至52）。但XLF排名11档中第5——与增长和信用挂钩的银行比科技（-25.7%）更抗跌，期间市场广度实际扩张（+2.8%），美元走弱（-3.9% DXY），直至4月8/9日关税暂缓低点。",
      "drivers_zh": [
-      "关税冲击",
-      "衰退担忧",
-      "信用风险",
-      "风险规避"
+      "避险",
+      "VIX 15→52",
+      "通缩恐慌象限",
+      "相对抗跌第5"
      ]
     },
     "2025-04-08": {
-     "title": "Recovery, capital-markets boom",
-     "body": "Off the tariff-pause low, banks rallied on a deregulation agenda, a capital-markets revival, and a wave of megadeal M&A that revived investment-banking fees. Strong earnings and a friendlier capital backdrop kept financials leading into 2026.",
+     "title": "Recovery — but starved by the semis melt-up",
+     "body": "Off the tariff-pause low banks rallied +29.7% on deregulation, a capital-markets revival and a wave of megadeal M&A that revived IB fees — yet XLF ranked only #6/11. This was a narrow, semis-led risk-on melt-up (SMH +116.1%, equal-weight lagged by -10.1%, growth>value +17.3) in a goldilocks/disinflation quad: value banks weren't broken, they were starved as flows chased Tech (+63.9%). A weaker dollar (-4.3% DXY) rounded out the backdrop.",
      "drivers": [
-      "deregulation",
-      "capital markets",
-      "M&A megadeals",
-      "strong earnings"
+      "starved by semis melt-up",
+      "narrow breadth",
+      "deregulation / M&A",
+      "goldilocks quad"
      ],
-     "title_zh": "复苏，资本市场繁荣",
-     "body_zh": "从关税暂缓低点起，银行凭借放松监管议程、资本市场复兴以及重振投行手续费的一波巨型并购浪潮而上涨。强劲的业绩和更友好的资本环境使金融板块领跑至2026年。",
+     "title_zh": "复苏——但被半导体熔涨冷落",
+     "body_zh": "从关税暂缓低点起，银行凭借放松监管、资本市场复兴以及重振投行手续费的一波巨型并购浪潮上涨+29.7%——但XLF仅排名11档中第6。这是金发姑娘/去通胀象限中由半导体主导的狭窄风险偏好熔涨（SMH +116.1%，等权重落后-10.1%，成长>价值+17.3）：价值类银行并未走坏，只是在资金追逐科技（+63.9%）时被冷落。走弱的美元（-4.3% DXY）补全了背景。",
      "drivers_zh": [
-      "放松监管",
-      "资本市场",
-      "并购巨额交易",
-      "强劲业绩"
+      "被半导体熔涨冷落",
+      "市场广度狭窄",
+      "放松监管/并购",
+      "金发姑娘象限"
      ]
     },
     "2026-01-06": {
-     "title": "Oil shock, credit caution",
-     "body": "The Iran/Hormuz oil shock pushed CPI to ~4.2% and flipped the Fed to a hiking bias, lifting long yields and the dollar and pressuring risk. Financials cooled on renewed recession/credit-cost concerns despite healthy NIM, though deregulation and deal flow cushioned the pullback.",
+     "title": "Oil shock — stagflation hits banks hardest",
+     "body": "The Iran/Hormuz oil shock pushed CPI to ~4.2% and flipped the Fed to a hiking bias, lifting the dollar (+1.6% DXY) into a stagflation-ish quad (oil +74.4%). XLF fell -14.8% and ranked dead last #11/11 — even as breadth broadened (+4.2%) toward Energy (+38.0%) and defensives, growth-geared banks bore the brunt of renewed recession/credit-cost fears despite healthy NIM, with deregulation and deal flow only cushioning the pullback.",
      "drivers": [
-      "oil shock",
+      "stagflation quad / oil shock",
+      "worst sector #11",
       "Fed hiking bias",
-      "credit caution",
-      "higher yields"
+      "credit caution"
      ],
-     "title_zh": "油价冲击，信用谨慎",
-     "body_zh": "伊朗/霍尔木兹油价冲击将CPI推升至约4.2%，使美联储转向加息倾向，推升长端收益率和美元并施压风险资产。尽管净息差健康，金融板块仍因衰退/信用成本担忧重燃而降温，不过放松监管和交易流缓冲了回调。",
+     "title_zh": "油价冲击——滞胀对银行打击最重",
+     "body_zh": "伊朗/霍尔木兹油价冲击将CPI推升至约4.2%，使美联储转向加息倾向，在偏滞胀象限中推升美元（+1.6% DXY，油价+74.4%）。XLF下跌-14.8%，垫底排名11档中第11——即便市场广度向能源（+38.0%）和防御股扩张（+4.2%），尽管净息差健康，与增长挂钩的银行仍首当其冲承受重燃的衰退/信用成本担忧，放松监管和交易流仅缓冲了回调。",
      "drivers_zh": [
-      "油价冲击",
+      "滞胀象限/油价冲击",
+      "最差板块第11",
       "美联储加息倾向",
-      "信用谨慎",
-      "更高收益率"
+      "信用谨慎"
      ]
     }
    },
-   "now_zh": "处于周期中段扩张，相对强度排名第5（位置约51）——银行依靠放松监管、资本市场复兴、并购重启和稳定的净息差，不过2026年的加息倾向和信用成本警示限制了上行空间。"
+   "now_zh": "处于趋势阶段，相对强度排名第5（位置约51），但短期落后，回报-2.7%（排名11档中第9）——当前领涨是由半导体主导的狭窄行情（SMH +67.9%），资金涌入科技/能源/工业，把周期性价值类的银行甩在后面。底层宏观其实是建设性的：再通胀/增长上行象限（周期股+11.2% vs 防御股+6.9%，铜金比+18.0，油价+20.9%）、市场广度扩张（等权重领先市值加权+2.9%）、成长减价值为-15.2%——这通常是银行领跑的利好价值环境。放松监管、并购/资本市场复兴和稳定的净息差是多头逻辑；2026年的加息倾向、走强的美元（+3.4% DXY）和信用成本警示限制上行空间。XLF并未走坏——只是在大型股熔涨中被冷落，重回价值/广度的板块轮动是值得关注的拐点。"
   },
   "xlre": {
-   "now": "Topping, RS#3 (pos~81) — a rate-sensitive, late-cycle leader; 2026 oil-shock inflation, the Fed's hiking bias and higher long yields threaten the duration trade despite AI-datacenter demand.",
+   "now": "Topping, RS#5 (pos~81) — REITs are +12.1% YTD but middle-of-the-pack as money chases the semis melt-up (SMH +67.9%, high-beta beat low-vol by +21pts), starving the low-vol duration trade. The 2026 oil-shock inflation, a Fed hiking bias and a stronger dollar (+3.4% DXY) cap the bond proxy, though firmer breadth (equal-weight +2.9% vs cap-weight) hints the late-cycle rotation could broaden back toward yield plays if long rates roll over.",
    "legs": {
     "2021-12-31": {
-     "title": "Rate-shock derating begins",
-     "body": "REITs led the 2022 decline as the Fed's hawkish turn against 9% CPI sent yields sharply higher, hammering long-duration real estate first. Rising discount rates compressed property valuations and made REIT dividend yields less competitive versus Treasuries.",
+     "title": "Rate-shock derating leads the tape down",
+     "body": "The Fed's hawkish turn against 9% CPI sent the 10Y surging (TLT −7.6%), and as the textbook rate-regime move it hammered the long-duration bond proxy first — REITs fell −15.1%, the worst defensive. This was a rate selloff, not a flight-to-safety: defensives actually lagged cyclicals (−7.4% vs −5.4%) with VIX 17→31, because rising discount rates compressed property valuations and made REIT yields uncompetitive versus Treasuries.",
      "drivers": [
-      "rising rates",
+      "rate regime",
       "duration hit",
-      "valuation compression"
+      "valuation compression",
+      "reflation quad"
      ],
-     "title_zh": "利率冲击估值下修开始",
-     "body_zh": "REIT（房地产信托）领跌2022年的下行，因美联储在9% CPI下转向鹰派使收益率急剧走高，首当其冲地重创了长久期房地产。上升的贴现率压缩了房产估值，并使REIT股息收益率相对国债的竞争力下降。",
+     "title_zh": "利率冲击下修领跌大盘",
+     "body_zh": "美联储在9% CPI下转向鹰派使10年期收益率飙升（TLT −7.6%），作为典型的利率象限走势，它首当其冲地重创了长久期债券替代品——REIT下跌−15.1%，是表现最差的防御板块。这是一轮利率抛售，而非避险：防御股实际跑输周期股（−7.4% vs −5.4%），VIX由17升至31，因上升的贴现率压缩了房产估值，并使REIT收益率相对国债失去竞争力。",
      "drivers_zh": [
-      "利率上升",
+      "利率象限",
       "久期受挫",
-      "估值压缩"
+      "估值压缩",
+      "再通胀象限"
      ]
     },
     "2022-02-23": {
-     "title": "Oversold rate-pause bounce",
-     "body": "REITs bounced as yields briefly stabilized and inflation/rate fears paused, drawing buyers into beaten-down rate-sensitive names. The rebound was a counter-trend relief move within the broader 2022 hiking-driven downtrend.",
+     "title": "Defensive rate-pause bounce, #3 sector",
+     "body": "With yields briefly stabilizing and inflation fears pausing, buyers rotated into beaten-down real assets — REITs bounced +15.7% (rank #3), behind only Energy and Utilities as defensives led cyclicals (+12.7% vs +7.9%) and semis stayed in the doghouse (SMH −4.2%). This was a value-over-growth, stagflation-quad relief move, but the bigger picture stayed bearish: the dollar firmed (+4.4% DXY) and the 10Y kept climbing (TLT −10.7%), capping the counter-trend rebound.",
      "drivers": [
-      "yield pause",
+      "defensive rotation",
       "relief rally",
-      "dip buying"
+      "rate pause",
+      "stagflation quad"
      ],
-     "title_zh": "超卖利率暂停反弹",
-     "body_zh": "随着收益率短暂企稳、通胀/利率担忧暂歇，买盘涌入被打压的利率敏感标的，REIT反弹。这轮回升是更广泛的2022年加息驱动下行趋势中的逆势纾解走势。",
+     "title_zh": "防御性利率暂停反弹，板块第3",
+     "body_zh": "随着收益率短暂企稳、通胀担忧暂歇，买盘轮入被打压的实物资产——REIT反弹+15.7%（排名第3），仅次于能源和公用事业，防御股领先周期股（+12.7% vs +7.9%），半导体仍遭冷落（SMH −4.2%）。这是一轮价值跑赢成长的滞胀象限纾解走势，但大格局仍偏空：美元走强（DXY +4.4%）、10年期收益率续升（TLT −10.7%），封住了这轮逆势回升。",
      "drivers_zh": [
-      "收益率暂停",
+      "板块轮动",
       "纾解反弹",
-      "逢低买入"
+      "利率暂停",
+      "滞胀象限"
      ]
     },
     "2022-04-20": {
-     "title": "Fastest hiking crushes duration",
-     "body": "As the Fed accelerated rate hikes and the 10-year surged, long-duration REITs sold off hard into the June low. Higher cap rates compressed property values and recession fears added to the de-rating.",
+     "title": "Fastest hiking crushes the duration trade",
+     "body": "As the Fed accelerated hikes and the 10Y surged (TLT −7.8%), the long-duration bond proxy sold off −23.2% into the June low — rank #10, worse even than other defensives (−14.5% avg). Higher cap rates compressed property values, a strong dollar (+3.2% DXY) added a stagflation-quad headwind, and recession fears deepened the de-rating as VIX climbed 20→33.",
      "drivers": [
-      "aggressive hiking",
+      "rate regime",
       "cap-rate rise",
-      "duration selloff"
+      "strong dollar",
+      "stagflation quad"
      ],
-     "title_zh": "最快加息压垮久期",
-     "body_zh": "随着美联储加速加息、10年期收益率飙升，长久期REIT大幅抛售至6月低点。更高的资本化率压缩了房产价值，衰退担忧也加重了估值下修。",
+     "title_zh": "最快加息压垮久期交易",
+     "body_zh": "随着美联储加速加息、10年期收益率飙升（TLT −7.8%），长久期债券替代品抛售−23.2%至6月低点——排名第10，甚至弱于其他防御板块（平均−14.5%）。更高的资本化率压缩了房产价值，强势美元（DXY +3.2%）叠加滞胀象限逆风，衰退担忧随VIX由20升至33而加深了估值下修。",
      "drivers_zh": [
-      "激进加息",
+      "利率象限",
       "资本化率上升",
-      "久期抛售"
+      "强势美元",
+      "滞胀象限"
      ]
     },
     "2022-06-16": {
-     "title": "Peak-Fed summer relief",
-     "body": "REITs rallied with rates pulling back from the June peak on softer inflation hopes. Lower yields temporarily relieved the duration pressure, lifting rate-sensitive real estate off its lows.",
+     "title": "Peak-Fed relief in a semis-led bounce",
+     "body": "REITs rallied +18.7% (rank #4) as rates pulled back from the June peak (TLT +3.7%) on softer-inflation hopes. But the leadership belonged to the risk-on melt-up — semis +20.8%, growth>value, VIX 33→20 — so the bond proxy rode a goldilocks-quad relief rather than leading; falling yields, not sector strength, lifted rate-sensitive real estate off its lows.",
      "drivers": [
       "yield pullback",
-      "relief rally",
-      "duration relief"
+      "tech-led risk-on",
+      "duration relief",
+      "goldilocks quad"
      ],
-     "title_zh": "美联储见顶夏季纾解",
-     "body_zh": "随着利率因偏软的通胀预期从6月高点回落，REIT上涨。更低的收益率暂时缓解了久期压力，使利率敏感的房地产从低点回升。",
+     "title_zh": "美联储见顶纾解，半导体领涨的反弹",
+     "body_zh": "随着利率因偏软的通胀预期从6月高点回落（TLT +3.7%），REIT上涨+18.7%（排名第4）。但领涨权属于风险偏好熔涨——半导体+20.8%、成长跑赢价值、VIX由33降至20——因此债券替代品是搭上了金发女孩象限的纾解,而非领涨;是收益率回落而非板块自身强势，将利率敏感的房地产从低点托起。",
      "drivers_zh": [
       "收益率回落",
-      "纾解反弹",
-      "久期缓解"
+      "科技领涨风险偏好",
+      "久期缓解",
+      "金发女孩象限"
      ]
     },
     "2022-08-15": {
-     "title": "Jackson Hole yield surge",
-     "body": "Powell's hawkish Jackson Hole and a renewed climb in Treasury yields drove REITs to fresh lows. The near one-for-one inverse link between REITs and the 10-year deepened the drawdown into October.",
+     "title": "Jackson Hole yield surge, worst sector",
+     "body": "Powell's hawkish Jackson Hole and a renewed climb in Treasury yields (TLT −14.2%) drove the bond proxy to fresh lows — REITs fell −25.5%, the single worst sector (#11). A surging dollar (+6.3% DXY) deepened the slowdown/deflation-scare quad, and the near one-for-one inverse link between REITs and the 10Y carried the drawdown into October even as VIX rose 20→32.",
      "drivers": [
       "hawkish Powell",
-      "yield surge",
+      "rate regime",
+      "strong dollar",
       "rate sensitivity"
      ],
-     "title_zh": "杰克逊霍尔收益率飙升",
-     "body_zh": "鲍威尔鹰派的杰克逊霍尔讲话和美债收益率的新一轮攀升，将REIT推向新低。REIT与10年期之间近乎一对一的反向关联加深了至10月的回撤。",
+     "title_zh": "杰克逊霍尔收益率飙升，最差板块",
+     "body_zh": "鲍威尔鹰派的杰克逊霍尔讲话和美债收益率的新一轮攀升（TLT −14.2%），将债券替代品推向新低——REIT下跌−25.5%，是唯一最差板块（第11）。飙升的美元（DXY +6.3%）加深了放缓/通缩恐慌象限，REIT与10年期之间近乎一对一的反向关联将回撤延续至10月，其间VIX由20升至32。",
      "drivers_zh": [
       "鹰派鲍威尔",
-      "收益率飙升",
+      "利率象限",
+      "强势美元",
       "利率敏感性"
      ]
     },
     "2022-10-14": {
-     "title": "Disinflation hope rebound",
-     "body": "REITs rallied off the October low as cooling CPI sparked peak-rate hopes and a pullback in yields. The duration-sensitive sector bounced sharply as discount-rate fears eased into early 2023.",
+     "title": "Disinflation pivot snaps the duration trade higher",
+     "body": "Cooling CPI sparked peak-rate hopes and yields fell hard (TLT +11.0%), so the duration-sensitive bond proxy roared back +25.3% (rank #2). A collapsing dollar (−10.2% DXY) and broadening tape (equal-weight +4.3%) drove a goldilocks-quad recovery, and discount-rate fears eased as VIX fell 32→19 into early 2023.",
      "drivers": [
       "disinflation hopes",
-      "yield pullback",
-      "duration rebound"
+      "rate regime",
+      "broadening breadth",
+      "goldilocks quad"
      ],
-     "title_zh": "去通胀预期反弹",
-     "body_zh": "随着降温的CPI点燃利率见顶预期和收益率回落，REIT从10月低点反弹。在贴现率担忧缓解之际，这个久期敏感的板块大幅反弹，直至2023年初。",
+     "title_zh": "去通胀转向带动久期交易飙升",
+     "body_zh": "降温的CPI点燃利率见顶预期、收益率大幅回落（TLT +11.0%），久期敏感的债券替代品强势反弹+25.3%（排名第2）。崩塌的美元（DXY −10.2%）与扩张的市场广度（等权重 +4.3%）驱动了金发女孩象限的复苏，贴现率担忧随VIX由32降至19而缓解，直至2023年初。",
      "drivers_zh": [
       "去通胀预期",
-      "收益率回落",
-      "久期反弹"
+      "利率象限",
+      "市场广度扩张",
+      "金发女孩象限"
      ]
     },
     "2023-02-02": {
-     "title": "Yields grind to 2023 peak",
-     "body": "REITs slid through 2023 as Treasury yields ground higher toward the October-2023 peak, lifting real-estate debt costs. Office distress and work-from-home headlines weighed on sentiment even as office was a small index slice; the sector bottomed in late October.",
+     "title": "Yields grind higher, the lone laggard",
+     "body": "As the 10Y ground toward its October-2023 peak (TLT −21.3%), the bond proxy slid −21.1% — dead-last (#11) while SPY was flat and semis rose, a textbook rate-regime divergence. A narrow, mega-cap tape (equal-weight lagged by −12.7%) and a firmer dollar (+4.7% DXY) starved real estate of flows, and office-distress/work-from-home headlines weighed on sentiment even as office was a small index slice; the sector bottomed in late October.",
      "drivers": [
-      "surging yields",
-      "debt costs",
+      "rate regime",
+      "narrow breadth",
       "office distress",
       "duration drag"
      ],
-     "title_zh": "收益率磨升至2023年峰值",
-     "body_zh": "随着美债收益率向2023年10月峰值缓步磨升、推高房地产债务成本，REIT在2023年下滑。即便办公楼只是指数中的一小部分，办公楼困境和居家办公的头条仍拖累情绪；该板块在10月底触底。",
+     "title_zh": "收益率磨升，唯一的落后者",
+     "body_zh": "随着10年期向2023年10月峰值缓步磨升（TLT −21.3%），债券替代品下滑−21.1%——垫底（第11），其间SPY持平、半导体上涨，是典型的利率象限背离。狭窄的大型股行情（等权重落后−12.7%）和走强的美元（DXY +4.7%）使房地产资金枯竭，办公楼困境与居家办公的头条拖累情绪——即便办公楼只是指数中的一小部分；该板块在10月底触底。",
      "drivers_zh": [
-      "收益率飙升",
-      "债务成本",
+      "利率象限",
+      "市场广度狭窄",
       "办公楼困境",
       "久期拖累"
      ]
     },
     "2023-10-25": {
-     "title": "Rate-cut pivot, datacenter boom",
-     "body": "REITs rallied off the yield peak as disinflation and the Fed's 2024 pivot lowered yields and revived the duration trade. AI-driven datacenter demand and resilient industrial/healthcare segments led, with the September-2024 cut and election-year optimism extending the recovery.",
+     "title": "Rate-cut pivot revives the bond proxy",
+     "body": "Disinflation and the Fed's 2024 pivot lowered yields (TLT +16.3%), reviving the duration trade and lifting REITs +45.4% off the yield peak. The rally trailed the semis-led melt-up (SMH +72.8%) in a narrow, mega-cap tape (equal-weight −5.1%), but AI-datacenter demand and resilient industrial/healthcare names led the sector, with the September-2024 cut and election-year optimism extending a goldilocks-quad recovery as VIX fell 20→14.",
      "drivers": [
       "rate-cut pivot",
-      "falling yields",
+      "rate regime",
       "AI datacenters",
-      "duration recovery"
+      "goldilocks quad"
      ],
-     "title_zh": "降息转向，数据中心繁荣",
-     "body_zh": "随着去通胀和美联储2024年的政策转向压低收益率并重振久期交易，REIT从收益率峰值反弹。AI驱动的数据中心需求和坚韧的工业/医疗细分领涨，2024年9月的降息和大选年乐观情绪延续了复苏。",
+     "title_zh": "降息转向重振债券替代品",
+     "body_zh": "去通胀和美联储2024年的政策转向压低收益率（TLT +16.3%），重振久期交易，使REIT从收益率峰值反弹+45.4%。在狭窄的大型股行情（等权重 −5.1%）中，这轮上涨落后于半导体领涨的熔涨（SMH +72.8%），但AI数据中心需求和坚韧的工业/医疗标的领涨板块，2024年9月的降息和大选年乐观情绪延续了金发女孩象限的复苏，VIX由20降至14。",
      "drivers_zh": [
       "降息转向",
-      "收益率回落",
+      "利率象限",
       "AI数据中心",
-      "久期复苏"
+      "金发女孩象限"
      ]
     },
     "2024-11-27": {
-     "title": "Yields rebound, tariff risk-off",
-     "body": "REITs faded as post-election yields backed up and the 10-year returned toward mid-2024 highs, undoing the duration tailwind. The April-2025 reciprocal-tariff crash then dragged rate-sensitive real estate to its April-8 low.",
+     "title": "Yields rebound, then tariff flight-to-safety",
+     "body": "Post-election yields backed up and the 10Y returned toward mid-2024 highs (TLT −3.3%), undoing the duration tailwind. The April-2025 reciprocal-tariff crash then dragged the sector to its April-8 low — but as a defensive REITs cushioned the blow (−16.6%, rank #6), with defensives down only −8.6% versus cyclicals −18.7% in a true flight-to-safety as VIX exploded 14→52.",
      "drivers": [
       "yields rebound",
       "duration headwind",
+      "flight-to-safety",
       "tariff crash"
      ],
-     "title_zh": "收益率回升，关税风险规避",
-     "body_zh": "随着大选后收益率回升、10年期重回2024年年中高位，久期顺风被抵消，REIT回落。随后2025年4月的对等关税崩盘将利率敏感的房地产拖向4月8日低点。",
+     "title_zh": "收益率回升，继而关税避险",
+     "body_zh": "大选后收益率回升、10年期重回2024年年中高位（TLT −3.3%），抵消了久期顺风。随后2025年4月的对等关税崩盘将板块拖向4月8日低点——但作为防御资产，REIT缓冲了冲击（−16.6%，排名第6），在真正的避险中防御股仅跌−8.6%、周期股跌−18.7%，其间VIX由14爆升至52。",
      "drivers_zh": [
       "收益率回升",
       "久期逆风",
+      "避险",
       "关税崩盘"
      ]
     },
     "2025-04-08": {
-     "title": "Recovery, then oil-shock cap",
-     "body": "REITs recovered off the tariff-pause low on easing rates and durable AI-datacenter and industrial demand. By 2026 the Iran/Hormuz oil shock, ~4.2% CPI, a Fed hiking bias and higher long yields capped the rally, leaving the rate-sensitive sector topping after a strong run.",
+     "title": "Recovery starved by the semis melt-up",
+     "body": "REITs recovered +26.2% off the tariff-pause low on easing rates and durable AI-datacenter/industrial demand — but it was a middling rank #7, badly lagging the risk-on melt-up: semis ripped +240.9% and high-beta beat low-vol by +111pts, draining flows from the low-vol bond proxy. By 2026 the Iran/Hormuz oil shock, ~4.2% CPI and a Fed hiking bias capped the rally in a narrow, mega-cap tape (equal-weight −8.7%), leaving the rate-sensitive sector topping.",
      "drivers": [
-      "AI datacenters",
-      "rate relief",
+      "tech-led risk-on",
+      "defensives starved",
       "oil-shock inflation",
-      "topping"
+      "narrow breadth"
      ],
-     "title_zh": "复苏，继而油价冲击封顶",
-     "body_zh": "REIT凭借利率缓解以及持久的AI数据中心和工业需求，从关税暂缓低点复苏。到2026年，伊朗/霍尔木兹油价冲击、约4.2%的CPI、美联储加息倾向和更高的长端收益率封住了涨势，使这个利率敏感的板块在一轮强劲上涨后筑顶。",
+     "title_zh": "复苏被半导体熔涨冷落",
+     "body_zh": "REIT凭借利率缓解和持久的AI数据中心/工业需求，从关税暂缓低点复苏+26.2%——但仅排名第7，大幅落后于风险偏好熔涨：半导体狂飙+240.9%、高贝塔跑赢低波动+111个百分点，抽走了低波动债券替代品的资金。到2026年，伊朗/霍尔木兹油价冲击、约4.2%的CPI和美联储加息倾向在狭窄的大型股行情（等权重 −8.7%）中封住了涨势，使这个利率敏感的板块筑顶。",
      "drivers_zh": [
-      "AI数据中心",
-      "利率缓解",
+      "科技领涨风险偏好",
+      "防御股被冷落",
       "油价冲击通胀",
-      "筑顶"
+      "市场广度狭窄"
      ]
     }
    },
-   "now_zh": "正在筑顶，相对强度排名第3（位置约81）——一个利率敏感的周期晚期领涨者；尽管有AI数据中心需求，2026年的油价冲击通胀、美联储的加息倾向和更高的长端收益率仍威胁着久期交易。"
+   "now_zh": "正在筑顶，相对强度排名第5（位置约81）——REIT年初至今+12.1%，但表现居中，因资金追逐半导体熔涨（SMH +67.9%，高贝塔跑赢低波动+21个百分点），冷落了低波动的久期交易。2026年的油价冲击通胀、美联储加息倾向和走强的美元（DXY +3.4%）封住了这个债券替代品，不过市场广度回暖（等权重 +2.9% 跑赢市值加权）暗示，若长端利率回落，周期晚期的板块轮动可能重新转向收益类资产。"
   },
   "xli": {
-   "now": "Trending up (RS#2 leader) — reshoring, defense, and AI-power/datacenter electrification capex keep industrials expanding while ISM firms off the lows.",
+   "now": "Trending up (RS#2 leader) — reshoring, defense, and AI-power/datacenter electrification capex keep XLI a genuine #2 leader (+15.8%) even as the 2026 tape is the narrowest in the cycle: high-beta has crushed low-vol by +20.7% and growth lags value by −15.2%, so this is broad-cyclical leadership, not a mega-cap melt-up — equal-weight is actually beating cap-weight (+2.9%). The reflation/growth-up quad (cyclicals 11.2% vs defensives 6.9%, oil +20.9%, copper−gold +18.0) and a +3.4% DXY favor domestic industrial demand over multinationals; watch ISM and whether the semis bid (+67.9%) keeps capex flowing.",
    "legs": {
     "2022-01-04": {
-     "title": "Fed liftoff sinks cyclicals",
-     "body": "Industrials de-rated hard as the Fed pivoted to aggressive hiking and recession fears hit deeply cyclical earnings; ISM Manufacturing rolled over as new orders softened. Caterpillar warned in late April that China COVID lockdowns would crimp demand, and Russia-Ukraine spiked input/energy costs while a strong dollar threatened the multinational revenue base.",
+     "title": "Fed liftoff: rate-regime de-rate, money flees to safety",
+     "body": "Industrials de-rated hard (−19.8%) as the Fed pivoted to aggressive hiking — a rate-regime shock that crushed long-duration assets (TLT −21.4%) and a strong dollar (+8.7% DXY) that hit the multinational revenue base. This was a flight-to-safety rotation, not sector strength: defensives (−10.4%) outran cyclicals (−16.3%) as VIX ran 17→31. Caterpillar warned in late April that China COVID lockdowns would crimp demand, ISM rolled over, and Russia-Ukraine spiked input/energy costs into a stagflation quad (oil +42.3%).",
      "drivers": [
-      "Fed hiking",
-      "ISM rolling over",
-      "recession fears",
-      "China lockdowns"
+      "rate regime",
+      "flight-to-safety",
+      "strong dollar",
+      "China lockdowns / stagflation quad"
      ],
-     "title_zh": "美联储启动加息打压周期股",
-     "body_zh": "随着美联储转向激进加息、衰退担忧冲击深度周期性盈利，工业股大幅杀估值；ISM制造业指数因新订单走软而见顶回落。卡特彼勒在4月底警告中国新冠封控将抑制需求，俄乌冲突推高投入与能源成本，强势美元则威胁跨国企业的营收基础。",
+     "title_zh": "美联储启动加息：利率体制杀估值，资金避险",
+     "body_zh": "随着美联储转向激进加息，工业股大幅杀估值（−19.8%）——这是一次利率体制冲击，重创长久期资产（TLT −21.4%），强势美元（+8.7% DXY）则打击跨国企业的营收基础。这是一次避险轮动而非板块走强：防御股（−10.4%）跑赢周期股（−16.3%），VIX由17升至31。卡特彼勒在4月底警告中国新冠封控将抑制需求，ISM见顶回落，俄乌冲突在滞胀象限中推高投入与能源成本（油价+42.3%）。",
      "drivers_zh": [
-      "美联储加息",
-      "ISM见顶回落",
-      "衰退担忧",
-      "中国封控"
+      "利率体制",
+      "避险轮动",
+      "强势美元",
+      "中国封控/滞胀象限"
      ]
     },
     "2022-06-17": {
-     "title": "Peak-inflation cyclical bounce",
-     "body": "Industrials rallied off the June low on 'peak inflation' optimism and Fed-pivot hopes, which lift rate-sensitive cyclicals first. July industrial production rose and ISM held in expansion, while aerospace/defense added support as Boeing deliveries recovered and the Ukraine war underpinned a multi-year defense tailwind.",
+     "title": "Peak-inflation bounce in a semis-led risk-on tape",
+     "body": "Industrials rallied +18.0% off the June low on 'peak inflation' optimism and Fed-pivot hopes, but they were a passenger (rank #4), not the engine: this was a tech/semis-led risk-on melt-up (SMH +18.5%, growth>value +7.2, VIX 31→20) that pulled flows into high-beta, with discretionary and tech out front. July industrial production rose and ISM held in expansion, while aerospace/defense added support as Boeing deliveries recovered and the Ukraine war underpinned a multi-year defense tailwind — a goldilocks quad as oil rolled over (−21.0%).",
      "drivers": [
-      "peak-inflation hope",
-      "Fed pivot bets",
+      "tech-led risk-on",
+      "peak-inflation hope / Fed pivot bets",
       "resilient production",
-      "defense tailwind"
+      "defense tailwind / goldilocks quad"
      ],
-     "title_zh": "通胀见顶周期股反弹",
-     "body_zh": "工业股在6月低点反弹，受益于“通胀见顶”乐观情绪与美联储转向预期，这类预期总是最先提振利率敏感的周期股。7月工业生产回升、ISM维持扩张区间，同时航空航天/国防形成支撑——波音交付量回升，乌克兰战争则奠定了多年期的国防顺风。",
+     "title_zh": "半导体领涨风险偏好行情中的“通胀见顶”反弹",
+     "body_zh": "工业股在6月低点反弹+18.0%，受益于“通胀见顶”乐观情绪与美联储转向预期，但它只是搭车者（排名第4）而非引擎：这是一次半导体领涨的风险偏好融涨（SMH +18.5%、成长跑赢价值+7.2、VIX由31降至20），资金涌入高贝塔，可选消费与科技领跑。7月工业生产回升、ISM维持扩张，航空航天/国防形成支撑——波音交付量回升，乌克兰战争奠定多年期国防顺风——油价回落（−21.0%）构成金发姑娘象限。",
      "drivers_zh": [
-      "通胀见顶预期",
-      "美联储转向押注",
+      "科技领涨风险偏好",
+      "通胀见顶预期/美联储转向押注",
       "生产韧性",
-      "国防顺风"
+      "国防顺风/金发姑娘象限"
      ]
     },
     "2022-08-16": {
-     "title": "Jackson Hole, FedEx warning",
-     "body": "The bounce reversed as Powell's hawkish Jackson Hole killed pivot hopes and a hot CPI drove the Fed to another 75bp hike. The sector-specific gut-punch was FedEx pulling guidance and warning of a 'worldwide recession' — a ~21% one-day crash that hammered transports and signaled collapsing global freight.",
+     "title": "Jackson Hole, FedEx warning, rate-regime selloff",
+     "body": "The bounce reversed (−17.2%) as Powell's hawkish Jackson Hole killed pivot hopes and a hot CPI drove another 75bp hike — a rate-regime selloff (TLT −11.4%) with a strong dollar (+5.3% DXY) headwind in a slowdown/deflation-scare quad (oil −8.1%, VIX 20→32). The sector-specific gut-punch was FedEx pulling guidance and warning of a 'worldwide recession' — a ~21% one-day crash that hammered transports and signaled collapsing global freight, sinking XLI even as the broad selloff was indiscriminate (defensives −12.4% barely beat cyclicals −15.3%).",
      "drivers": [
-      "Jackson Hole hawkish",
-      "hot CPI",
+      "rate regime",
+      "Jackson Hole hawkish / hot CPI",
       "FedEx recession warning",
-      "strong dollar"
+      "strong dollar / slowdown quad"
      ],
-     "title_zh": "杰克逊霍尔与联邦快递预警",
-     "body_zh": "反弹随后逆转：鲍威尔在杰克逊霍尔的鹰派表态浇灭了转向预期，高于预期的CPI促使美联储再加息75个基点。板块层面的重击来自联邦快递撤回业绩指引并警告“全球衰退”——单日暴跌约21%，重创运输股，预示全球货运正在崩塌。",
+     "title_zh": "杰克逊霍尔、联邦快递预警、利率体制抛售",
+     "body_zh": "反弹随后逆转（−17.2%）：鲍威尔在杰克逊霍尔的鹰派表态浇灭转向预期，高企的CPI促使美联储再加息75个基点——这是一次利率体制抛售（TLT −11.4%），强势美元（+5.3% DXY）在放缓/通缩恐慌象限中构成逆风（油价−8.1%，VIX由20升至32）。板块层面的重击来自联邦快递撤回指引并警告“全球衰退”——单日暴跌约21%，重创运输股、预示全球货运崩塌，拖累XLI；不过此次广泛抛售几乎无差别（防御股−12.4%仅略胜周期股−15.3%）。",
      "drivers_zh": [
-      "杰克逊霍尔鹰派",
-      "CPI高企",
+      "利率体制",
+      "杰克逊霍尔鹰派/CPI高企",
       "联邦快递衰退预警",
-      "强势美元"
+      "强势美元/放缓象限"
      ]
     },
     "2022-09-30": {
-     "title": "Soft landing, defense, electrification",
-     "body": "XLI rode a soft-landing macro and a broad capex super-cycle: aerospace recovered hard (GE Aerospace, RTX) on record backlogs and rising defense budgets, while reshoring tailwinds from CHIPS/IIJA lifted machinery (Caterpillar, Deere) and electrical-equipment names tied to early AI/datacenter electrification. The Fed's first cuts (Sep 2024) plus the Nov election sparked a cyclical 'Trump trade.'",
+     "title": "Soft landing + AI capex: cyclicals lead, but breadth narrows",
+     "body": "XLI rode a soft-landing macro and a capex super-cycle to +79.5%, the #3 sector, in a tech/semis-led risk-on regime (SMH +166.2%, growth>value +38.9, VIX 32→14) with a weaker dollar (−5.7% DXY) tailwind — though leadership narrowed sharply (equal-weight lagged cap-weight by −21.2%). Aerospace recovered hard (GE Aerospace, RTX) on record backlogs and rising defense budgets, while reshoring tailwinds from CHIPS/IIJA lifted machinery (Caterpillar, Deere) and electrical-equipment names tied to early AI/datacenter electrification. The Fed's first cuts (Sep 2024) plus the Nov election sparked a cyclical 'Trump trade' into a goldilocks quad.",
      "drivers": [
+      "tech-led risk-on / narrow breadth",
       "aerospace/defense backlogs",
       "reshoring + CHIPS/IIJA capex",
-      "Fed cuts begin",
-      "Trump-trade rotation"
+      "Fed cuts + Trump-trade rotation"
      ],
-     "title_zh": "软着陆、国防与电气化",
-     "body_zh": "工业股乘着软着陆宏观与广泛的资本开支超级周期上行：航空航天强劲复苏（GE航空航天、RTX）受订单积压创纪录与国防预算上升驱动，CHIPS法案/IIJA带来的制造业回流顺风提振了机械（卡特彼勒、迪尔）和与早期AI/数据中心电气化挂钩的电气设备公司。美联储首次降息（2024年9月）叠加11月大选点燃了周期性“特朗普交易”。",
+     "title_zh": "软着陆+AI资本开支：周期股领涨，但广度收窄",
+     "body_zh": "工业股乘着软着陆宏观与资本开支超级周期上行+79.5%，位列第3，处于半导体领涨的风险偏好体制（SMH +166.2%、成长跑赢价值+38.9、VIX由32降至14），并享美元走弱（−5.7% DXY）的顺风——但领涨明显收窄（等权落后市值加权−21.2%）。航空航天强劲复苏（GE航空航天、RTX）受订单积压创纪录与国防预算上升驱动，CHIPS法案/IIJA的回流顺风提振机械（卡特彼勒、迪尔）及与早期AI/数据中心电气化挂钩的电气设备公司。美联储首次降息（2024年9月）叠加11月大选，在金发姑娘象限中点燃周期性“特朗普交易”。",
      "drivers_zh": [
+      "科技领涨/市场广度狭窄",
       "航空航天/国防订单积压",
       "回流+CHIPS/IIJA资本开支",
-      "美联储开启降息",
-      "特朗普交易轮动"
+      "美联储降息+特朗普交易轮动"
      ]
     },
     "2024-11-29": {
-     "title": "Reciprocal tariffs gut supply chains",
-     "body": "Trump's April 2025 'reciprocal' tariffs cratered industrials into an April 8 low, with big China-exporting cyclicals leading the Dow down — Boeing fell ~9% and Caterpillar ~6% in two days. Industrials' globalized supply chains and machinery/aerospace input costs made the sector a clear casualty.",
+     "title": "Reciprocal tariffs gut supply chains, money flees to safety",
+     "body": "Trump's April 2025 'reciprocal' tariffs cratered industrials −18.5% into an April 8 low, with big China-exporting cyclicals leading the Dow down — Boeing fell ~9% and Caterpillar ~6% in two days. This was a flight-to-safety rotation as VIX spiked 14→52: defensives (−8.9%) sharply outran cyclicals (−19.2%) in a slowdown/deflation-scare quad (oil −12.4%). Industrials' globalized supply chains and machinery/aerospace input costs made the sector a clear casualty even as a weaker dollar (−2.6% DXY) offered no offset.",
      "drivers": [
+      "flight-to-safety",
       "April reciprocal tariffs",
-      "supply-chain cost shock",
-      "Boeing/Caterpillar hit",
-      "growth fears"
+      "Boeing/Caterpillar supply-chain hit",
+      "growth fears / slowdown quad"
      ],
-     "title_zh": "对等关税冲击供应链",
-     "body_zh": "特朗普2025年4月的“对等”关税将工业股打入4月8日低点，对华出口占比高的大型周期股领跌道指——波音两日内跌约9%、卡特彼勒跌约6%。工业板块全球化的供应链以及机械/航空航天的投入成本，使其成为明显的受害者。",
+     "title_zh": "对等关税冲击供应链，资金涌向避险",
+     "body_zh": "特朗普2025年4月的“对等”关税将工业股打入4月8日低点（−18.5%），对华出口占比高的大型周期股领跌道指——波音两日内跌约9%、卡特彼勒跌约6%。这是一次避险轮动，VIX由14飙升至52：在放缓/通缩恐慌象限中，防御股（−8.9%）大幅跑赢周期股（−19.2%，油价−12.4%）。工业板块全球化的供应链以及机械/航空航天的投入成本使其成为明显的受害者，即便美元走弱（−2.6% DXY）也未能提供缓冲。",
      "drivers_zh": [
+      "避险轮动",
       "4月对等关税",
-      "供应链成本冲击",
-      "波音/卡特彼勒受挫",
-      "增长担忧"
+      "波音/卡特彼勒供应链受挫",
+      "增长担忧/放缓象限"
      ]
     },
     "2025-04-08": {
-     "title": "Industrials lead the rebound",
-     "body": "Off the April low industrials surged as a market leader, powered by aerospace/defense (GE Aerospace, RTX) and the AI-power/datacenter electrification capex boom — GE Vernova and Eaton riding a transformer/switchgear shortage — alongside bonus-depreciation reigniting machinery orders and reshoring. The late-cycle leg held up through the 2026 Iran/Hormuz oil shock on durable defense and AI-infrastructure demand.",
+     "title": "Industrials lead the rebound — a true #2, not just a passenger",
+     "body": "Off the April low industrials surged +60.3% as a genuine #2 leader, powered by aerospace/defense (GE Aerospace, RTX) and the AI-power/datacenter electrification capex boom — GE Vernova and Eaton riding a transformer/switchgear shortage — alongside bonus-depreciation reigniting machinery orders and reshoring. In a reflation/growth-up quad (cyclicals +51.4% vs defensives +20.4%, oil +20.7%) this was risk-on leadership, though the tape stayed narrow (equal-weight lagged cap-weight by −8.8%) under a roaring semis bid (SMH +255%). The late-cycle leg held up through the 2026 Iran/Hormuz oil shock on durable defense and AI-infrastructure demand.",
      "drivers": [
-      "aerospace/defense leadership",
-      "AI-power electrification capex",
+      "risk-on leadership / reflation quad",
+      "aerospace/defense + AI-power electrification capex",
       "reshoring",
-      "resilient through Hormuz shock"
+      "narrow breadth / resilient through Hormuz shock"
      ],
-     "title_zh": "工业股领涨反弹",
-     "body_zh": "自4月低点起，工业股作为市场领头羊飙升，受航空航天/国防（GE航空航天、RTX）以及AI电力/数据中心电气化资本开支热潮驱动——GE Vernova与伊顿乘着变压器/开关设备短缺而上行，叠加加成折旧重新点燃机械订单与制造业回流。这一晚周期阶段在2026年伊朗/霍尔木兹油价冲击中依靠稳健的国防与AI基础设施需求得以挺住。",
+     "title_zh": "工业股领涨反弹——真正的第二领头，而非搭车者",
+     "body_zh": "自4月低点起，工业股作为名副其实的第二领头飙升+60.3%，受航空航天/国防（GE航空航天、RTX）及AI电力/数据中心电气化资本开支热潮驱动——GE Vernova与伊顿乘着变压器/开关设备短缺上行，叠加加成折旧重新点燃机械订单与制造业回流。在再通胀/增长向上的象限中（周期股+51.4% vs 防御股+20.4%、油价+20.7%），这是风险偏好领涨；尽管在半导体强劲买盘下（SMH +255%）市场广度仍偏窄（等权落后市值加权−8.8%）。这一晚周期阶段在2026年伊朗/霍尔木兹油价冲击中依靠稳健的国防与AI基础设施需求得以挺住。",
      "drivers_zh": [
-      "航空航天/国防领涨",
-      "AI电力电气化资本开支",
+      "风险偏好领涨/再通胀象限",
+      "航空航天/国防+AI电力电气化资本开支",
       "制造业回流",
-      "挺过霍尔木兹冲击"
+      "市场广度狭窄/挺过霍尔木兹冲击"
      ]
     }
    },
-   "now_zh": "趋势向上（RS排名第2，行业领头）——制造业回流、国防开支以及AI电力/数据中心电气化的资本开支，持续推动工业板块扩张，同时ISM在低位企稳回升。"
+   "now_zh": "趋势向上（RS排名第2，行业领头）——制造业回流、国防开支以及AI电力/数据中心电气化的资本开支，使工业板块（+15.8%）稳居名副其实的第二领头位置；即便2026年市场广度为本轮周期最窄（高贝塔跑赢低波动+20.7%、成长落后价值−15.2%），这仍是广泛的周期股领涨而非大盘股独涨——等权指数实际上跑赢市值加权+2.9%。再通胀/增长向上的象限（周期股11.2% vs 防御股6.9%、油价+20.9%、铜-金+18.0）叠加美元走强+3.4%，更利好本土工业需求而非跨国企业；关注ISM以及半导体的买盘（+67.9%）能否持续带动资本开支。"
   },
   "xlb": {
-   "now": "Rolling over (RS#7) — a strong dollar from the Hormuz oil shock plus soft China demand sap the industrial-metals bid even as structural copper tightness lingers.",
+   "now": "Rolling over (RS#7) — XLB is mid-pack (+13.3%, #4) but it's a quiet detente, not leadership: a +3.4% DXY (the Hormuz oil shock firming the dollar) is a direct headwind for dollar-priced metals, and copper-over-gold is actually firm (+18.0) on structural tightness. The tape has broadened (equal-weight beat cap-weight by +2.9%) and oil ripped +20.9% into a reflation/growth-up quad — a backdrop that should help cyclicals — but soft China demand and the strong dollar keep capping the industrial-metals bid.",
    "legs": {
     "2022-04-20": {
-     "title": "Copper crashes on recession, China",
-     "body": "Materials got hammered as copper logged its biggest quarterly decline since 2011, slumping below $7,000/tonne, driven by China's COVID lockdowns gutting demand, a strong dollar making metals dearer, and Fed hiking stoking recession fears. Miners led losses (Freeport) while chemicals (Dow, LyondellBasell) were squeezed by soaring Russia-Ukraine energy and feedstock costs.",
+     "title": "Copper crash meets recession risk-off",
+     "body": "Materials got hammered (−21.1%, #10) as copper logged its biggest quarterly decline since 2011, slumping below $7,000/tonne on China's COVID lockdowns, an +8.1% DXY surge that made metals dearer, and Fed-hiking recession fears. This wasn't sector-specific — it was a slowdown/deflation-scare quad where cyclicals (−17.5%) were dumped far harder than defensives (−8.9%), and copper-over-gold cratered −18.3 — but the strong-dollar headwind made miners (Freeport) and chemicals (Dow, LyondellBasell) the worst of the cyclical bunch.",
      "drivers": [
       "copper crash",
       "China lockdowns",
-      "strong dollar",
-      "recession fears"
+      "strong dollar (+8.1% DXY)",
+      "slowdown quad"
      ],
-     "title_zh": "铜价因衰退与中国崩跌",
-     "body_zh": "材料板块遭受重创：铜价创下2011年以来最大季度跌幅，跌破每吨7,000美元，背后是中国新冠封控掏空需求、强势美元抬高金属价格以及美联储加息引发的衰退担忧。矿企领跌（自由港），化工企业（陶氏、利安德巴塞尔）则因俄乌冲突推高的能源与原料成本而承压。",
+     "title_zh": "铜价崩跌叠加衰退避险",
+     "body_zh": "材料板块遭重创（−21.1%，第10），铜价创2011年以来最大季度跌幅，跌破每吨7,000美元，背后是中国新冠封控、美元飙升+8.1%抬高金属价格以及美联储加息引发的衰退担忧。这并非板块独有——而是增长放缓/通缩恐慌象限，周期股（−17.5%）被抛售远甚于防御股（−8.9%），铜金比暴跌−18.3——但强势美元逆风使矿企（自由港）与化工股（陶氏、利安德巴塞尔）成为周期板块中最差的一类。",
      "drivers_zh": [
       "铜价崩跌",
       "中国封控",
-      "强势美元",
-      "衰退担忧"
+      "强势美元（+8.1% DXY）",
+      "放缓象限"
      ]
     },
     "2022-07-14": {
-     "title": "Peak-inflation rebound",
-     "body": "Materials snapped back as a softer inflation read and Fed-pivot hopes pushed the dollar off its highs, letting copper and beaten-down metals rebound with the summer rally. Deeply oversold mining and chemicals names bounced on the easing-recession narrative and a weaker greenback that relieves dollar-priced commodities.",
+     "title": "Peak-inflation bounce, dollar relents",
+     "body": "Materials snapped back +14.9% as a softer inflation read and Fed-pivot hopes pushed the dollar off its highs (−1.9% DXY), letting copper and beaten-down metals rebound with a tech/semis-led risk-on summer rally (SMH +16.3%). It was a reflation/growth-up quad — cyclicals (+16.7%) led defensives (+7.6%) and copper-over-gold turned up +9.2 — but XLB only ranked #5: deeply oversold miners and chemicals bounced on the easing-recession narrative and a weaker greenback that relieves dollar-priced commodities, lagging the higher-beta discretionary/industrials leaders.",
      "drivers": [
       "peak-inflation hope",
-      "Fed pivot bets",
-      "dollar pullback",
-      "oversold bounce"
+      "dollar pullback (−1.9% DXY)",
+      "tech-led risk-on",
+      "reflation quad"
      ],
-     "title_zh": "通胀见顶反弹",
-     "body_zh": "材料板块强劲反弹，温和的通胀数据与美联储转向预期将美元从高位拉回，使铜和遭抛售的金属随夏季行情回升。深度超卖的矿业与化工股在衰退缓和叙事和走软的美元（利好以美元计价的大宗商品）下反弹。",
+     "title_zh": "通胀见顶反弹，美元退潮",
+     "body_zh": "材料板块反弹+14.9%，温和的通胀数据与美联储转向预期将美元拉离高位（−1.9% DXY），使铜和遭抛售的金属随科技/半导体引领的风险偏好夏季行情回升（SMH +16.3%）。这是再通胀/增长向上象限——周期股（+16.7%）领先防御股（+7.6%），铜金比转正+9.2——但XLB仅排名第5：深度超卖的矿业与化工股在衰退缓和叙事和走软美元（利好以美元计价的大宗商品）下反弹，落后于高贝塔的可选消费/工业领涨股。",
      "drivers_zh": [
       "通胀见顶预期",
-      "美联储转向押注",
-      "美元回落",
-      "超卖反弹"
+      "美元回落（−1.9% DXY）",
+      "科技引领风险偏好",
+      "再通胀象限"
      ]
     },
     "2022-08-16": {
-     "title": "Jackson Hole kills the bounce",
-     "body": "Powell's hawkish Jackson Hole sent the dollar index surging toward a 20-year high, a direct headwind that pushed copper back down and dragged gold below $1,700, crushing miners like Freeport and Newmont. Renewed recession fears plus China property/lockdown weakness battered the materials complex into a higher-for-longer regime.",
+     "title": "Jackson Hole reignites the dollar wrecking-ball",
+     "body": "Powell's hawkish Jackson Hole sent the dollar surging toward a 20-year high (+7.1% DXY) and yields ripping (TLT −10.4%), a double rate-regime-and-FX wrecking-ball that pushed copper back down and dragged gold below $1,700, crushing Freeport and Newmont. The −17.0% (#8) drop came in a slowdown/deflation-scare flight-to-safety — defensives (−9.1%) held up better than cyclicals (−15.1%), VIX 20→32 — so XLB fell as the dollar-sensitive cyclical caught in a higher-for-longer regime, not on a Materials-specific catalyst.",
      "drivers": [
       "Jackson Hole hawkish",
-      "dollar 20-year high",
-      "copper/gold drop",
-      "recession fears"
+      "dollar 20-year high (+7.1% DXY)",
+      "rate regime (TLT −10.4%)",
+      "flight-to-safety"
      ],
-     "title_zh": "杰克逊霍尔终结反弹",
-     "body_zh": "鲍威尔在杰克逊霍尔的鹰派表态将美元指数推向20年高位，构成直接逆风，使铜价重新下行、黄金跌破1,700美元，重创自由港、纽蒙特等矿企。新一轮衰退担忧叠加中国房地产/封控的疲弱，在“更高更久”的政策环境下打击了整个材料板块。",
+     "title_zh": "杰克逊霍尔重启美元破坏力",
+     "body_zh": "鲍威尔在杰克逊霍尔的鹰派表态将美元推向20年高位（+7.1% DXY），收益率飙升（TLT −10.4%），形成利率体制与汇率的双重打击，使铜价重新下行、黄金跌破1,700美元，重创自由港与纽蒙特。这−17.0%（第8）的下跌发生在增长放缓/通缩恐慌的避险中——防御股（−9.1%）比周期股（−15.1%）更抗跌，VIX由20升至32——因此XLB是作为陷入“更高更久”体制的美元敏感型周期股而下跌，并非材料板块独有的催化剂。",
      "drivers_zh": [
       "杰克逊霍尔鹰派",
-      "美元20年高位",
-      "铜/金下跌",
-      "衰退担忧"
+      "美元20年高位（+7.1% DXY）",
+      "利率体制（TLT −10.4%）",
+      "避险"
      ]
     },
     "2022-09-26": {
-     "title": "Soft landing lifts metals",
-     "body": "XLB rallied as a soft-landing economy, falling rates, and a weakening dollar powered copper toward record highs and gold to all-time highs. The Fed's jumbo 50bp cut in September 2024 plus China's ~$560B stimulus supercharged industrial-metals demand hopes, lifting miners and the broad complex; tight copper supply gave chemicals room to re-rate.",
+     "title": "Soft landing + weak dollar lift metals, but mega-caps lead",
+     "body": "XLB rallied +51.0% over two years as a soft-landing economy and a collapsing dollar (−9.3% DXY) powered copper toward record highs and gold to all-time highs; the Fed's jumbo 50bp cut in Sept 2024 plus China's ~$560B stimulus supercharged industrial-metals demand. But this was a tech/semis-led melt-up (SMH +169.2%, growth>value +33.4) with narrow breadth (equal-weight lagged cap-weight by −18.9%), so Materials (#5) trailed the mega-cap leaders — strong as a cyclical in a goldilocks quad, but not where the index leadership lived.",
      "drivers": [
       "Fed cuts begin",
-      "copper/gold record highs",
+      "weak dollar (−9.3% DXY) tailwind",
       "China stimulus",
-      "soft landing"
+      "narrow mega-cap breadth"
      ],
-     "title_zh": "软着陆提振金属",
-     "body_zh": "材料板块上涨，软着陆经济、利率下行和走弱的美元推动铜价逼近历史高位、黄金创历史新高。美联储2024年9月一次性降息50个基点叠加中国约5,600亿美元的刺激，大幅提振工业金属的需求预期，拉升矿企与整个板块；铜供应紧张也为化工股留出了重估空间。",
+     "title_zh": "软着陆+弱美元提振金属，但巨头领涨",
+     "body_zh": "材料板块两年内上涨+51.0%，软着陆经济与崩跌的美元（−9.3% DXY）推动铜价逼近历史高位、黄金创历史新高；美联储2024年9月一次性降息50个基点叠加中国约5,600亿美元刺激，大幅提振工业金属需求。但这是科技/半导体引领的逼空行情（SMH +169.2%，成长>价值+33.4），市场广度狭窄（等权重落后市值加权−18.9%），因此材料（第5）落后于巨头领涨股——作为金发女孩象限中的周期股表现强劲，但并非指数领涨所在。",
      "drivers_zh": [
       "美联储开启降息",
-      "铜/金创历史新高",
+      "弱美元（−9.3% DXY）顺风",
       "中国刺激",
-      "软着陆"
+      "狭窄的巨头市场广度"
      ]
     },
     "2024-10-18": {
-     "title": "Tariffs and dollar crush materials",
-     "body": "XLB fell as Trump's November win sent the dollar to a multi-year high, hammering dollar-priced commodities — copper plunged on the result. Materials sat in the tariff bullseye: 25% steel/aluminum duties hit in March 2025 and the April reciprocal tariffs triggered a crash bottoming around April 8, compounding an FX squeeze on chemicals.",
+     "title": "Tariff shock + flight-to-safety crush the cyclical",
+     "body": "XLB cratered −23.2% (dead last, #11) as Trump's November win, 25% steel/aluminum duties in March 2025, and the April reciprocal tariffs triggered a crash bottoming around April 8 — Materials sat squarely in the tariff bullseye. The macro was a slowdown/deflation-scare flight-to-safety (VIX 18→52) where defensives (−9.3%) sharply outperformed cyclicals (−15.5%), and XLB was the most-punished cyclical of all. The dollar barely moved (−0.5% DXY), so this was a tariff-and-de-risking story, not an FX squeeze — global-cyclical chemicals and miners absorbed the worst of the trade-war de-risk.",
      "drivers": [
       "Trump tariff shock",
-      "strong dollar",
       "steel/aluminum duties",
-      "April tariff crash"
+      "flight-to-safety",
+      "slowdown quad"
      ],
-     "title_zh": "关税与美元打压材料",
-     "body_zh": "材料板块下跌，特朗普11月胜选将美元推向多年高位，重创以美元计价的大宗商品——铜价因选举结果暴跌。材料处于关税靶心：25%的钢铝关税于2025年3月落地，4月的对等关税引发崩跌并在4月8日前后见底，叠加对化工企业的汇率挤压。",
+     "title_zh": "关税冲击+避险打压周期股",
+     "body_zh": "材料板块暴跌−23.2%（垫底，第11），特朗普11月胜选、2025年3月落地的25%钢铝关税以及4月对等关税引发崩跌并在4月8日前后见底——材料正处于关税靶心。宏观背景是增长放缓/通缩恐慌的避险（VIX由18升至52），防御股（−9.3%）大幅跑赢周期股（−15.5%），而XLB是所有周期股中受打击最重的。美元几乎未动（−0.5% DXY），因此这是关税与去风险的故事，而非汇率挤压——全球周期型化工与矿业股承受了贸易战去风险的最重一击。",
      "drivers_zh": [
       "特朗普关税冲击",
-      "强势美元",
       "钢铝关税",
-      "4月关税崩跌"
+      "避险",
+      "放缓象限"
      ]
     },
     "2025-04-08": {
-     "title": "Metals roar back, then rollover",
-     "body": "XLB rebounded off the tariff-crash low as copper ran ~40% higher into record territory on AI/datacenter demand and tight mine supply, while gold surged and peaked near record levels in late January 2026. By early 2026 the sector rolled over as the Iran/Hormuz oil shock firmed the dollar again and softening Chinese demand sapped the industrial-metals bid even as structural copper tightness lingered.",
+     "title": "Metals roar back on weak dollar, then roll over",
+     "body": "XLB rebounded +46.6% off the tariff-crash low as a weakening dollar (−6.0% DXY) and AI/datacenter demand ran copper ~40% higher into record territory and gold surged to a late-January-2026 peak. It rode a tech/semis-led risk-on melt-up (SMH +131.2%, VIX 52→18) in a reflation/growth-up quad, but only ranked #4 with narrow breadth (equal-weight lagged −5.9%). By early 2026 it rolled over: the Iran/Hormuz oil shock firmed the dollar again and softening Chinese demand sapped the industrial-metals bid even as structural copper tightness lingered.",
      "drivers": [
-      "post-tariff recovery",
+      "weak dollar (−6.0% DXY) tailwind",
       "copper/gold record highs",
-      "Hormuz strong dollar",
-      "China demand soft"
+      "tech-led risk-on",
+      "Hormuz strong-dollar rollover"
      ],
-     "title_zh": "金属强势回归后回落",
-     "body_zh": "材料板块自关税崩跌低点反弹，铜价在AI/数据中心需求与矿端供应紧张下大涨约40%进入创纪录区间，黄金亦飙升并在2026年1月底逼近历史高位见顶。进入2026年初板块见顶回落，伊朗/霍尔木兹油价冲击再度推升美元，中国需求走软削弱工业金属买盘，尽管结构性的铜供应紧张仍然存在。",
+     "title_zh": "金属借弱美元强势回归后回落",
+     "body_zh": "材料板块自关税崩跌低点反弹+46.6%，走弱的美元（−6.0% DXY）与AI/数据中心需求推动铜价上涨约40%进入创纪录区间，黄金飙升并在2026年1月底见顶。它搭乘了科技/半导体引领的风险偏好逼空行情（SMH +131.2%，VIX由52降至18），处于再通胀/增长向上象限，但仅排名第4，市场广度狭窄（等权重落后−5.9%）。进入2026年初板块见顶回落：伊朗/霍尔木兹油价冲击再度推升美元，中国需求走软削弱工业金属买盘，尽管结构性的铜供应紧张仍然存在。",
      "drivers_zh": [
-      "关税后复苏",
+      "弱美元（−6.0% DXY）顺风",
       "铜/金创历史新高",
-      "霍尔木兹强势美元",
-      "中国需求疲软"
+      "科技引领风险偏好",
+      "霍尔木兹强美元回落"
      ]
     }
    },
-   "now_zh": "见顶回落（RS第7）——霍尔木兹油价冲击带来的强势美元叠加中国需求疲软，削弱了工业金属的买盘，尽管结构性的铜供应紧张仍然存在。"
+   "now_zh": "见顶回落（RS第7）——XLB位居中游（+13.3%，第4），但这是平静的休战而非领涨：美元走强+3.4%（霍尔木兹油价冲击推升美元）对以美元计价的金属构成直接逆风，而铜金比实际上仍坚挺（+18.0），受结构性供应紧张支撑。市场广度已扩散（等权重跑赢市值加权+2.9%），油价飙升+20.9%进入再通胀/增长向上象限——本应利好周期股的背景——但中国需求疲软与强势美元持续压制工业金属买盘。"
   },
   "xlv": {
-   "now": "EXPANDING (RS #4) — medical/defensive sector firming as the 2026 oil-shock/late-cycle rotation favors quality defensives; health care is bid as tech tops, though drug-pricing (MFN/RFK Jr.) and pharma-tariff policy remain overhangs.",
+   "now": "EXPANDING (RS #4) — XLV is being starved by the 2026 semis/memory melt-up (SMH +68%, high-beta over low-vol +21%) yet quietly turning: it's +3.3% and ranks #8/11, but with VIX calm (14→18), value beating growth (growth−value −15.2) and broadening participation (equal-weight +2.9% over cap-weight), money is leaking out of the narrow mega-cap tech tape toward cheap quality defensives. Health care is bid as tech tops, though drug-pricing (MFN/RFK Jr.) and pharma-tariff policy remain overhangs.",
    "legs": {
     "2022-04-08": {
-     "title": "Rate-hike de-rating hits biotech",
-     "body": "The Fed's aggressive 2022 hiking cycle and the June 9.1% CPI shock crushed long-duration health care — biotech (XBI) sank to multi-year lows as rising real rates discounted distant cash flows. Large-cap pharma/devices cushioned XLV versus the broad selloff, but the sector still fell ~16% into the mid-June low.",
+     "title": "Rate-regime de-rating hits biotech",
+     "body": "A rate-regime selloff: the Fed's aggressive 2022 hiking cycle and the June 9.1% CPI shock sent yields surging (TLT −10.1%) and the dollar +4.9% (DXY), crushing long-duration health care — biotech (XBI) sank to multi-year lows as rising real rates discounted distant cash flows. In a stagflation-ish quad, large-cap pharma/devices cushioned XLV (−16% vs cyclicals −16.3%, ranking #6/11), but quality couldn't fully offset the duration hit.",
      "drivers": [
+      "rate regime",
       "Fed rate hikes",
-      "biotech de-rating",
-      "9.1% CPI shock"
+      "9.1% CPI shock",
+      "biotech de-rating"
      ],
-     "title_zh": "加息杀估值冲击生物科技",
-     "body_zh": "美联储2022年激进的加息周期与6月9.1%的CPI冲击重创长久期医疗保健——生物科技（XBI）跌至多年低位，因实际利率上升对远期现金流进行贴现折让。大型制药/器械相对大盘缓冲了XLV，但板块在6月中旬低点前仍下跌约16%。",
+     "title_zh": "利率体制杀估值冲击生物科技",
+     "body_zh": "一轮利率体制驱动的抛售：美联储2022年激进的加息周期与6月9.1%的CPI冲击推动收益率飙升（TLT −10.1%）、美元+4.9%（DXY），重创长久期医疗保健——生物科技（XBI）跌至多年低位，因实际利率上升对远期现金流贴现折让。在偏滞胀的象限中，大型制药/器械相对缓冲了XLV（−16%，对比周期股 −16.3%，排名第6/11），但优质属性仍无法完全抵消久期冲击。",
      "drivers_zh": [
+      "利率体制",
       "美联储加息",
-      "生物科技杀估值",
-      "9.1% CPI冲击"
+      "9.1% CPI冲击",
+      "生物科技杀估值"
      ]
     },
     "2022-06-17": {
-     "title": "Defensive bid and GLP-1 boom",
-     "body": "Off the June 2022 low, health care rallied as a defensive safe-haven through the bear and then re-rated on the GLP-1/obesity-drug super-cycle — Eli Lilly (tirzepatide) and Novo Nordisk drove leadership. Steady earnings, dividends and falling rate expectations into 2024 carried XLV up ~36% to its September 2024 peak.",
+     "title": "Defensive bid, then starved by the AI melt-up",
+     "body": "Off the June 2022 low, health care first caught a defensive safe-haven bid (VIX 31→17) and re-rated on the GLP-1/obesity-drug super-cycle — Eli Lilly (tirzepatide) and Novo Nordisk drove leadership. But as the tech/semis melt-up took over (SMH +131%, growth−value +36, narrow mega-cap breadth −18.7%), XLV was starved: nothing broke, money simply rotated to tech in a goldilocks quad, leaving it +36% but only #6/11.",
      "drivers": [
-      "defensive safe-haven",
+      "defensives starved",
+      "tech-led risk-on",
       "GLP-1 obesity drugs",
-      "Lilly/Novo leadership"
+      "narrow breadth"
      ],
-     "title_zh": "防御买盘与GLP-1热潮",
-     "body_zh": "自2022年6月低点起，医疗保健作为防御避险资产在熊市中上涨，随后凭借GLP-1/减肥药超级周期重估——礼来（替尔泊肽）与诺和诺德引领涨势。稳健的盈利、股息以及2024年前下行的利率预期，将XLV推升约36%至2024年9月的峰值。",
+     "title_zh": "防御买盘，随后被AI逼空式上涨冷落",
+     "body_zh": "自2022年6月低点起，医疗保健先获得防御避险买盘（VIX 31→17），随后凭借GLP-1/减肥药超级周期重估——礼来（替尔泊肽）与诺和诺德引领涨势。但当科技/半导体的逼空式上涨接管行情后（SMH +131%、成长减价值 +36、狭窄大盘广度 −18.7%），XLV遭冷落：板块本身并未出问题，只是在金发女孩象限中资金转向科技，令其虽涨约36%却仅排名第6/11。",
      "drivers_zh": [
-      "防御避险",
+      "防御被冷落",
+      "科技主导风险偏好",
       "GLP-1减肥药",
-      "礼来/诺和诺德领涨"
+      "市场广度狭窄"
      ]
     },
     "2024-09-16": {
-     "title": "Policy and pricing overhang",
-     "body": "Health care badly lagged the AI-led bull and then sold off as election/policy risk crystallized — RFK Jr. at HHS, the May 2025 Most-Favored-Nation drug-pricing order, and threatened pharma tariffs pushed pharma valuations to historic lows. GLP-1 enthusiasm cooled on pricing/competition fears, dragging XLV down ~17%.",
+     "title": "Policy hit while the tape rallied without it",
+     "body": "This wasn't a market selloff — SPY rose +5.4% and cyclicals +6.1% — XLV alone got hit, ending the single worst sector (−17%, #11/11) as election/policy risk crystallized: RFK Jr. at HHS, the May 2025 Most-Favored-Nation drug-pricing order, and threatened pharma tariffs pushed pharma valuations to historic lows. With yields surging (TLT −13.4%) and a narrow goldilocks tape rotating into Comm/Financials/Discretionary leaders, GLP-1 enthusiasm cooled on pricing/competition fears.",
      "drivers": [
-      "RFK Jr. / MAHA",
+      "idiosyncratic selloff",
       "MFN drug pricing",
-      "pharma tariffs"
+      "RFK Jr. / MAHA",
+      "rate regime"
      ],
-     "title_zh": "政策与定价隐忧",
-     "body_zh": "医疗保健严重跑输AI主导的牛市，随后因选举/政策风险落地而遭抛售——小罗伯特·肯尼迪执掌HHS、2025年5月的最惠国(MFN)药品定价行政令以及医药关税威胁，将制药估值压至历史低位。GLP-1热情在定价/竞争担忧下降温，拖累XLV下跌约17%。",
+     "title_zh": "政策独立打击，而大盘无此板块照样上涨",
+     "body_zh": "这并非大盘抛售——SPY上涨+5.4%、周期股+6.1%——唯独XLV遭重创，成为表现最差板块（−17%，第11/11），因选举/政策风险落地：小罗伯特·肯尼迪执掌HHS、2025年5月的最惠国(MFN)药品定价行政令以及医药关税威胁，将制药估值压至历史低位。在收益率飙升（TLT −13.4%）、狭窄的金发女孩行情转向通信/金融/可选消费龙头之际，GLP-1热情在定价/竞争担忧下降温。",
      "drivers_zh": [
-      "小罗伯特·肯尼迪/MAHA",
+      "个股独立抛售",
       "MFN药品定价",
-      "医药关税"
+      "小罗伯特·肯尼迪/MAHA",
+      "利率体制"
      ]
     },
     "2025-05-14": {
-     "title": "Defensive rotation rebound",
-     "body": "From the post-tariff washout, health care recovered as cheap valuations and a late-2025 risk-off rotation into defensives lifted the sector; clarity on drug-pricing deals removed some tail risk. The 2026 oil-shock/late-cycle backdrop further favored quality defensives, carrying XLV up ~27%.",
+     "title": "Rate tailwind + cheap-quality rerating",
+     "body": "From the post-tariff washout, XLV rallied ~27% to #4/11 — but not on a flight-to-safety: this was a risk-ON, cyclical-led reflation tape (cyclicals +25.6% vs defensives +18.7%, high-beta over low-vol +60, semis +147%). Health care's own tailwinds carried it: yields FELL (TLT +7.5%), a boost for the bond-proxy quality defensive, while cheap post-selloff valuations and value beating growth (growth−value −12.2) rewarded the rotation into cheap quality, and clarity on drug-pricing deals stripped out some tail risk. It led even as breadth stayed narrow (equal-weight −4.4%).",
      "drivers": [
-      "defensive rotation",
-      "cheap valuations",
+      "rate tailwind",
+      "cheap-quality rerating",
+      "value over growth",
       "pricing-deal clarity"
      ],
-     "title_zh": "防御轮动反弹",
-     "body_zh": "自关税后的洗盘中，医疗保健在低估值与2025年底向防御资产的避险轮动推动下复苏；药品定价协议的明朗化消除了部分尾部风险。2026年油价冲击/晚周期的背景进一步青睐优质防御资产，将XLV推升约27%。",
+     "title_zh": "利率顺风＋低估值优质资产重估",
+     "body_zh": "自关税后的洗盘中，XLV反弹约27%至第4/11——但这并非避险买盘：当时是风险偏好、周期股领涨的再通胀行情（周期股 +25.6% 对比防御股 +18.7%、高贝塔减低波动 +60、半导体 +147%）。推动它的是医疗保健自身的顺风：收益率下行（TLT +7.5%），利好这一债券替代品类优质防御资产，同时关税抛售后的低估值、价值跑赢成长（成长减价值 −12.2）奖励了向低估值优质资产的轮动，药品定价协议的明朗化也消除了部分尾部风险。即便市场广度依旧狭窄（等权重 −4.4%），它仍领先。",
      "drivers_zh": [
-      "防御轮动",
-      "低估值",
+      "利率顺风",
+      "低估值优质资产重估",
+      "价值跑赢成长",
       "定价协议明朗"
      ]
     }
    },
-   "now_zh": "扩张中（RS第4）——医疗/防御板块企稳走强，因2026年油价冲击/晚周期轮动青睐优质防御资产；科技见顶之际医疗保健获得买盘，尽管药品定价（最惠国(MFN)/小罗伯特·肯尼迪）与医药关税政策仍是悬而未决的隐忧。"
+   "now_zh": "扩张中（RS第4）——XLV正被2026年半导体/存储的逼空式上涨所冷落（SMH +68%，高贝塔减低波动 +21%），但已悄然转向：板块+3.3%、排名第8/11，然而在VIX平静（14→18）、价值跑赢成长（成长减价值 −15.2）以及市场广度扩散（等权重跑赢市值加权+2.9%）的背景下，资金正从狭窄的大盘科技行情中渗出，流向低估值的优质防御资产。科技见顶之际医疗保健获得买盘，尽管药品定价（最惠国MFN/小罗伯特·肯尼迪）与医药关税政策仍是悬而未决的隐忧。"
   },
   "xlp": {
-   "now": "ROLLING OVER (RS #8) — the 2025 defensive bid is fading at the margin as staples trade at rich valuations and momentum rotates; the sector is losing relative leadership even as it stays a recession hedge.",
+   "now": "ROLLING OVER (RS #8) — staples are being starved, not broken: XLP is up ~8.8% (rank #6) but the tape is a tech-led melt-up (semis +67.9%, high-beta over low-vol +20.7), so flows keep rotating out of low-vol defensives. The 2025 flight-to-safety bid is fading at the margin even as XLP stays a recession hedge, and value-over-growth (growth−value −15.2) hints the rotation could broaden if the mega-cap leadership cracks.",
    "legs": {
     "2022-04-20": {
-     "title": "Inflation squeezes staples margins",
-     "body": "Even as a defensive sector, staples fell ~16% in the 2022 bear as 9% CPI input-cost inflation and rising rates compressed multiples and pressured margins before pricing fully caught up. XLP outperformed the broad market on a relative basis but could not escape the de-rating into the October 2022 low.",
+     "title": "Rate-driven de-rating, even the defensive couldn't hide",
+     "body": "This wasn't a clean flight-to-safety: with the 10Y surging (TLT −16.0%) and the dollar ripping +12.4% in a slowdown/deflation-scare quad, the rate-regime de-rating hit everything, and even staples fell ~16.3% as 9% CPI input-cost inflation compressed margins before pricing caught up. XLP only ranked #5/11 because the whole tape was red — defensives (−14.6%) barely edged cyclicals (−15.5%) — so its 'outperformance' was relative cushioning, not strength, into the October 2022 low.",
      "drivers": [
+      "rate regime",
+      "strong dollar",
       "input-cost inflation",
-      "margin pressure",
-      "rate-driven de-rating"
+      "margin pressure"
      ],
-     "title_zh": "通胀挤压必需品利润率",
-     "body_zh": "即便作为防御板块，必需消费品在2022年熊市中仍下跌约16%，9%的CPI投入成本通胀与利率上升压缩了估值倍数、挤压利润率，而提价尚未完全跟上。XLP在相对基础上跑赢大盘，但仍无法在2022年10月低点前逃脱杀估值。",
+     "title_zh": "利率驱动的杀估值，连防御板块也无处藏身",
+     "body_zh": "这并非干净的避险行情：在10年期收益率飙升（TLT −16.0%）、美元在放缓/通缩担忧象限中暴涨+12.4%的背景下，利率体制的杀估值冲击了一切，连必需消费品也下跌约16.3%——9%的CPI投入成本通胀在提价跟上之前先挤压了利润率。XLP仅排名第5/11，只因整个市场一片惨绿——防御板块（−14.6%）勉强好于周期板块（−15.5%）——所以它的'跑赢'只是相对缓冲而非真正的强势，直至2022年10月低点。",
      "drivers_zh": [
+      "利率体制",
+      "强势美元",
       "投入成本通胀",
-      "利润率承压",
-      "利率驱动的杀估值"
+      "利润率承压"
      ]
     },
     "2022-10-07": {
-     "title": "Defensive haven, pricing power",
-     "body": "Off the October 2022 low, staples rallied on their classic risk-off appeal — steady demand, pricing power and reliable dividends — outperforming during volatility spikes while lagging in the AI-led growth rallies of 2023-24. The bid intensified into early 2026 as tariff and oil-shock uncertainty drove a flight-to-safety rotation, lifting XLP ~48% to its February 2026 peak.",
+     "title": "Starved by the AI melt-up — up 48%, but the laggard",
+     "body": "Off the October 2022 low staples did everything right — pricing power, steady demand and reliable dividends drew a flight-to-safety bid into early 2026 as tariff and oil-shock uncertainty flared, lifting XLP ~48% to its February 2026 peak. But it still ranked #9/11: nothing was wrong with the defensive, money simply rotated to tech in a narrow, mega-cap-led melt-up (SMH +341.8%, growth over value +42.4, equal-weight lagging cap-weight by −31.3%). A weak dollar (−13.5% DXY) and goldilocks quad turbo-charged the risk-on leaders, leaving low-vol staples to win on an absolute basis while badly lagging on a relative one.",
      "drivers": [
-      "defensive safe-haven",
-      "pricing power",
-      "flight-to-safety rotation"
+      "tech-led risk-on",
+      "narrow breadth",
+      "defensives starved",
+      "flight-to-safety"
      ],
-     "title_zh": "防御避险与定价权",
-     "body_zh": "自2022年10月低点起，必需消费品凭借其经典的避险吸引力——稳定需求、定价权与可靠股息——上涨，在波动率飙升时跑赢，而在2023-24年AI主导的增长行情中落后。买盘在2026年初随关税与油价冲击的不确定性加剧而增强，避险轮动将XLP推升约48%至2026年2月峰值。",
+     "title_zh": "被AI逼空行情冷落——上涨48%，却是落后者",
+     "body_zh": "自2022年10月低点起必需消费品样样做对——定价权、稳定需求与可靠股息，在2026年初关税与油价冲击的不确定性升温时吸引了避险买盘，将XLP推升约48%至2026年2月峰值。但它仍仅排名第9/11：防御板块本身并无问题，资金只是在狭窄的、大型股主导的逼空行情中轮动至科技（半导体+341.8%，成长跑赢价值+42.4，等权重落后市值加权达−31.3%）。疲软的美元（−13.5% DXY）与金发女孩象限为风险偏好的领涨者火上浇油，令低波动的必需消费品在绝对收益上获胜，却在相对表现上严重落后。",
      "drivers_zh": [
-      "防御避险",
-      "定价权",
-      "避险轮动"
+      "科技主导风险偏好",
+      "市场广度狭窄",
+      "防御板块被冷落",
+      "避险"
      ]
     }
    },
-   "now_zh": "见顶回落（RS第8）——2025年的防御买盘在边际上正在消退，必需消费品估值偏高且动量轮动；板块正在丧失相对领导地位，尽管它仍是衰退对冲工具。"
+   "now_zh": "见顶回落（RS第8）——必需消费品是被冷落而非走坏：XLP上涨约8.8%（排名第6），但当前是科技主导的逼空行情（半导体+67.9%，高贝塔减低波动+20.7），资金持续从低波动防御板块轮动流出。2025年的避险买盘在边际上正在消退，尽管XLP仍是衰退对冲工具；而价值跑赢成长（成长减价值−15.2）暗示，若大型科技股的领导地位破裂，板块轮动可能扩散。"
   },
   "xlu": {
-   "now": "BOTTOMING (RS #9) — utilities pulled back hard after the multi-year AI-power re-rating, pressured by the 2026 rate-hike bias/higher yields hitting the bond-proxy, but the structural AI-datacenter electricity-demand thesis underpins a base.",
+   "now": "BOTTOMING (RS #9) — Utilities isn't broken, it's being starved: a tech/semis-led melt-up (SMH +68%, high-beta over low-vol +21%) is pulling flows out of low-vol defensives even as XLU still grinds +8.5%. A strong dollar (+3.4% DXY) and a 2026 rate-hike bias keep a lid on the bond proxy, and last year defensives actually lagged cyclicals (6.9% vs 11.2% with VIX only 14→18) — but broadening breadth (equal-weight +2.9% over cap-weight) plus the structural AI-datacenter electricity-demand thesis underpin a base if leadership rotates off the narrow mega-cap tape.",
    "legs": {
     "2022-04-08": {
-     "title": "Bond-proxy hit by rates",
-     "body": "Utilities are classic bond proxies, so the Fed's hiking campaign and surging Treasury yields pressured the rate-sensitive sector's multiples in the spring 2022 selloff. High debt loads and dividend yields losing their edge versus rising bond yields drove XLU down ~16% into the mid-June low.",
+     "title": "Rate-regime selloff hits the bond proxy",
+     "body": "Utilities are classic bond proxies, so the Fed's hiking campaign and surging Treasury yields (TLT −10.1%) repriced the rate-sensitive sector's multiples in the spring 2022 stagflation drawdown — a strong dollar (+4.9% DXY) compounded the macro pressure. XLU still cushioned the broad rout (−16% vs SPY −18%), but it slightly underperformed the defensive cohort (−15.7% vs defensives −14.8%) as VIX ran 21→31, since rising bond yields stripped the income proxy of its dividend edge into the mid-June low.",
      "drivers": [
+      "rate regime",
       "bond-proxy",
-      "rising rates",
-      "Fed hikes"
+      "strong dollar",
+      "stagflation quad"
      ],
-     "title_zh": "债券替代品受利率冲击",
-     "body_zh": "公用事业是经典的债券替代品，因此美联储的加息行动与飙升的美债收益率在2022年春季抛售中压制了这一利率敏感板块的估值倍数。高债务负担以及股息收益率相对上升的债券收益率失去优势，将XLU推低约16%至6月中旬低点。",
+     "title_zh": "利率体制抛售冲击债券替代品",
+     "body_zh": "公用事业是经典的债券替代品，因此美联储加息与飙升的美债收益率（TLT −10.1%）在2022年春季滞胀回调中重新定价了这一利率敏感板块的估值倍数——强美元（+4.9% DXY）加剧了宏观压力。XLU仍缓冲了大盘抛售（−16% vs SPY −18%），但略逊于整体防御板块（−15.7% vs 防御板块 −14.8%），在VIX走高21→31之际，上行的债券收益率剥夺了这一收益替代品的股息优势，直至6月中旬低点。",
      "drivers_zh": [
+      "利率体制",
       "债券替代品",
-      "利率上升",
-      "美联储加息"
+      "强美元",
+      "滞胀象限"
      ]
     },
     "2022-06-17": {
-     "title": "Recession safe-haven rally",
-     "body": "As recession fears mounted in summer 2022, utilities rallied ~21% as a defensive safe-haven, outperforming the broad market with steady cash flows and dividends. The sector peaked in mid-September as the flight-to-safety bid and a brief lull in yields lifted valuations.",
+     "title": "Defensive safe-haven rally as growth scare bites",
+     "body": "As recession fears mounted in summer 2022, defensives edged out cyclicals (+13.4% vs +13.1%) in a slowdown/deflation-scare quad, and utilities rallied ~21% (#2 of 11) on steady cash flows and dividends. With oil collapsing −19.9% and VIX easing 31→24, the flight-to-safety bid plus a brief lull in yields lifted the bond proxy into its mid-September peak — defensive demand, not a yield tailwind (TLT still −3.6%).",
      "drivers": [
+      "flight-to-safety",
       "defensive safe-haven",
-      "recession fear",
+      "growth scare quad",
       "yield lull"
      ],
-     "title_zh": "衰退避险反弹",
-     "body_zh": "随着2022年夏季衰退担忧升温，公用事业作为防御避险资产上涨约21%，凭借稳定现金流与股息跑赢大盘。板块在9月中旬见顶，避险买盘与收益率短暂回落提振了估值。",
+     "title_zh": "增长恐慌中的防御避险反弹",
+     "body_zh": "随着2022年夏季衰退担忧升温，在放缓/通缩恐慌象限中防御板块微幅跑赢周期股（+13.4% vs +13.1%），公用事业凭借稳定现金流与股息上涨约21%（11个板块中排名第2）。油价暴跌 −19.9%、VIX回落31→24，避险买盘叠加收益率短暂回落，将债券替代品推升至9月中旬峰值——靠的是防御需求，而非收益率顺风（TLT仍 −3.6%）。",
      "drivers_zh": [
+      "避险",
       "防御避险",
-      "衰退担忧",
+      "增长恐慌象限",
       "收益率回落"
      ]
     },
     "2022-09-12": {
-     "title": "Yield spike crushes utilities",
-     "body": "A sharp surge in Treasury yields past 4% into early October repriced the bond proxy violently — with safe bond yields exceeding utility dividend yields, income investors rotated away. XLU fell ~21% in a month, one of its worst stretches of the cycle, in a textbook rate-sensitive selloff.",
+     "title": "Yield spike past 4% crushes the bond proxy",
+     "body": "A sharp rate-regime surge in Treasury yields past 4% into early October (TLT −6.4%) repriced the bond proxy violently — with safe bond yields topping utility dividend yields and a strong dollar (+4.6% DXY) tightening conditions, income investors rotated away. XLU fell ~21% in a month (#10 of 11), a deeper loss than even broad defensives (−12%), in a textbook rate-sensitive selloff as VIX spiked 24→34.",
      "drivers": [
+      "rate regime",
       "10Y yield >4%",
       "bond-proxy repricing",
-      "dividend-yield disadvantage"
+      "strong dollar"
      ],
-     "title_zh": "收益率飙升重创公用事业",
-     "body_zh": "美债收益率在10月初前急升突破4%，对债券替代品进行了剧烈重新定价——当无风险债券收益率超过公用事业股息收益率，收益型投资者纷纷转向。XLU一个月内下跌约21%，是本轮周期最糟糕的阶段之一，是教科书式的利率敏感型抛售。",
+     "title_zh": "收益率破4%飙升重创债券替代品",
+     "body_zh": "美债收益率在10月初前急升突破4%（TLT −6.4%）的利率体制冲击，对债券替代品进行了剧烈重新定价——当无风险债券收益率超过公用事业股息收益率、强美元（+4.6% DXY）收紧条件，收益型投资者纷纷转向。XLU一个月内下跌约21%（11个板块中排名第10），跌幅甚至超过整体防御板块（−12%），在VIX飙升24→34之际上演教科书式的利率敏感型抛售。",
      "drivers_zh": [
+      "利率体制",
       "10年期收益率>4%",
       "债券替代品重定价",
-      "股息收益率劣势"
+      "强美元"
      ]
     },
     "2022-10-12": {
-     "title": "Rate-relief bounce",
-     "body": "When yields pulled back from their October peak and the broad market rallied off the 2022 low, utilities bounced ~18% on rate relief and renewed defensive demand. The move tracked the inverse path of the 10-year yield, confirming the sector's rate-driven character.",
+     "title": "Rate-relief bounce on falling yields and weaker dollar",
+     "body": "When yields reversed lower off their October peak (TLT +7.8%) and the dollar rolled over (−8.2% DXY), the bond proxy bounced ~18% (#3 of 11) off the 2022 low. Defensives led cyclicals (+15.4% vs +13.4%) with broadening breadth (equal-weight +2.2% over cap-weight) and VIX collapsing 34→23 — the move tracked the inverse path of the 10-year yield, confirming the sector's rate-driven character.",
      "drivers": [
+      "rate regime",
       "yield pullback",
-      "rate relief",
-      "defensive demand"
+      "weaker dollar",
+      "broadening breadth"
      ],
-     "title_zh": "利率缓和反弹",
-     "body_zh": "当收益率从10月峰值回落、大盘自2022年低点反弹时，公用事业在利率缓和与防御需求回暖下反弹约18%。这一走势与10年期收益率呈反向路径，印证了该板块的利率驱动属性。",
+     "title_zh": "收益率回落、美元走弱下的利率缓和反弹",
+     "body_zh": "当收益率从10月峰值反转下行（TLT +7.8%）、美元走软（−8.2% DXY）时，债券替代品自2022年低点反弹约18%（11个板块中排名第3）。防御板块领先周期股（+15.4% vs +13.4%），市场广度走宽（等权重跑赢市值加权 +2.2%），VIX骤降34→23——走势与10年期收益率呈反向路径，印证了该板块的利率驱动属性。",
      "drivers_zh": [
+      "利率体制",
       "收益率回落",
-      "利率缓和",
-      "防御需求"
+      "美元走弱",
+      "市场广度走宽"
      ]
     },
     "2022-12-13": {
-     "title": "Higher-for-longer drags bond proxy",
-     "body": "Through 2023 the 'higher-for-longer' Fed and rising long-end yields steadily pressured the rate-sensitive sector, which lagged badly as cash and bonds offered competitive yields. XLU drifted down ~20% to a bottom in early October 2023 as yields peaked near cycle highs.",
+     "title": "Starved by the 2023 AI risk-on, not broken",
+     "body": "Utilities wasn't broken through 2023 — it was starved as a tech/semis-led melt-up (SMH +29.9%, growth over value +19.9, VIX 23→18) rotated money out of low-vol defensives, even as 'higher-for-longer' rates (TLT −17.1%) and a stronger dollar piled on. With breadth narrow (equal-weight lagging cap-weight by −11.1%) and cash/bonds offering competitive yields, XLU drifted down ~20% (worst of 11) to a bottom in early October 2023 as yields peaked near cycle highs.",
      "drivers": [
-      "higher-for-longer",
-      "rising long yields",
+      "starved (tech-led risk-on)",
+      "narrow breadth",
+      "higher-for-longer rates",
       "bond competition"
      ],
-     "title_zh": "更高更久拖累债券替代品",
-     "body_zh": "整个2023年，“更高更久”的美联储与上行的长端收益率持续压制这一利率敏感板块，在现金和债券提供有竞争力收益率之际严重落后。XLU震荡下行约20%，在2023年10月初收益率逼近周期高点时见底。",
+     "title_zh": "被2023年AI风险偏好冷落，而非走坏",
+     "body_zh": "整个2023年公用事业并未走坏——而是在科技/半导体引领的逼空行情（SMH +29.9%、成长跑赢价值 +19.9、VIX 23→18）将资金从低波动防御板块抽离时被冷落，叠加“更高更久”的利率（TLT −17.1%）与走强的美元雪上加霜。市场广度狭窄（等权重落后市值加权 −11.1%），现金和债券提供有竞争力的收益率，XLU震荡下行约20%（11个板块中最差），在2023年10月初收益率逼近周期高点时见底。",
      "drivers_zh": [
-      "更高更久",
-      "长端收益率上升",
+      "被冷落（科技引领风险偏好）",
+      "市场广度狭窄",
+      "更高更久利率",
       "债券竞争"
      ]
     },
     "2023-10-02": {
-     "title": "AI-datacenter power super-cycle",
-     "body": "From the October 2023 low, utilities staged a historic re-rating as the AI-datacenter electricity-demand super-cycle reframed the sector from sleepy bond proxy to a structural growth story — power names (Vistra, Constellation, NextEra) led as hyperscaler load forecasts surged after years of flat demand. With peaking-then-falling rate expectations adding tailwind, XLU rallied ~82% to its February 2026 peak.",
+     "title": "AI-datacenter power super-cycle re-rating",
+     "body": "From the October 2023 low, utilities staged a historic re-rating (#3 of 11, ~82%) as the AI-datacenter electricity-demand super-cycle reframed the sector from sleepy bond proxy to a structural growth story — power names (Vistra, Constellation, NextEra) led as hyperscaler load forecasts surged after years of flat demand. A goldilocks quad with falling yields (TLT +15.2%) and a weaker dollar (−8.7% DXY) gave the bond proxy a tailwind, letting defensives nearly keep pace with cyclicals (50.5% vs 57.1%) even as a narrow, semis-led tape (SMH +181.7%, equal-weight −13.4% behind cap-weight) dominated the index into the February 2026 peak.",
      "drivers": [
       "AI-datacenter power demand",
       "electricity super-cycle",
+      "rate tailwind / weaker dollar",
       "Vistra/Constellation/NextEra"
      ],
-     "title_zh": "AI数据中心电力超级周期",
-     "body_zh": "自2023年10月低点起，公用事业上演历史性重估，AI数据中心电力需求超级周期将板块从沉闷的债券替代品重塑为结构性增长故事——电力公司（Vistra、Constellation、NextEra）领涨，超大规模厂商在多年需求平淡后负荷预测大幅上调。叠加利率预期见顶后回落带来的顺风，XLU上涨约82%至2026年2月峰值。",
+     "title_zh": "AI数据中心电力超级周期重估",
+     "body_zh": "自2023年10月低点起，公用事业上演历史性重估（11个板块中排名第3，约 +82%），AI数据中心电力需求超级周期将板块从沉闷的债券替代品重塑为结构性增长故事——电力公司（Vistra、Constellation、NextEra）领涨，超大规模厂商在多年需求平淡后负荷预测大幅上调。金发女孩象限下收益率回落（TLT +15.2%）、美元走弱（−8.7% DXY）为债券替代品提供顺风，使防御板块几乎追平周期股（50.5% vs 57.1%），尽管狭窄的、半导体引领的行情（SMH +181.7%、等权重落后市值加权 −13.4%）主导着指数，直至2026年2月峰值。",
      "drivers_zh": [
       "AI数据中心电力需求",
       "电力超级周期",
+      "利率顺风/美元走弱",
       "Vistra/Constellation/NextEra"
      ]
     }
    },
-   "now_zh": "筑底中（RS第9）——公用事业在多年的AI电力重估后大幅回调，受2026年加息倾向/收益率上升打击债券替代品的压制，但AI数据中心电力需求的结构性逻辑为其奠定了底部基础。"
+   "now_zh": "筑底中（RS第9）——公用事业并非走坏，而是被冷落：科技/半导体引领的逼空行情（SMH +68%、高贝塔跑赢低波动 +21%）把资金从低波动防御板块抽离，即便XLU仍小幅上行 +8.5%。强美元（+3.4% DXY）与2026年加息倾向压制着这一债券替代品，去年防御板块其实落后周期股（6.9% vs 11.2%，VIX仅14→18）——但市场广度走宽（等权重跑赢市值加权 +2.9%）叠加AI数据中心电力需求的结构性逻辑，一旦领导权脱离狭窄的大盘股行情，便为其奠定底部。"
   },
   "xlc": {
-   "now": "BOTTOMING (RS #10, deeply washed out) — communication services is the most oversold sector, hit by the AI-capex/ad-cycle wobble and the 2026 risk-off, but Meta/Alphabet mega-cap dominance leaves it positioned for a turn off a washed-out base.",
+   "now": "BOTTOMING (RS #10, deeply washed out) — XLC is the tape's worst sector at -9.6% (rank 11/11) while Tech (+24.3%) and a +67.9% semis melt-up (SMH) lead a high-beta-over-low-vol risk-on regime (+20.7%). But growth is LAGGING value (-15.2%), so this isn't a clean tech bid carrying Meta/Alphabet — the AI-capex/ad-cycle wobble has the basket starved as money rotates into semis and energy, not the mega-cap ad names. Breadth is broadening (equal-weight +2.9% over cap-weight) and VIX stays calm (14->18), so the washout looks more like neglect than panic, leaving XLC positioned to turn off a beaten base if the growth-over-value flip rotates flows back to its Meta/Alphabet core.",
    "legs": {
     "2021-09-01": {
-     "title": "Worst sector: ad recession",
-     "body": "Communication services was the worst-hit S&P sector of 2022 as a digital ad recession gutted Meta and Alphabet, Netflix cratered ~36% in a single day on its first subscriber loss, and rate-driven de-rating crushed the streaming/mega-cap-heavy basket. XLC fell ~47% into the November 2022 low.",
+     "title": "Ad recession meets rate de-rating",
+     "body": "XLC was 2022's worst-hit S&P sector (-46.7%, rank 11/11) as a digital ad recession gutted Meta and Alphabet and Netflix cratered ~36% in a day on its first subscriber loss. The pain was amplified by a brutal rate-regime move — the 10Y surged with TLT -34.1% and the dollar ripped +22.2% (DXY) — which crushed the long-duration, growth-heavy streaming/mega-cap basket while Energy (+100.4%) ran. It fell ~47% into the November 2022 low.",
      "drivers": [
       "ad recession",
       "Meta/Netflix collapse",
-      "rate de-rating"
+      "rate regime",
+      "strong dollar"
      ],
-     "title_zh": "最差板块：广告衰退",
-     "body_zh": "通信服务是2022年标普中受打击最严重的板块，数字广告衰退掏空了Meta和谷歌母公司Alphabet，奈飞因首次订户流失单日暴跌约36%，利率驱动的杀估值则重创了以流媒体/大型科技股为主的篮子。XLC下跌约47%至2022年11月低点。",
+     "title_zh": "广告衰退叠加利率杀估值",
+     "body_zh": "XLC是2022年标普中受打击最严重的板块（-46.7%，11个中垫底），数字广告衰退掏空了Meta和Alphabet，奈飞因首次订户流失单日暴跌约36%。痛苦被剧烈的利率象限切换放大——10年期收益率飙升（TLT -34.1%）、美元暴涨+22.2%（DXY）——重创了这个长久期、偏成长的流媒体/大型科技股篮子，而能源（+100.4%）大涨。该板块下跌约47%至2022年11月低点。",
      "drivers_zh": [
       "广告衰退",
       "Meta/奈飞崩跌",
-      "利率杀估值"
+      "利率象限",
+      "美元走强"
      ]
     },
     "2022-11-03": {
-     "title": "AI mega-cap rebound",
-     "body": "Off the 2022 low, XLC staged a powerful recovery as the ad market healed and the genAI boom lifted its Meta/Alphabet-dominated basket — XLC was the best-performing sector of 2024, with Netflix up ~83% on ad-tier growth and Meta up ~65% on AI-powered ad targeting. The rally extended into February 2025, compounding ~137%.",
+     "title": "AI mega-cap melt-up, narrow tape",
+     "body": "Off the 2022 low XLC ripped +137.2% to lead all sectors (rank 1/11) as the ad market healed and the genAI boom lifted its Meta/Alphabet-dominated basket — Netflix +~83% on ad-tier growth, Meta +~65% on AI ad targeting. This was a textbook tech/semis-led risk-on melt-up (SMH +182.3%, growth>value +62.4, VIX 25->15, dollar -5.6%), and a hyper-narrow one — equal-weight lagged cap-weight by -31.3%, so the mega-cap concentration that crushed XLC in 2022 became its rocket fuel into the February 2025 high.",
      "drivers": [
+      "tech-led risk-on",
       "AI/genAI boom",
-      "ad recovery",
+      "narrow breadth",
       "Meta/Alphabet/Netflix"
      ],
-     "title_zh": "AI大型科技股反弹",
-     "body_zh": "自2022年低点起，XLC上演强劲复苏，广告市场回暖、生成式AI热潮提振了以Meta/Alphabet为主的篮子——XLC成为2024年表现最佳的板块，奈飞因广告版增长上涨约83%、Meta因AI驱动的广告定向上涨约65%。涨势延续至2025年2月，累计约137%。",
+     "title_zh": "AI大型科技股暴涨，窄幅行情",
+     "body_zh": "自2022年低点起，XLC暴涨+137.2%、领涨所有板块（11个中第1），广告市场回暖、生成式AI热潮提振了以Meta/Alphabet为主的篮子——奈飞因广告版增长上涨约83%、Meta因AI广告定向上涨约65%。这是教科书式的科技/半导体主导的风险偏好暴涨（SMH +182.3%、成长跑赢价值+62.4、VIX 25->15、美元-5.6%），且极度狭窄——等权重跑输市值加权-31.3%，于是2022年压垮XLC的大型科技股集中度，反而成了它冲向2025年2月高位的燃料。",
      "drivers_zh": [
+      "科技主导风险偏好",
       "AI/生成式AI热潮",
-      "广告复苏",
+      "市场广度狭窄",
       "Meta/Alphabet/奈飞"
      ]
     },
     "2025-02-14": {
-     "title": "DeepSeek and tariff shock",
-     "body": "The late-January DeepSeek scare questioned AI-capex ROI and the April reciprocal-tariff crash hammered mega-cap tech-adjacent names, pulling the concentrated XLC basket down ~18% into the April 8 low. Concentration in Meta and Alphabet amplified the drawdown.",
+     "title": "DeepSeek and the tariff flight-to-safety",
+     "body": "The late-January DeepSeek scare questioned AI-capex ROI and April's reciprocal-tariff crash detonated a flight-to-safety — VIX spiked 15->52, defensives held (-6.5%) while cyclicals were hammered (-18.1%) and SMH fell -28.8%. XLC's Meta/Alphabet concentration left it on the wrong side of that rotation, down ~18% (rank 9/11) into the April 8 low even as the selloff broadened (equal-weight +3.2% over cap-weight).",
      "drivers": [
+      "flight-to-safety",
       "DeepSeek AI scare",
       "April tariff crash",
       "mega-cap concentration"
      ],
-     "title_zh": "DeepSeek与关税冲击",
-     "body_zh": "1月底的DeepSeek恐慌质疑了AI资本开支的投资回报率，4月的对等关税崩跌重创了与大型科技股相关的公司，将高度集中的XLC篮子拖低约18%至4月8日低点。对Meta和Alphabet的集中持仓放大了回撤。",
+     "title_zh": "DeepSeek与关税引发的避险",
+     "body_zh": "1月底的DeepSeek恐慌质疑了AI资本开支的投资回报率，4月的对等关税崩跌引爆了避险情绪——VIX飙升15->52，防御板块抗跌（-6.5%）而周期股遭重创（-18.1%）、SMH下跌-28.8%。XLC对Meta/Alphabet的集中持仓使其站在了这次轮动的错误一侧，下跌约18%（11个中第9）至4月8日低点，尽管抛售在扩散（等权重跑赢市值加权+3.2%）。",
      "drivers_zh": [
+      "避险",
       "DeepSeek AI恐慌",
       "4月关税崩跌",
       "大型科技股集中度"
      ]
     },
     "2025-04-08": {
-     "title": "Post-tariff AI recovery",
-     "body": "From the April low, XLC rebounded ~41% as the tariff pause sparked a sharp relief rally and AI optimism reasserted — Alphabet re-rated on TPU/AI monetization and Meta on ad strength, carrying the sector to a late-January 2026 high. The advance faded as the 2026 oil shock and AI-capex doubts triggered a tech-led pullback.",
+     "title": "Post-tariff AI rebound on a narrow tape",
+     "body": "From the April low XLC rebounded +40.7% (rank 3/11) as the tariff pause sparked a sharp relief rally and a tech/semis-led risk-on regime reasserted — SMH +124.9%, growth>value +12.2, VIX collapsed 52->17, dollar -5.8%. Alphabet re-rated on TPU/AI monetization and Meta on ad strength, but the advance ran on narrow, mega-cap-led breadth (equal-weight -9.5% under cap-weight) and faded into the late-January 2026 high as the 2026 oil shock and AI-capex doubts triggered a tech-led pullback.",
      "drivers": [
+      "tech-led risk-on",
       "tariff-pause relief",
-      "AI monetization",
-      "Alphabet/Meta strength"
+      "narrow breadth",
+      "AI monetization"
      ],
-     "title_zh": "关税后AI复苏",
-     "body_zh": "自4月低点起，XLC反弹约41%，关税暂停引发强劲的缓和行情，AI乐观情绪重新占据上风——Alphabet因TPU/AI变现重估、Meta因广告强劲而走高，将板块推升至2026年1月底高位。涨势随后消退，因2026年油价冲击与AI资本开支疑虑引发科技主导的回调。",
+     "title_zh": "关税后AI反弹，窄幅行情",
+     "body_zh": "自4月低点起，XLC反弹+40.7%（11个中第3），关税暂停引发强劲缓和行情，科技/半导体主导的风险偏好象限重新占上风——SMH +124.9%、成长跑赢价值+12.2、VIX崩塌52->17、美元-5.8%。Alphabet因TPU/AI变现重估、Meta因广告强劲而走高，但这轮上涨依赖狭窄的大型科技股主导广度（等权重跑输市值加权-9.5%），并在2026年1月底高位消退，因2026年油价冲击与AI资本开支疑虑引发科技主导的回调。",
      "drivers_zh": [
+      "科技主导风险偏好",
       "关税暂停缓和",
-      "AI变现",
-      "Alphabet/Meta强势"
+      "市场广度狭窄",
+      "AI变现"
      ]
     }
    },
-   "now_zh": "筑底中（RS第10，深度超卖）——通信服务是最超卖的板块，受AI资本开支/广告周期动摇以及2026年避险情绪打击，但Meta/谷歌母公司Alphabet的大型科技股主导地位，使其在超卖的底部具备反转的有利位置。"
+   "now_zh": "筑底中（RS第10，深度超卖）——XLC是当前盘面最差的板块，-9.6%（11个板块中垫底），而科技（+24.3%）与+67.9%的半导体（SMH）暴涨引领着高贝塔跑赢低波动的风险偏好象限（+20.7%）。但成长正在跑输价值（-15.2%），所以这并非干净的科技买盘在带动Meta/Alphabet——AI资本开支/广告周期的动摇使该篮子被冷落，资金转向半导体和能源，而非大型广告股。市场广度在扩张（等权重跑赢市值加权+2.9%），VIX保持平静（14->18），因此这次washout更像被忽视而非恐慌，若成长跑赢价值的拐点把资金轮动回其Meta/Alphabet核心，XLC具备从重创底部反转的条件。"
   },
   "xly": {
-   "now": "XLY is bottoming as of mid-2026 (RS rank #6, cycle position ~31, below its 200-day): the consumer is squeezed by oil-driven inflation (CPI 4.2%, gasoline surging from the Iran/Hormuz shock) and a hawkish Fed keeping rates high into big-ticket discretionary demand. With Amazon and Tesla ~a third of the ETF, the sector is a leveraged bet on those two stabilizing alongside relief in pump prices and rates.",
+   "now": "XLY is bottoming (RS rank #6, cycle position ~31, below its 200-day) but for once it isn't being saved by the rotation tape — it's being starved by it. The 2026 melt-up is narrow and tech-led (Tech +24.3%, semis/SMH +67.9%, high-beta beating low-vol by +20.7%), yet discretionary sits #10 of 11 at -5.2% because the consumer is squeezed by oil-driven inflation (CPI 4.2%, gasoline surging on the Iran/Hormuz shock) and a hawkish Fed. With Amazon and Tesla ~a third of the ETF, XLY is a leveraged bet on those two re-joining the risk-on leaders once pump prices and rates relent; the breadth is broadening (RSP beat SPY +2.9%), which is the first crack of a turn.",
    "legs": {
     "2021-11-19": {
-     "title": "Fed-hike shock de-rates Amazon, Tesla",
-     "body": "With CPI heading toward 9% and the Fed pivoting to aggressive hikes, the long-duration growth names that dominate XLY de-rated hard, led by Amazon and Tesla. Surging inflation and the end of stimulus squeezed real wages and big-ticket demand, while rising mortgage rates hit homebuilders and Home Depot.",
+     "title": "Fed-hike shock de-rates Amazon, Tesla as money flees to safety",
+     "body": "With CPI heading toward 9% and the Fed pivoting to aggressive hikes, the long-duration growth names that dominate XLY de-rated hard, led by Amazon and Tesla, and discretionary finished dead-last (#11 of 11, -22.7%). This was a flight-to-safety rotation, not just sector weakness: defensives held +3.3% against cyclicals -3.4% as VIX ripped 18→36, while the end of stimulus and rising mortgage rates squeezed real wages, big-ticket demand and homebuilders.",
      "drivers": [
-      "Fed hikes",
-      "inflation squeeze",
+      "flight-to-safety",
+      "Fed hikes / inflation squeeze",
       "Amazon/Tesla de-rate",
-      "rate-sensitive housing"
+      "stagflation quad (oil +57%)"
      ],
-     "title_zh": "加息冲击重估亚马逊特斯拉",
-     "body_zh": "随着CPI迈向9%、美联储转向激进加息，主导XLY的长久期成长股大幅估值下修，以亚马逊和特斯拉为首。飙升的通胀和刺激政策的退出挤压了实际工资和大额消费需求，而上升的抵押贷款利率打击了房屋建筑商和家得宝。",
+     "title_zh": "加息冲击重估亚马逊特斯拉，资金避险出逃",
+     "body_zh": "随着CPI迈向9%、美联储转向激进加息，主导XLY的长久期成长股大幅估值下修，以亚马逊和特斯拉为首，可选消费垫底（11个板块中第11位，-22.7%）。这是一轮避险轮动，而不只是板块走弱：在VIX从18飙升至36之际，防御板块守住+3.3%、周期板块为-3.4%，与此同时刺激政策退出和抵押贷款利率上升挤压了实际工资、大额需求和房屋建筑商。",
      "drivers_zh": [
-      "美联储加息",
-      "通胀挤压",
+      "避险",
+      "美联储加息/通胀挤压",
       "亚马逊/特斯拉估值下修",
-      "利率敏感的房地产"
+      "滞胀象限（油价+57%）"
      ]
     },
     "2022-03-07": {
-     "title": "Bear-market bounce on rate clarity",
-     "body": "After the Nasdaq's March 14 low, beaten-down discretionary mega-caps like Amazon and Tesla snapped back as the Fed's first hike removed near-term uncertainty and short-covering fueled a ~16% bounce. The relief was narrow and rate-sensitive rather than a fundamental improvement in the consumer.",
+     "title": "Bear-market bounce: discretionary leads a risk-on snap",
+     "body": "After the Nasdaq's March 14 low, beaten-down discretionary mega-caps like Amazon and Tesla snapped back to lead the tape (#1 of 11, +17.5%) as the Fed's first hike removed near-term uncertainty and money rotated back into high-beta growth — semis +16.9%, growth beating value +7.2, VIX collapsing 36→19. The relief was narrow (equal-weight lagged cap-weight -2.0%) and rate-sensitive rather than a fundamental improvement in the consumer.",
      "drivers": [
-      "bear-market rally",
-      "Fed clarity",
-      "short covering",
-      "Amazon/Tesla bounce"
+      "tech-led risk-on",
+      "Fed clarity / short covering",
+      "Amazon/Tesla bounce",
+      "narrow breadth"
      ],
-     "title_zh": "利率明朗化的熊市反弹",
-     "body_zh": "在纳指3月14日见底后，亚马逊、特斯拉等被打压的可选消费大型股强劲反弹，因美联储首次加息消除了近期不确定性，空头回补推动了约16%的反弹。这轮纾解狭窄且对利率敏感，而非消费者基本面的真正改善。",
+     "title_zh": "熊市反弹：可选消费引领risk-on弹升",
+     "body_zh": "在纳指3月14日见底后，亚马逊、特斯拉等被打压的可选消费大型股强劲反弹并领涨大盘（11个板块中第1位，+17.5%），因美联储首次加息消除了近期不确定性，资金重新轮动回高贝塔成长股——半导体+16.9%，成长跑赢价值+7.2，VIX从36回落至19。这轮纾解狭窄（等权落后市值权重-2.0%）且对利率敏感，而非消费者基本面的真正改善。",
      "drivers_zh": [
-      "熊市反弹",
-      "美联储明朗化",
-      "空头回补",
-      "亚马逊/特斯拉反弹"
+      "科技引领risk-on",
+      "美联储明朗化/空头回补",
+      "亚马逊/特斯拉反弹",
+      "市场广度狭窄"
      ]
     },
     "2022-03-29": {
-     "title": "Retail margin shock, Walmart/Target miss",
-     "body": "Walmart and Target delivered rare earnings misses in May as freight, payroll and inventory costs crushed margins and shoppers pulled back on big-ticket goods, sparking a brutal discretionary-wide selloff. Compounding 75bp Fed hikes and recession fear hammered Amazon and the homebuilders as real wages kept falling.",
+     "title": "Retail margin shock and a flight-to-safety leg down",
+     "body": "Walmart and Target delivered rare earnings misses in May as freight, payroll and inventory costs crushed margins and shoppers pulled back on big-ticket goods, dropping discretionary to dead-last (#11, -28.0%). The selloff was a defensive rotation — defensives -2.8% vs cyclicals -11.9% with VIX 19→29 — compounded by a rate-regime move (TLT -8.8%) and a stronger dollar (+3.5% DXY) that hammered Amazon and the homebuilders.",
      "drivers": [
-      "retail margin collapse",
+      "flight-to-safety",
       "Walmart/Target miss",
-      "75bp hikes",
-      "recession fear"
+      "rate regime (TLT -8.8%)",
+      "strong dollar"
      ],
-     "title_zh": "零售利润率冲击，沃尔玛塔吉特不及预期",
-     "body_zh": "沃尔玛和塔吉特在5月罕见地业绩不及预期，因运费、薪资和库存成本压垮了利润率，消费者在大额商品上收紧开支，引发了一轮全面而残酷的可选消费抛售。叠加75个基点的美联储加息和衰退担忧，在实际工资持续下降之际重创了亚马逊和房屋建筑商。",
+     "title_zh": "零售利润率冲击，叠加避险下挫",
+     "body_zh": "沃尔玛和塔吉特在5月罕见地业绩不及预期，因运费、薪资和库存成本压垮了利润率，消费者在大额商品上收紧开支，使可选消费跌至垫底（第11位，-28.0%）。这轮抛售是防御性轮动——防御板块-2.8%对周期板块-11.9%，VIX从19升至29——并叠加利率体制走高（TLT -8.8%）和走强的美元（DXY +3.5%），重创了亚马逊和房屋建筑商。",
      "drivers_zh": [
-      "零售利润率崩塌",
+      "避险",
       "沃尔玛/塔吉特不及预期",
-      "加息75个基点",
-      "衰退担忧"
+      "利率体制（TLT -8.8%）",
+      "美元走强"
      ]
     },
     "2022-05-24": {
-     "title": "Oversold relief rally",
-     "body": "After a historic losing streak, deeply oversold discretionary names bounced as retailers' results were reframed as execution problems rather than a broken consumer. The rebound in Amazon and beaten-down retail was a technical relief snap, not a fundamental turn.",
+     "title": "Oversold relief: discretionary tops the leaderboard",
+     "body": "After a historic losing streak, deeply oversold discretionary names bounced to #1 of 11 (+14.4%) as retailers' results were reframed as execution problems rather than a broken consumer. This was a risk-on snap led by cyclicals (+7.0% vs defensives +0.9%, reflation quad) with Amazon and beaten-down retail rebounding — a technical relief, not a fundamental turn.",
      "drivers": [
+      "risk-on leadership",
       "oversold bounce",
       "execution-not-consumer narrative",
-      "Amazon rebound"
+      "reflation quad"
      ],
-     "title_zh": "超卖纾解反弹",
-     "body_zh": "在历史性的连跌之后，深度超卖的可选消费股反弹，因零售商的业绩被重新解读为执行问题而非消费者崩塌。亚马逊和被打压的零售股的回升是技术性纾解反弹，而非基本面的扭转。",
+     "title_zh": "超卖纾解：可选消费登顶榜首",
+     "body_zh": "在历史性的连跌之后，深度超卖的可选消费股反弹至11个板块中第1位（+14.4%），因零售商的业绩被重新解读为执行问题而非消费者崩塌。这是一轮由周期股引领的risk-on弹升（周期+7.0%对防御+0.9%，再通胀象限），亚马逊和被打压的零售股回升——属于技术性纾解，而非基本面扭转。",
      "drivers_zh": [
+      "risk-on领涨",
       "超卖反弹",
       "执行问题而非消费者叙事",
-      "亚马逊回升"
+      "再通胀象限"
      ]
     },
     "2022-06-02": {
-     "title": "Hot CPI, 75bp hike pummel sector",
-     "body": "A scorching 8.6% CPI print and the Fed's first 75bp hike since 1994 sent rate-sensitive discretionary names sharply lower into the mid-June bottom. Amazon, Tesla and the homebuilders led the slide as recession odds and mortgage rates spiked.",
+     "title": "Hot CPI, 75bp hike trigger a broad risk-off flush",
+     "body": "A scorching 8.6% CPI print and the Fed's first 75bp hike since 1994 sent rate-sensitive discretionary names to dead-last (#11, -14.6%) into the mid-June bottom. This was an everything-down flush — defensives also bled (-9.5%) as VIX climbed 25→33 — with Amazon, Tesla and the homebuilders leading the slide as recession odds and mortgage rates spiked.",
      "drivers": [
-      "hot CPI",
-      "75bp hike",
+      "broad risk-off",
+      "hot CPI / 75bp hike",
       "recession fear",
-      "Amazon/Tesla weak"
+      "deflation-scare quad"
      ],
-     "title_zh": "高CPI，75个基点加息重击板块",
-     "body_zh": "炙热的8.6% CPI数据和美联储自1994年以来首次75个基点加息，使利率敏感的可选消费股大幅走低，直至6月中旬触底。随着衰退概率和抵押贷款利率飙升，亚马逊、特斯拉和房屋建筑商领跌。",
+     "title_zh": "高CPI，75个基点加息触发全面risk-off抛售",
+     "body_zh": "炙热的8.6% CPI数据和美联储自1994年以来首次75个基点加息，使利率敏感的可选消费股跌至垫底（第11位，-14.6%），直至6月中旬触底。这是一轮无差别下跌——VIX从25升至33之际防御板块也失血（-9.5%）——随着衰退概率和抵押贷款利率飙升，亚马逊、特斯拉和房屋建筑商领跌。",
      "drivers_zh": [
-      "高CPI",
-      "加息75个基点",
+      "全面risk-off",
+      "高CPI/加息75个基点",
       "衰退担忧",
-      "亚马逊/特斯拉疲软"
+      "通缩恐慌象限"
      ]
     },
     "2022-06-16": {
-     "title": "Peak-inflation summer rally",
-     "body": "From the June low, hopes that inflation had peaked and the Fed might soon pivot drove discretionary up over 18% in July alone, the strongest sector, as Amazon and Tesla led rate-sensitive cyclicals higher. Amazon's Q2 report and cooling July CPI fed the optimism before Powell's hawkish Jackson Hole ended it.",
+     "title": "Peak-inflation summer rally, discretionary leads",
+     "body": "From the June low, hopes that inflation had peaked and the Fed might soon pivot made discretionary the strongest sector (#1 of 11, +28.8%) as money rotated into high-beta growth — semis +19.5%, growth beating value +8.8, VIX 33→20. Amazon and Tesla led rate-sensitive cyclicals higher on Amazon's Q2 report and cooling July CPI, before Powell's hawkish Jackson Hole ended it.",
      "drivers": [
-      "peak-inflation hopes",
-      "Fed-pivot bets",
+      "tech-led risk-on",
+      "peak-inflation / Fed-pivot bets",
       "Amazon rebound",
-      "cyclical bounce"
+      "goldilocks quad"
      ],
-     "title_zh": "通胀见顶夏季上涨",
-     "body_zh": "从6月低点起，对通胀已见顶、美联储可能很快转向的预期，推动可选消费仅在7月就上涨逾18%，成为表现最强的板块，亚马逊和特斯拉引领利率敏感的周期股走高。亚马逊的二季度业绩和7月CPI降温助长了乐观情绪，直至鲍威尔鹰派的杰克逊霍尔讲话终结了行情。",
+     "title_zh": "通胀见顶夏季上涨，可选消费领涨",
+     "body_zh": "从6月低点起，对通胀已见顶、美联储可能很快转向的预期，使可选消费成为表现最强的板块（11个板块中第1位，+28.8%），资金轮动进入高贝塔成长股——半导体+19.5%，成长跑赢价值+8.8，VIX从33回落至20。亚马逊和特斯拉凭借亚马逊二季度业绩和7月CPI降温引领利率敏感的周期股走高，直至鲍威尔鹰派的杰克逊霍尔讲话终结了行情。",
      "drivers_zh": [
-      "通胀见顶预期",
-      "押注美联储转向",
+      "科技引领risk-on",
+      "通胀见顶/押注美联储转向",
       "亚马逊回升",
-      "周期股反弹"
+      "金发女孩象限"
      ]
     },
     "2022-08-16": {
-     "title": "Jackson Hole, Tesla collapse",
-     "body": "Powell's hawkish Jackson Hole killed the pivot trade and rates kept climbing, but the bigger drag was Tesla's record collapse into year-end as Musk dumped billions in shares for Twitter, demand softened and Tesla cut prices. Amazon's slowing retail growth and a strained consumer carried XLY to its December low.",
+     "title": "Jackson Hole and Tesla collapse drive a flight-to-safety",
+     "body": "Powell's hawkish Jackson Hole killed the pivot trade and a rate-regime move (TLT -13.1%) kept yields climbing, but the bigger drag was Tesla's record collapse into year-end as Musk dumped billions in shares for Twitter, demand softened and Tesla cut prices. The rotation was defensive (defensives -2.7% vs cyclicals -7.0%) as Amazon's slowing retail and a strained consumer carried XLY to dead-last (#11, -26.7%) at its December low.",
      "drivers": [
+      "flight-to-safety",
       "Jackson Hole hawkish",
-      "Tesla collapse",
-      "Musk/Twitter sales",
-      "weak consumer"
+      "Tesla collapse / Musk sales",
+      "rate regime (TLT -13.1%)"
      ],
-     "title_zh": "杰克逊霍尔，特斯拉崩盘",
-     "body_zh": "鲍威尔鹰派的杰克逊霍尔讲话终结了政策转向交易，利率持续攀升，但更大的拖累是特斯拉在年底前的历史性崩盘——马斯克为收购推特抛售了数十亿美元股票，需求走软，特斯拉降价。亚马逊放缓的零售增长和承压的消费者将XLY拖向12月低点。",
+     "title_zh": "杰克逊霍尔与特斯拉崩盘引发避险",
+     "body_zh": "鲍威尔鹰派的杰克逊霍尔讲话终结了政策转向交易，利率体制走高（TLT -13.1%）使收益率持续攀升，但更大的拖累是特斯拉在年底前的历史性崩盘——马斯克为收购推特抛售了数十亿美元股票，需求走软，特斯拉降价。轮动偏向防御（防御板块-2.7%对周期板块-7.0%），亚马逊放缓的零售和承压的消费者将XLY拖至垫底（第11位，-26.7%）的12月低点。",
      "drivers_zh": [
+      "避险",
       "杰克逊霍尔鹰派",
-      "特斯拉崩盘",
-      "马斯克/推特抛售",
-      "消费者疲软"
+      "特斯拉崩盘/马斯克抛售",
+      "利率体制（TLT -13.1%）"
      ]
     },
     "2022-12-28": {
-     "title": "Amazon, Tesla mega-cap recovery",
-     "body": "Disinflation, a resilient consumer and the AI-driven mega-cap rebound powered a ~40% rally led by Amazon and Tesla, the two names that drive the ETF. Better-than-feared retail earnings and falling inflation expectations revived big-ticket and online discretionary demand into the July 2023 peak.",
+     "title": "Amazon, Tesla lead a narrow, tech-led recovery",
+     "body": "Disinflation, a resilient consumer and the AI-driven mega-cap rebound powered a ~41% rally led by Amazon and Tesla, the two names that drive the ETF (#3 of 11). This was a classic narrow, tech-led melt-up — semis +60.8%, growth beating value +27.7, equal-weight lagging cap-weight by -10.2%, VIX 22→14 — that pulled flows back into high-beta discretionary into the July 2023 peak.",
      "drivers": [
+      "tech-led risk-on",
       "Amazon/Tesla recovery",
-      "resilient consumer",
-      "disinflation",
-      "AI mega-cap rally"
+      "disinflation / resilient consumer",
+      "narrow breadth"
      ],
-     "title_zh": "亚马逊特斯拉大型股复苏",
-     "body_zh": "去通胀、坚韧的消费者和AI驱动的大型股反弹，推动了一轮约40%的上涨，由驱动该ETF的两只股票——亚马逊和特斯拉领涨。好于担忧的零售业绩和回落的通胀预期，在2023年7月见顶前重振了大额和线上可选消费需求。",
+     "title_zh": "亚马逊、特斯拉引领狭窄、科技主导的复苏",
+     "body_zh": "去通胀、坚韧的消费者和AI驱动的大型股反弹，推动了一轮约41%的上涨，由驱动该ETF的两只股票——亚马逊和特斯拉领涨（11个板块中第3位）。这是一轮典型的狭窄、科技主导的逼空上涨——半导体+60.8%，成长跑赢价值+27.7，等权落后市值权重-10.2%，VIX从22降至14——将资金重新拉回高贝塔可选消费，直至2023年7月见顶。",
      "drivers_zh": [
+      "科技引领risk-on",
       "亚马逊/特斯拉复苏",
-      "坚韧消费者",
-      "去通胀",
-      "AI大型股上涨"
+      "去通胀/坚韧消费者",
+      "市场广度狭窄"
      ]
     },
     "2023-07-19": {
-     "title": "Yield spike to 5% hits valuations",
-     "body": "The 10-year Treasury surging toward 5%, its highest since 2007, on stronger data and deficit worries crushed long-duration discretionary valuations. Amazon, Tesla and rate-sensitive homebuilders led the slide as higher borrowing costs threatened auto and big-ticket spending.",
+     "title": "Yield spike to 5% de-rates duration-heavy discretionary",
+     "body": "The 10-year Treasury surging toward 5%, its highest since 2007, on stronger data and deficit worries was a pure rate-regime move (TLT -17.0%) that crushed XLY's long-duration valuations to dead-last (#11, -16.2%). A stronger dollar (+6.3% DXY) and higher borrowing costs hit Amazon, Tesla and rate-sensitive homebuilders, threatening auto and big-ticket spending.",
      "drivers": [
-      "10-year toward 5%",
-      "higher-for-longer",
-      "Amazon/Tesla pressure",
-      "housing/autos hit"
+      "rate regime (TLT -17.0%)",
+      "10-year toward 5% / higher-for-longer",
+      "strong dollar",
+      "Amazon/Tesla pressure"
      ],
-     "title_zh": "收益率升至5%打击估值",
-     "body_zh": "受强劲数据和赤字担忧推动，10年期美债收益率飙升至接近5%——为2007年以来最高，重创了长久期可选消费的估值。随着借贷成本上升威胁汽车和大额消费，亚马逊、特斯拉和利率敏感的房屋建筑商领跌。",
+     "title_zh": "收益率升至5%重估久期偏重的可选消费",
+     "body_zh": "受强劲数据和赤字担忧推动，10年期美债收益率飙升至接近5%——为2007年以来最高，这是一次纯粹的利率体制走高（TLT -17.0%），将XLY的长久期估值压至垫底（第11位，-16.2%）。走强的美元（DXY +6.3%）和上升的借贷成本打击了亚马逊、特斯拉和利率敏感的房屋建筑商，威胁汽车和大额消费。",
      "drivers_zh": [
-      "10年期接近5%",
-      "更高更久",
-      "亚马逊/特斯拉承压",
-      "房地产/汽车受挫"
+      "利率体制（TLT -17.0%）",
+      "10年期接近5%/更高更久",
+      "美元走强",
+      "亚马逊/特斯拉承压"
      ]
     },
     "2023-10-26": {
-     "title": "Rate cuts, resilient consumer, Tesla",
-     "body": "Falling yields, the Fed's September 2024 cut and a remarkably resilient consumer drove a ~63% melt-up, with discretionary surging in 2024 on record holiday spending. Tesla exploded higher after Trump's November win on Musk-administration optimism, and Amazon's strength carried XLY to its December 17, 2024 record peak.",
+     "title": "Rate cuts and a narrow, tech-led melt-up; Tesla rockets",
+     "body": "Falling yields (TLT +12.0%), the Fed's September 2024 cut and a remarkably resilient consumer drove a ~63% melt-up that put discretionary back at #1 of 11 on record holiday spending. It was a narrow, tech-led tape — semis +82.9%, growth beating value +30.7, equal-weight lagging cap-weight by -13.1% — with Tesla exploding higher after Trump's November win and Amazon's strength carrying XLY to its December 17, 2024 record peak.",
      "drivers": [
-      "Fed rate cuts",
-      "resilient consumer",
+      "tech-led risk-on",
+      "rate cuts (TLT +12%)",
       "Tesla post-election surge",
-      "strong holiday spending"
+      "narrow breadth"
      ],
-     "title_zh": "降息，坚韧消费者，特斯拉",
-     "body_zh": "回落的收益率、美联储2024年9月降息和异常坚韧的消费者，推动了约63%的飙升，可选消费在2024年凭借创纪录的假日消费而大涨。特斯拉在特朗普11月获胜后因\"马斯克入阁\"乐观情绪而暴涨，亚马逊的强势将XLY推向2024年12月17日的纪录高点。",
+     "title_zh": "降息与狭窄、科技主导的逼空上涨；特斯拉飙升",
+     "body_zh": "回落的收益率（TLT +12.0%）、美联储2024年9月降息和异常坚韧的消费者，推动了约63%的飙升，凭借创纪录的假日消费使可选消费重回11个板块中第1位。这是一轮狭窄、科技主导的行情——半导体+82.9%，成长跑赢价值+30.7，等权落后市值权重-13.1%——特斯拉在特朗普11月获胜后暴涨，亚马逊的强势将XLY推向2024年12月17日的纪录高点。",
      "drivers_zh": [
-      "美联储降息",
-      "坚韧消费者",
+      "科技引领risk-on",
+      "降息（TLT +12%）",
       "特斯拉大选后飙升",
-      "强劲假日消费"
+      "市场广度狭窄"
      ]
     },
     "2024-12-17": {
-     "title": "DeepSeek then tariff crash",
-     "body": "The peak unwound as January's DeepSeek shock hit AI/mega-cap sentiment and Amazon, then April's reciprocal-tariff announcement crushed import-heavy retail and slapped 25% levies on autos and parts. Tesla fell far from its post-election high and import-reliant discretionary names cratered into the April 8 low.",
+     "title": "DeepSeek then tariff crash trigger a flight-to-safety",
+     "body": "The peak unwound as January's DeepSeek shock hit AI/mega-cap sentiment and Amazon, then April's reciprocal-tariff announcement crushed import-heavy retail and slapped 25% levies on autos and parts, sending discretionary to dead-last (#11, -26.0%). It was a flight-to-safety rout — defensives -4.0% vs cyclicals -16.6% as VIX exploded 16→52 — with Tesla collapsing from its post-election high into the April 8 low.",
      "drivers": [
+      "flight-to-safety",
       "DeepSeek shock",
-      "reciprocal tariffs",
-      "auto/import tariffs",
+      "reciprocal / auto tariffs",
       "Tesla/Amazon decline"
      ],
-     "title_zh": "DeepSeek继而关税崩盘",
-     "body_zh": "随着1月的DeepSeek冲击打击AI/大型股情绪和亚马逊，继而4月的对等关税公告重创了进口依赖型零售并对汽车及零部件征收25%关税，顶部随之瓦解。特斯拉从大选后高点大幅回落，进口依赖型可选消费股暴跌至4月8日低点。",
+     "title_zh": "DeepSeek继而关税崩盘触发避险",
+     "body_zh": "随着1月的DeepSeek冲击打击AI/大型股情绪和亚马逊，继而4月的对等关税公告重创进口依赖型零售并对汽车及零部件征收25%关税，顶部随之瓦解，可选消费跌至垫底（第11位，-26.0%）。这是一轮避险溃败——VIX从16暴涨至52之际，防御板块-4.0%对周期板块-16.6%——特斯拉从大选后高点崩跌至4月8日低点。",
      "drivers_zh": [
+      "避险",
       "DeepSeek冲击",
-      "对等关税",
-      "汽车/进口关税",
+      "对等/汽车关税",
       "特斯拉/亚马逊下跌"
      ]
     },
     "2025-04-08": {
-     "title": "Tariff-pause recovery",
-     "body": "Trump's 90-day tariff pause sparked a furious rebound, and a still-resilient, spending consumer plus AI euphoria drove discretionary higher through 2025 into early 2026. Amazon and Tesla recovered as recession fears faded and big-ticket demand held up despite lingering tariff costs.",
+     "title": "Tariff-pause recovery rides the narrow, tech-led tape",
+     "body": "Trump's 90-day tariff pause sparked a furious rebound, and a still-resilient consumer plus AI euphoria drove discretionary to #2 of 11 (+42.1%) through 2025 into early 2026. It was a narrow, tech-led, weak-dollar melt-up — semis +117.8%, growth beating value +17.1, equal-weight lagging cap-weight -10.3%, VIX 52→15 — as Amazon and Tesla recovered and big-ticket demand held despite lingering tariff costs.",
      "drivers": [
-      "tariff pause",
-      "resilient consumer",
+      "tech-led risk-on",
+      "tariff pause / resilient consumer",
       "Amazon/Tesla rebound",
-      "AI euphoria"
+      "narrow breadth"
      ],
-     "title_zh": "关税暂缓复苏",
-     "body_zh": "特朗普90天的关税暂缓引发了一轮迅猛反弹，仍然坚韧、持续消费的消费者叠加AI热潮，推动可选消费在2025年走高直至2026年初。随着衰退担忧消退、大额消费需求顶住关税成本而保持稳健，亚马逊和特斯拉复苏。",
+     "title_zh": "关税暂缓复苏，搭乘狭窄、科技主导的行情",
+     "body_zh": "特朗普90天的关税暂缓引发了一轮迅猛反弹，仍然坚韧的消费者叠加AI热潮，推动可选消费升至11个板块中第2位（+42.1%），贯穿2025年直至2026年初。这是一轮狭窄、科技主导、弱美元的逼空上涨——半导体+117.8%，成长跑赢价值+17.1，等权落后市值权重-10.3%，VIX从52降至15——亚马逊和特斯拉复苏，大额需求在残留的关税成本下保持稳健。",
      "drivers_zh": [
-      "关税暂缓",
-      "坚韧消费者",
+      "科技引领risk-on",
+      "关税暂缓/坚韧消费者",
       "亚马逊/特斯拉反弹",
-      "AI热潮"
+      "市场广度狭窄"
      ]
     },
     "2026-01-12": {
-     "title": "Oil shock, hawkish Fed squeeze consumer",
-     "body": "The Iran/Strait-of-Hormuz oil shock sent gas prices and CPI toward 4.2%, squeezing real wages and discretionary spending just as a hawkish Fed leaned toward hikes. Higher rates and energy-driven inflation hit the rate-sensitive, big-ticket parts of XLY and pressured Amazon and Tesla.",
+     "title": "Oil shock and hawkish Fed leave discretionary stranded",
+     "body": "The Iran/Strait-of-Hormuz oil shock sent gas prices and CPI toward 4.2% (oil +72.9%, a stagflation quad), squeezing real wages and discretionary spending just as a hawkish Fed leaned toward hikes, dropping XLY to dead-last (#11, -15.0%). Notably it wasn't a clean flight-to-safety — breadth actually broadened (RSP beat SPY +4.3%) — but energy-led inflation and higher rates hit the big-ticket, rate-sensitive parts of XLY and pressured Amazon and Tesla.",
      "drivers": [
-      "oil shock",
-      "gas-price squeeze",
+      "stagflation quad (oil +73%)",
+      "oil shock / gas squeeze",
       "hawkish Fed",
-      "weak consumer"
+      "broadening breadth"
      ],
-     "title_zh": "油价冲击，鹰派美联储挤压消费者",
-     "body_zh": "伊朗/霍尔木兹海峡油价冲击使汽油价格和CPI升向4.2%，在鹰派美联储倾向加息之际挤压实际工资和可选消费支出。更高的利率和能源驱动的通胀打击了XLY中利率敏感的大额消费部分，并施压亚马逊和特斯拉。",
+     "title_zh": "油价冲击与鹰派美联储令可选消费搁浅",
+     "body_zh": "伊朗/霍尔木兹海峡油价冲击使汽油价格和CPI升向4.2%（油价+72.9%，滞胀象限），在鹰派美联储倾向加息之际挤压实际工资和可选消费支出，使XLY跌至垫底（第11位，-15.0%）。值得注意的是这并非干净的避险——市场广度反而扩大（RSP跑赢SPY +4.3%）——但能源驱动的通胀和更高的利率打击了XLY中利率敏感的大额消费部分，并施压亚马逊和特斯拉。",
      "drivers_zh": [
-      "油价冲击",
-      "汽油价格挤压",
+      "滞胀象限（油价+73%）",
+      "油价冲击/汽油挤压",
       "鹰派美联储",
-      "消费者疲软"
+      "市场广度扩大"
      ]
     },
     "2026-03-30": {
-     "title": "Ceasefire, falling-oil relief bounce",
-     "body": "A mid-June Iran ceasefire and reopening of the Strait of Hormuz pulled oil back toward $70, easing the pump-price squeeze and sparking a relief rally in beaten-down discretionary. Amazon and Tesla led the bounce, though a still-hawkish Fed and below-trend positioning keep the recovery tentative.",
+     "title": "Ceasefire relief, but discretionary trails the tech-led tape",
+     "body": "A mid-June Iran ceasefire and reopening of the Strait of Hormuz pulled oil back toward $70, easing the pump-price squeeze and sparking a relief bounce in Amazon and Tesla. But XLY (+15.3%) trailed a narrow, tech-led melt-up (Tech +46.4%, semis +65.5%, equal-weight lagging cap-weight -8.8%, VIX 31→16) — discretionary is rejoining risk-on, not leading it, with a hawkish Fed and below-trend positioning keeping the recovery tentative.",
      "drivers": [
-      "Iran ceasefire",
-      "oil relief",
-      "easing gas squeeze",
-      "Amazon/Tesla bounce"
+      "tech-led risk-on",
+      "Iran ceasefire / oil relief",
+      "Amazon/Tesla bounce",
+      "narrow breadth"
      ],
-     "title_zh": "停火，油价回落纾解反弹",
-     "body_zh": "6月中旬的伊朗停火和霍尔木兹海峡重新开放，使油价回落至约70美元，缓解了汽油价格挤压，并在被打压的可选消费中引发了纾解反弹。亚马逊和特斯拉领涨反弹，不过仍然鹰派的美联储和低于趋势的持仓使复苏保持谨慎。",
+     "title_zh": "停火纾解，但可选消费落后于科技主导的行情",
+     "body_zh": "6月中旬的伊朗停火和霍尔木兹海峡重新开放，使油价回落至约70美元，缓解了汽油价格挤压，并在亚马逊和特斯拉中引发了纾解反弹。但XLY（+15.3%）落后于一轮狭窄、科技主导的逼空上涨（Tech +46.4%，半导体+65.5%，等权落后市值权重-8.8%，VIX从31降至16）——可选消费是在重新加入risk-on而非领涨，仍然鹰派的美联储和低于趋势的持仓使复苏保持谨慎。",
      "drivers_zh": [
-      "伊朗停火",
-      "油价纾解",
-      "汽油挤压缓解",
-      "亚马逊/特斯拉反弹"
+      "科技引领risk-on",
+      "伊朗停火/油价纾解",
+      "亚马逊/特斯拉反弹",
+      "市场广度狭窄"
      ]
     }
    },
-   "now_zh": "截至2026年年中，XLY正在筑底（相对强度排名第6，周期位置约31，位于200日均线下方）：消费者受油价驱动的通胀挤压（CPI 4.2%，汽油因伊朗/霍尔木兹冲击飙升），叠加鹰派美联储维持高利率，打压大额可选消费需求。由于亚马逊和特斯拉约占该ETF的三分之一，该板块是对这两只股票企稳、并叠加油价与利率纾解的杠杆化押注。"
+   "now_zh": "XLY正在筑底（相对强度排名第6，周期位置约31，位于200日均线下方），但这一次轮动行情并没有救它——而是把它\"冷落\"了。2026年的逼空上涨狭窄且由科技引领（Tech +24.3%，半导体/SMH +67.9%，高贝塔跑赢低波动+20.7%），可选消费却以-5.2%排在11个板块中的第10位，因为消费者受油价驱动的通胀（CPI 4.2%，汽油因伊朗/霍尔木兹冲击飙升）和鹰派美联储挤压。由于亚马逊和特斯拉约占该ETF三分之一，XLY是对这两只股票在油价与利率松动后重新加入risk-on领涨阵营的杠杆化押注；市场广度正在扩大（RSP跑赢SPY +2.9%），这是转向的第一道裂缝。"
   }
  },
  "baskets": {
