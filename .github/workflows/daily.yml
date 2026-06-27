@@ -63,6 +63,17 @@ jobs:
           path: data/intraday
           key: intraday-${{ github.run_id }}
           restore-keys: intraday-
+      - name: restore data-quality revision baselines
+        # The end-of-collect audit (scripts/audit_macro) needs the PRIOR run's macro values to
+        # detect backwards-revisions. The baselines are a daily-changing full copy of the macro
+        # series — pure machine state — so they are cached cross-run (like the breadth caches),
+        # not committed, to keep the repo from bloating. Absent on the first run => the audit just
+        # seeds them (no detection that day) and revision-checking is active from the next run.
+        uses: actions/cache@v4
+        with:
+          path: data/quality/baselines
+          key: quality-baselines-${{ github.run_id }}
+          restore-keys: quality-baselines-
       - name: run collectors (graceful degradation — never fails the build on one source)
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
