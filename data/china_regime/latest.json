@@ -215,8 +215,8 @@
       "chg_20d_pct": 5.29
     },
     "usdcny": {
-      "level": 6.7891,
-      "chg_20d_pct": 0.14
+      "level": 6.7897,
+      "chg_20d_pct": 0.15
     }
   },
   "property": {
@@ -246,8 +246,8 @@
     "dir_sign": -1,
     "confidence": "low",
     "confidence_zh": "\u4f4e",
-    "strength": 1.21,
-    "dominance_ratio": 1.13,
+    "strength": 1.19,
+    "dominance_ratio": 1.11,
     "agreement": 1.0,
     "runner_up": "ai_semis",
     "runner_up_label": "AI / semis leadership",
@@ -283,8 +283,8 @@
         "label": "Inflation / commodities",
         "label_zh": "\u901a\u80c0/\u5927\u5b97",
         "family": "inflation",
-        "projection": -1.21,
-        "strength": 1.21,
+        "projection": -1.19,
+        "strength": 1.19,
         "direction": "upstream disinflation \u2014 PPI, coal, nonferrous & oil lead down"
       },
       {
@@ -301,8 +301,8 @@
         "label": "Yuan (CNH) shock",
         "label_zh": "\u4eba\u6c11\u5e01(CNH)\u51b2\u51fb",
         "family": "fx",
-        "projection": 0.78,
-        "strength": 0.78,
+        "projection": 0.83,
+        "strength": 0.83,
         "direction": "yuan weakening \u2014 CNH up, capital-outflow stress, equities pressured"
       },
       {
@@ -328,8 +328,8 @@
         "label": "Stimulus tape",
         "label_zh": "\u523a\u6fc0\u884c\u60c5",
         "family": "growth",
-        "projection": -0.24,
-        "strength": 0.24,
+        "projection": -0.23,
+        "strength": 0.23,
         "direction": "stimulus-off \u2014 CSI300, brokers, property & copper/rebar lead down"
       },
       {
@@ -355,16 +355,16 @@
   },
   "conditions": {
     "roro": {
-      "roro": -0.094,
-      "roro_raw": -0.095,
+      "roro": -0.104,
+      "roro_raw": -0.104,
       "roro_state": "neutral",
-      "china_roro_copper_gold": 1.697,
+      "china_roro_copper_gold": 1.636,
       "china_roro_breadth": -1.078,
       "china_roro_southbound": -0.685,
       "china_roro_m1_m2": 0.021,
       "china_roro_turnover": 2.285,
       "china_roro_qvix": -1.399,
-      "china_roro_usdcnh": -1.1,
+      "china_roro_usdcnh": -1.114,
       "china_roro_margin": -0.499,
       "china_roro_ah_premium": null,
       "legs": [
@@ -372,7 +372,7 @@
           "key": "copper_gold",
           "name_en": "Copper / Gold",
           "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-          "value": 1.697,
+          "value": 1.636,
           "lean": "risk-on"
         },
         {
@@ -414,7 +414,7 @@
           "key": "usdcnh",
           "name_en": "Offshore yuan (20d)",
           "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-          "value": -1.1,
+          "value": -1.114,
           "lean": "risk-off"
         },
         {
@@ -2088,7 +2088,7 @@
           0.115,
           0.123,
           -0.094,
-          -0.094
+          -0.104
         ]
       },
       "recession": {
@@ -6828,7 +6828,7 @@
           71.2,
           72.4,
           48.5,
-          48.4
+          47.6
         ]
       }
     },
@@ -6839,15 +6839,15 @@
     "fe_score": 48,
     "band": "Neutral",
     "band_zh": "\u4e2d\u6027",
-    "roro": -0.094,
+    "roro": -0.104,
     "roro_state": "neutral",
     "legs": [
       {
         "key": "copper_gold",
         "name_en": "Copper / Gold",
         "name_zh": "\u94dc\uff0f\u91d1 \u6bd4",
-        "value": 1.697,
-        "pct": 99,
+        "value": 1.636,
+        "pct": 98,
         "lean": "risk-on"
       },
       {
@@ -6894,7 +6894,7 @@
         "key": "usdcnh",
         "name_en": "Offshore yuan (20d)",
         "name_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01\uff0820\u65e5\uff09",
-        "value": -1.1,
+        "value": -1.114,
         "pct": 10,
         "lean": "risk-off"
       },

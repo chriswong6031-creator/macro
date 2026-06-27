@@ -1,5 +1,5 @@
 {
-  "cash": 0.37,
+  "cash": 0.369,
   "crash": false,
   "eligible": [
     "ai_infra",
@@ -13,6 +13,7 @@
     "energy_complex",
     "housing",
     "industrial_distribution",
+    "insurance",
     "managed_care",
     "memory_storage",
     "non_ai_tech",

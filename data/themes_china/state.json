@@ -35,7 +35,7 @@
     "label": "deteriorating",
     "name": "Banks",
     "name_zh": "\u94f6\u884c",
-    "rank": 8,
+    "rank": 9,
     "reco": "avoid",
     "score": 39
   },
@@ -75,9 +75,9 @@
     "label": "deteriorating",
     "name": "Defense & Aerospace",
     "name_zh": "\u519b\u5de5\u822a\u5929",
-    "rank": 9,
+    "rank": 7,
     "reco": "avoid",
-    "score": 38
+    "score": 44
   },
   "cn_food_bev": {
     "label": "deteriorating",
@@ -139,7 +139,7 @@
     "label": "neutral",
     "name": "Robotics & Automation",
     "name_zh": "\u673a\u5668\u4eba\u4e0e\u81ea\u52a8\u5316",
-    "rank": 7,
+    "rank": 8,
     "reco": "hold",
     "score": 41
   },

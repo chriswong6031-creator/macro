@@ -1,62 +1,86 @@
 {
   "schema": "ai_desk.v1",
   "is_context_only": true,
-  "generated_at": "2026-06-26T12:40:12.295045+00:00",
-  "state_asof": "2026-06-25",
+  "generated_at": "2026-06-27T02:56:27.751766+00:00",
+  "state_asof": "2026-06-26",
   "model": "deepseek-v4-pro",
-  "regime_context": "Flow lens shows a cyclical cluster (Industrials, Financials, Consumer Discretionary, Real Estate) but the overall verdict is display_only with no validated directional edge. VIX is elevated at 20.0 (75th percentile), fear is rebuilding, and no relief snap is present. Materials leadership is narrow and dominated by a single-name surge, while Information Technology is cooling from extreme relative strength.",
+  "regime_context": "The flow lens reports 'display_only' with no validated forward edge; elevated VIX (18.4, 62nd %ile) activates stress-conditional cohesion readings but the regime snap remains dormant. Sector flow is concentrating in Utilities, Real Estate, and Financials while Information Technology cools\u2014all signals are fragile and rely on a marginal, stress-dependent signal.",
   "theses": [
     {
-      "id": "2026-06-25-1",
-      "subject": "Materials",
-      "lean": "avoid",
+      "id": "2026-06-26-1",
+      "subject": "Utilities",
+      "lean": "overweight",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Materials sector returns are dominated by DuPont\u2019s outsized gain (21% share, 189% ret), producing narrow leadership and high HHI. The flow lens shows no genuine breadth, and the top-pair correlation with Industrials is a single-name mirage, not a thematic spread. The skeptic and structural analysts concur.",
+      "thesis": "Flow concentration is strongest among sectors (flow_score 1.56), with broad leadership and RS in the 73rd %ile; the elevated VIX regime supports stress-conditional cohesion patterns. Opportunity and base-rate analysts concur on a cautious overweight, and the skeptic has not challenged this specific group.",
       "evidence": [
-        "Detector state: Materials leadership HHI=0.057, n=77, breadth='narrow'; top name DD ret_20d=1.891, share=0.21",
-        "Structural analyst: narrow breadth and high HHI from DuPont's extreme return, correlation with Industrials is a single-name mirage",
-        "Skeptic analyst: sector return dominated by DuPont single-name, low cohesion makes this a survivorship artifact"
+        "Flow sector Utilities: stage emerging, flow_score 1.56, broad leadership (HHI 0.021, n=59), RS pctile 0.734 (opportunity analyst).",
+        "Base-rate analyst notes emerging flow concentration with broad leadership and elevated VIX supports stress-conditional cohesion.",
+        "No underweight or avoid call from the skeptic for Utilities."
       ],
-      "dissent": "DuPont's surge may reflect genuine industrial demand, and other Materials names could catch up, broadening the move. Avoid based on current concentration risks missing a rotation that widens participation.",
+      "dissent": "The flow lens itself has a de-confounded IC near ~0.10 and is fragile outside stress environments; a rapid VIX decline would collapse the stress-conditional signal, making this overweight call reliant on an unstable regime (skeptic's overall key risk).",
       "falsifier": {
-        "text": "Materials sector RS pctile remains above 0.80 and breadth expands to >120 names on the leadership table within 20 trading days.",
+        "text": "VIX drops below 15 and Utilities' cohesion_chg turns decisively negative.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "XLB",
+          "subject_ticker": "XLU",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
+          "op": "<",
+          "threshold": -0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-07-23"
+      "check_by": "2026-07-24"
     },
     {
-      "id": "2026-06-25-2",
-      "subject": "Information Technology",
-      "lean": "underweight",
+      "id": "2026-06-26-2",
+      "subject": "Real Estate",
+      "lean": "overweight",
       "conviction": "low",
       "horizon_d": 20,
-      "thesis": "Information Technology sits at the 98th RS percentile but shows a negative flow_score (-0.902) and a cooling stage, indicative of momentum exhaustion and profit-taking dispersion. Both the skeptic and base-rate analysts flag this as a sector where recent strength is fragile.",
+      "thesis": "Real Estate shows the strongest combination of high RS (94th pctile), cohering leadership under stress-conditional cohesion, and broad participation (HHI 0.014). Both opportunity and base-rate analysts support an overweight, and the structural analyst notes its cluster leadership.",
       "evidence": [
-        "Detector state: IT flow_score=-0.902, stage='cooling', rs_pctile=0.98, cohesion=0.18 (non-cohering)",
-        "Skeptic analyst: RS at 98th percentile but flow_score negative and stage cooling indicates momentum exhaustion",
-        "Base-rate analyst: only cooling sector with negative flow score and extreme RS, indicative of profit-taking dispersion"
+        "Flow sector Real Estate: stage confirmed, cohesion_gate cohering true, stress_conditional true, RS pctile 0.94, breadth broad (opportunity and base-rate analysts).",
+        "Structural analyst identifies Real Estate as part of the dominant cluster with broad, low-concentration leadership."
       ],
-      "dissent": "Momentum can persist despite cooling flow; the sector's extreme RS may be supported by AI-driven earnings expansions, and mean-reversion timing is uncertain. The negative flow_score has no forward edge, so the underweight call may be premature.",
+      "dissent": "The edge is entirely stress-conditional; if VIX normalizes, the cohesion signal collapses and the overweight would be unmoored from any durable flow signal (skeptic's overall risk).",
       "falsifier": {
-        "text": "Information Technology sector flow_score turns positive and RS pctile remains above 0.95 for 10 consecutive trading days.",
+        "text": "Real Estate rs_pctile drops below 0.7 and cohesion_gate cohering flips to false.",
         "check": {
           "kind": "rel_return",
-          "subject_ticker": "XLK",
+          "subject_ticker": "XLRE",
           "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
+          "op": "<",
+          "threshold": -0.05,
           "horizon_d": 20
         }
       },
-      "check_by": "2026-07-23"
+      "check_by": "2026-07-24"
+    },
+    {
+      "id": "2026-06-26-3",
+      "subject": "Financials",
+      "lean": "overweight",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Financials is emerging with strong acceleration (accel_z 2.791), extremely broad membership (HHI 0.006), and is part of the dominant cluster. The base-rate analyst advocates an overweight, and neither the skeptic nor opportunity analysts directly oppose.",
+      "evidence": [
+        "Flow sector Financials: stage emerging, accel_z 2.791, HHI 0.006, n=254, RS pctile 0.679 (base-rate analyst).",
+        "Structural analyst highlights Financials' extremely broad and low-concentration leadership."
+      ],
+      "dissent": "Cohesion is low (0.305) and not cohering, so the overweight relies on a weak, non-directional flow signal that has no proven forward IC; a sector-wide mean-reversion could quickly reverse these flows (skeptic's general mean-reversion caution).",
+      "falsifier": {
+        "text": "Financials cohesion_chg turns negative and breadth shrinks below 150 members.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "XLF",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 20
+        }
+      },
+      "check_by": "2026-07-24"
     }
   ],
   "source_verdicts": {
@@ -65,9 +89,9 @@
   },
   "track_record": {
     "schema": "ai_desk_track_record.v1",
-    "as_of": "2026-06-26",
+    "as_of": "2026-06-27",
     "scored_total": 1,
-    "open": 13,
+    "open": 14,
     "unscored_soft": 0,
     "expired": 0,
     "overall": {
@@ -136,130 +160,136 @@
   "disclaimer": "AI desk note \u2014 context only, never scored or sized. The detectors it reads are DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade recommendation or a position size.",
   "panel": {
     "opportunity": {
-      "stance": "Flow concentrates in an Industrials-led cyclical cluster (Industrials, Financials, Consumer Discretionary, Real Estate) amid elevated VIX, but the lens has no validated forward edge and the relief snap is dormant; the only durable lean is to avoid fade-VIX calls given rebuilding fear and a recent miss.",
+      "stance": "Flow is concentrating in Real Estate, Health Care, and Utilities inside an elevated-VIX stress regime, but the lens carries no forward edge and the relief snap is absent; any directional read is low-conviction and fragile.",
       "candidates": [
         {
-          "subject": "Industrials",
-          "lean": "none",
-          "rationale": "Highest RS pctile (0.925) in the dominant cluster, but flow stage is 'confirmed', cohesion is low and non-cohering, and the directive forbids inferring direction from concentration alone.",
-          "strength": "moderate"
-        },
-        {
-          "subject": "Financials",
-          "lean": "none",
-          "rationale": "Part of dominant cluster with broad leadership but non-cohering; despite elevated VIX (the lens's stress-conditional regime), the read quality is only 0.70 and no directional signal is confirmed.",
-          "strength": "moderate"
-        },
-        {
-          "subject": "Consumer Discretionary",
-          "lean": "none",
-          "rationale": "Emerging flow score and part of the cyclical cluster, but cohesion is declining and directional confidence is low; the lens offers no forward edge to act upon.",
+          "subject": "Real Estate",
+          "lean": "overweight",
+          "rationale": "Highest RS percentile (0.94) with broad, cohering leadership under stress-conditional cohesion; concentration signal is the strongest among sectors.",
           "strength": "weak"
         },
         {
-          "subject": "Real Estate",
-          "lean": "none",
-          "rationale": "Quiet stage with broad leadership and moderate RS pctile (0.746), but non-cohering and no directional signal; concentration alone does not justify a lean.",
+          "subject": "Health Care",
+          "lean": "overweight",
+          "rationale": "Near-max RS percentile (0.984) with broad breadth, though cohesion is not cohering; flow concentration remains elevated.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Utilities",
+          "lean": "overweight",
+          "rationale": "Top flow_score among sectors (1.56) with high RS percentile (0.734) and broad leadership, despite non-cohering cohesion.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "avoid",
+          "rationale": "Cooling stage with negative flow_score and deterioration in breadth; cohesion is low and not cohering, signaling dispersion.",
           "strength": "weak"
         },
         {
           "subject": "VIX",
-          "lean": "avoid",
-          "rationale": "Fear is rebuilding (fear_rebuilding=true), cap_recent=true, and no relief snap exists; the prior fade-fear call missed (realized 0.2031), reinforcing that fading VIX here is premature.",
-          "strength": "moderate"
+          "lean": "none",
+          "rationale": "Fear built is moderate (0.5), VIX term inverted (0.915), but no relief snap is triggered; recent fade-fear missed.",
+          "strength": "weak"
         }
       ],
-      "key_risk": "A sudden de-escalation in the VIX regime could shift flow concentration patterns rapidly, but the underlying lens would still carry no directional edge."
+      "key_risk": "A swift VIX normalization would collapse the stress-conditional cohesion signals, removing the only marginal lens edge that currently favors the overweight calls."
     },
     "skeptic": {
-      "stance": "The flow lens is coincident and has no forward edge; observed sector RS strength is likely already priced-in or driven by single-name outliers. Apparent leadership in Materials and IT is particularly fragile, meriting a fade.",
+      "stance": "Elevated VIX (18.4, 62nd %ile) activates the stress-conditional edge, but extreme RS sectors (Health Care, Info Tech, Materials, Travel) lack genuine cohesion and appear as mean-reversion traps, not durable themes. The flow lens offers no forward IC; I would fade these apparent strengths.",
       "candidates": [
         {
-          "subject": "Materials",
-          "lean": "avoid",
-          "rationale": "Sector return dominated by DuPont (DD) single-name 21% share; narrow leadership and low cohesion make this a survivorship artifact, not a theme.",
-          "strength": "strong"
+          "subject": "Health Care",
+          "lean": "underweight",
+          "rationale": "RS at 98th %ile but cohesion only 0.15 (non-cohering), indicating idiosyncratic leadership (MRNA, TGTX) without thematic depth\u2014likely to mean-revert.",
+          "strength": "moderate"
         },
         {
           "subject": "Information Technology",
           "lean": "underweight",
-          "rationale": "RS at 98th percentile but flow_score negative and stage cooling, indicating momentum exhaustion; recent strength driven by a few high-alpha names like AMAT, SNDK.",
+          "rationale": "RS at 99th %ile, stage cooling, cohesion 0.176 (non-cohering); broad sector but move concentrated in semicap equipment names, not a durable rotation.",
           "strength": "moderate"
         },
         {
-          "subject": "Industrials",
-          "lean": "underweight",
-          "rationale": "RS percentile 92.5, but cohesion low and directional false; top contributors have negative alpha, suggesting the sector is riding residual momentum rather than a durable group move.",
-          "strength": "weak"
+          "subject": "Materials",
+          "lean": "avoid",
+          "rationale": "RS at 87th %ile but utterly single-name-driven: DuPont's +187% captures 20% share; HHI 0.051 narrow\u2014a classic survivorship trap, not a sector theme.",
+          "strength": "strong"
+        },
+        {
+          "subject": "Travel & Experiences",
+          "lean": "avoid",
+          "rationale": "RS at 100th %ile, cohesion 0.414 (non-cohering, declining), leadership narrow (airlines/leisure); extreme RS unsupported by broad participation signals a fade.",
+          "strength": "moderate"
         }
       ],
-      "key_risk": "The lens has ~0 forward IC; momentum can extend further than mean-reversion suggests, and a macro shift into cyclicals could keep these sectors outperforming."
+      "key_risk": "A sustained broadening of participation in these sectors\u2014turning low cohesion into genuine rotational flows\u2014would break the mean-reversion argument and validate the high RS as a durable signal."
     },
     "base_rate": {
-      "stance": "Flow lens shows descriptive concentration in Utilities, Financials, and Consumer Discretionary, while Information Technology is cooling from extreme RS. All signals are display-only (rank-IC ~0); no reliable forward edge.",
+      "stance": "Current flow shows concentration into Utilities, Financials, and Real Estate, while Technology cools; these patterns are stress-conditional and have no validated forward edge. The regime snap is dormant, offering no VIX fade signal.",
       "candidates": [
         {
           "subject": "Utilities",
           "lean": "overweight",
-          "rationale": "Highest emerging flow score (1.03) with broadening participation and moderate RS percentile (0.52) \u2014 a descriptive concentration snapshot, not a forecast.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Financials",
-          "lean": "overweight",
-          "rationale": "Strong emerging flow score (0.97) with broad leadership and mid-range RS (0.42) indicating descriptive buying interest, though no predictive edge exists.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Information Technology",
-          "lean": "underweight",
-          "rationale": "Only cooling sector with negative flow score (-0.90) and extreme RS percentile (0.98); indicative of profit-taking dispersion, not a predictive signal.",
-          "strength": "weak"
-        },
-        {
-          "subject": "VIX",
-          "lean": "none",
-          "rationale": "VIX elevated (20.0, 75th pctile) but regime snap dormant and recent fade-fear miss; no coincident relief trigger for a fear-fade lean.",
-          "strength": "weak"
-        }
-      ],
-      "key_risk": "A sudden volatility collapse triggering a 'relief' regime shift would likely reverse these relative flow patterns, especially in the crowded tech sector."
-    },
-    "structural": {
-      "stance": "The dominant cross-sector cluster (Industrials, Financials, Consumer Discretionary, Real Estate) shows genuine broad-based co-movement consistent with a cyclical rotation, led by Industrials. The top-pair correlation between Industrials and Materials is likely a mirage driven by DuPont's single-name surge; Materials is narrow and high-HHI.",
-      "candidates": [
-        {
-          "subject": "Industrials",
-          "lean": "overweight",
-          "rationale": "Broad leadership (HHI 0.006, n=252) and the highest RS pctile within the cluster, anchoring genuine cyclical co-movement.",
+          "rationale": "Emerging flow concentration with high RS, broad leadership, and elevated VIX supports its stress-conditional cohesion pattern.",
           "strength": "moderate"
         },
         {
           "subject": "Financials",
           "lean": "overweight",
-          "rationale": "Broad breadth, part of the dominant cluster, but lower relative strength.",
-          "strength": "weak"
-        },
-        {
-          "subject": "Consumer Discretionary",
-          "lean": "overweight",
-          "rationale": "Broad breadth, cluster member, still emerging with low RS pctile.",
-          "strength": "weak"
+          "rationale": "Emerging with strong acceleration and broad breadth, though low cohesion makes it a weaker group read.",
+          "strength": "moderate"
         },
         {
           "subject": "Real Estate",
           "lean": "overweight",
-          "rationale": "Broad breadth, cluster member, quiet stage but co-moving.",
+          "rationale": "Confirmed stage with very high RS, cohering in a stress-conditional way, leadership broad.",
+          "strength": "moderate"
+        },
+        {
+          "subject": "Information Technology",
+          "lean": "underweight",
+          "rationale": "Cooling stage with negative flow scores and narrowing participation despite high RS, cohesion remains low.",
+          "strength": "weak"
+        }
+      ],
+      "key_risk": "The flow lens has no forward edge and its signal is largely noise outside extreme stress environments; if VIX declines, these patterns could reverse without warning."
+    },
+    "structural": {
+      "stance": "The dominant cluster of Consumer Discretionary, Industrials, Real Estate, and Financials shows genuine cross-group co-movement with broad, low-concentration leadership. The high Industrials-Materials correlation (0.86) is likely a single-name mirage driven by DuPont's extreme share in narrow-breadth Materials.",
+      "candidates": [
+        {
+          "subject": "Real Estate",
+          "lean": "none",
+          "rationale": "Cohering, broad leadership (HHI=0.014, n=106), leading the cluster with high rs_pctile (0.94).",
+          "strength": "weak"
+        },
+        {
+          "subject": "Industrials",
+          "lean": "none",
+          "rationale": "Broad, low-HHI (0.007), high rs_pctile (0.94), but cohesion is low (0.228).",
+          "strength": "weak"
+        },
+        {
+          "subject": "Financials",
+          "lean": "none",
+          "rationale": "Very broad (n=254, HHI=0.006), part of cluster, but rs_pctile (0.679) and cohesion (0.305) moderate.",
+          "strength": "weak"
+        },
+        {
+          "subject": "Consumer Discretionary",
+          "lean": "none",
+          "rationale": "Broad (n=196, HHI=0.009), part of cluster, but weakest rs (0.556) and declining cohesion.",
           "strength": "weak"
         },
         {
           "subject": "Materials",
           "lean": "avoid",
-          "rationale": "Narrow breadth and high HHI from DuPont's extreme return; the high correlation with Industrials is a single-name mirage, not a theme spread.",
-          "strength": "moderate"
+          "rationale": "Narrow breadth, HHI 0.051, DuPont (ret +188%, share 0.2) drives the high correlation with Industrials; not a genuine theme spread.",
+          "strength": "weak"
         }
       ],
-      "key_risk": "The cyclical co-movement may be fragile under elevated VIX; stress intensification could reverse the rotation and break the cluster correlation."
+      "key_risk": "A mean-reversion in DuPont would dissolve the top-pair correlation, exposing the cluster as purely cyclical without a Materials linkage."
     }
   }
 }

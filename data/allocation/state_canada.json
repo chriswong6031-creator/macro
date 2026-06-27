@@ -1,5 +1,5 @@
 {
-  "cash": 0.342,
+  "cash": 0.339,
   "crash": false,
   "eligible": [
     "ca_asset_mgrs",
@@ -18,8 +18,8 @@
   "held": [
     "ca_banks",
     "ca_base_metals",
-    "ca_pipelines",
-    "ca_rails_ind"
+    "ca_rails_ind",
+    "ca_pipelines"
   ],
   "leader": "ca_banks",
   "names": {

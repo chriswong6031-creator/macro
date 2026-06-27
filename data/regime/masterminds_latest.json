@@ -1,8 +1,8 @@
 {
   "schema": "masterminds.latest.v2",
   "n": 3,
-  "built": "2026-06-26 12:31 UTC",
-  "asof": "2026-06-25",
+  "built": "2026-06-27 02:47 UTC",
+  "asof": "2026-06-26",
   "stale_after_min": 1440,
   "cards": [
     {
@@ -11,7 +11,7 @@
       "cagr": 7.89,
       "sharpe": 1.12,
       "maxdd": -17.3,
-      "asof": "2026-06-25",
+      "asof": "2026-06-26",
       "gross_now": 0.83,
       "alloc": [
         {
@@ -64,7 +64,7 @@
       "cagr": 11.45,
       "sharpe": 1.06,
       "maxdd": -24.1,
-      "asof": "2026-06-25",
+      "asof": "2026-06-26",
       "gross_now": 1.49,
       "alloc": [
         {
@@ -117,7 +117,7 @@
       "cagr": 17.27,
       "sharpe": 1.0,
       "maxdd": -34.9,
-      "asof": "2026-06-25",
+      "asof": "2026-06-26",
       "gross_now": 2.5,
       "alloc": [
         {
