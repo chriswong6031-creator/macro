@@ -5,12 +5,18 @@
  * If nothing is configured/served it cleanly no-ops and the page stays exactly as
  * the build rendered it.
  *
+ * HONESTY: on the current Polygon STANDARD plan (and Yahoo spark) the feed is
+ * ~15-MIN DELAYED, not real-time. window.LIVE_DELAYED_MIN (=15) makes the chips show
+ * an amber "delayed" dot + "≥15-min delayed" title and SUPPRESSES the green "live"
+ * pulse. The green pulse returns automatically once a real-time/websocket plan sets
+ * LIVE_DELAYED_MIN=0 (see research/LIVE_DATA_POLYGON.md).
+ *
  * Three price sources, in priority order (all optional):
  *   - the Worker /quotes endpoint (window.LIVE_QUOTES_URL) -> freshest, per-page,
- *     real-time US via Polygon.
+ *     lowest-latency US via Polygon (delayed on Standard; real-time after a WS upgrade).
  *   - a static full-universe snapshot JSON (window.LIVE_SNAPSHOT_URL, written by
  *     scripts/build_live_quotes on a GitHub Action, fetched from raw.githubusercontent
- *     CORS) -> keyless ~15-min quotes with NO Worker deploy. Same {ts,quotes} shape.
+ *     CORS) -> keyless ~15-min delayed quotes with NO Worker deploy. Same {ts,quotes} shape.
  *   - the static live/overlay.json (written by build_live_overlay) -> the
  *     divergence flag + market sessions (+ a price fallback when neither above).
  *
@@ -27,6 +33,12 @@
   var SNAP = window.LIVE_SNAPSHOT_URL || "";                 // keyless no-Worker fallback
   var POLL = (window.LIVE_POLL_SEC || 60) * 1000;
   var STALE_MIN = window.LIVE_STALE_MIN || 20;
+  // Vendor plan delay FLOOR (min). Polygon Standard + Yahoo spark are ~15-min delayed,
+  // so the whole feed is delayed, never "real-time": when >0 we never show the green
+  // "live" pulse — we show an amber "delayed" dot + an honest title. Set to 0 only once
+  // a real-time/websocket plan is live (see research/LIVE_DATA_POLYGON.md).
+  var DELAYED_MIN = window.LIVE_DELAYED_MIN || 0;
+  var FEED_LABEL = window.LIVE_FEED_LABEL || "";   // honest caption for [data-live-label] nodes
   var OVERLAY = "live/overlay.json";
   var inflight = false, lastTs = 0, pendingRefresh = false;
 
@@ -65,6 +77,7 @@
       "box-shadow:0 0 0 0 rgba(22,163,74,.5);animation:livePulse 2s infinite}" +
       ".nb-px[data-live='stale']::after{background:#9ca3af;animation:none;box-shadow:none}" +
       ".nb-px[data-live='closed']::after{background:#6b7280;animation:none;box-shadow:none}" +
+      ".nb-px[data-live='delayed']::after{background:#d97706;animation:none;box-shadow:none}" +
       ".nb-dvg{font-size:10px;font-weight:700;margin-left:5px;padding:0 4px;border-radius:4px;" +
       "vertical-align:middle;white-space:nowrap}" +
       ".nb-dvg.alert{background:#7f1d1d;color:#fecaca}.nb-dvg.watch{background:#78350f;color:#fde68a}" +
@@ -101,10 +114,12 @@
         r.price = q.price; r.src = q.source;
         var prev = (q.prevClose != null) ? q.prevClose : null;
         r.chg = (q.changePct != null) ? q.changePct : (prev ? (q.price / prev - 1) * 100 : null);
-        r.ageMin = Math.max(0, (serverNow - (q.ts || serverNow)) / 60000);
+        // never report an age below the vendor delay floor (a delayed quote IS old)
+        r.ageMin = Math.max(DELAYED_MIN, Math.max(0, (serverNow - (q.ts || serverNow)) / 60000));
         r.stale = r.ageMin > STALE_MIN;
       } else if (ov && ov.price != null) {
-        r.price = ov.price; r.src = ov.source; r.stale = !!ov.stale; r.ageMin = ov.age_min;
+        r.price = ov.price; r.src = ov.source; r.stale = !!ov.stale;
+        r.ageMin = (ov.age_min != null) ? Math.max(DELAYED_MIN, ov.age_min) : ov.age_min;
         r.chg = (ov.chg_pct != null) ? ov.chg_pct : null;
       }
       return r;
@@ -118,9 +133,14 @@
         el.textContent = fmtPrice(p.price, mkt);
         var sess = sessions[regionOf(sym)];
         var closed = sess && sess.open === false;
-        el.setAttribute("data-live", p.stale ? (closed ? "closed" : "stale") : "1");
-        el.title = (p.stale ? (closed ? "market closed" : "delayed") : "live") +
-          " · " + (p.src || "?") + (p.ageMin != null ? " · " + Number(p.ageMin).toFixed(0) + "m ago" : "");
+        // when fresh: "delayed" (amber, no pulse) on a delayed plan, else "live" (green pulse)
+        var state = p.stale ? (closed ? "closed" : "stale") : (DELAYED_MIN > 0 ? "delayed" : "1");
+        el.setAttribute("data-live", state);
+        var word = state === "closed" ? "market closed"
+                 : state === "stale" ? "stale"
+                 : state === "delayed" ? ("≥" + DELAYED_MIN + "-min delayed") : "live";
+        el.title = word + " · " + (p.src || "?") +
+          (p.ageMin != null ? " · " + Number(p.ageMin).toFixed(0) + "m ago" : "");
       }
       // divergence chip (only when fresh + not baseline-stale): the nightly
       // invalidation signal, surfaced to the human watching the same card.
@@ -182,8 +202,17 @@
     }, done);
   }
 
+  // Stamp an honest feed caption into any [data-live-label] element the build placed
+  // (e.g. "≈15-min delayed (Polygon Standard / Yahoo)"). No-op if none / no label.
+  function paintLabel() {
+    if (!FEED_LABEL) return;
+    [].slice.call(document.querySelectorAll("[data-live-label]"))
+      .forEach(function (el) { el.textContent = FEED_LABEL; el.title = FEED_LABEL; });
+  }
+
   function start() {
     injectStyle();
+    paintLabel();
     // Refresh hook for SPA pages (the single-stock view re-renders .nb-px nodes
     // client-side on hashchange) — they call this right after setting data-sym.
     // If a poll is in flight, defer so the new symbol isn't dropped.

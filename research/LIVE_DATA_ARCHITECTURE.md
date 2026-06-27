@@ -6,6 +6,12 @@ sessions, live market-context, divergence-to-website, outlier/baseline guards,
 canonical-symbol fix, Polygon trade-time staleness + status, retry/backoff,
 NaN-safe emit, worker hardening). Phase 4 (live GEX/options) deferred.
 
+> **Polygon plan + real-time upgrade seam:** the live feed runs on the Polygon
+> **STANDARD** plan = **15-MIN DELAYED** (not real-time), labeled honestly end-to-end.
+> The intraday bar store, the delayed-labeling wiring, and the **websocket upgrade seam**
+> (swap the quote source behind the unchanged `/quotes` contract) are documented in
+> [`research/LIVE_DATA_POLYGON.md`](LIVE_DATA_POLYGON.md).
+
 ## The problem
 
 The dashboard is a static GitHub Pages site rebuilt **once per day** (`.github/

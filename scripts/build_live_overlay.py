@@ -216,6 +216,11 @@ def write_live_config(site_dir) -> None:
           f"window.LIVE_SNAPSHOT_URL={json.dumps(resolve_snapshot_url())};"
           f"window.LIVE_POLL_SEC={int(cfg.get('poll_seconds', 60))};"
           f"window.LIVE_STALE_MIN={int(cfg.get('stale_after_min', 20))};"
+          # HONEST FRESHNESS: vendor delay floor + caption so live.js never claims
+          # "real-time" on the 15-min-delayed Standard plan. Set delayed_min: 0 to
+          # restore the green "live" pulse once a real-time/websocket plan is live.
+          f"window.LIVE_DELAYED_MIN={int(cfg.get('delayed_min', 0))};"
+          f"window.LIVE_FEED_LABEL={json.dumps(str(cfg.get('feed_label', '') or ''))};"
           f"window.LIVE_ENABLED={json.dumps(bool(cfg.get('enabled', True)))};\n")
     (site_dir / "live_config.js").write_text(js)
 
@@ -263,6 +268,11 @@ def build(offline: bool = False, limit: int | None = None) -> dict:
         "built": now.strftime("%Y-%m-%d %H:%M:%S UTC"),
         "quote_ts_max": max(ts_vals) if ts_vals else None,
         "stale_after_min": stale_after, "max_chg_pct": max_chg,
+        # vendor delay floor (15 = Polygon Standard / Yahoo spark) — the whole feed is
+        # DELAYED, never real-time; 0 only after a real-time/websocket upgrade.
+        "delayed_min": int(cfg.get("delayed_min", 0)),
+        "feed": str(cfg.get("feed_label", "") or ""),
+        "realtime": int(cfg.get("delayed_min", 0)) == 0,
         "sources": {"us": cfg.get("us_source", "polygon"),
                     "intl": cfg.get("intl_source", "yahoo"),
                     "polygon_key": bool(config.secret("POLYGON_API_KEY")
