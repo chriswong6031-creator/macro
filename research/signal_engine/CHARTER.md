@@ -176,15 +176,15 @@ render on the chart without a later rewrite. The signal engine WRITES these; the
   "state": "long-bias" | "short-bias" | "mixed",
   "above200": true, "weekly_bull": false,
   "markers": [
-    {"date": "2025-07-16", "type": "buy",   "quality": "take" | "block", "reason": "held confirmation"},
+    {"date": "2025-07-16", "type": "buy",   "quality": "take" | "block" | "pending", "reason": "held confirmation"},
     {"date": "2025-09-30", "type": "sell"},
     {"date": "2026-01-16", "type": "cut"},
-    {"date": "2026-03-12", "type": "rebuy", "quality": "take" | "block", "reason": "counter-trend, no reclaim"}
+    {"date": "2026-03-12", "type": "rebuy", "quality": "take" | "block" | "pending", "reason": "counter-trend, no reclaim"}
   ]
 }
 ```
 - `type`: `buy` (confluence BUY★), `sell` (confluence SELL★), `cut` (fast-reversal cut-loss), `rebuy` (fast-reversal re-entry).
-- `quality` (on `buy`/`rebuy` only): `take` = passed the validated buy-filter (reclaim-and-hold + no bearish-div + 200MA bar-raiser); `block` = filtered out. **Chart should render `take` solid and `block` greyed/hollow** so the eye sees which entries the risk-filter endorsed.
+- `quality` (on `buy`/`rebuy` only): `take` = passed the validated buy-filter (reclaim-and-hold + no bearish-div + 200MA bar-raiser); `block` = filtered out; `pending` = the most recent 1–2 bars whose forward confirmation isn't in yet — **neither endorsed nor rejected** (NOT the same as `block`), and it may still resolve to `take` or `block` on the next build. **Chart should render `take` solid, `block` greyed/hollow, and `pending` dim/dashed** so the eye sees which entries the risk-filter endorsed vs which are still unconfirmed. A `pending` entry must NEVER be treated as a `take`.
 - Suggested rendering: buy=▲ below bar (green), sell=▼ above bar (red), cut=✕ (orange), rebuy=▲ (lime). Dates are 3D bar dates.
 - **Display-only side channels (separate date lists, NOT in the validated `markers` stream, never scored/auto-traded):**
   - `risk_flags`: dates of a close-below-EMA8(3D) trailing-trend breach (tail-risk protector); plus current `trail_stop`/`trail_breach` state.
@@ -197,7 +197,7 @@ render on the chart without a later rewrite. The signal engine WRITES these; the
               "trail_breach": false, "early_now": false,
               "last": {"date": "...", "type": "buy", "quality": "take", "reason": "..."}}]}
 ```
-The brain consumes this as a **risk / entry-quality input** (honestly labeled — NOT alpha, per §2), never as an auto-trade trigger. `early_now`/`trail_breach` are display-only context flags (per the side-channel note above), never scored.
+The brain consumes this as a **risk / entry-quality input** (honestly labeled — NOT alpha, per §2), never as an auto-trade trigger. `last.quality` may be `take`/`block`/`pending` (per §7A) — `pending` is an unconfirmed latest entry; treat it as non-endorsed, never as a `take`. `early_now`/`trail_breach` are display-only context flags (per the side-channel note above), never scored.
 
 > Contract rule: if either workstream needs a new field, ADD it here first, then both sides build to it.
 > Never let the chart and the engine invent divergent shapes.
