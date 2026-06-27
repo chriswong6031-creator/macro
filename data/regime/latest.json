@@ -422,9 +422,9 @@
     "tiers": {
       "leading": {
         "asof": "2026-06-30",
-        "index": 91.81677804005298,
+        "index": 91.81677804005295,
         "mom6": 0.21178101113352454,
-        "trend": 0.5738914937339376,
+        "trend": 0.5738914937339371,
         "diffusion": 75.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4236,19 +4236,14 @@
     "doc_id": "fomc_2026-06-17",
     "asof": "2026-06-17",
     "tone_score": 0.0,
-    "guidance_direction": "on_hold",
+    "guidance_direction": "unknown",
     "risk_delta": 0.0,
     "shock_reversible": "unknown",
-    "confidence": "high",
+    "confidence": "low",
     "confidence_gated": false,
     "dropped_fields": [],
-    "evidence": [
-      {
-        "field": "guidance_direction",
-        "quote_span": "decided to maintain the target range for the federal funds rate at 3-1/2 to 3-3/4 percent"
-      }
-    ],
-    "degraded_reason": null,
+    "evidence": [],
+    "degraded_reason": "stop_max_tokens",
     "disclaimer": "Context only \u2014 not a signal. This is a machine DIGEST of a public document, produced by an AI model after the fact. The tone / guidance / risk / reversibility readings are background context; they are NOT inputs to any score, signal or allocation unless a downstream, separately-gated step promotes a single field, and even then only as one bounded factor. \u201cunknown\u201d means the evidence was insufficient \u2014 the honest answer. Every non-unknown field is backed by a quote verified to appear verbatim in the source; unverifiable claims are dropped."
   },
   "dislocation": {
@@ -4753,7 +4748,7 @@
   },
   "fed_path": {
     "asof": "2026-06-26",
-    "built": "2026-06-27T11:51:44.334981+00:00",
+    "built": "2026-06-27T13:15:15.967709+00:00",
     "policy_rate": 3.63,
     "target_low": 3.5,
     "target_high": 3.75,
@@ -4815,17 +4810,15 @@
     "label_zh": "\u9e70\u6d3e",
     "color": "down",
     "implied_cuts_12m": -1.0,
-    "guidance": "on_hold",
+    "guidance": "unknown",
     "market_vs_fed_bp": 9.0,
     "market_vs_fed_en": "market \u2248 the Fed",
     "market_vs_fed_zh": "\u5e02\u573a\u4e0e\u7f8e\u8054\u50a8\u57fa\u672c\u4e00\u81f4",
     "drivers_en": [
-      "market prices ~1.0 hike(s) over 12m",
-      "statement guidance on-hold"
+      "market prices ~1.0 hike(s) over 12m"
     ],
     "drivers_zh": [
-      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f",
-      "\u58f0\u660e\u6307\u5f15\u6309\u5175\u4e0d\u52a8"
+      "\u5e02\u573a\u8ba1\u5165\u672a\u676512\u4e2a\u6708\u7ea61.0\u6b21\u52a0\u606f"
     ],
     "is_context_only": true,
     "phase0": "display-only \u2014 never scored",
@@ -7944,6 +7937,280 @@
     },
     "note": "display-only; T1 leading leg of the foresight cascade. Watchlist-builder / thesis-confirmer, NOT an entry-timer \u2014 defer the buy to the dislocation overlay."
   },
+  "demand_capex": {
+    "asof": "2025",
+    "source": "hyperscaler_capex",
+    "pool_bn": 378.7,
+    "pool_yoy": 69.0,
+    "pool_trend": "accelerating",
+    "n_themes": 6,
+    "themes": {
+      "memory_storage": {
+        "name": "Memory, HBM & Storage",
+        "demand_band": "ACCELERATING",
+        "strength": "direct",
+        "capex_yoy": 69.0,
+        "capex_yoy_prev": 50.4,
+        "capex_trend": "accelerating",
+        "total_latest_bn": 378.7,
+        "fy_latest": 2025,
+        "customers": [
+          "MSFT",
+          "GOOG",
+          "AMZN",
+          "META",
+          "ORCL"
+        ]
+      },
+      "ai_semiconductors": {
+        "name": "AI Semiconductors",
+        "demand_band": "ACCELERATING",
+        "strength": "direct",
+        "capex_yoy": 69.0,
+        "capex_yoy_prev": 50.4,
+        "capex_trend": "accelerating",
+        "total_latest_bn": 378.7,
+        "fy_latest": 2025,
+        "customers": [
+          "MSFT",
+          "GOOG",
+          "AMZN",
+          "META",
+          "ORCL"
+        ]
+      },
+      "semicap_equipment": {
+        "name": "Semiconductor Equipment (WFE)",
+        "demand_band": "ACCELERATING",
+        "strength": "lagged",
+        "capex_yoy": 69.0,
+        "capex_yoy_prev": 50.4,
+        "capex_trend": "accelerating",
+        "total_latest_bn": 378.7,
+        "fy_latest": 2025,
+        "customers": [
+          "MSFT",
+          "GOOG",
+          "AMZN",
+          "META",
+          "ORCL"
+        ]
+      },
+      "data_center_power": {
+        "name": "Data Center Power & Cooling",
+        "demand_band": "ACCELERATING",
+        "strength": "indirect",
+        "capex_yoy": 69.0,
+        "capex_yoy_prev": 50.4,
+        "capex_trend": "accelerating",
+        "total_latest_bn": 378.7,
+        "fy_latest": 2025,
+        "customers": [
+          "MSFT",
+          "GOOG",
+          "AMZN",
+          "META",
+          "ORCL"
+        ]
+      },
+      "grid_electrification": {
+        "name": "Grid & Electrification",
+        "demand_band": "ACCELERATING",
+        "strength": "indirect",
+        "capex_yoy": 69.0,
+        "capex_yoy_prev": 50.4,
+        "capex_trend": "accelerating",
+        "total_latest_bn": 378.7,
+        "fy_latest": 2025,
+        "customers": [
+          "MSFT",
+          "GOOG",
+          "AMZN",
+          "META",
+          "ORCL"
+        ]
+      },
+      "nuclear_power": {
+        "name": "Nuclear & SMR Power",
+        "demand_band": "ACCELERATING",
+        "strength": "indirect",
+        "capex_yoy": 69.0,
+        "capex_yoy_prev": 50.4,
+        "capex_trend": "accelerating",
+        "total_latest_bn": 378.7,
+        "fy_latest": 2025,
+        "customers": [
+          "MSFT",
+          "GOOG",
+          "AMZN",
+          "META",
+          "ORCL"
+        ]
+      }
+    },
+    "note": "display-only; T2 LEADING demand leg \u2014 hyperscaler capex leads beneficiary revenue ~2-4 quarters, i.e. a pre-revision flag. Name-level forward grading lives in engine/demand_ledger.py."
+  },
+  "glut_watch": {
+    "asof": null,
+    "n_themes": 7,
+    "themes": {
+      "rare_earth_critical_min": {
+        "name": "Rare Earth & Critical Minerals",
+        "naics": "331",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      },
+      "data_center_power": {
+        "name": "Data Center Power & Cooling",
+        "naics": "334",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      },
+      "memory_storage": {
+        "name": "Memory, HBM & Storage",
+        "naics": "3344",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      },
+      "ai_semiconductors": {
+        "name": "AI Semiconductors",
+        "naics": "3344",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      },
+      "semicap_equipment": {
+        "name": "Semiconductor Equipment (WFE)",
+        "naics": "3344",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      },
+      "copper_steel_electrify": {
+        "name": "Copper, Steel & Electrification",
+        "naics": "331",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      },
+      "grid_electrification": {
+        "name": "Grid & Electrification",
+        "naics": "334",
+        "band": "AWAITING_DATA",
+        "glut_score": null,
+        "regime": false,
+        "n_legs": 0,
+        "legs": {
+          "leg1_caputil_rollover": null,
+          "leg2_inventory_restock": null,
+          "leg3_backlog_drain": null,
+          "leg4_pricing_fade": null,
+          "leg5_supply_response": null
+        },
+        "weights": {
+          "leg1_caputil_rollover": 0.24,
+          "leg2_inventory_restock": 0.22,
+          "leg3_backlog_drain": 0.22,
+          "leg4_pricing_fade": 0.2,
+          "leg5_supply_response": 0.12
+        }
+      }
+    },
+    "note": "display-only; exit-risk mirror of the bottleneck. Buy the bottleneck, exit before the glut. GLUT_FORMING/GLUT = trim / exit clock, never a sized signal."
+  },
   "foresight_cascade": {
     "asof": "2026-06-25",
     "n_themes": 18,
@@ -7964,7 +8231,28 @@
         "revision_breadth": 0.955,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 27.7
+        "est_drift_90d": 27.7,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 50.0,
+        "score_detail": {
+          "score": 50.0,
+          "base": 55.8,
+          "axes": {
+            "magnitude": 1.0,
+            "acceleration": 0.75,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.14,
+            "purity": 0.9,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "semicap_equipment",
@@ -7982,7 +8270,28 @@
         "revision_breadth": 0.926,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 17.73
+        "est_drift_90d": 17.73,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 50.0,
+        "score_detail": {
+          "score": 50.0,
+          "base": 53.7,
+          "axes": {
+            "magnitude": 1.0,
+            "acceleration": 0.75,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.17,
+            "purity": 0.6,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "ai_semiconductors",
@@ -8000,7 +8309,28 @@
         "revision_breadth": 0.832,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 9.71
+        "est_drift_90d": 9.71,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 50.0,
+        "score_detail": {
+          "score": 50.0,
+          "base": 57.4,
+          "axes": {
+            "magnitude": 1.0,
+            "acceleration": 0.75,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.25,
+            "purity": 0.9,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "data_center_power",
@@ -8018,97 +8348,28 @@
         "revision_breadth": 0.628,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 9.67
-      },
-      {
-        "theme": "robotics_automation",
-        "name": "Robotics & Automation",
-        "stage": "RE-RATING",
-        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
-        "entry_ready": false,
-        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
-        "bottleneck_band": null,
-        "tightness": null,
-        "bottleneck_regime": null,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.853,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 4.57
-      },
-      {
-        "theme": "diagnostics_lifesci",
-        "name": "Diagnostics & Life-Science Tools",
-        "stage": "RE-RATING",
-        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
-        "entry_ready": false,
-        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
-        "bottleneck_band": null,
-        "tightness": null,
-        "bottleneck_regime": null,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.709,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 1.62
-      },
-      {
-        "theme": "rare_earth_critical_min",
-        "name": "Rare Earth & Critical Minerals",
-        "stage": "RE-RATING",
-        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
-        "entry_ready": false,
-        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
-        "bottleneck_band": "AWAITING_DATA",
-        "tightness": null,
-        "bottleneck_regime": false,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.58,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 5.16
-      },
-      {
-        "theme": "space_satellite",
-        "name": "Space & Satellites",
-        "stage": "RE-RATING",
-        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
-        "entry_ready": false,
-        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
-        "bottleneck_band": null,
-        "tightness": null,
-        "bottleneck_regime": null,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.554,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 0.72
-      },
-      {
-        "theme": "cybersecurity",
-        "name": "Cybersecurity",
-        "stage": "RE-RATING",
-        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
-        "entry_ready": false,
-        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
-        "bottleneck_band": null,
-        "tightness": null,
-        "bottleneck_regime": null,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.539,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 1.19
+        "est_drift_90d": 9.67,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 50.0,
+        "score_detail": {
+          "score": 50.0,
+          "base": 56.6,
+          "axes": {
+            "magnitude": 1.0,
+            "acceleration": 0.75,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.43,
+            "purity": 0.45,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "grid_electrification",
@@ -8126,7 +8387,29 @@
         "revision_breadth": 0.38,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 0.07
+        "est_drift_90d": 0.07,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 60.3,
+          "axes": {
+            "magnitude": 1.0,
+            "acceleration": 0.75,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.66,
+            "purity": 0.45,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "nuclear_power",
@@ -8144,43 +8427,29 @@
         "revision_breadth": 0.134,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 1.97
-      },
-      {
-        "theme": "copper_steel_electrify",
-        "name": "Copper, Steel & Electrification",
-        "stage": "WATCH",
-        "rationale": "revisions present (bottleneck unknown)",
-        "entry_ready": false,
-        "entry_note": "not a thesis stage \u2014 no entry",
-        "bottleneck_band": "AWAITING_DATA",
-        "tightness": null,
-        "bottleneck_regime": false,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.375,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 7.89
-      },
-      {
-        "theme": "defense_aerospace",
-        "name": "Defense & Aerospace",
-        "stage": "WATCH",
-        "rationale": "revisions present (bottleneck unknown)",
-        "entry_ready": false,
-        "entry_note": "not a thesis stage \u2014 no entry",
-        "bottleneck_band": null,
-        "tightness": null,
-        "bottleneck_regime": null,
-        "demand_band": null,
-        "demand_strength": null,
-        "capex_yoy": null,
-        "revision_breadth": 0.374,
-        "revision_level": "POSITIVE",
-        "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": 0.68
+        "est_drift_90d": 1.97,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 63.6,
+          "axes": {
+            "magnitude": 1.0,
+            "acceleration": 0.75,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.88,
+            "purity": 0.45,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "glp1_obesity",
@@ -8198,7 +8467,29 @@
         "revision_breadth": 0.15,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -0.02
+        "est_drift_90d": -0.02,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 46.8,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.86,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "fintech_payments",
@@ -8216,7 +8507,29 @@
         "revision_breadth": 0.149,
         "revision_level": "POSITIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -0.57
+        "est_drift_90d": -0.57,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 46.8,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.87,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "ag_fertilizer",
@@ -8234,7 +8547,29 @@
         "revision_breadth": 0.023,
         "revision_level": "FLAT_LOW",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -2.01
+        "est_drift_90d": -2.01,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 48.1,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.95,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "medical_devices",
@@ -8252,7 +8587,29 @@
         "revision_breadth": -0.008,
         "revision_level": "FLAT_LOW",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -0.33
+        "est_drift_90d": -0.33,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 48.1,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.95,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
       },
       {
         "theme": "solar",
@@ -8270,7 +8627,302 @@
         "revision_breadth": -0.336,
         "revision_level": "NEGATIVE",
         "broadening_state": "INSUFFICIENT_HISTORY",
-        "est_drift_90d": -7.01
+        "est_drift_90d": -7.01,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 45.0,
+        "score_detail": {
+          "score": 45.0,
+          "base": 48.6,
+          "axes": {
+            "magnitude": 0.23,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.95,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50",
+            "WATCH (late) -> capped at 45"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "copper_steel_electrify",
+        "name": "Copper, Steel & Electrification",
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "entry_ready": false,
+        "entry_note": "not a thesis stage \u2014 no entry",
+        "bottleneck_band": "AWAITING_DATA",
+        "tightness": null,
+        "bottleneck_regime": false,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.375,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 7.89,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 44.7,
+        "score_detail": {
+          "score": 44.7,
+          "base": 44.7,
+          "axes": {
+            "magnitude": 0.26,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.66,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "defense_aerospace",
+        "name": "Defense & Aerospace",
+        "stage": "WATCH",
+        "rationale": "revisions present (bottleneck unknown)",
+        "entry_ready": false,
+        "entry_note": "not a thesis stage \u2014 no entry",
+        "bottleneck_band": null,
+        "tightness": null,
+        "bottleneck_regime": null,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.374,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 0.68,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 43.8,
+        "score_detail": {
+          "score": 43.8,
+          "base": 43.8,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.66,
+            "purity": 0.5,
+            "timing": 0.4
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "cybersecurity",
+        "name": "Cybersecurity",
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "entry_ready": false,
+        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
+        "bottleneck_band": null,
+        "tightness": null,
+        "bottleneck_regime": null,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.539,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 1.19,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 41.2,
+        "score_detail": {
+          "score": 41.2,
+          "base": 41.2,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.51,
+            "purity": 0.5,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "space_satellite",
+        "name": "Space & Satellites",
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "entry_ready": false,
+        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
+        "bottleneck_band": null,
+        "tightness": null,
+        "bottleneck_regime": null,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.554,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 0.72,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 41.0,
+        "score_detail": {
+          "score": 41.0,
+          "base": 41.0,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.5,
+            "purity": 0.5,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "rare_earth_critical_min",
+        "name": "Rare Earth & Critical Minerals",
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "entry_ready": false,
+        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
+        "bottleneck_band": "AWAITING_DATA",
+        "tightness": null,
+        "bottleneck_regime": false,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.58,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 5.16,
+        "glut_band": "AWAITING_DATA",
+        "glut_score": null,
+        "score": 40.6,
+        "score_detail": {
+          "score": 40.6,
+          "base": 40.6,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.48,
+            "purity": 0.5,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "watch",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "diagnostics_lifesci",
+        "name": "Diagnostics & Life-Science Tools",
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "entry_ready": false,
+        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
+        "bottleneck_band": null,
+        "tightness": null,
+        "bottleneck_regime": null,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.709,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 1.62,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 38.9,
+        "score_detail": {
+          "score": 38.9,
+          "base": 38.9,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.36,
+            "purity": 0.5,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "low / late",
+          "physical_confirmed": false
+        }
+      },
+      {
+        "theme": "robotics_automation",
+        "name": "Robotics & Automation",
+        "stage": "RE-RATING",
+        "rationale": "revisions already broad (bottleneck unknown) \u2014 likely late",
+        "entry_ready": false,
+        "entry_note": "late \u2014 revisions already broad; do not chase, wait for a reset",
+        "bottleneck_band": null,
+        "tightness": null,
+        "bottleneck_regime": null,
+        "demand_band": null,
+        "demand_strength": null,
+        "capex_yoy": null,
+        "revision_breadth": 0.853,
+        "revision_level": "POSITIVE",
+        "broadening_state": "INSUFFICIENT_HISTORY",
+        "est_drift_90d": 4.57,
+        "glut_band": null,
+        "glut_score": null,
+        "score": 36.9,
+        "score_detail": {
+          "score": 36.9,
+          "base": 36.9,
+          "axes": {
+            "magnitude": 0.2,
+            "acceleration": 0.5,
+            "bottleneck": 0.4,
+            "pricing_power": 0.4,
+            "underpricing": 0.23,
+            "purity": 0.5,
+            "timing": 0.35
+          },
+          "caps": [
+            "text-only (no physical bottleneck) -> capped at 50"
+          ],
+          "verdict": "low / late",
+          "physical_confirmed": false
+        }
       }
     ],
     "dislocation": {
@@ -8284,7 +8936,8 @@
       "yoy": 69.0,
       "trend": "accelerating"
     },
-    "note": "display-only; STAGE = where the leading edge is, ranked by edge remaining (PRECIPICE first). T1 bottleneck LEADS, T2 demand confirms, T4 revisions confirm; ENTRY is deferred to the dislocation overlay, not decided here."
+    "note": "display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 demand confirms, T4 revisions confirm, exit-risk caps the late ones; the 0-100 score ranks edge+quality. ENTRY is deferred to the dislocation overlay.",
+    "scored": true
   },
   "cross_asset_confirm": {
     "verdict": "diverge",
@@ -10385,7 +11038,7 @@
   },
   "freshness": {
     "asof": "2026-06-26",
-    "built_at": "2026-06-27T11:51:46Z",
+    "built_at": "2026-06-27T13:15:18Z",
     "age_days": 1,
     "age_sessions": 0,
     "max_age_sessions": 1,

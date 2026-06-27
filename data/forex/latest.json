@@ -58,9 +58,9 @@
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.1704,
-      "chg": 3.0,
+      "chg": 1.8,
       "action": "FLAT",
-      "score": 9.3
+      "score": 11.1
     },
     "USDCNH": {
       "label": "USD/CNH",
@@ -115,10 +115,10 @@
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 12.5,
+      "carry_unwind": 13.0,
       "dollar_wrecking_ball": 36.8,
       "em_crisis_capital_flight": 8.0,
-      "haven_flight_risk_off": 9.7,
+      "haven_flight_risk_off": 10.8,
       "reflation_risk_on": 0,
       "intervention_risk": 21.6
     }

@@ -115,9 +115,9 @@
     {
       "ticker": "XEG.TO",
       "name": "Energy",
-      "rs": 0.0006836764126794552,
-      "mom_20d_pct": -8.18,
-      "mom_60d_pct": -13.67,
+      "rs": 0.0006838193275098326,
+      "mom_20d_pct": -8.16,
+      "mom_60d_pct": -13.65,
       "above_200d_trend": true,
       "pctile_252d": 65.1,
       "rank": 10
@@ -163,12 +163,12 @@
   },
   "pair_ratios": {
     "cyc_def": {
-      "level": 2.0977,
+      "level": 2.0978,
       "chg_20d_pct": -10.27
     },
     "infl_basket": {
-      "level": 2.1701,
-      "chg_20d_pct": -10.9
+      "level": 2.1703,
+      "chg_20d_pct": -10.89
     },
     "tsx_spx": {
       "level": 47.9842,

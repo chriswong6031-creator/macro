@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-27T12:33:11.636266+00:00",
+  "generated_utc": "2026-06-27T13:58:12.991848+00:00",
   "as_of": "2026-06-27",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4460,7 +4460,7 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 407,
+      "rows": 408,
       "last_seen": "2026-06-27",
       "recent": [
         {
@@ -4482,21 +4482,21 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Files+Amendment+to+Block+Pentagon+Name+Change+Proposal",
-          "time": "2026-06-27 00:20:01",
-          "headline": "Press Release: John Larson Files Amendment to Block Pentagon Name Change Proposal",
-          "category": "legislation_automated",
-          "summary": "<p>Rep. Larson proposed an NDAA amendment to block a Pentagon renaming plan, citing taxpayer costs and unnecessary spending.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
-          "image": "https://www.quiverquant.com/images/L000557_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Steube%2C+Thompson+Introduce+Military+Survivor+Financial+Relief+Bill",
           "time": "2026-06-27 00:20:01",
           "headline": "Press Release: Steube, Thompson Introduce Military Survivor Financial Relief Bill",
           "category": "legislation_automated",
           "summary": "<p>Bipartisan bill seeks to give surviving military families more time for tax-advantaged financial decisions after a service member's death.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"colo\u2026",
           "image": "https://www.quiverquant.com/images/S001214_congress.png",
+          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Files+Amendment+to+Block+Pentagon+Name+Change+Proposal",
+          "time": "2026-06-27 00:20:01",
+          "headline": "Press Release: John Larson Files Amendment to Block Pentagon Name Change Proposal",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Larson proposed an NDAA amendment to block a Pentagon renaming plan, citing taxpayer costs and unnecessary spending.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,24\u2026",
+          "image": "https://www.quiverquant.com/images/L000557_congress.png",
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
@@ -4590,6 +4590,15 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security",
+          "time": "2026-06-26 22:21:04",
+          "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
+          "category": "legislation_automated",
+          "summary": "<p>Amata met with USDA Secretary Rollins to discuss farm policy, funding, and American Samoa\u2019s food security role.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Amata\u2026",
+          "image": "https://www.quiverquant.com/images/R000600_congress.png",
+          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Vince+Fong+Announces+CMS+Approval+of+California+Hospital+Funding+Plan",
           "time": "2026-06-26 22:21:04",
           "headline": "Press Release: Vince Fong Announces CMS Approval of California Hospital Funding Plan",
@@ -4608,6 +4617,15 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+Advancement",
+          "time": "2026-06-26 22:21:04",
+          "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act Advancement",
+          "category": "legislation_automated",
+          "summary": "<p>Trahan supports a bipartisan child online safety bill, calling it a workable compromise to protect children.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Trahan b\u2026",
+          "image": "https://www.quiverquant.com/images/T000482_congress.png",
+          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Thompson+Introduces+Bill+to+Extend+Benefits+Timeline+for+Military+Survivors",
           "time": "2026-06-26 22:21:04",
           "headline": "Press Release: Mike Thompson Introduces Bill to Extend Benefits Timeline for Military Survivors",
@@ -4623,15 +4641,6 @@
           "category": "legislation_automated",
           "summary": "<p>Brian Mast argues federally protected banking access should extend to state-legal cannabis businesses to improve safety and equal treatment.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"co\u2026",
           "image": "https://www.quiverquant.com/images/M001199_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+Advancement",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act Advancement",
-          "category": "legislation_automated",
-          "summary": "<p>Trahan supports a bipartisan child online safety bill, calling it a workable compromise to protect children.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Trahan b\u2026",
-          "image": "https://www.quiverquant.com/images/T000482_congress.png",
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
@@ -4671,21 +4680,12 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
-          "category": "legislation_automated",
-          "summary": "<p>Amata met with USDA Secretary Rollins to discuss farm policy, funding, and American Samoa\u2019s food security role.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Amata\u2026",
-          "image": "https://www.quiverquant.com/images/R000600_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+%26+Immunovant+CEO+of+%24ROIV+Sells+46%2C234+Shares",
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24AVGO+Sells+30%2C456+Shares",
           "time": "2026-06-26 22:16:38",
-          "headline": "Insider Sale: President & Immunovant CEO of $ROIV Sells 46,234 Shares",
+          "headline": "Insider Sale: Director at $AVGO Sells 30,456 Shares",
           "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1801917/Eric-Venker\">Eric Venker</a>, the President & Immunovant CEO of <a href=\"https://www.quiverquant.com/stock/ROIV/\">$ROIV</a>, sold 46,234 shares of the company o\u2026",
-          "image": "https://www.quiverquant.com/images/roiv_rect_new.png",
+          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1201633/Henry-Samueli\">HENRY SAMUELI</a>, a director at <a href=\"https://www.quiverquant.com/stock/AVGO/\">$AVGO</a>, sold 30,456 shares of the company on 06-24-2026 for\u2026",
+          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         }
       ]
@@ -17774,11 +17774,11 @@
       },
       {
         "ticker": "NTZ",
-        "category": "Restructuring",
-        "confidence": "high",
+        "category": "Delistings",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Restructuring"
+        "detail": "Delistings"
       },
       {
         "ticker": "PKP",
@@ -19566,6 +19566,14 @@
       },
       {
         "ticker": "CVGW",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "DVN",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
@@ -27918,11 +27926,11 @@
       },
       {
         "ticker": "PEP",
-        "category": "Activist Campaigns",
+        "category": "Other",
         "confidence": "high",
-        "activist": true,
+        "activist": false,
         "filer": null,
-        "detail": "Activist Campaigns"
+        "detail": "Other"
       },
       {
         "ticker": "5970",
@@ -35133,6 +35141,14 @@
         "detail": "Other"
       },
       {
+        "ticker": "GIPRW",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "LEXX",
         "category": "Delistings",
         "confidence": "high",
@@ -35350,11 +35366,11 @@
       },
       {
         "ticker": "KIDZW",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Capital Returns",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Capital Returns"
       },
       {
         "ticker": "LOCLW",
@@ -37117,6 +37133,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "ACGCW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "AMODW",
         "category": "Delistings",
         "confidence": "high",
@@ -37163,6 +37187,14 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "JXG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "AHRO",
@@ -37973,6 +38005,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "GUACU",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "BTMWQ",
         "category": "Delistings",
         "confidence": "high",
@@ -37987,6 +38027,14 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
+      },
+      {
+        "ticker": "ETSS-WT",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "VAL-WT",
@@ -38117,6 +38165,70 @@
         "detail": "Other"
       },
       {
+        "ticker": "RYET",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "SA",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "SELXF",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "WAI",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "YDKG",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "ZENA",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "AHRT-PA",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "AKAM",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "AVXL",
         "category": "Delistings",
         "confidence": "high",
@@ -38125,12 +38237,28 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "CVCO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "GTBP",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "LVWR-WT",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
       },
       {
         "ticker": "RNAZ",
@@ -39149,14 +39277,6 @@
         "detail": "Capital Returns"
       },
       {
-        "ticker": "SA",
-        "category": "Spin-Offs",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Spin-Offs"
-      },
-      {
         "ticker": "ZYBT",
         "category": "Other",
         "confidence": "high",
@@ -39763,14 +39883,6 @@
         "activist": false,
         "filer": null,
         "detail": "Other"
-      },
-      {
-        "ticker": "WAI",
-        "category": "Divestitures",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Divestitures"
       },
       {
         "ticker": "ASPI",
@@ -40421,38 +40533,38 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17575,
-        "wow_pct": 0.81,
+        "stars": 17576,
+        "wow_pct": 0.82,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14641,
+        "stars": 14642,
         "wow_pct": 0.45,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7535,
-        "wow_pct": 0.39,
+        "stars": 7536,
+        "wow_pct": 0.4,
         "hot": true
       },
       {
         "ticker": "AMD",
-        "stars": 6654,
-        "wow_pct": 0.26,
+        "stars": 6655,
+        "wow_pct": 0.27,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186832,
-        "wow_pct": 0.14,
+        "stars": 186844,
+        "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77163,
-        "wow_pct": 0.11,
+        "stars": 77170,
+        "wow_pct": 0.12,
         "hot": true
       },
       {
@@ -40463,8 +40575,8 @@
       },
       {
         "ticker": "MDB",
-        "stars": 28403,
-        "wow_pct": 0.09,
+        "stars": 28405,
+        "wow_pct": 0.1,
         "hot": false
       },
       {
@@ -40475,19 +40587,19 @@
       },
       {
         "ticker": "GOOGL",
-        "stars": 195933,
+        "stars": 195945,
         "wow_pct": 0.08,
         "hot": false
       },
       {
         "ticker": "GTLB",
-        "stars": 24472,
-        "wow_pct": 0.07,
+        "stars": 24473,
+        "wow_pct": 0.08,
         "hot": false
       },
       {
         "ticker": "META",
-        "stars": 246129,
+        "stars": 246137,
         "wow_pct": 0.07,
         "hot": false
       },
@@ -41968,18 +42080,18 @@
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SEC.+AND+CHIEF+LEGAL+OFFICER+of+%24NTRA+Sells+1%2C200+Shares"
       },
       {
-        "headline": "Press Release: John Larson Files Amendment to Block Pentagon Name Change Proposal",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-27 00:20:01",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Files+Amendment+to+Block+Pentagon+Name+Change+Proposal"
-      },
-      {
         "headline": "Press Release: Steube, Thompson Introduce Military Survivor Financial Relief Bill",
         "ticker": null,
         "category": "legislation_automated",
         "time": "2026-06-27 00:20:01",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Steube%2C+Thompson+Introduce+Military+Survivor+Financial+Relief+Bill"
+      },
+      {
+        "headline": "Press Release: John Larson Files Amendment to Block Pentagon Name Change Proposal",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-27 00:20:01",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+John+Larson+Files+Amendment+to+Block+Pentagon+Name+Change+Proposal"
       },
       {
         "headline": "Insider Sale: Director at $OVLY Sells 375 Shares",
@@ -42052,6 +42164,13 @@
         "url": "https://www.quiverquant.com/news/Spectrum+Brands+Holdings%2C+Inc.+%28%24SPB%29+CEO+2025+Pay+Revealed"
       },
       {
+        "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-26 22:21:04",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security"
+      },
+      {
         "headline": "Press Release: Vince Fong Announces CMS Approval of California Hospital Funding Plan",
         "ticker": null,
         "category": "legislation_automated",
@@ -42066,6 +42185,13 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Foushee-Led+AI+Measures+Advance+Through+House+Science+Committee"
       },
       {
+        "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act Advancement",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-26 22:21:04",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+Advancement"
+      },
+      {
         "headline": "Press Release: Mike Thompson Introduces Bill to Extend Benefits Timeline for Military Survivors",
         "ticker": null,
         "category": "legislation_automated",
@@ -42078,20 +42204,6 @@
         "category": "legislation_automated",
         "time": "2026-06-26 22:21:04",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+backs+SAFE+Banking+Act+for+state-legal+cannabis+businesses"
-      },
-      {
-        "headline": "Press Release: Lori Trahan Supports Bipartisan KIDS Act Advancement",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Lori+Trahan+Supports+Bipartisan+KIDS+Act+Advancement"
-      },
-      {
-        "headline": "Press Release: Pettersen Seeks Answers Over EPA Region 8 Emergency Communication Concerns",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Pettersen+Seeks+Answers+Over+EPA+Region+8+Emergency+Communication+Concerns"
       }
     ],
     "wsb": [
@@ -43949,7 +44061,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.81% stars \u00b7 hf_model_momentum: +6.1% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.82% stars \u00b7 hf_model_momentum: +6.1% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -43975,7 +44087,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,671,970 reviews \u00b7 github_momentum: +0.14% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,671,970 reviews \u00b7 github_momentum: +0.15% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -44023,7 +44135,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.26% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.27% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
       },
       {
         "ticker": "DELL",
