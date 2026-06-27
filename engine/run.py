@@ -280,6 +280,32 @@ def run() -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("turning-point layer failed: %s", e)
         latest["turning_point"] = None
+    # Thematic Foresight Desk (research/THEMATIC_FORESIGHT_DESK.md): anticipate themes at
+    # the "precipice of induction" — physical-supply TIGHTNESS (T1, engine/bottleneck.py,
+    # the LEADING thesis) x revision-breadth BROADENING (T4, engine/theme_revisions.py, the
+    # CONFIRMATION gauge) -> a per-theme STAGE (PRECIPICE / BROADENING / RE-RATING /
+    # GLUT-RISK) ranked by edge remaining. DISPLAY-ONLY leaves; entry is deferred to the
+    # dislocation overlay (13D was right & ~9mo early). Each writes its own append-only
+    # forward-grading ledger. Never scored, never an MRS leg, never fatal.
+    try:
+        from engine.theme_revisions import compute_theme_revisions
+        latest["theme_revisions"] = compute_theme_revisions()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("theme-revisions layer failed: %s", e)
+        latest["theme_revisions"] = None
+    try:
+        from engine.bottleneck import compute_bottleneck
+        latest["bottleneck"] = compute_bottleneck()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("bottleneck layer failed: %s", e)
+        latest["bottleneck"] = None
+    try:
+        from engine.foresight_cascade import compute_foresight_cascade
+        latest["foresight_cascade"] = compute_foresight_cascade(
+            latest.get("bottleneck"), latest.get("theme_revisions"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("foresight-cascade layer failed: %s", e)
+        latest["foresight_cascade"] = None
     # Cross-asset confirmation: does the leading-family complex (BONDS + FX) CONFIRM
     # or DIVERGE from the equity/macro regime computed above? Reads the two dedicated
     # dashboards' contracts (data/bonds/bond_health.json, data/forex/latest.json) — whose
