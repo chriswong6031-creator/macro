@@ -1,5 +1,5 @@
 {
-  "date": "Jun 26, 2026",
+  "date": "Jun 27, 2026",
   "regime": "US growth premium",
   "favored": [
     "USD"
@@ -22,7 +22,7 @@
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.73,
+      "quote": 161.685,
       "chg": 1.1,
       "action": "SHORT",
       "score": -40.0
@@ -37,16 +37,16 @@
     "AUDUSD": {
       "label": "AUD/USD",
       "quote": 0.6901,
-      "chg": -3.8,
+      "chg": -3.3,
       "action": "SHORT",
-      "score": -31.0
+      "score": -32.5
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.419,
-      "chg": 2.5,
+      "quote": 1.4194,
+      "chg": 2.2,
       "action": "LONG",
-      "score": 28.7
+      "score": 27.2
     },
     "USDMXN": {
       "label": "USD/MXN",
@@ -74,7 +74,7 @@
     "lean": "mixed backdrop",
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.61,
-    "fed_path_bps": 35.0,
+    "fed_path_bps": 33.0,
     "fed_path_lean": "steady",
     "usd_pos_pctile": 72.0,
     "usd_pos_state": "neutral",
@@ -118,9 +118,9 @@
       "carry_unwind": 12.5,
       "dollar_wrecking_ball": 36.8,
       "em_crisis_capital_flight": 8.0,
-      "haven_flight_risk_off": 8.7,
+      "haven_flight_risk_off": 9.7,
       "reflation_risk_on": 0,
-      "intervention_risk": 8.2
+      "intervention_risk": 21.6
     }
   }
 }

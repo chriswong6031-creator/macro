@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-27T09:47:51.992181+00:00",
+  "generated_utc": "2026-06-27T11:16:15.415249+00:00",
   "as_of": "2026-06-27",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -4460,9 +4460,18 @@
       "emoji": "\ud83d\udcf0",
       "label_en": "Quiver news feed",
       "label_zh": "Quiver\u65b0\u95fb",
-      "rows": 406,
+      "rows": 407,
       "last_seen": "2026-06-27",
       "recent": [
+        {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Jared+Huffman+Responds+to+Trump+Administration+Religious+Liberty+Commission+Report",
+          "time": "2026-06-27 02:19:57",
+          "headline": "Press Release: Jared Huffman Responds to Trump Administration Religious Liberty Commission Report",
+          "category": "legislation_automated",
+          "summary": "<p>Rep. Huffman condemns a Trump commission report he says threatens church-state separation and First Amendment religious freedom.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189\u2026",
+          "image": "https://www.quiverquant.com/images/H001068_congress.png",
+          "_first_seen": "2026-06-27T10:21:48.854124+00:00"
+        },
         {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+SEC.+AND+CHIEF+LEGAL+OFFICER+of+%24NTRA+Sells+1%2C200+Shares",
           "time": "2026-06-27 01:16:01",
@@ -4491,21 +4500,21 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+See+Remarks+of+%24STUB+Sells+25%2C080+Shares",
-          "time": "2026-06-26 23:30:49",
-          "headline": "Insider Sale: See Remarks of $STUB Sells 25,080 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2059741/Nayaab-Islam\">Nayaab Islam</a>, the See Remarks of <a href=\"https://www.quiverquant.com/stock/STUB/\">$STUB</a>, sold 25,080 shares of the company on 06-26-2026 \u2026",
-          "image": "https://www.quiverquant.com/images/stub_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24OVLY+Sells+375+Shares",
           "time": "2026-06-26 23:30:49",
           "headline": "Insider Sale: Director at $OVLY Sells 375 Shares",
           "category": "insiders_automated",
           "summary": "<p>Don Barton, a director at <a href=\"https://www.quiverquant.com/stock/OVLY/\">$OVLY</a>, sold 375 shares of the company on 06-26-2026 for an estimated <strong>$12,472</strong>. We received data on the trade from a re\u2026",
           "image": "https://www.quiverquant.com/images/ovly_rect_new.png",
+          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+        },
+        {
+          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+See+Remarks+of+%24STUB+Sells+25%2C080+Shares",
+          "time": "2026-06-26 23:30:49",
+          "headline": "Insider Sale: See Remarks of $STUB Sells 25,080 Shares",
+          "category": "insiders_automated",
+          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/2059741/Nayaab-Islam\">Nayaab Islam</a>, the See Remarks of <a href=\"https://www.quiverquant.com/stock/STUB/\">$STUB</a>, sold 25,080 shares of the company on 06-26-2026 \u2026",
+          "image": "https://www.quiverquant.com/images/stub_rect_new.png",
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
@@ -4608,15 +4617,6 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
-          "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security",
-          "time": "2026-06-26 22:21:04",
-          "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
-          "category": "legislation_automated",
-          "summary": "<p>Amata met with USDA Secretary Rollins to discuss farm policy, funding, and American Samoa\u2019s food security role.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Amata\u2026",
-          "image": "https://www.quiverquant.com/images/R000600_congress.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
           "url": "https://www.quiverquant.com/news/Press+Release%3A+Brian+Mast+backs+SAFE+Banking+Act+for+state-legal+cannabis+businesses",
           "time": "2026-06-26 22:21:04",
           "headline": "Press Release: Brian Mast backs SAFE Banking Act for state-legal cannabis businesses",
@@ -4671,21 +4671,21 @@
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         },
         {
+          "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security",
+          "time": "2026-06-26 22:21:04",
+          "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
+          "category": "legislation_automated",
+          "summary": "<p>Amata met with USDA Secretary Rollins to discuss farm policy, funding, and American Samoa\u2019s food security role.</p><div class='ai_summary'><h2>Quiver AI Summary</h2><p><strong style=\"color: rgb(189,165,241);\">Amata\u2026",
+          "image": "https://www.quiverquant.com/images/R000600_congress.png",
+          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
+        },
+        {
           "url": "https://www.quiverquant.com/news/Insider+Sale%3A+President+%26+Immunovant+CEO+of+%24ROIV+Sells+46%2C234+Shares",
           "time": "2026-06-26 22:16:38",
           "headline": "Insider Sale: President & Immunovant CEO of $ROIV Sells 46,234 Shares",
           "category": "insiders_automated",
           "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1801917/Eric-Venker\">Eric Venker</a>, the President & Immunovant CEO of <a href=\"https://www.quiverquant.com/stock/ROIV/\">$ROIV</a>, sold 46,234 shares of the company o\u2026",
           "image": "https://www.quiverquant.com/images/roiv_rect_new.png",
-          "_first_seen": "2026-06-27T02:06:59.048301+00:00"
-        },
-        {
-          "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24AVGO+Sells+30%2C456+Shares",
-          "time": "2026-06-26 22:16:38",
-          "headline": "Insider Sale: Director at $AVGO Sells 30,456 Shares",
-          "category": "insiders_automated",
-          "summary": "<p><a href=\"https://www.quiverquant.com/insiders/1201633/Henry-Samueli\">HENRY SAMUELI</a>, a director at <a href=\"https://www.quiverquant.com/stock/AVGO/\">$AVGO</a>, sold 30,456 shares of the company on 06-24-2026 for\u2026",
-          "image": "https://www.quiverquant.com/images/avgo_rect_new.png",
           "_first_seen": "2026-06-27T02:06:59.048301+00:00"
         }
       ]
@@ -4878,20 +4878,150 @@
       "emoji": "\ud83d\udcd1",
       "label_en": "Bill summaries",
       "label_zh": "\u6cd5\u6848\u6458\u8981",
-      "rows": 225,
-      "last_seen": "2026-06-26",
+      "rows": 232,
+      "last_seen": "2026-06-27",
       "recent": [
         {
           "currentChamber": "House",
-          "title": "Rural and Municipal Utility Cybersecurity Act",
+          "title": "Energy Threat Analysis Center Act of 2026",
           "congress": "119",
-          "number": "7266",
+          "number": "7305",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>Rural and Municipal Utility Cybersecurity Act</strong></p><p>This bill reauthorizes through FY2030 a program that provides cybersecurity-related assistance and funding to rural electric cooperatives and mun\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/7266?format=json",
+          "summary": "<p><strong>Energy Threat Analysis Center Act of 2026</strong></p><p>This bill reauthorizes through FY2031 and expands the pilot Energy Sector Operational Support for Cyber Resilience Program of the Department of Energ\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/7305?format=json",
           "lastAction": "Reported to House",
-          "lastActionDate": "2026-04-30",
+          "lastActionDate": "2026-05-12",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "Unknown",
+          "title": "Investing in All of America Act of 2025",
+          "congress": "119",
+          "number": "2066",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Investing in All of America Act of 2025</strong></p><p>This act modifies the limit on the amount of financing available to a&nbsp;Small Business Investment Company (SBIC)&nbsp;from the Small Business Admini\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/2066?format=json",
+          "lastAction": "Public Law",
+          "lastActionDate": "2026-05-19",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Florida Freeze Disaster Assistance Act of 2026",
+          "congress": "119",
+          "number": "9094",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Florida Freeze Disaster Assistance Act of 2026</strong></p><p>This bill provides $3.5 billion in emergency funding for the Department of Agriculture (USDA) to provide block grants to certain states for loss\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9094?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-02",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Florida Freeze Disaster Assistance Act",
+          "congress": "119",
+          "number": "4663",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Florida Freeze Disaster Assistance Act</strong></p><p>This bill provides $3.5 billion in emergency funding for the Department of Agriculture (USDA) to provide block grants to certain states for losses of re\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4663?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-02",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Directing the President pursuant to section 5(c) of the War Powers Resolution to remove United States Armed Forces from hostilities in Lebanon.",
+          "congress": "119",
+          "number": "108",
+          "originChamber": "House",
+          "billType": "HCONRES",
+          "summary": "<p>This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities in Lebanon within seven days of the resolution's adoption.</p><p>The resolution specifies that it shall not be construed\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hconres/108?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-03",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Commemorating the one-year anniversary of the enactment of the Working Families Tax Cuts.",
+          "congress": "119",
+          "number": "1383",
+          "originChamber": "House",
+          "billType": "HRES",
+          "summary": "<p>This resolution commemorates the one-year anniversary of the enactment of tax relief as part of the 2025 reconciliation act. It also expresses support for tax policies that benefit American families, farmers, senio\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hres/1383?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-24",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Removing Barriers to Work for Disabled Americans Act",
+          "congress": "119",
+          "number": "8884",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Removing Barriers to Work for Disabled Americans Act</strong></p><p>This bill reauthorizes through 2031 the Social Security Administration\u2019s (SSA\u2019s) authority to carry out demonstration projects within the \u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8884?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-06-25",
+          "_first_seen": "2026-06-27T10:21:49.631129+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "SECURE Grid Act",
+          "congress": "119",
+          "number": "7257",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Securing Community Upgrades for a Resilient Grid Act or the SECURE Grid Act</strong></p><p>This bill extends through FY2031 and modifies requirements for state energy security plans. Under current law, stat\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/7257?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-05-11",
+          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Providing for consideration of the bill (H.R. 1181) to prohibit payment card networks and covered entities from requiring the use of or assigning merchant category codes that distinguish a firearms retailer from gener\u2026",
+          "congress": "119",
+          "number": "1377",
+          "originChamber": "House",
+          "billType": "HRES",
+          "summary": "This resolution provides for the consideration of the bill (H.R. 1181) to prohibit payment card networks and covered entities from requiring the use of or assigning merchant category codes that distinguish a firearms \u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hres/1377?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-06-23",
+          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "Declaration of Independence Reaffirmation Act of 2026",
+          "congress": "119",
+          "number": "4828",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Declaration of Independence Reaffirmation Act of 2026</strong></p><p>This bill reaffirms and readopts the Declaration of Independence as an organic law of the United States and as the enduring charter of Am\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/4828?format=json",
+          "lastAction": "Passed Senate",
+          "lastActionDate": "2026-06-18",
+          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "A resolution designating June 23, 2026, as \"Social Media Harms Victim Remembrance Day\".",
+          "congress": "119",
+          "number": "761",
+          "originChamber": "Senate",
+          "billType": "SRES",
+          "summary": "<p>This resolution designates June 23, 2026, as Social Media Harms Victim Remembrance Day&nbsp;and encourages government, industry, and community stakeholders to take action to prevent social media-related harm.</p>",
+          "url": "https://api.congress.gov/v3/bill/119/sres/761?format=json",
+          "lastAction": "Introduced in Senate",
+          "lastActionDate": "2026-06-09",
           "_first_seen": "2026-06-26T07:11:41.705091+00:00"
         },
         {
@@ -4909,55 +5039,55 @@
         },
         {
           "currentChamber": "House",
-          "title": "SECURE Grid Act",
+          "title": "Rural and Municipal Utility Cybersecurity Act",
           "congress": "119",
-          "number": "7257",
+          "number": "7266",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>Securing Community Upgrades for a Resilient Grid Act or the SECURE Grid Act</strong></p><p>This bill extends through FY2031 and modifies requirements for state energy security plans. Under current law, stat\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/7257?format=json",
+          "summary": "<p><strong>Rural and Municipal Utility Cybersecurity Act</strong></p><p>This bill reauthorizes through FY2030 a program that provides cybersecurity-related assistance and funding to rural electric cooperatives and mun\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/7266?format=json",
           "lastAction": "Reported to House",
-          "lastActionDate": "2026-05-11",
-          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A resolution designating June 23, 2026, as \"Social Media Harms Victim Remembrance Day\".",
-          "congress": "119",
-          "number": "761",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution designates June 23, 2026, as Social Media Harms Victim Remembrance Day&nbsp;and encourages government, industry, and community stakeholders to take action to prevent social media-related harm.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/sres/761?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "Declaration of Independence Reaffirmation Act of 2026",
-          "congress": "119",
-          "number": "4828",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Declaration of Independence Reaffirmation Act of 2026</strong></p><p>This bill reaffirms and readopts the Declaration of Independence as an organic law of the United States and as the enduring charter of Am\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4828?format=json",
-          "lastAction": "Passed Senate",
-          "lastActionDate": "2026-06-18",
+          "lastActionDate": "2026-04-30",
           "_first_seen": "2026-06-26T07:11:41.705091+00:00"
         },
         {
           "currentChamber": "House",
-          "title": "Providing for consideration of the bill (H.R. 1181) to prohibit payment card networks and covered entities from requiring the use of or assigning merchant category codes that distinguish a firearms retailer from gener\u2026",
+          "title": "Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
           "congress": "119",
-          "number": "1377",
+          "number": "100",
           "originChamber": "House",
-          "billType": "HRES",
-          "summary": "This resolution provides for the consideration of the bill (H.R. 1181) to prohibit payment card networks and covered entities from requiring the use of or assigning merchant category codes that distinguish a firearms \u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hres/1377?format=json",
-          "lastAction": "Reported to House",
-          "lastActionDate": "2026-06-23",
-          "_first_seen": "2026-06-26T07:11:41.705091+00:00"
+          "billType": "HCONRES",
+          "summary": "<p>This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities&nbsp;against Iran or any part of its government or military unless a declaration of war or authorization to use military\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hconres/100?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-05-13",
+          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "A resolution designating May 16, 2026, as \"Kids to Parks Day\".",
+          "congress": "119",
+          "number": "734",
+          "originChamber": "Senate",
+          "billType": "SRES",
+          "summary": "<p>This resolution designates May 16, 2026, as Kids to Parks Day.</p><p>The resolution recognizes the importance of outdoor recreation and the preservation of open spaces in promoting the health and education of the y\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/sres/734?format=json",
+          "lastAction": "Passed Senate",
+          "lastActionDate": "2026-05-14",
+          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
+        },
+        {
+          "currentChamber": "Senate",
+          "title": "A resolution expressing support for the designation of May 2026 as \"Motorcycle Safety Awareness Month\".",
+          "congress": "119",
+          "number": "740",
+          "originChamber": "Senate",
+          "billType": "SRES",
+          "summary": "<p>This resolution expresses support for the designation of May 2026 as Motorcycle Safety Awareness Month. It also recognizes the contribution of motorcycles to transportation.</p>",
+          "url": "https://api.congress.gov/v3/bill/119/sres/740?format=json",
+          "lastAction": "Passed Senate",
+          "lastActionDate": "2026-05-19",
+          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
         },
         {
           "currentChamber": "Unknown",
@@ -4970,6 +5100,32 @@
           "url": "https://api.congress.gov/v3/bill/119/hr/3497?format=json",
           "lastAction": "Public Law",
           "lastActionDate": "2026-05-28",
+          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Recover COVID Unemployment Fraud in Banks Act",
+          "congress": "119",
+          "number": "8873",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Recover COVID Unemployment Fraud in Banks Act</strong></p><p>This bill extends to 10 years the statute of limitations for federal criminal charges or civil enforcement actions for fraud&nbsp;related to seve\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/8873?format=json",
+          "lastAction": "Reported to House",
+          "lastActionDate": "2026-05-29",
+          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
+        },
+        {
+          "currentChamber": "House",
+          "title": "Boxing Therapy for Parkinson\u2019s Access Act",
+          "congress": "119",
+          "number": "9150",
+          "originChamber": "House",
+          "billType": "HR",
+          "summary": "<p><strong>Boxing Therapy for Parkinson's Access Act</strong></p><p>This bill requires the Department of Veterans Affairs (VA) to furnish boxing-based exercise classes to veterans who (1) are enrolled in the VA health\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/9150?format=json",
+          "lastAction": "Introduced in House",
+          "lastActionDate": "2026-06-04",
           "_first_seen": "2026-06-25T07:13:05.357250+00:00"
         },
         {
@@ -4987,97 +5143,6 @@
         },
         {
           "currentChamber": "House",
-          "title": "Boxing Therapy for Parkinson\u2019s Access Act",
-          "congress": "119",
-          "number": "9150",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Boxing Therapy for Parkinson's Access Act</strong></p><p>This bill requires the Department of Veterans Affairs (VA) to furnish boxing-based exercise classes to veterans who (1) are enrolled in the VA health\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9150?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-06-04",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Recover COVID Unemployment Fraud in Banks Act",
-          "congress": "119",
-          "number": "8873",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Recover COVID Unemployment Fraud in Banks Act</strong></p><p>This bill extends to 10 years the statute of limitations for federal criminal charges or civil enforcement actions for fraud&nbsp;related to seve\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/8873?format=json",
-          "lastAction": "Reported to House",
-          "lastActionDate": "2026-05-29",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A resolution expressing support for the designation of May 2026 as \"Motorcycle Safety Awareness Month\".",
-          "congress": "119",
-          "number": "740",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution expresses support for the designation of May 2026 as Motorcycle Safety Awareness Month. It also recognizes the contribution of motorcycles to transportation.</p>",
-          "url": "https://api.congress.gov/v3/bill/119/sres/740?format=json",
-          "lastAction": "Passed Senate",
-          "lastActionDate": "2026-05-19",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A resolution designating May 16, 2026, as \"Kids to Parks Day\".",
-          "congress": "119",
-          "number": "734",
-          "originChamber": "Senate",
-          "billType": "SRES",
-          "summary": "<p>This resolution designates May 16, 2026, as Kids to Parks Day.</p><p>The resolution recognizes the importance of outdoor recreation and the preservation of open spaces in promoting the health and education of the y\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/sres/734?format=json",
-          "lastAction": "Passed Senate",
-          "lastActionDate": "2026-05-14",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "Directing the President, pursuant to section 5(c) of the War Powers Resolution, to remove United States Armed Forces from hostilities with Iran.",
-          "congress": "119",
-          "number": "100",
-          "originChamber": "House",
-          "billType": "HCONRES",
-          "summary": "<p>This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities&nbsp;against Iran or any part of its government or military unless a declaration of war or authorization to use military\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hconres/100?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-05-13",
-          "_first_seen": "2026-06-25T07:13:05.357250+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "Protect College Sports Act of 2026",
-          "congress": "119",
-          "number": "4668",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Protect College Sports Act of 2026</strong></p><p>This bill establishes requirements for name, image, or likeness (NIL) agreements for college student athletes and provides a limited antitrust exemption for\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4668?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-06-02",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "House",
-          "title": "United States Commission on International Religious Freedom Reauthorization Act of 2026",
-          "congress": "119",
-          "number": "1744",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>United States Commission on International Religious Freedom Reauthorization Act of 2026</strong></p><p>This bill reauthorizes the U.S. Commission on International Religious Freedom through 2028. The commiss\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/1744?format=json",
-          "lastAction": "Passed House",
-          "lastActionDate": "2026-06-08",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "House",
           "title": "Faster Labor Contracts Act",
           "congress": "119",
           "number": "5408",
@@ -5086,19 +5151,6 @@
           "summary": "<p><strong>Faster Labor Contracts Act</strong></p><p>This bill establishes mandatory deadlines for parties negotiating an initial collective bargaining agreement (CBA)&nbsp;and provides for mediation and arbitration t\u2026",
           "url": "https://api.congress.gov/v3/bill/119/hr/5408?format=json",
           "lastAction": "Passed House",
-          "lastActionDate": "2026-06-09",
-          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
-        },
-        {
-          "currentChamber": "Unknown",
-          "title": "Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act",
-          "congress": "119",
-          "number": "2393",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act</strong></p><p>This act authorizes the Department of Veterans Affairs to carry out a major medical facility project in St. Louis, M\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/2393?format=json",
-          "lastAction": "Public Law",
           "lastActionDate": "2026-06-09",
           "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
@@ -5116,6 +5168,19 @@
           "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
+          "currentChamber": "Unknown",
+          "title": "Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act",
+          "congress": "119",
+          "number": "2393",
+          "originChamber": "Senate",
+          "billType": "S",
+          "summary": "<p><strong>Fiscal Year 2025 Veterans Affairs Major Medical Facility Authorization Act</strong></p><p>This act authorizes the Department of Veterans Affairs to carry out a major medical facility project in St. Louis, M\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/s/2393?format=json",
+          "lastAction": "Public Law",
+          "lastActionDate": "2026-06-09",
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
+        },
+        {
           "currentChamber": "Senate",
           "title": "Community College Agriculture Advancement Act of 2026",
           "congress": "119",
@@ -5129,82 +5194,17 @@
           "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         },
         {
-          "currentChamber": "Unknown",
-          "title": "Cape Fox Land Entitlement Finalization Act of 2025",
-          "congress": "119",
-          "number": "2815",
-          "originChamber": "House",
-          "billType": "HR",
-          "summary": "<p><strong>Cape Fox Land Entitlement Finalization Act of 2025</strong></p><p>This act waives a statutory core township selection requirement for the Cape Fox Corporation and allows Cape Fox to receive&nbsp;other lands\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/2815?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-05-19",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
-        },
-        {
-          "currentChamber": "Unknown",
-          "title": "ARTIST Act",
-          "congress": "119",
-          "number": "254",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Alaska\u2019s Right to Ivory Sales and Tradition Act or the ARTIST Act</strong></p><p>This act prohibits states from imposing bans on marine mammal products produced by Alaska Natives.</p><p>Specifically, states\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/254?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-06-12",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
-        },
-        {
           "currentChamber": "House",
-          "title": "Protect College Sports Act of 2026",
+          "title": "United States Commission on International Religious Freedom Reauthorization Act of 2026",
           "congress": "119",
-          "number": "9137",
+          "number": "1744",
           "originChamber": "House",
           "billType": "HR",
-          "summary": "<p><strong>Protect College Sports Act of 2026</strong></p><p>This bill establishes requirements for name, image, or likeness (NIL) agreements for college student athletes and provides a limited antitrust exemption for\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/hr/9137?format=json",
-          "lastAction": "Introduced in House",
-          "lastActionDate": "2026-06-04",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
-        },
-        {
-          "currentChamber": "Senate",
-          "title": "A bill to direct the Secretary of Agriculture to establish an initiative to address the availability, quality, and cost of childcare in rural areas, and for other purposes.",
-          "congress": "119",
-          "number": "4628",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong></strong>This bill requires the&nbsp;Department of Agriculture (USDA) to establish the Expanding Childcare in Rural America Initiative to&nbsp;prioritize certain loans and grants that address&nbsp;childcare\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/4628?format=json",
-          "lastAction": "Introduced in Senate",
-          "lastActionDate": "2026-05-21",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
-        },
-        {
-          "currentChamber": "Unknown",
-          "title": "Tribal Trust Land Homeownership Act of 2025",
-          "congress": "119",
-          "number": "723",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Tribal Trust Land Homeownership Act of 2025</strong></p><p>This act sets forth requirements for the processing of a proposed residential leasehold mortgage, business leasehold mortgage, land mortgage, or ri\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/723?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-05-04",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
-        },
-        {
-          "currentChamber": "Unknown",
-          "title": "Rural Broadband Protection Act of 2025",
-          "congress": "119",
-          "number": "98",
-          "originChamber": "Senate",
-          "billType": "S",
-          "summary": "<p><strong>Rural Broadband Protection Act of 2025</strong></p><p>This act requires the Federal Communications Commission (FCC) to vet the qualifications of applicants for certain funding programs that support affordab\u2026",
-          "url": "https://api.congress.gov/v3/bill/119/s/98?format=json",
-          "lastAction": "Public Law",
-          "lastActionDate": "2026-05-11",
-          "_first_seen": "2026-06-23T11:16:34.012349+00:00"
+          "summary": "<p><strong>United States Commission on International Religious Freedom Reauthorization Act of 2026</strong></p><p>This bill reauthorizes the U.S. Commission on International Religious Freedom through 2028. The commiss\u2026",
+          "url": "https://api.congress.gov/v3/bill/119/hr/1744?format=json",
+          "lastAction": "Passed House",
+          "lastActionDate": "2026-06-08",
+          "_first_seen": "2026-06-24T08:11:24.235655+00:00"
         }
       ]
     },
@@ -5471,182 +5471,182 @@
       "emoji": "\ud83c\udfdb\ufe0f",
       "label_en": "Top shareholders",
       "label_zh": "\u4e3b\u8981\u80a1\u4e1c",
-      "rows": 43148,
+      "rows": 43367,
       "last_seen": "2026-06-27",
       "recent": [
         {
-          "ticker": "COF",
-          "owner_name": "FIRST TRUST ADVISORS LP",
+          "ticker": "DAL",
+          "owner_name": "NISA INVESTMENT ADVISORS, LLC",
           "owner_title": "Institution",
-          "shares": "243415",
+          "shares": "150367",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "National Pension Service",
+          "owner_name": "CANADA LIFE ASSURANCE Co",
           "owner_title": "Institution",
-          "shares": "19843319",
+          "shares": "7657087",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "DEUTSCHE BANK AG\\",
+          "owner_name": "PRUDENTIAL FINANCIAL INC",
           "owner_title": "Institution",
-          "shares": "32308027",
+          "shares": "8226360",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "JANUS HENDERSON GROUP PLC",
+          "owner_name": "FAYEZ SAROFIM & CO",
           "owner_title": "Institution",
-          "shares": "32297269",
+          "shares": "8084635",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "WELLS FARGO & COMPANY/MN",
+          "owner_name": "ProShare Advisors LLC",
           "owner_title": "Institution",
-          "shares": "32078451",
+          "shares": "8030900",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Sanders Capital, LLC",
+          "owner_name": "ALKEON CAPITAL MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "29818675",
+          "shares": "7964931",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "BAILLIE GIFFORD & CO",
+          "owner_name": "PARNASSUS INVESTMENTS, LLC",
           "owner_title": "Institution",
-          "shares": "29387070",
+          "shares": "7887228",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Swiss National Bank",
+          "owner_name": "NEW YORK STATE TEACHERS RETIREMENT SYSTEM",
           "owner_title": "Institution",
-          "shares": "28236000",
+          "shares": "7863287",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "AMERICAN CENTURY COMPANIES INC",
+          "owner_name": "CITADEL ADVISORS LLC",
           "owner_title": "Institution",
-          "shares": "26600380",
+          "shares": "7692857",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "MASSACHUSETTS FINANCIAL SERVICES CO /MA/",
+          "owner_name": "ALTAROCK PARTNERS LP",
           "owner_title": "Institution",
-          "shares": "25952500",
+          "shares": "7567946",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "BANK OF MONTREAL /CAN/",
+          "owner_name": "Newlands Management Operations LLC",
           "owner_title": "Institution",
-          "shares": "24640996",
+          "shares": "6589070",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Sumitomo Mitsui Trust Group, Inc.",
+          "owner_name": "APG Asset Management N.V.",
           "owner_title": "Institution",
-          "shares": "24620350",
+          "shares": "7547056",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "VICTORY CAPITAL MANAGEMENT INC",
+          "owner_name": "DnB Asset Management AS",
           "owner_title": "Institution",
-          "shares": "24448590",
+          "shares": "7450247",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "HSBC HOLDINGS PLC",
+          "owner_name": "SANDS CAPITAL MANAGEMENT, LLC",
           "owner_title": "Institution",
-          "shares": "23474107",
+          "shares": "7440012",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "CALIFORNIA PUBLIC EMPLOYEES RETIREMENT SYSTEM",
+          "owner_name": "Korea Investment CORP",
           "owner_title": "Institution",
-          "shares": "21785734",
+          "shares": "7350766",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Mitsubishi UFJ Asset Management Co., Ltd.",
+          "owner_name": "LAZARD ASSET MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "21415372",
+          "shares": "7239349",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "RAYMOND JAMES FINANCIAL INC",
+          "owner_name": "WINDACRE PARTNERSHIP LLC",
           "owner_title": "Institution",
-          "shares": "21213148",
+          "shares": "7185100",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "ARROWSTREET CAPITAL, LIMITED PARTNERSHIP",
+          "owner_name": "FRED ALGER MANAGEMENT, LLC",
           "owner_title": "Institution",
-          "shares": "32578171",
+          "shares": "7053441",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Fisher Asset Management, LLC",
+          "owner_name": "BANK OF NOVA SCOTIA",
           "owner_title": "Institution",
-          "shares": "34185457",
+          "shares": "8248355",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "UBS Group AG",
+          "owner_name": "TD ASSET MANAGEMENT INC",
           "owner_title": "Institution",
-          "shares": "34407951",
+          "shares": "8275670",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Amundi",
+          "owner_name": "AVIVA PLC",
           "owner_title": "Institution",
-          "shares": "53809551",
+          "shares": "8349689",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Nuveen Asset Management, LLC",
+          "owner_name": "1832 Asset Management L.P.",
           "owner_title": "Institution",
-          "shares": "62741520",
+          "shares": "8349910",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "WELLINGTON MANAGEMENT GROUP LLP",
+          "owner_name": "COATUE MANAGEMENT LLC",
           "owner_title": "Institution",
-          "shares": "62403604",
+          "shares": "9932265",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Invesco Ltd.",
+          "owner_name": "BESSEMER GROUP INC",
           "owner_title": "Institution",
-          "shares": "59604857",
+          "shares": "9828748",
           "_collected": "2026-06-27"
         },
         {
           "ticker": "AMZN",
-          "owner_name": "Nuveen, LLC",
+          "owner_name": "Skye Global Management LP",
           "owner_title": "Institution",
-          "shares": "57301203",
+          "shares": "9752000",
           "_collected": "2026-06-27"
         }
       ]
@@ -6415,56 +6415,56 @@
     "hf": [
       {
         "ticker": "NVDA",
-        "downloads_30d": 29073198.0,
-        "wow_pct": 4.5,
+        "downloads_30d": 29516894.0,
+        "wow_pct": 6.1,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "downloads_30d": 208683112.0,
-        "wow_pct": 4.3,
+        "downloads_30d": 209122239.0,
+        "wow_pct": 4.5,
         "hot": true
       },
       {
         "ticker": "META",
-        "downloads_30d": 90365730.0,
-        "wow_pct": 2.4,
-        "hot": true
+        "downloads_30d": 90762303.0,
+        "wow_pct": 2.9,
+        "hot": false
       },
       {
         "ticker": "BABA",
-        "downloads_30d": 211614927.0,
-        "wow_pct": 0.5,
+        "downloads_30d": 210169954.0,
+        "wow_pct": -0.2,
         "hot": false
       },
       {
         "ticker": "AMZN",
-        "downloads_30d": 24423932.0,
-        "wow_pct": 0.2,
+        "downloads_30d": 24250340.0,
+        "wow_pct": -0.5,
         "hot": false
       },
       {
         "ticker": "CRM",
-        "downloads_30d": 6847545.0,
-        "wow_pct": -2.1,
+        "downloads_30d": 6799234.0,
+        "wow_pct": -2.8,
         "hot": false
       },
       {
         "ticker": "MSFT",
-        "downloads_30d": 28880288.0,
-        "wow_pct": -3.3,
+        "downloads_30d": 28694894.0,
+        "wow_pct": -3.9,
         "hot": false
       },
       {
         "ticker": "IBM",
-        "downloads_30d": 9725589.0,
-        "wow_pct": -5.3,
+        "downloads_30d": 9697582.0,
+        "wow_pct": -5.5,
         "hot": false
       },
       {
         "ticker": "AAPL",
-        "downloads_30d": 6523168.0,
-        "wow_pct": -7.6,
+        "downloads_30d": 6378294.0,
+        "wow_pct": -9.6,
         "hot": false
       }
     ],
@@ -27941,6 +27941,14 @@
         "detail": "Activist Campaigns"
       },
       {
+        "ticker": "AME",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "6668",
         "category": "M&A / Divestitures",
         "confidence": "high",
@@ -35989,6 +35997,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "ITRN",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "SSYS",
         "category": "Acquisitions",
         "confidence": "high",
@@ -36443,6 +36459,14 @@
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "FVGPY",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "CALC",
@@ -37974,11 +37998,11 @@
       },
       {
         "ticker": "BPTH",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "NRXP",
@@ -38051,6 +38075,54 @@
         "activist": true,
         "filer": null,
         "detail": "Activist Campaigns"
+      },
+      {
+        "ticker": "HKIT",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "KNRX",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "KYIVW",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PLTYF",
+        "category": "Liquidations",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Liquidations"
+      },
+      {
+        "ticker": "SVM",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "TGB",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "BRKHU",
@@ -39984,7 +40056,7 @@
       {
         "ticker": "FIX",
         "bull_ratio": 0.83,
-        "articles": 41,
+        "articles": 42,
         "hot": true
       },
       {
@@ -40189,32 +40261,32 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17572,
-        "wow_pct": 0.8,
+        "stars": 17575,
+        "wow_pct": 0.81,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14639,
-        "wow_pct": 0.43,
+        "stars": 14641,
+        "wow_pct": 0.45,
         "hot": true
       },
       {
         "ticker": "IBM",
-        "stars": 7532,
-        "wow_pct": 0.35,
+        "stars": 7535,
+        "wow_pct": 0.39,
         "hot": true
       },
       {
         "ticker": "AMD",
-        "stars": 6653,
-        "wow_pct": 0.24,
+        "stars": 6654,
+        "wow_pct": 0.26,
         "hot": true
       },
       {
         "ticker": "MSFT",
-        "stars": 186820,
-        "wow_pct": 0.13,
+        "stars": 186832,
+        "wow_pct": 0.14,
         "hot": true
       },
       {
@@ -40225,9 +40297,15 @@
       },
       {
         "ticker": "U",
-        "stars": 19516,
+        "stars": 19517,
         "wow_pct": 0.11,
         "hot": true
+      },
+      {
+        "ticker": "MDB",
+        "stars": 28403,
+        "wow_pct": 0.09,
+        "hot": false
       },
       {
         "ticker": "DDOG",
@@ -40242,12 +40320,6 @@
         "hot": false
       },
       {
-        "ticker": "MDB",
-        "stars": 28401,
-        "wow_pct": 0.08,
-        "hot": false
-      },
-      {
         "ticker": "GTLB",
         "stars": 24472,
         "wow_pct": 0.07,
@@ -40255,14 +40327,14 @@
       },
       {
         "ticker": "META",
-        "stars": 246128,
+        "stars": 246129,
         "wow_pct": 0.07,
         "hot": false
       },
       {
         "ticker": "PLTR",
-        "stars": 21858,
-        "wow_pct": 0.04,
+        "stars": 21860,
+        "wow_pct": 0.05,
         "hot": false
       },
       {
@@ -41722,6 +41794,13 @@
     ],
     "news": [
       {
+        "headline": "Press Release: Jared Huffman Responds to Trump Administration Religious Liberty Commission Report",
+        "ticker": null,
+        "category": "legislation_automated",
+        "time": "2026-06-27 02:19:57",
+        "url": "https://www.quiverquant.com/news/Press+Release%3A+Jared+Huffman+Responds+to+Trump+Administration+Religious+Liberty+Commission+Report"
+      },
+      {
         "headline": "Insider Sale: SEC. AND CHIEF LEGAL OFFICER of $NTRA Sells 1,200 Shares",
         "ticker": null,
         "category": "insiders_automated",
@@ -41743,18 +41822,18 @@
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Steube%2C+Thompson+Introduce+Military+Survivor+Financial+Relief+Bill"
       },
       {
-        "headline": "Insider Sale: See Remarks of $STUB Sells 25,080 Shares",
-        "ticker": null,
-        "category": "insiders_automated",
-        "time": "2026-06-26 23:30:49",
-        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+See+Remarks+of+%24STUB+Sells+25%2C080+Shares"
-      },
-      {
         "headline": "Insider Sale: Director at $OVLY Sells 375 Shares",
         "ticker": null,
         "category": "insiders_automated",
         "time": "2026-06-26 23:30:49",
         "url": "https://www.quiverquant.com/news/Insider+Sale%3A+Director+at+%24OVLY+Sells+375+Shares"
+      },
+      {
+        "headline": "Insider Sale: See Remarks of $STUB Sells 25,080 Shares",
+        "ticker": null,
+        "category": "insiders_automated",
+        "time": "2026-06-26 23:30:49",
+        "url": "https://www.quiverquant.com/news/Insider+Sale%3A+See+Remarks+of+%24STUB+Sells+25%2C080+Shares"
       },
       {
         "headline": "XMax Inc. Announces Up to $25 Million in AI API Agreements and First GPU-as-a-Service Contract",
@@ -41832,13 +41911,6 @@
         "category": "legislation_automated",
         "time": "2026-06-26 22:21:04",
         "url": "https://www.quiverquant.com/news/Press+Release%3A+Mike+Thompson+Introduces+Bill+to+Extend+Benefits+Timeline+for+Military+Survivors"
-      },
-      {
-        "headline": "Press Release: Amata Meets with Agriculture Secretary Rollins to Discuss Farm Bill and Food Security",
-        "ticker": null,
-        "category": "legislation_automated",
-        "time": "2026-06-26 22:21:04",
-        "url": "https://www.quiverquant.com/news/Press+Release%3A+Amata+Meets+with+Agriculture+Secretary+Rollins+to+Discuss+Farm+Bill+and+Food+Security"
       },
       {
         "headline": "Press Release: Brian Mast backs SAFE Banking Act for state-legal cannabis businesses",
@@ -42422,6 +42494,16 @@
     ],
     "bills": [
       {
+        "title": "Removing Barriers to Work for Disabled Americans Act",
+        "sector": "Financials",
+        "chamber": "House",
+        "bill": "HR8884",
+        "last_action": "Reported to House",
+        "last_action_date": "2026-06-25",
+        "url": "https://api.congress.gov/v3/bill/119/hr/8884?format=json",
+        "summary": "Removing Barriers to Work for Disabled Americans Act   This bill reauthorizes through 2031 the Social Security Administration\u2019s (SSA\u2019s) authority to carry out demonstration projects within the Social Security Disability Insurance (SSDI) program. The bill also imposes requirements related to benefici"
+      },
+      {
         "title": "Providing for consideration of the bill (H.R. 1181) to prohibit payment card networks and covered entities from requiring the use of or assi",
         "sector": "Defense",
         "chamber": "House",
@@ -42482,16 +42564,6 @@
         "summary": "Community College Agriculture Advancement Act of 2026   This bill allows the Department of Agriculture (USDA) to make competitive grants to assist eligible entities (i.e.,&nbsp;a junior or community college, or a consortium or alliance of two-year public colleges, supporting agriculture advancement)"
       },
       {
-        "title": "Department of the Interior, Environment, and Related Agencies Appropriations Act, 2027",
-        "sector": "Energy",
-        "chamber": "House",
-        "bill": "HR9171",
-        "last_action": "Introduced in House",
-        "last_action_date": "2026-06-05",
-        "url": "https://api.congress.gov/v3/bill/119/hr/9171?format=json",
-        "summary": "Department of the Interior, Environment, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations for the Department of the Interior, the Environmental Protection Agency (EPA), and several related agencies.  The bill provides appropriations to Interior for   the Burea"
-      },
-      {
         "title": "Secure America Act",
         "sector": "Homeland / Immigration",
         "chamber": "Senate",
@@ -42500,6 +42572,16 @@
         "last_action_date": "2026-06-05",
         "url": "https://api.congress.gov/v3/bill/119/s/2?format=json",
         "summary": "Secure America Act   This bill provides funding to the Department of Homeland Security (DHS), U.S. Customs and Border Protection (CBP), and U.S. Immigration and Customs Enforcement (ICE) through FY2029 for immigration enforcement and related activities.  It is known as a reconciliation bill and incl"
+      },
+      {
+        "title": "Department of the Interior, Environment, and Related Agencies Appropriations Act, 2027",
+        "sector": "Energy",
+        "chamber": "House",
+        "bill": "HR9171",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-06-05",
+        "url": "https://api.congress.gov/v3/bill/119/hr/9171?format=json",
+        "summary": "Department of the Interior, Environment, and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations for the Department of the Interior, the Environmental Protection Agency (EPA), and several related agencies.  The bill provides appropriations to Interior for   the Burea"
       },
       {
         "title": "Transportation, Housing and Urban Development, and Related Agencies Appropriations Act, 2027",
@@ -42530,6 +42612,16 @@
         "last_action_date": "2026-06-04",
         "url": "https://api.congress.gov/v3/bill/119/hr/9150?format=json",
         "summary": "Boxing Therapy for Parkinson's Access Act   This bill requires the Department of Veterans Affairs (VA) to furnish boxing-based exercise classes to veterans who (1) are enrolled in the VA health care system, (2) have been diagnosed with Parkinson's disease (or a similar movement disorder), and (3) el"
+      },
+      {
+        "title": "Directing the President pursuant to section 5(c) of the War Powers Resolution to remove United States Armed Forces from hostilities in Leban",
+        "sector": "Defense",
+        "chamber": "House",
+        "bill": "HCONRES108",
+        "last_action": "Introduced in House",
+        "last_action_date": "2026-06-03",
+        "url": "https://api.congress.gov/v3/bill/119/hconres/108?format=json",
+        "summary": "This concurrent resolution directs the President to remove U.S. Armed Forces from hostilities in Lebanon within seven days of the resolution's adoption.  The resolution specifies that it shall not be construed to prevent or limit security cooperation with the Lebanese Armed Forces or the protection "
       },
       {
         "title": "Small Business Technological Act of 2025",
@@ -42572,16 +42664,6 @@
         "summary": "Fraud Prevention and Accountability Act   This bill (1) assigns financial integrity, improper payment prevention, and spending transparency functions to the Bureau of the Fiscal Service (BFS) within the Department of the Treasury; (2) establishes an Office of the Inspector General for Fraud, Account"
       },
       {
-        "title": "Recover COVID Unemployment Fraud in Banks Act",
-        "sector": "Financials",
-        "chamber": "House",
-        "bill": "HR8873",
-        "last_action": "Reported to House",
-        "last_action_date": "2026-05-29",
-        "url": "https://api.congress.gov/v3/bill/119/hr/8873?format=json",
-        "summary": "Recover COVID Unemployment Fraud in Banks Act   This bill extends to 10 years the statute of limitations for federal criminal charges or civil enforcement actions for fraud&nbsp;related to several&nbsp;unemployment insurance programs that were established during the COVID-19 pandemic. The bill also "
-      },
-      {
         "title": "COOL Online Act",
         "sector": "Trade",
         "chamber": "House",
@@ -42590,16 +42672,6 @@
         "last_action_date": "2026-05-29",
         "url": "https://api.congress.gov/v3/bill/119/hr/9057?format=json",
         "summary": "Country of Origin Labeling Requirement Act or the COOL Online Act     This bill requires sellers of imported products online to conspicuously disclose the country of origin of the products and the country where the seller's principal place of business is located.   This requirement does not apply to"
-      },
-      {
-        "title": "Energy and Water Development and Related Agencies Appropriations Act, 2027",
-        "sector": "Defense",
-        "chamber": "House",
-        "bill": "HR9022",
-        "last_action": "Reported to House",
-        "last_action_date": "2026-05-22",
-        "url": "https://api.congress.gov/v3/bill/119/hr/9022?format=json",
-        "summary": "Energy and Water Development and Related Agencies Appropriations Act, 2027   This bill provides FY2027 appropriations for U.S. Army Corps of Engineers civil works projects, the Department of the Interior's Bureau of Reclamation, the Department of Energy (DOE), and several independent agencies.  The "
       }
     ],
     "congress_holdings": {
@@ -43717,7 +43789,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.8% stars \u00b7 hf_model_momentum: +4.5% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +0.81% stars \u00b7 hf_model_momentum: +6.1% model downloads \u00b7 patent_cluster: 36 grants, 10 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -43730,7 +43802,7 @@
           "material_8k",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,622,991 reviews \u00b7 hf_model_momentum: +4.3% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$221,451,087 \u00b7 app_demand: 4.71\u2605 \u00d7 25,622,991 reviews \u00b7 hf_model_momentum: +4.5% model downloads \u00b7 material_8k: 4 material 8-Ks (items 1.01, 5.02, 7.01, 8.01) \u00b7 special_situation: Other Situations"
       },
       {
         "ticker": "MSFT",
@@ -43743,7 +43815,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,671,970 reviews \u00b7 github_momentum: +0.13% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,671,970 reviews \u00b7 github_momentum: +0.14% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 70 grants, 18 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -43791,7 +43863,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.24% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
+        "why": "congress_buy: 2 member(s) net +12 \u00b7 github_momentum: +0.26% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 special_situation: Other Situations \u00b7 trump: ADVANCED MICRO DEVICES INC"
       },
       {
         "ticker": "DELL",
