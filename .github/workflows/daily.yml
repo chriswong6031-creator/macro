@@ -286,6 +286,7 @@ jobs:
             brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
             brun reports       "research reports section (build_reports)"     scripts.build_reports
             brun cycle         "cycle intelligence page (build_cycle)"        scripts.build_cycle
+            brun sectorcyc     "sector cycle intelligence (build_sector_cycles)" scripts.build_sector_cycles
             brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
             brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
             brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
