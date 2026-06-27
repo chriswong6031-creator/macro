@@ -442,3 +442,200 @@ python3 research/signal_engine/tuning_reversal.py rev2d_6 --dump /tmp/rev2d_6.js
 > not "rip anything out." The owner's ~80–90% manual win-rate comes from judging these cases (charter
 > §2c); the mechanical cut reproduces only a whipsaw-prone floor.
 
+---
+
+# 9. Corrected verdict under the OWNER'S risk model — stop-out rate, not held drawdown
+
+## 9.0. Reframe — and an honest revision of §§3–6
+
+The earlier studies (§§3–6) judged every variant on the **max-drawdown of a position held all
+the way to the *opposite* confluence signal**. The owner correctly pushed back that **this is not
+how they trade.** Their actual process is:
+
+- a **tight hard stop** (≤ −5%, cut decisively the moment the entry thesis breaks),
+- their **own manual timing + sector gates** layered on top,
+- and the signal used to **pre-emptively surface names onto a standout/watchlist for manual
+  eyeballing** — not as an auto-fill.
+
+Under that process the held-to-opposite-cross max-DD is the wrong loss function: a name that dips
+−12% before ripping +30% is a **clean win** for them (the stop was never hit on the way they'd
+actually size it), while a held-DD metric scores it as a deep drawdown. The metric that matches
+their book is the **stop-out rate**: of the entries the signal *surfaces*, how often does price
+fake down to −5% first (a bad/fake entry that costs them the stop) versus run favorably without
+ever touching the stop (a **clean entry**). Secondary read: **MFE** (median favorable excursion),
+i.e. how much room a surfaced name typically offers before any reversal.
+
+**Honest note on what this revises.** The §0/§6 conclusion — *"keep `base3d`; the earlier triggers
+are worse on drawdown"* — was **conditional on a risk model the owner does not use.** "Worse on
+held drawdown" was true and is *not* retracted; but it was never the deciding question for a
+tight-stop watchlist tool. This section re-runs the comparison on the **right** axis (stop-out
+rate under a hard −5% / −3% stop, `tuning_stops.py`, same 110 held-out names, leak-audited below).
+The headline outcome is **directionally the same** — `base3d` still wins — but for an honest and
+*different* reason, and the margins for the "fuller" faster triggers are now thin enough that the
+owner's intuition deserves explicit credit (§9.3).
+
+## 9.1. `base3d` vs the key candidates @ −5% hard stop (110 held-out names)
+
+Lower `stop_rate` = fewer fake entries (better). Higher `clean_rate` = more entries that run
+without ever touching the stop (better). `med_mfe` = median favorable excursion %, room before
+reversal. `avg_signals` = surfaced entries per name (watchlist volume — a tool that surfaces
+nothing is useless).
+
+| variant | trigger | avg_signals | stop_rate ↓ | clean_rate ↑ | med_mfe |
+|---|---|---|---|---|---|
+| **`base3d`** | **incumbent (3D confirmed)** | **8.35** | **38.3** | **45.1** | **5.65** |
+| `stochlead3d` | leading-leg (faster) | 11.90 (143%) | 40.1 (+1.8) | 42.0 (−3.1) | 5.35 |
+| `m2d_s3d_early` | anticipation (pre-cross) | 10.63 (127%) | 41.0 (+2.7) | 40.6 (−4.5) | 5.19 |
+| `m2d_s3d` | 2D MACD (faster) | 13.90 (166%) | 41.4 (+3.1) | 41.2 (−3.9) | 4.96 |
+| `early_vol` | **location guard** (ATR-contraction) | 5.25 (63%) | 43.4 (+5.1) | 36.7 (−8.4) | 5.08 |
+| `early_hl` | **location guard** (higher-low) | 2.44 (29%) | 42.1 (+3.8) | 35.8 (−9.3) | 5.34 |
+| `early_vol_50` | location guard (vol + 50MA) | 1.71 (20%) | 48.3 (+10.0) | 36.7 (−8.4) | 4.96 |
+| `early_vol_hl` | location guard (vol + HL) | 1.90 (23%) | 46.0 (+7.7) | 33.9 (−11.2) | 4.71 |
+
+(% = signal count vs base3d. Deltas in parentheses vs base3d's stop_rate/clean_rate.)
+
+**On the aggregate, `base3d` has the lowest stop-out rate (38.3%), the highest clean-entry rate
+(45.1%), the highest med-MFE (5.65), *and* a healthy watchlist volume (8.35/name).** It is not a
+near-tie on aggregates: every candidate fakes down to −5% *more* often and runs clean *less* often.
+The −3% panel is the same shape, just harsher (base 58.6 stop / 33.6 clean; every candidate worse).
+
+## 9.2. The per-name gate — does any earlier/guarded trigger beat base3d on a MAJORITY of names?
+
+The aggregate could hide a candidate that wins on most names by a hair and loses big on a few. So
+the decisive test is the **adversarial per-name held-out gate**: align by ticker, and count the
+**% of names where the candidate has a *lower* stop_rate than `base3d`** (need **>50%** to "hold").
+
+**No candidate clears 50% — at either stop.** @ −5% (matched-names framing, which already favors the
+candidate by dropping names where it emits zero signals):
+
+| candidate | % names lower-stop | median stop-Δ vs base | clean-rate win % | signal count |
+|---|---|---|---|---|
+| `early_hl` | 47.8% | +0.00 pp | 36.7% | 29% of base ✗ |
+| `m2d_s3d_early` | 44.5% | +3.04 pp | 41.8% | 127% |
+| `stochlead3d` | 44.5% | +1.90 pp | 41.8% | 143% |
+| `early_vol_50` | 46.8% | +12.50 pp | 36.4% | 20% of base ✗ |
+| `early_vol_hl` | 46.4% | +0.00 pp | 31.9% | 22% of base ✗ |
+| `early_vol` | 39.8% | +7.74 pp | 36.1% | 63% |
+| `m2d_s3d` | 38.2% | +3.41 pp | 37.3% | 166% |
+
+Every **median per-name stop-Δ is positive (= more fakeouts than base)**, and every clean-rate
+win-% is also <50%. Over the **full** base universe (counting names a candidate never surfaces as
+"not better"), the ceiling drops further: best is `stochlead3d` / `m2d_s3d_early` at 44.5%. @ −3%
+the picture is the same (best `early_hl` 44.4%, all medians positive).
+
+**Distinguishing the two families:**
+
+- **Plain faster triggers** (`m2d_s3d`, `m2d_s3d_early`, `stochlead3d`): keep or expand the
+  watchlist (127–166% of base volume) but **do not reduce fakeouts** — they surface *more* names,
+  a larger fraction of which fake down. `stochlead3d` and `m2d_s3d_early` are the **least-bad**
+  (44.5% lower-stop, smallest positive median Δ +1.90 / +3.04 pp) — genuinely *close*, but on the
+  wrong side of the majority line.
+- **Location-guarded variants** (`early_vol`, `early_hl`, `early_vol_50`, `early_vol_hl`): these
+  were the live hope — guards meant to surface entries that *survive* a tight stop. The honest
+  answer is **no, they do not earn it.** Their headline lower-stop %s (46–48%) are a mirage produced
+  by **gutting the watchlist**: 1.7–2.4 signals/name (**20–29% of base**, on 69–90 names not 110).
+  They surface so few entries that the per-name comparison is noise — and the ones they do surface
+  still fake to −5% on roughly the same fraction. `early_hl` even **flips sign across the subpanel
+  split** (Half A +9.4 pp *worse* than base, Half B −1.5 pp better → **UNSTABLE**), confirming the
+  thin count is driving it. `early_vol` is the only guarded variant whose stop-Δ sign is *stable*
+  across both halves — and it is stably **worse** (+6.6 / +3.7 pp). **Verdict: the location guards
+  do not surface tighter-stop-survivable entries; they surface fewer entries.** Same exposure-
+  artifact lesson as §5b, now confirmed on the stop-out axis the owner actually cares about.
+
+**Subpanel stability:** deterministic odd/even ticker split, `--stop 0.05`, no code modified.
+`base3d` stop_rate is **identical (38.3 / 38.3)** on both halves — the baseline is rock-stable. The
+candidates do not produce a *stable* edge on either half; the only stable candidate sign (`early_vol`)
+is stably negative.
+
+## 9.3. Watchlist framing — false positives are cheap; earlier/cleaner surfacing is the point
+
+For the owner's *actual* tool — **pre-emptive surfacing → manual eyeball → tight stop → sector
+gate** — the cost structure is asymmetric and matters here:
+
+- **A false positive is cheap.** A surfaced name that looks wrong gets discarded at the eyeball
+  step (zero cost) or, if taken and it breaks, cut at −5% (small, bounded cost). The owner is
+  *paid to throw most surfaced names away.* So a tool is not disqualified by a high raw stop_rate
+  — it is disqualified by **surfacing the wrong *set* of names**, or by **surfacing too few**.
+- **A false negative — a clean mover never surfaced — is the expensive error.** This is what
+  argues *for* earlier/fuller surfacing and against the gutting guards.
+
+Under that cost structure the relevant question is **not** "which variant has the lowest stop_rate
+on the names it picks" but **"which variant surfaces the broadest set of clean movers early, for a
+human to filter."** On that question:
+
+- The **location guards lose decisively** — they don't lower the fakeout rate *and* they amputate
+  the watchlist (20–29% of base). For a surfacing tool, **a guard that throws away 70–80% of
+  candidates to achieve no better hit-rate is the worst trade in the table.** The cheap-false-
+  positive logic kills them: you do not pay to *suppress* candidates when discarding is free.
+- The **earlier/fuller triggers are defensible *as a surfacing layer*** even though they fail the
+  scored gate: `stochlead3d` (143% volume, +1.8 pp stop) and `m2d_s3d_early` (127% volume, the
+  earliest read) surface *more* clean movers earlier, and the owner's eyeball + sector gate + tight
+  stop absorb the extra fakeouts they admit. They are bad *auto-buys* and acceptable *surfacers*.
+- The **early-anticipation marker (`m2d_s3d_early`) earns its place — but only in its already-
+  intended role.** §6 proposed it as a **display-only hollow pre-cross dot**, never a scored buy.
+  The stop-out re-frame *strengthens* that recommendation: a pre-emptive "a `base3d` buy may be
+  approaching" annotation is exactly a surfacing aid, the false positives are cheap, and the
+  owner's discretion is the gate. It does **not** earn promotion into the scored buy quality (its
+  per-name stop-Δ is still +3.04 pp worse), but it **does** earn its keep as the earliest honest
+  heads-up on the watchlist.
+
+## 9.4. Honest verdict + recommendation
+
+1. **`base3d` remains the signal to *score* — now confirmed on the owner's own risk axis, not
+   just the held-DD axis.** It has the lowest stop-out rate (38.3% @ −5%), highest clean rate
+   (45.1%), highest med-MFE, a stable baseline across subpanels, and a healthy surfacing volume.
+   No earlier or guarded variant lowers the stop-out rate on a **majority** of held-out names at
+   either stop. The §6 "keep base3d" call **survives the re-framing** — for the corrected reason.
+
+2. **Credit where due — the owner's intuition was directionally right, and the margins are thin.**
+   The owner argued the earlier triggers were being judged on the wrong metric, and on the *right*
+   metric the gap **narrows from "clearly worse on drawdown" to "+1.8–3.0 pp worse stop-rate, fails
+   the majority gate by ~5–6 points."** `stochlead3d` and `m2d_s3d_early` are genuinely close
+   (44.5% of names lower-stop) **and** surface 127–143% of base volume. They are not good enough to
+   *score*, but they are good enough to **surface** — which is the role the owner actually puts them
+   in. That is a real, credited revision, not a rubber-stamp of the old conclusion.
+
+3. **Surface the earlier triggers as display-only watchlist context; score none of them.**
+   Concretely: keep `base3d` as the scored confirmed BUY; render `m2d_s3d_early` as the **hollow
+   pre-cross "early-anticipation" dot** (§6.2) and optionally let `stochlead3d` widen the *standout
+   surfacing* set — both clearly labeled, never folded into conviction or `quality`, with the
+   health note that they admit more −5% fakeouts and are intended for manual filtering.
+
+4. **The location guards are now closed on BOTH axes.** Killed on held-DD as an exposure artifact
+   (§5b); killed here on stop-out rate because they reduce fakeouts only by reducing *exposure*
+   (20–29% of base volume), flip sign across subpanels (`early_hl`), or are stably worse
+   (`early_vol`). Do not ship them as either a buy or a surfacing layer.
+
+**Honest caveats.**
+
+- **The floor is mechanical, not signal failure.** A ~38–48% stop-out rate at a −5% stop on a
+  panel of liquid, mostly high-beta US names is largely **the names, not the signal**: high-beta
+  equities routinely wiggle −5% intraday/intraweek, so *any* entry method stops out roughly half
+  the time under a tight hard stop. `base3d`'s 38.3% is the *best* in the table, but no signal on
+  this universe will push it far below ~one-in-three without giving up the watchlist.
+- **The user's process lifts that floor in ways this backtest cannot see.** The stop-out rate here
+  is **mechanical entry-at-next-close with a blind −5% stop and no discretion.** The owner's actual
+  **manual timing, sector gates, and ≥80% discretionary win-rate (charter §2c)** filter the
+  surfaced set further — so the *realized* fake-entry rate on names they actually take is lower than
+  any number in this table. This section bounds the **tool's** raw surfacing quality, not the
+  **owner's** realized hit-rate.
+- **Scope.** 110 held-out names, single recent regime (entries since 2023-06), −5% and −3% stops
+  only, common-exit isolation. Leak-audited (§9.5): entry = next daily close, triple-barrier walks
+  strictly forward, all guards backward-looking; the only forward-looking input (`daily_filter`,
+  HELD=3) is `--filter`-gated *off* by default and not among the 7 audited variants — flag if ever
+  scored. MFE captures on the same bar as the stop touch (mild intrabar optimism, not a forward
+  leak). The clean-vs-fake conclusion and the relative base-wins ordering are leak-free.
+
+## 9.5. Reproduce
+
+```bash
+# stop-out / clean-entry rates per variant at a given hard stop (default 0.05)
+python3 research/signal_engine/tuning_stops.py --stop 0.05            # all variants, one table
+python3 research/signal_engine/tuning_stops.py --stop 0.03            # tighter stop panel
+python3 research/signal_engine/tuning_stops.py --stop 0.05 --dump research/signal_engine/_tuning_out/stop/
+
+# the decisive read is the PER-NAME gate vs base3d: %names lower-stop must be >50% to "hold"
+#   (every candidate is <50% at both stops); median per-name stop-Δ must be NEGATIVE (it is +ve everywhere)
+# subpanel stability: run per odd/even ticker half at --stop 0.05; base3d is 38.3/38.3, candidate signs must agree
+```
+
