@@ -9,6 +9,22 @@ divergence veto + 200-day-MA as a confidence bar-raiser) cut average max drawdow
 Faithful to the owner's `MACD STOCH RSI CONFLUENCE SIGNAL.pine`, run on the 3D:
   RSI-MACD : macd = EMA(RSI14,14) - EMA(RSI14,60); signal = EMA(macd,5)   (NOT price MACD)
   StochRSI : k = SMA(stoch(RSI14,14),3); d = SMA(k,3)
+
+EXITS — the mechanical sell/cut stay the SIMPLE validated baseline (oscillator SELL* =>
+`sell`; fast-reversal cut-loss => `cut`). A cross-sectional exit bake-off
+(research/signal_engine/diagnose_v5_exits.py) tested Chandelier-ATR and close-below-EMA
+trailing stops as REPLACEMENTS and they did NOT generalize: on the held-out US panel the
+best (close<EMA8) improved drawdown on only ~58-69% of names and the joint drawdown-AND-
+capture gate was ~37-43% — below the pre-committed 70%. So per the kill rule we ship the
+simpler baseline (this echoes the CHARTER §5 killed regime-router: drawdown control is an
+ENTRY problem, not an exit-routing one). The one robust finding: a close-below-EMA8 breach
+is a TAIL-risk protector (rescues drawdown on 81-92% of the deepest-drawdown-quartile names
+across two windows, at some capture cost). We surface it ONLY as a display-only `risk_flags`
+date list + current `trail_breach`/`trail_stop` state fields — kept OUT of the validated
+trade-marker stream, never an auto-sell, never per-ticker, never routed. EMA8 is CLOSE-ONLY
+by construction, so the flag needs no high/low and works identically on the close-only names
+(Tencent 0700.HK, BABA) — that, plus simplicity and the better tail, is why we chose it over
+a high/low Chandelier ATR.
 """
 from __future__ import annotations
 
@@ -22,6 +38,7 @@ STOCH_LEN, SMOOTH_K, SMOOTH_D = 14, 3, 3
 OB, OS = 80, 20
 CONF_W, BUY_RSI_MAX, EXT_RSI, REV_BARS = 8, 65, 70, 3
 MA_LEN = 200
+TRAIL_SPAN = 8   # 3D close-below-EMA8 trailing trend — the display-only tail-risk flag (see below)
 
 
 def _ema(s, span):
@@ -71,6 +88,7 @@ def signal_frame(daily_close: pd.Series) -> pd.DataFrame:
     wbull = (wm >= wsg).shift(1).reindex(s3.index, method="ffill").fillna(False).astype(bool)
     ma = daily_close.rolling(MA_LEN).mean()
     above = (s3 > ma.reindex(s3.index).ffill()).fillna(False)
+    ema_trail = s3.ewm(span=TRAIL_SPAN, min_periods=TRAIL_SPAN).mean()   # close-only; no high/low
     b1os, s1ob = d.rolling(CONF_W).min() < OS, d.rolling(CONF_W).max() > OB
     cb = (mb & (_since(sb) <= CONF_W) & (wbull | b1os) & (r14 < BUY_RSI_MAX)).fillna(False)
     rext = (k.rolling(CONF_W).max() >= OB) | (r14.rolling(CONF_W).max() >= EXT_RSI)
@@ -79,7 +97,7 @@ def signal_frame(daily_close: pd.Series) -> pd.DataFrame:
     revbuy = (mb & (_since(cs) <= REV_BARS)).fillna(False)
     return pd.DataFrame({"close": s3, "macd": macd, "sig": sig, "k": k, "d": d, "rsi14": r14,
                          "CB": cb, "CS": cs, "revBuy": revbuy, "revSell": revsell,
-                         "w_bull": wbull, "above200": above})
+                         "w_bull": wbull, "above200": above, "ema_trail": ema_trail})
 
 
 def _swing_highs(s, w=2):
@@ -122,7 +140,22 @@ def analyze(ticker: str, daily_close: pd.Series) -> dict | None:
         return None
     c, macd, idx, n = sig["close"], sig["macd"], sig.index, len(sig)
     hi = _swing_highs(c)
-    markers = []
+    # close-only trailing trend + its fresh breaches. A breach of a trail that was RISING
+    # INTO it = an uptrend's trailing trend breaking down (the tail-risk event we surface).
+    # NB: below.shift(1, fill_value=False) keeps BOOL dtype — plain .shift(1) returns object
+    # dtype, where ~ does integer bitwise-not (~True == -2, truthy) and silently corrupts the
+    # mask. The breach BAR itself can't be "rising" (its sub-trail close pulls the EMA down),
+    # so we test the slope leading into it.
+    trail = sig["ema_trail"]
+    below = (c < trail)
+    prev_below = below.shift(1, fill_value=False)
+    rising_into = (trail.shift(1) > trail.shift(3))
+    fresh_breach = (below & ~prev_below & rising_into).fillna(False)
+    # `markers` is the validated TRADE stream (buy/sell/cut/rebuy), one per bar -> strictly
+    # date-ascending (the §7 contract invariant). The trail-stop breach is a DISTINCT display-
+    # only risk layer in its OWN `risk_flags` date list, so it can co-occur with a sell/cut on
+    # the same bar without violating the one-marker-per-bar rule (and is never read as a sell).
+    markers, risk_flags = [], []
     for i in range(n):
         ds = str(idx[i].date())
         if bool(sig["CB"].iloc[i]) or bool(sig["revBuy"].iloc[i]):
@@ -134,9 +167,14 @@ def analyze(ticker: str, daily_close: pd.Series) -> dict | None:
             markers.append({"date": ds, "type": "sell"})
         elif bool(sig["revSell"].iloc[i]):
             markers.append({"date": ds, "type": "cut"})
+        if bool(fresh_breach.iloc[i]):
+            risk_flags.append(ds)
     last = sig.iloc[-1]
     state = ("long-bias" if (last["k"] >= last["d"] and last["macd"] >= last["sig"])
              else "short-bias" if (last["k"] < last["d"] and last["macd"] < last["sig"]) else "mixed")
+    t_last = float(trail.iloc[-1])
     return {"ticker": ticker, "asof": str(idx[-1].date()), "tf": "3D", "state": state,
             "above200": bool(last["above200"]), "weekly_bull": bool(last["w_bull"]),
-            "markers": markers}
+            "trail_stop": round(t_last, 4) if pd.notna(t_last) else None,
+            "trail_breach": bool(pd.notna(t_last) and last["close"] < t_last),
+            "markers": markers, "risk_flags": risk_flags}
