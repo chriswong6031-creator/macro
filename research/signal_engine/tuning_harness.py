@@ -139,8 +139,45 @@ def to_daily(tf_series: pd.Series, known: pd.Series, daily_index: pd.DatetimeInd
     return out
 
 
+# ------------------------------------------------------------ location guards
+# Secondary LOCATION guards for the early trigger: universal rules reading a
+# PERSISTENT property (ATR%-percentile, Kaufman efficiency, swing structure, MA),
+# validated cross-sectionally — NOT per-ticker tuning (charter 2e/5). All leak-free
+# (backward-looking; swing structure only uses lows already CONFIRMED by bar i).
+def _guard_frame(daily, high=None, low=None):
+    di = daily.index
+    if high is not None and low is not None:
+        tr = pd.concat([high - low, (high - daily.shift()).abs(),
+                        (low - daily.shift()).abs()], axis=1).max(axis=1)
+    else:
+        tr = daily.diff().abs()
+    atr = tr.ewm(alpha=1 / 14, min_periods=14).mean()
+    atrp = (atr / daily)
+    atr_rank = atrp.rolling(100, min_periods=40).apply(lambda x: (x <= x[-1]).mean(), raw=True)
+    # vol-contraction: not in the high-vol bucket (falling-knife zone) -> calm/coiling
+    volcontract = (atr_rank <= 0.60).fillna(False)
+    # Kaufman efficiency ratio(10) above its own rolling median -> trending, not chop
+    er = (daily - daily.shift(10)).abs() / daily.diff().abs().rolling(10).sum()
+    eff = (er >= er.rolling(100, min_periods=40).median()).fillna(False)
+    # above a RISING 50-day MA -> not in freefall
+    ma50 = daily.rolling(50).mean()
+    above50 = ((daily > ma50) & (ma50 > ma50.shift(5))).fillna(False)
+    # structural higher-low: latest CONFIRMED swing low (w=3) > the prior one
+    v = daily.to_numpy(); n = len(v); w = 3
+    lows = [i for i in range(w, n - w) if v[i] == v[i - w:i + w + 1].min()]
+    confirm = [(l + w, l) for l in lows]
+    hl = np.zeros(n, bool); ptr = 0; seq = []
+    for i in range(n):
+        while ptr < len(confirm) and confirm[ptr][0] <= i:
+            seq.append(confirm[ptr][1]); ptr += 1
+        if len(seq) >= 2 and v[seq[-1]] > v[seq[-2]]:
+            hl[i] = True
+    higherlow = pd.Series(hl, index=di)
+    return {"volcontract": volcontract, "eff": eff, "above50": above50, "higherlow": higherlow}
+
+
 # ------------------------------------------------------------ variant build -
-def build_signals(daily: pd.Series, cfg: dict) -> pd.DataFrame:
+def build_signals(daily: pd.Series, cfg: dict, high=None, low=None) -> pd.DataFrame:
     """Return a daily-indexed frame with a boolean `buy` column (raw confluence
     buy of this variant) plus the columns the filter / scorecard need."""
     di = daily.index
@@ -203,6 +240,13 @@ def build_signals(daily: pd.Series, cfg: dict) -> pd.DataFrame:
         buy = sb_event_d & (hist_pos_d | hist_rise_d) & confirm_bull & rsi_ok & brk_ok
     else:
         raise ValueError(trig)
+
+    # --- secondary LOCATION guards (veto the early fires landing in bad locations) ---
+    guards = cfg.get("guards") or []
+    if guards:
+        gf = _guard_frame(daily, high, low)
+        for g in guards:
+            buy = buy & gf[g].reindex(di).fillna(False).astype(bool)
 
     return pd.DataFrame({
         "close": daily, "buy": buy.fillna(False).astype(bool),
@@ -354,6 +398,14 @@ VARIANTS = {
     "m2d_s3d_early": dict(macd_tf=2, stoch_tf=3, trigger="early"),        # anticipation
     "stochlead3d":   dict(macd_tf=2, stoch_tf=3, trigger="stochlead"),    # leading leg only
     "m2d_s3d_brk":   dict(macd_tf=2, stoch_tf=3, trigger="macd_cross", brk=True),  # +3rd indicator
+    # ---- secondary LOCATION guards on the anticipation trigger (research avenue) ----
+    "early_vol":     dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["volcontract"]),
+    "early_hl":      dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["higherlow"]),
+    "early_eff":     dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["eff"]),
+    "early_50":      dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["above50"]),
+    "early_vol_hl":  dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["volcontract", "higherlow"]),
+    "early_vol_50":  dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["volcontract", "above50"]),
+    "early_hl_50":   dict(macd_tf=2, stoch_tf=3, trigger="early", guards=["higherlow", "above50"]),
 }
 
 
@@ -367,10 +419,13 @@ def run_variant(name: str, use_filter: bool, tickers=None) -> dict:
     for fp in files:
         t = Path(fp).stem
         try:
-            daily = pd.read_parquet(fp)["close"].dropna()
+            df = pd.read_parquet(fp)
+            daily = df["close"].dropna()
             if len(daily) < 400:
                 continue
-            fr = build_signals(daily, cfg)
+            hi = df["high"].reindex(daily.index) if "high" in df else None
+            lo = df["low"].reindex(daily.index) if "low" in df else None
+            fr = build_signals(daily, cfg, hi, lo)
             if use_filter:
                 fr["buy_use"] = daily_filter(fr)
             else:

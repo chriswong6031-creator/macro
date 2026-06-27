@@ -32,9 +32,9 @@ import tuning_harness as H   # noqa: E402
 WIN = 12   # trading-day window to call two buys "the same move"
 
 
-def fills(daily: pd.Series, cfg: dict) -> list[int]:
+def fills(daily: pd.Series, cfg: dict, high=None, low=None) -> list[int]:
     """Daily fill-bar indices of this variant's raw buys (since SINCE)."""
-    fr = H.build_signals(daily, cfg)
+    fr = H.build_signals(daily, cfg, high, low)
     c_idx = fr.index
     out = []
     for i in np.where(fr["buy"].to_numpy())[0]:
@@ -56,12 +56,15 @@ def analyze(cand: str, tickers=None) -> dict:
     for fp in files:
         t = Path(fp).stem
         try:
-            daily = pd.read_parquet(fp)["close"].dropna()
+            df = pd.read_parquet(fp)
+            daily = df["close"].dropna()
             if len(daily) < 400:
                 continue
+            hi = df["high"].reindex(daily.index) if "high" in df else None
+            lo = df["low"].reindex(daily.index) if "low" in df else None
             c = daily.to_numpy()
-            bf = fills(daily, base_cfg)
-            cf = fills(daily, cand_cfg)
+            bf = fills(daily, base_cfg, hi, lo)
+            cf = fills(daily, cand_cfg, hi, lo)
             if not bf:
                 continue
             n_base += len(bf)
