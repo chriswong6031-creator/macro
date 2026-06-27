@@ -1,41 +1,900 @@
 {
-  "version": "2026-06-27-seed",
-  "note": "Researched 'what happened & why' narratives for each sector's auto-detected cycle legs, keyed by the START turn's date (YYYY-MM-DD; the page also accepts a YYYY-MM key). `now` is the current-read line for the focus panel. THIS FILE IS A SEED covering XLK only for UI verification — Phase 1b fans out research agents to fill all 11 sectors against the real dated turns engine/sector_cycles surfaces.",
-  "sectors": {
-    "xlk": {
-      "now": "Tech is topping on narrowing leadership. XLK is RS rank #1 and well above its 200-day, but the cycle-position oscillator has rolled from euphoric highs and the advance is carried by a shrinking set of AI mega-caps. The setup is late-cycle distribution, not a fresh breakout.",
-      "legs": {
-        "2022-10-12": {
-          "title": "The genAI bull run",
-          "body": "From the October-2022 bear-market low, XLK more than doubled into mid-2024 as ChatGPT ignited a generative-AI capex super-cycle. Hyperscalers raced to buy accelerators, NVDA/AVGO re-rated violently, and falling inflation plus a Fed pivot-in-sight re-expanded multiples across software and semis.",
-          "drivers": ["genAI capex super-cycle", "NVDA/hyperscaler accelerator demand", "disinflation + Fed pivot hopes", "multiple re-expansion"]
-        },
-        "2024-07-10": {
-          "title": "Yen-carry unwind air-pocket",
-          "body": "A sharp but brief ~17% drawdown into early August 2024 as a BoJ hike unwound the yen carry trade, a weak payrolls print sparked a growth scare, and the most-crowded AI longs were forced to de-gross. It was a positioning flush, not a fundamental break — the uptrend resumed within weeks.",
-          "drivers": ["BoJ hike · yen-carry unwind", "soft payrolls growth scare", "crowded-long de-grossing"]
-        },
-        "2025-02-19": {
-          "title": "DeepSeek + tariff shock",
-          "body": "A ~26% slide as DeepSeek's cheap-inference claims questioned the AI capex ROI thesis, then the April 2025 reciprocal-tariff salvo hit hardware supply chains and risk appetite. Highest-multiple AI names corrected hardest into the early-April low.",
-          "drivers": ["DeepSeek capex-ROI scare", "reciprocal tariff shock", "high-multiple de-rating"]
-        },
-        "2025-04-08": {
-          "title": "Post-tariff-pause melt-up",
-          "body": "Off the April low, a tariff pause and resilient hyperscaler capex guides drove a powerful ~70% recovery to new highs by late October. Memory pricing tightened into an undersupplied market and AI-infrastructure spend kept beating, re-rating semis and software back to euphoria.",
-          "drivers": ["tariff pause / de-escalation", "hyperscaler capex beats", "memory undersupply", "re-rating to euphoria"]
-        },
-        "2025-10-29": {
-          "title": "AI-bubble wobble & valuation reset",
-          "body": "A ~16% reset from the October highs as breadth narrowed, Broadcom's refusal to raise its AI outlook triggered a sharp wipeout, and a hotter inflation tape flipped the Fed to a hiking bias — compressing the long-duration multiples that had powered the melt-up.",
-          "drivers": ["narrowing breadth / distribution", "Broadcom AI-guide disappointment", "Fed hiking bias · long-duration de-rating"]
-        },
-        "2026-03-30": {
-          "title": "Spring relief rally",
-          "body": "A recovery off the March-2026 low as the Iran/Hormuz oil tail unwound on a ceasefire and AI mega-caps found support, but the advance has narrowed and the cycle is re-approaching the highs on thinner participation.",
-          "drivers": ["oil-shock unwind (ceasefire)", "AI mega-cap support", "narrowing participation"]
-        }
-      }
+ "version": "2026-06-27",
+ "note": "Researched 'what happened & why' narratives for each sector's auto-detected cycle legs, keyed by the START turn's date (the page also accepts a YYYY-MM key). `now` is the current focus-panel read. Web-researched 2026-06-27 via per-sector history agents against the real dated turns engine/sector_cycles surfaces; 2026 reads follow the site's house macro timeline (Iran/Hormuz oil shock -> mid-June ceasefire).",
+ "sectors": {
+  "xlk": {
+   "now": "Technology sits late-cycle: RS rank #1 and cycle position ~84/100, riding above its 200-day on a powerful AI-capex melt-up, but the tape is now TOPPING with narrowing breadth as leadership concentrates in a handful of AI names. Broadcom's early-June refusal to raise its AI outlook triggered a $1T+ semis wipeout — the classic distribution signature of a maturing leg.",
+   "legs": {
+    "2021-12-27": {
+     "title": "Rate-shock duration de-rating",
+     "body": "As the Fed pivoted hawkish into a 9% CPI print, the discount-rate spike crushed long-duration tech, where rich multiples hung on far-future earnings. Unprofitable growth and high-multiple software led the unwind, with the Russia-Ukraine invasion in February adding a risk-off bid.",
+     "drivers": [
+      "rate shock",
+      "duration de-rating",
+      "stretched valuations"
+     ]
+    },
+    "2022-03-14": {
+     "title": "Oversold relief bounce",
+     "body": "A sharp counter-trend rally as the market digested the first Fed hike and an oversold growth complex snapped back. Beaten-down megacaps and semis led a ~16% relief rip, but nothing in the inflation or rates picture had actually turned.",
+     "drivers": [
+      "oversold bounce",
+      "first hike priced",
+      "short cover"
+     ]
+    },
+    "2022-03-29": {
+     "title": "Hiking-cycle bear leg",
+     "body": "The Fed accelerated to 50-75bp hikes and QT as inflation stayed near 9%, sending real yields and the dollar surging and re-crushing long-duration tech. Semiconductors broke down on demand fears and software multiples kept compressing into the June bear low.",
+     "drivers": [
+      "aggressive hikes",
+      "real-yield surge",
+      "multiple compression"
+     ]
+    },
+    "2022-06-16": {
+     "title": "Peak-inflation hope rally",
+     "body": "Tech bounced ~23% on hopes that inflation had peaked and the Fed would soon pivot, with falling yields lifting the most rate-sensitive growth names. Mega-cap tech and semis led the summer squeeze before Powell's hawkish Jackson Hole killed it.",
+     "drivers": [
+      "peak-inflation hope",
+      "yield pullback",
+      "pivot bet"
+     ]
+    },
+    "2022-08-15": {
+     "title": "Jackson Hole hawkish reset",
+     "body": "Powell's Jackson Hole vow to hold rates 'higher for longer' repriced terminal-rate expectations, slamming long-duration tech as yields and the dollar pushed to new highs. A hot September CPI sealed the move into the October bear-market bottom.",
+     "drivers": [
+      "Jackson Hole",
+      "higher-for-longer",
+      "yields/dollar high"
+     ]
+    },
+    "2022-10-12": {
+     "title": "The genAI bull run",
+     "body": "A softer October CPI marked the rate-peak inflection, and ChatGPT's late-2022 launch ignited a generative-AI super-cycle that made hyperscaler and semiconductor capex the dominant equity theme. Nvidia became the face of the boom as Fed cuts began in Sep-2024; surviving the Oct-2023 yield scare, XLK more than doubled on AI demand and soft-landing optimism.",
+     "drivers": [
+      "genAI super-cycle",
+      "NVDA/hyperscaler capex",
+      "rate-peak + cuts"
+     ]
+    },
+    "2024-07-10": {
+     "title": "Yen-carry air-pocket",
+     "body": "A BoJ rate hike and a weak US jobs report violently unwound the yen-carry trade, hitting the most crowded momentum and AI longs hardest. Semis and the Magnificent-7 air-pocketed ~17% in a fast, technical deleveraging rather than a fundamental break.",
+     "drivers": [
+      "yen-carry unwind",
+      "crowded momentum",
+      "growth-scare jobs print"
+     ]
+    },
+    "2024-08-07": {
+     "title": "Soft-landing AI recovery",
+     "body": "Tech rebounded as the carry-unwind panic faded, the Fed delivered its first cut in September, and the November election fueled deregulation and growth bets. Nvidia-led AI enthusiasm and resilient hyperscaler spending carried XLK back to new highs into early 2025.",
+     "drivers": [
+      "Fed cuts begin",
+      "AI demand",
+      "election risk-on"
+     ]
+    },
+    "2025-02-19": {
+     "title": "DeepSeek + tariff shock",
+     "body": "The late-January DeepSeek cheap-AI scare had already cracked the AI-capex thesis (Nvidia's record one-day value loss), and April's 'Liberation Day' reciprocal tariffs detonated a broad crash. Semis and hardware bore the brunt on supply-chain and demand-destruction fears, bottoming around April 8.",
+     "drivers": [
+      "DeepSeek scare",
+      "reciprocal tariffs",
+      "capex-thesis doubt"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Tariff-pause AI melt-up",
+     "body": "Trump's tariff pause and tech-device exemptions detonated a relief rally that turned into a full AI-capex melt-up, with hyperscaler spend estimates ballooning past $400B. Nvidia and Broadcom led semis to fresh records on insatiable AI-infrastructure demand through year-end.",
+     "drivers": [
+      "tariff de-escalation",
+      "AI-capex melt-up",
+      "NVDA/AVGO records"
+     ]
+    },
+    "2025-10-29": {
+     "title": "Hawkish valuation reset",
+     "body": "A hawkish Fed turn repriced borrowing costs just as hyperscalers committed to the most expensive build-out in a generation, sparking an AI-complex valuation reset. Megacap spenders and the semis (NVDA, AVGO) de-rated together on capex-first-revenue-later and bubble worries.",
+     "drivers": [
+      "hawkish Fed",
+      "AI valuation reset",
+      "capex-vs-revenue fear"
+     ]
+    },
+    "2026-03-30": {
+     "title": "Oil-fade AI rip",
+     "body": "Tech ripped ~55% as the Iran-war oil tail began to fade toward the mid-June ceasefire and the AI-capex trade roared back — the SOX gained 100%+ over the run. The leg crested into early June as Broadcom's refusal to raise its full-year AI outlook detonated a $1T+ semis wipeout, marking the late-cycle top.",
+     "drivers": [
+      "oil-tail unwind",
+      "AI-capex revival",
+      "AVGO outlook top"
+     ]
     }
+   }
+  },
+  "xle": {
+   "now": "Energy is rolling over as of mid-2026 — RS rank #11, the weakest sector, as the post-ceasefire oil-tail unwind drains the Iran/Strait-of-Hormuz war premium out of crude and integrated/E&P cash flows normalize back toward pre-war levels.",
+   "legs": {
+    "2020-10-28": {
+     "title": "Vaccine reflation lifts energy",
+     "body": "XLE roared off pandemic lows as the November 2020 vaccine news ignited the reopening/reflation trade in the most beaten-down, deepest-discounted sector. WTI climbed from the low-$30s past $70 by June 2021 on rebounding travel and refining demand, OPEC+ supply discipline, and the February 2021 Texas freeze that shut in production.",
+     "drivers": [
+      "vaccine reflation",
+      "reopening demand",
+      "OPEC+ discipline",
+      "low-base snapback"
+     ]
+    },
+    "2021-06-15": {
+     "title": "Delta scare, OPEC+ supply hike",
+     "body": "Crude reversed as OPEC+ agreed in July 2021 to add back 400,000 b/d per month while the Delta variant sparked fresh global demand fears, dragging WTI from the mid-$70s toward the high-$60s. The pullback was a sentiment-driven repricing rather than a fundamental glut, with U.S. inventories still drawing.",
+     "drivers": [
+      "Delta demand scare",
+      "OPEC+ output increase",
+      "growth fears"
+     ]
+    },
+    "2021-08-19": {
+     "title": "Energy crisis, Russia oil spike",
+     "body": "A global energy crunch — tight supply, surging European gas, OPEC+ producing below target — pushed crude higher, then Russia's February 2022 invasion of Ukraine sent Brent above $120 and WTI to ~$127 by March. Sanctions risk, record LNG exports and chronic shale discipline starved the market; XLE was the top sector of 2022.",
+     "drivers": [
+      "Russia-Ukraine invasion",
+      "energy crisis",
+      "European natgas crunch",
+      "capex discipline + buybacks"
+     ]
+    },
+    "2022-06-08": {
+     "title": "Recession fears crush oil peak",
+     "body": "From the June 8 peak crude rolled over hard as aggressive Fed hikes stoked recession and demand-destruction fears, knocking ~$30/bbl off WTI by mid-July. Coordinated SPR releases — the largest ever — added supply and cooled prices, dragging energy equities down even as physical fundamentals stayed tight.",
+     "drivers": [
+      "recession fears",
+      "demand destruction",
+      "SPR releases",
+      "Fed hikes"
+     ]
+    },
+    "2022-07-14": {
+     "title": "Tight supply sparks rebound",
+     "body": "Energy bounced as the market refocused on tight supply: OPEC+ delivered only a token 100,000 b/d September hike, Russia throttled then shut Nord Stream gas, and the alliance's shortfall underscored the deficit. Resilient cash flows and buybacks supported XLE even as crude stayed choppy below its June highs.",
+     "drivers": [
+      "tight supply",
+      "token OPEC+ hike",
+      "Nord Stream cuts",
+      "buybacks"
+     ]
+    },
+    "2022-08-29": {
+     "title": "Strong dollar, hikes hit oil",
+     "body": "Energy gave back gains as oil slid on a soaring dollar, the most aggressive Fed tightening in decades, and global recession fears that overwhelmed tight supply. Continued SPR releases and softening Chinese demand under COVID lockdowns added pressure, pulling WTI toward the mid-$70s.",
+     "drivers": [
+      "strong dollar",
+      "Fed hikes",
+      "recession fears",
+      "SPR releases"
+     ]
+    },
+    "2022-09-26": {
+     "title": "OPEC+ 2mb/d cut, China hopes",
+     "body": "Energy rallied after OPEC+ announced its biggest cut since 2020 — a headline 2 million b/d reduction — to defend prices, putting a floor under crude. Hopes that China would reopen and unwind demand destruction added fuel, lifting WTI and powering a sharp XLE recovery into mid-November.",
+     "drivers": [
+      "OPEC+ 2mb/d cut",
+      "China reopening hopes",
+      "price defense"
+     ]
+    },
+    "2022-11-15": {
+     "title": "Demand worry, SVB banking crash",
+     "body": "Energy faded into early 2023 as weak-demand worries capped crude, then crashed in mid-March when the SVB collapse and Credit Suisse turmoil routed risk assets — WTI tumbled ~12% to near $66, its lowest since December 2021. The credit-instability shock, not a supply story, drove energy equities down.",
+     "drivers": [
+      "weak demand",
+      "SVB banking crisis",
+      "recession fears",
+      "credit shock"
+     ]
+    },
+    "2023-03-17": {
+     "title": "Range-bound crude, record payouts",
+     "body": "Energy ground higher over a long, choppy stretch as OPEC+ — led by Saudi voluntary cuts — defended a ~$70-90 Brent band against soft Chinese demand and rising non-OPEC supply. U.S. operators held capital discipline and majors returned record cash (Big Oil paid out ~$114bn in 2023), rewarding shareholders through a flat-tape oil market into late 2024.",
+     "drivers": [
+      "OPEC+ Saudi cuts",
+      "range-bound crude",
+      "capital discipline",
+      "record buybacks"
+     ]
+    },
+    "2024-11-22": {
+     "title": "Soft oil, OPEC+ delay, dollar",
+     "body": "Crude drifted in a narrow ~$73 Brent range as weak Chinese demand and a looming non-OPEC surplus capped prices, while OPEC+ delayed unwinding cuts again. A post-election surge in the dollar plus a hawkish December Fed cut pressured crude, and 'drill baby drill' added an oversupply overhang on energy equities.",
+     "drivers": [
+      "weak demand",
+      "OPEC+ delay",
+      "strong dollar",
+      "hawkish Fed"
+     ]
+    },
+    "2024-12-19": {
+     "title": "New-year crude rally lifts energy",
+     "body": "Oil rallied to start 2025, Brent jumping toward a five-month high above $80 on cold-weather demand, fresh Russia sanctions, China-stimulus hopes and inventory draws. Despite 'drill baby drill' rhetoric, producers held discipline, and the firmer tape supported XLE's dividends and buybacks into early April.",
+     "drivers": [
+      "winter demand",
+      "Russia sanctions",
+      "capital discipline",
+      "inventory draws"
+     ]
+    },
+    "2025-04-02": {
+     "title": "Liberation Day tariff oil crash",
+     "body": "Trump's April 2 'reciprocal tariff' shock triggered a global growth and demand scare that slammed crude, with WTI plunging toward $57-60 by April 8 — its lowest since 2021. The rout was amplified when OPEC+ stunned the market by tripling its planned May output hike, piling supply onto collapsing demand expectations.",
+     "drivers": [
+      "tariff shock",
+      "demand scare",
+      "OPEC+ accelerated unwind",
+      "WTI sub-$60"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Iran war Hormuz oil supershock",
+     "body": "From the tariff low, energy stormed higher as crude recovered through 2025 and then exploded in early 2026 when the Iran-Israel war erupted: Brent rocketed from ~$72 toward ~$120 by mid-March 2026 as disruption of the Strait of Hormuz threatened ~20% of world oil flows. The war-risk premium handed integrated oil and E&P names windfall cash flows that powered XLE's massive rally into late March (2026 = house view).",
+     "drivers": [
+      "Iran war",
+      "Hormuz risk premium",
+      "Brent ~$120",
+      "windfall cash flows"
+     ]
+    },
+    "2026-03-27": {
+     "title": "Ceasefire unwinds oil premium",
+     "body": "Energy rolled over as the war-risk premium drained out of crude: a mid-June 2026 ceasefire and hopes the Strait of Hormuz would fully reopen sent oil tumbling and WTI back below ~$70. With the 'oil tail' priced out and Middle East supply returning, XLE gave back its war-driven gains to the weakest sector RS rank (house view).",
+     "drivers": [
+      "ceasefire unwind",
+      "Hormuz reopening",
+      "risk-premium drain",
+      "rising supply"
+     ]
+    }
+   }
+  },
+  "xlf": {
+   "now": "Mid-cycle expanding, RS#5 (pos~51) — banks lean on deregulation, capital-markets revival, M&A reopening and stable NIM, though a 2026 hiking bias and credit-cost watch cap the upside.",
+   "legs": {
+    "2020-06-26": {
+     "title": "Reflation rally lifts banks",
+     "body": "Financials rode the post-COVID reopening: a steepening yield curve and rising 10-year yield widened net interest margins while reserve releases and resumed buybacks boosted EPS. Loan growth, stimulus and the no-recession reflation trade made banks a leading recovery sector into early 2022.",
+     "drivers": [
+      "steepening curve",
+      "NIM expansion",
+      "reserve releases",
+      "buybacks"
+     ]
+    },
+    "2022-01-12": {
+     "title": "Recession fear hits banks",
+     "body": "As the Fed pivoted hawkish into 9% CPI, banks sold off on hard-landing fears despite improving margins. Investors looked past higher NIM to peaking margins, slowing loan growth and rising credit-loss provisions, plus a capital-markets/IPO freeze that gutted investment-banking fees.",
+     "drivers": [
+      "recession fear",
+      "credit provisions",
+      "Fed hiking",
+      "IB fee drought"
+     ]
+    },
+    "2022-06-16": {
+     "title": "Oversold bear-market bounce",
+     "body": "Banks rebounded with the broad market as a softer inflation print and peak-hawkishness hopes sparked a summer relief rally. Higher rates kept NIM tailwinds intact, but the move was a bear-market bounce, not a credit all-clear.",
+     "drivers": [
+      "relief rally",
+      "NIM tailwind",
+      "peak-hawk hopes"
+     ]
+    },
+    "2022-08-16": {
+     "title": "Jackson Hole hawkish reset",
+     "body": "Powell's hawkish Jackson Hole message and a renewed yield surge ended the summer bounce. Recession and credit-cost fears returned as provisions and loan-loss reserves climbed to multi-year highs into year-end.",
+     "drivers": [
+      "hawkish Powell",
+      "yield surge",
+      "rising provisions"
+     ]
+    },
+    "2022-10-12": {
+     "title": "Peak-rate rally, earnings beats",
+     "body": "Banks rallied off the October low as cooling CPI and peak-Fed hopes lifted risk assets. Resilient NIM and better-than-feared Q3/Q4 earnings supported financials even as recession worries lingered.",
+     "drivers": [
+      "disinflation hopes",
+      "NIM resilience",
+      "earnings beats"
+     ]
+    },
+    "2023-02-07": {
+     "title": "SVB regional-bank crisis",
+     "body": "The collapse of Silicon Valley Bank and Signature in March 2023 triggered the worst bank panic since 2008, sparking deposit flight from regionals and contagion fears across XLF. Unrealized bond losses and funding stress crushed the sector before the Fed's BTFP and rescues stemmed the run.",
+     "drivers": [
+      "bank failures",
+      "deposit flight",
+      "unrealized losses",
+      "contagion"
+     ]
+    },
+    "2023-03-17": {
+     "title": "Crisis fades, deregulation trade",
+     "body": "Once contagion was contained, financials embarked on a long rally as deposits stabilized and NIM held up. The 2024 soft landing, the Fed's September cut, and the Trump-election deregulation/M&A 'bank trade' powered big banks and capital-markets names into early 2025.",
+     "drivers": [
+      "crisis contained",
+      "Trump deregulation",
+      "M&A revival",
+      "rate cuts"
+     ]
+    },
+    "2025-02-19": {
+     "title": "Tariff-crash risk-off",
+     "body": "Financials slid into the April reciprocal-tariff crash as recession and credit fears spiked alongside the broad market's record two-day loss. Banks, geared to growth and credit cycles, sold off hard before the April-8/9 tariff-pause low.",
+     "drivers": [
+      "tariff shock",
+      "recession fear",
+      "credit risk",
+      "risk-off"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Recovery, capital-markets boom",
+     "body": "Off the tariff-pause low, banks rallied on a deregulation agenda, a capital-markets revival, and a wave of megadeal M&A that revived investment-banking fees. Strong earnings and a friendlier capital backdrop kept financials leading into 2026.",
+     "drivers": [
+      "deregulation",
+      "capital markets",
+      "M&A megadeals",
+      "strong earnings"
+     ]
+    },
+    "2026-01-06": {
+     "title": "Oil shock, credit caution",
+     "body": "The Iran/Hormuz oil shock pushed CPI to ~4.2% and flipped the Fed to a hiking bias, lifting long yields and the dollar and pressuring risk. Financials cooled on renewed recession/credit-cost concerns despite healthy NIM, though deregulation and deal flow cushioned the pullback.",
+     "drivers": [
+      "oil shock",
+      "Fed hiking bias",
+      "credit caution",
+      "higher yields"
+     ]
+    }
+   }
+  },
+  "xlre": {
+   "now": "Topping, RS#3 (pos~81) — a rate-sensitive, late-cycle leader; 2026 oil-shock inflation, the Fed's hiking bias and higher long yields threaten the duration trade despite AI-datacenter demand.",
+   "legs": {
+    "2021-12-31": {
+     "title": "Rate-shock derating begins",
+     "body": "REITs led the 2022 decline as the Fed's hawkish turn against 9% CPI sent yields sharply higher, hammering long-duration real estate first. Rising discount rates compressed property valuations and made REIT dividend yields less competitive versus Treasuries.",
+     "drivers": [
+      "rising rates",
+      "duration hit",
+      "valuation compression"
+     ]
+    },
+    "2022-02-23": {
+     "title": "Oversold rate-pause bounce",
+     "body": "REITs bounced as yields briefly stabilized and inflation/rate fears paused, drawing buyers into beaten-down rate-sensitive names. The rebound was a counter-trend relief move within the broader 2022 hiking-driven downtrend.",
+     "drivers": [
+      "yield pause",
+      "relief rally",
+      "dip buying"
+     ]
+    },
+    "2022-04-20": {
+     "title": "Fastest hiking crushes duration",
+     "body": "As the Fed accelerated rate hikes and the 10-year surged, long-duration REITs sold off hard into the June low. Higher cap rates compressed property values and recession fears added to the de-rating.",
+     "drivers": [
+      "aggressive hiking",
+      "cap-rate rise",
+      "duration selloff"
+     ]
+    },
+    "2022-06-16": {
+     "title": "Peak-Fed summer relief",
+     "body": "REITs rallied with rates pulling back from the June peak on softer inflation hopes. Lower yields temporarily relieved the duration pressure, lifting rate-sensitive real estate off its lows.",
+     "drivers": [
+      "yield pullback",
+      "relief rally",
+      "duration relief"
+     ]
+    },
+    "2022-08-15": {
+     "title": "Jackson Hole yield surge",
+     "body": "Powell's hawkish Jackson Hole and a renewed climb in Treasury yields drove REITs to fresh lows. The near one-for-one inverse link between REITs and the 10-year deepened the drawdown into October.",
+     "drivers": [
+      "hawkish Powell",
+      "yield surge",
+      "rate sensitivity"
+     ]
+    },
+    "2022-10-14": {
+     "title": "Disinflation hope rebound",
+     "body": "REITs rallied off the October low as cooling CPI sparked peak-rate hopes and a pullback in yields. The duration-sensitive sector bounced sharply as discount-rate fears eased into early 2023.",
+     "drivers": [
+      "disinflation hopes",
+      "yield pullback",
+      "duration rebound"
+     ]
+    },
+    "2023-02-02": {
+     "title": "Yields grind to 2023 peak",
+     "body": "REITs slid through 2023 as Treasury yields ground higher toward the October-2023 peak, lifting real-estate debt costs. Office distress and work-from-home headlines weighed on sentiment even as office was a small index slice; the sector bottomed in late October.",
+     "drivers": [
+      "surging yields",
+      "debt costs",
+      "office distress",
+      "duration drag"
+     ]
+    },
+    "2023-10-25": {
+     "title": "Rate-cut pivot, datacenter boom",
+     "body": "REITs rallied off the yield peak as disinflation and the Fed's 2024 pivot lowered yields and revived the duration trade. AI-driven datacenter demand and resilient industrial/healthcare segments led, with the September-2024 cut and election-year optimism extending the recovery.",
+     "drivers": [
+      "rate-cut pivot",
+      "falling yields",
+      "AI datacenters",
+      "duration recovery"
+     ]
+    },
+    "2024-11-27": {
+     "title": "Yields rebound, tariff risk-off",
+     "body": "REITs faded as post-election yields backed up and the 10-year returned toward mid-2024 highs, undoing the duration tailwind. The April-2025 reciprocal-tariff crash then dragged rate-sensitive real estate to its April-8 low.",
+     "drivers": [
+      "yields rebound",
+      "duration headwind",
+      "tariff crash"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Recovery, then oil-shock cap",
+     "body": "REITs recovered off the tariff-pause low on easing rates and durable AI-datacenter and industrial demand. By 2026 the Iran/Hormuz oil shock, ~4.2% CPI, a Fed hiking bias and higher long yields capped the rally, leaving the rate-sensitive sector topping after a strong run.",
+     "drivers": [
+      "AI datacenters",
+      "rate relief",
+      "oil-shock inflation",
+      "topping"
+     ]
+    }
+   }
+  },
+  "xli": {
+   "now": "Trending up (RS#2 leader) — reshoring, defense, and AI-power/datacenter electrification capex keep industrials expanding while ISM firms off the lows.",
+   "legs": {
+    "2022-01-04": {
+     "title": "Fed liftoff sinks cyclicals",
+     "body": "Industrials de-rated hard as the Fed pivoted to aggressive hiking and recession fears hit deeply cyclical earnings; ISM Manufacturing rolled over as new orders softened. Caterpillar warned in late April that China COVID lockdowns would crimp demand, and Russia-Ukraine spiked input/energy costs while a strong dollar threatened the multinational revenue base.",
+     "drivers": [
+      "Fed hiking",
+      "ISM rolling over",
+      "recession fears",
+      "China lockdowns"
+     ]
+    },
+    "2022-06-17": {
+     "title": "Peak-inflation cyclical bounce",
+     "body": "Industrials rallied off the June low on 'peak inflation' optimism and Fed-pivot hopes, which lift rate-sensitive cyclicals first. July industrial production rose and ISM held in expansion, while aerospace/defense added support as Boeing deliveries recovered and the Ukraine war underpinned a multi-year defense tailwind.",
+     "drivers": [
+      "peak-inflation hope",
+      "Fed pivot bets",
+      "resilient production",
+      "defense tailwind"
+     ]
+    },
+    "2022-08-16": {
+     "title": "Jackson Hole, FedEx warning",
+     "body": "The bounce reversed as Powell's hawkish Jackson Hole killed pivot hopes and a hot CPI drove the Fed to another 75bp hike. The sector-specific gut-punch was FedEx pulling guidance and warning of a 'worldwide recession' — a ~21% one-day crash that hammered transports and signaled collapsing global freight.",
+     "drivers": [
+      "Jackson Hole hawkish",
+      "hot CPI",
+      "FedEx recession warning",
+      "strong dollar"
+     ]
+    },
+    "2022-09-30": {
+     "title": "Soft landing, defense, electrification",
+     "body": "XLI rode a soft-landing macro and a broad capex super-cycle: aerospace recovered hard (GE Aerospace, RTX) on record backlogs and rising defense budgets, while reshoring tailwinds from CHIPS/IIJA lifted machinery (Caterpillar, Deere) and electrical-equipment names tied to early AI/datacenter electrification. The Fed's first cuts (Sep 2024) plus the Nov election sparked a cyclical 'Trump trade.'",
+     "drivers": [
+      "aerospace/defense backlogs",
+      "reshoring + CHIPS/IIJA capex",
+      "Fed cuts begin",
+      "Trump-trade rotation"
+     ]
+    },
+    "2024-11-29": {
+     "title": "Reciprocal tariffs gut supply chains",
+     "body": "Trump's April 2025 'reciprocal' tariffs cratered industrials into an April 8 low, with big China-exporting cyclicals leading the Dow down — Boeing fell ~9% and Caterpillar ~6% in two days. Industrials' globalized supply chains and machinery/aerospace input costs made the sector a clear casualty.",
+     "drivers": [
+      "April reciprocal tariffs",
+      "supply-chain cost shock",
+      "Boeing/Caterpillar hit",
+      "growth fears"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Industrials lead the rebound",
+     "body": "Off the April low industrials surged as a market leader, powered by aerospace/defense (GE Aerospace, RTX) and the AI-power/datacenter electrification capex boom — GE Vernova and Eaton riding a transformer/switchgear shortage — alongside bonus-depreciation reigniting machinery orders and reshoring. The late-cycle leg held up through the 2026 Iran/Hormuz oil shock on durable defense and AI-infrastructure demand.",
+     "drivers": [
+      "aerospace/defense leadership",
+      "AI-power electrification capex",
+      "reshoring",
+      "resilient through Hormuz shock"
+     ]
+    }
+   }
+  },
+  "xlb": {
+   "now": "Rolling over (RS#7) — a strong dollar from the Hormuz oil shock plus soft China demand sap the industrial-metals bid even as structural copper tightness lingers.",
+   "legs": {
+    "2022-04-20": {
+     "title": "Copper crashes on recession, China",
+     "body": "Materials got hammered as copper logged its biggest quarterly decline since 2011, slumping below $7,000/tonne, driven by China's COVID lockdowns gutting demand, a strong dollar making metals dearer, and Fed hiking stoking recession fears. Miners led losses (Freeport) while chemicals (Dow, LyondellBasell) were squeezed by soaring Russia-Ukraine energy and feedstock costs.",
+     "drivers": [
+      "copper crash",
+      "China lockdowns",
+      "strong dollar",
+      "recession fears"
+     ]
+    },
+    "2022-07-14": {
+     "title": "Peak-inflation rebound",
+     "body": "Materials snapped back as a softer inflation read and Fed-pivot hopes pushed the dollar off its highs, letting copper and beaten-down metals rebound with the summer rally. Deeply oversold mining and chemicals names bounced on the easing-recession narrative and a weaker greenback that relieves dollar-priced commodities.",
+     "drivers": [
+      "peak-inflation hope",
+      "Fed pivot bets",
+      "dollar pullback",
+      "oversold bounce"
+     ]
+    },
+    "2022-08-16": {
+     "title": "Jackson Hole kills the bounce",
+     "body": "Powell's hawkish Jackson Hole sent the dollar index surging toward a 20-year high, a direct headwind that pushed copper back down and dragged gold below $1,700, crushing miners like Freeport and Newmont. Renewed recession fears plus China property/lockdown weakness battered the materials complex into a higher-for-longer regime.",
+     "drivers": [
+      "Jackson Hole hawkish",
+      "dollar 20-year high",
+      "copper/gold drop",
+      "recession fears"
+     ]
+    },
+    "2022-09-26": {
+     "title": "Soft landing lifts metals",
+     "body": "XLB rallied as a soft-landing economy, falling rates, and a weakening dollar powered copper toward record highs and gold to all-time highs. The Fed's jumbo 50bp cut in September 2024 plus China's ~$560B stimulus supercharged industrial-metals demand hopes, lifting miners and the broad complex; tight copper supply gave chemicals room to re-rate.",
+     "drivers": [
+      "Fed cuts begin",
+      "copper/gold record highs",
+      "China stimulus",
+      "soft landing"
+     ]
+    },
+    "2024-10-18": {
+     "title": "Tariffs and dollar crush materials",
+     "body": "XLB fell as Trump's November win sent the dollar to a multi-year high, hammering dollar-priced commodities — copper plunged on the result. Materials sat in the tariff bullseye: 25% steel/aluminum duties hit in March 2025 and the April reciprocal tariffs triggered a crash bottoming around April 8, compounding an FX squeeze on chemicals.",
+     "drivers": [
+      "Trump tariff shock",
+      "strong dollar",
+      "steel/aluminum duties",
+      "April tariff crash"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Metals roar back, then rollover",
+     "body": "XLB rebounded off the tariff-crash low as copper ran ~40% higher into record territory on AI/datacenter demand and tight mine supply, while gold surged and peaked near record levels in late January 2026. By early 2026 the sector rolled over as the Iran/Hormuz oil shock firmed the dollar again and softening Chinese demand sapped the industrial-metals bid even as structural copper tightness lingered.",
+     "drivers": [
+      "post-tariff recovery",
+      "copper/gold record highs",
+      "Hormuz strong dollar",
+      "China demand soft"
+     ]
+    }
+   }
+  },
+  "xlv": {
+   "now": "EXPANDING (RS #4) — medical/defensive sector firming as the 2026 oil-shock/late-cycle rotation favors quality defensives; health care is bid as tech tops, though drug-pricing (MFN/RFK Jr.) and pharma-tariff policy remain overhangs.",
+   "legs": {
+    "2022-04-08": {
+     "title": "Rate-hike de-rating hits biotech",
+     "body": "The Fed's aggressive 2022 hiking cycle and the June 9.1% CPI shock crushed long-duration health care — biotech (XBI) sank to multi-year lows as rising real rates discounted distant cash flows. Large-cap pharma/devices cushioned XLV versus the broad selloff, but the sector still fell ~16% into the mid-June low.",
+     "drivers": [
+      "Fed rate hikes",
+      "biotech de-rating",
+      "9.1% CPI shock"
+     ]
+    },
+    "2022-06-17": {
+     "title": "Defensive bid and GLP-1 boom",
+     "body": "Off the June 2022 low, health care rallied as a defensive safe-haven through the bear and then re-rated on the GLP-1/obesity-drug super-cycle — Eli Lilly (tirzepatide) and Novo Nordisk drove leadership. Steady earnings, dividends and falling rate expectations into 2024 carried XLV up ~36% to its September 2024 peak.",
+     "drivers": [
+      "defensive safe-haven",
+      "GLP-1 obesity drugs",
+      "Lilly/Novo leadership"
+     ]
+    },
+    "2024-09-16": {
+     "title": "Policy and pricing overhang",
+     "body": "Health care badly lagged the AI-led bull and then sold off as election/policy risk crystallized — RFK Jr. at HHS, the May 2025 Most-Favored-Nation drug-pricing order, and threatened pharma tariffs pushed pharma valuations to historic lows. GLP-1 enthusiasm cooled on pricing/competition fears, dragging XLV down ~17%.",
+     "drivers": [
+      "RFK Jr. / MAHA",
+      "MFN drug pricing",
+      "pharma tariffs"
+     ]
+    },
+    "2025-05-14": {
+     "title": "Defensive rotation rebound",
+     "body": "From the post-tariff washout, health care recovered as cheap valuations and a late-2025 risk-off rotation into defensives lifted the sector; clarity on drug-pricing deals removed some tail risk. The 2026 oil-shock/late-cycle backdrop further favored quality defensives, carrying XLV up ~27%.",
+     "drivers": [
+      "defensive rotation",
+      "cheap valuations",
+      "pricing-deal clarity"
+     ]
+    }
+   }
+  },
+  "xlp": {
+   "now": "ROLLING OVER (RS #8) — the 2025 defensive bid is fading at the margin as staples trade at rich valuations and momentum rotates; the sector is losing relative leadership even as it stays a recession hedge.",
+   "legs": {
+    "2022-04-20": {
+     "title": "Inflation squeezes staples margins",
+     "body": "Even as a defensive sector, staples fell ~16% in the 2022 bear as 9% CPI input-cost inflation and rising rates compressed multiples and pressured margins before pricing fully caught up. XLP outperformed the broad market on a relative basis but could not escape the de-rating into the October 2022 low.",
+     "drivers": [
+      "input-cost inflation",
+      "margin pressure",
+      "rate-driven de-rating"
+     ]
+    },
+    "2022-10-07": {
+     "title": "Defensive haven, pricing power",
+     "body": "Off the October 2022 low, staples rallied on their classic risk-off appeal — steady demand, pricing power and reliable dividends — outperforming during volatility spikes while lagging in the AI-led growth rallies of 2023-24. The bid intensified into early 2026 as tariff and oil-shock uncertainty drove a flight-to-safety rotation, lifting XLP ~48% to its February 2026 peak.",
+     "drivers": [
+      "defensive safe-haven",
+      "pricing power",
+      "flight-to-safety rotation"
+     ]
+    }
+   }
+  },
+  "xlu": {
+   "now": "BOTTOMING (RS #9) — utilities pulled back hard after the multi-year AI-power re-rating, pressured by the 2026 rate-hike bias/higher yields hitting the bond-proxy, but the structural AI-datacenter electricity-demand thesis underpins a base.",
+   "legs": {
+    "2022-04-08": {
+     "title": "Bond-proxy hit by rates",
+     "body": "Utilities are classic bond proxies, so the Fed's hiking campaign and surging Treasury yields pressured the rate-sensitive sector's multiples in the spring 2022 selloff. High debt loads and dividend yields losing their edge versus rising bond yields drove XLU down ~16% into the mid-June low.",
+     "drivers": [
+      "bond-proxy",
+      "rising rates",
+      "Fed hikes"
+     ]
+    },
+    "2022-06-17": {
+     "title": "Recession safe-haven rally",
+     "body": "As recession fears mounted in summer 2022, utilities rallied ~21% as a defensive safe-haven, outperforming the broad market with steady cash flows and dividends. The sector peaked in mid-September as the flight-to-safety bid and a brief lull in yields lifted valuations.",
+     "drivers": [
+      "defensive safe-haven",
+      "recession fear",
+      "yield lull"
+     ]
+    },
+    "2022-09-12": {
+     "title": "Yield spike crushes utilities",
+     "body": "A sharp surge in Treasury yields past 4% into early October repriced the bond proxy violently — with safe bond yields exceeding utility dividend yields, income investors rotated away. XLU fell ~21% in a month, one of its worst stretches of the cycle, in a textbook rate-sensitive selloff.",
+     "drivers": [
+      "10Y yield >4%",
+      "bond-proxy repricing",
+      "dividend-yield disadvantage"
+     ]
+    },
+    "2022-10-12": {
+     "title": "Rate-relief bounce",
+     "body": "When yields pulled back from their October peak and the broad market rallied off the 2022 low, utilities bounced ~18% on rate relief and renewed defensive demand. The move tracked the inverse path of the 10-year yield, confirming the sector's rate-driven character.",
+     "drivers": [
+      "yield pullback",
+      "rate relief",
+      "defensive demand"
+     ]
+    },
+    "2022-12-13": {
+     "title": "Higher-for-longer drags bond proxy",
+     "body": "Through 2023 the 'higher-for-longer' Fed and rising long-end yields steadily pressured the rate-sensitive sector, which lagged badly as cash and bonds offered competitive yields. XLU drifted down ~20% to a bottom in early October 2023 as yields peaked near cycle highs.",
+     "drivers": [
+      "higher-for-longer",
+      "rising long yields",
+      "bond competition"
+     ]
+    },
+    "2023-10-02": {
+     "title": "AI-datacenter power super-cycle",
+     "body": "From the October 2023 low, utilities staged a historic re-rating as the AI-datacenter electricity-demand super-cycle reframed the sector from sleepy bond proxy to a structural growth story — power names (Vistra, Constellation, NextEra) led as hyperscaler load forecasts surged after years of flat demand. With peaking-then-falling rate expectations adding tailwind, XLU rallied ~82% to its February 2026 peak.",
+     "drivers": [
+      "AI-datacenter power demand",
+      "electricity super-cycle",
+      "Vistra/Constellation/NextEra"
+     ]
+    }
+   }
+  },
+  "xlc": {
+   "now": "BOTTOMING (RS #10, deeply washed out) — communication services is the most oversold sector, hit by the AI-capex/ad-cycle wobble and the 2026 risk-off, but Meta/Alphabet mega-cap dominance leaves it positioned for a turn off a washed-out base.",
+   "legs": {
+    "2021-09-01": {
+     "title": "Worst sector: ad recession",
+     "body": "Communication services was the worst-hit S&P sector of 2022 as a digital ad recession gutted Meta and Alphabet, Netflix cratered ~36% in a single day on its first subscriber loss, and rate-driven de-rating crushed the streaming/mega-cap-heavy basket. XLC fell ~47% into the November 2022 low.",
+     "drivers": [
+      "ad recession",
+      "Meta/Netflix collapse",
+      "rate de-rating"
+     ]
+    },
+    "2022-11-03": {
+     "title": "AI mega-cap rebound",
+     "body": "Off the 2022 low, XLC staged a powerful recovery as the ad market healed and the genAI boom lifted its Meta/Alphabet-dominated basket — XLC was the best-performing sector of 2024, with Netflix up ~83% on ad-tier growth and Meta up ~65% on AI-powered ad targeting. The rally extended into February 2025, compounding ~137%.",
+     "drivers": [
+      "AI/genAI boom",
+      "ad recovery",
+      "Meta/Alphabet/Netflix"
+     ]
+    },
+    "2025-02-14": {
+     "title": "DeepSeek and tariff shock",
+     "body": "The late-January DeepSeek scare questioned AI-capex ROI and the April reciprocal-tariff crash hammered mega-cap tech-adjacent names, pulling the concentrated XLC basket down ~18% into the April 8 low. Concentration in Meta and Alphabet amplified the drawdown.",
+     "drivers": [
+      "DeepSeek AI scare",
+      "April tariff crash",
+      "mega-cap concentration"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Post-tariff AI recovery",
+     "body": "From the April low, XLC rebounded ~41% as the tariff pause sparked a sharp relief rally and AI optimism reasserted — Alphabet re-rated on TPU/AI monetization and Meta on ad strength, carrying the sector to a late-January 2026 high. The advance faded as the 2026 oil shock and AI-capex doubts triggered a tech-led pullback.",
+     "drivers": [
+      "tariff-pause relief",
+      "AI monetization",
+      "Alphabet/Meta strength"
+     ]
+    }
+   }
+  },
+  "xly": {
+   "now": "XLY is bottoming as of mid-2026 (RS rank #6, cycle position ~31, below its 200-day): the consumer is squeezed by oil-driven inflation (CPI 4.2%, gasoline surging from the Iran/Hormuz shock) and a hawkish Fed keeping rates high into big-ticket discretionary demand. With Amazon and Tesla ~a third of the ETF, the sector is a leveraged bet on those two stabilizing alongside relief in pump prices and rates.",
+   "legs": {
+    "2021-11-19": {
+     "title": "Fed-hike shock de-rates Amazon, Tesla",
+     "body": "With CPI heading toward 9% and the Fed pivoting to aggressive hikes, the long-duration growth names that dominate XLY de-rated hard, led by Amazon and Tesla. Surging inflation and the end of stimulus squeezed real wages and big-ticket demand, while rising mortgage rates hit homebuilders and Home Depot.",
+     "drivers": [
+      "Fed hikes",
+      "inflation squeeze",
+      "Amazon/Tesla de-rate",
+      "rate-sensitive housing"
+     ]
+    },
+    "2022-03-07": {
+     "title": "Bear-market bounce on rate clarity",
+     "body": "After the Nasdaq's March 14 low, beaten-down discretionary mega-caps like Amazon and Tesla snapped back as the Fed's first hike removed near-term uncertainty and short-covering fueled a ~16% bounce. The relief was narrow and rate-sensitive rather than a fundamental improvement in the consumer.",
+     "drivers": [
+      "bear-market rally",
+      "Fed clarity",
+      "short covering",
+      "Amazon/Tesla bounce"
+     ]
+    },
+    "2022-03-29": {
+     "title": "Retail margin shock, Walmart/Target miss",
+     "body": "Walmart and Target delivered rare earnings misses in May as freight, payroll and inventory costs crushed margins and shoppers pulled back on big-ticket goods, sparking a brutal discretionary-wide selloff. Compounding 75bp Fed hikes and recession fear hammered Amazon and the homebuilders as real wages kept falling.",
+     "drivers": [
+      "retail margin collapse",
+      "Walmart/Target miss",
+      "75bp hikes",
+      "recession fear"
+     ]
+    },
+    "2022-05-24": {
+     "title": "Oversold relief rally",
+     "body": "After a historic losing streak, deeply oversold discretionary names bounced as retailers' results were reframed as execution problems rather than a broken consumer. The rebound in Amazon and beaten-down retail was a technical relief snap, not a fundamental turn.",
+     "drivers": [
+      "oversold bounce",
+      "execution-not-consumer narrative",
+      "Amazon rebound"
+     ]
+    },
+    "2022-06-02": {
+     "title": "Hot CPI, 75bp hike pummel sector",
+     "body": "A scorching 8.6% CPI print and the Fed's first 75bp hike since 1994 sent rate-sensitive discretionary names sharply lower into the mid-June bottom. Amazon, Tesla and the homebuilders led the slide as recession odds and mortgage rates spiked.",
+     "drivers": [
+      "hot CPI",
+      "75bp hike",
+      "recession fear",
+      "Amazon/Tesla weak"
+     ]
+    },
+    "2022-06-16": {
+     "title": "Peak-inflation summer rally",
+     "body": "From the June low, hopes that inflation had peaked and the Fed might soon pivot drove discretionary up over 18% in July alone, the strongest sector, as Amazon and Tesla led rate-sensitive cyclicals higher. Amazon's Q2 report and cooling July CPI fed the optimism before Powell's hawkish Jackson Hole ended it.",
+     "drivers": [
+      "peak-inflation hopes",
+      "Fed-pivot bets",
+      "Amazon rebound",
+      "cyclical bounce"
+     ]
+    },
+    "2022-08-16": {
+     "title": "Jackson Hole, Tesla collapse",
+     "body": "Powell's hawkish Jackson Hole killed the pivot trade and rates kept climbing, but the bigger drag was Tesla's record collapse into year-end as Musk dumped billions in shares for Twitter, demand softened and Tesla cut prices. Amazon's slowing retail growth and a strained consumer carried XLY to its December low.",
+     "drivers": [
+      "Jackson Hole hawkish",
+      "Tesla collapse",
+      "Musk/Twitter sales",
+      "weak consumer"
+     ]
+    },
+    "2022-12-28": {
+     "title": "Amazon, Tesla mega-cap recovery",
+     "body": "Disinflation, a resilient consumer and the AI-driven mega-cap rebound powered a ~40% rally led by Amazon and Tesla, the two names that drive the ETF. Better-than-feared retail earnings and falling inflation expectations revived big-ticket and online discretionary demand into the July 2023 peak.",
+     "drivers": [
+      "Amazon/Tesla recovery",
+      "resilient consumer",
+      "disinflation",
+      "AI mega-cap rally"
+     ]
+    },
+    "2023-07-19": {
+     "title": "Yield spike to 5% hits valuations",
+     "body": "The 10-year Treasury surging toward 5%, its highest since 2007, on stronger data and deficit worries crushed long-duration discretionary valuations. Amazon, Tesla and rate-sensitive homebuilders led the slide as higher borrowing costs threatened auto and big-ticket spending.",
+     "drivers": [
+      "10-year toward 5%",
+      "higher-for-longer",
+      "Amazon/Tesla pressure",
+      "housing/autos hit"
+     ]
+    },
+    "2023-10-26": {
+     "title": "Rate cuts, resilient consumer, Tesla",
+     "body": "Falling yields, the Fed's September 2024 cut and a remarkably resilient consumer drove a ~63% melt-up, with discretionary surging in 2024 on record holiday spending. Tesla exploded higher after Trump's November win on Musk-administration optimism, and Amazon's strength carried XLY to its December 17, 2024 record peak.",
+     "drivers": [
+      "Fed rate cuts",
+      "resilient consumer",
+      "Tesla post-election surge",
+      "strong holiday spending"
+     ]
+    },
+    "2024-12-17": {
+     "title": "DeepSeek then tariff crash",
+     "body": "The peak unwound as January's DeepSeek shock hit AI/mega-cap sentiment and Amazon, then April's reciprocal-tariff announcement crushed import-heavy retail and slapped 25% levies on autos and parts. Tesla fell far from its post-election high and import-reliant discretionary names cratered into the April 8 low.",
+     "drivers": [
+      "DeepSeek shock",
+      "reciprocal tariffs",
+      "auto/import tariffs",
+      "Tesla/Amazon decline"
+     ]
+    },
+    "2025-04-08": {
+     "title": "Tariff-pause recovery",
+     "body": "Trump's 90-day tariff pause sparked a furious rebound, and a still-resilient, spending consumer plus AI euphoria drove discretionary higher through 2025 into early 2026. Amazon and Tesla recovered as recession fears faded and big-ticket demand held up despite lingering tariff costs.",
+     "drivers": [
+      "tariff pause",
+      "resilient consumer",
+      "Amazon/Tesla rebound",
+      "AI euphoria"
+     ]
+    },
+    "2026-01-12": {
+     "title": "Oil shock, hawkish Fed squeeze consumer",
+     "body": "The Iran/Strait-of-Hormuz oil shock sent gas prices and CPI toward 4.2%, squeezing real wages and discretionary spending just as a hawkish Fed leaned toward hikes. Higher rates and energy-driven inflation hit the rate-sensitive, big-ticket parts of XLY and pressured Amazon and Tesla.",
+     "drivers": [
+      "oil shock",
+      "gas-price squeeze",
+      "hawkish Fed",
+      "weak consumer"
+     ]
+    },
+    "2026-03-30": {
+     "title": "Ceasefire, falling-oil relief bounce",
+     "body": "A mid-June Iran ceasefire and reopening of the Strait of Hormuz pulled oil back toward $70, easing the pump-price squeeze and sparking a relief rally in beaten-down discretionary. Amazon and Tesla led the bounce, though a still-hawkish Fed and below-trend positioning keep the recovery tentative.",
+     "drivers": [
+      "Iran ceasefire",
+      "oil relief",
+      "easing gas squeeze",
+      "Amazon/Tesla bounce"
+     ]
+    }
+   }
   }
+ }
 }
