@@ -34,7 +34,10 @@ _STAGE_RANK = {"PRECIPICE": 0, "BROADENING": 1, "RE-RATING": 2, "GLUT-RISK": 3,
                "WATCH": 4, "UNKNOWN": 5}
 
 
-def _stage(bn: dict | None, rv: dict | None) -> tuple[str, str]:
+GLUT_BANDS = {"GLUT_FORMING", "GLUT"}
+
+
+def _stage(bn: dict | None, rv: dict | None, glut_band: str | None = None) -> tuple[str, str]:
     """Return (stage, rationale). Honest about missing tiers."""
     band = (bn or {}).get("band")
     tight = band in TIGHT_BANDS
@@ -47,9 +50,15 @@ def _stage(bn: dict | None, rv: dict | None) -> tuple[str, str]:
     positive = breadth is not None and breadth > 0
     broad_hi = breadth is not None and breadth > BROAD_HI
     rv_known = rv is not None and breadth is not None
+    glut_on = glut_band in GLUT_BANDS
 
-    if not bn_known and not rv_known:
+    if not bn_known and not rv_known and not glut_on:
         return "UNKNOWN", "no bottleneck or revision data for this theme"
+    # exit-risk takes precedence: supply catching up while estimates are still elevated is
+    # the moment to trim, regardless of how tight supply WAS
+    if glut_on and (positive or broad_hi):
+        return "GLUT-RISK", (f"glut {glut_band.lower().replace('_', ' ')} (supply catching up) "
+                             "while estimates still high — trim / exit clock")
     if not bn_known:
         # revisions only — can flag late-ness, cannot confirm the durable thesis
         if broad_hi:
@@ -111,9 +120,10 @@ def _entry(stage: str, disloc: dict | None) -> tuple[bool, str]:
 def compute_foresight_cascade(bottleneck: dict | None = None,
                               revisions: dict | None = None,
                               demand: dict | None = None,
+                              glut: dict | None = None,
                               write_ledger: bool = True) -> dict | None:
-    """Combine T1 (bottleneck) x T2 (demand) x T4 (revisions) into a per-theme stage +
-    entry overlay. Computes any input not supplied."""
+    """Combine T1 (bottleneck) x T2 (demand) x T4 (revisions) x exit-risk (glut) into a
+    per-theme stage + entry overlay. Computes any input not supplied."""
     if bottleneck is None:
         try:
             from engine.bottleneck import compute_bottleneck
@@ -135,10 +145,18 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: demand_capex failed: %s", e)
             demand = None
+    if glut is None:
+        try:
+            from engine.glut_watch import compute_glut_watch
+            glut = compute_glut_watch(demand=demand, write_ledger=False)
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: glut_watch failed: %s", e)
+            glut = None
 
     bn_themes = (bottleneck or {}).get("themes") or {}
     rv_themes = (revisions or {}).get("themes") or {}
     dm_themes = (demand or {}).get("themes") or {}
+    gl_themes = (glut or {}).get("themes") or {}
     keys = set(bn_themes) | set(rv_themes) | set(dm_themes)
     if not keys:
         return None
@@ -146,14 +164,15 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
 
     rows = []
     for k in keys:
-        bn, rv, dm = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k)
-        stage, rationale = _stage(bn, rv)
+        bn, rv, dm, gl = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k), gl_themes.get(k)
+        gband = (gl or {}).get("band")
+        stage, rationale = _stage(bn, rv, gband)
         # demand is a LEADING confirmation/conviction modifier on the rationale, not a
-        # stage-changer (the stage is bottleneck x revision; demand reinforces or cautions)
+        # stage-changer (the stage is bottleneck x revision x exit-risk; demand reinforces)
         dband = (dm or {}).get("demand_band")
         if dm and stage in THESIS_STAGES and dband in ("ACCELERATING", "STEADY"):
             rationale += f" · customer capex {dband.lower()} (+{(dm.get('capex_yoy') or 0):.0f}% YoY) confirms demand"
-        elif dm and dband in ("COOLING", "CONTRACTING"):
+        elif dm and dband in ("COOLING", "CONTRACTING") and stage != "GLUT-RISK":
             rationale += f" · CAUTION: customer capex {dband.lower()}"
         entry_ready, entry_note = _entry(stage, disloc)
         rows.append({
@@ -173,6 +192,8 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
             "revision_level": (rv or {}).get("level_state"),
             "broadening_state": (rv or {}).get("broadening_state"),
             "est_drift_90d": (rv or {}).get("est_drift_90d"),
+            "glut_band": gband,
+            "glut_score": (gl or {}).get("glut_score"),
         })
     # rank by edge remaining (stage), then surface AI-capex beneficiaries, then by the
     # sharpest physical/estimate read available (tightness if known, else revision breadth)

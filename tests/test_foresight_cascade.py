@@ -75,8 +75,21 @@ def test_demand_confirms_in_rationale():
     demand = {"themes": {"a": {"name": "A", "demand_band": "ACCELERATING",
                                "capex_yoy": 69.0, "strength": "direct"}}}
     out = fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions,
-                                       demand=demand, write_ledger=False)
+                                       demand=demand, glut={"themes": {}}, write_ledger=False)
     r = out["themes"][0]
     assert r["stage"] == "PRECIPICE"
     assert r["demand_band"] == "ACCELERATING"
     assert "capex" in r["rationale"].lower()
+
+
+def test_glut_overrides_to_exit_risk():
+    # a forming glut while estimates are still broad -> GLUT-RISK (exit clock) takes precedence
+    bottleneck = {"themes": {"a": {"name": "A", "band": "TIGHT", "tightness": 0.9}}}
+    revisions = {"themes": {"a": {"name": "A", "breadth": 0.8, "level_state": "POSITIVE"}}}
+    glut = {"themes": {"a": {"name": "A", "band": "GLUT_FORMING", "glut_score": 0.8}}}
+    out = fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions,
+                                       demand={"themes": {}}, glut=glut, write_ledger=False)
+    r = out["themes"][0]
+    assert r["stage"] == "GLUT-RISK"
+    assert r["glut_band"] == "GLUT_FORMING"
+    assert "exit clock" in r["rationale"]
