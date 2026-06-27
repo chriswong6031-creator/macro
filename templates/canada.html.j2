@@ -294,10 +294,10 @@
 {% endif %}{# /macro-only sections #}
 
 <!-- ===== Standout stocks (alpha-led) — the TSX Stock Dashboard headline ===== -->
-{% if mode == 'stocks' and setups and setups.buy %}
+{% if mode == 'stocks' and setups %}
 <div class="panel">
   <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
-    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('of', '/') }} {{ setups.eligible }} {{ t('cleared the +0.5 α floor · each card carries the unified Conviction profile (cycle state caps the verdict)', '只通过 +0.5 α 门槛 · 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
+    {% if setups.eligible is defined %}<span class="muted small" style="font-weight:400; text-transform:none; letter-spacing:0">{{ setups.buy|length }} {{ t('of', '/') }} {{ setups.eligible }} {{ t('endorsed by the validated MACD-RSI × StochRSI buy gate · each card carries the unified Conviction profile (cycle state caps the verdict)', '通过经验证的 MACD-RSI × StochRSI 买入门槛 · 每张卡片附带统一确信度画像（周期状态会封顶结论）') }}</span>{% endif %}
     {{ help('Large-cap TSX names ranked by the VALIDATED sector-neutral residual-momentum leg (α, the positive-IC selection leg), with the cycle entry shown as timing context. Alpha-led like the US (Canada is momentum-persistent). Each card then carries the unified Conviction profile: four transparent axes (selection / entry / tailwind / quality) and one honest verdict. The price-cycle state is a HARD modifier — a name in a downtrend or topping can never read \'Buy\', it reads \'strong name, wrong tape\' — so this card and the stock\'s own page never disagree. The 0-100 score is a within-market percentile DISPLAY skin (not a probability). On Canada the selection leg is weak positive-IC CONTEXT and the axis weights are an unvalidated prior — the trust badge says so. Context, not personalized advice.', '按已验证的板块中性残差动量腿（α，正 IC 选股腿）排名的大盘 TSX 个股，并以周期入场作为时机背景。与美国一样采用 α 主导（加拿大动量具持续性）。每张卡片再附带统一确信度画像：四条透明维度（选股／入场／顺风／质量）与一个诚实结论。价格周期状态是硬性修正项——处于下行或做顶的个股永远不会显示"买入"，而显示"强势但趋势不利"——因此该卡片与个股自身页面永不矛盾。0-100 分是市场内百分位的展示皮肤（非概率）。在加拿大，选股腿为弱正 IC 背景，维度权重为未经验证的先验——信任徽标已注明。仅作背景，非个性化建议。') }}
   </h2>
   <div class="cards" data-showmore="12">
@@ -308,6 +308,7 @@
         <a href="canada_stock.html#{{ s.ticker }}"><b>{{ s.name or s.ticker }}</b></a>
         <span class="muted small">{{ s.ticker }}</span>
         <span style="flex:1"></span>
+        {% set sig = s.signal %}{% include "_sig_badge.html.j2" %}
         {% if s.label %}<span class="lad {{ 'up' if s.dir=='up' else ('down' if s.dir=='down' else 'flat') }}">{{ td(s.label) }}</span>{% endif %}
       </div>
       <div class="row small muted" style="gap:10px; margin:5px 0">
@@ -336,6 +337,15 @@
     </div>
     {% endfor %}
   </div>
+  {% if not setups.buy %}
+  <p class="nb-watchnote"><span class="l-en">No TSX name currently clears the validated MACD-RSI × StochRSI buy gate — leaders are on the watch list, waiting for an entry.</span><span class="l-zh">目前没有 TSX 个股通过经验证的 MACD-RSI × StochRSI 买入门槛——领涨股在观察列表上，等待入场信号。</span></p>
+  {% endif %}
+  {% if setups.coverage and setups.coverage.scored is defined and setups.coverage.eligible is defined %}
+  {% set _noSignal = setups.coverage.scored - setups.coverage.eligible %}
+  {% if _noSignal > 0 %}
+  <p class="nb-watchnote"><span class="l-en">{{ _noSignal }} of {{ setups.coverage.scored }} scored names had no live buy signal — they sit on the watch list, surfaced honestly, never sold as buys.</span><span class="l-zh">{{ setups.coverage.scored }} 只入选评分个股中有 {{ _noSignal }} 只没有有效买入信号——它们留在观察列表上，如实展示，绝不当作买入推荐。</span></p>
+  {% endif %}
+  {% endif %}
   <p class="caveat" style="margin-top:8px">{{ t('Residual-momentum construction is shared with the validated US/China engines; the Canada-specific axis weights are HK-mirrored priors pending Phase-0 validation. The Conviction composite is displayed context, never the shipped sort key — the board rank stays the validated α leg.', '残差动量构造与经验证的美国／中国引擎共用；加拿大专属维度权重为对标香港的先验，待 Phase-0 验证。确信度综合分仅作情境展示，绝非出货排序键——榜单排名仍以已验证的 α 腿为准。') }}</p>
 </div>
 {% endif %}

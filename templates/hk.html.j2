@@ -484,13 +484,18 @@
   {% endif %}
 
   <!-- ===================== STANDOUT STOCKS (relative-strength cards) ===================== -->
-  {% if mode == 'stocks' and setups and setups.buy %}
+  {% if mode == 'stocks' and setups %}
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Top conviction — the HK Stock Desk', '⚡ 最高确信 — 港股研判台') }}
       <span class="note" style="text-transform:none">· {{ t('southbound flow + A/H value + beta-neutral RS · regime-conditioned', '南向资金 + A/H 价值 + 贝塔中性相对强度 · 随周期调整') }}</span>
       {{ help("The HK names ranked by a UNIFIED, regime-conditioned conviction that fuses HK's three HONEST structural edges — NOT a raw relative-strength sort (that just re-discovered global-risk beta and crowned an outlier). Each card's EDGE axis is the fused z of: <b>southbound smart-money flow</b> (the mainland Connect crowd, HK's dominant marginal buyer, adding to this name), <b>A/H value</b> (its HK-listed H line cheap vs its mainland A twin), and <b>beta-neutral relative strength</b> (real leadership once global-risk beta is stripped). The live risk state re-weights the blend. Ranked by the GATED conviction composite, split into a BUY strip (a constructive entry) and a WATCH strip (strong edge but the cycle/extension blocks it — wait for a base). HK has <b>no selection alpha</b>, so the verdict never says 'Buy' and the trust tier reads 'screen' — a positioning / flow screen to size and confirm, not a validated buy list.", "按统一的、随周期调整的确信度排序的港股 —— 而非原始相对强度排序（那只是在重新发现全球风险贝塔并捧出一个离群股）。每张卡片的 EDGE 轴是三条诚实结构性优势的融合 z：<b>南向资金</b>（内地港股通这一主力边际买家在加仓该股）、<b>A/H 价值</b>（其港股 H 相对 A 股孪生便宜）、以及<b>贝塔中性相对强度</b>（剥离全球风险贝塔后的真实领先）。实时风险状态重新加权各腿。按门控后的确信度综合排序，分为买入区（入场点建设性）与观察区（优势强但周期／拉伸阻挡 —— 等待筑底）。香港<b>无选股阿尔法</b>，故结论永不显示“买入”、信任等级为“筛选” —— 用于定仓与确认的资金筛选，而非已验证买入清单。") }}
     </h2>
-    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Ranked by the unified, regime-conditioned conviction (southbound flow + A/H value + beta-neutral relative strength). Each card shows the four-axis profile — <b>EDGE</b> is the fused HK signal — plus the mainland-flow and A/H-value chips. The cycle state caps every verdict; HK has no selection alpha so it never says "Buy".', '按统一的、随周期调整的确信度排序（南向资金 + A/H 价值 + 贝塔中性相对强度）。每张卡片展示四轴画像 —— <b>EDGE</b> 为融合后的香港信号 —— 并附内地资金与 A/H 价值标签。周期状态封顶每个结论；香港无选股阿尔法，故永不显示“买入”。') }}</p>
+    <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Buy inclusion is now gated on the VALIDATED MACD-RSI × StochRSI confluence (the same risk-filter the chart marks) — only names with a live buy signal appear, confirmed <b>BUY</b>s ahead of the <i>forming</i>/<i>approaching</i> anticipation exception. Within each tier they are ordered by the unified, regime-conditioned conviction (southbound flow + A/H value + beta-neutral relative strength). Each card shows the four-axis profile — <b>EDGE</b> is the fused HK signal — plus the mainland-flow and A/H-value chips. The cycle state caps every verdict; HK has no selection alpha so it never says "Buy".', '买入纳入现以经验证的 MACD-RSI × StochRSI 共识为门槛（与图表标记同源的风险过滤器）——只有出现实时买入信号的标的才显示，确认<b>买入</b>排在<i>形成中</i>/<i>临近</i>的入选例外之前。同一层级内再按统一的、随周期调整的确信度排序（南向资金 + A/H 价值 + 贝塔中性相对强度）。每张卡片展示四轴画像 —— <b>EDGE</b> 为融合后的香港信号 —— 并附内地资金与 A/H 价值标签。周期状态封顶每个结论；香港无选股阿尔法，故永不显示“买入”。') }}</p>
+    {# GATED board: shows ONLY names the VALIDATED MACD-RSI × StochRSI confluence endorses
+       (engine/signal_gate; GRID_GATE.md), in BUILD ORDER — confirmed TAKEs first, then the
+       anticipation exception (pending / early). `setups.buy` is already tier-then-conviction
+       ordered, so do NOT re-sort it. Strong leaders with no live buy signal fall to the WATCH
+       strip below (counted in the footnote). #}
     <div class="nbgrid" data-showmore="12">
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
@@ -500,6 +505,7 @@
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ n.name }}</span>
           {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          {% set sig = n.signal %}{% include "_sig_badge.html.j2" %}
         </div>
         <div class="nb-sub">{% if n.sector %}<span>{{ t(n.sector, n.sector_zh or n.sector) }}</span>{% endif %}{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
@@ -547,6 +553,12 @@
       </a>
     {% endfor %}
     </div>
+    {% if not setups.buy %}<p class="nb-watchnote"><span class="l-en">No names currently meet the validated confluence buy signal.</span><span class="l-zh">当前没有标的满足经验证的共识买入信号。</span></p>{% endif %}
+    {# Coverage footnote: how many SCORED names had no live buy signal (scored − eligible). #}
+    {% set _cov = setups.coverage or {} %}
+    {% set _noidle = (_cov.scored or 0) - (_cov.eligible or 0) %}
+    {% if _noidle > 0 %}<p class="nb-watchnote"><span class="l-en">➕ {{ _noidle }} scored name{{ 's' if _noidle != 1 else '' }} have no live buy signal — awaiting a confluence entry (not shown as buys).</span><span class="l-zh">➕ 另有 {{ _noidle }} 只已评分标的尚无买入信号 — 等待共识入场（未列为买入）。</span></p>{% endif %}
+    {% if setups.gate_applied == false %}<p class="nb-watchnote"><span class="l-en">No name cleared the confluence gate today — showing the conviction-screen fallback instead.</span><span class="l-zh">今日无标的通过共识门槛 — 改为显示确信度筛选回退结果。</span></p>{% endif %}
     {% if setups.watch %}
     <div class="watch-strip">
       <p class="ws-h">👁 {{ t('On watch — strong edge, blocked entry (wait for a base)', '观察名单 — 优势强但入场受阻（等待筑底）') }}</p>

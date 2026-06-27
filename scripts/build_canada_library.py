@@ -24,6 +24,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import signal_gate  # noqa: E402  — validated confluence buy gate (CHARTER §7)
 from engine import stock_score  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.residual_alpha import compute_residual_alpha  # noqa: E402
@@ -374,6 +375,14 @@ def main(alpha: dict | None = None) -> dict | None:
     # Mirrors build_stock_library (US).
     profiles: dict[str, dict] = {}
     to_write: dict[str, tuple[str, dict]] = {}   # ticker -> (safe, rec)
+    # VALIDATED confluence buy gate (engine/signal_gate over engine/signal_quality): the
+    # per-name {ticker: verdict} that becomes the PRIMARY buy-entry gate for the standout
+    # board, REPLACING the alpha-only +0.5 floor (CHARTER §7, GRID_GATE.md). Each candidate
+    # also gets its §7 site/signals/<T>.json so the chart shows the same buy/sell/cut/rebuy
+    # markers the board gated on. signal_quality is close-only by construction; thin names
+    # degrade to "insufficient history" (excluded, never a crash).
+    sig_verdict: dict[str, dict] = {}
+    signals_dir = site / "signals"
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
@@ -384,6 +393,12 @@ def main(alpha: dict | None = None) -> dict | None:
             sc = _setup_score(rec)
             if sc:
                 cand.append(sc)
+                # gate the candidate on the validated confluence (close-only; never fatal)
+                # + write its §7 marker file so chart + grid stay consistent.
+                safe_sig = ticker.replace("=", "_").replace("^", "_")
+                _g = signal_gate.gate(ticker, close)
+                sig_verdict[ticker] = _g
+                signal_gate.write_signal_file(signals_dir, safe_sig, _g.get("result"))
         # ---- unified Conviction Profile (engine/stock_score) -----------------
         # The single block both the dashboard standout card AND this name's detail page
         # render, so the two can never structurally disagree. CA selection = residual
@@ -486,35 +501,47 @@ def main(alpha: dict | None = None) -> dict | None:
         # bench. The SHIPPED rank stays the VALIDATED alpha leg — the Conviction composite
         # rides as the displayed profile/verdict on each card, never as the sort key.
         as_of = (alpha or {}).get("as_of")
-        eligible = sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5)
-        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100)
+        # PRIMARY BUY GATE = the VALIDATED MACD-RSI × StochRSI confluence (engine/signal_gate
+        # over engine/signal_quality), REPLACING the old alpha-only +0.5 floor (CHARTER §7,
+        # GRID_GATE.md). Passing gate= restricts the buy list to ELIGIBLE names, ranks takes
+        # ABOVE anticipations, drops the +0.5 floor, attaches the compact verdict to each row
+        # (row.signal — the badge), and returns gate_applied + coverage. If gating would empty
+        # the board, rank_setups falls back to the un-gated +0.5 board so the page never blanks.
+        setups = rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, gate=sig_verdict)
         # attach the unified Conviction Profile to every shipped row (the dashboard card
         # and the name's own page then render the SAME block — never disagree).
         for r in setups["buy"] + setups.get("laggards", []):
             t = r.get("ticker")
             if profiles.get(t):
                 r["conviction"] = profiles[t]
-        setups["eligible"] = eligible        # how many cleared the +0.5 alpha floor
+        # `eligible` (legacy header field) now = names the confluence gate endorsed
+        # (coverage.eligible); falls back to the +0.5 α count in the degenerate case.
+        _cov = setups.get("coverage") or {}
+        setups["eligible"] = (_cov.get("eligible")
+                              if setups.get("gate_applied")
+                              else sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5))
         setups["universe"] = len(cand)
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "canada_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
         # WIDE "Standout individual stocks" board persisted as its own artifact, so a
         # transient build failure leaves a stale-but-present file (mirrors us_standouts.json).
-        # Ranked by the validated alpha leg; enriched with price/off-high/sparkline + the
-        # Conviction profile; eligible = how many cleared the +0.5 alpha floor.
+        # Same VALIDATED confluence gate (gate=sig_verdict): only endorsed names, takes above
+        # anticipations; enriched with price/off-high/sparkline + the Conviction profile.
         wide = compute_canada_standouts(
-            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12))
+            rank_setups(cand, as_of=as_of, rank_by="alpha", n_buy=100, n_lag=12, gate=sig_verdict))
         for r in wide["buy"] + wide.get("laggards", []):
             t = r.get("ticker")
             if r.get("conviction") is None and profiles.get(t):
                 r["conviction"] = profiles[t]
-        wide["eligible"] = eligible          # how many cleared the +0.5 alpha floor
+        _wcov = wide.get("coverage") or {}
+        wide["eligible"] = (_wcov.get("eligible") if wide.get("gate_applied")
+                            else sum(1 for s, r in cand if (r.get("alpha") or 0) >= 0.5))
         wide["universe"] = len(cand)
         (site / "factordata" / "canada_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe)",
-                 len(wide["buy"]), eligible, len(cand))
+        log.info("wrote canada_standouts.json (%d buy of %d eligible / %d universe · gate_applied=%s)",
+                 len(wide["buy"]), wide["eligible"], len(cand), wide.get("gate_applied"))
     log.info("canada library: %d analyzed, %d skipped (thin history), %d setups",
              built, failed, len(cand))
     return setups

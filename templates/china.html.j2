@@ -1016,7 +1016,9 @@
 
   {% if mode != 'macro' %}
   <!-- ===================== STANDOUT STOCKS (reversal-led cards · selection × timing) ===================== -->
-  {% if setups and setups.buy %}
+  {# Render when the board was COMPUTED — buy list non-empty OR the confluence gate ran
+     (so the honest empty-state footnote can show when the gate endorsed no name). #}
+  {% if setups and (setups.buy or setups.coverage) %}
   <div class="panel span12" id="standouts">
     <h2>{{ t('⚡ Standout individual stocks', '⚡ 表现突出的个股') }}
       <span class="note" style="text-transform:none">· {{ t('reversal-led shortlist · cycle-confirmed mean-reversion entries', '反转主导精选 · 周期确认的均值回归入场') }}</span>
@@ -1024,6 +1026,11 @@
     </h2>
     <p class="note" style="margin:0 0 2px;text-transform:none">{{ t('Decent names at a cycle-confirmed mean-reversion entry — the validated A-share read, ranked by setup score (cycle entry + pullback/reversal). Each card carries the unified Conviction profile — four transparent axes (selection / entry / tailwind / quality) and one honest verdict; the cycle state caps the verdict, so a downtrend never reads “Buy”. The selection axis is the validated reversal context (high-variance, not a buy list). A research shortlist to size and confirm, not a buy list.', '处于周期确认均值回归入场点的优质个股 —— 已验证的A股解读，按配置分（周期入场＋回调/反转）排序。每张卡片附带统一确信度画像 —— 四条透明维度（选股／入场／顺风／质量）与一个诚实结论；周期状态会封顶结论，下行趋势永不显示“买入”。选股维度即已验证的均值回归参考（高波动，非买入清单）。用于研究、定仓与确认的名单，而非买入清单。') }}</p>
     <div class="nbgrid" data-showmore="12">
+    {# GATED board: the grid shows ONLY names the VALIDATED MACD-RSI × StochRSI confluence
+       endorses as a buy entry (engine/signal_gate; GRID_GATE.md), in BUILD ORDER — confirmed
+       TAKEs first, then the anticipation exception (pending / early). `setups.buy` is already
+       tier-then-setup-score ordered, so do NOT re-sort it. Scored names with no live buy
+       signal are NOT shown (counted in the footnote below). #}
     {% for n in setups.buy %}
       {% set _d = n.dir or 'caution' %}
       <a class="nbcard nb-{{ _d }}" href="china_lookup.html#{{ n.ticker }}">
@@ -1031,6 +1038,7 @@
           <span class="nb-tk">{{ n.ticker }}</span>
           <span class="nb-nm">{{ nm(n.name) }}</span>
           {% if n.price is not none %}<span class="nb-px">{{ '%.2f'|format(n.price) }}</span>{% endif %}
+          {% set sig = n.signal %}{% include "_sig_badge.html.j2" %}
         </div>
         <div class="nb-sub"><span>{{ t(n.sector, SECZH.get(n.sector, n.sector)) }}</span>{% if n.off_high is not none %}<span>{{ '%+.1f'|format(n.off_high) }}% {{ t('off 52w high', '距52周高') }}</span>{% endif %}</div>
         {% if n.spark_svg %}{{ n.spark_svg | safe }}{% endif %}
@@ -1069,6 +1077,10 @@
       </a>
     {% endfor %}
     </div>
+    {% set _cov = setups.coverage or {} %}
+    {% set _nobuy = (_cov.scored or 0) - (_cov.eligible or 0) %}
+    {% if not setups.buy %}<p class="nb-watchnote"><span class="l-en">No names currently meet the validated confluence buy signal.</span><span class="l-zh">当前没有标的满足经验证的共识买入信号。</span></p>{% endif %}
+    {% if setups.gate_applied and _nobuy > 0 %}<p class="nb-watchnote"><span class="l-en">➕ {{ _nobuy }} scored name{{ 's' if _nobuy != 1 else '' }} have no live buy signal yet — awaiting a confluence entry (not shown).</span><span class="l-zh">➕ 另有 {{ _nobuy }} 只已评分标的尚无买入信号 — 等待共识入场（未显示）。</span></p>{% endif %}
     {% if setups.laggards %}
     <p class="note" style="margin:13px 0 5px;text-transform:none;color:var(--down);font-weight:700">⚠ {{ t('Weakest relative momentum (laggards) — distribution risk:', '相对动量最弱（落后股）— 派发风险：') }}</p>
     <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">

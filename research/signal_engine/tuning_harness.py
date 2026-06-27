@@ -207,9 +207,11 @@ def build_signals(daily: pd.Series, cfg: dict, high=None, low=None) -> pd.DataFr
 
     # --- map everything onto the daily grid by KNOWN date (leak-free) ---
     mb_d = to_daily(mb_cross.fillna(False), sm_known, di, "event")
+    recent_mb_d = to_daily((since(mb_cross) <= CONF_W).fillna(False), sm_known, di, "ffill").fillna(False)
     hist_rise_d = to_daily(hist_rising.fillna(False), sm_known, di, "ffill").fillna(False)
     hist_pos_d = to_daily((hist_m > 0).fillna(False), sm_known, di, "ffill").fillna(False)
     sb_event_d = to_daily(sb_from_os.fillna(False), ss_known, di, "event")
+    sb_any_event_d = to_daily(sb_cross.fillna(False), ss_known, di, "event")
     recent_sb_d = to_daily(recent_sb.fillna(False), ss_known, di, "ffill").fillna(False)
     b1os_d = to_daily(b1_from_os.fillna(False), ss_known, di, "ffill").fillna(False)
     r14_d = to_daily(r14, ss_known, di, "ffill")
@@ -238,6 +240,14 @@ def build_signals(daily: pd.Series, cfg: dict, high=None, low=None) -> pd.DataFr
     elif trig == "stochlead":
         # leading-leg only: StochRSI bull-from-OS, MACD merely not-falling (hist>0 or rising)
         buy = sb_event_d & (hist_pos_d | hist_rise_d) & confirm_bull & rsi_ok & brk_ok
+    elif trig == "early_hi":
+        # ANTICIPATION (exception b, for SURFACING only — never a tradeable buy): the StochRSI
+        # crossed up FROM ABOVE oversold (the cross did NOT dip <20) while the 2D MACD has ALSO
+        # crossed recently (or its histogram is rising) and the weekly is bull. Motivation: not
+        # every real bottom drives StochRSI below 20, so the from-OS `early` leg misses those
+        # imminent turns. This is the "StochRSI doesn't always drop below 20" case. Leak-free:
+        # same .shift-guarded crosses + known-date mapping as every other trigger.
+        buy = sb_any_event_d & (~b1os_d) & w_bull_d & (recent_mb_d | hist_rise_d) & rsi_ok & brk_ok
     else:
         raise ValueError(trig)
 
@@ -395,7 +405,8 @@ VARIANTS = {
     "m2d_s3d":       dict(macd_tf=2, stoch_tf=3, trigger="macd_cross"),   # OWNER hypothesis
     "m2d_s2d":       dict(macd_tf=2, stoch_tf=2, trigger="macd_cross"),
     "m1d_s3d":       dict(macd_tf=1, stoch_tf=3, trigger="macd_cross"),
-    "m2d_s3d_early": dict(macd_tf=2, stoch_tf=3, trigger="early"),        # anticipation
+    "m2d_s3d_early": dict(macd_tf=2, stoch_tf=3, trigger="early"),        # anticipation (a): from-OS
+    "m2d_s3d_early_hi": dict(macd_tf=2, stoch_tf=3, trigger="early_hi"),  # anticipation (b): from-above-OS + 2D cross
     "stochlead3d":   dict(macd_tf=2, stoch_tf=3, trigger="stochlead"),    # leading leg only
     "m2d_s3d_brk":   dict(macd_tf=2, stoch_tf=3, trigger="macd_cross", brk=True),  # +3rd indicator
     # ---- secondary LOCATION guards on the anticipation trigger (research avenue) ----

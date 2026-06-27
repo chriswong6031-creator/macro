@@ -23,6 +23,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine import signal_gate  # noqa: E402  — validated confluence buy gate (CHARTER §7)
 from engine.cycles import analyze  # noqa: E402
 from engine.intl_stocks import compute_intl_alpha, panel  # noqa: E402
 from engine.setups import rank_setups, setup_score  # noqa: E402
@@ -148,6 +149,15 @@ def main(alpha: dict | None = None) -> dict | None:
         alpha = compute_intl_alpha(closes, members)
     alpha_pt = (alpha or {}).get("per_ticker", {})
 
+    # VALIDATED confluence buy gate (engine/signal_gate over engine/signal_quality): the
+    # per-name {ticker: verdict} that becomes the PRIMARY buy-entry gate for the standout
+    # board, REPLACING the alpha-only buy_min floor (CHARTER §4/§7, GRID_GATE.md). Each name
+    # also gets its §7 site/signals/<T>.json so the bespoke chart shows the SAME markers the
+    # board gated on. signal_quality is close-only; thin names degrade to "insufficient
+    # history" (excluded, never a crash). ~992 of ~1000 intl names have enough history.
+    sig_verdict: dict[str, dict] = {}
+    signals_dir = site / "signals"
+
     index, cand, built, failed = [], [], 0, 0
     uni = []
     for ticker in closes.columns:
@@ -167,6 +177,11 @@ def main(alpha: dict | None = None) -> dict | None:
             if sc:
                 cand.append(sc)
         safe = ticker.replace("=", "_").replace("^", "_")
+        # validated confluence verdict from the SAME close series + its §7 marker file
+        # (close-only; never fatal — gate() swallows thin/bad data, returns ineligible).
+        _g = signal_gate.gate(ticker, close)
+        sig_verdict[ticker] = _g
+        signal_gate.write_signal_file(signals_dir, safe, _g.get("result"))
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
         idx = {"t": ticker, "n": rec["name"], "s": rec["sector"], "st": rec["ladder"]["state"],
                "fl": rec["flag"], "mk": rec["market"]}
@@ -186,10 +201,16 @@ def main(alpha: dict | None = None) -> dict | None:
     except Exception as e:  # noqa: BLE001
         log.warning("intl chart data step failed (%s)", e)
 
-    # pooled alpha-led "standout individual stocks" shortlist (flags attached)
+    # pooled alpha-led "standout individual stocks" shortlist (flags attached).
+    # PRIMARY BUY GATE = the VALIDATED MACD-RSI x StochRSI confluence (engine/signal_gate),
+    # passed as gate=: the buy list is restricted to ELIGIBLE names, takes rank ABOVE
+    # anticipations (alpha orders WITHIN each tier), the alpha buy_min floor is dropped, and
+    # each row gets row['signal']=compact verdict for the badge. coverage/gate_applied come
+    # back for the footnote + build log; degenerate (nothing eligible) falls back un-gated.
     setups = None
     if cand:
-        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), rank_by="alpha", n_buy=60)
+        setups = rank_setups(cand, as_of=(alpha or {}).get("as_of"), rank_by="alpha",
+                             n_buy=60, gate=sig_verdict)
         for r in (setups.get("buy") or []):
             t = r["ticker"]
             if t in members.index:
@@ -211,8 +232,12 @@ def main(alpha: dict | None = None) -> dict | None:
         (site / "factordata").mkdir(parents=True, exist_ok=True)
         (site / "factordata" / "intl_setups.json").write_text(
             json.dumps(setups, separators=(",", ":"), default=str))
-    log.info("intl library: %d analyzed, %d skipped, %d standouts",
-             built, failed, len(cand))
+    _cov = (setups or {}).get("coverage") or {}
+    log.info("intl library: %d analyzed, %d skipped, %d standouts "
+             "(gate_applied=%s · %d eligible / %d scored · %d take · %d anticip)",
+             built, failed, len(cand), (setups or {}).get("gate_applied"),
+             _cov.get("eligible", 0), _cov.get("scored", 0),
+             _cov.get("take", 0), _cov.get("anticipation", 0))
     return setups
 
 

@@ -2449,11 +2449,13 @@
       {% endif %}
       <div class="nbgrid" data-showmore="12">
       {% if _su %}
-      {# Two-gauge board: one CONVICTION-ranked watch-list (buy + leaders-to-watch
-         merged, top conviction first), each card carrying its own ENTRY-timing gauge
-         so a high-conviction-but-extended leader (HWM) stays visible as "wait for the
-         pullback", never silently dropped and never mislabeled "Buy Now". #}
-      {% set _board = (_su.buy + (_su.watch or []))|sort(attribute='conviction.score', reverse=True) %}
+      {# GATED board: the grid shows ONLY names the VALIDATED MACD-RSI × StochRSI confluence
+         endorses as a buy entry (engine/signal_gate; GRID_GATE.md), in BUILD ORDER — confirmed
+         TAKEs first, then the anticipation exception (pending / early). `_su.buy` is already
+         tier-then-conviction ordered, so do NOT re-sort it. Strong leaders with no live buy
+         signal are NOT shown (counted in the footnote below). Each card still carries its
+         own ENTRY-timing gauge as context. #}
+      {% set _board = _su.buy %}
       {% for n in _board %}
         {% set c = n.conviction %}
         {% set es = n.entry_signal %}
@@ -2462,6 +2464,7 @@
             <span class="nb-tk">{{ n.ticker }}</span>
             <span class="nb-nm">{{ n.name }}</span>
             {% if n.get('price') is not none %}<span class="nb-px" data-sym="{{ n.ticker }}" data-mkt="us">${{ '%.2f'|format(n.price) }}</span>{% endif %}
+            {% set sig = n.signal %}{% include "_sig_badge.html.j2" %}
           </div>
           {# Context line LEADS with the specific narrative basket (de-blurs "Technology"
              into e.g. "Memory & Storage ▲"); the GICS sector is demoted to a muted tag.
@@ -2552,6 +2555,8 @@
           {% endif %}
         </a>
       {% endfor %}
+      {% if not _board %}<p class="nb-watchnote"><span class="l-en">No names currently meet the validated confluence buy signal.</span><span class="l-zh">当前没有标的满足经验证的共识买入信号。</span></p>{% endif %}
+      {% if _su.watch %}<p class="nb-watchnote"><span class="l-en">➕ {{ _su.watch|length }} strong leader{{ 's' if _su.watch|length != 1 else '' }} have no live buy signal yet — awaiting a confluence entry (not shown).</span><span class="l-zh">➕ 另有 {{ _su.watch|length }} 只强势领涨股尚无买入信号 — 等待共识入场（未显示）。</span></p>{% endif %}
       {% else %}
       {% for n in action_board.notable %}
         {% set _d = n.dir or 'caution' %}

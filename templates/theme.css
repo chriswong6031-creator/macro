@@ -187,6 +187,19 @@ html body :is(a.actitem, a.idx-alloc, a.nbcard, a.scard):hover {
 .urgpill.urg-imminent, .urgpill.urg-soon, .state-NEW_REGIME { --c: var(--info); }
 .st-TOP_WATCH, .pill-stale, .urgpill.urg-caution, .state-WEAKENING { --c: var(--warn); }
 .st-ROLLING_OVER, .st-COUNTERTREND_BOUNCE, .state-TRANSITIONING { --c: var(--orange); }
+/* Validated-confluence buy-GATE badge on standout cards (engine/signal_gate; GRID_GATE.md).
+   Tier colours are STATUS (confirmed / forming / approaching), NOT price direction, so they
+   intentionally do NOT swap under the zh red=up theme. take=ok(green), pending=warn(amber),
+   early=muted(grey) — visually ranking confirmed TAKEs above the anticipation exceptions. */
+.sig-gate { display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:600;
+  line-height:1; padding:2px 7px; border-radius:999px; white-space:nowrap;
+  background: color-mix(in srgb, var(--c, var(--muted)) 16%, var(--panel));
+  color: color-mix(in srgb, var(--c, var(--muted)) 82%, var(--text));
+  border: 1px solid color-mix(in srgb, var(--c, var(--muted)) 34%, transparent); }
+.sig-gate.sig-take { --c: var(--ok); }
+.sig-gate.sig-pending { --c: var(--warn); }
+.sig-gate.sig-early { --c: var(--muted); }
+.nb-watchnote { grid-column: 1/-1; color: var(--muted); font-size: 12px; margin: 6px 2px 0; }
 .st-DECLINE, .pill-failed, .pill-dead, .tag-avoid, .chip-neg, .sig-m,
 .urgpill.urg-exit, .urgpill.urg-avoid { --c: var(--down); }
 .pill-blocked, .state-STABLE, .urgpill.urg-hold, .urgpill.urg-later { --c: var(--muted); }

@@ -137,7 +137,7 @@ def dedupe_dual_class(rows: list[dict]) -> list[dict]:
 
 def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
                 lag_max: float = LAG_MAX, n_buy: int = N_BUY, n_lag: int = N_LAG,
-                as_of=None, rank_by: str = "setup") -> dict:
+                as_of=None, rank_by: str = "setup", gate: dict | None = None) -> dict:
     """Split scored candidates into the constructive ``buy`` shortlist and the
     ``laggards`` watch. ``cands`` is a list of ``(score, row)`` from :func:`setup_score`.
 
@@ -151,7 +151,18 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
         research/CHINA_HK_STOCK_SIGNALS.md).
 
     The factor composite (``row['factor_z']``) breaks near-ties as a LIGHT quality leg.
-    Dual-class duplicates collapse to the best-ranked variant."""
+    Dual-class duplicates collapse to the best-ranked variant.
+
+    ``gate`` (optional) is a ``{ticker: signal_gate.verdict}`` map — the VALIDATED
+    confluence buy gate (``engine/signal_gate``). When supplied it becomes the PRIMARY
+    buy-entry gate (CHARTER §7): the ``buy`` shortlist is restricted to ELIGIBLE names
+    (a buy-filter ``take``, or the ``anticipation`` eligibility exception), takes are
+    ranked ABOVE anticipations, and the alpha ``buy_min`` floor is NOT applied (the
+    confluence gate replaces it; ``rank_by`` still orders names WITHIN each tier). Each
+    row gets a ``signal`` field with its compact verdict. If gating would empty the buy
+    list (degenerate — e.g. analyze() failed for every name) it falls back to the un-gated
+    ``buy_min`` board so the page never goes blank. The result carries ``gate_applied`` and
+    ``coverage`` for the build log. Laggards are never gated."""
     def _key(x):
         s, r = x
         primary = (r.get("alpha") if rank_by == "alpha" else s) or 0.0
@@ -159,10 +170,41 @@ def rank_setups(cands: list[tuple[float, dict]], *, buy_min: float = BUY_MIN,
 
     ranked_desc = sorted(cands, key=_key, reverse=True)   # best (buys) first
     ranked_asc = sorted(cands, key=_key)                  # worst (laggards) first
-    buys = dedupe_dual_class(
-        [r for s, r in ranked_desc
-         if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
     laggards = dedupe_dual_class(
         [r for s, r in ranked_asc
          if r.get("alpha") is not None and r["alpha"] <= lag_max])[:n_lag]
+
+    if gate is not None:
+        from engine import signal_gate            # lazy: pulls pandas only when gating
+        n_take = n_antic = 0
+        for _s, r in ranked_desc:
+            v = gate.get(r.get("ticker"))
+            r["signal"] = signal_gate.compact(v)
+            if v and v.get("eligible"):
+                n_take += int(v.get("tier") == signal_gate.TAKE)
+                n_antic += int(v.get("tier") == signal_gate.ANTICIPATION)
+        eligible = [(s, r) for s, r in ranked_desc
+                    if (gate.get(r.get("ticker")) or {}).get("eligible")]
+        if eligible:
+            # primary key = tier (take above anticipation), secondary = the market rank key
+            gated = sorted(eligible,
+                           key=lambda x: (signal_gate.tier_rank(gate.get(x[1].get("ticker"))),
+                                          -_key(x)[0], -_key(x)[1]))
+            buys = dedupe_dual_class([r for _s, r in gated])[:n_buy]
+            return {"as_of": as_of, "buy": buys, "laggards": laggards,
+                    "gate_applied": True,
+                    "coverage": {"scored": len(cands), "eligible": len(eligible),
+                                 "take": n_take, "anticipation": n_antic}}
+        # degenerate: nothing eligible -> graceful fallback to the un-gated board
+        buys = dedupe_dual_class(
+            [r for s, r in ranked_desc
+             if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
+        return {"as_of": as_of, "buy": buys, "laggards": laggards,
+                "gate_applied": False,
+                "coverage": {"scored": len(cands), "eligible": 0,
+                             "take": 0, "anticipation": 0}}
+
+    buys = dedupe_dual_class(
+        [r for s, r in ranked_desc
+         if r.get("alpha") is not None and r["alpha"] >= buy_min])[:n_buy]
     return {"as_of": as_of, "buy": buys, "laggards": laggards}
