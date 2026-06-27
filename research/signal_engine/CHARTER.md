@@ -7,6 +7,13 @@
 > running return backtests to "see if it works." The framing here is the product of long,
 > hard reasoning with the project owner. Honor it.
 
+> **🔒 SINGLE-OWNER FILES — IF YOU ARE A SPAWNED WORK SESSION, DO NOT EDIT OR COMMIT THESE.**
+> `CHARTER.md` and `research/signal_engine/SCHEMA.json` are owned by the orchestrating session ONLY.
+> Read them and build to them, but **never edit them and never include them in your commits** (commit only
+> the files YOUR task creates). If you think the charter or schema needs a change, write it as a note in your
+> task output for the owner to apply — do not change it yourself. (Several parallel sessions share this branch;
+> one committing an older copy silently reverted a fix once — hence this rule.)
+
 ---
 
 ## 0. TL;DR (the whole thing in six sentences)
@@ -84,8 +91,19 @@ ships is **does it generalize to names/periods you did NOT tune on.** In-sample 
 
 ## 3. How to evaluate (metrics + validation discipline)
 
-- **Primary metric:** max drawdown reduction; secondarily shake-out rate, avg-loss size, entry
-  efficiency, per-trade expectancy. **Not** total return, **not** beat-buy-and-hold.
+- **Primary metric — measured AS THE OWNER ACTUALLY TRADES IT, with a stop-loss in place (default ≤ −5%).**
+  A bad entry is one that gets **faked out and stopped out.** So the operative entry-quality metrics are:
+  the **stop-out / shake-out rate** (how often the entry hits the stop — LOWER is better; this is PRIMARY),
+  the **realized per-trade loss distribution under that stop**, **entry efficiency** (how close to the
+  eventual bottom / how far *before* the breakout it enters), and per-trade expectancy. **Never** total
+  return, **never** beat-buy-and-hold.
+  - ⚠️ **DO NOT measure the max adverse excursion / max drawdown of a position held loosely or with no stop.**
+    That is a strategy nobody would run; it conflates entry quality with exit policy and overstates "drawdown."
+    When this charter says *"reduce drawdown,"* it means **fewer stop-outs and smaller realized losses under
+    the stop** — NOT the MAE of a never-stopped hold. (Even the validated buy-filter's headline
+    "−23.7%→−15.5% max-DD" was a loose-hold equity-curve number; the honest restatement is *the filter cuts
+    the fakeout / stop-out rate*. Re-express and re-validate signal results in stop-out terms. A session
+    misread this **even with this charter** — that is how easy the trap is.)
 - **Trade-level simulation** (enter on signal, exit on signal/cut, re-buy on reversal) — the way it's
   actually traded. **Not** fixed-horizon forward returns of a "state" (the flawed lens of the old
   `scripts/_bt_signals.py` study).
@@ -102,6 +120,9 @@ ships is **does it generalize to names/periods you did NOT tune on.** In-sample 
 
 - ❌ Running a "does the indicator beat buy-and-hold / make money on its own" backtest, then
   declaring it dead. → Wrong metric. It's a risk tool. (This is the exact loop that wasted ~10 sessions.)
+- ❌ Measuring max adverse excursion / max drawdown of a loosely-held or no-stop position. → Evaluate
+  AS-TRADED with the stop (≤ −5%); the entry-quality metric is the **stop-out / shake-out rate**, not the
+  MAE of a hold you'd never run (§3). This trap bit a session *even with this charter* — that's how easy it is.
 - ❌ Treating it as a standalone autonomous algo that must be profitable alone. → It's a brain input.
 - ❌ Using a standard price MACD(12,26,9). → The owner's indicator uses an **RSI-based MACD** and
   **stoch-of-RSI** (see §5). Standard MACD = unfaithful port = garbage results.
