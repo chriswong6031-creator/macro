@@ -85,6 +85,14 @@
                     padding:4px 10px; border-radius:8px;
                     background:color-mix(in srgb, var(--c) 16%, var(--panel)); color:var(--c); border:1px solid color-mix(in srgb,var(--c) 32%,transparent); }
   .fx-card .tagline { font-size:11.5px; color:var(--muted); margin-left:auto; }
+  .fx-score { display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+              min-width:50px; padding:4px 8px; border-radius:10px; cursor:help;
+              border:1px solid color-mix(in srgb,var(--sc,var(--muted)) 35%,transparent);
+              background:color-mix(in srgb,var(--sc,var(--muted)) 12%,var(--panel)); }
+  .fx-score .s { font-size:20px; font-weight:800; line-height:1; color:var(--sc,var(--text)); }
+  .fx-score .l { font-size:8.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+  .sc-hi { --sc:var(--up); } .sc-mid { --sc:var(--g-cold); } .sc-watch { --sc:var(--warn); } .sc-low { --sc:var(--muted); }
+  .fx-cap { font-size:10.5px; color:var(--muted); margin-top:6px; font-style:italic; }
 
   .fx-strip { display:flex; flex-wrap:wrap; gap:8px; margin:11px 0 9px; }
   .fx-leg { flex:1 1 150px; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:8px 11px;
@@ -289,7 +297,7 @@
     <div class="fx-eyebrow">🔮 <span class="l-en">Thematic Foresight Desk</span><span class="l-zh">主题前瞻台</span></div>
     <h1><span class="l-en">Catch the theme before the revisions explode</span><span class="l-zh">在盈利预期爆发前抓住主题</span></h1>
     <p class="fx-sub"><span class="l-en">Anticipate themes at the <b>precipice of induction</b> and convert them to calls <b>before</b> estimate revisions broaden. Physical-supply tightness (T1) <b>leads</b> the revision; customer capex (T2) and revision-breadth (T4) <b>confirm</b>; the buy is deferred to a dislocation. Worked case: the June-2024 13D HBM/DRAM call — <i>sold out, concentrated, underpriced</i>, right and ~9 months early.</span><span class="l-zh">在主题处于<b>诱发临界点</b>时提前布局，在盈利预期普遍上修<b>之前</b>转化为决策。物理供给紧张（T1）<b>领先</b>预期修正；客户资本开支（T2）与预期上修广度（T4）<b>确认</b>；买点交由错位回调触发。范例：2024年6月 13D 的 HBM/DRAM 判断——售罄、集中、被低估，正确且早约9个月。</span></p>
-    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-25 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-27 11:46 UTC</div>
+    <div class="fx-asof"><span class="l-en">Revisions as of</span><span class="l-zh">预期数据截至</span> 2026-06-25 · <span class="l-en">generated</span><span class="l-zh">生成于</span> 2026-06-27 11:59 UTC</div>
   </header>
 
   
@@ -339,6 +347,11 @@
     
     <article class="fx-card stg-RE-RATING">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.14 · purity 0.9 · timing 0.35">
+          <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Memory, HBM &amp; Storage</span>
         <span class="badge">RE-RATING</span>
         <span class="tagline"><span class="l-en">AI-capex beneficiary</span><span class="l-zh">AI 资本开支受益</span> · direct</span>
@@ -365,10 +378,16 @@
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
     </article>
     
     <article class="fx-card stg-RE-RATING">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.17 · purity 0.6 · timing 0.35">
+          <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Semiconductor Equipment (WFE)</span>
         <span class="badge">RE-RATING</span>
         <span class="tagline"><span class="l-en">AI-capex beneficiary</span><span class="l-zh">AI 资本开支受益</span> · lagged</span>
@@ -395,10 +414,16 @@
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
     </article>
     
     <article class="fx-card stg-RE-RATING">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.25 · purity 0.9 · timing 0.35">
+          <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">AI Semiconductors</span>
         <span class="badge">RE-RATING</span>
         <span class="tagline"><span class="l-en">AI-capex beneficiary</span><span class="l-zh">AI 资本开支受益</span> · direct</span>
@@ -425,10 +450,16 @@
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
     </article>
     
     <article class="fx-card stg-RE-RATING">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.43 · purity 0.45 · timing 0.35">
+          <span class="s">50</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Data Center Power &amp; Cooling</span>
         <span class="badge">RE-RATING</span>
         <span class="tagline"><span class="l-en">AI-capex beneficiary</span><span class="l-zh">AI 资本开支受益</span> · indirect</span>
@@ -455,160 +486,16 @@
       <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
       <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
       
-    </article>
-    
-    <article class="fx-card stg-RE-RATING">
-      <div class="row1">
-        <span class="nm">Robotics &amp; Automation</span>
-        <span class="badge">RE-RATING</span>
-        
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.85</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +5%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
-      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
-      
-    </article>
-    
-    <article class="fx-card stg-RE-RATING">
-      <div class="row1">
-        <span class="nm">Diagnostics &amp; Life-Science Tools</span>
-        <span class="badge">RE-RATING</span>
-        
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.71</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +2%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
-      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
-      
-    </article>
-    
-    <article class="fx-card stg-RE-RATING">
-      <div class="row1">
-        <span class="nm">Rare Earth &amp; Critical Minerals</span>
-        <span class="badge">RE-RATING</span>
-        
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING DATA</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.58</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +5%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
-      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
-      
-    </article>
-    
-    <article class="fx-card stg-RE-RATING">
-      <div class="row1">
-        <span class="nm">Space &amp; Satellites</span>
-        <span class="badge">RE-RATING</span>
-        
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.55</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
-      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
-      
-    </article>
-    
-    <article class="fx-card stg-RE-RATING">
-      <div class="row1">
-        <span class="nm">Cybersecurity</span>
-        <span class="badge">RE-RATING</span>
-        
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.54</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
-      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
-      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.66 · purity 0.45 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Grid &amp; Electrification</span>
         <span class="badge">WATCH</span>
         <span class="tagline"><span class="l-en">AI-capex beneficiary</span><span class="l-zh">AI 资本开支受益</span> · indirect</span>
@@ -635,10 +522,16 @@
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 1.0 · acceleration 0.75 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.88 · purity 0.45 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Nuclear &amp; SMR Power</span>
         <span class="badge">WATCH</span>
         <span class="tagline"><span class="l-en">AI-capex beneficiary</span><span class="l-zh">AI 资本开支受益</span> · indirect</span>
@@ -665,70 +558,16 @@
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
-        <span class="nm">Copper, Steel &amp; Electrification</span>
-        <span class="badge">WATCH</span>
         
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING DATA</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.38</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +8%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions present (bottleneck unknown)</p>
-      <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
-      
-    </article>
-    
-    <article class="fx-card stg-WATCH">
-      <div class="row1">
-        <span class="nm">Defense &amp; Aerospace</span>
-        <span class="badge">WATCH</span>
-        
-      </div>
-
-      <div class="fx-strip">
-        <div class="fx-leg mute">
-          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
-          <div class="lv">AWAITING</div>
-          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
-        </div>
-        <div class="fx-leg mute">
-          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
-          <div class="lv">—</div>
-          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
-        </div>
-        <div class="fx-leg hot">
-          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
-          <div class="lv">+0.37</div>
-          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
-        </div>
-      </div>
-
-      <p class="why">revisions present (bottleneck unknown)</p>
-      <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
-      
-    </article>
-    
-    <article class="fx-card stg-WATCH">
-      <div class="row1">
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.86 · purity 0.5 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">GLP-1 / Obesity</span>
         <span class="badge">WATCH</span>
         
@@ -755,10 +594,16 @@
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.87 · purity 0.5 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Fintech &amp; Payments</span>
         <span class="badge">WATCH</span>
         
@@ -785,10 +630,16 @@
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.95 · purity 0.5 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Agriculture &amp; Fertilizer</span>
         <span class="badge">WATCH</span>
         
@@ -815,10 +666,16 @@
       <p class="why">revisions flat (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.95 · purity 0.5 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Medical Devices</span>
         <span class="badge">WATCH</span>
         
@@ -845,10 +702,16 @@
       <p class="why">revisions flat (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
     </article>
     
     <article class="fx-card stg-WATCH">
       <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.23 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.95 · purity 0.5 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
         <span class="nm">Solar</span>
         <span class="badge">WATCH</span>
         
@@ -875,6 +738,259 @@
       <p class="why">revisions present (bottleneck unknown)</p>
       <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
       
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50 · WATCH (late) -&gt; capped at 45</div>
+    </article>
+    
+    <article class="fx-card stg-WATCH">
+      <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.26 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.66 · purity 0.5 · timing 0.4">
+          <span class="s">45</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Copper, Steel &amp; Electrification</span>
+        <span class="badge">WATCH</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING DATA</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.38</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +8%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
+    </article>
+    
+    <article class="fx-card stg-WATCH">
+      <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.66 · purity 0.5 · timing 0.4">
+          <span class="s">44</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Defense &amp; Aerospace</span>
+        <span class="badge">WATCH</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.37</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions present (bottleneck unknown)</p>
+      <span class="fx-entry ">⏳ not a thesis stage — no entry</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
+    </article>
+    
+    <article class="fx-card stg-RE-RATING">
+      <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.51 · purity 0.5 · timing 0.35">
+          <span class="s">41</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Cybersecurity</span>
+        <span class="badge">RE-RATING</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.54</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
+    </article>
+    
+    <article class="fx-card stg-RE-RATING">
+      <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.5 · purity 0.5 · timing 0.35">
+          <span class="s">41</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Space &amp; Satellites</span>
+        <span class="badge">RE-RATING</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.55</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +1%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
+    </article>
+    
+    <article class="fx-card stg-RE-RATING">
+      <div class="row1">
+        
+        <span class="fx-score sc-watch"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.48 · purity 0.5 · timing 0.35">
+          <span class="s">41</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Rare Earth &amp; Critical Minerals</span>
+        <span class="badge">RE-RATING</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING DATA</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.58</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +5%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
+    </article>
+    
+    <article class="fx-card stg-RE-RATING">
+      <div class="row1">
+        
+        <span class="fx-score sc-low"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.36 · purity 0.5 · timing 0.35">
+          <span class="s">39</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Diagnostics &amp; Life-Science Tools</span>
+        <span class="badge">RE-RATING</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.71</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +2%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
+    </article>
+    
+    <article class="fx-card stg-RE-RATING">
+      <div class="row1">
+        
+        <span class="fx-score sc-low"
+              title="magnitude 0.2 · acceleration 0.5 · bottleneck 0.4 · pricing_power 0.4 · underpricing 0.23 · purity 0.5 · timing 0.35">
+          <span class="s">37</span><span class="l"><span class="l-en">score</span><span class="l-zh">评分</span></span>
+        </span>
+        <span class="nm">Robotics &amp; Automation</span>
+        <span class="badge">RE-RATING</span>
+        
+      </div>
+
+      <div class="fx-strip">
+        <div class="fx-leg mute">
+          <div class="lk">T1 · <span class="l-en">Bottleneck</span><span class="l-zh">瓶颈</span></div>
+          <div class="lv">AWAITING</div>
+          <div class="ld"><span class="l-en">FRED capacity pending</span><span class="l-zh">FRED 产能待采集</span></div>
+        </div>
+        <div class="fx-leg mute">
+          <div class="lk">T2 · <span class="l-en">Demand</span><span class="l-zh">需求</span></div>
+          <div class="lv">—</div>
+          <div class="ld"><span class="l-en">not capex-linked</span><span class="l-zh">非资本开支驱动</span></div>
+        </div>
+        <div class="fx-leg hot">
+          <div class="lk">T4 · <span class="l-en">Revisions</span><span class="l-zh">预期修正</span></div>
+          <div class="lv">+0.85</div>
+          <div class="ld"><span class="l-en">90d EPS drift</span><span class="l-zh">90日EPS漂移</span> +5%</div>
+        </div>
+      </div>
+
+      <p class="why">revisions already broad (bottleneck unknown) — likely late</p>
+      <span class="fx-entry ">⏳ late — revisions already broad; do not chase, wait for a reset</span>
+      
+      <div class="fx-cap">⚑ <span class="l-en">score capped</span><span class="l-zh">评分受限</span>: text-only (no physical bottleneck) -&gt; capped at 50</div>
     </article>
     
   </div>
@@ -890,6 +1006,13 @@
       <span class="chip2"><b>0</b> <span class="l-en">revision reads</span><span class="l-zh">预期读数</span></span>
       
     </div>
+    
+    <div class="fx-rec" style="margin-top:9px">
+      
+        <span class="chip2">⏳ <span class="l-en">accruing</span><span class="l-zh">累计中</span> — <b>0</b> <span class="l-en">flags pending, graded forward over ~3mo vs SPY</span><span class="l-zh">个标记待评分，约3个月后对标普前瞻评分</span></span>
+      
+    </div>
+    
   </div>
 
   <div class="fx-panel">

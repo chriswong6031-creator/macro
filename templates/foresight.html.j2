@@ -71,6 +71,14 @@
                     padding:4px 10px; border-radius:8px;
                     background:color-mix(in srgb, var(--c) 16%, var(--panel)); color:var(--c); border:1px solid color-mix(in srgb,var(--c) 32%,transparent); }
   .fx-card .tagline { font-size:11.5px; color:var(--muted); margin-left:auto; }
+  .fx-score { display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+              min-width:50px; padding:4px 8px; border-radius:10px; cursor:help;
+              border:1px solid color-mix(in srgb,var(--sc,var(--muted)) 35%,transparent);
+              background:color-mix(in srgb,var(--sc,var(--muted)) 12%,var(--panel)); }
+  .fx-score .s { font-size:20px; font-weight:800; line-height:1; color:var(--sc,var(--text)); }
+  .fx-score .l { font-size:8.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-top:2px; }
+  .sc-hi { --sc:var(--up); } .sc-mid { --sc:var(--g-cold); } .sc-watch { --sc:var(--warn); } .sc-low { --sc:var(--muted); }
+  .fx-cap { font-size:10.5px; color:var(--muted); margin-top:6px; font-style:italic; }
 
   .fx-strip { display:flex; flex-wrap:wrap; gap:8px; margin:11px 0 9px; }
   .fx-leg { flex:1 1 150px; min-width:140px; border:1px solid var(--line); border-radius:10px; padding:8px 11px;
@@ -160,6 +168,11 @@
     {% for r in themes %}
     <article class="fx-card stg-{{ r.stage }}">
       <div class="row1">
+        {% if r.score is defined and r.score is not none %}{% set sd = r.score_detail or {} %}
+        <span class="fx-score {{ {'high-conviction':'sc-hi','constructive':'sc-mid','watch':'sc-watch','low / late':'sc-low'}.get(sd.verdict, 'sc-low') }}"
+              title="{% for k, v in (sd.axes or {}).items() %}{{ k }} {{ v }}{% if not loop.last %} · {% endif %}{% endfor %}">
+          <span class="s">{{ r.score|round|int }}</span><span class="l">{{ t('score', '评分') }}</span>
+        </span>{% endif %}
         <span class="nm">{{ r.name }}</span>
         <span class="badge">{{ r.stage }}</span>
         {% if r.demand_strength %}<span class="tagline">{{ t('AI-capex beneficiary', 'AI 资本开支受益') }} · {{ r.demand_strength }}</span>{% endif %}
@@ -186,6 +199,7 @@
       <p class="why">{{ r.rationale }}</p>
       <span class="fx-entry {{ 'ready' if r.entry_ready else '' }}">{{ '✅' if r.entry_ready else '⏳' }} {{ r.entry_note }}</span>
       {% if r.glut_band in ('GLUT_FORMING', 'GLUT') %}<span class="fx-exit">⚠️ {{ t('exit-risk', '退出风险') }}: {{ r.glut_band.replace('_',' ')|lower }}{% if r.glut_score is not none %} ({{ '%+.2f'|format(r.glut_score) }}){% endif %}</span>{% endif %}
+      {% if r.score_detail and r.score_detail.caps %}<div class="fx-cap">⚑ {{ t('score capped', '评分受限') }}: {{ r.score_detail.caps|join(' · ') }}</div>{% endif %}
     </article>
     {% endfor %}
   </div>
@@ -201,6 +215,17 @@
       <span class="chip2"><b>{{ track.revisions }}</b> {{ t('revision reads', '预期读数') }}</span>
       {% for e in track.recent %}<span class="chip2">{{ e.theme }} · <b>{{ e.stage }}</b> · {{ e.asof }}</span>{% endfor %}
     </div>
+    {% if grade %}
+    <div class="fx-rec" style="margin-top:9px">
+      {% if grade.n_graded and grade.n_graded > 0 %}
+        {% for stage, b in grade.by_stage.items() %}{% if b.n %}
+        <span class="chip2"><b>{{ stage }}</b> {{ t('hit-rate', '命中率') }} {{ (b.hit_rate*100)|round|int }}% ({{ b.hits }}/{{ b.n }}) · {{ t('excess', '超额') }} {{ '%+.1f'|format(b.avg_excess_pct) }}%</span>
+        {% endif %}{% endfor %}
+      {% else %}
+        <span class="chip2">⏳ {{ t('accruing', '累计中') }} — <b>{{ grade.n_pending }}</b> {{ t('flags pending, graded forward over ~3mo vs SPY', '个标记待评分，约3个月后对标普前瞻评分') }}</span>
+      {% endif %}
+    </div>
+    {% endif %}
   </div>
 
   <div class="fx-panel">
