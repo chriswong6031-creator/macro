@@ -46,11 +46,14 @@ def main() -> None:
         asof = res["asof"]
         snap.append({"ticker": t, "asof": res["asof"], "state": res["state"],
                      "above200": res["above200"], "weekly_bull": res["weekly_bull"],
+                     "trail_breach": res["trail_breach"],
                      "last": res["markers"][-1] if res["markers"] else None})
 
     (arch / "mtf_signals_latest.json").write_text(json.dumps({
         "asof": asof, "tf": "3D", "universe": "us_deep",
-        "note": "entry-quality RISK signal (display-only, NOT alpha); see research/signal_engine/CHARTER.md",
+        "note": "entry-quality RISK signal (display-only, NOT alpha); see research/signal_engine/CHARTER.md. "
+                "Exits are the simple validated baseline (sell=SELL*, cut=fast-reversal). "
+                "trail_breach/trail_stop = close-below-EMA8(3D) tail-risk flag (display-only, NOT a sell).",
         "signals": snap,
     }, indent=1))
     print(f"wrote {len(snap)} tickers -> site/signals/ + "
