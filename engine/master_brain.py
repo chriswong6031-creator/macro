@@ -119,6 +119,17 @@ MASTER_SYSTEM_TMPL = (
     "is present, factor the interest-driven (realpolitik) Fed/Admin thesis and the "
     "targeted-vs-starved capital rotation into your regime_read and rotation_check, "
     "honoring its FACT/INFERENCE/PRIOR labels — never trade a PRIOR or THEORY as fact.\n"
+    "- If `entry_quality_breadth` is present, it is a RISK / ENTRY-QUALITY breadth check "
+    "from the MTF confluence buy-filter across the US deep equity universe — it appears "
+    "ONLY because that breadth DISAGREES with the regime read, so treat it as a CALIBRATION "
+    "check: read its `calibration_check` line (e.g. a risk-on regime with few take-quality "
+    "entries = narrow leadership / rotation, not broad conviction). Its `trend_breadth` "
+    "(% above the 200-day) is the regime-tracking read; the long/short state mix is "
+    "short-horizon mean-reversion-oscillator colour, NOT a regime turn — do not read a "
+    "washed-out oscillator at a pullback low as a bear. It is a DRAWDOWN / entry-quality "
+    "read, NEVER a return / alpha signal or an auto-trade trigger; it is ONE input among "
+    "many; and it is a DIFFERENT axis from any cycle 'entry quality' (cycle proximity) — "
+    "do not conflate them. Use it to TEMPER conviction in the regime call, not to flip it.\n"
     "- Evaluate the trader's working rotation thesis against the actual state; say "
     "explicitly where reality tracks it and where it diverges.\n"
     "- Do NOT give position sizes or fire trades — the deterministic system does "
@@ -436,6 +447,144 @@ def _policy_intel_summary(root: Path) -> dict | None:
     }
 
 
+# --------------------------------------------------------------------------- #
+# entry-quality breadth — the MTF confluence buy-filter leaf, aggregated into a
+# RISK / ENTRY-QUALITY breadth CALIBRATION check for the brain. This is the seam
+# where the brain CONSUMES data/signal_archive/mtf_signals_latest.json (the leaf
+# run.py loads into latest["mtf_signals"]; see research/signal_engine/CHARTER.md §7).
+# Hard rules (CHARTER §2–4): it is a RISK / drawdown / entry-quality read, NOT a
+# return / alpha signal; ONE input among many; never scored, never an auto-trade
+# trigger; a DIFFERENT axis from engine.cycles entry_quality (cycle proximity) —
+# do not conflate. Surfaced ONLY when the breadth DISAGREES with the macro regime.
+# --------------------------------------------------------------------------- #
+def _macro_risk_posture(macro: dict | None) -> tuple[str, int]:
+    """Coarse risk-on / risk-off / neutral read off the macro summary, as an integer
+    tilt: low macro-risk + expanding growth & liquidity -> risk-on; the inverse ->
+    risk-off. Used ONLY to decide whether the entry-quality breadth DISAGREES with the
+    regime (a calibration check) — it is NOT itself a signal. Reads keys that exist on
+    BOTH the raw data/regime/latest.json dict and the _macro_summary shape (growth_score,
+    liquidity_overlay, macro_risk.label), so either may be passed."""
+    if not isinstance(macro, dict):
+        return "unknown", 0
+    tilt = 0
+    mr = ((macro.get("macro_risk") or {}).get("label") or "").lower()
+    tilt += {"low": 2, "moderate": 1, "elevated": -1, "severe": -2}.get(mr, 0)
+    g = macro.get("growth_score")
+    if isinstance(g, (int, float)):
+        tilt += 1 if g > 0.25 else -1 if g < -0.25 else 0
+    liq = (macro.get("liquidity_overlay") or "").lower()
+    tilt += 1 if "expand" in liq else -1 if "contract" in liq else 0
+    posture = "risk-on" if tilt >= 2 else "risk-off" if tilt <= -2 else "neutral"
+    return posture, tilt
+
+
+def entry_quality_breadth(macro: dict | None, root: Path | None = None) -> dict | None:
+    """Aggregate the MTF buy-filter leaf across the US deep universe into a one-line
+    entry-quality BREADTH read, and flag a calibration CONFLICT when that breadth
+    disagrees with the macro regime posture. DISPLAY-ONLY risk/entry-quality context
+    (CHARTER §2) — one input among many, never a return signal, never auto-traded."""
+    root = Path(root) if root else config.ROOT
+    leaf = _read_json(root / "data" / "signal_archive" / "mtf_signals_latest.json")
+    return breadth_from_leaf(leaf, macro)
+
+
+def breadth_from_leaf(leaf: dict | None, macro: dict | None) -> dict | None:
+    """Pure aggregation of an mtf_signals leaf (the §7B shape) into the entry-quality
+    breadth read + calibration check. Split out so the disk path and the historical
+    regression harness share ONE code path."""
+    if not isinstance(leaf, dict):
+        return None
+    sigs = [s for s in (leaf.get("signals") or []) if isinstance(s, dict)]
+    n = len(sigs)
+    if n < 20:                      # too thin to read breadth honestly
+        return None
+
+    def pct(c: int) -> int:
+        return round(100.0 * c / n)
+
+    def _last(s: dict) -> dict:          # malformed/absent `last` -> {} (degrade-never-raise)
+        last = s.get("last")
+        return last if isinstance(last, dict) else {}
+
+    long_pct = pct(sum(1 for s in sigs if s.get("state") == "long-bias"))
+    short_pct = pct(sum(1 for s in sigs if s.get("state") == "short-bias"))
+    mixed_pct = pct(sum(1 for s in sigs if s.get("state") == "mixed"))
+    above_pct = pct(sum(1 for s in sigs if s.get("above200") is True))
+    # entry-posture = names whose LAST signal is a fresh entry (buy/rebuy); quality
+    # (take/block/pending) only exists on those.
+    entries = [s for s in sigs if _last(s).get("type") in ("buy", "rebuy")]
+    ne = len(entries)
+    entry_pct = pct(ne)
+    take_n = sum(1 for s in entries if _last(s).get("quality") == "take")
+    block_n = sum(1 for s in entries if _last(s).get("quality") == "block")
+    pend_n = sum(1 for s in entries if _last(s).get("quality") == "pending")
+
+    def qpct(c: int) -> int | None:
+        return round(100.0 * c / ne) if ne else None
+
+    take_pct, block_pct, pending_pct = qpct(take_n), qpct(block_n), qpct(pend_n)
+    # take_share = take over RESOLVED entries (exclude pending) — the conviction read used
+    # for the conflict test, so a wave of not-yet-confirmable entries can't masquerade as
+    # low conviction (a pending entry isn't a blocked one).
+    resolved = take_n + block_n
+    take_share = round(100.0 * take_n / resolved) if resolved else None
+
+    # Two ORTHOGONAL dimensions — CHARTER §5 is explicit that the 3D confluence is a
+    # MEAN-REVERSION oscillator, so its long/short state mix is SHORT-HORIZON entry-timing
+    # colour, NOT a regime read (at a local low inside an uptrend the whole universe reads
+    # short-bias). Only the 200-day TREND breadth tracks the slow regime — so the regime
+    # conflict is anchored on trend breadth, and entry quality is reported separately.
+    #   thresholds: 40/60 trend bands; 45/55 take-share bands (around a 50% midpoint) —
+    #   coarse, symmetric, display-only cut points, never tuned to past P&L (CHARTER §3).
+    trend_breadth = ("broad-up" if above_pct >= 60
+                     else "broad-down" if above_pct <= 40 else "split")
+    entry_breadth = ("n/a" if take_share is None
+                     else "endorsed" if take_share >= 55
+                     else "narrow" if (ne >= 8 and take_share <= 45) else "mixed")
+
+    take_txt = f"{take_pct}% take-quality entries" if take_pct is not None else "no fresh entries"
+    summary = (f"entry-quality breadth (risk / display-only): {above_pct}% above 200-day, "
+               f"{take_txt}, {long_pct}% long-bias ({n} US names, {ne} at entry)")
+
+    # Surface a calibration CONFLICT only when the breadth DISAGREES with the regime: a
+    # rolled-over / narrow tape under a risk-on read, or a still-broad tape under risk-off.
+    macro_posture, _tilt = _macro_risk_posture(macro)
+    conflict = None
+    if macro_posture == "risk-on":
+        if trend_breadth == "broad-down":
+            conflict = (f"macro read is risk-on, but equity breadth has broadly rolled over "
+                        f"(only {above_pct}% above the 200-day, {short_pct}% short-bias) — "
+                        f"not broad risk appetite.")
+        elif entry_breadth == "narrow":
+            conflict = (f"macro read is risk-on, but only {take_share}% of fresh entries clear "
+                        f"the buy-filter ({ne} at entry) — suggests narrow leadership / rotation, "
+                        f"not broad conviction (trend breadth is {trend_breadth}).")
+    elif macro_posture == "risk-off":
+        if trend_breadth == "broad-up" and (take_share is None or take_share >= 50):
+            extra = f", {take_share}% of fresh entries clear the filter" if take_share is not None else ""
+            conflict = (f"macro read is risk-off, but equity breadth is still broadly up "
+                        f"({above_pct}% above the 200-day{extra}) — the de-risk may be lagging or "
+                        f"the all-clear premature; watch breadth to confirm the turn.")
+
+    return {
+        "kind": "entry-quality / risk breadth (NOT a return signal)",
+        "asof": leaf.get("asof"), "tf": leaf.get("tf"), "universe": leaf.get("universe"),
+        "n": n, "n_at_entry": ne,
+        "long_bias_pct": long_pct, "short_bias_pct": short_pct, "mixed_pct": mixed_pct,
+        "above200_pct": above_pct, "entry_posture_pct": entry_pct,
+        "take_pct": take_pct, "block_pct": block_pct, "pending_pct": pending_pct,
+        "take_share_resolved_pct": take_share,
+        "trend_breadth": trend_breadth,        # regime-tracking (above-200)
+        "entry_breadth": entry_breadth,        # short-horizon entry conviction
+        "macro_posture": macro_posture,
+        "summary": summary,
+        "calibration_check": conflict,        # populated ONLY on a regime conflict
+        "is_risk_breadth_only": True,
+        "axis_note": ("3D MTF confluence buy-filter breadth; a DIFFERENT axis from cycle "
+                      "entry_quality (cycle proximity) — do not conflate."),
+    }
+
+
 def gather_state(root: Path | None = None) -> dict:
     """Compact cross-asset state assembled from each dashboard's latest.json.
     Excludes holdings / watchlist composition by design. (macro lens)"""
@@ -486,6 +635,12 @@ def gather_state(root: Path | None = None) -> dict:
     pol = _policy_intel_summary(root)
     if pol:
         state["policy_intel"] = pol
+    # MTF buy-filter entry-quality BREADTH (the brain CONSUMING the mtf_signals leaf) —
+    # a RISK / entry-quality calibration check (CHARTER §2). Surfaced ONLY when it
+    # CONFLICTS with the macro regime read; one input among many, never scored.
+    eqb = entry_quality_breadth(macro, root)
+    if eqb and eqb.get("calibration_check"):
+        state["entry_quality_breadth"] = eqb
     return state
 
 
