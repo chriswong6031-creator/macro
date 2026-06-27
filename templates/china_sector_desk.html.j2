@@ -1,0 +1,274 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
+{%- endmacro %}
+{% macro pc(v) -%}
+{% if v is none %}<span class="chg na">·</span>{% else %}<span class="chg {{ 'pos' if v>=0 else 'neg' }}">{{ '%+.2f'|format(v) }}%</span>{% endif %}
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<title>China Sector Desk — Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
+  --faint:{{C.faint}}; --red:{{C.red}}; --amber:{{C.amber}}; --grid:{{C.grid}}; --card:{{C.card}};
+  --bg:{{C.bg}}; --green:#1FA971;
+}
+*{box-sizing:border-box}
+html:not([data-lang="zh"]) .l-zh{display:none}
+html[data-lang="zh"] .l-en{display:none}
+html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 0 14px;border-bottom:1px solid var(--grid);margin-bottom:24px;position:sticky;top:0;background:var(--bg);z-index:20}
+.nav-links{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+a.nav-link{padding:7px 11px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;white-space:nowrap;transition:color .18s,background .18s}
+a.nav-link:hover,a.nav-link.active{color:var(--ink);background:#eef1f6}
+.nav-dd{position:relative;display:inline-flex}
+.nav-dd>a.nav-link .caret{display:inline-block;margin-left:3px;font-size:9px;opacity:.6;transition:transform .2s}
+.nav-dd:hover>a.nav-link .caret,.nav-dd:focus-within>a.nav-link .caret{transform:rotate(180deg)}
+.nav-dd::after{content:"";position:absolute;left:0;right:0;top:100%;height:9px}
+.nav-dd-menu{position:absolute;top:calc(100% + 7px);left:0;min-width:218px;background:var(--card);border:1px solid var(--grid);border-radius:13px;box-shadow:0 12px 34px rgba(16,24,40,.14);padding:6px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:opacity .18s ease,transform .18s ease,visibility .18s;z-index:70}
+.nav-dd:hover>.nav-dd-menu,.nav-dd:focus-within>.nav-dd-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.nav-dd-menu a{display:block;padding:9px 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--text);text-decoration:none;white-space:nowrap;transition:background .15s,color .15s}
+.nav-dd-menu a .d{display:block;font-size:11.5px;font-weight:400;color:var(--muted);margin-top:2px}
+.nav-dd-menu a:hover,.nav-dd-menu a.active{background:#eef1f6;color:var(--ink)}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.nav-ctrls .ai-brief-link{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;flex:none;padding:5px 12px;border-radius:999px;background:var(--card);border:1px solid var(--grid);color:var(--text);font-size:12.5px;font-weight:600;line-height:1;text-decoration:none;transition:border-color .15s,color .15s}
+.nav-ctrls .ai-brief-link:hover{border-color:var(--blue);color:var(--blue)}
+.lang-toggle{display:inline-flex;position:relative;background:#eef1f6;border:1px solid var(--grid);border-radius:999px;padding:3px;cursor:pointer;flex:none}
+.lang-toggle .pill{position:absolute;top:3px;left:3px;width:calc(50% - 3px);height:calc(100% - 6px);border-radius:999px;background:var(--blue);transition:transform .34s cubic-bezier(.34,1.4,.5,1)}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(100%)}
+.lang-toggle .opt{position:relative;z-index:1;min-width:28px;text-align:center;padding:3px 9px;font-size:11.5px;font-weight:600;color:var(--muted);transition:color .25s;user-select:none}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:#fff}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:#fff}
+.theme-switch{width:56px;height:27px;border-radius:999px;background:#eef1f6;border:1px solid var(--grid);position:relative;cursor:pointer;padding:0;flex:none}
+.theme-switch .ic{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;opacity:.5;line-height:1}
+.theme-switch .ic.sun{right:8px}.theme-switch .ic.moon{left:8px}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;box-shadow:0 2px 5px rgba(0,0,0,.3);transform:translateX(29px);transition:transform .34s cubic-bezier(.34,1.45,.5,1),background .3s}
+.theme-switch .knob::before{content:"☀️"}
+html[data-theme="dark"]{--bg:#0f1115;--card:#181b21;--grid:#2a2f3a;--ink:#e8edf4;--text:#d7dce3;--muted:#8b93a1;--faint:#6b7280}
+html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.active{background:#222732}
+html[data-theme="dark"] .nav-dd-menu a:hover,html[data-theme="dark"] .nav-dd-menu a.active{background:#222732}
+html[data-theme="dark"] .lang-toggle{background:#222732}
+html[data-theme="dark"] .theme-switch{background:#222732}
+html[data-theme="dark"] .theme-switch .knob{transform:translateX(0);background:#e8c15a}
+html[data-theme="dark"] .theme-switch .knob::before{content:"🌙"}
+.h1{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:6px 0 4px}
+.intro{color:var(--muted);font-size:14.5px;max-width:880px;margin-bottom:6px}
+.note{border-left:3px solid var(--blue);padding:8px 0 8px 14px;margin:14px 0 4px;color:var(--text);font-size:13px;max-width:920px}
+.sec-h{display:flex;align-items:baseline;gap:12px;margin:34px 0 4px}
+.sec-h h2{font-size:21px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.02em}
+.sec-h .sub{color:var(--muted);font-size:13px}
+.chg{font-variant-numeric:tabular-nums;font-weight:700}
+.chg.pos{color:var(--green)} .chg.neg{color:var(--red)} .chg.na{color:var(--faint);font-weight:400}
+html[data-lang="zh"] .chg.pos{color:var(--red)} html[data-lang="zh"] .chg.neg{color:var(--green)}
+/* ---- pathway cards ---- */
+.pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:14px}
+@media(max-width:880px){.pgrid{grid-template-columns:1fr}}
+.pcard{background:var(--card);border:1px solid var(--grid);border-radius:18px;padding:20px}
+.pcard-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px}
+.pcard-top h3{font-size:18px;font-weight:800;color:var(--ink);margin:0;letter-spacing:-.02em}
+.bbg{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--blue);background:color-mix(in srgb,var(--blue) 12%,transparent);padding:3px 7px;border-radius:6px}
+.lvl{margin-left:auto;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.posrow{display:flex;align-items:center;gap:10px;margin:12px 0 6px}
+.posbar{flex:1;height:9px;border-radius:999px;position:relative;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7)}
+.posbar i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;border:2.5px solid var(--ink);transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.poslab{font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
+.posends{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin:-2px 0 8px}
+.cond{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.cond>div{flex:1;min-width:120px;background:var(--bg);border-radius:11px;padding:10px 12px}
+html[data-theme="dark"] .cond>div{background:var(--grid)}
+.cond .k{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600}
+.cond .v{font-size:21px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.cond .v small{font-size:11px;font-weight:600;color:var(--muted)}
+.cond .ci{font-size:10.5px;color:var(--faint);margin-top:1px}
+.legs{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.leg{font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:999px;border:1px solid var(--grid);color:var(--text)}
+.leg.bullish{border-color:#1FA971;color:#1FA971;background:color-mix(in srgb,#1FA971 9%,transparent)}
+.leg.bearish{border-color:var(--amber);color:var(--amber);background:color-mix(in srgb,var(--amber) 10%,transparent)}
+.narr{font-size:13px;color:var(--text);margin:10px 0 4px;line-height:1.55}
+.turns{font-size:11.5px;color:var(--muted);margin-top:6px}
+.caveat{font-size:11px;color:var(--faint);margin-top:10px;border-top:1px solid var(--grid);padding-top:8px;line-height:1.5}
+/* ---- board table ---- */
+.tbl-wrap{overflow-x:auto;margin-top:12px;border:1px solid var(--grid);border-radius:14px}
+table.board{border-collapse:collapse;width:100%;min-width:980px;font-size:13px}
+table.board th,table.board td{padding:9px 11px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--grid)}
+table.board th{font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;position:sticky;top:0;background:var(--card);cursor:pointer;user-select:none}
+table.board th:first-child,table.board td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+table.board tbody tr:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
+.snm{font-weight:700;color:var(--ink)} .snm small{display:block;font-weight:400;color:var(--faint);font-size:10.5px}
+.nb-px{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.pill-pos{display:inline-flex;align-items:center;gap:6px}
+.minibar{width:54px;height:7px;border-radius:999px;background:linear-gradient(90deg,#1FA971,#e0a106,#a855f7);position:relative;display:inline-block}
+.minibar i{position:absolute;top:50%;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--ink);transform:translate(-50%,-50%)}
+.poslbl{font-size:10.5px;color:var(--muted)}
+.cyc{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--bg);border:1px solid var(--grid);color:var(--text)}
+html[data-theme="dark"] .cyc{background:var(--grid)}
+svg.spark{display:block}
+.val{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.chipset{background:var(--card);border:1px solid var(--grid);border-radius:13px;padding:12px 14px;flex:1;min-width:220px}
+.chipset .k{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--text);background:var(--bg);border:1px solid var(--grid);border-radius:999px;padding:4px 9px;margin:0 5px 5px 0}
+html[data-theme="dark"] .chip{background:var(--grid)}
+.chip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.gate{font-size:11.5px;margin-top:8px;font-weight:600}
+.gate.ok{color:var(--green)} .gate.warn{color:var(--amber)}
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--grid);font-size:12px;color:var(--faint);line-height:1.7;max-width:980px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+      {% include "_navlinks.html.j2" %}
+    <div class="nav-ctrls">
+      <a class="ai-brief-link" href="china.html">🇨🇳 {{ t('China Regime','中国体制') }}</a>
+      <button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <span class="pill"></span>
+        <span class="opt en-opt" data-l="en">EN</span>
+        <span class="opt zh-opt" data-l="zh">中文</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="h1">🇨🇳 {{ t('China Sector Desk','中国行业桌面') }}</div>
+  <div class="intro">{{ t('Live tracking of China’s equity sectors as clean indices — the open-data analogue of the Bloomberg GS China sector baskets (GSXACHBA Banks · GSXACCON Consumption · GSXACNRE Real Estate · GSXACNAU Auto). Headline series are the authoritative Shenwan (申万) L1 industry indices (deep history to 1999/2014); the intraday tape rides the sector ETFs. The Pathway Desk adds an evidence-gated, conditional forward read for the four GS sectors.','以干净指数实时跟踪中国股票行业——彭博 GS 中国行业篮子（GSXACHBA 银行 · GSXACCON 消费 · GSXACNRE 地产 · GSXACNAU 汽车）的开源数据对应版。主线为权威的申万一级行业指数（历史可追溯至 1999/2014 年）；日内行情跟随行业 ETF。路径桌面为四大 GS 行业提供经证据门槛的条件化前瞻。') }}</div>
+
+  <div class="note">{{ t('The GSXAC* tickers are Goldman Sachs proprietary baskets, licensed only through Bloomberg — not redistributable. This desk reconstructs the same exposures from free, keyless data (Shenwan indices + sector ETFs + curated constituents). It is descriptive context, not investment advice.','GSXAC* 代码为高盛专有篮子，仅通过彭博授权，不可再分发。本桌面以免费、无密钥数据（申万指数 + 行业 ETF + 精选成分股）重建相同的敞口。仅为描述性背景，非投资建议。') }}</div>
+
+  {% if pathway and pathway.sectors %}
+  <div class="sec-h"><h2>🧭 {{ t('Pathway Desk — GS Sectors','路径桌面 — GS 行业') }}</h2>
+    <span class="sub">{{ t('cycle position · major turns · conditional forward tilt','周期位置 · 主要拐点 · 条件化前瞻倾向') }}</span></div>
+  <div class="pgrid">
+    {% for s in pathway.sectors %}
+    {% set h6 = s.conditional.h6 or s.conditional.h3 %}
+    <div class="pcard">
+      <div class="pcard-top">
+        <h3>{{ t(s.en, s.zh) }}</h3><span class="bbg">{{ s.bbg }}</span>
+        <span class="lvl">{{ t('idx','指数') }} {{ '%.0f'|format(s.level) }} · {{ s.span }}</span>
+      </div>
+      <div class="posrow">
+        <span class="poslab">{{ t(s.position.label, s.position.label_zh) }} · {{ s.position.score|int }}/100</span>
+        <div class="posbar">{% if s.position.score is not none %}<i style="left:{{ s.position.score }}%"></i>{% endif %}</div>
+      </div>
+      <div class="posends"><span>{{ t('washed out','超卖见底') }}</span><span>{{ t('euphoric','过热') }}</span></div>
+      {% if h6 %}
+      <div class="cond">
+        <div><div class="k">{{ t('Fwd 6m up-rate','未来6月上涨率') }}</div>
+          <div class="v">{{ (h6.cond_rate*100)|int }}%<small> / {{ t('base','基准') }} {{ (h6.base_rate*100)|int }}%</small></div>
+          <div class="ci">{{ t('when setup ~ today','当配置类似今日') }} · 95% CI {{ (h6.ci_lo*100)|int }}–{{ (h6.ci_hi*100)|int }}% · n={{ h6.n }}</div></div>
+        <div><div class="k">{{ t('Median fwd 6m','未来6月中位') }}</div>
+          <div class="v">{{ pc(h6.med_fwd_pct) }}</div>
+          <div class="ci">{{ t('vs base','对比基准') }} {{ pc(h6.base_med_pct) }}</div></div>
+      </div>
+      {% endif %}
+      <div class="legs">
+        {% for l in s.setup.legs %}{% if l.stance != 'neutral' %}<span class="leg {{ l.stance }}">{{ t(l.label_en, l.label_zh) }} {{ '%+.1f'|format(l.contribution) }}</span>{% endif %}{% endfor %}
+      </div>
+      <div class="narr">{{ t(s.narrative_en, s.narrative_zh) }}</div>
+      {% if s.turns.last %}<div class="turns">{{ t('Last major turn','最近主要拐点') }}: <b>{{ t(s.turns.last.kind, '底' if s.turns.last.kind=='bottom' else '顶') }}</b> {{ s.turns.last.date }} · {{ s.turns.n_bottoms }}{{ t('B','底') }}/{{ s.turns.n_tops }}{{ t('T','顶') }} {{ t('(≥25% zigzag)','（≥25% 折线）') }}</div>{% endif %}
+      <div class="caveat">{{ t(s.caveat_en, s.caveat_zh) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if gate %}<div class="gate {{ 'ok' if gate.passed else 'warn' }}">{{ '✓' if gate.passed else '⚠' }} {{ t('Evidence gate','证据门槛') }}: {{ t('signature checks pass','特征检验通过') if gate.passed else 'review' }}{% if gate.soft_warnings %} · {{ gate.soft_warnings|length }} {{ t('sign-drift note(s)','符号漂移提示') }}{% endif %}</div>{% endif %}
+  {% endif %}
+
+  <div class="sec-h"><h2>📊 {{ t('Live Sector Board','行业实时看板') }}</h2>
+    <span class="sub">{{ t('all 16 sectors · Shenwan index + live ETF tape · as of','全部16个行业 · 申万指数 + ETF实时行情 · 截至') }} {{ desk.as_of }}</span></div>
+  {% if desk.summary %}
+  <div class="chips">
+    <div class="chipset"><div class="k">🏆 {{ t('RS leaders (60d)','相对强度领先（60日）') }}</div>
+      {% for x in desk.summary.leaders %}<span class="chip">{{ t(x.name, x.name_zh) }} {{ pc(x.rs_60d) }}</span>{% endfor %}</div>
+    <div class="chipset"><div class="k">🐌 {{ t('RS laggards','相对强度落后') }}</div>
+      {% for x in desk.summary.laggards %}<span class="chip">{{ t(x.name, x.name_zh) }} {{ pc(x.rs_60d) }}</span>{% endfor %}</div>
+    <div class="chipset"><div class="k">🟢 {{ t('Washed out (bottom-like)','超卖（接近底部）') }}</div>
+      {% for x in desk.summary.washed_out %}<span class="chip">{{ t(x.name, x.name_zh) }} <b>{{ x.score|int }}</b></span>{% endfor %}</div>
+    <div class="chipset"><div class="k">🔴 {{ t('Euphoric (top-like)','过热（接近顶部）') }}</div>
+      {% for x in desk.summary.euphoric %}<span class="chip">{{ t(x.name, x.name_zh) }} <b>{{ x.score|int }}</b></span>{% endfor %}</div>
+  </div>
+  {% endif %}
+  <div class="tbl-wrap">
+    <table class="board" id="board">
+      <thead><tr>
+        <th data-c="0">{{ t('Sector','行业') }}</th>
+        <th data-c="1">{{ t('ETF','ETF') }}</th>
+        <th data-c="2">{{ t('Index','指数') }}</th>
+        <th data-c="3">1D</th><th data-c="4">5D</th><th data-c="5">20D</th><th data-c="6">YTD</th>
+        <th data-c="7">{{ t('RS 60d','相对强度60日') }}</th>
+        <th data-c="8">{{ t('Cycle pos.','周期位置') }}</th>
+        <th data-c="9">{{ t('State','状态') }}</th>
+        <th data-c="10">PE</th><th data-c="11">PB</th><th data-c="12">{{ t('Yld','股息') }}</th>
+        <th data-c="13">{{ t('3y trend','3年走势') }}</th>
+        <th data-c="14">{{ t('Last turn','最近拐点') }}</th>
+      </tr></thead>
+      <tbody>
+      {% for s in desk.sectors %}
+        <tr>
+          <td><span class="snm">{{ t(s.name, s.name_zh) }}<small>申万 {{ s.sw_code }} · {{ t('from','起') }} {{ s.history_from }}</small></span></td>
+          <td><span class="nb-px" data-sym="{{ s.live_sym }}" data-mkt="cn">{% if s.etf_last is not none %}{{ '%.3f'|format(s.etf_last) }}{% else %}·{% endif %}</span></td>
+          <td class="val">{{ '%.0f'|format(s.level) }}</td>
+          <td>{{ pc(s.chg_1d) }}</td><td>{{ pc(s.chg_5d) }}</td><td>{{ pc(s.chg_20d) }}</td><td>{{ pc(s.chg_ytd) }}</td>
+          <td>{% if s.rs %}{{ pc(s.rs.mom_60d) }}{% else %}<span class="chg na">·</span>{% endif %}</td>
+          <td><span class="pill-pos">{% if s.position.score is not none %}<span class="minibar"><i style="left:{{ s.position.score }}%"></i></span><span class="poslbl">{{ t(s.position.label, s.position.label_zh) }}</span>{% else %}·{% endif %}</span></td>
+          <td>{% if s.cycle and s.cycle.state %}<span class="cyc">{{ s.cycle.state }}</span>{% else %}<span class="chg na">·</span>{% endif %}</td>
+          <td class="val">{{ s.valuation.pe if s.valuation and s.valuation.pe is not none else '·' }}</td>
+          <td class="val">{{ s.valuation.pb if s.valuation and s.valuation.pb is not none else '·' }}</td>
+          <td class="val">{{ s.valuation.div ~ '%' if s.valuation and s.valuation.div is not none else '·' }}</td>
+          <td><span class="spark" data-key="{{ s.sw_code }}"></span></td>
+          <td class="val">{% if s.last_turn %}{{ t(s.last_turn.kind, '底' if s.last_turn.kind=='bottom' else '顶') }} {{ s.last_turn.date[:7] }}{% else %}·{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    {{ t('Headline sector series = Shenwan (申万) L1 industry indices (akshare, keyless), deep history to 1999/2014 — the domestic standard and the closest free analogue to the GS China baskets. Intraday ETF tape via live.js. Cycle position = own-history percentile of distance-from-200DMA + drawdown-from-1y-high (the washout↔euphoria signature that was stable across all four GS sectors in Phase 0). The Pathway Desk’s forward tilt is an EMPIRICAL conditional probability over the sign-stable lead cluster (credit / PPI / mean-reversion / breadth) — conditioning context with Wilson confidence intervals, not a point forecast or buy signal. Method: research/CHINA_SECTOR_PATHWAY_PHASE0.md. Built','主线行业序列 = 申万一级行业指数（akshare，无密钥），历史至 1999/2014 年——境内标准，也是 GS 中国篮子最接近的免费替代。日内 ETF 行情经 live.js。周期位置 = 偏离200日均线 + 距一年高点回撤的自身历史分位（在 Phase 0 中四大 GS 行业均稳定的超卖↔过热特征）。路径桌面的前瞻倾向为符号稳定领先因子组合（信用 / PPI / 均值回归 / 广度）的经验条件概率——带 Wilson 置信区间的条件化背景，而非点预测或买卖信号。方法见 research/CHINA_SECTOR_PATHWAY_PHASE0.md。生成于') }} {{ built }}.
+  </div>
+</div>
+<script>
+// inline SVG sparklines from desk.json (dependency-free)
+(function(){
+  var desk = {{ desk_json|safe }};
+  var dark = document.documentElement.getAttribute('data-theme') !== 'light';
+  function draw(arr){
+    if(!arr || arr.length < 2) return '';
+    var w=84, h=22, n=arr.length, mn=Math.min.apply(null,arr), mx=Math.max.apply(null,arr);
+    var rng=(mx-mn)||1, up=arr[n-1]>=arr[0];
+    var pts=arr.map(function(v,i){return (i/(n-1)*w).toFixed(1)+','+(h-((v-mn)/rng)*h).toFixed(1);}).join(' ');
+    var col=up?'#1FA971':'#e5484d';
+    if(document.documentElement.getAttribute('data-lang')==='zh'){col=up?'#e5484d':'#1FA971';}
+    return '<svg class="spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">'+
+      '<polyline fill="none" stroke="'+col+'" stroke-width="1.4" points="'+pts+'"/></svg>';
+  }
+  var byKey={}; (desk.sectors||[]).forEach(function(s){byKey[s.sw_code]=s.spark;});
+  document.querySelectorAll('.spark[data-key]').forEach(function(el){
+    el.innerHTML = draw(byKey[el.getAttribute('data-key')]);
+  });
+  // simple click-to-sort on numeric columns
+  var tbl=document.getElementById('board'); if(!tbl) return;
+  tbl.querySelectorAll('th').forEach(function(th){
+    th.addEventListener('click',function(){
+      var ci=+th.getAttribute('data-c'), rows=Array.from(tbl.tBodies[0].rows);
+      var asc=th._asc=!th._asc;
+      rows.sort(function(a,b){
+        var x=parseFloat((a.cells[ci].textContent||'').replace(/[^0-9.\-]/g,'')),
+            y=parseFloat((b.cells[ci].textContent||'').replace(/[^0-9.\-]/g,''));
+        if(isNaN(x)&&isNaN(y))return 0; if(isNaN(x))return 1; if(isNaN(y))return -1;
+        return asc?x-y:y-x;
+      });
+      rows.forEach(function(r){tbl.tBodies[0].appendChild(r);});
+    });
+  });
+})();
+</script>
+<script src="theme.js"></script>
+<script src="live.js"></script>
+</body></html>
