@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-27T11:16:15.415249+00:00",
+  "generated_utc": "2026-06-27T12:33:11.636266+00:00",
   "as_of": "2026-06-27",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -28077,6 +28077,14 @@
         "detail": "M&A / Divestitures"
       },
       {
+        "ticker": "DDL",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "ESAB",
         "category": "Acquisitions",
         "confidence": "high",
@@ -34925,6 +34933,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "SKY",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "MWYN",
         "category": "Delistings",
         "confidence": "high",
@@ -34933,12 +34949,12 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "NCRA",
-        "category": "Delistings",
+        "ticker": "MLAAU",
+        "category": "SPACs",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "SPACs"
       },
       {
         "ticker": "OLB",
@@ -35285,6 +35301,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "IPW",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "CONE",
         "category": "Acquisitions",
         "confidence": "high",
@@ -35299,6 +35323,14 @@
         "activist": false,
         "filer": null,
         "detail": "Deal Terminations"
+      },
+      {
+        "ticker": "OCTLF",
+        "category": "Spin-Offs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
       },
       {
         "ticker": "VCIG",
@@ -35965,6 +35997,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "MNSBP",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "SWKHL",
         "category": "Delistings",
         "confidence": "high",
@@ -36445,6 +36485,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "WULF",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "GUTS",
         "category": "Delistings",
         "confidence": "high",
@@ -36750,6 +36798,14 @@
       },
       {
         "ticker": "PLUR",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "RDACU",
         "category": "Other",
         "confidence": "medium",
         "activist": false,
@@ -37141,6 +37197,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "TRAW",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "BMNP",
         "category": "Delistings",
         "confidence": "high",
@@ -37403,6 +37467,14 @@
         "activist": false,
         "filer": null,
         "detail": "Delistings"
+      },
+      {
+        "ticker": "WSUPW",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "AMBR",
@@ -38013,9 +38085,33 @@
         "detail": "Other"
       },
       {
-        "ticker": "AAPG",
+        "ticker": "EZGO",
         "category": "Other",
         "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "ELOG",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "EMPG",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "FUTU",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
         "detail": "Other"
@@ -38125,12 +38221,68 @@
         "detail": "Other"
       },
       {
-        "ticker": "BRKHU",
+        "ticker": "EDIT",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "XZO",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "HLLY-WT",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "KNSA",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "LCCCR",
         "category": "SPACs",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "SPACs"
+      },
+      {
+        "ticker": "NL",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "NOG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PGNY",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "XHLD",
@@ -38299,6 +38451,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "AAPG",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "ATS",
@@ -38733,14 +38893,6 @@
         "detail": "Other"
       },
       {
-        "ticker": "NOG",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
-      },
-      {
         "ticker": "NUTR",
         "category": "Delistings",
         "confidence": "high",
@@ -38867,6 +39019,14 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "BRKHU",
+        "category": "SPACs",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "SPACs"
       },
       {
         "ticker": "SCOR",
