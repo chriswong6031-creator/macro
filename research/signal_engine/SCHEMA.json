@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "research/signal_engine/SCHEMA.json",
+  "title": "Signal Engine ↔ Chart contract (CHARTER §7)",
+  "description": "SINGLE SOURCE OF TRUTH for the signal→chart marker contract (research/signal_engine/CHARTER.md §7). The signal engine WRITES these shapes; the charting web-app READS them. Both sides build to THIS file so the two workstreams never drift. Encodes the two §7 shapes via $defs: `perTicker` (the per-ticker chart-marker file site/signals/<TICKER>.json) and `brainLeaf` (the Mastermind brain leaf data/signal_archive/mtf_signals_latest.json). Contract rule: if either side needs a new field, ADD it HERE first, then both sides build to it — never invent a divergent shape in the charting app. No version field yet (v1 implicit).",
+  "$comment": "This document only defines $defs; it asserts nothing at the root. scripts/validate_signals.py validates each file against the relevant $def (perTicker for site/signals/*.json, brainLeaf for the archive). Keep `quality` enum in sync with engine/signal_quality.py: it emits take | block | pending (pending = last 1-2 bars can't confirm yet) — documented in CHARTER §7.",
+  "$defs": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      "description": "ISO calendar date YYYY-MM-DD (a 3D bar date)."
+    },
+    "state": {
+      "enum": ["long-bias", "short-bias", "mixed"],
+      "description": "Confluence state of the most recent bar."
+    },
+    "marker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["date", "type"],
+      "properties": {
+        "date": {"$ref": "#/$defs/date"},
+        "type": {
+          "enum": ["buy", "sell", "cut", "rebuy"],
+          "description": "buy=confluence BUY★, sell=confluence SELL★, cut=fast-reversal cut-loss, rebuy=fast-reversal re-entry."
+        },
+        "quality": {
+          "enum": ["take", "block", "pending"],
+          "description": "Buy-filter verdict — present on buy/rebuy ONLY (never sell/cut). take=passed the validated buy-filter (render solid); block=filtered out (render greyed/hollow); pending=last 1-2 bars cannot confirm reclaim-and-hold yet."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Human-readable rationale for the buy/rebuy quality verdict."
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "`quality` and `reason` are buy-filter verdict fields — they may appear ONLY on buy/rebuy markers. Forbid both on sell/cut. (validate_signals.py re-asserts this with a clearer message.)",
+          "if": {"required": ["type"], "properties": {"type": {"enum": ["sell", "cut"]}}},
+          "then": {"allOf": [{"not": {"required": ["quality"]}}, {"not": {"required": ["reason"]}}]}
+        },
+        {
+          "$comment": "Every buy/rebuy carries the buy-filter verdict — `quality` is REQUIRED on them (the chart reads it to render solid/hollow/provisional). A bare buy with no quality is a drift the chart can't render.",
+          "if": {"required": ["type"], "properties": {"type": {"enum": ["buy", "rebuy"]}}},
+          "then": {"required": ["quality"]}
+        }
+      ]
+    },
+    "perTicker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ticker", "asof", "tf", "state", "above200", "weekly_bull", "markers"],
+      "description": "Per-ticker chart-marker file — site/signals/<TICKER>.json (§7.A).",
+      "properties": {
+        "ticker": {"type": "string", "minLength": 1},
+        "asof": {"$ref": "#/$defs/date"},
+        "tf": {"type": "string", "minLength": 1, "description": "Timeframe label, e.g. 3D."},
+        "state": {"$ref": "#/$defs/state"},
+        "above200": {"type": "boolean"},
+        "weekly_bull": {"type": "boolean"},
+        "trail_stop": {
+          "type": ["number", "null"],
+          "description": "Current 3D EMA8 level (the close-only trailing trend). DISPLAY-ONLY tail-risk context, NOT a mechanical stop — the validated exit stays the oscillator sell/cut. See CHARTER §7."
+        },
+        "trail_breach": {
+          "type": "boolean",
+          "description": "Is the latest close below trail_stop (elevated drawdown risk right now). Display-only risk flag, never an auto-sell."
+        },
+        "risk_flags": {
+          "type": "array",
+          "description": "Ascending 3D bar-dates where price freshly breached a RISING EMA8 trailing trend (an uptrend's trail breaking = tail-risk event). DISPLAY-ONLY risk layer, kept OUT of `markers` so it never collides with the one-trade-marker-per-bar rule and is never read as a validated sell. Render de-emphasized (e.g. dotted/⚠).",
+          "items": {"$ref": "#/$defs/date"}
+        },
+        "early_markers": {
+          "type": "array",
+          "description": "Ascending 3D bar-dates of the 2D-MACD pre-cross ADVANCE-WARNING (3D StochRSI bottom-turn while the faster 2D RSI-MACD histogram is only rising). Validated as m2d_s3d_early: fires ~5 trading days BEFORE the confirmed `buy` and ~2% cheaper, but acting on it early is empirically WORSE entry quality (deeper drawdown — see CONFLUENCE_TUNING.md §3/§5b). DISPLAY-ONLY context, kept OUT of `markers`, suppressed on a confirmed-buy bar, NEVER a buy/take, NEVER scored. Render as a faint/hollow pre-dot distinct from the green buy ▲.",
+          "items": {"$ref": "#/$defs/date"}
+        },
+        "early_now": {
+          "type": "boolean",
+          "description": "Is the latest bar an active 2D-MACD advance-warning. Display-only context, never an auto-buy."
+        },
+        "markers": {
+          "type": "array",
+          "description": "Chronological (ascending) chart markers. validate_signals.py asserts strict ascending order.",
+          "items": {"$ref": "#/$defs/marker"}
+        }
+      }
+    },
+    "signalEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ticker", "asof", "state", "above200", "weekly_bull", "last"],
+      "description": "One ticker's compact snapshot inside the brain leaf (§7.B).",
+      "properties": {
+        "ticker": {"type": "string", "minLength": 1},
+        "asof": {"$ref": "#/$defs/date"},
+        "state": {"$ref": "#/$defs/state"},
+        "above200": {"type": "boolean"},
+        "weekly_bull": {"type": "boolean"},
+        "trail_stop": {
+          "type": ["number", "null"],
+          "description": "Current 3D EMA8 trailing-trend level (display-only tail-risk context; see perTicker.trail_stop)."
+        },
+        "trail_breach": {
+          "type": "boolean",
+          "description": "Is the latest close below trail_stop (elevated drawdown risk now). Display-only, never an auto-sell."
+        },
+        "early_now": {
+          "type": "boolean",
+          "description": "Is the latest bar an active 2D-MACD pre-cross advance-warning (display-only context; see perTicker.early_markers). NEVER a buy and NEVER scored."
+        },
+        "last": {
+          "description": "The ticker's most recent TRADE marker (buy/sell/cut/rebuy), or null when it has no markers. Never a risk_flag — breaches are not trade signals.",
+          "anyOf": [{"type": "null"}, {"$ref": "#/$defs/marker"}]
+        }
+      }
+    },
+    "brainLeaf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asof", "tf", "universe", "signals"],
+      "description": "Brain leaf — data/signal_archive/mtf_signals_latest.json, loaded into latest[\"mtf_signals\"] by engine/run.py (§7.B). Consumed as a display-only RISK / entry-quality input, NOT alpha.",
+      "properties": {
+        "asof": {"$ref": "#/$defs/date"},
+        "tf": {"type": "string", "minLength": 1},
+        "universe": {"type": "string", "minLength": 1},
+        "note": {"type": "string", "description": "Honest-labeling note (display-only risk signal, not alpha)."},
+        "signals": {"type": "array", "items": {"$ref": "#/$defs/signalEntry"}}
+      }
+    }
+  }
+}
