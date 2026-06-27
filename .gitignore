@@ -71,3 +71,9 @@ admin/*-sa.json
 
 # dev-only fast-render view-model cache (scripts/render_macro_fast.py)
 data/_dev_macro_vm.pkl
+
+# Signal track-record log (churning research log — see engine/track_record.py)
+data/signal_archive/track_record.parquet
+
+# Signal track-record audit scratch output (reader writes this; git-ignored)
+research/signal_engine/_track_record_audit.md
