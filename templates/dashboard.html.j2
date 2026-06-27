@@ -14,6 +14,22 @@
 <span class="npstat"><span>{{ nh.years }}y</span><span><span class="l-en">range</span><span class="l-zh">区间</span> {{ nh.lo }}–{{ nh.hi }}%</span><span><span class="l-en">now</span><span class="l-zh">现值</span> <b>{{ nh.last }}%</b></span></span>
 <span class="muted" style="font-size:10px;display:block;margin-top:2px">{% if nh.kind=='inflation' %}<span class="l-en">Dashed line = 2% Fed target · trend vs ~3 months ago.</span><span class="l-zh">虚线＝美联储 2% 目标 · 趋势对比约三个月前。</span>{% else %}<span class="l-en">Dashed line = 0% (stall) · trend = recent direction.</span><span class="l-zh">虚线＝0%（停滞）· 趋势＝近期方向。</span>{% endif %}</span>{% endif %}
 {%- endmacro %}
+{# Zeberg-style mini cycle chart: grey recession shading + zero baseline + blue trend +
+   red momentum. mom/trend/rec are equal-length arrays (None allowed). #}
+{% macro bcspark(mom, trend, rec, w=320, h=52) -%}
+{%- set vals = (mom|reject('none')|list) + (trend|reject('none')|list) -%}
+{%- set n = mom|length -%}
+{%- if vals|length > 1 and n > 1 -%}
+{%- set amax = [vals|map('abs')|max, 0.5]|max -%}
+{%- set mid = h/2 -%}
+<svg viewBox="0 0 {{ w }} {{ h }}" preserveAspectRatio="none" style="width:100%;height:{{ h }}px;display:block" role="img">
+{%- if rec -%}{%- for i in range(rec|length) -%}{%- if rec[i] -%}<rect x="{{ (i/(n-1)*w)|round(2) }}" y="0" width="{{ (w/(n-1)+0.6)|round(2) }}" height="{{ h }}" fill="var(--muted)" opacity="0.16"/>{%- endif -%}{%- endfor -%}{%- endif -%}
+<line x1="0" y1="{{ mid }}" x2="{{ w }}" y2="{{ mid }}" stroke="var(--line)" stroke-width="1"/>
+<polyline fill="none" stroke="#4c8bf5" stroke-width="1.4" opacity="0.85" points="{% for i in range(trend|length) %}{% if trend[i] is not none %}{{ (i/(n-1)*w)|round(2) }},{{ (mid - trend[i]/amax*(mid-4))|round(2) }} {% endif %}{% endfor %}"/>
+<polyline fill="none" stroke="#e0443e" stroke-width="1.6" points="{% for i in range(mom|length) %}{% if mom[i] is not none %}{{ (i/(n-1)*w)|round(2) }},{{ (mid - mom[i]/amax*(mid-4))|round(2) }} {% endif %}{% endfor %}"/>
+</svg>
+{%- else -%}<div class="muted sm">—</div>{%- endif -%}
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1928,6 +1944,69 @@
   </div>
   {% endif %}{# /dislocation panel — only when active #}
   {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
+
+  {% if latest.business_cycle and latest.business_cycle.available %}
+  {% set BC = latest.business_cycle %}
+  {% set SIG = BC.recession_signal %}
+  {% set M = BC.measured %}
+  {% set phase_c = {'expansion':'var(--up)','slowdown':'#d98a00','contraction':'var(--down)','recovery':'#4c8bf5','unknown':'var(--muted)'} %}
+  {% set phase_z = {'expansion':'扩张','slowdown':'放缓','contraction':'收缩','recovery':'复苏','unknown':'未知'} %}
+  <div class="panel span12" id="business-cycle">
+    <h2>🔄 {{ t('Business cycle — Leading · Coincident · Lagging', '商业周期 — 领先 · 同步 · 滞后') }}
+      {{ help("A Conference-Board-style decomposition that keeps three tiers SEPARATE so the lead-lag SEQUENCE is readable: Leading indicators (jobless claims, building permits, capital-goods orders, manufacturing hours, the S&P 500, HY credit spread, the yield curve, consumer expectations) roll over FIRST; months later Coincident indicators (payrolls, real income, industrial production, manufacturing & trade sales) confirm the actual peak; Lagging indicators confirm last. Each tier is inverse-volatility-standardized monthly changes (the CB method), shown as 6-month momentum (red) vs a smoothed trend (blue), NBER recessions shaded. The recession signal is the CB '3 D's' — depth+duration (leading momentum below a calibrated threshold) AND diffusion (broad weakening). Unlike the 0–100 recession-risk score beside it, this does NOT blend the tiers — the separation IS the anticipation. Reverse-engineered free from FRED; measured, see reports/business-cycle-validation.md.", "会议委员会式的三层分解，把层级分开以读出领先-滞后顺序：领先指标（初请失业金、营建许可、资本品订单、制造业工时、标普500、高收益利差、收益率曲线、消费者预期）最先转向；数月后同步指标（非农、实际收入、工业产出、制造与贸易销售）确认真正峰值；滞后指标最后确认。每层为逆波动率标准化的月度变化（CB 方法），以6个月动量（红）对比平滑趋势（蓝）呈现，并标注 NBER 衰退阴影。衰退信号采用 CB“三D”——深度+持续（领先动量低于校准阈值）且扩散广泛走弱。与旁边的0–100衰退风险评分不同，此面板不混合层级——分离本身即前瞻性。基于免费 FRED 数据逆向构建并实测，详见 reports/business-cycle-validation.md。") }}
+    </h2>
+    <p class="muted sm" style="margin:-4px 0 10px">{{ t('Where the recession-risk score blends everything into one number, this keeps Leading / Coincident / Lagging apart so you can watch the turn propagate. Measured against NBER dates — never eyeballed.', '衰退风险评分把一切揉成一个数字；此面板把领先／同步／滞后分开，让你看清转折如何传导。以 NBER 日期实测，绝非肉眼判断。') }}</p>
+    <div class="grid">
+
+      <!-- recession signal status -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        {% set on = SIG.state == 'on' %}
+        {% set scolor = 'var(--down)' if on else 'var(--up)' %}
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Recession signal', '衰退信号') }} <span class="muted sm">{{ t('CB 3 D’s', 'CB 三D') }}</span></div>
+        <div style="font-size:22px;font-weight:700;color:{{ scolor }}">{{ t('ON', '触发') if on else t('OFF', '未触发') }}
+          <span class="badge" style="font-size:11px;vertical-align:middle">{{ SIG.months_active }} {{ t('mo active', '月触发') if on else t('mo clear', '月平静') }}</span></div>
+        <div class="muted sm" style="margin-top:5px">{{ t('Fires when leading 6-month momentum is below', '当领先6个月动量低于') }} {{ SIG.conditions.roc_threshold }} {{ t('and diffusion at or below', '且扩散度不高于') }} {{ SIG.conditions.diffusion_max|round|int }}.
+          {{ t('Now:', '当前：') }} {{ t('depth', '深度') }} {{ '✓' if SIG.conditions.depth else '✗' }} · {{ t('breadth', '广度') }} {{ '✓' if SIG.conditions.breadth else '✗' }}</div>
+        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">
+          {{ t('Cycle phase', '周期阶段') }}: <b style="color:{{ phase_c.get(BC.phase.label,'var(--muted)') }}">{{ t(BC.phase.label, phase_z.get(BC.phase.label, BC.phase.label)) }}</b></div>
+      </div>
+
+      <!-- measured track record -->
+      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
+        <div style="font-weight:700;margin-bottom:6px">{{ t('Measured vs NBER', '对照 NBER 实测') }}
+          {{ help("The signal backtested against actual NBER recession dates: lead time, false-positive count, hit rate. Effective sample is tiny (~3 point-in-time recessions), so treat the lead as illustrative, not statistically robust. The false alarms are the famous growth scares (1995 soft landing, 2002 double-dip fear, 2022 inflation scare) the real Conference Board LEI also flagged.", "信号针对 NBER 实际衰退日期回测：领先时长、误报次数、命中率。有效样本极小（约3次可点对点回溯的衰退），故领先时长仅供示意，并非统计稳健。误报恰是著名的增长恐慌（1995 软着陆、2002 二次探底担忧、2022 通胀恐慌），真实的 CB 领先指标同样曾误报。") }}</div>
+        {% if M %}
+        <div class="kv">{{ t('Recessions caught (1985+)', '已捕捉衰退（1985+）') }} <b style="color:var(--up)">{{ M.endo_caught }}/{{ M.endo_recessions }}</b></div>
+        <div class="kv">{{ t('Median lead', '中位领先') }} <b>~{{ M.median_lead_months }} {{ t('months', '个月') }}</b> <span class="muted sm">({{ t('mean', '均值') }} {{ M.mean_lead_months }})</span></div>
+        <div class="kv">{{ t('False alarms in 40y', '40年误报') }} <b>{{ M.false_positives }}</b> <span class="muted sm">{{ t('— 1995 · 2002 · 2022 growth scares', '— 1995 · 2002 · 2022 增长恐慌') }}</span></div>
+        <div class="kv">{{ t('Point-in-time era (1997+)', '可点对点回溯（1997+）') }} <b style="color:var(--up)">{{ M.pit_era_caught }}/{{ M.pit_era_recessions }}</b></div>
+        {% else %}<div class="muted sm">{{ t('Not yet calibrated — run scripts/validate_business_cycle.py', '尚未校准 — 运行 scripts/validate_business_cycle.py') }}</div>{% endif %}
+      </div>
+
+      <!-- three tiers with mini Zeberg-style charts -->
+      {% for tk, ten, tzh, tnote, tnote_z in [
+          ('leading','Leading','领先','turns first','最先转向'),
+          ('coincident','Coincident','同步','marks the peak','标记峰值'),
+          ('lagging','Lagging','滞后','confirms last','最后确认')] %}
+      {% set T = BC.tiers.get(tk) %}
+      {% if T and T.mom6 is not none %}
+      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        {% set dcolor = 'var(--up)' if T.direction=='rising' else 'var(--down)' %}
+        <div style="min-width:190px">
+          <div style="font-weight:700">{{ t(ten, tzh) }} <span class="muted sm">{{ t(tnote, tnote_z) }}</span></div>
+          <div style="font-size:20px;font-weight:700;color:{{ dcolor }}">{{ '%+.2f'|format(T.mom6) }}
+            <span class="muted" style="font-size:12px">{{ t('6mo mom.', '6月动量') }}</span></div>
+          <div class="muted sm">{{ t('diffusion', '扩散度') }} {{ T.diffusion|round|int }} · {{ T.n_legs }} {{ t('legs', '指标') }} · {{ T.asof }}</div>
+        </div>
+        <div style="flex:1;min-width:240px">{{ bcspark(T.spark_mom6, T.spark_trend, BC.spark_recession) }}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+
+    </div>
+    <p class="muted sm" style="margin-top:8px">⚠️ {{ t(BC.caveat, BC.caveat_zh) }} <span class="muted sm">{{ t('Red = 6-month momentum · blue = trend · grey = NBER recessions.', '红=6个月动量 · 蓝=趋势 · 灰=NBER 衰退。') }}</span></p>
+  </div>
+  {% endif %}
 
   {% if latest.conditions %}
   {% set C = latest.conditions %}

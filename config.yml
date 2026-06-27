@@ -42,6 +42,14 @@ fred:
   # Needs FRED_API_KEY (fredgraph has no vintages). vintage_series defaults to the
   # revision-prone set in collectors/fred.py:DEFAULT_VINTAGE_SERIES; override here.
   vintage_realtime_start: "1997-01-01"   # FRED's real-time archive begins ~1997
+  # Point-in-time set: DEFAULT_VINTAGE_SERIES (collectors/fred.py) PLUS the revision-
+  # prone business-cycle hard-data legs, so a FRED_API_KEY run (CI) auto-upgrades the
+  # recession backtest to full point-in-time. Market/rate legs (MPRIME, USREC) are not
+  # revised and stay out. NFCI family stays out (re-revises all history, API times out).
+  vintage_series: [PAYEMS, INDPRO, M2SL, WEI, GDPNOW, RECPROUSM156N, THREEFYTP10,
+    SAHMREALTIME, STICKCPIM157SFRBATL, CORESTICKM157SFRBATL, FLEXCPIM157SFRBATL,
+    MEDCPIM158SFRBCLE, STLFSI4, UMCSENT, MICH,
+    AWHMAN, ICSA, PERMIT, NEWORDER, W875RX1, CMRMTSPL, UEMPMEAN, ISRATIO, BUSLOANS, CUSR0000SAS]
   series:
     rates:
       DGS2: us2y
@@ -164,6 +172,27 @@ fred:
       FEDTARMD: fed_dot_median    # FOMC SEP median projection of the fed funds rate (year-end, % annual; quarterly)
       DFEDTARU: fed_target_upper  # fed funds target range — UPPER limit (daily, 2008-12->)
       DFEDTARL: fed_target_lower  # fed funds target range — LOWER limit (daily)
+    # --- Business-cycle model (research/BUSINESS_CYCLE_MODEL.md) — Conference-Board
+    # style Leading / Coincident / Lagging tiers. All free on FRED (keyless CSV OK).
+    # PAYEMS+INDPRO reused from econ_confirm; SPY (yahoo), spread_10y3m (curve),
+    # hy_oas (credit) and umich_sentiment (survey) are reused leading legs too, so
+    # only the genuinely-missing components are declared here.
+    cycle_leading:
+      AWHMAN: mfg_hours             # avg weekly hours, manufacturing (leads hiring/firing)
+      ICSA: initial_claims          # initial jobless claims (weekly; INVERTED in engine)
+      PERMIT: building_permits      # new private housing units authorized (thousands)
+      NEWORDER: cap_goods_orders    # new orders, nondefense capital goods ex-aircraft ($M)
+    cycle_coincident:
+      W875RX1: real_income_ex_transfer  # real personal income less transfer payments ($bn)
+      CMRMTSPL: mfg_trade_sales         # real manufacturing & trade industries sales ($M)
+    cycle_lagging:
+      UEMPMEAN: unemp_duration      # avg (mean) duration of unemployment, weeks (INVERTED)
+      ISRATIO: inventory_sales      # total business inventories-to-sales ratio (INVERTED)
+      BUSLOANS: ci_loans            # commercial & industrial loans ($bn)
+      MPRIME: prime_rate            # bank prime loan rate (%)
+      CUSR0000SAS: cpi_services     # CPI for services (lagging-inflation leg)
+    cycle_truth:
+      USREC: nber_recession         # NBER recession indicator (1=recession) — validation ground truth
     # --- Forex Vector (research/FOREX_DASHBOARD.md) — all keyless via FRED ---------
     fx_rates:                     # daily FX reference rates (H.10) — cross-check + deep history
       DEXUSEU: fx_eur_usd         # USD per EUR  (EUR base, NOT inverted)
@@ -1765,6 +1794,36 @@ engine:
         model: deepseek-v4-pro
         max_tokens: 1500
         headlines_n: 12              # recent headline titles handed to the model
+
+  # --- Business-cycle model (engine/business_cycle.py). ADDITIVE — a Conference-
+  # Board-style Leading/Coincident/Lagging decomposition that keeps the three tiers
+  # SEPARATE so the lead-lag SEQUENCE (leading rolls over -> coincident peaks ->
+  # lagging confirms) is readable, unlike the conditions recession_risk which blends
+  # them into one score. Each tier = causal inverse-vol-standardized monthly
+  # contributions (the CB standardization), cumulated to an index; the recession
+  # signal is the CB "3 D's" (depth+duration via the 6-month momentum, diffusion via
+  # breadth). The roc_threshold is in THIS index's own units — CALIBRATED by
+  # scripts/validate_business_cycle.py against NBER dates (point-in-time where ALFRED
+  # vintages exist), NOT CB's -4.3% (a different index's scaling). See
+  # research/BUSINESS_CYCLE_MODEL.md. Effective N is tiny (~3 PIT recessions) — the
+  # measured lead/false-positive stats are shipped WITH the signal, never implied.
+  business_cycle:
+    z_lookback_m: 120               # rolling window (months) for causal leg standardization (~10y)
+    z_min_months: 36                # a leg must have this many months before it contributes
+    roc_window_m: 6                 # the CB "6-month change" horizon (red line)
+    trend_smooth_m: 6               # blue line = EMA span (months) over the 6-month momentum
+    diffusion_window_m: 6           # breadth horizon: share of legs rising over this window
+    rebase: 100.0                   # index level rebased to this at first valid month
+    signal:                         # CB 3 D's — CALIBRATED (scripts/validate_business_cycle.py
+                                    # writes the live operating point to the calibration JSON,
+                                    # which WINS over these defaults; kept in sync here).
+                                    # 1985+: 3/3 endogenous recessions caught, 3 false alarms in
+                                    # 40y (1995/2002/2022 growth scares), ~7-month median lead.
+      roc_threshold: -1.25          # leading 6-month momentum below this = depth+duration (index units)
+      diffusion_max: 50.0           # leading 6-month diffusion at/below this = broad weakening (CB-canonical)
+      min_consecutive_m: 3          # both conditions must hold this many months (whipsaw filter)
+      lookahead_window_m: 18        # a fire is a true positive if an NBER recession starts within this
+      max_lead_window_m: 24         # a recession is "caught" if the signal fired within this many months before its peak
 
 # -----------------------------------------------------------------------------
 # Alerts (Phase 3 — rules defined now, wired after validation checkpoint)
