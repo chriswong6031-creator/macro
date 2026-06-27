@@ -1,0 +1,41 @@
+{
+  "version": "2026-06-27-seed",
+  "note": "Researched 'what happened & why' narratives for each sector's auto-detected cycle legs, keyed by the START turn's date (YYYY-MM-DD; the page also accepts a YYYY-MM key). `now` is the current-read line for the focus panel. THIS FILE IS A SEED covering XLK only for UI verification — Phase 1b fans out research agents to fill all 11 sectors against the real dated turns engine/sector_cycles surfaces.",
+  "sectors": {
+    "xlk": {
+      "now": "Tech is topping on narrowing leadership. XLK is RS rank #1 and well above its 200-day, but the cycle-position oscillator has rolled from euphoric highs and the advance is carried by a shrinking set of AI mega-caps. The setup is late-cycle distribution, not a fresh breakout.",
+      "legs": {
+        "2022-10-12": {
+          "title": "The genAI bull run",
+          "body": "From the October-2022 bear-market low, XLK more than doubled into mid-2024 as ChatGPT ignited a generative-AI capex super-cycle. Hyperscalers raced to buy accelerators, NVDA/AVGO re-rated violently, and falling inflation plus a Fed pivot-in-sight re-expanded multiples across software and semis.",
+          "drivers": ["genAI capex super-cycle", "NVDA/hyperscaler accelerator demand", "disinflation + Fed pivot hopes", "multiple re-expansion"]
+        },
+        "2024-07-10": {
+          "title": "Yen-carry unwind air-pocket",
+          "body": "A sharp but brief ~17% drawdown into early August 2024 as a BoJ hike unwound the yen carry trade, a weak payrolls print sparked a growth scare, and the most-crowded AI longs were forced to de-gross. It was a positioning flush, not a fundamental break — the uptrend resumed within weeks.",
+          "drivers": ["BoJ hike · yen-carry unwind", "soft payrolls growth scare", "crowded-long de-grossing"]
+        },
+        "2025-02-19": {
+          "title": "DeepSeek + tariff shock",
+          "body": "A ~26% slide as DeepSeek's cheap-inference claims questioned the AI capex ROI thesis, then the April 2025 reciprocal-tariff salvo hit hardware supply chains and risk appetite. Highest-multiple AI names corrected hardest into the early-April low.",
+          "drivers": ["DeepSeek capex-ROI scare", "reciprocal tariff shock", "high-multiple de-rating"]
+        },
+        "2025-04-08": {
+          "title": "Post-tariff-pause melt-up",
+          "body": "Off the April low, a tariff pause and resilient hyperscaler capex guides drove a powerful ~70% recovery to new highs by late October. Memory pricing tightened into an undersupplied market and AI-infrastructure spend kept beating, re-rating semis and software back to euphoria.",
+          "drivers": ["tariff pause / de-escalation", "hyperscaler capex beats", "memory undersupply", "re-rating to euphoria"]
+        },
+        "2025-10-29": {
+          "title": "AI-bubble wobble & valuation reset",
+          "body": "A ~16% reset from the October highs as breadth narrowed, Broadcom's refusal to raise its AI outlook triggered a sharp wipeout, and a hotter inflation tape flipped the Fed to a hiking bias — compressing the long-duration multiples that had powered the melt-up.",
+          "drivers": ["narrowing breadth / distribution", "Broadcom AI-guide disappointment", "Fed hiking bias · long-duration de-rating"]
+        },
+        "2026-03-30": {
+          "title": "Spring relief rally",
+          "body": "A recovery off the March-2026 low as the Iran/Hormuz oil tail unwound on a ceasefire and AI mega-caps found support, but the advance has narrowed and the cycle is re-approaching the highs on thinner participation.",
+          "drivers": ["oil-shock unwind (ceasefire)", "AI mega-cap support", "narrowing participation"]
+        }
+      }
+    }
+  }
+}

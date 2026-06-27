@@ -1,0 +1,91 @@
+/* ============================================================================
+   sector_cycles.css — Sector Cycle Intelligence · deltas over cycle.css
+   ----------------------------------------------------------------------------
+   This page reuses the WHOLE cycle.css design system (.cyc-* + .mmc-*). Only the
+   net-new chrome lives here: the Price↔Cycle mode + Log/Linear scale segmented
+   controls, peak/trough legend glyphs, the focused-sector narrative timeline, the
+   cross-sector leadership rail, and the clickable narrative bands.
+   ========================================================================== */
+
+/* Opaque page canvas — theme.css paints its site-wide "aurora" backdrop OVER an
+   expected body { background:var(--bg) }, so the page must set it (robust in any
+   browser regardless of the default canvas colour). */
+body { background: var(--bg); color: var(--text); }
+
+/* segmented controls (mode + scale) — share the zoom-button visual language */
+.sc-modes, .sc-scale { display: inline-flex; align-items: center; gap: 2px; background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 9px; padding: 2px; }
+.sc-mbtn, .sc-sbtn { font-size: 11.5px; font-weight: 650; color: var(--muted); background: transparent;
+  border: 0; border-radius: 7px; padding: 4px 11px; cursor: pointer; transition: color .16s, background .16s; }
+.sc-mbtn:hover, .sc-sbtn:hover { color: var(--text); }
+.sc-mbtn.on, .sc-sbtn.on { color: #fff; background: color-mix(in srgb, var(--link) 88%, #000 4%);
+  box-shadow: 0 1px 6px color-mix(in srgb, var(--link) 30%, transparent); }
+html[data-theme="light"] .sc-mbtn.on, html[data-theme="light"] .sc-sbtn.on { color: #fff; }
+.sc-scale.hide { display: none; }
+
+/* legend peak/trough glyphs */
+.cyc-legend .lm { width: 0; height: 0; }
+.cyc-legend .lm-pk { border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 7px solid var(--warn); }
+.cyc-legend .lm-tr { border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--up); }
+
+/* the price-mode markers (peaks/troughs) always show for the focused line; the
+   mm_charts CSS only reveals peak/trough glyphs on focus — exactly what we want. */
+.sc-page .mmc-series.is-focus .mmc-mk-peak, .sc-page .mmc-series.is-focus .mmc-mk-trough { opacity: 1; }
+
+/* clickable narrative bands (focused sector, price mode) */
+.sc-page .mmc-vband { cursor: pointer; transition: opacity .2s ease; }
+.sc-page .mmc-vband:hover { opacity: .2 !important; }
+.sc-page .mmc-vlabel { cursor: pointer; }
+
+/* ---- focus panel: leadership + turns/legs timeline ---------------------- */
+.sc-pos { display: flex; align-items: center; gap: 10px; margin: 2px 0 4px; }
+.sc-pos-bar { flex: 1; height: 7px; border-radius: 99px; background: linear-gradient(90deg,
+  color-mix(in srgb, var(--up) 40%, transparent), color-mix(in srgb, var(--muted) 30%, transparent),
+  color-mix(in srgb, var(--warn) 55%, transparent)); position: relative; border: 1px solid var(--line); }
+.sc-pos-dot { position: absolute; top: 50%; width: 13px; height: 13px; border-radius: 50%; background: var(--c, var(--link));
+  transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--panel), 0 0 12px color-mix(in srgb, var(--c, var(--link)) 60%, transparent); }
+.sc-pos-lab { font-size: 10.5px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* turns/legs timeline — each clickable leg reveals its narrative below */
+.sc-legs { display: flex; flex-direction: column; gap: 5px; max-height: 320px; overflow-y: auto; padding-right: 4px; scrollbar-width: thin; }
+.sc-leg { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px;
+  background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--lc, var(--muted));
+  border-radius: 9px; padding: 7px 11px; cursor: pointer; transition: border-color .16s, background .16s, transform .12s; }
+.sc-leg:hover { border-color: color-mix(in srgb, var(--c, var(--link)) 45%, var(--line)); transform: translateX(2px); }
+.sc-leg.open { border-color: color-mix(in srgb, var(--c, var(--link)) 60%, var(--line));
+  background: color-mix(in srgb, var(--c, var(--link)) 8%, var(--panel2)); }
+.sc-leg-k { font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px;
+  white-space: nowrap; }
+.sc-leg-k.up { color: var(--up); background: color-mix(in srgb, var(--up) 15%, transparent); }
+.sc-leg-k.down { color: var(--down); background: color-mix(in srgb, var(--down) 15%, transparent); }
+.sc-leg-t { font-size: 12px; font-weight: 600; color: var(--text); min-width: 0; }
+.sc-leg-t .sc-leg-dt { color: var(--muted); font-weight: 500; font-size: 11px; }
+.sc-leg-m { font-size: 11px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sc-leg-body { font-size: 12.5px; line-height: 1.55; color: var(--text); padding: 2px 4px 8px; display: none; }
+.sc-leg-body.show { display: block; }
+.sc-leg-body .sc-drv { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.sc-leg-body .sc-drv span { font-size: 10.5px; color: var(--muted); background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 8px; }
+.sc-leg-pending { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+/* leadership rail */
+.sc-lead { display: flex; flex-direction: column; gap: 5px; }
+.sc-lead-row { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px; font-size: 12px; }
+.sc-lead-rk { font-size: 11px; font-weight: 800; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.sc-lead-nm { display: inline-flex; align-items: center; gap: 7px; color: var(--text); font-weight: 600; cursor: pointer; }
+.sc-lead-nm .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--muted)); flex: none; }
+.sc-lead-nm:hover { color: var(--link); }
+.sc-lead-rs { font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sc-lead-rs.pos { color: var(--up); }
+.sc-lead-rs.neg { color: var(--down); }
+
+/* scorecard header: keep the (sometimes long) phase badge from overlapping the
+   (sometimes 2-line) sector name — let the name column flex/shrink, badge stays top-right */
+.sc-page .cc-id { flex: 1 1 auto; min-width: 0; }
+.sc-page .cc-nm { overflow-wrap: anywhere; }
+.sc-page .cc-phase { align-self: flex-start; font-size: 10px; }
+
+/* a faint "Phase 2" affordance on the family row (baskets) */
+.sc-fam { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; }
+.sc-fam .sc-soon { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--muted); opacity: .7;
+  border: 1px dashed var(--line); border-radius: 999px; padding: 2px 8px; }
