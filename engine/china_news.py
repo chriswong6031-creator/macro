@@ -83,7 +83,7 @@ MACRO_THEMES: dict[str, list[str]] = {
                 "A-shares", "A shares",
                 "Chinese stocks", "CSI 300", "Shanghai Composite", "CSRC",
                 "capital market", "yuan", "renminbi", "上市公司", "个股", "股票",
-                "回购", "增持", "业绩", "并购", "重组", "券商", "研报"],
+                "公司公告", "停牌", "复牌", "并购", "重组", "研报"],
 }
 # theme display labels (EN, ZH)
 THEME_LABEL: dict[str, tuple[str, str]] = {
