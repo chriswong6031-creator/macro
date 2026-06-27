@@ -31,10 +31,11 @@ def _track_record() -> dict:
     """Read the three append-only forward-grading ledgers for the track-record panel.
     Honest: these only began accruing recently, so this is a 'flags logged, grading forward'
     counter, not a hit-rate yet."""
-    out = {"foresight": 0, "bottleneck": 0, "revisions": 0, "recent": []}
+    out = {"foresight": 0, "bottleneck": 0, "glut": 0, "revisions": 0, "recent": []}
     d = config.data_dir()
     for key, rel in (("foresight", "foresight/log.jsonl"),
                      ("bottleneck", "bottleneck/log.jsonl"),
+                     ("glut", "glut_watch/log.jsonl"),
                      ("revisions", "themes/revisions_log.jsonl")):
         p = d / rel
         if not p.exists():

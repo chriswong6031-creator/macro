@@ -300,9 +300,22 @@ def run() -> dict:
         log.error("bottleneck layer failed: %s", e)
         latest["bottleneck"] = None
     try:
+        from engine.demand_capex import compute_demand_capex
+        latest["demand_capex"] = compute_demand_capex()
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("demand-capex layer failed: %s", e)
+        latest["demand_capex"] = None
+    try:
+        from engine.glut_watch import compute_glut_watch
+        latest["glut_watch"] = compute_glut_watch(demand=latest.get("demand_capex"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("glut-watch layer failed: %s", e)
+        latest["glut_watch"] = None
+    try:
         from engine.foresight_cascade import compute_foresight_cascade
         latest["foresight_cascade"] = compute_foresight_cascade(
-            latest.get("bottleneck"), latest.get("theme_revisions"))
+            latest.get("bottleneck"), latest.get("theme_revisions"),
+            latest.get("demand_capex"), latest.get("glut_watch"))
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("foresight-cascade layer failed: %s", e)
         latest["foresight_cascade"] = None
