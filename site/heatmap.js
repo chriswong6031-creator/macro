@@ -46,7 +46,7 @@
   }
   function edgeFmt(v) { return v >= 10 ? Math.round(v) : (v >= 1 ? +v.toFixed(1) : +v.toFixed(2)); }
 
-  var SEC_HD = 19, IND_HD = 12, GAP = 2;
+  var SEC_HD = 20, IND_HD = 12, GAP = 3;
 
   /* ----- small helpers ----- */
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -79,6 +79,23 @@
     // a desaturated slate between the gauge-mid track and the panel — distinct
     // from the page background so a flat ~0% tile still reads as a tile.
     return mix(hexToRgb(cssVar('--g-mid') || '#3a4150'), hexToRgb(cssVar('--panel') || '#181b21'), 0.30);
+  }
+  function computeCap(tiles, tf) {
+    var a = [];
+    (tiles || []).forEach(function (t) { var v = t.perf[tf]; if (v != null && !isNaN(v)) a.push(Math.abs(v)); });
+    if (!a.length) return FLOOR[tf] || 2;
+    a.sort(function (x, y) { return x - y; });
+    return Math.max(FLOOR[tf] || 1, a[Math.floor(a.length * 0.85)] || a[a.length - 1]);
+  }
+  function tileColor(pc, cap) {
+    var nu = neutral();
+    if (pc == null || isNaN(pc)) return mix(hexToRgb(cssVar('--panel2') || '#1e222a'), nu, 0.5);
+    var up = hexToRgb(cssVar('--hm-up-v') || '#1fbf80'), dn = hexToRgb(cssVar('--hm-dn-v') || '#f04e6a');
+    var s = 0.08 + 0.92 * Math.pow(Math.min(1, Math.abs(pc) / cap), 0.8);
+    return mix(pc >= 0 ? up : dn, nu, s);
+  }
+  function logoUrl(t) {
+    return 'https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/' + encodeURIComponent(String(t).toUpperCase()) + '.png';
   }
   function binPalette() {
     var up = hexToRgb(cssVar('--hm-up-v') || '#1ec173');
@@ -392,26 +409,33 @@
       if (mode === 'tree') recolor(); else layoutList();
       updateLegend();
     }
-    function updateLegend() {
-      var e = edgesFor(TF), pal = binPalette();
-      var sw = '';
-      [-3, -2, -1, 0, 1, 2, 3].forEach(function (b) {
-        sw += '<span class="hm-lg-sw" style="background:' + rgb(pal[b]) + '"></span>';
-      });
-      legendEl.innerHTML = '<span class="hm-lg-end">−' + edgeFmt(e[2]) + '%</span>'
-        + '<span class="hm-lg-sws">' + sw + '</span>'
-        + '<span class="hm-lg-end">+' + edgeFmt(e[2]) + '%</span>'
-        + '<span class="hm-lg-step">' + L('bins', '分档') + ' ±' + edgeFmt(e[0]) + '/' + edgeFmt(e[1]) + '/' + edgeFmt(e[2]) + '</span>';
+    function updateLegend(cap) {
+      if (cap == null) cap = computeCap(data.tiles, TF);
+      var nu = rgb(neutral());
+      var dn = rgb(hexToRgb(cssVar('--hm-dn-v') || '#f04e6a'));
+      var up = rgb(hexToRgb(cssVar('--hm-up-v') || '#1fbf80'));
+      var c = cap >= 10 ? Math.round(cap) : cap.toFixed(1);
+      legendEl.innerHTML = '<span class="hm-lg-end">−' + c + '%</span>'
+        + '<span class="hm-lg-bar" style="background:linear-gradient(90deg,' + dn + ',' + nu + ' 50%,' + up + ')"></span>'
+        + '<span class="hm-lg-end">+' + c + '%</span>';
     }
     function updateRead() {
-      var adv = 0, dec = 0;
-      data.tiles.forEach(function (t) { var v = t.perf['1D']; if (v > 0) adv++; else if (v < 0) dec++; });
+      var tf = TF || '1D', adv = 0, dec = 0, num = 0, den = 0;
+      data.tiles.forEach(function (t) {
+        var v = t.perf[tf]; if (v == null || isNaN(v)) return;
+        if (v > 0) adv++; else if (v < 0) dec++;
+        num += (t.size || 0) * v; den += (t.size || 0);
+      });
+      var agg = den > 0 ? num / den : null, tot = Math.max(1, adv + dec);
       var live = data.source === 'polygon-live';
-      var srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—');
-      var srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—');
-      readEl.innerHTML = '<span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
-        + '<span class="hm-read-src">' + L(srcEn, srcZh) + '</span>'
-        + '<span class="hm-read-br"><b class="up">' + adv + ' ▲</b> <b class="dn">' + dec + ' ▼</b></span>';
+      var tfl = (data.timeframes || []).filter(function (x) { return x.key === tf; })[0] || { en: tf, zh: tf };
+      readEl.innerHTML =
+        '<span class="hm-idx ' + (agg == null ? '' : agg >= 0 ? 'up' : 'dn') + '">' + fmtPc(agg) + '</span>'
+        + '<span class="hm-idx-l">' + L(tfl.en, tfl.zh) + '</span>'
+        + '<span class="hm-brbar"><i class="up" style="width:' + (100 * adv / tot).toFixed(1) + '%"></i><i class="dn" style="width:' + (100 * dec / tot).toFixed(1) + '%"></i></span>'
+        + '<span class="hm-brc"><b class="up">' + adv + '</b> / <b class="dn">' + dec + '</b></span>'
+        + '<span class="hm-asof"><span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
+        + L((live ? 'Live' : 'Close') + ' · ' + (data.asof || '—'), (live ? '实时' : '收盘') + ' · ' + (data.asof || '—')) + '</span>';
     }
 
     /* ----- treemap (desktop) ----- */
@@ -419,7 +443,7 @@
       mode = 'tree'; root.classList.remove('hm-mobile');
       var animate = firstLayout && !REDUCE; firstLayout = false;
       tileEls = []; secPc = [];
-      var H = Math.max(540, Math.min(window.innerHeight - 150, 1220));
+      var H = Math.max(620, Math.min(window.innerHeight - 110, 1500));
       wrap.style.height = H + 'px'; tm.style.height = H + 'px';
       var W = tm.clientWidth || wrap.clientWidth;
       if (W <= 0) { requestAnimationFrame(layoutTree); return; }
@@ -462,8 +486,12 @@
             if (tw < 27 || th < 15) cls += ' micro';
             var symF = Math.max(7.5, Math.min(tw / 3.7, th * 0.52, 18));
             var pcF = Math.max(7, Math.min(tw / 5.0, th * 0.4, 12.5));
-            html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + tr.x + 'px;top:'
-              + (innerY - y + tr.y) + 'px;width:' + tw + 'px;height:' + th + 'px">'
+            var lsz = (tw >= 72 && th >= 60) ? Math.max(18, Math.min(tw * 0.26, th * 0.30, 46)) : 0;
+            var logo = lsz ? '<img class="hm-logo" alt="" src="' + logoUrl(t.t)
+              + '" onerror="this.style.display=\'none\'" style="width:' + lsz.toFixed(0) + 'px;height:' + lsz.toFixed(0) + 'px">' : '';
+            html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + (tr.x + 1.5) + 'px;top:'
+              + (innerY - y + tr.y + 1.5) + 'px;width:' + Math.max(1, tw - 3) + 'px;height:' + Math.max(1, th - 3) + 'px">'
+              + logo
               + '<span class="sym" style="font-size:' + symF.toFixed(1) + 'px">' + esc(t.t) + '</span>'
               + '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px"></span></div>');
             tileEls.push({ t: t });
@@ -487,9 +515,10 @@
       recolor();
     }
     function recolor() {
-      var edges = edgesFor(TF), pal = binPalette();
+      var cap = computeCap(data.tiles, TF);
+      updateLegend(cap); updateRead();
       tileEls.forEach(function (rec) {
-        var pc = rec.t.perf[TF], c = pal[binIndex(pc, edges)];
+        var pc = rec.t.perf[TF], c = tileColor(pc, cap);
         rec.el.style.backgroundColor = rgb(c);
         rec.el.style.color = fgFor(c);
         if (rec.pcEl) rec.pcEl.textContent = fmtPc(pc);
@@ -506,7 +535,7 @@
     function layoutList() {
       mode = 'list'; root.classList.add('hm-mobile');
       wrap.style.height = 'auto'; tm.style.height = 'auto';
-      var edges = edgesFor(TF), pal = binPalette();
+      var cap = computeCap(data.tiles, TF);
       var sectors = groupHierarchy(data);
       var secKeys = Object.keys(sectors).sort(function (a, b) { return sectors[b].value - sectors[a].value; });
       var html = [];
@@ -530,7 +559,7 @@
           return (b.size || 0) - (a.size || 0);
         });
         rows.forEach(function (t) {
-          var pc = t.perf[TF], c = pal[binIndex(pc, edges)];
+          var pc = t.perf[TF], c = tileColor(pc, cap);
           html.push('<a class="hm-mrow" href="stock.html#' + encodeURIComponent(t.t) + '">'
             + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
             + '<span class="hm-mid"><b>' + esc(t.t) + '</b><span>' + esc(t.name) + '</span></span>'
@@ -539,6 +568,7 @@
         html.push('</div>');
       });
       tm.innerHTML = html.join('');
+      updateRead();
     }
 
     /* ----- hover / click on the treemap ----- */
@@ -670,13 +700,13 @@
       var W = strip.clientWidth, H = 96;
       if (W <= 0) { requestAnimationFrame(paintStrip); return; }
       strip.style.height = H + 'px';
-      var pal = binPalette(), edges = edgesFor('1D');
+      var cap = computeCap(data.tiles, '1D');
       var items = Object.keys(sectors).map(function (k) { return { value: sectors[k].value, ref: sectors[k] }; });
       var rects = squarify(items, 0, 0, W, H);
       var html = [];
       rects.forEach(function (r) {
         var s = r.ref, agg = sectorAgg(data, s.tiles, '1D');
-        var c = pal[binIndex(agg, edges)], fg = fgFor(c);
+        var c = tileColor(agg, cap), fg = fgFor(c);
         var sl = shortSec(s.name), w = r.w - 3, h = r.h - 3;
         if (w < 2 || h < 2) return;
         var top = s.tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); })
@@ -757,8 +787,8 @@
   function injectStyle() {
     if (document.getElementById('mm-heatmap-style')) return;
     var css = ''
-      + ':root{--hm-up-v:#16c784;--hm-dn-v:#ea3943;--hm-glass:color-mix(in srgb,var(--panel) 56%,transparent);--hm-edge:color-mix(in srgb,#ffffff 10%,var(--line));--hm-tray:#0b0d11;}'
-      + 'html[data-theme="light"]{--hm-up-v:#0fae6e;--hm-dn-v:#e02d3c;--hm-glass:color-mix(in srgb,#ffffff 66%,transparent);--hm-edge:color-mix(in srgb,#0b1830 9%,var(--line));--hm-tray:#e8ebf1;}'
+      + ':root{--hm-up-v:#1fbf80;--hm-dn-v:#f04e6a;--hm-glass:color-mix(in srgb,var(--panel) 56%,transparent);--hm-edge:color-mix(in srgb,#ffffff 9%,var(--line));--hm-tray:#0a0c11;}'
+      + 'html[data-theme="light"]{--hm-up-v:#12a567;--hm-dn-v:#e23a55;--hm-glass:color-mix(in srgb,#ffffff 66%,transparent);--hm-edge:color-mix(in srgb,#0b1830 9%,var(--line));--hm-tray:#eceff4;}'
       + 'html[data-lang="zh"]{--hm-up-v:#ea3943;--hm-dn-v:#16c784;}'
       + 'html[data-theme="light"][data-lang="zh"]{--hm-up-v:#e02d3c;--hm-dn-v:#0fae6e;}'
       + '.hm-scope{font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,sans-serif;}'
@@ -770,10 +800,14 @@
       + '.hm-tf:hover:not(.off){color:var(--text);background:color-mix(in srgb,#ffffff 7%,transparent);} .hm-tf:active:not(.off){transform:scale(.95);} .hm-tf.on{background:linear-gradient(180deg,color-mix(in srgb,var(--link) 76%,#ffffff),var(--link));color:#fff;box-shadow:0 3px 11px color-mix(in srgb,var(--link) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.4);}'
       + '.hm-tf.off{opacity:.3;cursor:default;}'
       + '.hm-legend{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--muted);}'
-      + '.hm-lg-sws{display:inline-flex;border-radius:5px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.3),inset 0 0 0 1px rgba(255,255,255,.1);}'
-      + '.hm-lg-sw{width:20px;height:13px;background-image:linear-gradient(180deg,rgba(255,255,255,.2),rgba(0,0,0,.16));} '
-      + '.hm-lg-end{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text);}'
-      + '.hm-lg-step{color:var(--muted);}'
+      + '.hm-lg-bar{width:148px;height:9px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.09);}'
+      + '.hm-lg-end{font-variant-numeric:tabular-nums;font-weight:600;color:var(--muted);font-size:10px;}'
+      + '.hm-idx{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;} .hm-idx.up{color:var(--up);} .hm-idx.dn{color:var(--down);}'
+      + '.hm-idx-l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}'
+      + '.hm-brbar{width:50px;height:6px;border-radius:3px;overflow:hidden;display:inline-flex;background:var(--panel2);} .hm-brbar i{display:block;height:100%;} .hm-brbar i.up{background:var(--up);} .hm-brbar i.dn{background:var(--down);}'
+      + '.hm-brc{font-size:11px;font-variant-numeric:tabular-nums;color:var(--muted);} .hm-brc b.up{color:var(--up);} .hm-brc b.dn{color:var(--down);}'
+      + '.hm-asof{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px;}'
+      + '.hm-logo{border-radius:5px;object-fit:contain;margin-bottom:3px;background:rgba(255,255,255,.94);padding:2px;box-shadow:0 1px 2px rgba(0,0,0,.28);}'
       + '.hm-grow{flex:1 1 8px;}'
       + '.hm-read{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);flex-wrap:wrap;}'
       + '.hm-read-br{font-variant-numeric:tabular-nums;font-weight:700;}'
@@ -801,9 +835,9 @@
       + '.hm-sc2-row{display:flex;justify-content:space-between;gap:12px;font-size:11.5px;padding:2.5px 0;break-inside:avoid;}'
       + '.hm-sc2-row b{font-weight:700;color:var(--text);} .hm-sc2-row i{font-style:normal;font-variant-numeric:tabular-nums;color:var(--muted);} .hm-sc2-row i.up{color:var(--up);} .hm-sc2-row i.dn{color:var(--down);}'
       + '.hm-ind-hd{position:absolute;padding:0 4px;font-size:9.5px;font-weight:700;color:color-mix(in srgb,var(--text) 72%,transparent);white-space:nowrap;pointer-events:none;z-index:2;text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;}'
-      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:2px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.08;box-shadow:inset 0 0 0 .5px rgba(0,0,0,.38);transition:filter .12s,box-shadow .12s;}'
-      + '.hm-tile:hover{filter:brightness(1.2);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.95);z-index:6;}'
-      + '.hm-tile .sym{font-weight:800;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.34);}'
+      + '.hm-tile{position:absolute;overflow:hidden;cursor:pointer;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.08;box-shadow:inset 0 1px 0 rgba(255,255,255,.07);transition:filter .12s,box-shadow .12s;}'
+      + '.hm-tile:hover{filter:brightness(1.16) saturate(1.05);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.92);z-index:6;}'
+      + '.hm-tile .sym{font-weight:700;letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,0,0,.28);}'
       + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:2px;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
       + '.hm-tile.tiny .pc{display:none;} .hm-tile.micro .sym{display:none;}'
       // hover card
