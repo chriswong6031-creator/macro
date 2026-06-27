@@ -209,10 +209,17 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         "dislocation": disloc,
         "demand_pool": {"bn": (demand or {}).get("pool_bn"), "yoy": (demand or {}).get("pool_yoy"),
                         "trend": (demand or {}).get("pool_trend")} if demand else None,
-        "note": ("display-only; STAGE = where the leading edge is, ranked by edge remaining "
-                 "(PRECIPICE first). T1 bottleneck LEADS, T2 demand confirms, T4 revisions "
-                 "confirm; ENTRY is deferred to the dislocation overlay, not decided here."),
+        "note": ("display-only; STAGE = where the leading edge is. T1 bottleneck LEADS, T2 "
+                 "demand confirms, T4 revisions confirm, exit-risk caps the late ones; the "
+                 "0-100 score ranks edge+quality. ENTRY is deferred to the dislocation overlay."),
     }
+    # Phase-5 investability rubric: annotate each row with a 0-100 score and re-rank by it
+    # (additive — the cascade is unchanged if scoring fails).
+    try:
+        from engine.foresight_score import annotate
+        payload = annotate(payload) or payload
+    except Exception as e:  # noqa: BLE001
+        log.warning("cascade scoring failed: %s", e)
     if write_ledger:
         try:
             _append_ledger(payload)

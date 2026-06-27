@@ -63,6 +63,14 @@ def main() -> int:
         log.warning("foresight cascade returned nothing — skipping page")
         return 0
 
+    # close the learning loop: grade matured flags forward against realized basket return
+    try:
+        from engine.foresight_grader import grade
+        grade_summary = grade()
+    except Exception as e:  # noqa: BLE001
+        log.warning("foresight grader failed (non-fatal): %s", e)
+        grade_summary = None
+
     themes = cascade.get("themes", [])
     stage_counts = {s: 0 for s in STAGE_ORDER}
     for r in themes:
@@ -89,6 +97,7 @@ def main() -> int:
             demand_pool=cascade.get("demand_pool"),
             dislocation=cascade.get("dislocation"),
             track=_track_record(),
+            grade=grade_summary,
             asof=cascade.get("asof"),
             generated_utc=built,
             nav_prefix="",
