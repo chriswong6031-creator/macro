@@ -1,0 +1,278 @@
+{
+ "asof": "2026-06-27",
+ "audit": "prices",
+ "config": {
+  "price_max_gap_days": 4,
+  "price_move_alert_pct": 20,
+  "price_recent_days": 120,
+  "macro_revision_alert_pct": 5,
+  "macro_stale_days": 45,
+  "universe_min_bars": 250,
+  "abort_fail_pct": 5,
+  "warn_fail_pct": 1,
+  "macro_outlier_z": 5,
+  "email_alerts": false
+ },
+ "n": 459,
+ "n_failed": 1,
+ "fail_pct": 0.218,
+ "n_flags": 45,
+ "universes": [
+  {
+   "name": "stocks",
+   "n": 114,
+   "n_failed": 0,
+   "fail_pct": 0.0,
+   "n_flags": 1,
+   "skipped": false,
+   "note": "",
+   "failed": [],
+   "flags": [
+    {
+     "name": "INTC",
+     "kind": "move",
+     "detail": "+23.6% on 2026-04-24"
+    }
+   ]
+  },
+  {
+   "name": "baskets/ohlcv",
+   "n": 345,
+   "n_failed": 1,
+   "fail_pct": 0.29,
+   "n_flags": 44,
+   "skipped": false,
+   "note": "",
+   "failed": [
+    {
+     "name": "HUBB",
+     "reasons": [
+      "OHLC invalid: low>min(open,high,close) on 1 row(s) (worst 2021-05-05)"
+     ]
+    }
+   ],
+   "flags": [
+    {
+     "name": "ACLS",
+     "kind": "move",
+     "detail": "+22.4% on 2026-05-06"
+    },
+    {
+     "name": "ALHC",
+     "kind": "move",
+     "detail": "+25.1% on 2026-06-09"
+    },
+    {
+     "name": "ALM",
+     "kind": "move",
+     "detail": "-21.1% on 2026-06-05"
+    },
+    {
+     "name": "APLD",
+     "kind": "move",
+     "detail": "+21.5% on 2026-05-21"
+    },
+    {
+     "name": "ASPI",
+     "kind": "move",
+     "detail": "+24.9% on 2026-05-26"
+    },
+    {
+     "name": "BKSY",
+     "kind": "move",
+     "detail": "+22.4% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "BTDR",
+     "kind": "move",
+     "detail": "+21.0% on 2026-05-06"
+    },
+    {
+     "name": "CIFR",
+     "kind": "move",
+     "detail": "+23.5% on 2026-05-05"
+    },
+    {
+     "name": "CRCL",
+     "kind": "move",
+     "detail": "-20.1% on 2026-03-24"
+    },
+    {
+     "name": "CRML",
+     "kind": "move",
+     "detail": "+35.5% on 2026-04-17 (2 day(s) > 20%)"
+    },
+    {
+     "name": "DDOG",
+     "kind": "move",
+     "detail": "+31.3% on 2026-05-07"
+    },
+    {
+     "name": "DELL",
+     "kind": "move",
+     "detail": "+32.8% on 2026-05-29 (2 day(s) > 20%)"
+    },
+    {
+     "name": "DVA",
+     "kind": "move",
+     "detail": "+23.5% on 2026-05-06"
+    },
+    {
+     "name": "FLY",
+     "kind": "move",
+     "detail": "+22.6% on 2026-05-08 (2 day(s) > 20%)"
+    },
+    {
+     "name": "FTNT",
+     "kind": "move",
+     "detail": "+20.0% on 2026-05-07"
+    },
+    {
+     "name": "FUTU",
+     "kind": "move",
+     "detail": "-27.5% on 2026-05-22"
+    },
+    {
+     "name": "GLXY",
+     "kind": "move",
+     "detail": "+21.4% on 2026-06-08"
+    },
+    {
+     "name": "HIMS",
+     "kind": "move",
+     "detail": "+40.8% on 2026-03-09"
+    },
+    {
+     "name": "HUT",
+     "kind": "move",
+     "detail": "+35.3% on 2026-05-06"
+    },
+    {
+     "name": "INFQ",
+     "kind": "move",
+     "detail": "+31.5% on 2026-05-21"
+    },
+    {
+     "name": "INTU",
+     "kind": "move",
+     "detail": "-20.0% on 2026-05-21"
+    },
+    {
+     "name": "IONQ",
+     "kind": "move",
+     "detail": "+20.9% on 2026-04-15 (2 day(s) > 20%)"
+    },
+    {
+     "name": "LUNR",
+     "kind": "move",
+     "detail": "+20.2% on 2026-05-08"
+    },
+    {
+     "name": "MDB",
+     "kind": "move",
+     "detail": "-22.2% on 2026-03-03 (2 day(s) > 20%)"
+    },
+    {
+     "name": "MRVL",
+     "kind": "move",
+     "detail": "+32.5% on 2026-06-02"
+    },
+    {
+     "name": "NET",
+     "kind": "move",
+     "detail": "-23.6% on 2026-05-08"
+    },
+    {
+     "name": "NNE",
+     "kind": "move",
+     "detail": "+27.7% on 2026-05-06"
+    },
+    {
+     "name": "NTAP",
+     "kind": "move",
+     "detail": "+22.4% on 2026-05-29"
+    },
+    {
+     "name": "NXPI",
+     "kind": "move",
+     "detail": "+25.5% on 2026-04-29"
+    },
+    {
+     "name": "OKTA",
+     "kind": "move",
+     "detail": "+30.1% on 2026-05-29"
+    },
+    {
+     "name": "PL",
+     "kind": "move",
+     "detail": "-26.0% on 2026-06-05 (2 day(s) > 20%)"
+    },
+    {
+     "name": "QBTS",
+     "kind": "move",
+     "detail": "+33.4% on 2026-05-21 (2 day(s) > 20%)"
+    },
+    {
+     "name": "RDW",
+     "kind": "move",
+     "detail": "+26.0% on 2026-05-26 (3 day(s) > 20%)"
+    },
+    {
+     "name": "RGTI",
+     "kind": "move",
+     "detail": "+30.6% on 2026-05-21"
+    },
+    {
+     "name": "RKLB",
+     "kind": "move",
+     "detail": "+34.2% on 2026-05-08"
+    },
+    {
+     "name": "SGML",
+     "kind": "move",
+     "detail": "+21.5% on 2026-04-02"
+    },
+    {
+     "name": "SMCI",
+     "kind": "move",
+     "detail": "-33.3% on 2026-03-20 (3 day(s) > 20%)"
+    },
+    {
+     "name": "SNOW",
+     "kind": "move",
+     "detail": "+36.5% on 2026-05-28"
+    },
+    {
+     "name": "SOUN",
+     "kind": "move",
+     "detail": "+20.1% on 2026-05-01"
+    },
+    {
+     "name": "TEAM",
+     "kind": "move",
+     "detail": "+29.6% on 2026-05-01"
+    },
+    {
+     "name": "UAMY",
+     "kind": "move",
+     "detail": "+20.3% on 2026-04-30"
+    },
+    {
+     "name": "URG",
+     "kind": "move",
+     "detail": "+22.8% on 2026-06-02"
+    },
+    {
+     "name": "URI",
+     "kind": "move",
+     "detail": "+22.9% on 2026-04-23"
+    },
+    {
+     "name": "ZS",
+     "kind": "move",
+     "detail": "-31.5% on 2026-05-27"
+    }
+   ]
+  }
+ ]
+}
