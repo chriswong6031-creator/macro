@@ -370,8 +370,11 @@
   }
   function clickAt(cx, cy) {
     var m = pick(cx, cy);
-    if (m) selectMarket(m, cx, cy); else { selected = null; hideTip(); syncRows(); }
+    if (m) toggleSelect(m, cx, cy); else deselect();
   }
+  // press an already-open market again to close it; otherwise open / switch
+  function toggleSelect(m, cx, cy) { if (selected === m.cc) deselect(); else selectMarket(m, cx, cy); }
+  function deselect() { selected = null; hovered = null; tip.classList.remove("pinned"); tip.hidden = true; syncRows(); if (live) live.textContent = ""; }
   function selectMarket(m, cx, cy) {
     selected = m.cc; hovered = null; lastInteract = performance.now();
     var ll = m.kind === "marker" ? m.marker_lonlat : (byCC[m.cc] && paintCentroid(m.cc)) || [0, 0];
@@ -447,6 +450,9 @@
   }
   function hideTip() { if (selected) return; tip.hidden = true; }
   function fmt(v) { return v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(2); }
+  // anchor a transient hover preview to a clock row: the sidebar hugs the right edge,
+  // so showTip's overflow-flip naturally lands the popup on the open (left) side
+  function showRowTip(m, li) { var r = li.getBoundingClientRect(); showTip(m, r.left, r.top + r.height / 2); }
 
   // ---- sidebar market clock ------------------------------------------------
   function localParts(tz) {
@@ -492,9 +498,20 @@
         '<span class="gd-r-main"><span class="gd-r-idx">' + m.flag + ' ' + bilingual(m.index_name_en, m.index_name_zh) + '</span>' +
         '<span class="gd-r-px">' + (m.index_price || "—") + ' <em style="color:' + ((m.index_chg_pct || 0) >= 0 ? "var(--up)" : "var(--down)") + '">' + ((m.index_chg_pct || 0) >= 0 ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</em></span></span>' +
         '<span class="gd-r-state"><span class="gd-r-dot"></span><span class="gd-r-txt"></span><span class="gd-r-cd"></span></span>';
-      li.addEventListener("click", function () { selectMarket(m); });
-      li.addEventListener("mouseenter", function () { hovered = m.cc; });
-      li.addEventListener("mouseleave", function () { if (!dragging) hovered = null; });
+      // tap (mobile) / click (desktop) toggles a PERSISTENT popup — press again to close
+      li.addEventListener("click", function () { toggleSelect(m); });
+      // desktop only: hovering a row pops a transient preview that drops on mouse-out.
+      // touch reports pointerType "touch" — skip hover there so the tap-toggle owns it.
+      li.addEventListener("pointerenter", function (e) {
+        if (e.pointerType === "touch") return;
+        hovered = m.cc;
+        if (!selected) showRowTip(m, li);          // don't disturb an already-pinned popup
+      });
+      li.addEventListener("pointerleave", function (e) {
+        if (e.pointerType === "touch") return;
+        if (!dragging) hovered = null;
+        if (!selected) hideTip();                  // drop the transient preview on leave
+      });
       ul.appendChild(li); rowEls[m.cc] = li;
     });
     updateClocks();
@@ -533,12 +550,12 @@
     else if (k === "ArrowUp") rot[1] = clampLat(rot[1] + 6); else if (k === "ArrowDown") rot[1] = clampLat(rot[1] - 6);
     else if (k === "+" || k === "=") scale = Math.min(fitScale * 1.3, scale * 1.1);
     else if (k === "-") scale = Math.max(fitScale * 0.8, scale * 0.9);
-    else if (k === "Escape") { selected = null; hideTip(); syncRows(); }
+    else if (k === "Escape") { deselect(); }
     else return;
     e.preventDefault(); apply();
   });
   stage.querySelectorAll(".gd-leg").forEach(function (btn) {
-    btn.addEventListener("click", function () { var m = byCC[btn.getAttribute("data-cc")]; if (m) selectMarket(m); });
+    btn.addEventListener("click", function () { var m = byCC[btn.getAttribute("data-cc")]; if (m) toggleSelect(m); });
     btn.addEventListener("mouseenter", function () { hovered = btn.getAttribute("data-cc"); });
     btn.addEventListener("mouseleave", function () { if (!dragging) hovered = null; });
   });
