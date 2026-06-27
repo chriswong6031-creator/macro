@@ -1379,6 +1379,23 @@ def _sector_member_breadth() -> dict:
     return out
 
 
+def _vol_shock_view(latest: dict, event_risk: dict | None) -> dict | None:
+    """Forward Vol-Shock Risk gauge (engine.vol_shock_scorecard) for the front of the
+    macro page. Re-derives the pure snapshot with the already-built event_risk snapshot
+    injected (adds the event-proximity leg's days-to) and attaches the forward-outcome
+    track record so the card can print its measured hit-rate. Display-only; never fatal."""
+    try:
+        from engine import vol_shock_scorecard as vss
+        snap = vss.snapshot(latest, event_risk=event_risk)
+        if snap is None:
+            return None
+        snap["track_record"] = vss.track_record()
+        return snap
+    except Exception as e:  # noqa: BLE001 — additive / display-only, never fatal
+        log.warning("vol-shock view failed (%s)", e)
+        return None
+
+
 def sector_bottom_view(latest: dict) -> dict | None:
     """Sector Bottom Radar for the US-stocks dashboard: the validated per-sector
     Bottom Confidence + washout (engine.sector_bottom) conditioned by the index
@@ -2871,6 +2888,7 @@ def main() -> int:
         regime_snap=_rs_view,                     # velocity complement + triggered AI veto (display-only)
         market_state=market_state_view(latest, f),  # Green/Yellow/Red market-state command-center (display-only)
         signal_stack=build_signal_stack(latest),  # consolidated cross-subsystem read (display-only)
+        vol_shock=_vol_shock_view(latest, event_risk),  # forward vol-shock risk gauge (display-only)
     )
     # DEV-ONLY fast-render cache: when MACRO_DUMP_VM is set, pickle the assembled
     # view-model so scripts/render_macro_fast.py can re-render macro.html /
