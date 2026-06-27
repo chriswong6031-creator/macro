@@ -56,10 +56,12 @@ SECTORS: dict[str, dict] = {
 
 # Phase taxonomy — identical hues/labels to site/cycle_data.js CYCLE_PHASES so this
 # page reads the same as Cycle Intelligence. Internal ladder states fold into these.
+# cool -> warm cycle wheel: bottoming (cold/cheap) -> prime entry (turning) ->
+# trending (healthy) -> topping (hot) -> rolling over (declining).
 PHASES = {
-    "Trough":    {"label": "Trough",    "short": "Bottoming",    "hue": "#e06464"},
-    "Recovery":  {"label": "Recovery",  "short": "Early up",     "hue": "#45b873"},
-    "Expansion": {"label": "Expansion", "short": "Trending up",  "hue": "#3da564"},
+    "Trough":    {"label": "Trough",    "short": "Bottoming",    "hue": "#5b9bf0"},
+    "Recovery":  {"label": "Recovery",  "short": "Prime entry",  "hue": "#2dd4bf"},
+    "Expansion": {"label": "Expansion", "short": "Trending",     "hue": "#45b873"},
     "Peak":      {"label": "Peak",      "short": "Topping",      "hue": "#e0a030"},
     "Downturn":  {"label": "Downturn",  "short": "Rolling over", "hue": "#e0556b"},
 }
@@ -168,9 +170,10 @@ def _classify_phase(pos: float, slope: float, w: dict, t3: dict,
     if pos >= 68:
         return ("Peak", "Topping") if rising else ("Downturn", "Rolling over")
     if pos <= 32:
-        return ("Recovery", "Early upturn") if rising else ("Trough", "Bottoming")
+        # bottomed AND turning up = the actionable buy window; still falling = bottoming
+        return ("Recovery", "Prime entry") if rising else ("Trough", "Bottoming")
     if rising:
-        return ("Expansion", "Trending up")
+        return ("Expansion", "Trending")
     return ("Downturn", "Rolling over")
 
 

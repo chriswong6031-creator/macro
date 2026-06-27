@@ -12,16 +12,44 @@
    browser regardless of the default canvas colour). */
 body { background: var(--bg); color: var(--text); }
 
-/* segmented controls (mode + scale) — share the zoom-button visual language */
-.sc-modes, .sc-scale { display: inline-flex; align-items: center; gap: 2px; background: var(--panel2);
-  border: 1px solid var(--line); border-radius: 9px; padding: 2px; }
-.sc-mbtn, .sc-sbtn { font-size: 11.5px; font-weight: 650; color: var(--muted); background: transparent;
-  border: 0; border-radius: 7px; padding: 4px 11px; cursor: pointer; transition: color .16s, background .16s; }
+/* ---- a bigger, dominant hero chart ------------------------------------- */
+#sc-chart { width: 100%; height: 500px; }
+@media (min-width: 881px) { #sc-chart { height: 600px; } }
+@media (min-width: 1400px) { #sc-chart { height: 660px; } }
+@media (max-width: 880px) { #sc-chart { height: 380px; } }
+/* let the hero breathe + lift the chart inside its card */
+.sc-page .cyc-hero { padding: 18px 18px 12px; }
+
+/* ---- segmented controls (scale + mode) — premium pill switch ------------ */
+.sc-ctrl-group { display: inline-flex; align-items: center; gap: 8px; }
+.sc-modes, .sc-scale { display: inline-flex; align-items: center; gap: 3px; background: var(--panel2);
+  border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: inset 0 1px 2px rgba(0,0,0,.18); }
+html[data-theme="light"] .sc-modes, html[data-theme="light"] .sc-scale { box-shadow: inset 0 1px 2px rgba(20,30,50,.05); }
+.sc-mbtn, .sc-sbtn { font-size: 12px; font-weight: 650; letter-spacing: .01em; color: var(--muted); background: transparent;
+  border: 0; border-radius: 7px; padding: 5px 13px; cursor: pointer; white-space: nowrap;
+  transition: color .18s, background .18s, box-shadow .18s, transform .1s; }
 .sc-mbtn:hover, .sc-sbtn:hover { color: var(--text); }
-.sc-mbtn.on, .sc-sbtn.on { color: #fff; background: color-mix(in srgb, var(--link) 88%, #000 4%);
-  box-shadow: 0 1px 6px color-mix(in srgb, var(--link) 30%, transparent); }
+.sc-mbtn:active, .sc-sbtn:active { transform: translateY(1px); }
+.sc-mbtn.on, .sc-sbtn.on { color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--link) 90%, #fff 10%), var(--link));
+  box-shadow: 0 1px 2px rgba(0,0,0,.28), 0 2px 10px color-mix(in srgb, var(--link) 36%, transparent); }
 html[data-theme="light"] .sc-mbtn.on, html[data-theme="light"] .sc-sbtn.on { color: #fff; }
-.sc-scale.hide { display: none; }
+/* scale is meaningless in cycle-position mode → dim + lock, but keep its footprint (no layout shift) */
+.sc-scale.disabled { opacity: .4; filter: saturate(.35); pointer-events: none; }
+
+/* ---- "where they stand" phase chips — reactive like the sector chips ---- */
+.sc-page .cyc-gchip { transition: color .18s, background .2s, border-color .2s, box-shadow .2s, transform .14s var(--ease); }
+.sc-page .cyc-gchip:not(.on) { opacity: .62; }
+.sc-page .cyc-gchip:not(.on):hover { opacity: 1; transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--ph, var(--muted)) 60%, var(--line));
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--ph, var(--muted)) 22%, transparent); }
+.sc-page .cyc-gchip.on { color: #fff; opacity: 1; transform: translateY(-1px);
+  background: color-mix(in srgb, var(--ph, var(--link)) 86%, #000 6%);
+  border-color: var(--ph, var(--link));
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ph, var(--link)) 36%, transparent); }
+html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
+.sc-page .cyc-gchip.on .gdot { background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, #fff 32%, transparent); }
+.sc-page .cyc-gchip.on i { opacity: .95; color: #fff; }
 
 /* legend peak/trough glyphs */
 .cyc-legend .lm { width: 0; height: 0; }

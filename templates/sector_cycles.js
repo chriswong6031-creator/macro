@@ -52,13 +52,29 @@
   /* ---- y-scaling: price (rebased, log/linear) vs cycle position (0–100) --- */
   function yval(v) { return state.mode === "osc" ? v : (state.scale === "log" ? log10(v) : v); }
 
+  // Price RE-ANCHORING: every line is rebased to 100 at the LEFT EDGE of the
+  // visible window (TradingView "percent"), so a zoom shows clean relative
+  // performance from that point — not a tangled 6-year fan. curView tracks the
+  // visible x-range; the anchor factor scales each series' stored (window-start)
+  // rebase to the current left edge.
+  var curView = META.xDomain.slice();
+  function priceAnchorFactor(s) {
+    var pts = s.price, a = pts.length ? pts[0].v : 100;
+    for (var i = 0; i < pts.length; i++) { if (pts[i].x <= curView[0]) a = pts[i].v; else break; }
+    return a > 0 ? 100 / a : 1;
+  }
+
   function priceExtent() {
-    var lo = Infinity, hi = -Infinity;
+    var lo = Infinity, hi = -Infinity, x0 = curView[0], x1 = curView[1];
     SECTORS.forEach(function (s) {
       if (chartHidden[s.id]) return;
-      s.price.forEach(function (p) { if (p.v < lo) lo = p.v; if (p.v > hi) hi = p.v; });
+      var f = priceAnchorFactor(s);
+      s.price.forEach(function (p) {
+        if (p.x < x0 - 0.02 || p.x > x1 + 0.02) return;
+        var v = p.v * f; if (v < lo) lo = v; if (v > hi) hi = v;
+      });
     });
-    if (!isFinite(lo)) { lo = 80; hi = 200; }
+    if (!isFinite(lo)) { lo = 80; hi = 120; }
     return [lo, hi];
   }
 
@@ -88,10 +104,12 @@
 
   /* ---- build one sector's mm_charts series for the current mode ----------- */
   function seriesFor(s) {
-    var pts = state.mode === "osc" ? s.osc : s.price;
-    var hist = pts.map(function (p) { return { x: p.x, y: yval(p.v) }; });
+    var osc = state.mode === "osc";
+    var f = osc ? 1 : priceAnchorFactor(s);
+    var pts = osc ? s.osc : s.price;
+    var hist = pts.map(function (p) { return { x: p.x, y: yval(osc ? p.v : p.v * f) }; });
     var markers = (s.turns || []).filter(function (t) { return !t.provisional; }).map(function (t) {
-      var yv = state.mode === "osc" ? (t.osc != null ? t.osc : 50) : yval(t.rebased);
+      var yv = osc ? (t.osc != null ? t.osc : 50) : yval(t.rebased * f);
       return { x: t.x, y: yv, kind: t.k === "peak" ? "peak" : "trough", label: fmtMon(t.t), sub: t.mag_pct ? ("±" + t.mag_pct + "%") : "" };
     });
     if (hist.length) markers.push({ x: hist[hist.length - 1].x, y: hist[hist.length - 1].y, kind: "now", label: "Now", sub: phaseLabel(s) });
@@ -105,9 +123,13 @@
     var s = d.c, near = Math.abs(xVal - META.today) < 0.05;
     var fy = Math.floor(xVal), fmo = clamp(Math.floor((xVal - fy) * 12), 0, 11);
     var ds = near ? L("Now", "当前") : (curLang() === "zh" ? (fy + "年" + (fmo + 1) + "月") : (MONTHS[fmo] + " " + fy));
-    var val = state.mode === "osc"
-      ? (Math.round(pt.y) + " / 100 · " + zoneWord(pt.y))
-      : ((state.scale === "log" ? Math.round(Math.pow(10, pt.y)) : Math.round(pt.y)) + (curLang() === "zh" ? " （基准100）" : " (base 100)"));
+    var val;
+    if (state.mode === "osc") {
+      val = Math.round(pt.y) + " / 100 · " + zoneWord(pt.y);
+    } else {
+      var rv = Math.round(state.scale === "log" ? Math.pow(10, pt.y) : pt.y), pct = rv - 100;
+      val = rv + " · " + (pct >= 0 ? "+" : "") + pct + "%";   // re-based to 100 at the visible left edge
+    }
     var head = '<div class="mmc-tip-h"><span class="dot" style="background:' + d.color + '"></span>' + s.name + ' · ' + s.ticker + '</div>';
     var yr = '<div class="mmc-tip-yr">' + ds + '</div>';
     var z = '<div class="mmc-tip-z">' + val + '</div>';
@@ -131,8 +153,20 @@
       vbands: focusBands(),
       tip: heroTip,
       onPick: function (id) { toggleFocus(id); },
-      onZoom: function (domain, zoomed) { var z = document.getElementById("sc-zoom"); if (z) z.classList.toggle("zoomed", zoomed); }
+      onZoom: function (domain, zoomed) {
+        var z = document.getElementById("sc-zoom"); if (z) z.classList.toggle("zoomed", zoomed);
+        scheduleReanchor(domain);
+      }
     };
+  }
+
+  // re-anchor Price mode to the new visible left edge once the zoom/pan settles
+  var reTimer = null;
+  function scheduleReanchor(domain) {
+    curView = domain.slice();
+    if (state.mode !== "price" || !heroChart) return;
+    if (reTimer) clearTimeout(reTimer);
+    reTimer = setTimeout(function () { reTimer = null; rebuildHero(false); }, 130);
   }
 
   function rebuildHero(animate) {
@@ -221,7 +255,7 @@
         var m = b.getAttribute("data-mode"); if (m === state.mode) return;
         state.mode = m;
         modes.querySelectorAll(".sc-mbtn").forEach(function (x) { x.classList.toggle("on", x === b); });
-        scale.classList.toggle("hide", m !== "price");
+        scale.classList.toggle("disabled", m !== "price");
         rebuildHero(true); remountSparks();
       });
     });
@@ -238,9 +272,9 @@
   /* ---- phase filter chips ------------------------------------------------- */
   var PHASE_FILTER = [
     { key: "Peak", label: ["Topping", "见顶"] },
-    { key: "Expansion", label: ["Expanding", "扩张中"] },
+    { key: "Expansion", label: ["Trending", "上行"] },
     { key: "Downturn", label: ["Rolling over", "回落中"] },
-    { key: "Recovery", label: ["Recovering", "复苏中"] },
+    { key: "Recovery", label: ["Prime entry", "入场良机"] },
     { key: "Trough", label: ["Bottoming", "筑底中"] }
   ];
   var phaseState = {};
@@ -513,18 +547,16 @@
     def.innerHTML = '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<div class="cyc-lbl">' + L("Sector rotation · ", "板块轮动 · ") + META.asOf + '</div>' +
-        '<p class="rg-headline">' + L("Real price, rebased to 100 at " + META.rebaseDate + " on a log axis so every sector shares one scale. " +
-          "Each line is graded by where it sits in its own cycle — flip to <b>Cycle position</b> to compare them on a 0–100 clock. " +
-          "Tap a sector to see its turning points and the story behind each move.",
-          "真实价格，于 " + META.rebaseDate + " 再基准化为 100 并取对数坐标，使各板块共用一个刻度。每条线按其自身周期所处阶段评级——切换到<b>周期位置</b>可在 0–100 的时钟上对比。点按某板块查看其拐点及每段走势背后的故事。") + '</p>' +
+        '<p class="rg-headline">' + L("Real price on a log axis, every line rebased to 100 at the left edge of the visible window — so <b>zoom to any period</b> and the lines instantly show relative performance from there. Flip to <b>Cycle position</b> to compare sectors on a 0–100 clock. Tap a sector to see its turning points and the story behind each move.",
+          "对数坐标下的真实价格，每条线在可见区间的左端再基准化为 100——<b>缩放到任意时段</b>，各线即刻显示自该点起的相对表现。切换到<b>周期位置</b>可在 0–100 的时钟上对比。点按某板块查看其拐点及每段走势背后的故事。") + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
         '<div class="cyc-lbl">' + L("Where the sectors stand", "各板块所处位置") + '</div>' +
         '<div class="xc-map">' +
           row(L("Topping · late", "见顶 · 晚期"), buckets.Peak, L("thin cushion", "缓冲薄弱")) +
-          row(L("Expanding", "扩张中"), buckets.Expansion, L("trending up", "上行趋势")) +
+          row(L("Trending", "上行中"), buckets.Expansion, L("healthy up-trend", "健康上行")) +
           row(L("Rolling over", "回落中"), buckets.Downturn, L("declining", "下行中")) +
-          row(L("Recovering", "复苏中"), buckets.Recovery, L("early up-leg", "上行初段")) +
+          row(L("Prime entry", "入场良机"), buckets.Recovery, L("bottomed · turning up", "已筑底 · 转强")) +
           row(L("Bottoming", "筑底中"), buckets.Trough, L("washed-out", "超卖")) +
         '</div>' +
       '</div>' +
