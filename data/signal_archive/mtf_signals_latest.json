@@ -1,0 +1,1292 @@
+{
+ "asof": "2026-06-16",
+ "tf": "3D",
+ "universe": "us_deep",
+ "note": "entry-quality RISK signal (display-only, NOT alpha); see research/signal_engine/CHARTER.md",
+ "signals": [
+  {
+   "ticker": "AAPL",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-10",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "ABBV",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-01",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "ABT",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-18",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "AEP",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-19",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "AMAT",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-08",
+    "type": "rebuy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "AMD",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-08",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "AMGN",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-03",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "AMT",
+   "asof": "2026-06-17",
+   "state": "short-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-17",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "AMZN",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-02",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "APD",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-05",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "AVGO",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-03",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "AXP",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-03",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "BA",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-16",
+    "type": "buy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  {
+   "ticker": "BAC",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-20",
+    "type": "rebuy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "BKNG",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-25",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "BKR",
+   "asof": "2026-06-12",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-06",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "BRK-B",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-03-17",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "C",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-28",
+    "type": "rebuy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "CAT",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-03",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "CCI",
+   "asof": "2026-06-11",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-11",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "CEG",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-29",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "CL",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-12",
+    "type": "rebuy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "COP",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-06",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "COST",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-26",
+    "type": "cut"
+   }
+  },
+  {
+   "ticker": "CRH",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-13",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "CSCO",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-11",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "CTVA",
+   "asof": "2026-06-11",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-06",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "CVX",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-01",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "D",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-03-16",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "DE",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-10",
+    "type": "buy",
+    "quality": "block",
+    "reason": "veto: bearish divergence"
+   }
+  },
+  {
+   "ticker": "DIS",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-16",
+    "type": "rebuy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  {
+   "ticker": "DLR",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-01",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "DUK",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-24",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "EA",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-01",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "EOG",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-08",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "EQIX",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-29",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "ETN",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-15",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "ETR",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-31",
+    "type": "rebuy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "EXC",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-09",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "FCX",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-21",
+    "type": "cut"
+   }
+  },
+  {
+   "ticker": "GE",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-05",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "GEV",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-05",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "GILD",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-02",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "GOOG",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-01",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "GOOGL",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-01",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "GS",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-08",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "HD",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-30",
+    "type": "cut"
+   }
+  },
+  {
+   "ticker": "HLT",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-01",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "HON",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-11",
+    "type": "rebuy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "INTC",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-29",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "JNJ",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-03",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "JPM",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-03",
+    "type": "rebuy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "KO",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-11",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "LIN",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-18",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "LLY",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-29",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "LOW",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-11",
+    "type": "buy",
+    "quality": "pending",
+    "reason": "pending confirmation"
+   }
+  },
+  {
+   "ticker": "LRCX",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-01-30",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "LYV",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-10",
+    "type": "buy",
+    "quality": "block",
+    "reason": "veto: bearish divergence"
+   }
+  },
+  {
+   "ticker": "MA",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-05",
+    "type": "buy",
+    "quality": "block",
+    "reason": "failed reclaim-and-hold"
+   }
+  },
+  {
+   "ticker": "MAR",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-20",
+    "type": "rebuy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "MCD",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-05",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "MDLZ",
+   "asof": "2026-06-17",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-17",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "META",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-29",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "MNST",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-23",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "MO",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-16",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "MPC",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-08",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "MRK",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-11",
+    "type": "cut"
+   }
+  },
+  {
+   "ticker": "MS",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-02",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "MSFT",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-11",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "MU",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-02-03",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "NEE",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-04",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "NEM",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-27",
+    "type": "cut"
+   }
+  },
+  {
+   "ticker": "NUE",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-16",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "NVDA",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-05",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "O",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-13",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "OMC",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-19",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "PEP",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-05",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "PFE",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-02",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "PG",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-13",
+    "type": "cut"
+   }
+  },
+  {
+   "ticker": "PLD",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-03",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "PM",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-16",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "PSA",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-04-13",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "PSX",
+   "asof": "2026-06-17",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-09",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "RTX",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-04",
+    "type": "buy",
+    "quality": "take",
+    "reason": "reclaimed 200 & held"
+   }
+  },
+  {
+   "ticker": "SATS",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-23",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "SBUX",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-26",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "SHW",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-09",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "SLB",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-26",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "SO",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-24",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "SPG",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-19",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "SRE",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-17",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "STLD",
+   "asof": "2026-06-17",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-17",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "TJX",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-06-03",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "TMO",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-26",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "TSLA",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-15",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "TTWO",
+   "asof": "2026-06-17",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-12",
+    "type": "rebuy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "UBER",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-25",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "UNH",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-16",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "UNP",
+   "asof": "2026-06-17",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-27",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "V",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-01-14",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "VLO",
+   "asof": "2026-06-18",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-04-08",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "VMC",
+   "asof": "2026-06-18",
+   "state": "long-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-12",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "VST",
+   "asof": "2026-06-16",
+   "state": "long-bias",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-06-11",
+    "type": "buy",
+    "quality": "take",
+    "reason": "held confirmation"
+   }
+  },
+  {
+   "ticker": "VTR",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-26",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "WBD",
+   "asof": "2026-06-17",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2025-12-18",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "WELL",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-28",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "WFC",
+   "asof": "2026-06-18",
+   "state": "mixed",
+   "above200": false,
+   "weekly_bull": true,
+   "last": {
+    "date": "2026-05-25",
+    "type": "buy",
+    "quality": "block",
+    "reason": "counter-trend, no 200-reclaim/hold"
+   }
+  },
+  {
+   "ticker": "WMB",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-26",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "WMT",
+   "asof": "2026-06-16",
+   "state": "mixed",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-05-21",
+    "type": "sell"
+   }
+  },
+  {
+   "ticker": "XOM",
+   "asof": "2026-06-16",
+   "state": "short-bias",
+   "above200": true,
+   "weekly_bull": false,
+   "last": {
+    "date": "2026-03-03",
+    "type": "sell"
+   }
+  }
+ ]
+}
