@@ -26,12 +26,13 @@ Pure-read + additive: any failure on one sector is logged and skipped, never fat
 """
 from __future__ import annotations
 
+import json
 import logging
 
 import numpy as np
 import pandas as pd
 
-from engine import cycles
+from engine import basket_index, cycles
 from engine.inputs import yahoo_closes
 from lib import config
 
@@ -236,6 +237,89 @@ def _leadership(close_full: pd.DataFrame, ticker: str, bench: str = "SPY") -> di
             "rs_above_trend": bool(rs.iloc[-1] > ma200)}
 
 
+def _zz_pct_for(full: pd.Series) -> float:
+    """Volatility-scaled ZigZag threshold: a 14% reversal is a "major" swing for a
+    typical sector, but a thematic basket (crypto, uranium, neoclouds) swings that
+    much weekly — so scale the threshold up with realised vol to keep the turn count
+    sane (a basket's major turns ARE bigger). Sectors keep the fixed 14% so their
+    detected dates — and the narrative keys bound to them — never move."""
+    r = full.pct_change().dropna()
+    if len(r) < 60:
+        return _ZZ_PCT
+    vol = float(r.std()) * (252.0 ** 0.5)            # annualised
+    return float(min(55.0, _ZZ_PCT * max(1.0, vol / 0.22)))
+
+
+def _record_core(full: pd.Series, win_start: pd.Timestamp, last_ts: pd.Timestamp,
+                 pct: float = _ZZ_PCT) -> dict | None:
+    """Shared cycle math for ANY close/level series (a sector ETF or a basket index):
+    rebased-to-100 price + 0–100 oscillator series (weekly), ZigZag turns, the
+    weekly/3-day MACD-confirmed phase, and the median-half-cycle projection."""
+    win = full[full.index >= win_start]
+    if len(win) < 60:
+        return None
+    base = float(win.iloc[0])
+    if base <= 0:
+        return None
+    price_pts = _weekly_points(win, lambda v: v / base * 100.0)
+    osc_full = _detrended_osc(full)
+    osc_pts = _weekly_points(osc_full[osc_full.index >= win_start])
+
+    swings_all = _detect_swings(full, pct)
+    swings = [s for s in swings_all if s["x"] >= _yf(win_start) - 0.05]
+    for s in swings:                           # attach rebased y + osc y for the chart
+        s["rebased"] = round(s["px"] / base * 100.0, 2)
+        oy = osc_full.reindex([pd.Timestamp(s["date"])], method="nearest")
+        s["osc"] = round(float(oy.iloc[0]), 1) if len(oy) and pd.notna(oy.iloc[0]) else None
+
+    res = cycles.analyze(full, kind="equity")
+    lad = (res or {}).get("ladder") or {}
+    mtf = (res or {}).get("mtf") or {}
+    osc_clean = osc_full.dropna()
+    pos_now = float(osc_clean.iloc[-1]) if len(osc_clean) else 50.0
+    osc_slope = float(osc_clean.iloc[-1] - osc_clean.iloc[-22]) if len(osc_clean) > 22 else 0.0
+    above200 = bool(len(full) >= 200 and full.iloc[-1] > full.iloc[-200:].mean())
+    phase, phase_label = _classify_phase(pos_now, osc_slope, mtf.get("W") or {},
+                                         mtf.get("3D") or {}, above200)
+    last_trough = next((s["t"] for s in reversed(swings) if s["k"] == "trough"), None)
+    last_peak = next((s["t"] for s in reversed(swings) if s["k"] == "peak"), None)
+    proj = _project_next(swings_all, last_ts)
+    ret_win = round((float(win.iloc[-1]) / base - 1.0) * 100.0, 1)
+    return {
+        "price": price_pts, "osc": osc_pts, "turns": swings, "proj": proj,
+        "n_turns_all": len(swings_all),
+        "now": {
+            "phase": phase, "phaseLabel": phase_label, "pos": round(pos_now, 1),
+            "osc_slope": round(osc_slope, 1),
+            "timing_state": lad.get("state") or "", "action": lad.get("action") or "",
+            "w_macd_up": bool((mtf.get("W") or {}).get("macd_pos")),
+            "t3_macd_up": bool((mtf.get("3D") or {}).get("macd_pos")),
+            "lastTrough": last_trough, "lastPeak": last_peak,
+            "above200d": above200, "ret_win_pct": ret_win,
+            "dc_phase": (res.get("cycle") or {}).get("dc_phase"),
+            "read": None,           # narrative.json fills the live read
+        },
+    }
+
+
+def _apply_leadership(rec: dict, lead: dict) -> None:
+    """Fold RS-vs-SPY leadership into the record's `now` + a tailwind/headwind tilt."""
+    nw = rec["now"]
+    nw["rs_63d"] = lead.get("rs_63d")
+    nw["rs_126d"] = lead.get("rs_126d")
+    nw["rs_above_trend"] = lead.get("rs_above_trend")
+    up = nw["phase"] in ("Recovery", "Expansion")
+    rs_strong = (lead.get("rs_63d") or 0) > 0 and lead.get("rs_above_trend")
+    if up and rs_strong and nw["above200d"]:
+        tilt = "tailwind"
+    elif (not up) and (not nw["above200d"]) and (lead.get("rs_63d") or 0) < 0:
+        tilt = "headwind"
+    else:
+        tilt = "mixed"
+    if rec.get("proj") is not None:
+        rec["proj"]["tilt"] = tilt
+
+
 def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
                  win_start: pd.Timestamp) -> dict | None:
     """One sector ETF -> its full cycle record (price, oscillator, turns, phase, projection)."""
@@ -243,79 +327,79 @@ def build_sector(ticker: str, meta: dict, closes: pd.DataFrame,
     if len(full) < 300:
         log.warning("sector_cycles: %s too thin (%d rows) — skipped", ticker, len(full))
         return None
-    win = full[full.index >= win_start]
-    if len(win) < 60:
+    core = _record_core(full, win_start, full.index[-1])
+    if core is None:
         return None
-    last_ts = full.index[-1]
+    rec = dict(core)
+    rec.update({"id": ticker.lower(), "ticker": ticker, "kind": "sector",
+                "name": meta["name"], "short": meta["short"],
+                "group": meta["group"], "accent": meta["accent"]})
+    _apply_leadership(rec, _leadership(closes, ticker))
+    return rec
 
-    # --- chart series: rebased-to-100 price + 0–100 oscillator (weekly) ---
-    base = float(win.iloc[0])
-    price_pts = _weekly_points(win, lambda v: v / base * 100.0)
-    osc_full = _detrended_osc(full)
-    osc_pts = _weekly_points(osc_full[osc_full.index >= win_start])
 
-    # --- turning points within the window ---
-    swings_all = _detect_swings(full)
-    swings = [s for s in swings_all if s["x"] >= _yf(win_start) - 0.05]
-    for s in swings:                           # attach rebased y + osc y for the chart
-        s["rebased"] = round(s["px"] / base * 100.0, 2)
-        oy = osc_full.reindex([pd.Timestamp(s["date"])], method="nearest")
-        s["osc"] = round(float(oy.iloc[0]), 1) if len(oy) and pd.notna(oy.iloc[0]) else None
-        s["narr_id"] = None                    # filled from narratives.json at build time
+def _basket_rs(full: pd.Series, spy: pd.Series | None) -> dict:
+    """RS of a basket index vs SPY (scale-invariant — ratio momentum)."""
+    if spy is None or spy.empty:
+        return {}
+    rs = (full / spy.reindex(full.index).ffill()).dropna()
+    if len(rs) < 210:
+        return {}
+    return {"rs_63d": round(float(rs.pct_change(63).iloc[-1] * 100), 1),
+            "rs_126d": round(float(rs.pct_change(126).iloc[-1] * 100), 1),
+            "rs_above_trend": bool(rs.iloc[-1] > rs.rolling(200).mean().iloc[-1])}
 
-    # --- current phase: the SLOW (weekly/3-day) cycle clock, confirmed by MTF MACD ---
-    res = cycles.analyze(full, kind="equity")
-    lad = (res or {}).get("ladder") or {}
-    mtf = (res or {}).get("mtf") or {}
-    timing_state = lad.get("state") or ""          # the fast daily-timing read (secondary)
-    osc_clean = osc_full.dropna()
-    pos_now = float(osc_clean.iloc[-1]) if len(osc_clean) else 50.0
-    osc_slope = float(osc_clean.iloc[-1] - osc_clean.iloc[-22]) if len(osc_clean) > 22 else 0.0
-    above200 = bool(len(full) >= 200 and full.iloc[-1] > full.iloc[-200:].mean())
-    phase, phase_label = _classify_phase(pos_now, osc_slope, mtf.get("W") or {},
-                                         mtf.get("3D") or {}, above200)
-    lead = _leadership(closes, ticker)
 
-    last_trough = next((s["t"] for s in reversed(swings) if s["k"] == "trough"), None)
-    last_peak = next((s["t"] for s in reversed(swings) if s["k"] == "peak"), None)
-    proj = _project_next(swings_all, last_ts)
+def build_basket(bid: str, bmeta: dict, win_start: pd.Timestamp, last_ts: pd.Timestamp,
+                 spy: pd.Series | None, accent: str) -> dict | None:
+    """One thematic basket -> its cycle record, off the equal-weight member index
+    (engine.basket_index.consolidated_candle, current-membership deep tape)."""
+    members = bmeta.get("members") or []
+    if len(members) < 3:
+        return None
+    try:
+        idx = basket_index.deep_calendar(members)
+        if idx is None or len(idx) < 300:
+            return None
+        cand, cmeta = basket_index.consolidated_candle(members, idx, mode="equal", pit=False)
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_cycles: basket %s candle failed: %s", bid, e)
+        return None
+    if cand is None or "close" not in cand:
+        return None
+    full = cand["close"].dropna()
+    if len(full) < 300:
+        return None
+    core = _record_core(full, win_start, last_ts, pct=_zz_pct_for(full))
+    if core is None:
+        return None
+    rec = dict(core)
+    rec.update({"id": "b-" + bid, "ticker": bmeta.get("etf_proxy") or "", "kind": "basket",
+                "name": bmeta.get("name") or bid, "short": bmeta.get("name") or bid,
+                "group": bmeta.get("category") or "Thematic", "accent": accent,
+                "theme": bmeta.get("theme"), "etf_proxy": bmeta.get("etf_proxy"),
+                "coverage": (cmeta or {}).get("coverage_pct"),
+                "n_members": (cmeta or {}).get("n_live")})
+    _apply_leadership(rec, _basket_rs(full, spy))
+    return rec
 
-    # tilt: direction of the ladder + leadership
-    up = phase in ("Recovery", "Expansion")
-    rs_strong = (lead.get("rs_63d") or 0) > 0 and lead.get("rs_above_trend")
-    if up and rs_strong and above200:
-        tilt = "tailwind"
-    elif (not up) and (not above200) and (lead.get("rs_63d") or 0) < 0:
-        tilt = "headwind"
-    else:
-        tilt = "mixed"
-    if proj is not None:
-        proj["tilt"] = tilt
 
-    ret_win = round((float(win.iloc[-1]) / base - 1.0) * 100.0, 1)
+def _load_baskets() -> dict:
+    """Thematic basket membership (data/baskets/membership.json)."""
+    f = config.data_dir() / "baskets" / "membership.json"
+    if not f.exists():
+        return {}
+    try:
+        return (json.loads(f.read_text(encoding="utf-8")) or {}).get("baskets", {})
+    except Exception as e:  # noqa: BLE001
+        log.warning("sector_cycles: membership.json unreadable: %s", e)
+        return {}
 
-    return {
-        "id": ticker.lower(), "ticker": ticker, "name": meta["name"], "short": meta["short"],
-        "group": meta["group"], "accent": meta["accent"],
-        "now": {
-            "phase": phase, "phaseLabel": phase_label, "pos": round(pos_now, 1),
-            "osc_slope": round(osc_slope, 1),
-            "timing_state": timing_state, "action": (lad.get("action") or ""),
-            "w_macd_up": bool((mtf.get("W") or {}).get("macd_pos")),
-            "t3_macd_up": bool((mtf.get("3D") or {}).get("macd_pos")),
-            "lastTrough": last_trough, "lastPeak": last_peak,
-            "above200d": above200, "ret_win_pct": ret_win,
-            "rs_63d": lead.get("rs_63d"), "rs_126d": lead.get("rs_126d"),
-            "rs_above_trend": lead.get("rs_above_trend"),
-            "dc_phase": (res.get("cycle") or {}).get("dc_phase"),
-            "read": None,           # narrative.json fills the live read
-        },
-        "proj": proj,
-        "turns": swings,
-        "price": price_pts,
-        "osc": osc_pts,
-        "n_turns_all": len(swings_all),
-    }
+
+def _basket_accent(i: int, n: int) -> str:
+    """Evenly-spaced, dark-bg-legible hue per basket so toggled lines stay distinct."""
+    hue = round((i * 360.0 / max(n, 1) + 12) % 360)
+    return f"hsl({hue} 64% 62%)"
 
 
 def compute(asof: str | None = None) -> dict | None:
@@ -351,6 +435,27 @@ def compute(asof: str | None = None) -> dict | None:
     for n, s in enumerate(ranked, 1):
         s["now"]["rs_rank"] = n
 
+    # --- thematic baskets (Phase 2): same machinery off the equal-weight member index;
+    #     OFF by default in the UI, the user toggles individual baskets onto the chart ---
+    spy = closes["SPY"].dropna() if "SPY" in closes else None
+    basket_defs = _load_baskets()
+    keys = list(basket_defs.keys())
+    baskets = []
+    for i, bid in enumerate(keys):
+        try:
+            rec = build_basket(bid, basket_defs[bid], win_start, last_ts, spy,
+                               _basket_accent(i, len(keys)))
+        except Exception as e:  # noqa: BLE001
+            log.exception("sector_cycles: basket %s failed: %s", bid, e)
+            rec = None
+        if rec:
+            baskets.append(rec)
+    branked = sorted([b for b in baskets if b["now"].get("rs_63d") is not None],
+                     key=lambda b: b["now"]["rs_63d"], reverse=True)
+    for n, b in enumerate(branked, 1):
+        b["now"]["rs_rank"] = n
+    baskets.sort(key=lambda b: (b.get("group") or "", b["name"]))   # grouped for the chip rail
+
     x_lo = round(_yf(win_start), 3)
     x_hi = round(_yf(last_ts) + _TODAY_PAD, 3)
     return {
@@ -362,7 +467,9 @@ def compute(asof: str | None = None) -> dict | None:
             "rebaseDate": str(win_start.date()),
             "benchmark": config.load()["engine"]["rs_ranking"]["benchmark"],
             "n_sectors": len(sectors),
+            "n_baskets": len(baskets),
         },
         "phases": PHASES,
         "sectors": sectors,
+        "baskets": baskets,
     }

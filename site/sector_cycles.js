@@ -18,6 +18,9 @@
   var DATA = window.SECTOR_CYCLES, NARR = window.SECTOR_NARR || {};
   if (!DATA || !DATA.sectors) return;
   var META = DATA.meta, PHASES = DATA.phases, SECTORS = DATA.sectors;
+  var BASKETS = DATA.baskets || [];
+  var ALL = SECTORS.concat(BASKETS);            // one chart space; baskets hidden until selected
+  var basketShown = {};                          // basket id -> on the chart? (default false)
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   /* ---- i18n (EN default, 中文 when <html data-lang="zh">) ----------------- */
@@ -25,7 +28,7 @@
   function L(en, zh) { return curLang() === "zh" ? (zh || en) : en; }
 
   var byId = {};
-  SECTORS.forEach(function (s) { byId[s.id] = s; });
+  ALL.forEach(function (s) { byId[s.id] = s; });
 
   /* ---- view state -------------------------------------------------------- */
   var state = { mode: "price", scale: "log", focus: null };
@@ -66,7 +69,7 @@
 
   function priceExtent() {
     var lo = Infinity, hi = -Infinity, x0 = curView[0], x1 = curView[1];
-    SECTORS.forEach(function (s) {
+    ALL.forEach(function (s) {
       if (chartHidden[s.id]) return;
       var f = priceAnchorFactor(s);
       s.price.forEach(function (p) {
@@ -113,7 +116,7 @@
       return { x: t.x, y: yv, kind: t.k === "peak" ? "peak" : "trough", label: fmtMon(t.t), sub: t.mag_pct ? ("±" + t.mag_pct + "%") : "" };
     });
     if (hist.length) markers.push({ x: hist[hist.length - 1].x, y: hist[hist.length - 1].y, kind: "now", label: "Now", sub: phaseLabel(s) });
-    return { id: s.id, color: s.accent, label: s.name, width: 2, hist: hist, proj: [], markers: markers, c: s };
+    return { id: s.id, color: s.accent, label: s.name, width: 2, hist: hist, proj: [], markers: markers, c: s, hidden: !!chartHidden[s.id] };
   }
 
   /* ---- hero overlay ------------------------------------------------------ */
@@ -149,7 +152,7 @@
       padding: HERO_PAD,
       guides: [{ x: META.today, label: L("TODAY", "当前"), kind: "today" }],
       animate: true, crosshair: true, zoom: true,
-      series: SECTORS.map(seriesFor),
+      series: ALL.map(seriesFor),
       vbands: focusBands(),
       tip: heroTip,
       onPick: function (id) { toggleFocus(id); },
@@ -288,7 +291,6 @@
       PHASE_FILTER.map(function (p) {
         return '<button class="cyc-gchip on" data-k="' + p.key + '" style="--ph:' + phaseHue(p.key) + '"><span class="gdot"></span>' + L(p.label[0], p.label[1]) + ' <i>' + (counts[p.key] || 0) + '</i></button>';
       }).join("") +
-      '<span class="sc-fam">' + L("Sectors", "板块") + '<span class="sc-soon">' + L("+ Baskets soon", "+ 篮子即将上线") + '</span></span>' +
       '<button class="cyc-gall" id="sc-gall" title="' + L("Show all phases", "显示全部") + '"><span class="ga-dots">' +
         PHASE_FILTER.map(function (p) { return '<i style="background:' + phaseHue(p.key) + '"></i>'; }).join("") +
       '</span>' + L("Select all", "全选") + '</button>';
@@ -313,21 +315,26 @@
     });
     var gall = document.getElementById("sc-gall");
     if (gall) gall.classList.toggle("active", !allOn);
-    applyGroupFilter();
+    applyVisibility();
   }
-  function applyGroupFilter() {
+  function applyVisibility() {
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
+    function phaseOK(s) { return allOff || phaseState[s.now.phase]; }
+    // chart: sectors always on (subject to phase filter); baskets only if selected
     chartHidden = {};
+    ALL.forEach(function (s) {
+      var selected = s.kind === "basket" ? !!basketShown[s.id] : true;
+      chartHidden[s.id] = !(phaseOK(s) && selected);
+    });
     document.querySelectorAll(".cyc-card").forEach(function (cd) {
       var s = byId[cd.getAttribute("data-id")]; if (!s) return;
-      var inF = allOff || phaseState[s.now.phase];
+      var inF = phaseOK(s);
       cd.classList.toggle("gdim", !inF);
       cd.style.order = inF ? "0" : "1";
-      if (!inF) chartHidden[s.id] = true;
     });
-    document.querySelectorAll(".cyc-chip").forEach(function (b) {
+    document.querySelectorAll(".cyc-chip, .sc-bchip").forEach(function (b) {
       var s = byId[b.getAttribute("data-id")]; if (!s) return;
-      b.classList.toggle("gdim", !(allOff || phaseState[s.now.phase]));
+      b.classList.toggle("gdim", !phaseOK(s));
     });
     if (heroChart) { heroChart.setHidden(chartHidden); rebuildHero(false); }
   }
@@ -345,6 +352,60 @@
       b.addEventListener("click", function () { toggleFocus(s.id); });
       wrap.appendChild(b);
     });
+  }
+
+  /* ---- thematic baskets: a collapsible, category-grouped rail; OFF by
+     default — selecting a basket adds its line to the chart and focuses it ---- */
+  function basketChipHTML(b) {
+    return '<button class="sc-bchip' + (basketShown[b.id] ? " on" : "") + '" data-id="' + b.id + '" style="--c:' + b.accent + '">' +
+      '<span class="dot"></span><span class="nm">' + b.short + '</span>' +
+      '<span class="sc-bdot" style="background:' + phaseHue(b.now.phase) + '" title="' + phaseLabel(b) + '"></span></button>';
+  }
+  function mountBaskets() {
+    var host = document.getElementById("sc-baskets");
+    if (!host) return;
+    if (!BASKETS.length) { host.style.display = "none"; return; }
+    var byCat = {};
+    BASKETS.forEach(function (b) { (byCat[b.group] = byCat[b.group] || []).push(b); });
+    var cats = Object.keys(byCat).sort();
+    host.innerHTML =
+      '<button class="sc-bask-head" id="sc-bask-head" aria-expanded="false">' +
+        '<span class="sc-bask-ic">🧺</span><span class="sc-bask-title">' + L("Thematic baskets", "主题篮子") + '</span>' +
+        '<span class="sc-bask-n">' + BASKETS.length + '</span>' +
+        '<span class="sc-bask-sel" id="sc-bask-sel"></span>' +
+        '<span class="sc-bask-hint">' + L("select to overlay", "点选叠加到图表") + '</span>' +
+        '<span class="sc-bask-caret">▾</span></button>' +
+      '<div class="sc-bask-panel" id="sc-bask-panel">' +
+        cats.map(function (c) {
+          return '<div class="sc-bask-cat"><div class="sc-bask-cath">' + c + '</div>' +
+            '<div class="sc-bask-chips">' + byCat[c].map(basketChipHTML).join("") + '</div></div>';
+        }).join("") +
+      '</div>';
+    document.getElementById("sc-bask-head").addEventListener("click", function () {
+      var open = host.classList.toggle("open");
+      this.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    host.querySelectorAll(".sc-bchip").forEach(function (ch) {
+      ch.addEventListener("click", function () { toggleBasket(ch.getAttribute("data-id")); });
+    });
+    updateBasketSel();
+  }
+  function updateBasketSel() {
+    var n = BASKETS.filter(function (b) { return basketShown[b.id]; }).length;
+    var el2 = document.getElementById("sc-bask-sel");
+    if (el2) el2.textContent = n ? (n + " " + L("on chart", "在图中")) : "";
+    document.querySelectorAll(".sc-bchip").forEach(function (ch) {
+      ch.classList.toggle("on", !!basketShown[ch.getAttribute("data-id")]);
+    });
+  }
+  function toggleBasket(id) {
+    if (basketShown[id]) {
+      basketShown[id] = false; updateBasketSel();
+      if (state.focus === id) setFocus(null); else applyVisibility();
+    } else {
+      basketShown[id] = true; updateBasketSel();
+      applyVisibility(); setFocus(id);
+    }
   }
 
   /* ---- scorecards -------------------------------------------------------- */
@@ -407,11 +468,18 @@
   /* ---- focus orchestration ----------------------------------------------- */
   function toggleFocus(id) { setFocus(state.focus === id ? null : id); }
   function setFocus(id) {
+    // focusing a basket implies selecting it onto the chart
+    if (id && byId[id] && byId[id].kind === "basket" && !basketShown[id]) {
+      basketShown[id] = true; updateBasketSel(); applyVisibility();
+    }
     state.focus = id;
     if (heroChart) { heroChart.focus(id); rebuildHero(false); }   // refresh narrative bands
     document.querySelectorAll(".cyc-chip").forEach(function (b) {
       b.classList.toggle("on", b.getAttribute("data-id") === id);
       b.classList.toggle("off", !!id && b.getAttribute("data-id") !== id);
+    });
+    document.querySelectorAll(".sc-bchip").forEach(function (b) {
+      b.classList.toggle("foc", b.getAttribute("data-id") === id);
     });
     document.querySelectorAll(".cyc-card").forEach(function (cd) {
       cd.classList.toggle("lit", cd.getAttribute("data-id") === id);
@@ -442,19 +510,23 @@
     var posLab = Math.round(nw.pos) + "/100 · " + zoneWord(nw.pos);
     var lenVal = s.proj && s.proj.period_yrs ? (s.proj.period_yrs.median + L(" yr", " 年")) : "—";
     var rsVal = nw.rs_63d == null ? "—" : ((nw.rs_63d >= 0 ? "+" : "") + nw.rs_63d + "% · #" + (nw.rs_rank || "—"));
+    var isB = s.kind === "basket", noun = isB ? "Basket" : "Sector", nounZh = isB ? "篮子" : "板块";
     var read = (NARR[s.id] || {}).now || nw.read;
     var readHTML = read ? ('<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p>' + read + '</p></div>')
       : ('<div class="cyc-read"><div class="cyc-lbl">' + L("The read", "解读") + '</div><p class="sc-leg-pending">' +
-         L("Sector is " + phaseLabel(s).toLowerCase() + " — cycle position " + Math.round(nw.pos) + "/100, " +
+         L("This " + noun.toLowerCase() + " is " + phaseLabel(s).toLowerCase() + " — cycle position " + Math.round(nw.pos) + "/100, " +
            (nw.above200d ? "above" : "below") + " its 200-day. Narrative read pending research.",
-           "板块" + phaseLabel(s) + " — 周期位置 " + Math.round(nw.pos) + "/100，" + (nw.above200d ? "位于" : "低于") + "200日均线。解读研究待补充。") + '</p></div>');
+           "该" + nounZh + phaseLabel(s) + " — 周期位置 " + Math.round(nw.pos) + "/100，" + (nw.above200d ? "位于" : "低于") + "200日均线。解读研究待补充。") + '</p></div>');
+    var subtitle = isB
+      ? (L("Basket", "篮子") + (s.n_members ? " · " + s.n_members + " " + L("names", "只成分") : "") + (s.etf_proxy ? " · " + L("proxy ", "对标 ") + s.etf_proxy : ""))
+      : (s.ticker + " · " + L(s.group, s.group));
 
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
         '<button class="cyc-back">' + L("← All sectors", "← 全部板块") + '</button>' +
         '<div class="cyc-fhead" style="--c:' + s.accent + '">' +
           '<div class="cyc-ftitle">' + s.name + '</div>' +
-          '<div class="cyc-fsub">' + s.ticker + ' · ' + L(s.group, s.group) + (nw.above200d ? L(" · above 200d", " · 200日上") : L(" · below 200d", " · 200日下")) + '</div>' +
+          '<div class="cyc-fsub">' + subtitle + (nw.above200d ? L(" · above 200d", " · 200日上") : L(" · below 200d", " · 200日下")) + '</div>' +
           '<div class="cyc-fchips">' +
             '<span class="cyc-pchip" style="--ph:' + (ph.hue || "var(--muted)") + '">' + phaseLabel(s) + '</span>' +
             '<span class="cyc-tchip ' + tilt.cls + '">' + tilt.ar + ' ' + L(tilt.lab[0], tilt.lab[1]) + '</span>' +
@@ -598,7 +670,7 @@
   function rerender() {
     var savedFocus = state.focus, savedPhase = {};
     PHASE_FILTER.forEach(function (p) { savedPhase[p.key] = phaseState[p.key]; });
-    mountChips(); mountCards(); buildDefaultPanel(); buildZoom(); buildGroups();
+    mountChips(); mountBaskets(); mountCards(); buildDefaultPanel(); buildZoom(); buildGroups();
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = savedPhase[p.key]; });
     syncGroups();
     if (heroChart) rebuildHero(false);
@@ -607,7 +679,9 @@
 
   /* ---- boot -------------------------------------------------------------- */
   function boot() {
-    mountChips(); mountHero(); wireControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
+    mountChips(); mountBaskets();
+    BASKETS.forEach(function (b) { chartHidden[b.id] = true; });   // baskets off the chart until selected
+    mountHero(); wireControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
     document.addEventListener("langchange", rerender);
     var h = (location.hash || "").replace("#", "");
     if (h && byId[h]) setTimeout(function () { setFocus(h); }, 350);
