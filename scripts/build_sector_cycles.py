@@ -36,6 +36,8 @@ SHARED_ASSETS = ("mm_charts.js", "cycle.css")
 
 
 def _load_narratives(root: Path) -> dict:
+    """NARR keyed by the chart's series id: sectors by ticker.lower() (xlk…), baskets
+    by the engine's "b-"+membership-key (b-mag7…). Merges the file's sectors+baskets."""
     f = root / "data" / "sector_cycles" / "narratives.json"
     if not f.exists():
         return {}
@@ -44,7 +46,12 @@ def _load_narratives(root: Path) -> dict:
     except Exception as e:  # noqa: BLE001
         log.warning("sector_cycles: narratives.json unreadable (%s) — page renders without narratives", e)
         return {}
-    return doc.get("sectors", doc) if isinstance(doc, dict) else {}
+    if not isinstance(doc, dict):
+        return {}
+    narr = dict(doc.get("sectors", {}))
+    for k, v in (doc.get("baskets", {}) or {}).items():
+        narr["b-" + k] = v
+    return narr
 
 
 def main() -> int:
