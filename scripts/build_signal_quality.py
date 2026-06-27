@@ -1,0 +1,61 @@
+"""Build MTF confluence buy-filter signals.
+
+Writes, per US deep-history ticker, the chart-marker file site/signals/<T>.json AND a
+compact brain snapshot data/signal_archive/mtf_signals_latest.json (loaded by engine/run.py
+into latest["mtf_signals"]). DISPLAY-ONLY entry-quality / risk signal — see the contract in
+research/signal_engine/CHARTER.md (§7). Heavy compute lives here so engine/run.py just reads
+the snapshot and can never be slowed by it.
+"""
+from __future__ import annotations
+
+import sys
+import glob
+import json
+import warnings
+import logging
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+warnings.filterwarnings("ignore")
+logging.disable(logging.CRITICAL)
+
+import pandas as pd  # noqa: E402
+from engine.signal_quality import analyze  # noqa: E402
+
+
+def main() -> None:
+    src = ROOT / "data" / "stocks"
+    out_sig = ROOT / "site" / "signals"
+    out_sig.mkdir(parents=True, exist_ok=True)
+    arch = ROOT / "data" / "signal_archive"
+    arch.mkdir(parents=True, exist_ok=True)
+
+    snap, asof = [], None
+    files = sorted(glob.glob(str(src / "*.parquet")))
+    for fp in files:
+        t = Path(fp).stem
+        try:
+            close = pd.read_parquet(fp)["close"].dropna()
+            res = analyze(t, close)
+        except Exception:
+            continue
+        if not res:
+            continue
+        (out_sig / f"{t}.json").write_text(json.dumps(res, separators=(",", ":")))
+        asof = res["asof"]
+        snap.append({"ticker": t, "asof": res["asof"], "state": res["state"],
+                     "above200": res["above200"], "weekly_bull": res["weekly_bull"],
+                     "last": res["markers"][-1] if res["markers"] else None})
+
+    (arch / "mtf_signals_latest.json").write_text(json.dumps({
+        "asof": asof, "tf": "3D", "universe": "us_deep",
+        "note": "entry-quality RISK signal (display-only, NOT alpha); see research/signal_engine/CHARTER.md",
+        "signals": snap,
+    }, indent=1))
+    print(f"wrote {len(snap)} tickers -> site/signals/ + "
+          f"data/signal_archive/mtf_signals_latest.json (asof {asof})")
+
+
+if __name__ == "__main__":
+    main()
