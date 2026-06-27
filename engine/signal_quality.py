@@ -73,8 +73,17 @@ def _since(cond):
     return pd.Series(pos, index=cond.index) - last
 
 
-def signal_frame(daily_close: pd.Series) -> pd.DataFrame:
-    """3D confluence signals (CB/CS/revBuy/revSell) + regime gates, leak-free."""
+def signal_frame(daily_close: pd.Series, daily_high: pd.Series | None = None,
+                 daily_low: pd.Series | None = None) -> pd.DataFrame:
+    """3D confluence signals (CB/CS/revBuy/revSell) + regime gates, leak-free.
+
+    Every confluence value stays CLOSE-driven (faithful to the owner's Pine source).
+    If a daily ``high``/``low`` is supplied — true OHLC for US deep names, or a
+    conservative reconstruction for close-only names (engine.ohlc_reconstruct) — it
+    is resampled onto the 3D grid (high=max, low=min over each bucket) and exposed
+    as ``high``/``low`` so swing-high & bearish-divergence can read intrabar extremes.
+    With NO high/low given, ``high``/``low`` collapse to ``close`` — i.e. the original
+    close-only behaviour is preserved EXACTLY (the validated buy-filter default)."""
     s3 = daily_close.resample("3B").last().dropna()
     if len(s3) < 90:
         return pd.DataFrame()
@@ -109,7 +118,19 @@ def signal_frame(daily_close: pd.Series) -> pd.DataFrame:
     rising2 = ((hist2 > hist2.shift(1)) & (hist2.shift(1) > hist2.shift(2))).shift(1)
     rising2_on3 = rising2.reindex(s3.index, method="ffill").fillna(False).astype(bool)
     early = (sb & b1os & rising2_on3 & (wbull | b1os) & (r14 < BUY_RSI_MAX)).fillna(False)
-    return pd.DataFrame({"close": s3, "macd": macd, "sig": sig, "k": k, "d": d, "rsi14": r14,
+    if daily_high is not None and daily_low is not None:
+        # align high/low onto the close's daily index FIRST so the 3B resample shares
+        # s3's bucket anchor; otherwise a leading-NaN/short high|low would resample on
+        # a different anchor and silently collapse the band back to close.
+        hl = pd.DataFrame({"high": daily_high, "low": daily_low}).reindex(daily_close.index)
+        h3 = hl["high"].resample("3B").max().reindex(s3.index)
+        l3 = hl["low"].resample("3B").min().reindex(s3.index)
+        h3 = pd.concat([h3, s3], axis=1).max(axis=1)   # 3D high never below its close
+        l3 = pd.concat([l3, s3], axis=1).min(axis=1)   # 3D low never above its close
+    else:
+        h3 = l3 = s3
+    return pd.DataFrame({"close": s3, "high": h3, "low": l3,
+                         "macd": macd, "sig": sig, "k": k, "d": d, "rsi14": r14,
                          "CB": cb, "CS": cs, "revBuy": revbuy, "revSell": revsell,
                          "w_bull": wbull, "above200": above, "ema_trail": ema_trail,
                          "early": early})
@@ -120,10 +141,13 @@ def _swing_highs(s, w=2):
     return [i for i in range(w, len(v) - w) if v[i] == v[i - w:i + w + 1].max()]
 
 
-def _bear_div(i, close, macd, hi, look=12):
-    cv, mv = close.to_numpy(), macd.to_numpy()
+def _bear_div(i, price, macd, hi, look=12):
+    """Bearish divergence: price prints a HIGHER swing-high while the RSI-MACD prints
+    a LOWER one. ``price`` is the 3D HIGH when available (true OHLC / reconstruction),
+    else the close; MACD stays close-based (faithful to the Pine confluence)."""
+    pv, mv = price.to_numpy(), macd.to_numpy()
     rh = [h for h in hi if i - look < h <= i]
-    return len(rh) >= 2 and cv[rh[-1]] > cv[rh[-2]] and mv[rh[-1]] < mv[rh[-2]]
+    return len(rh) >= 2 and pv[rh[-1]] > pv[rh[-2]] and mv[rh[-1]] < mv[rh[-2]]
 
 
 def _buy_filter(i, sig, bear, n):
@@ -145,16 +169,21 @@ def _buy_filter(i, sig, bear, n):
     return held, ("held confirmation" if held else "failed reclaim-and-hold")
 
 
-def analyze(ticker: str, daily_close: pd.Series) -> dict | None:
-    """Per-ticker chart-marker + state object (the site/signals/<T>.json contract, §7)."""
-    sig = signal_frame(daily_close)
+def analyze(ticker: str, daily_close: pd.Series, daily_high: pd.Series | None = None,
+            daily_low: pd.Series | None = None) -> dict | None:
+    """Per-ticker chart-marker + state object (the site/signals/<T>.json contract, §7).
+
+    Optional ``daily_high``/``daily_low`` let swing-high & bearish-divergence read
+    intrabar extremes (true OHLC for US; a conservative reconstruction for close-only
+    names — see engine.ohlc_reconstruct). Omit them for the close-only default."""
+    sig = signal_frame(daily_close, daily_high, daily_low)
     if sig.empty:
         return None
     sig = sig.dropna(subset=["macd", "sig", "k", "d", "rsi14"])
     if len(sig) < 5:
         return None
     c, macd, idx, n = sig["close"], sig["macd"], sig.index, len(sig)
-    hi = _swing_highs(c)
+    hi = _swing_highs(sig["high"])
     # close-only trailing trend + its fresh breaches. A breach of a trail that was RISING
     # INTO it = an uptrend's trailing trend breaking down (the tail-risk event we want to
     # surface). NB: below.shift(1, fill_value=False) keeps BOOL dtype — plain .shift(1)
@@ -178,7 +207,7 @@ def analyze(ticker: str, daily_close: pd.Series) -> dict | None:
         ds = str(idx[i].date())
         is_buy = bool(sig["CB"].iloc[i]) or bool(sig["revBuy"].iloc[i])
         if is_buy:
-            ok, reason = _buy_filter(i, sig, _bear_div(i, c, macd, hi), n)
+            ok, reason = _buy_filter(i, sig, _bear_div(i, sig["high"], macd, hi), n)
             q = "pending" if ok is None else ("take" if ok else "block")
             markers.append({"date": ds, "type": "rebuy" if bool(sig["revBuy"].iloc[i]) else "buy",
                             "quality": q, "reason": reason})

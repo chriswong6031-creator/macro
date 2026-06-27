@@ -527,9 +527,10 @@ jobs:
           # deploy ships no price data and every stock chart renders empty.
           git add -f site/ohlc 2>/dev/null || true
           # Non-US bespoke chart OHLC (built by build_{china,canada,intl}_library): same
-          # gitignore + force-add situation as their stockdata libraries (HK needs none —
-          # its per-stock JSON carries the chart series inline).
-          git add -f site/chinaohlc site/canadaohlc site/intlohlc 2>/dev/null || true
+          # gitignore + force-add situation as their stockdata libraries. HK now also ships
+          # reconstructed candles (build_hk_library -> build_chart_data.build_hk -> site/hkohlc),
+          # imputed from its close-only per-stock JSON so the chart draws candlesticks.
+          git add -f site/chinaohlc site/canadaohlc site/intlohlc site/hkohlc 2>/dev/null || true
           # US 4H intraday chart data (built by build_site -> build_chart_data.emit_intraday
           # from the cached data/intraday) — gitignored, force-add so the deploy ships it.
           git add -f site/intraday 2>/dev/null || true

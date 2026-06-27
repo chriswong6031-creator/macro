@@ -15,6 +15,7 @@ site/intlstockdata/
 site/chinaohlc/
 site/canadaohlc/
 site/intlohlc/
+site/hkohlc/
 site/intraday/
 # Polygon hourly bars for the 4H chart timeframe — regenerable + daily-changing, so
 # cached cross-job in CI (actions/cache) rather than committed; site/intraday is the

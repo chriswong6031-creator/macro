@@ -542,16 +542,28 @@
     if (!box || !window.StockChart) return;
     var ch = d.chart;
     // HK ships a per-stock close series inline (HKEX data is login-gated on TradingView's
-    // free embed), so hand it straight to the bespoke chart engine — same area + client-side
-    // RSI/Stoch/MACD/Stoch-RSI/EMA panes and 1D/3D/1W timeframes as the other markets.
-    if (!ch || !ch.t || !ch.t.length) {
-      box.innerHTML = '<p class="muted" style="font-size:13px">' + L('nochart') + '</p>';
-      return;
+    // free embed). We PREFER reconstructed candlesticks (build_chart_data -> site/hkohlc/),
+    // which give a conservative high/low band from that close series so the chart can draw
+    // real candles + ATR-style logic; if the file is missing we fall back to the inline
+    // close line — same client-side RSI/Stoch/MACD/Stoch-RSI/EMA panes as the other markets.
+    function inlineFallback() {
+      if (!ch || !ch.t || !ch.t.length) {
+        box.innerHTML = '<p class="muted" style="font-size:13px">' + L('nochart') + '</p>';
+        return;
+      }
+      var data = { t: d.ticker, o: 0, src: 'hk',
+        bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }) };
+      try { window.StockChart.mount(box, d.ticker, {name: d.name, data: data}); }
+      catch (e) { /* chart is garnish — analysis above stands alone */ }
     }
-    var data = { t: d.ticker, o: 0, src: 'hk',
-      bars: ch.t.map(function (x, i) { return [x, ch.c[i], null]; }) };
-    try { window.StockChart.mount(box, d.ticker, {name: d.name, data: data}); }
-    catch (e) { /* chart is garnish — analysis above stands alone */ }
+    var key = String(d.ticker).replace(/[=^]/g, '_');
+    fetch('hkohlc/' + key + '.json').then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (j && j.bars && j.bars.length) {
+          try { window.StockChart.mount(box, d.ticker, {name: d.name, data: j}); }
+          catch (e) { inlineFallback(); }
+        } else { inlineFallback(); }
+      }).catch(inlineFallback);
   }
   document.addEventListener('themechange', function () {
     var h = (location.hash || '').slice(1);

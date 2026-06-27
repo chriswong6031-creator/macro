@@ -654,7 +654,10 @@
     var up = r.c >= prev, sgn = up ? 'up' : 'dn';
     var ch = r.c - prev, chp = prev ? (ch / prev * 100) : 0;
     var pp = (this.data.o === 1) ? 2 : 2;
-    var html = '<span class="t">' + this.ticker + '</span> <span class="k">' + fmtTime(r.time) + '</span>';
+    var reconTag = (this.data && this.data.recon)
+      ? ' <span class="k" title="high/low reconstructed from close — not exchange intraday">~recon</span>' : '';
+    var html = '<span class="t">' + this.ticker + '</span>' + reconTag +
+      ' <span class="k">' + fmtTime(r.time) + '</span>';
     if (this.tf === '4H' || this.data.o === 1) {
       html += '<div class="row">O<span class="v"> ' + fnum(r.o, pp) + '</span> H<span class="v"> ' + fnum(r.h, pp) +
               '</span> L<span class="v"> ' + fnum(r.l, pp) + '</span> C<span class="' + sgn + '"> ' + fnum(r.c, pp) + '</span> ' +

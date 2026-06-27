@@ -36,8 +36,14 @@ def main() -> None:
     for fp in files:
         t = Path(fp).stem
         try:
-            close = pd.read_parquet(fp)["close"].dropna()
-            res = analyze(t, close)
+            df = pd.read_parquet(fp)
+            close = df["close"].dropna()
+            # data/stocks carries TRUE intraday high/low — feed them so swing-high &
+            # bearish-divergence read real extremes (close-only names omit them and
+            # fall back to close; see engine.ohlc_reconstruct for the recon path).
+            high = df["high"] if "high" in df.columns else None
+            low = df["low"] if "low" in df.columns else None
+            res = analyze(t, close, high, low)
         except Exception:
             continue
         if not res:

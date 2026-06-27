@@ -39,6 +39,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from engine.ohlc_reconstruct import reconstruct_ohlc, has_real_ohlc  # noqa: E402
 
 log = logging.getLogger("build_chart_data")
 
@@ -99,6 +100,30 @@ def _bars_close(close: pd.Series, vol: pd.Series | None = None) -> list:
     return out
 
 
+def _bars_recon(close: pd.Series, vol: pd.Series | None = None) -> list:
+    """Build [date, open, high, low, close, vol] rows from a CLOSE-ONLY series by
+    conservatively reconstructing the high/low band (engine.ohlc_reconstruct). This
+    lets close-only markets (HK / A-shares / search & breadth caches) render real
+    candlesticks instead of a flat line, and gives ATR-style logic a high/low to
+    attach to. The reconstruction never understates realised range; records carry a
+    ``"recon":1`` flag so the chart (and any consumer) can label them as imputed."""
+    close = close.dropna()
+    close = close[~close.index.duplicated(keep="last")].sort_index().tail(MAX_BARS)
+    if close.empty:
+        return []
+    rec = reconstruct_ohlc(close)
+    if vol is not None:
+        vol = vol[~vol.index.duplicated(keep="last")]   # a dup date makes vol.loc[ts] a Series
+    out = []
+    for ts, r in rec.iterrows():
+        v = None
+        if vol is not None and ts in vol.index and not pd.isna(vol.loc[ts]):
+            v = int(vol.loc[ts])
+        out.append([ts.strftime("%Y-%m-%d"), _round(r["open"]), _round(r["high"]),
+                    _round(r["low"]), _round(r["close"]), v])
+    return out
+
+
 def _load_caches() -> dict[str, pd.DataFrame]:
     """Close-only constituent caches, loaded once and reused across the universe."""
     caches: dict[str, pd.DataFrame] = {}
@@ -127,20 +152,27 @@ def _build_ticker(t: str, deep_dir: Path, caches: dict[str, pd.DataFrame]) -> di
             log.warning("deep %s unreadable (%s)", t, e)
 
     # 2/3. close-only constituent caches (large-cap first, then small-cap).
+    # Reconstruct a conservative high/low so these names render candles too.
     for grp in ("breadth", "smallcap_breadth", "midcap_breadth"):
         cache = caches.get(grp)
         if cache is not None and t in cache.columns:
-            bars = _bars_close(cache[t])
+            bars = _bars_recon(cache[t])
             if bars:
-                return {"t": t, "o": 0, "src": grp, "bars": bars}
+                return {"t": t, "o": 1, "src": grp, "recon": 1, "bars": bars}
 
-    # 4. yahoo store — ETFs / macro proxies / searchable extras (close + volume).
+    # 4. yahoo store — ETFs / macro proxies / searchable extras. Most are close-only,
+    # but a few names DO carry true OHLC (e.g. futures like BTC=F): prefer the real
+    # candle when present (never reconstruct over real data), else reconstruct.
     df = store.read("yahoo", t)
     if df is not None and "close" in df and len(df):
+        if has_real_ohlc(df):
+            bars = _bars_ohlc(df)
+            if bars:
+                return {"t": t, "o": 1, "src": "yahoo", "bars": bars}
         vol = df["volume"] if "volume" in df else None
-        bars = _bars_close(df["close"], vol)
+        bars = _bars_recon(df["close"], vol)
         if bars:
-            return {"t": t, "o": 0, "src": "yahoo", "bars": bars}
+            return {"t": t, "o": 1, "src": "yahoo", "recon": 1, "bars": bars}
 
     return None
 
@@ -173,13 +205,15 @@ def build_us(site: Path) -> tuple[int, int]:
 
 
 def emit_close_only(index_file: Path, close_path: Path, outdir: Path, src_label: str) -> int:
-    """Emit close-only chart JSON (`site/<mkt>ohlc/<T>.json`) for a non-US market whose
-    price store is a single wide closes-cache parquet (China/Canada/International). Same
-    compact `o:0` schema as build_us's close-only path — chart.js draws an area series and
-    computes every indicator client-side. A 40-year deep cache (HK) is auto-trimmed to the
-    last MAX_BARS by `_bars_close`. Returns the count written; a missing index or source is
-    a no-op so a market that hasn't built yet never breaks the caller. Universes are ~94-100%
-    covered by their search-closes cache; the few names absent just fall back to "no chart".
+    """Emit reconstructed-candle chart JSON (`site/<mkt>ohlc/<T>.json`) for a non-US market
+    whose price store is a single wide closes-cache parquet (China/Canada/International).
+    These sources are CLOSE-ONLY, so we reconstruct a conservative high/low band
+    (engine.ohlc_reconstruct) and emit the `o:1` + `recon:1` candle schema — chart.js then
+    draws real candlesticks and computes every indicator client-side. A 40-year deep cache
+    is auto-trimmed to the last MAX_BARS by `_bars_recon`. Returns the count written; a
+    missing index or source is a no-op so a market that hasn't built yet never breaks the
+    caller. Universes are ~94-100% covered by their search-closes cache; the few names absent
+    just fall back to "no chart".
     """
     if not index_file.exists() or not close_path.exists():
         log.warning("%s chart data: index or source missing — skipped", src_label)
@@ -196,18 +230,57 @@ def emit_close_only(index_file: Path, close_path: Path, outdir: Path, src_label:
     for t in tickers:
         if t not in closes.columns:
             continue
-        bars = _bars_close(closes[t])
+        bars = _bars_recon(closes[t])
         if not bars:
             continue
         (outdir / f"{_safe(t)}.json").write_text(
-            json.dumps({"t": t, "o": 0, "src": src_label, "bars": bars}, separators=(",", ":")))
+            json.dumps({"t": t, "o": 1, "src": src_label, "recon": 1, "bars": bars},
+                       separators=(",", ":")))
+        n += 1
+    return n
+
+
+def build_hk(site: Path) -> int:
+    """Emit `site/hkohlc/<T>.json` reconstructed candles from the HK per-stock JSON.
+
+    Each `site/hkstockdata/<T>.json` ships a close-only `chart` series ({t:[dates], c:[closes]})
+    — HKEX intraday is login-gated on TradingView's free embed, so we never get real OHLC.
+    We reconstruct a conservative high/low band and write the `o:1`+`recon:1` candle schema;
+    `hk_lookup.html` prefers these candles and falls back to its inline close line if absent.
+    Returns the count written; a missing source dir is a no-op."""
+    src = site / "hkstockdata"
+    if not src.exists():
+        log.warning("HK chart data: %s missing — skipped", src)
+        return 0
+    outdir = site / "hkohlc"
+    outdir.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for p in sorted(src.glob("*.json")):
+        try:
+            doc = json.loads(p.read_text())
+        except Exception as e:  # noqa: BLE001 — one bad file must not break the market
+            log.warning("HK chart data: %s unreadable (%s)", p.name, e)
+            continue
+        ch = doc.get("chart") if isinstance(doc, dict) else None
+        if not ch or not ch.get("t") or not ch.get("c"):
+            continue
+        try:
+            close = pd.Series(ch["c"], index=pd.to_datetime(ch["t"]), dtype="float64").dropna()
+        except Exception:  # noqa: BLE001
+            continue
+        bars = _bars_recon(close)
+        if not bars:
+            continue
+        (outdir / f"{_safe(p.stem)}.json").write_text(
+            json.dumps({"t": p.stem, "o": 1, "src": "hk", "recon": 1, "bars": bars},
+                       separators=(",", ":")))
         n += 1
     return n
 
 
 # Non-US markets: (site-subdir, search-closes parquet under data/, src label). HK is
-# absent on purpose — its per-stock JSON already carries a `chart` close series that
-# hk_lookup.html feeds to chart.js inline, so it needs no separate ohlc dir.
+# handled separately by build_hk() — its price lives in the per-stock JSON `chart`
+# series, not a wide closes cache — but it now also gets reconstructed candles.
 NONUS_MARKETS = {
     "china": ("china_search/closes.parquet",),
     "canada": ("canada_search/closes.parquet",),
@@ -274,6 +347,7 @@ def main() -> None:
              written, candles, written - candles)
     for mkt, n in build_nonus(site).items():
         log.info("chart data: wrote %d %s ohlc files", n, mkt)
+    log.info("chart data: wrote %d HK reconstructed-candle files", build_hk(site))
     log.info("chart data: wrote %d US intraday (4H) files", emit_intraday(site))
 
 
