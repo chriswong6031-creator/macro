@@ -72,9 +72,13 @@ def _stage(bn: dict | None, rv: dict | None) -> tuple[str, str]:
     return "WATCH", "supply not tight; nothing actionable yet"
 
 
+THESIS_STAGES = {"PRECIPICE", "BROADENING"}
+BUYABLE_VERDICTS = {"buyable_washout"}
+
+
 def _dislocation_context() -> dict | None:
-    """Light read of the existing dislocation gate for display (entry overlay, Phase-1
-    wiring will consume this properly). Degrades to None if latest.json absent."""
+    """Read the existing dislocation gate (engine/dislocation.py) for the entry overlay.
+    Degrades to None if latest.json absent."""
     p = config.data_dir() / "regime" / "latest.json"
     if not p.exists():
         return None
@@ -84,14 +88,32 @@ def _dislocation_context() -> dict | None:
         return None
     if not isinstance(d, dict):
         return None
-    return {"active": d.get("active"), "headline": d.get("headline"),
-            "state": d.get("state") or d.get("verdict")}
+    return {"active": bool(d.get("active")), "headline": d.get("headline"),
+            "verdict": d.get("verdict"), "state": d.get("state") or d.get("verdict")}
+
+
+def _entry(stage: str, disloc: dict | None) -> tuple[bool, str]:
+    """Entry overlay — detection tells you WHAT/that-it's-durable; the BUY waits for a
+    dislocation/flush. 13D was right & ~9mo early; the real HBM entry was the early-2025
+    tariff flush. So entry_ready only when a thesis-stage theme meets an active buyable
+    dislocation."""
+    if stage not in THESIS_STAGES:
+        if stage == "RE-RATING":
+            return False, "late — revisions already broad; do not chase, wait for a reset"
+        return False, "not a thesis stage — no entry"
+    if not disloc:
+        return False, "thesis intact — await a dislocation/flush to enter (no signal wired)"
+    if disloc.get("verdict") in BUYABLE_VERDICTS or disloc.get("active"):
+        return True, "ENTRY WINDOW — thesis stage + active dislocation (buy the flush, not the pop)"
+    return False, "thesis intact — await a dislocation/flush to enter"
 
 
 def compute_foresight_cascade(bottleneck: dict | None = None,
                               revisions: dict | None = None,
+                              demand: dict | None = None,
                               write_ledger: bool = True) -> dict | None:
-    """Combine T1 + T4 into a per-theme stage. Computes the inputs if not supplied."""
+    """Combine T1 (bottleneck) x T2 (demand) x T4 (revisions) into a per-theme stage +
+    entry overlay. Computes any input not supplied."""
     if bottleneck is None:
         try:
             from engine.bottleneck import compute_bottleneck
@@ -106,39 +128,69 @@ def compute_foresight_cascade(bottleneck: dict | None = None,
         except Exception as e:  # noqa: BLE001
             log.warning("cascade: theme_revisions failed: %s", e)
             revisions = None
+    if demand is None:
+        try:
+            from engine.demand_capex import compute_demand_capex
+            demand = compute_demand_capex()
+        except Exception as e:  # noqa: BLE001
+            log.warning("cascade: demand_capex failed: %s", e)
+            demand = None
 
     bn_themes = (bottleneck or {}).get("themes") or {}
     rv_themes = (revisions or {}).get("themes") or {}
-    keys = set(bn_themes) | set(rv_themes)
+    dm_themes = (demand or {}).get("themes") or {}
+    keys = set(bn_themes) | set(rv_themes) | set(dm_themes)
     if not keys:
         return None
+    disloc = _dislocation_context()
 
     rows = []
     for k in keys:
-        bn, rv = bn_themes.get(k), rv_themes.get(k)
+        bn, rv, dm = bn_themes.get(k), rv_themes.get(k), dm_themes.get(k)
         stage, rationale = _stage(bn, rv)
+        # demand is a LEADING confirmation/conviction modifier on the rationale, not a
+        # stage-changer (the stage is bottleneck x revision; demand reinforces or cautions)
+        dband = (dm or {}).get("demand_band")
+        if dm and stage in THESIS_STAGES and dband in ("ACCELERATING", "STEADY"):
+            rationale += f" · customer capex {dband.lower()} (+{(dm.get('capex_yoy') or 0):.0f}% YoY) confirms demand"
+        elif dm and dband in ("COOLING", "CONTRACTING"):
+            rationale += f" · CAUTION: customer capex {dband.lower()}"
+        entry_ready, entry_note = _entry(stage, disloc)
         rows.append({
             "theme": k,
-            "name": (rv or bn or {}).get("name", k),
+            "name": (rv or bn or dm or {}).get("name", k),
             "stage": stage,
             "rationale": rationale,
+            "entry_ready": entry_ready,
+            "entry_note": entry_note,
             "bottleneck_band": (bn or {}).get("band"),
             "tightness": (bn or {}).get("tightness"),
             "bottleneck_regime": (bn or {}).get("regime"),
+            "demand_band": dband,
+            "demand_strength": (dm or {}).get("strength"),
+            "capex_yoy": (dm or {}).get("capex_yoy"),
             "revision_breadth": (rv or {}).get("breadth"),
             "revision_level": (rv or {}).get("level_state"),
             "broadening_state": (rv or {}).get("broadening_state"),
             "est_drift_90d": (rv or {}).get("est_drift_90d"),
         })
-    rows.sort(key=lambda r: (_STAGE_RANK.get(r["stage"], 9), -(r["tightness"] or -9)))
+    # rank by edge remaining (stage), then surface AI-capex beneficiaries, then by the
+    # sharpest physical/estimate read available (tightness if known, else revision breadth)
+    def _key(r):
+        sharp = r["tightness"] if r["tightness"] is not None else (r["revision_breadth"] or -9)
+        return (_STAGE_RANK.get(r["stage"], 9), 0 if r["demand_band"] else 1, -sharp)
+    rows.sort(key=_key)
 
     payload = {
         "asof": (revisions or {}).get("asof") or (bottleneck or {}).get("asof"),
         "n_themes": len(rows),
         "themes": rows,
-        "dislocation": _dislocation_context(),
+        "dislocation": disloc,
+        "demand_pool": {"bn": (demand or {}).get("pool_bn"), "yoy": (demand or {}).get("pool_yoy"),
+                        "trend": (demand or {}).get("pool_trend")} if demand else None,
         "note": ("display-only; STAGE = where the leading edge is, ranked by edge remaining "
-                 "(PRECIPICE first). Entry is deferred to the dislocation overlay, not decided here."),
+                 "(PRECIPICE first). T1 bottleneck LEADS, T2 demand confirms, T4 revisions "
+                 "confirm; ENTRY is deferred to the dislocation overlay, not decided here."),
     }
     if write_ledger:
         try:

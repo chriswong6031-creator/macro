@@ -212,6 +212,10 @@ jobs:
           # data/quiver/congress.parquet) + build_site (refreshes per-name stockdata + regime +
           # allocation that the watchlist scores against). Reads only committed data; returns 0 on error.
           run_py "congressional trades desk (build_congress)" scripts.build_congress
+          # Thematic Foresight Desk — AFTER build_site (regime latest.json carries the
+          # dislocation entry-overlay) + the engines' bottleneck/revision/demand leaves.
+          # Reads only committed data; returns 0 on error.
+          run_py "thematic foresight desk (build_foresight)" scripts.build_foresight
           exit 0
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually

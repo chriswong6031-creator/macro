@@ -51,6 +51,32 @@ def test_ranks_precipice_first():
         "a": {"name": "A", "breadth": 0.05, "level_state": "FLAT_LOW"},   # PRECIPICE
         "b": {"name": "B", "breadth": 0.8, "level_state": "POSITIVE"},    # RE-RATING
     }}
-    out = fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions, write_ledger=False)
+    out = fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions,
+                                       demand={"themes": {}}, write_ledger=False)
     assert out["themes"][0]["theme"] == "a"
     assert out["themes"][0]["stage"] == "PRECIPICE"
+
+
+def test_entry_overlay():
+    # thesis stage + active dislocation -> entry window
+    ready, _ = fc._entry("PRECIPICE", {"active": True, "verdict": "buyable_washout"})
+    assert ready is True
+    # thesis stage but calm market -> wait for the flush
+    ready2, note2 = fc._entry("BROADENING", {"active": False, "verdict": "calm"})
+    assert ready2 is False and "await" in note2.lower()
+    # late stage never an entry, even on a flush
+    ready3, _ = fc._entry("RE-RATING", {"active": True})
+    assert ready3 is False
+
+
+def test_demand_confirms_in_rationale():
+    bottleneck = {"themes": {"a": {"name": "A", "band": "TIGHT", "tightness": 0.9, "regime": True}}}
+    revisions = {"themes": {"a": {"name": "A", "breadth": 0.05, "level_state": "FLAT_LOW"}}}
+    demand = {"themes": {"a": {"name": "A", "demand_band": "ACCELERATING",
+                               "capex_yoy": 69.0, "strength": "direct"}}}
+    out = fc.compute_foresight_cascade(bottleneck=bottleneck, revisions=revisions,
+                                       demand=demand, write_ledger=False)
+    r = out["themes"][0]
+    assert r["stage"] == "PRECIPICE"
+    assert r["demand_band"] == "ACCELERATING"
+    assert "capex" in r["rationale"].lower()
