@@ -33,6 +33,13 @@ that looks good on a few names and fails the held-out generalization gate. **The
 lag is partly load-bearing** — it is a selectivity filter; speeding it up admits more
 not-yet-confirmed moves that shake out.
 
+**Follow-up (§5b): a secondary location guard was tested and also killed.** Adding
+ATR%-contraction / Kaufman-efficiency / higher-low / rising-50MA guards to the early trigger
+*does* cut drawdown sharply — but the exposure-confound check proves it is an **exposure
+artifact** (it draws down less because it trades 3–6× less, not because it enters better):
+`corr(DD-gain, signal-drop) ≈ +0.3 to +0.5`, and at **matched trade-count the DD edge is ~0
+(−1pp)**. Per-entry location never improves on a majority of names. No guard flips the gate.
+
 ---
 
 ## 1. What was tested
@@ -181,6 +188,41 @@ drawdown, worse location, more shake-outs.** Trading the lag away trades selecti
 
 ---
 
+## 5b. Follow-up — secondary location guard (research avenue #3): tested, also killed
+
+The §6 recommendation flagged one live avenue: tighten `m2d_s3d_early` with a **secondary
+location guard** that vetoes the early fires landing in deep-DD locations, then re-run the
+gate. Done. Guards tested (universal, persistent-property, leak-free — charter §2e/§5):
+`volcontract` (ATR%-percentile ≤ 0.60, calm/coiling not falling-knife), `higherlow` (latest
+**confirmed** swing low > prior), `eff` (Kaufman Efficiency Ratio(10) above its rolling
+median — trending not chop), `above50` (above a *rising* 50-day MA), and pairwise combos.
+
+**The guards cut drawdown hard** — but for the wrong reason. Filtered, candidate vs `base3d`,
+held-out per-name:
+
+| guarded variant | agg dd (base −12.5) | DD-shallower % | location-better % | avg signals (base 2.34) |
+|---|---|---|---|---|
+| `early_vol_50` | −11.3 | **65.8%** ✓ | 42.1% ✗ | 1.2 |
+| `early_50` | −12.6 | 57.7% ✓ | 32.7% ✗ | 1.6 |
+| `early_vol_hl` | −10.0 | 57.7% ✓ | 38.5% ✗ | 1.2 |
+| `early_hl` | −11.1 | 55.8% ✓ | 48.8% ✗ | 1.2 |
+| `m2d_s3d_early` (unguarded) | −16.6 | 29.9% | 34.0% | 3.4 |
+
+Raw is even more dramatic (`early_hl_50` shallower-DD on **93.8%** of names, agg −12.8 vs
+−24.5). **But it is an EXPOSURE ARTIFACT, not better entries:**
+
+- `corr(DD-gain, signal-drop)` = **+0.30 to +0.46** — the more trades a guard skips, the more
+  its drawdown "improves."
+- On names where the guarded variant fires **as many trades as `base3d` (±1)**, the DD edge is
+  **−1.0 to −1.3 pp (gone / inverted)**. The drawdown win lives entirely in trading less.
+- **Per-entry location (`locw`) never improves on a majority** of held-out names (32–49%), and
+  the guards fire **3–6× fewer signals** (1.2–1.6 vs `base3d` 2.34 filtered; 1.4–5.2 vs 8.4 raw).
+
+**Verdict: no guard flips the gate.** A selectivity filter lowers drawdown by participating
+less, not by entering at better locations — exactly the thing we set out to fix. Avenue #3 is
+closed. (Driver: `tuning_gate.py`; guards in `tuning_harness.py` `_guard_frame` + `early_*`
+variants.)
+
 ## 6. Recommendation
 
 1. **Promote nothing into the scored buy gate. Keep `base3d`.** The pre-committed §3 kill rule
@@ -199,13 +241,11 @@ drawdown, worse location, more shake-outs.** Trading the lag away trades selecti
    (median −2.93 pp) and roughly doubles the shake-out rate. It is context ("a buy may be
    coming"), not a signal to act before confirmation.
 
-3. **Only research avenue with a live signal: the chase/lead axis.** The earlier triggers reliably
-   reduce chasing; the failure is that the extra early fires are *unselective*. A future session
-   could add a **secondary location guard** that vetoes the early fires landing in the bottom-DD
-   bucket (e.g. require the StochRSI turn to coincide with a structural higher-low or a volatility
-   contraction), then re-run the §3b per-name generalization gate. Until that flips DD-shallower
-   **and** location to >50% of held-out names, `base3d` stays. Do not tune the guard per-ticker
-   to past P&L (CHARTER §4) — use a universal rule validated cross-sectionally.
+3. **The secondary-location-guard avenue is now closed (§5b).** It was the one live lead; tested
+   with universal, cross-sectionally-validated guards, it cut drawdown only by trading less
+   (exposure artifact, DD edge gone at matched trade-count) and never improved per-entry location
+   on a majority of held-out names. `base3d` stays for the scored gate. No remaining avenue
+   flips the location gate on this data; treat the earlier trigger as display-only context only.
 
 **Honest caveats.** Backtest is a microscope: ~110 names, a single recent regime window
 (entries since 2023-06), common-exit isolation. The filtered *absolute* DD figures are optimistic
@@ -229,6 +269,11 @@ python3 research/signal_engine/tuning_casestudy.py NVDA AMD AAPL
 
 # leak/robustness probe (edge must not appear when you act later)
 python3 research/signal_engine/tuning_harness.py --variant m2d_s3d_early --filter on --fill-offset 1 --json
+
+# secondary location guards (§5b): dump a guarded variant, then run the verdict gate vs base3d
+python3 research/signal_engine/tuning_harness.py --variant early_vol_50 --filter on --dump /tmp/ev50.json --json
+python3 research/signal_engine/tuning_harness.py --variant base3d        --filter on --dump /tmp/base.json --json
+python3 research/signal_engine/tuning_gate.py /tmp/base.json /tmp/ev50.json
 ```
 
 Variant configs live in `VARIANTS` in `tuning_harness.py`. The per-name dumps used for the §3b

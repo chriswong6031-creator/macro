@@ -186,14 +186,18 @@ render on the chart without a later rewrite. The signal engine WRITES these; the
 - `type`: `buy` (confluence BUY★), `sell` (confluence SELL★), `cut` (fast-reversal cut-loss), `rebuy` (fast-reversal re-entry).
 - `quality` (on `buy`/`rebuy` only): `take` = passed the validated buy-filter (reclaim-and-hold + no bearish-div + 200MA bar-raiser); `block` = filtered out. **Chart should render `take` solid and `block` greyed/hollow** so the eye sees which entries the risk-filter endorsed.
 - Suggested rendering: buy=▲ below bar (green), sell=▼ above bar (red), cut=✕ (orange), rebuy=▲ (lime). Dates are 3D bar dates.
+- **Display-only side channels (separate date lists, NOT in the validated `markers` stream, never scored/auto-traded):**
+  - `risk_flags`: dates of a close-below-EMA8(3D) trailing-trend breach (tail-risk protector); plus current `trail_stop`/`trail_breach` state.
+  - `early_markers`: dates of the **2D-MACD pre-cross advance-warning** (the 3D StochRSI bottom-turn while the faster 2D RSI-MACD histogram is only rising). Validated as `m2d_s3d_early` — fires ~5 trading days BEFORE the confirmed `buy` and ~2% cheaper, but acting on it early is empirically WORSE entry quality (deeper drawdown; a secondary location guard could not fix it — see `CONFLUENCE_TUNING.md` §3/§5b). It is **advance-warning context only**: not every early marker is followed by a buy, it is suppressed on a confirmed-buy bar, and it must NEVER be rendered as a `buy`/`take` or fed to conviction. Suggested rendering: a faint/hollow pre-dot below the bar, visually distinct from the green `buy` ▲. `early_now` (brain leaf) = latest bar is an active advance-warning.
 
 **B) Brain leaf** — `data/signal_archive/mtf_signals_latest.json` → loaded into `latest["mtf_signals"]` by `engine/run.py`:
 ```json
 {"asof": "...", "tf": "3D", "universe": "us_deep",
  "signals": [{"ticker": "AAPL", "asof": "...", "state": "...", "above200": true, "weekly_bull": false,
+              "trail_breach": false, "early_now": false,
               "last": {"date": "...", "type": "buy", "quality": "take", "reason": "..."}}]}
 ```
-The brain consumes this as a **risk / entry-quality input** (honestly labeled — NOT alpha, per §2), never as an auto-trade trigger.
+The brain consumes this as a **risk / entry-quality input** (honestly labeled — NOT alpha, per §2), never as an auto-trade trigger. `early_now`/`trail_breach` are display-only context flags (per the side-channel note above), never scored.
 
 > Contract rule: if either workstream needs a new field, ADD it here first, then both sides build to it.
 > Never let the chart and the engine invent divergent shapes.
