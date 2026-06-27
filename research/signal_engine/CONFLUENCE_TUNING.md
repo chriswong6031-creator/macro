@@ -279,3 +279,166 @@ python3 research/signal_engine/tuning_gate.py /tmp/base.json /tmp/ev50.json
 Variant configs live in `VARIANTS` in `tuning_harness.py`. The per-name dumps used for the §3b
 gate are written by `--dump <path>` (see `_tuning_out/`). All three drivers import the single
 shared harness so the methodology is identical across every experiment.
+
+---
+
+# 8. Reversal Gate — Cut / Re-Buy on the Opposite Cross (Owner's "Liquidity-Sweep" Hypothesis)
+
+> Distinct study, same charter and same `tuning_harness` primitives (leak-audited below). The §3
+> kill rule applies unchanged: judged on held-out **drawdown + whipsaw + cut/re-buy quality**,
+> never on beating buy-and-hold. Panel: 110 held-out US names, `--json` per variant in
+> `_tuning_out/rev/`. Driver: `tuning_reversal.py`.
+
+**The owner's question.** The Pine indicator already *cuts* a position (and later *re-buys*)
+when the OPPOSITE signal fires within a few bars of an entry — the intent is to dodge false
+breakdowns (MM liquidity sweeps) and to catch the rally after a false sell. The lever tested:
+the reversal already exists in the engine (`revBuy`/`revSell`, `REV_BARS=3` on the **lagging
+3D MACD** ≈ 9 trading days); does detecting the flip *sooner* — on the **faster 2D MACD** and/or
+in **tighter windows** — meaningfully improve held-out drawdown and protect against selling
+right before a rally?
+
+## 8.0. Direct answer — NO, it does not considerably improve performance
+
+On the held-out panel **no reversal config — current, faster, or tighter — materially improves
+drawdown**, and faster detection actively *worsens* the things that matter. Across all 9 variants
+aggregate DD sits in a rounding-error band of **−24.0 to −25.2** vs the no-reversal ablation
+(`none` = **−24.45**); the very fastest trigger (`rev1d_6`) buys **+0.43 pp** of DD "improvement"
+while shredding compounded return (`cap` 35.1 vs 42.3) and collapsing win-rate (48.2% vs 60.3%).
+Worst-loss is essentially flat across the board (−8.5 to −9.4). There is **no considerable
+improvement here — there is no improvement at all, on either DD axis.** The lever the owner hoped
+for does not exist in this data.
+
+## 8.1. Does the SHIPPED reversal (`rev3d_9`) even beat the no-reversal ablation? — No.
+
+The decisive, leak-free test is the per-name held-out gate vs `none` (the engine with the
+reversal logic switched OFF):
+
+- **DD:** `rev3d_9` is shallower-DD on only **30.9%** of names; aggregate DD is **worse** with
+  the reversal on (**−24.861** vs `none` **−24.454**).
+- **Worst-loss:** `rev3d_9` produces a smaller worst-loss on only **10.0%** of names.
+- **Of the 64 names the reversal actually touches** (46 are byte-identical — the logic never
+  fires), **38 get DEEPER drawdown vs 26 shallower** (median changed-delta **−0.94 pp**).
+
+So the mechanism **as currently shipped hurts drawdown on the clear majority of the names it
+touches, and does not help on a majority overall.** It is not earning its place.
+
+**Does FASTER (2D) detection beat the current 3D?** No — it loses the verdict gate on both axes.
+% of names where a faster config is *shallower-DD than `rev3d_9`* (need >50% to "hold"):
+`rev3d_6` 26.4 · `rev2d_4` 43.6 · `rev2d_6` 44.5 · `rev2d_9` 38.2 · `rev1d_6` 46.4 — **all <50%**.
+% where it gives a *smaller worst-loss* than `rev3d_9`: `rev3d_6` 9.1 · `rev2d_4` 30.9 · `rev2d_6`
+29.1 · `rev2d_9` 24.5 · `rev1d_6` 32.7 — **every faster config deepens worst-loss on the
+majority of names.** Median DD-delta vs `rev3d_9` is **+0.00 pp** for all (most names untouched).
+Faster does not win; it just fires more often into noise.
+
+## 8.2. Whipsaw — the cuts MANUFACTURE head-fakes, they do not dodge drops
+
+The defining metric is **`cut_fwd`** = average forward return *after* a protective cut. A cut
+that dodges a real breakdown should show **`cut_fwd` clearly NEGATIVE** (price keeps falling
+after we exit). Instead it is **POSITIVE in every single one of the 9 variants** — price *rises*
+after the cut. That is the textbook whipsaw signature, and it **scales monotonically with how
+fast/tight the trigger is**, which proves the mechanism itself is creating the head-fakes, not
+sampling noise:
+
+| trigger speed | variant | `cut_fwd` (NEG=good) | whipsaw % | cap vs `none` (42.29) |
+|---|---|---|---|---|
+| ablation | `none` | 0.000 | 0.0 | — |
+| slow/loose | `rev2d_4` | **+0.118** | 4.8 | +1.24 |
+| | `rev2d_6` | **+0.509** | 14.2 | +0.74 |
+| | `rev3d_6` | **+1.601** | 24.8 | −3.89 |
+| | `rev2d_9` | **+2.246** | 27.1 | −3.90 |
+| current | `rev3d_9` | **+2.498** | 31.7 | −5.51 |
+| fast/tight | `rev1d_6` | **+3.273** | 35.7 | −7.15 |
+
+`rev1d_6` makes **348 cuts** across the panel, and **>1-in-3 of them see price rally >4% within
+20 days.** The tighter the trigger, the worse the head-fake — and it buys **no** drawdown
+dividend (DD flat) while paying up to **−7.15 pp** of compounded return.
+
+**Is the re-buy half more useful than the cut half? Yes — but only because it un-does the cut.**
+`rebuy_fwd` is positive (+0.31 to +2.57; `rebuy_good_pct` up to 58.8%) — re-buys *do* tend to
+re-enter into a rally. But that is the **mirror image of having cut into strength**: the re-buy is
+recovering self-inflicted damage, not capturing alpha. The ablations isolate this cleanly:
+
+- **`rev2d_6_cutonly`** (cut, never re-buy): `cut_fwd` **+0.875**, whipsaw 14.3%, **cap 38.69 <
+  42.29** — cutting alone is pure whipsaw that destroys return.
+- **`rev2d_6_rebuyonly`** (re-buy, never cut): **cap 45.05** — the **only** config that BEATS
+  `none`, and it does so by **disabling the cut entirely** (`cut_fwd` 0, one stray re-buy).
+
+In other words the cut leg is a net drag and the re-buy leg is only "good" at cleaning up the
+cut leg's mess. **There is no config where the cuts systematically dodge drops.**
+
+## 8.3. Leak audit & subpanel — the verdict is real, not an artifact
+
+- **Leak audit: HOLDS (clean).** Six checks on `tuning_reversal.py` against the `H.*` primitives
+  all pass: raw `base3d` confluence buy with no forward-peeking `daily_filter`; reversal crosses
+  via `xup`/`xdn` (both `.shift(1)`, strictly backward) mapped by known-date `to_daily("event")`;
+  fills at `c[i+1]` with **no same-bar fill**; cut/re-buy windows measured against decision-bar
+  indices that are all `≤ i` (backward); `cut_fwd`/`rebuy_fwd` are pure **outcome** metrics that
+  never gate entries/exits; `SINCE` boundary consistent. The DD/whipsaw numbers above are
+  trustworthy (unlike the §4 *absolute* filtered DD, this sim uses the raw common-exit, so even
+  the absolute DD here is leak-free).
+- **Subpanel: HOLDS, but only for the inter-config ordering.** Deterministic even/odd ticker
+  split (55 names each). The sign of `(rev2d_6 DD − rev3d_9 DD)` is **the same on both halves**
+  (A +0.486, B +0.489) — i.e. `rev2d_6` is reproducibly the *gentler of the two reversal
+  variants* (higher cap, ~14% whipsaw vs ~28–35%). **But no reversal config beats `none`
+  consistently:** `rev2d_6` vs `none` **flips sign across halves** (beats on A +0.232, loses on
+  B −0.070). The only stable, reproducible fact is the relative ordering *between reversal
+  configs* — not that any of them helps.
+
+## 8.4. Recommendation — keep `REV_BARS=3` on the 3D as a context leg only; promote no faster variant; consider neutering the cut
+
+1. **Promote nothing faster. Do NOT switch the scored gate to 2D or tighten the window.** The §3
+   kill rule fires: faster/tighter detection loses the held-out DD *and* worst-loss majority gate
+   vs the current `rev3d_9` and vs `none`, and it manufactures more whipsaws (`cut_fwd` and
+   whipsaw% both climb monotonically with speed). `rev1d_6`/`rev2d_9` are the **worst** options
+   despite firing soonest — earlier detection of the flip is earlier reaction to *noise*.
+
+2. **The honest read on the shipped `rev3d_9` cut: it is a net negative on this panel** (deeper
+   DD on the majority of touched names, +2.50 `cut_fwd`, −5.51 pp cap, 31.7% whipsaw). The
+   evidence-led move is to **disable the auto-cut leg** (or demote it to display-only "opposite
+   signal fired — discretionary review") and, if anything is kept live, keep **only the re-buy
+   leg** — `rev2d_6_rebuyonly` is the single config that beat `none` (cap 45.05), precisely
+   because it never cuts. If the cut must stay for parity with the owner's Pine, **`rev2d_6` is
+   the least-bad cut config** (gentlest: lowest whipsaw among non-inert variants, smallest cap
+   loss, reproducible across both subpanels) — but it is a *damage-minimizing* choice, not an
+   improvement over `none`.
+
+3. **Charter framing — detect, don't predict (CHARTER §2).** This is the load-bearing point. The
+   gate **cannot know** that a breakdown is a market-maker liquidity sweep versus the start of a
+   real decline. It only *reacts to the opposite signal flipping* — and on held-out data that
+   flip, fired faster, is **more often noise than a real sweep**: the price keeps rising after the
+   cut (`cut_fwd > 0`) in every variant. The owner's mechanism is built on a *predictive* claim
+   ("this breakdown is fake, hold/re-buy through it") that a reactive signal-flip detector cannot
+   make. Speeding it up does not make it more clairvoyant — it makes it react to thinner, noisier
+   flips. The lag on the 3D is again **partly load-bearing**: it is what stops the gate from
+   cutting on every shallow wobble.
+
+**Honest caveats.** Microscope, not verdict machine: 110 names, single recent regime window
+(entries since 2023-06-01, `FWD_K=20`, `WHIP=0.04`), common-exit isolation, daily-bar windows.
+The DD band is narrow enough (−24.0 to −25.2) that *no* config is decisively separable on the
+aggregate — which is itself the finding: the reversal gate is a **wash on drawdown** and a
+**drag on whipsaw + compounding**, in every flavor tested. The one robust, reproducible signal is
+directional and unfavorable: faster/tighter ⇒ more whipsaw, less cap, lower win-rate, **no** DD
+payoff. Add this to the "tested and killed" ledger alongside the entry-trigger study (§6) and the
+regime router (CHARTER §5).
+
+## 8.5. Reproduce
+
+```bash
+# variant is a POSITIONAL arg; no arg = print the whole table. Writes _tuning_out/rev/<variant>.json with --dump
+python3 research/signal_engine/tuning_reversal.py                       # all 9 configs, one table
+python3 research/signal_engine/tuning_reversal.py rev3d_9 --json        # current engine
+python3 research/signal_engine/tuning_reversal.py none    --json        # no-reversal ablation
+python3 research/signal_engine/tuning_reversal.py rev2d_6 --dump /tmp/rev2d_6.json --json
+
+# the decisive whipsaw read is cut_fwd (must be NEGATIVE to be protective; it is +ve everywhere)
+# the verdict gate is per-name %shallower-DD / %smaller-worst-loss vs rev3d_9 AND vs none (need >50%)
+```
+
+> **Production note (no code change required).** In the live engine the `cut`/`rebuy` are already
+> **display-only markers** (`engine/signal_quality.py` `revSell`/`revBuy` → marker stream), never
+> auto-trades — the owner/brain reads them and applies discretion. This study tested *mechanically
+> acting* on them; the verdict ("don't go faster; the cut is whipsaw-prone") therefore means **keep
+> the markers, keep `REV_BARS=3` on the 3D, and treat the `cut` marker as low-reliability context**,
+> not "rip anything out." The owner's ~80–90% manual win-rate comes from judging these cases (charter
+> §2c); the mechanical cut reproduces only a whipsaw-prone floor.
+
