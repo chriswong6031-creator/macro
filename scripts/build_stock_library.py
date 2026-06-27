@@ -30,6 +30,7 @@ from engine.cycles import analyze, market_vix_context  # noqa: E402
 from engine.extension import extension_signals  # noqa: E402
 from engine.playbook import SECTOR_NAMES  # noqa: E402
 from engine.setups import US_ALPHA_WEIGHT, rank_setups, setup_score, sue_confirmer  # noqa: E402
+from engine import signal_gate  # noqa: E402  — validated confluence buy gate (CHARTER §7)
 from engine import stock_score  # noqa: E402
 from engine import stock_macro_sensitivity as macro_sens  # noqa: E402
 from engine import dannytrades_chip as dt_chip  # noqa: E402
@@ -853,6 +854,14 @@ def main() -> int:
     profiles: dict[str, dict] = {}
     disp_map: dict[str, dict] = {}              # price / off-high / sparkline per name
     to_write: list[tuple[str, dict]] = []
+    # VALIDATED confluence buy gate (engine/signal_gate over engine/signal_quality): the
+    # per-name {ticker: verdict} that becomes the PRIMARY buy-entry gate for the standout
+    # board, REPLACING the unvalidated cycles MACD(12,26,9)+StochRSI ladder gate (CHARTER §4,
+    # GRID_GATE.md). Each name also gets its §7 site/signals/<T>.json so the chart shows the
+    # same markers the board gated on. signal_quality is close-only; thin names degrade to
+    # "insufficient history" (excluded, never a crash).
+    sig_verdict: dict[str, dict] = {}
+    signals_dir = site / "signals"
     uni = universe()
     # extension / exhaustion read over the WHOLE library universe (own-history ext_z +
     # grade), wired in EXACTLY as build_discovery does — this is what re-arms the validated
@@ -1046,6 +1055,10 @@ def main() -> int:
                                     color=_SPARK_COLOR.get((rec.get("ladder") or {}).get("dir"), "var(--link)"))}
         ladder_rows.append(ticker_alerts.ladder_row(ticker, rec.get("ladder"), rec.get("asof")))
         safe = ticker.replace("=", "_").replace("^", "_")
+        # VALIDATED confluence buy gate + its §7 marker file (close-only; never fatal).
+        _g = signal_gate.gate(ticker, close)
+        sig_verdict[ticker] = _g
+        signal_gate.write_signal_file(signals_dir, safe, _g.get("result"))
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
         if rec.get("alpha", {}).get("alpha") is not None:
@@ -1105,38 +1118,66 @@ def main() -> int:
         scored = [(t, p) for t, p in profiles.items()
                   if p.get("composite_z") is not None and t in row_by_t]
         scored.sort(key=lambda kv: -(kv[1]["composite_z"]))
-        # ENTRY-QUALITY GATE (China's discipline, T4-validated: poor-entry top-momentum names
-        # realize -0.7pp/mo and a -58% vs -41% worst drawdown). A name is BUYABLE only if its
-        # cycle/extension does NOT block (downtrend / parabolic / over-extended chase like CASY)
-        # AND its entry is constructive (entry_z > 0; an ABSENT entry is not "poor", so it
-        # stays). Strong-but-not-buyable names go to a WATCH list ("leaders — wait for a
-        # pullback") so they are surfaced honestly, never sold as buys.
-        def _buyable(p):
-            if p.get("cycle_blocked"):
-                return False
-            ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
-            return ez is None or ez > 0
-        buyable = [(t, p) for t, p in scored if _buyable(p)]
-        watch = [(t, p) for t, p in scored
-                 if not _buyable(p) and (p.get("composite_z") or 0) > 0]
-        wide = {"as_of": alpha_asof, "rank_by": ("edge-validated" if gate_go else "conviction"),
-                "gate_go": gate_go,
+        # PRIMARY BUY GATE = the VALIDATED MACD-RSI x StochRSI confluence (engine/signal_gate
+        # over engine/signal_quality), REPLACING the old cycles-ladder MACD(12,26,9)+StochRSI
+        # screen the board used to gate on (CHARTER §4 forbids standard MACD; GRID_GATE.md). A
+        # name is BUYABLE only if the validated signal endorses it — a buy-filter `take`, or the
+        # `anticipation` eligibility exception (a just-fired `pending` buy, or the `early`
+        # advance-warning). Takes ALWAYS rank ABOVE anticipations; the Conviction composite then
+        # orders names WITHIN each tier (the validated within-board sort, surfacing the event-edge
+        # leaders). Strong names with no live buy signal fall to the WATCH list ("leaders — wait
+        # for entry"), surfaced honestly, never sold as buys. The validated buy-filter already
+        # carries the trend/drawdown discipline the old cycle_blocked screen approximated (200MA
+        # bar-raiser + bearish-div veto + RSI<65 entry gate ⇒ it will not fire on an extended chase).
+        def _elig(t):
+            v = sig_verdict.get(t)
+            return bool(v and v.get("eligible"))
+        eligible_scored = [(t, p) for t, p in scored if _elig(t)]
+        gate_applied = bool(eligible_scored)
+        if gate_applied:
+            # takes first (tier_rank 0), then anticipations; composite_z orders within tier
+            buyable = sorted(eligible_scored,
+                             key=lambda kv: (signal_gate.tier_rank(sig_verdict.get(kv[0])),
+                                             -(kv[1]["composite_z"])))
+            buy_set = {t for t, _ in buyable}
+            watch = [(t, p) for t, p in scored
+                     if t not in buy_set and (p.get("composite_z") or 0) > 0]
+        else:   # degenerate: no name cleared the confluence gate -> graceful un-gated fallback
+            log.warning("us_standouts: 0 names cleared the confluence gate — falling back to conviction board")
+            def _fallback_ok(p):
+                if p.get("cycle_blocked"):
+                    return False
+                ez = ((p.get("axes") or {}).get("entry") or {}).get("z")
+                return ez is None or ez > 0
+            buyable = [(t, p) for t, p in scored if _fallback_ok(p)]
+            buy_set = {t for t, _ in buyable}
+            watch = [(t, p) for t, p in scored
+                     if t not in buy_set and (p.get("composite_z") or 0) > 0]
+        n_take = sum(1 for t, _ in buyable if (sig_verdict.get(t) or {}).get("tier") == signal_gate.TAKE)
+        n_antic = sum(1 for t, _ in buyable if (sig_verdict.get(t) or {}).get("tier") == signal_gate.ANTICIPATION)
+        wide = {"as_of": alpha_asof, "gate_go": gate_go, "gate_applied": gate_applied,
+                "rank_by": ("confluence+" + ("edge-validated" if gate_go else "conviction")
+                            if gate_applied else "conviction-fallback"),
                 "buy": [row_by_t[t] for t, _ in buyable[:120]],
                 "watch": [row_by_t[t] for t, _ in watch[:24]],
                 "laggards": [row_by_t[t] for t, _ in scored[-12:][::-1]] if len(scored) > 24 else []}
-        eligible = sum(1 for _, p in buyable if (p.get("composite_z") or 0) > 0)
         for r in wide["buy"] + wide["watch"] + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
+            r["signal"] = signal_gate.compact(sig_verdict.get(t))   # take/anticipation badge + §7 state
             r.update({k: v for k, v in (disp_map.get(t) or {}).items() if v is not None})
             if demand_chip.get(t):                 # L2 demand-divergence flag for the board chip
                 r["demand"] = demand_chip[t]
-        wide["eligible"] = eligible
+        wide["eligible"] = len(buyable) if gate_applied else 0
+        wide["coverage"] = {"scored": len(scored), "eligible": len(eligible_scored),
+                            "take": n_take, "anticipation": n_antic}
         wide["universe"] = len(cand)
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(wide, separators=(",", ":"), default=str))
-        log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
-                 len(wide["buy"]), wide["rank_by"], eligible, len(cand))
+        log.info("wrote us_standouts.json (%d buy [%d take · %d anticip] · rank_by=%s · "
+                 "%d eligible / %d scored / %d universe)",
+                 len(wide["buy"]), n_take, n_antic, wide["rank_by"],
+                 len(eligible_scored), len(scored), len(cand))
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)
     bccal = config.data_dir() / "regime" / "bottom_confidence_calibration.json"

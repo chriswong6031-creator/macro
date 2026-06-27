@@ -23,6 +23,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import i18n  # noqa: E402
+from engine import signal_gate  # noqa: E402  — validated confluence buy gate (CHARTER §7)
 from engine import stock_score  # noqa: E402
 from engine.cycles import analyze  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
@@ -599,7 +600,36 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             row["conv"] = profiles[e["ticker"]].get("score")
             row["edge_z"] = e.get("edge_z")
 
-    # ---- rank by the GATED conviction composite, split buy / watch / laggards ----
+    # ---- PRIMARY BUY GATE = the VALIDATED MACD-RSI × StochRSI confluence (engine/signal_gate
+    # over engine/signal_quality), REPLACING the conviction-composite-alone buy screen this
+    # board used to gate on (CHARTER §4 forbids standard MACD; GRID_GATE.md). signal_quality is
+    # CLOSE-ONLY, so it runs on the SAME close series the chart draws (rec.chart t/c). A name is
+    # BUYABLE only if the validated signal endorses it — a buy-filter `take`, or the
+    # `anticipation` eligibility exception (a just-fired `pending` buy, or the `early`
+    # advance-warning). Takes ALWAYS rank ABOVE anticipations; the conviction composite then
+    # orders names WITHIN each tier. We also write the §7 site/signals/<T>.json marker file from
+    # the SAME analyze() result so the bespoke chart renders the SAME markers the board gated on.
+    # Thin/close-only names degrade to "insufficient history" (excluded, never a crash). The
+    # hard-coded HK trust_tier=screen / size-cap / never-Buy honesty constraints are untouched —
+    # this gate only decides INCLUSION + ORDER, never the verb.
+    sig_verdict: dict[str, dict] = {}
+    signals_dir = site / "signals"
+    for e in enriched:
+        t = e["ticker"]
+        chart = (e.get("_rec") or {}).get("chart") or {}
+        ts, cs = chart.get("t") or [], chart.get("c") or []
+        close = pd.Series(dtype="float64")
+        if ts and cs and len(ts) == len(cs):
+            try:
+                close = pd.Series(cs, index=pd.to_datetime(ts), dtype="float64").dropna()
+            except Exception:  # noqa: BLE001 — never fatal; degrades to "insufficient history"
+                close = pd.Series(dtype="float64")
+        v = signal_gate.gate(t, close)   # never raises on thin/empty data
+        sig_verdict[t] = v
+        safe = t.replace("=", "_").replace("^", "_")
+        signal_gate.write_signal_file(signals_dir, safe, v.get("result"))
+
+    # ---- rank by tier (gate) then the conviction composite WITHIN tier ----
     def comp(e: dict) -> float:
         c = e.get("conviction") or {}
         z = c.get("composite_z")
@@ -613,12 +643,26 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         return ez is None or ez > -0.1
 
     ranked = sorted(enriched, key=comp, reverse=True)
-    buys = [e for e in ranked if buyable(e)][:n_buy]
+    eligible = [e for e in ranked if (sig_verdict.get(e["ticker"]) or {}).get("eligible")]
+    gate_applied = bool(eligible)
+    if gate_applied:
+        # takes first (tier_rank 0), then anticipations; composite_z orders within tier
+        buys = sorted(eligible,
+                      key=lambda e: (signal_gate.tier_rank(sig_verdict.get(e["ticker"])),
+                                     -comp(e)))[:n_buy]
+    else:   # degenerate: no name cleared the confluence gate -> graceful un-gated fallback
+        log.warning("hk_standouts: 0 names cleared the confluence gate — falling back to conviction board")
+        buys = [e for e in ranked if buyable(e)][:n_buy]
     buy_keys = {id(e) for e in buys}
-    # strong-but-blocked names (good edge, wrong tape / extended) -> a WATCH strip, not the
+    # attach the compact verdict to every card row so the §7 badge renders on the grid.
+    for e in enriched:
+        e["signal"] = signal_gate.compact(sig_verdict.get(e["ticker"]))
+    # strong-but-blocked names (good edge, no live buy signal) -> a WATCH strip, not the
     # buy list — the honest "wait for a base" demotion the old board lacked.
     watch = [e for e in ranked if id(e) not in buy_keys and comp(e) > 0.2][:8]
     laggards = sorted(enriched, key=comp)[:n_lag]
+    n_take = sum(1 for e in buys if (sig_verdict.get(e["ticker"]) or {}).get("tier") == signal_gate.TAKE)
+    n_antic = sum(1 for e in buys if (sig_verdict.get(e["ticker"]) or {}).get("tier") == signal_gate.ANTICIPATION)
 
     for e in buys + watch:
         col = ("var(--up)" if e["dir"] == "up" else
@@ -632,9 +676,15 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             e.pop(k, None)
     out = {"as_of": as_of, "risk_state": risk_state, "overlay": overlay,
            "calm": calm, "cohort": cohort or None,
+           "gate_applied": gate_applied,
            "buy": buys, "watch": watch, "laggards": laggards,
            "southbound_summary": hk_southbound_stocks.market_summary(),
-           "eligible": sum(1 for e in enriched if comp(e) > 0),
+           # eligible = names the VALIDATED confluence endorsed (the gate's coverage), so the
+           # board header reads "<buy> of <eligible> passed the entry-quality gate". coverage
+           # carries scored/eligible/take/anticipation for the build log (GRID_GATE.md).
+           "eligible": len(eligible) if gate_applied else 0,
+           "coverage": {"scored": len(enriched), "eligible": len(eligible),
+                        "take": n_take, "anticipation": n_antic},
            "universe": len(enriched)}
     # persist the artifact so a transient build failure leaves a stale-but-present board.
     try:
@@ -642,8 +692,10 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
         fdir.mkdir(parents=True, exist_ok=True)
         (fdir / "hk_standouts.json").write_text(
             json.dumps(out, separators=(",", ":"), default=str))
-        log.info("wrote hk_standouts.json (%d buy / %d watch of %d eligible / %d universe; %s)",
-                 len(buys), len(watch), out["eligible"], out["universe"], risk_state)
+        log.info("wrote hk_standouts.json (%d buy [%d take · %d anticip] / %d watch of "
+                 "%d eligible / %d universe · gate_applied=%s · %s)",
+                 len(buys), n_take, n_antic, len(watch), out["eligible"],
+                 out["universe"], gate_applied, risk_state)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("hk_standouts.json persist skipped (%s)", e)
     return out

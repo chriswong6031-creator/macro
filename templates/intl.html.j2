@@ -564,13 +564,21 @@
 <!-- ===== Standout stocks ===== -->
 <div class="panel">
   <h2>{{ t('Standout individual stocks', '个股精选') }} {{ help('Pooled from every market top constituents, ranked by sector-neutral residual momentum computed within each name own market (alpha-led, with the cycle entry as timing). Flagged by country. A relative-strength lens — not a forward-edge claim.', '汇集各市场主要成分股，按各自市场内部的板块中性残差动量排名（阿尔法主导，周期入场为时机）。标注国家。相对强弱视角 — 非前瞻收益主张。') }}</h2>
+  {# GATED board: the grid shows ONLY names the VALIDATED MACD-RSI × StochRSI confluence
+     endorses as a buy entry (engine/signal_gate; GRID_GATE.md), in rank_setups BUILD ORDER —
+     confirmed TAKEs first, then the anticipation exception (pending / early), alpha ordering
+     within each tier. Do NOT re-sort it. Strong leaders with no live buy signal fall away
+     (counted in the footnote). Each card carries the take/anticipation badge. #}
   {% set buys = (setups.buy if setups else []) %}
+  {% set _cov = (setups.coverage if setups else {}) or {} %}
+  {% set _noentry = (_cov.scored or 0) - (_cov.eligible or 0) %}
   {% if buys %}
   <div class="cards">
     {% for b in buys %}
     <a class="card {{ 'hidden stmore' if loop.index > 12 }}" href="intl_stock.html#{{ b.ticker }}">
       <div class="hd"><span class="flg">{{ b.flag }}</span><span class="tk">{{ b.ticker }}</span>
         <span style="flex:1"></span>
+        {% set sig = b.signal %}{% include "_sig_badge.html.j2" %}
         {% if b.dir %}<span class="lad {{ b.dir }}">{{ b.label or b.state }}</span>{% endif %}</div>
       <div class="muted small" style="margin:3px 0">{{ b.name }}{% if b.sector %} · {{ b.sector }}{% endif %}</div>
       {% if b.spark_svg %}{{ b.spark_svg|safe }}{% endif %}
@@ -583,7 +591,9 @@
     {% endfor %}
   </div>
   {% if buys|length > 12 %}<button class="more-btn" data-more="stmore">{{ t('Show more', '显示更多') }} ({{ buys|length }})</button>{% endif %}
-  <p class="caveat" style="margin-top:10px">{{ t('Standout within its own market — alpha is sector-neutral residual momentum computed per market, never pooled raw across currencies. Click a card for the full cycle / momentum breakdown.', '相对其所在市场的精选 — 阿尔法为各市场内部计算的板块中性残差动量，绝不跨币种原始汇总。点击卡片查看完整周期／动量拆解。') }}</p>
+  {% if _noentry > 0 %}<p class="nb-watchnote"><span class="l-en">➕ {{ _noentry }} scored leader{{ 's' if _noentry != 1 else '' }} have no live confluence buy signal yet — awaiting an entry (not shown).</span><span class="l-zh">➕ 另有 {{ _noentry }} 只已评分领涨股尚无共识买入信号 — 等待入场（未显示）。</span></p>{% endif %}
+  <p class="caveat" style="margin-top:10px">{{ t('Standout within its own market — alpha is sector-neutral residual momentum computed per market, never pooled raw across currencies. The board is gated on the validated MACD-RSI × StochRSI confluence buy signal (a risk / entry-quality filter, not alpha). Click a card for the full cycle / momentum breakdown.', '相对其所在市场的精选 — 阿尔法为各市场内部计算的板块中性残差动量，绝不跨币种原始汇总。本榜单以经验证的 MACD-RSI × StochRSI 共识买入信号为门槛（风险／入场质量过滤器，非阿尔法）。点击卡片查看完整周期／动量拆解。') }}</p>
+  {% elif setups %}<p class="nb-watchnote"><span class="l-en">No names currently meet the validated confluence buy signal{% if _cov.scored %} ({{ _cov.scored }} scored).{% else %}.{% endif %}</span><span class="l-zh">当前没有标的满足经验证的共识买入信号{% if _cov.scored %}（已评分 {{ _cov.scored }} 只）。{% else %}。{% endif %}</span></p>
   {% else %}<p class="muted small">{{ t('Standouts unavailable — universe still building.', '精选不可用 — 个股库构建中。') }}</p>{% endif %}
 </div>
 

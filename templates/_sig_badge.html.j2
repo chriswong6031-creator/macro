@@ -1,0 +1,12 @@
+{#- Validated-confluence buy-GATE badge for the Standout grids (every country). Expects
+    `sig` = the compact engine/signal_gate verdict attached to the card row (row['signal']).
+    Renders take vs the anticipation exception (pending / early) so the eye sees which entries
+    the VALIDATED risk-filter endorsed (CHARTER §7, GRID_GATE.md). Bilingual; one source of
+    truth so all five grids render the badge identically. Renders nothing when not eligible. -#}
+{%- if sig and sig.eligible -%}
+{%- set _tier = 'take' if sig.tier == 'take' else (sig.sub or 'early') -%}
+{%- set _glyph = {'take':'✓','pending':'◔','early':'⋯'}[_tier] -%}
+{%- set _en = {'take':'BUY','pending':'forming','early':'approaching'}[_tier] -%}
+{%- set _zh = {'take':'买入','pending':'形成中','early':'临近'}[_tier] -%}
+<span class="sig-gate sig-{{ _tier }}" title="{{ (sig.reason or '')|e }}{% if sig.state %} · {{ sig.state|e }}{% endif %}{% if sig.asof %} · {{ sig.asof|e }}{% endif %} · Validated MACD-RSI × StochRSI confluence buy gate (CHARTER §7); forming/approaching = eligibility exception, ranked below confirmed buys, not a stronger entry. | 经验证的 MACD-RSI × StochRSI 共识买入门槛（CHARTER §7）。临近/形成中=入选例外，排在确认买入之后，非更强买点。">{{ _glyph }} <span class="l-en">{{ _en }}</span><span class="l-zh">{{ _zh }}</span></span>
+{%- endif -%}
