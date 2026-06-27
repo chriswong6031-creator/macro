@@ -31,7 +31,11 @@
   ALL.forEach(function (s) { byId[s.id] = s; });
 
   /* ---- view state -------------------------------------------------------- */
-  var state = { mode: "price", scale: "log", focus: null };
+  // family = which independent SECTION is active: the 11 sector ETFs (clean default)
+  // or the 34 thematic baskets (their own space). Only one family is ever on screen.
+  var state = { mode: "price", scale: "log", focus: null, family: "sectors" };
+  function activeList() { return state.family === "baskets" ? BASKETS : SECTORS; }
+  function isActive(s) { return (s.kind === "basket") === (state.family === "baskets"); }
 
   /* ---- small helpers ----------------------------------------------------- */
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
@@ -297,8 +301,8 @@
     var host = document.getElementById("sc-groups");
     if (!host) return;
     var counts = {};
-    SECTORS.forEach(function (s) { counts[s.now.phase] = (counts[s.now.phase] || 0) + 1; });
-    PHASE_FILTER.forEach(function (p) { if (phaseState[p.key] == null) phaseState[p.key] = true; });
+    activeList().forEach(function (s) { counts[s.now.phase] = (counts[s.now.phase] || 0) + 1; });
+    PHASE_FILTER.forEach(function (p) { phaseState[p.key] = true; });
     host.innerHTML = '<span class="cyc-glabel">' + L("Where they stand", "所处阶段") + '</span>' +
       PHASE_FILTER.map(function (p) {
         return '<button class="cyc-gchip on" data-k="' + p.key + '" style="--ph:' + phaseHue(p.key) + '"><span class="gdot"></span>' + L(p.label[0], p.label[1]) + ' <i>' + (counts[p.key] || 0) + '</i></button>';
@@ -332,11 +336,12 @@
   function applyVisibility() {
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
     function phaseOK(s) { return allOff || phaseState[s.now.phase]; }
-    // chart: sectors always on (subject to phase filter); baskets only if selected
+    // only the ACTIVE family is ever on the chart; in the sectors section all 11 are on
+    // (subject to phase filter), in the baskets section only the ones the user selected.
     chartHidden = {};
     ALL.forEach(function (s) {
-      var selected = s.kind === "basket" ? !!basketShown[s.id] : true;
-      chartHidden[s.id] = !(phaseOK(s) && selected);
+      var sel = s.kind === "basket" ? !!basketShown[s.id] : true;
+      chartHidden[s.id] = !(isActive(s) && phaseOK(s) && sel);
     });
     document.querySelectorAll(".cyc-card").forEach(function (cd) {
       var s = byId[cd.getAttribute("data-id")]; if (!s) return;
@@ -348,7 +353,49 @@
       var s = byId[b.getAttribute("data-id")]; if (!s) return;
       b.classList.toggle("gdim", !phaseOK(s));
     });
+    updateChartHint();
     if (heroChart) { heroChart.setHidden(chartHidden); rebuildHero(false); }
+  }
+  function updateChartHint() {
+    var hint = document.getElementById("sc-chart-hint");
+    if (!hint) return;
+    var anyShown = ALL.some(function (s) { return isActive(s) && !chartHidden[s.id]; });
+    if (state.family === "baskets" && !anyShown) {
+      hint.hidden = false;
+      hint.innerHTML = L("Tap a basket card or chip to chart it — overlay any you like to compare.",
+                         "点击下方任一篮子卡片或标签即可绘制——可叠加多个进行对比。");
+    } else { hint.hidden = true; }
+  }
+  /* ---- section family (Sector ETFs vs Thematic Baskets) ------------------ */
+  function applyFamilyDisplay() {
+    var chips = document.getElementById("sc-chips"), bask = document.getElementById("sc-baskets");
+    if (chips) chips.style.display = state.family === "sectors" ? "" : "none";
+    // baskets rail = a compact, collapsed quick-picker above the chart; the 34
+    // scorecards below are the primary browse/selector, so the chart stays in view.
+    if (bask) { bask.style.display = state.family === "baskets" ? "" : "none"; bask.classList.remove("open"); }
+    document.querySelectorAll("#sc-tabs .sc-tab").forEach(function (t) { t.classList.toggle("on", t.getAttribute("data-fam") === state.family); });
+    var ttl = document.getElementById("sc-hero-title");
+    if (ttl) ttl.innerHTML = state.family === "baskets"
+      ? '<span class="l-en">Thematic basket rotation</span><span class="l-zh">主题篮子轮动</span>'
+      : '<span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span>';
+  }
+  function switchFamily(fam) {
+    if (fam === state.family) return;
+    state.family = fam; state.focus = null;
+    if (heroChart) heroChart.focus(null);
+    applyFamilyDisplay();
+    mountCards();          // re-render the scorecards for the new family
+    buildGroups();         // re-count phase chips + re-filter (calls applyVisibility)
+    buildDefaultPanel();
+    renderPanel(null);
+  }
+  function wireFamily() {
+    document.querySelectorAll("#sc-tabs .sc-tab").forEach(function (t) {
+      t.addEventListener("click", function () { switchFamily(t.getAttribute("data-fam")); });
+    });
+    var ns = document.getElementById("sc-tab-n-sec"), nb = document.getElementById("sc-tab-n-bsk");
+    if (ns) ns.textContent = SECTORS.length;
+    if (nb) nb.textContent = BASKETS.length;
   }
 
   /* ---- sector toggle chips ----------------------------------------------- */
@@ -409,11 +456,17 @@
     document.querySelectorAll(".sc-bchip").forEach(function (ch) {
       ch.classList.toggle("on", !!basketShown[ch.getAttribute("data-id")]);
     });
+    // keep the basket scorecards' "on chart" state in sync with the chips
+    document.querySelectorAll("#sc-cards .cyc-card").forEach(function (cd) {
+      var id = cd.getAttribute("data-id"), it = byId[id];
+      if (it && it.kind === "basket") cd.classList.toggle("sel", !!basketShown[id]);
+    });
   }
   function toggleBasket(id) {
     if (basketShown[id]) {
       basketShown[id] = false; updateBasketSel();
-      if (state.focus === id) setFocus(null); else applyVisibility();
+      if (state.focus === id) setFocus(null);
+      applyVisibility();                         // always recompute (setFocus(null) doesn't)
     } else {
       basketShown[id] = true; updateBasketSel();
       applyVisibility(); setFocus(id);
@@ -443,8 +496,8 @@
   }
   // cards run the cycle order bottoming -> prime entry -> trending -> topping -> rolling over
   var PHASE_ORDER = { Trough: 0, Recovery: 1, Expansion: 2, Peak: 3, Downturn: 4 };
-  function sortedSectors() {
-    return SECTORS.slice().sort(function (a, b) {
+  function sortedActive() {
+    return activeList().slice().sort(function (a, b) {
       var pa = PHASE_ORDER[a.now.phase], pb = PHASE_ORDER[b.now.phase];
       return pa !== pb ? pa - pb : a.now.pos - b.now.pos;
     });
@@ -455,21 +508,25 @@
     Object.keys(sparks).forEach(function (k) { try { sparks[k].destroy(); } catch (e) {} });
     sparks = {};
     grid.innerHTML = "";
-    sortedSectors().forEach(function (s) {
+    sortedActive().forEach(function (s) {
       var nw = s.now, tilt = tiltOf(s);
       var card = el("article", "cyc-card");
       card.setAttribute("data-id", s.id);
       card.style.setProperty("--c", s.accent);           // ETF identity dot
       card.style.setProperty("--ph", phaseHue(nw.phase)); // card chrome reads by CYCLE PHASE
+      if (s.kind === "basket" && basketShown[s.id]) card.classList.add("sel");
       var rs = nw.rs_63d;
       var rsTxt = rs == null ? "" : ('<span class="cc-tilt ' + (rs >= 0 ? "t-up" : "t-down") + '">RS #' + (nw.rs_rank || "—") + '</span>');
       var nextTxt = s.proj ? (L("Next ", "下次") + (s.proj.nextTurn === "peak" ? "▲ " : "▼ ") + fmtMon(s.proj.central)) : L("—", "—");
       var sigHTML = nw.signal === "BUY" ? '<span class="cc-sig buy">' + L("BUY", "买入") + '</span>'
         : nw.signal === "SELL" ? '<span class="cc-sig sell">' + L("SELL", "卖出") + '</span>' : "";
+      var pxLine = s.kind === "basket"
+        ? ((s.etf_proxy ? s.etf_proxy + " · " : "") + grpName(s))
+        : (s.ticker + " · " + grpName(s));
       card.innerHTML =
         '<div class="cc-top">' +
           '<div class="cc-id"><span class="cc-dot"></span><div><div class="cc-nm">' + nm(s) + '</div>' +
-          '<div class="cc-px">' + s.ticker + ' · ' + grpName(s) + '</div></div></div>' +
+          '<div class="cc-px">' + pxLine + '</div></div></div>' +
           '<div class="cc-tags"><div class="cc-phase" style="--ph:' + phaseHue(nw.phase) + '">' + phaseLabel(s) + '</div>' + sigHTML + '</div>' +
         '</div>' +
         '<div class="cc-spark"></div>' +
@@ -481,7 +538,7 @@
             '<span class="cc-tilt ' + tilt.cls + '">' + tilt.ar + ' ' + L(tilt.lab[0], tilt.lab[1]) + '</span>' +
             rsTxt + '</div>' +
         '</div>';
-      card.addEventListener("click", function () { toggleFocus(s.id); });
+      card.addEventListener("click", function () { s.kind === "basket" ? toggleBasket(s.id) : toggleFocus(s.id); });
       grid.appendChild(card);
       var sp = card.querySelector(".cc-spark");
       sparks[s.id] = window.MMChart.create(sp, sparkSpec(s));
@@ -546,7 +603,7 @@
 
     return '' +
       '<div class="cyc-grp cyc-grp-full">' +
-        '<button class="cyc-back">' + L("← All sectors", "← 全部板块") + '</button>' +
+        '<button class="cyc-back">' + (s.kind === "basket" ? L("← All baskets", "← 全部篮子") : L("← All sectors", "← 全部板块")) + '</button>' +
         '<div class="cyc-fhead" style="--c:' + s.accent + '">' +
           '<div class="cyc-ftitle">' + nm(s) + '</div>' +
           '<div class="cyc-fsub">' + subtitle + (nw.above200d ? L(" · above 200d", " · 200日上") : L(" · below 200d", " · 200日下")) + '</div>' +
@@ -623,8 +680,10 @@
   function buildDefaultPanel() {
     var def = document.getElementById("sc-panel-default");
     if (!def) return;
+    var baskets = state.family === "baskets";
+    var noun = baskets ? L("baskets", "篮子") : L("sectors", "板块");
     var buckets = { Peak: [], Expansion: [], Downturn: [], Recovery: [], Trough: [] };
-    SECTORS.forEach(function (s) { (buckets[s.now.phase] || (buckets[s.now.phase] = [])).push(s); });
+    activeList().forEach(function (s) { (buckets[s.now.phase] || (buckets[s.now.phase] = [])).push(s); });
     function row(title, list, note) {
       if (!list.length) return "";
       var chips = list.map(function (s) {
@@ -632,22 +691,26 @@
       }).join("");
       return '<div class="xc-row"><div class="xc-rh">' + title + '<span>' + note + '</span></div><div class="xc-chips">' + chips + '</div></div>';
     }
-    var lead = SECTORS.filter(function (s) { return s.now.rs_rank; }).sort(function (a, b) { return a.now.rs_rank - b.now.rs_rank; });
-    var leadRows = lead.map(function (s) {
+    var lead = activeList().filter(function (s) { return s.now.rs_rank; }).sort(function (a, b) { return a.now.rs_rank - b.now.rs_rank; });
+    var leadCap = baskets ? 12 : lead.length;
+    var leadRows = lead.slice(0, leadCap).map(function (s) {
       var rs = s.now.rs_63d;
       return '<div class="sc-lead-row"><span class="sc-lead-rk">' + s.now.rs_rank + '</span>' +
         '<span class="sc-lead-nm" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + nm(s) + '</span>' +
         '<span class="sc-lead-rs ' + (rs >= 0 ? "pos" : "neg") + '">' + (rs >= 0 ? "+" : "") + rs + '%</span></div>';
-    }).join("");
+    }).join("") + (lead.length > leadCap ? '<div class="sc-lead-more">+ ' + (lead.length - leadCap) + ' ' + L("more", "更多") + '</div>' : "");
 
     def.innerHTML = '' +
       '<div class="cyc-grp cyc-grp-full">' +
-        '<div class="cyc-lbl">' + L("Sector rotation · ", "板块轮动 · ") + META.asOf + '</div>' +
-        '<p class="rg-headline">' + L("Real price on a log axis, every line rebased to 100 at the left edge of the visible window — so <b>zoom to any period</b> and the lines instantly show relative performance from there. Flip to <b>Cycle position</b> to compare sectors on a 0–100 clock. Tap a sector to see its turning points and the story behind each move.",
-          "对数坐标下的真实价格，每条线在可见区间的左端再基准化为 100——<b>缩放到任意时段</b>，各线即刻显示自该点起的相对表现。切换到<b>周期位置</b>可在 0–100 的时钟上对比。点按某板块查看其拐点及每段走势背后的故事。") + '</p>' +
+        '<div class="cyc-lbl">' + (baskets ? L("Thematic basket rotation · ", "主题篮子轮动 · ") : L("Sector rotation · ", "板块轮动 · ")) + META.asOf + '</div>' +
+        '<p class="rg-headline">' + (baskets
+          ? L("The 34 thematic baskets on the same cycle clock — each an equal-weight index of its members. The chart starts empty; <b>tap any basket</b> (card or chip) to overlay its real price, then read its turning points. Flip to <b>Cycle position</b> to compare them on a 0–100 clock.",
+              "34 个主题篮子同处一张周期时钟——每个均为其成分股的等权指数。图表初始为空；<b>点击任一篮子</b>（卡片或标签）即可叠加其真实价格并查看拐点。切换到<b>周期位置</b>可在 0–100 的时钟上对比。")
+          : L("Real price on a log axis, every line rebased to 100 at the left edge of the visible window — so <b>zoom to any period</b> and the lines instantly show relative performance from there. Flip to <b>Cycle position</b> to compare sectors on a 0–100 clock. Tap a sector to see its turning points and the story behind each move.",
+              "对数坐标下的真实价格，每条线在可见区间的左端再基准化为 100——<b>缩放到任意时段</b>，各线即刻显示自该点起的相对表现。切换到<b>周期位置</b>可在 0–100 的时钟上对比。点按某板块查看其拐点及每段走势背后的故事。")) + '</p>' +
       '</div>' +
       '<div class="cyc-grp cyc-grp-3">' +
-        '<div class="cyc-lbl">' + L("Where the sectors stand", "各板块所处位置") + '</div>' +
+        '<div class="cyc-lbl">' + L("Where the ", "各") + noun + L(" stand", "所处位置") + '</div>' +
         '<div class="xc-map">' +
           row(L("Topping · late", "见顶 · 晚期"), buckets.Peak, L("thin cushion", "缓冲薄弱")) +
           row(L("Trending", "上行中"), buckets.Expansion, L("healthy up-trend", "健康上行")) +
@@ -694,7 +757,7 @@
   function rerender() {
     var savedFocus = state.focus, savedPhase = {};
     PHASE_FILTER.forEach(function (p) { savedPhase[p.key] = phaseState[p.key]; });
-    mountChips(); mountBaskets(); mountCards(); buildDefaultPanel(); buildZoom(); buildGroups();
+    mountChips(); mountBaskets(); applyFamilyDisplay(); mountCards(); buildDefaultPanel(); buildZoom(); buildGroups();
     PHASE_FILTER.forEach(function (p) { phaseState[p.key] = savedPhase[p.key]; });
     syncGroups();
     if (heroChart) rebuildHero(false);
@@ -705,10 +768,14 @@
   function boot() {
     mountChips(); mountBaskets();
     BASKETS.forEach(function (b) { chartHidden[b.id] = true; });   // baskets off the chart until selected
+    wireFamily(); applyFamilyDisplay();                            // sectors section active; baskets hidden
     mountHero(); wireControls(); buildGroups(); buildDefaultPanel(); mountCards(); initSheet();
     document.addEventListener("langchange", rerender);
     var h = (location.hash || "").replace("#", "");
-    if (h && byId[h]) setTimeout(function () { setFocus(h); }, 350);
+    if (h && byId[h]) setTimeout(function () {
+      if (byId[h].kind === "basket") switchFamily("baskets");
+      setFocus(h);
+    }, 350);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
   else boot();

@@ -12,6 +12,26 @@
    browser regardless of the default canvas colour). */
 body { background: var(--bg); color: var(--text); }
 
+/* ---- section tabs: Sector ETFs vs Thematic Baskets (two independent views) -- */
+.sc-tabs { display: inline-flex; gap: 4px; background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 13px; padding: 4px; margin: 8px 2px 2px; }
+.sc-tab { font-size: 13.5px; font-weight: 700; color: var(--muted); background: transparent; border: 0;
+  border-radius: 10px; padding: 8px 17px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+  transition: color .18s, background .18s, box-shadow .18s, transform .1s; }
+.sc-tab i { font-style: normal; font-size: 11px; font-weight: 700; color: var(--muted); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; }
+.sc-tab:hover { color: var(--text); }
+.sc-tab:active { transform: translateY(1px); }
+.sc-tab.on { color: var(--text); background: var(--panel);
+  box-shadow: 0 1px 2px rgba(0,0,0,.22), 0 3px 12px color-mix(in srgb, var(--link) 16%, transparent); }
+.sc-tab.on i { color: var(--link); border-color: color-mix(in srgb, var(--link) 42%, var(--line)); }
+
+/* chart empty-state hint (baskets section with nothing selected yet) */
+.sc-chartwrap { position: relative; }
+.sc-chart-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  pointer-events: none; color: var(--muted); font-size: 13.5px; line-height: 1.6; text-align: center; padding: 0 26px; }
+.sc-chart-hint[hidden] { display: none; }
+
 /* ---- a bigger, dominant hero chart ------------------------------------- */
 #sc-chart { width: 100%; height: 500px; }
 @media (min-width: 881px) { #sc-chart { height: 600px; } }
@@ -124,6 +144,10 @@ html[data-theme="light"] .sc-page .cyc-gchip.on { color: #fff; }
 .sc-page .cyc-card.lit { border-color: var(--ph);
   box-shadow: 0 0 0 1px var(--ph), 0 14px 38px color-mix(in srgb, var(--ph) 26%, transparent); }
 .sc-page .cc-leg-bar i { background: linear-gradient(90deg, color-mix(in srgb, var(--ph) 48%, transparent), var(--ph)); }
+
+/* a basket card that's currently overlaid on the chart gets a phase-coloured ring */
+.sc-page .cyc-card.sel { box-shadow: 0 0 0 1.5px var(--ph), 0 8px 24px color-mix(in srgb, var(--ph) 16%, transparent); }
+.sc-page .cyc-card.sel.lit { box-shadow: 0 0 0 1px var(--ph), 0 14px 38px color-mix(in srgb, var(--ph) 26%, transparent); }
 
 /* BUY / SELL transition badge — washed-out + curling up = BUY, stretched + rolling = SELL */
 .cc-sig { font-size: 11px; font-weight: 800; letter-spacing: .07em; padding: 2px 9px; border-radius: 6px; color: #fff; line-height: 1.45; }

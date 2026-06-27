@@ -174,10 +174,15 @@
     </div>
   </header>
 
+  <div class="sc-tabs" id="sc-tabs" role="tablist">
+    <button class="sc-tab on" data-fam="sectors" role="tab">🧭 <span class="l-en">Sector ETFs</span><span class="l-zh">板块 ETF</span> <i id="sc-tab-n-sec"></i></button>
+    <button class="sc-tab" data-fam="baskets" role="tab">🧺 <span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span> <i id="sc-tab-n-bsk"></i></button>
+  </div>
+
   <section class="cyc-stage">
     <div class="cyc-hero">
       <div class="cyc-hero-hd">
-        <h2><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
+        <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
         <div class="cyc-hero-tools">
           <div class="sc-ctrl-group">
             <div class="sc-scale" id="sc-scale" aria-label="Price scale">
@@ -200,7 +205,10 @@
       <div class="cyc-groups" id="sc-groups" aria-label="Phase filter"></div>
       <div class="cyc-chips" id="sc-chips" aria-label="Sector toggles"></div>
       <div class="sc-baskets" id="sc-baskets" aria-label="Thematic baskets"></div>
-      <div id="sc-chart" data-h="600" role="img" aria-label="Sector cycle overlay chart"></div>
+      <div class="sc-chartwrap">
+        <div id="sc-chart" data-h="600" role="img" aria-label="Sector cycle overlay chart"></div>
+        <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
+      </div>
     </div>
 
     <aside class="cyc-detail" id="sc-detail">
