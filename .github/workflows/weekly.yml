@@ -123,6 +123,7 @@ jobs:
           run_py "calibrate rate/inflation transmission" scripts.calibrate_rate_inflation
           run_py "build transmission" scripts.build_transmission
           run_py "calibrate vector" scripts.calibrate_vector
+          run_py "validate gex (forward-RV gate)" scripts.validate_gex
           run_py "build vector + landing hub" scripts.build_vector
           run_py "AI brief page (build_aibrief)" scripts.build_aibrief
           exit 0
