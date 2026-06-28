@@ -3276,6 +3276,17 @@ vector:
       aggressive:   {mom_full: 0.3, risk_full: 40, mom_half: -0.2, risk_half: 60}
       optimal:      {mom_full: 0.5, risk_full: 25, mom_half: 0.0, risk_half: 50}  # re-tuned by calibration sweep
     confirm_days: 2               # whipsaw guard on allocation changes
+    # Midterm-election blackout — the "proprietary cycle timer" gate (that is the only
+    # name shown to users; the mechanism stays internal). US MIDTERM-election years
+    # (even, year % 4 == 2: 2014 / 2018 / 2022 / 2026 / ...) have been hostile for BTC
+    # INTO the vote (all three priors capitulated), so the strategy sits FLAT (cash)
+    # from Jan 1 of a midterm year until ~election day, then re-engages around the vote.
+    # Deterministic + point-in-time (the calendar is fixed years ahead -> no look-ahead).
+    # Applied as the FINAL word over the grid / conviction / brake / bottom-overlay for
+    # ALL variants, so the backtest reflects the rule too. n=3 midterms of BTC history.
+    midterm_gate:
+      enabled: true
+      buy_lead_days: 0            # release the gate this many days BEFORE election day (0 = at the vote)
     # Tier-1b blend: fold the CALIBRATION-CONFIRMED deep-history valuation tails
     # into the (momentum, risk) grid as contrarian overrides. Gated — the
     # allocation backtest must not degrade (see reports/vector-calibration.md).

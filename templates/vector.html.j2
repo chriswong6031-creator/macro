@@ -443,7 +443,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="cmd-act">
         <div class="a"><div class="k">{{ t('Risk Index','风险指数') }}</div><div class="v" style="color:{{ 'var(--blue)' if risk_on else 'var(--r3)' }}">{{ risk_index }}</div><div class="h">{{ td(risk_label) }}</div></div>
         {% if env and env.risk and env.risk.tail is not none %}<div class="a"><div class="k">{{ t('Next-7d drawdown','未来7天回撤') }}</div><div class="v" style="color:var(--r3)">{{ env.risk.avg }}%</div><div class="h">{{ t('worst','极端') }} {{ env.risk.tail }}%</div></div>{% else %}<div class="a"><div class="k">{{ t('Momentum','动量') }}</div><div class="v">{{ momentum }}</div><div class="h">{{ td(momentum_state) }}</div></div>{% endif %}
-        <div class="a"><div class="k">{{ t('Model allocation','模型仓位') }}</div><div class="v" style="color:{{ 'var(--blue)' if alloc_pct>=50 else 'var(--r3)' }}">{{ alloc_pct }}%</div><div class="h">{% if sizing %}Kelly {{ sizing.size_pct }}%{% else %}BTC{% endif %}</div></div>
+        <div class="a"><div class="k">{{ t('Model allocation','模型仓位') }}</div><div class="v" style="color:{{ 'var(--blue)' if alloc_pct>=50 else 'var(--r3)' }}">{{ alloc_pct }}%</div><div class="h">{% if midterm and midterm.active %}{{ t('cycle timer','周期计时') }}{% elif sizing %}Kelly {{ sizing.size_pct }}%{% else %}BTC{% endif %}</div></div>
       </div>
     </div>
   </div>
@@ -790,6 +790,12 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
     <!-- allocation (next to the long-term scorecard) -->
     <div class="card">
       <h2>{{ t('BTC Allocation · Optimal strategy', 'BTC 仓位 · 最优策略') }}</h2>
+      {% if midterm and midterm.active %}
+      <div style="margin:2px 0 12px;padding:11px 13px;border:1px solid var(--amber);border-radius:11px;background:color-mix(in srgb, var(--amber) 9%, transparent)">
+        <div style="font-weight:700;font-size:13.5px;color:var(--amber)">⏳ {{ t('Proprietary cycle timer · holding cash', '专有周期计时器 · 持有现金') }}</div>
+        <div class="sub" style="margin-top:5px;font-size:12.5px">{{ t('Our cycle timing flags this as a stay-out window for BTC, so the tactical model is overridden to 0% — sitting in cash and re-engaging around', '我们的周期择时判定当前为 BTC 的回避窗口，因此战术模型被覆盖为 0% — 持有现金，并将在以下时间前后重新参与') }} <b>{{ midterm.release or '—' }}</b>.</div>
+      </div>
+      {% endif %}
       <div class="allocbar">
         {% if alloc_pct > 0 %}<div class="btc" style="width:{{ alloc_pct }}%">{{ alloc_pct }}% BTC</div>{% endif %}
         {% if alloc_pct < 100 %}<div class="cash" style="width:{{ 100-alloc_pct }}%">{{ 100-alloc_pct }}% {{ t('Cash', '现金') }}</div>{% endif %}
@@ -797,11 +803,11 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       <div class="sub" style="margin-top:10px">{{ t('Market mode:', '市场模式：') }}
         <span class="chip {{ 'chip-strategic' if market_mode=='Strategic' else 'chip-tactical' }}">{{ td(market_mode) }}</span>
         · {{ t('BTC vs Alts leader:', 'BTC vs 山寨币 领先：') }} <b>{{ td(alt_leader) }}</b></div>
-      {% if sizing %}
+      {% if sizing and not (midterm and midterm.active) %}
       <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Risk-budgeted Kelly size','风险预算 Kelly 仓位') }} <span class="faint" style="font-size:11px">({{ '½' if sizing.kelly_frac==0.5 else (sizing.kelly_frac|string) }}-Kelly, {{ sizing.dd_budget }}% {{ t('DD budget','回撤预算') }})</span></span><span><b style="font-size:17px;color:{{ 'var(--blue)' if sizing.size_pct>=40 else 'var(--r3)' }}">{{ sizing.size_pct }}%</b></span></div></div>
       <div class="sub faint" style="margin-top:4px;font-size:12px">{{ t('Half-Kelly on the','半 Kelly 基于') }} <b>{{ '%+0.0f'|format(sizing.edge_90) }}%/90d</b> {{ t('regime edge (','格局优势（') }}{{ td(sizing.stance|capitalize) }}{{ t(', σ','，σ') }} {{ sizing.vol_90 }}%), {% if sizing.binding=='tail' %}{{ t('capped by the','受限于') }} {{ sizing.tail_90 }}% {{ t('worst-case 90d dip','90 天极端回撤') }}{% else %}{{ t('edge-limited (the tail cap would allow','受优势限制（尾部上限允许') }} {{ (sizing.f_tail*100)|round|int }}%){% endif %}. {{ t('Direction is a coin-flip, so the edge is the regime, not the week.','方向接近抛硬币，故优势来自格局而非本周。') }}</div>
       {% endif %}
-      {% if alloc_sizing %}
+      {% if alloc_sizing and not (midterm and midterm.active) %}
       <div class="mini" style="margin-top:12px;border-top:1px solid var(--grid);padding-top:11px"><div class="lab" style="border:none;padding-top:0"><span>{{ t('Bottom-detector overlay','底部探测叠加') }} <span class="faint" style="font-size:11px">({{ t('adds size at washout lows','洗盘低点加仓') }})</span></span><span><b style="font-size:16px;color:{{ 'var(--blue)' if alloc_sizing.bottom_active else 'var(--muted)' }}">{{ t('Pressure','压力') }} {{ alloc_sizing.bottom_pressure }}/100{% if alloc_sizing.bottom_active %} · +{{ alloc_sizing.bottom_add }}%{% endif %}</b></span></div></div>
       <div class="sub faint" style="margin-top:4px;font-size:12px">{% if alloc_sizing.bottom_active %}{{ t('A multi-timeframe washout bottom is forming — the overlay is adding','正在形成多周期洗盘底部 — 叠加正在加仓') }} <b>+{{ alloc_sizing.bottom_add }}%</b> {{ t('to capture lower entry prices.','以获取更低的入场价。') }}{% else %}{{ t('Dormant. When StochRSI is washed-out across timeframes at a deep drawdown, it re-adds exposure the drawdown brake would otherwise sit out — the brake protects on the way down, this re-engages at the low.','休眠中。当 StochRSI 在多周期深度回撤中超卖时，叠加会重新加仓——回撤刹车在下跌时保护，本叠加在低点重新参与。') }}{% endif %} {{ t('Backtested +15.6% return at flat Sharpe; passes the same gates.','回测回报 +15.6%，夏普持平；通过相同验证门槛。') }}</div>
       {% endif %}
@@ -962,7 +968,7 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
         <span class="vtm-badge" id="vtm-regime">—</span>
         <span class="vtm-badge" id="vtm-extreme" style="display:none">—</span>
         <span class="kv">{{ t('cycle stage','周期阶段') }} <b id="vtm-stage">—</b></span>
-        <span class="kv">{{ t('1064/364 phase','1064/364 相位') }} <b id="vtm-cphase">—</b></span>
+        <span class="kv">{{ t('Cycle phase','周期相位') }} <b id="vtm-cphase">—</b></span>
         <span class="kv">{{ t('ladder','阶梯') }} <b id="vtm-ladder">—</b></span>
         <span class="kv">{{ t('momentum','动量') }} <b id="vtm-mom">—</b></span>
         <span class="kv">{{ t('valuation','估值') }} <b id="vtm-val">—</b></span>
@@ -1320,16 +1326,15 @@ html[data-theme="dark"] .score .s{background:var(--grid)} /* --bg is near-black 
       {% set kz = {'top':'顶部','bottom':'底部'} %}
       {% set stz = {'on_track':'按节奏','overdue':'已超期','invalidated':'已失效'} %}
       {% set stc = {'on_track':'var(--blue)','overdue':'var(--amber)','invalidated':'var(--r3)'} %}
-      <h3>{{ t('Cycle Phase Clock · 1064 / 364-day structure', '周期相位时钟 · 1064 / 364 天结构') }}
+      <h3>{{ t('Cycle Phase Clock', '周期相位时钟') }}
         {% if cp.phase %}<b style="color:{{ cpc.get(cp.phase,'var(--muted)') }}"> · {{ t(cp.phase|upper, cpz.get(cp.phase,'—')) }}</b>{% endif %}
         {% if cp.status and cp.status != 'on_track' %}<b style="color:{{ stc.get(cp.status,'var(--muted)') }}"> · {{ t(cp.status|replace('_',' ')|upper, stz.get(cp.status,'')) }}</b>{% endif %}</h3>
       {% if cp.pct is not none %}
-      <div class="mini"><div class="lab"><span>{{ t('Phase progress','相位进度') }}</span><span><b>{{ cp.pct }}%</b> <span class="faint">({{ cp.days_in|int }} / {{ cp.len|int }}d)</span></span></div>
+      <div class="mini"><div class="lab"><span>{{ t('Phase progress','相位进度') }}</span><span><b>{{ cp.pct }}%</b></span></div>
         <div class="bar"><div class="fill" style="width:{{ cp.pct if cp.pct<=100 else 100 }}%;background:{{ cpc.get(cp.phase,'var(--blue)') }}"></div></div></div>
       <div class="mini"><div class="lab"><span>{{ t('Projected next pivot','预计下一转折') }}{% if cp.next_kind %} <span class="faint">{{ t(cp.next_kind, kz.get(cp.next_kind,'')) }}</span>{% endif %}</span><span><b>{{ cp.next_pivot or '—' }}</b>{% if cp.days_left is not none %} <span class="faint">({{ cp.days_left|int }}d)</span>{% endif %}</span></div></div>
       {% endif %}
-      <div class="sub" style="margin-top:8px">{{ t('The chart\'s “1064 days up / 364 days down” structure, anchored on the observed cycle lows/highs. Measured vs our own price history: up-legs 1067/1059/1050d, down-legs 364/378d — mean error ~7 days, but only n=3 cycles (in-sample). It refines the cycle prior by the same ≤5pp as the halving clock, never triggers.', '图中“上涨 1064 天 / 下跌 364 天”结构，锚定于已观测的周期低/高点。与本站价格历史实测：上涨腿 1067/1059/1050 天，下跌腿 364/378 天 — 平均误差约 7 天，但仅 3 个周期（样本内）。它以与减半时钟相同的 ≤5pp 幅度优化周期先验，从不触发。') }}</div>
-      <div class="sub faint" style="margin-top:6px;font-size:12px">{{ t('Timing only — NOT amplitude (2025 gained ~240% vs >1000% in prior cycles), and we do NOT endorse the $37.5K “bottom” target floating with this theory. The 4-year cycle may be mutating as ETFs/institutions decouple BTC from the halving.', '仅为时间 — 非幅度（2025 涨约 240%，此前周期 >1000%），且我们不认可随该理论流传的 3.75 万美元“底部”目标。随着 ETF/机构令 BTC 与减半脱钩，四年周期可能正在演变。') }}</div>
+      <div class="sub" style="margin-top:8px">{{ t('Proprietary cycle timer.', '专有周期计时器。') }}</div>
     </div>
     <div class="card">
       <h3>{{ t('CME positioning & correlation', 'CME 持仓与相关性') }}

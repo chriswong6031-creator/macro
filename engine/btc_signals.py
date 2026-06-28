@@ -451,6 +451,35 @@ def bottom_pressure(price: pd.DataFrame) -> pd.Series:
     return score.clip(0.0, 1.0).fillna(0.0).rename("bottom_pressure")
 
 
+def _us_election_date(year: int) -> pd.Timestamp:
+    """US general-election day = the first Tuesday AFTER the first Monday of November."""
+    nov1 = pd.Timestamp(year=int(year), month=11, day=1)
+    first_monday = nov1 + pd.Timedelta(days=(7 - nov1.weekday()) % 7)  # weekday(): Mon=0..Sun=6
+    return first_monday + pd.Timedelta(days=1)
+
+
+def midterm_blackout(index, cfg: dict | None) -> pd.Series:
+    """Boolean Series marking the US *midterm*-election 'wait it out' window — from
+    Jan 1 of a midterm-election year (an even year with year % 4 == 2: 2014, 2018,
+    2022, 2026, ...) until ~election day. BTC has historically capitulated INTO the
+    midterms (2014/2018/2022 were all hostile), so during this window the strategy
+    sits flat (cash) and only re-engages around the vote. True = force allocation to 0.
+    Deterministic and point-in-time — the election calendar is fixed years ahead, so
+    this is NOT look-ahead. Off by default; gated by config (vector.allocation.midterm_gate:
+    {enabled, buy_lead_days})."""
+    idx = pd.DatetimeIndex(index)
+    mask = pd.Series(False, index=idx)
+    cfg = cfg or {}
+    if not cfg.get("enabled", False) or len(idx) == 0:
+        return mask
+    lead = int(cfg.get("buy_lead_days", 0))   # release the gate this many days BEFORE the vote
+    for y in sorted({int(yr) for yr in idx.year.unique() if int(yr) % 4 == 2}):
+        start = pd.Timestamp(year=y, month=1, day=1)
+        release = _us_election_date(y) - pd.Timedelta(days=lead)
+        mask = mask | pd.Series((idx >= start) & (idx < release), index=idx)
+    return mask
+
+
 def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
                val: pd.DataFrame | None = None,
                close: pd.Series | None = None,
@@ -493,6 +522,10 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
     # drags it); fill the warm-up gap with a coin-flip (sizes the floor, never NaN).
     score = cycle_stage(mom, risk_idx).fillna(0.5) if conv_on else None
     ret = close.pct_change() if brake_on else None
+    # Midterm-election blackout: the FINAL word over the grid/conviction/brake/overlay —
+    # force every variant flat (cash) through a midterm year until ~the vote.
+    gate = midterm_blackout(mom.index, cfg.get("midterm_gate"))
+    gate_on = bool(gate.any())
     for name, v in cfg["variants"].items():
         full = (mom > v["mom_full"]) & (risk_idx < v["risk_full"])
         half = (mom > v["mom_half"]) & (risk_idx < v["risk_half"])
@@ -509,6 +542,8 @@ def allocation(mom: pd.Series, risk_idx: pd.Series, cfg: dict,
             # add size at washout bottoms the brake would otherwise sit out (magnitude
             # only; never reduces exposure). cap=1.0 -> no leverage.
             raw = (raw + b_boost * b_strength).clip(0.0, b_cap)
+        if gate_on:
+            raw = raw.mask(gate, 0.0)   # midterm-election blackout: flat (cash) until ~the vote
         out[f"alloc_{name}"] = raw.clip(lower=0.0)
     return out
 

@@ -562,8 +562,8 @@ def _conviction_why(c: dict, cell, n, horizon: int):
               f"优势在周期，而非{near_zh}。")
         return en, zh
     dword, dword_zh = ("bull", "看多") if c["dir"] > 0 else ("bear", "看空")
-    drv = f"{c['tilt']:+d}pp macro + 1064/364-cycle tilt" if c["tilt"] else "the cell base-rate"
-    drv_zh = f"{c['tilt']:+d}pp 宏观+1064/364周期偏移" if c["tilt"] else "区间基准率"
+    drv = f"{c['tilt']:+d}pp macro + cycle tilt" if c["tilt"] else "the cell base-rate"
+    drv_zh = f"{c['tilt']:+d}pp 宏观 + 周期偏移" if c["tilt"] else "区间基准率"
     tf, tf_zh = ("weekly", "周线") if horizon >= 7 else ("daily", "日线")
     tape_en = (" Tape agrees." if c["tape"] == "confirm"
                else (f" But the {tf} tape disagrees — nimble only." if c["tape"] == "conflict" else ""))
@@ -1958,6 +1958,7 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
                           recommend_d: dict | None = None, cones: dict | None = None,
                           sizing: dict | None = None, catalyst: dict | None = None,
                           breadth: dict | None = None, env_d: dict | None = None,
+                          midterm: dict | None = None,
                           **_ignored) -> None:
     """The allocation deep-dive page: the Master Signal recommendation + Kelly sizing +
     forward cones (shared with vector.html), AND the altcoin-cycle / ETH allocation keyed
@@ -1996,6 +1997,7 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
         "grid": rec, "grid_full": grid, "regime": regime, "regime_label": lad.get("regime_label"),
         "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
         "alloc_pct": alloc_pct,
+        "midterm": midterm or {"active": False},
         "cards": cards,
         # shared command-center decision layer (reused from vector.html). NOTE: the local
         # `rec` above is the BTC/ETH/alts/cash SPLIT — the recommendation is `recommend_d`.
@@ -2109,9 +2111,20 @@ def main() -> int:
 
     eq = alloc_equity(close, sig["alloc_optimal"])
     hodl = (1 + close.pct_change().fillna(0)).cumprod()
-    asizing = alloc_sizing(last, eq, config.load()["vector"]["allocation"])  # conviction/brake/bottom-overlay decomposition
+    _acfg = config.load()["vector"]["allocation"]
+    asizing = alloc_sizing(last, eq, _acfg)  # conviction/brake/bottom-overlay decomposition
     cards = {v: scorecard(close, sig[f"alloc_{v}"])
              for v in ("conservative", "moderate", "aggressive", "optimal")}
+    # Midterm-election blackout state for the live readout (the "proprietary cycle timer"
+    # that overrides the tactical allocation to cash through a midterm year until ~the vote).
+    _mg_cfg = _acfg.get("midterm_gate") or {}
+    _last_dt = pd.Timestamp(sig.index[-1])
+    _mt_active = bool(btc_signals.midterm_blackout([_last_dt], _mg_cfg).iloc[0])
+    _mt_release = None
+    if _mt_active:
+        _mt_release = (btc_signals._us_election_date(_last_dt.year)
+                       - pd.Timedelta(days=int(_mg_cfg.get("buy_lead_days", 0)))).strftime("%Y-%m-%d")
+    midterm = {"active": _mt_active, "year": _last_dt.year if _mt_active else None, "release": _mt_release}
 
     # raw OHLC for scenarios
     raw = store.read("coinbase", "btc_daily")
@@ -2328,6 +2341,8 @@ def main() -> int:
         "market_mode": last["market_mode"],
         "alloc_pct": round(100 * last["alloc_optimal"]),
         "alloc_sizing": asizing,
+        "midterm": midterm,                      # proprietary cycle-timer blackout state
+
         # ---- accuracy-upgrade layers (Tier 1/1b/2) ----
         "composite_state": last.get("composite_state", "NEUTRAL"),
         "composite_context": last.get("composite_context", ""),
@@ -2576,7 +2591,8 @@ def main() -> int:
     try:
         build_allocation_page(env, site, sig, cards, mtf_a, verdict,
                               master=master, recommend_d=recommendation, cones=cones,
-                              sizing=sizing, catalyst=catalyst, breadth=breadth, env_d=envd)
+                              sizing=sizing, catalyst=catalyst, breadth=breadth, env_d=envd,
+                              midterm=midterm)
     except Exception as e:  # noqa: BLE001 — never let the sub-page break the main build
         log.error("allocation page failed (%s)", e)
     try:

@@ -82,11 +82,56 @@ def test_daily_state_events_on_transitions() -> None:
     assert "High Risk" in regime_ev[0]["headline"] or "High Risk" in regime_ev[1]["headline"]
 
 
+def test_compute_all_events_merge_drops_stale_keeps_flash_and_sentinel() -> None:
+    # The merge in compute_all_events must (a) DROP stale sig-derived events at/before the
+    # last daily bar (recomputed fresh), (b) KEEP flash_crash history regardless of ts, and
+    # (c) KEEP genuine intraday sentinel events newer than the last bar; recompute wins on id.
+    import types
+    idx = pd.date_range("2026-06-20", "2026-06-28", freq="D")
+    sig = pd.DataFrame({"close": np.linspace(100, 110, len(idx))}, index=idx)  # last bar 2026-06-28
+
+    fresh = [{"id": "risk_regime:2026-06-25", "ts": "2026-06-25T00:00:00",
+              "type": "risk_regime", "headline": "FRESH wins"}]
+    persisted = [
+        {"id": "flash_crash:old", "ts": "2020-03-12T09:00:00", "type": "flash_crash",
+         "headline": "old flash"},                                    # keep (flash, any ts)
+        {"id": "allocation_change:2026-06-27", "ts": "2026-06-27T00:00:00",
+         "type": "allocation_change", "headline": "stale alloc"},     # drop (sig-derived, <= last bar)
+        {"id": "flash_crash:sentinel", "ts": "2026-06-28T14:30:00", "type": "flash_crash",
+         "headline": "intraday sentinel"},                            # keep (ts > last bar)
+        {"id": "risk_regime:2026-06-25", "ts": "2026-06-25T00:00:00", "type": "risk_regime",
+         "headline": "STALE loses"},                                  # id collision -> fresh wins
+    ]
+
+    saved = {k: getattr(A, k) for k in ("daily_state_events", "risk_extreme_events",
+             "impulse_radar_events", "leverage_derisk_events", "flash_events",
+             "load_events", "store")}
+    try:
+        A.daily_state_events = lambda s: [dict(e) for e in fresh]
+        A.risk_extreme_events = lambda s, c: []
+        A.impulse_radar_events = lambda s: []
+        A.leverage_derisk_events = lambda s: []
+        A.flash_events = lambda h, c: []
+        A.load_events = lambda: [dict(e) for e in persisted]
+        A.store = types.SimpleNamespace(read=lambda *a, **k: None)
+        merged = A.compute_all_events(sig)
+    finally:
+        for k, v in saved.items():
+            setattr(A, k, v)
+
+    by_id = {e["id"]: e for e in merged}
+    assert "flash_crash:old" in by_id            # flash history kept regardless of (old) ts
+    assert "flash_crash:sentinel" in by_id       # intraday sentinel newer than last bar kept
+    assert "allocation_change:2026-06-27" not in by_id  # stale sig-derived event dropped
+    assert by_id["risk_regime:2026-06-25"]["headline"] == "FRESH wins"  # recompute wins on id
+
+
 if __name__ == "__main__":
     for fn in [test_flash_state_machine_detects_and_recovers,
                test_flash_machine_ignores_normal_chop,
                test_event_schema_and_idempotent_ids,
-               test_daily_state_events_on_transitions]:
+               test_daily_state_events_on_transitions,
+               test_compute_all_events_merge_drops_stale_keeps_flash_and_sentinel]:
         fn()
         print(f"PASS {fn.__name__}")
     print("all btc alert tests passed")
