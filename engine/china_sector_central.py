@@ -47,6 +47,17 @@ TIERS = [
     (0,  "Reduce",       "减配",     "down"),
 ]
 
+# zh for the reasoning-BODY tokens. The en bodies are composed in English from
+# upstream regime/quad/phase/momentum reads, so the zh trace would otherwise leak
+# raw English words (Stagflation, Trough, lagging, …). Canonical zh mirrors the
+# cycle page (site/cycle_app.js phase wheel) and the signal stacks (quad names).
+_PHASE_ZH = {"Trough": "筑底", "Recovery": "复苏", "Expansion": "扩张",
+             "Peak": "见顶", "Downturn": "回落"}
+_QUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
+            "Growth-scare": "增长恐慌", "Growth scare": "增长恐慌",
+            "Growth Scare": "增长恐慌", "Deflation": "通缩"}
+_LEAD_ZH = {"leading": "领先", "lagging": "落后", "mid-pack": "中游"}
+
 
 # =========================================================================== #
 # market context — the validated regime GATE + display flow/froth context
@@ -151,8 +162,9 @@ def _state_score(now: dict) -> tuple[float, dict]:
     phase_dir = {"Trough": 0.5, "Recovery": 0.6, "Expansion": 0.25,
                  "Peak": -0.4, "Downturn": -0.55}.get(phase, 0.0)
     score = float(np.clip(0.6 * setup + 0.4 * phase_dir, -1, 1))
+    sig_d = now.get("signature") or {}
     return score, {"signature": sig, "phase": phase,
-                   "label": (now.get("signature") or {}).get("label")}
+                   "label": sig_d.get("label"), "label_zh": sig_d.get("label_zh")}
 
 
 def _forward_tilt(rec: dict) -> tuple[float | None, dict | None]:
@@ -278,9 +290,11 @@ def _trace(state_d, fwd_d, mkt, mom_d, crowd, early, euphoric) -> list[dict]:
     sig = state_d.get("signature")
     if sig is not None:
         stance = "bullish" if sig <= 35 else "bearish" if sig >= 65 else "neutral"
+        ph = state_d.get("phase")
         t.append({"layer": "Cycle state", "tier": "validated", "stance": stance,
-                  "en": f"{state_d.get('label') or '—'} (signature {sig:.0f}/100), phase {state_d.get('phase')}",
-                  "zh": f"{state_d.get('label') or '—'}（特征 {sig:.0f}/100），阶段 {state_d.get('phase')}"})
+                  "en": f"{state_d.get('label') or '—'} (signature {sig:.0f}/100), phase {ph}",
+                  "zh": f"{state_d.get('label_zh') or state_d.get('label') or '—'}"
+                        f"（特征 {sig:.0f}/100），阶段 {_PHASE_ZH.get(ph, ph or '—')}"})
     if fwd_d and fwd_d.get("cond_rate") is not None:
         cr, br = round(fwd_d["cond_rate"] * 100), round(fwd_d["base_rate"] * 100)
         stance = "bullish" if fwd_d.get("lift", 0) > 0.03 else "bearish" if fwd_d.get("lift", 0) < -0.03 else "neutral"
@@ -289,14 +303,18 @@ def _trace(state_d, fwd_d, mkt, mom_d, crowd, early, euphoric) -> list[dict]:
                         f"(CI {round((fwd_d.get('ci_lo') or 0)*100)}–{round((fwd_d.get('ci_hi') or 0)*100)}%, n={fwd_d.get('n')})",
                   "zh": f"未来{fwd_d.get('h')}个月上涨概率 {cr}%（基准 {br}%，样本 {fwd_d.get('n')}）"})
     rstance = "bullish" if (mkt.get("risk_on") or 0) > 0.1 else "bearish" if (mkt.get("risk_on") or 0) < -0.1 else "neutral"
+    quad_name = mkt.get("quad_name")
+    quad_zh = _QUAD_ZH.get(quad_name, quad_name) if quad_name else (mkt.get("quad") or "—")
     t.append({"layer": "Regime gate", "tier": "validated", "stance": rstance,
-              "en": f"{mkt.get('state_en')} (de-risk {mkt.get('derisk_blended')}, {mkt.get('quad_name') or mkt.get('quad') or '—'}, "
+              "en": f"{mkt.get('state_en')} (de-risk {mkt.get('derisk_blended')}, {quad_name or mkt.get('quad') or '—'}, "
                     f"liquidity {mkt.get('liquidity') or '—'}) → gate ×{mkt.get('gate_factor')}",
-              "zh": f"{mkt.get('state_zh') or mkt.get('state_en')}（降险 {mkt.get('derisk_blended')}，{mkt.get('quad_name') or '—'}）→ 门控 ×{mkt.get('gate_factor')}"})
-    t.append({"layer": "Momentum", "tier": "confirmer", "stance": mom_d.get("lead"),
-              "en": f"RS #{mom_d.get('rs_rank') or '—'} — {mom_d.get('lead')}"
+              "zh": f"{mkt.get('state_zh') or mkt.get('state_en')}（降险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}"})
+    lead = mom_d.get("lead")
+    t.append({"layer": "Momentum", "tier": "confirmer", "stance": lead,
+              "en": f"RS #{mom_d.get('rs_rank') or '—'} — {lead}"
                     + (" (early — not yet confirmed by trend)" if early else ""),
-              "zh": f"相对强度 #{mom_d.get('rs_rank') or '—'} — {mom_d.get('lead')}"})
+              "zh": f"相对强度 #{mom_d.get('rs_rank') or '—'} — {_LEAD_ZH.get(lead, lead)}"
+                    + ("（偏早 — 趋势尚未确认）" if early else "")})
     if crowd:
         t.append({"layer": "Crowding", "tier": "display", "stance": "caution",
                   "en": f"{crowd['n_crowded']}/{crowd['n_members']} members crowded-fragile → size down",

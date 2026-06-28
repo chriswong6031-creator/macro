@@ -49,6 +49,19 @@ TIERS = [
     (0,  "Reduce",       "减配",     "down"),
 ]
 
+# zh for the reasoning-BODY tokens (this hub is EN-first, but the bilingual UI still
+# renders the zh body — keep it from leaking raw English). Canonical zh mirrors the US
+# sector-cycles page (templates/sector_cycles.js phase shorts) + the signal stacks (quads).
+_PHASELABEL_ZH = {"Bottoming": "筑底", "Prime entry": "入场良机", "Trending": "上行",
+                  "Topping": "见顶", "Rolling over": "回落"}
+_PHASE_ZH = {"Trough": "筑底", "Recovery": "复苏", "Expansion": "扩张",
+             "Peak": "见顶", "Downturn": "回落"}
+_QUAD_ZH = {"Goldilocks": "理想增长", "Reflation": "再通胀", "Stagflation": "滞胀",
+            "Growth-scare": "增长恐慌", "Growth scare": "增长恐慌",
+            "Growth Scare": "增长恐慌", "Deflation": "通缩"}
+_LEAD_ZH = {"leading": "领先", "lagging": "落后", "mid-pack": "中游"}
+_SIGNAL_ZH = {"BUY": "买入", "SELL": "卖出"}
+
 # SPDR sector ETF → Finviz heatmap sector vocabulary (the heatmap uses Finviz names, which
 # differ from GICS — map before joining heat to a sector row). 11 clean entries.
 SPDR_TO_FINVIZ = {
@@ -355,31 +368,41 @@ def _trace(state_d, fwd, mkt, mom_d, crowd, early, stretched, beta, heat) -> lis
         stance = "bullish" if pos <= 40 else "bearish" if pos >= 65 else "neutral"
         sig = state_d.get("signal")
         sigtxt = f" · turn signal {sig}" if sig else ""
+        sigtxt_zh = f" · 转向信号 {_SIGNAL_ZH.get(sig, sig)}" if sig else ""
+        plab = state_d.get("phaseLabel")
+        ph = state_d.get("phase")
+        plab_zh = (_PHASELABEL_ZH.get(plab) if plab else None) or _PHASE_ZH.get(ph, plab or ph or "—")
         t.append({"layer": "Cycle state", "tier": "validated", "stance": stance,
-                  "en": f"{state_d.get('phaseLabel') or state_d.get('phase') or '—'} — position {pos:.0f}/100{sigtxt}",
-                  "zh": f"{state_d.get('phaseLabel') or state_d.get('phase') or '—'} — 位置 {pos:.0f}/100{sigtxt}"})
+                  "en": f"{plab or ph or '—'} — position {pos:.0f}/100{sigtxt}",
+                  "zh": f"{plab_zh} — 位置 {pos:.0f}/100{sigtxt_zh}"})
     # the validated trend gate (forward axis)
     tp = (fwd or {}).get("trend_pass")
     if tp is not None:
         r12 = (fwd or {}).get("ret_12m")
         r12txt = (f"{r12 * 100:+.0f}% 12m" if r12 is not None else "12m —")
+        r12txt_zh = (f"12个月{r12 * 100:+.0f}%" if r12 is not None else "12个月 —")
         stance = "bullish" if tp else "bearish"
         en = ("above its own 200-day trend & " + r12txt + " — drawdown gate OPEN") if tp else \
              ("below its own 200-day trend / " + r12txt + " — drawdown gate SHUT (longs de-rated)")
-        zh = ("位于自身200日趋势之上且" + r12txt + " — 回撤门控开启") if tp else \
-             ("跌破自身200日趋势/" + r12txt + " — 回撤门控关闭（多头降级）")
+        zh = ("位于自身200日趋势之上且" + r12txt_zh + " — 回撤门控开启") if tp else \
+             ("跌破自身200日趋势/" + r12txt_zh + " — 回撤门控关闭（多头降级）")
         t.append({"layer": "Trend gate", "tier": "validated", "stance": stance, "en": en, "zh": zh})
     # regime gate
     rstance = "bullish" if (mkt.get("risk_on") or 0) > 0.1 else "bearish" if (mkt.get("risk_on") or 0) < -0.1 else "neutral"
     betatxt = (" · cyclical (β+)" if beta > 0.3 else " · defensive (β−)" if beta < -0.3 else "")
+    betatxt_zh = (" · 周期性（β+）" if beta > 0.3 else " · 防御性（β−）" if beta < -0.3 else "")
+    quad_name = mkt.get("quad_name")
+    quad_zh = _QUAD_ZH.get(quad_name, quad_name) if quad_name else (mkt.get("quad") or "—")
     t.append({"layer": "Regime gate", "tier": "validated", "stance": rstance,
-              "en": f"{mkt.get('state_en')} (MRS {mkt.get('derisk_blended')}, {mkt.get('quad_name') or mkt.get('quad') or '—'}, "
+              "en": f"{mkt.get('state_en')} (MRS {mkt.get('derisk_blended')}, {quad_name or mkt.get('quad') or '—'}, "
                     f"liquidity {mkt.get('liquidity') or '—'}) → gate ×{mkt.get('gate_factor')}{betatxt}",
-              "zh": f"{mkt.get('state_zh') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{mkt.get('quad_name') or '—'}）→ 门控 ×{mkt.get('gate_factor')}{betatxt}"})
-    t.append({"layer": "Momentum", "tier": "confirmer", "stance": mom_d.get("lead"),
-              "en": f"RS #{mom_d.get('rs_rank') or '—'} — {mom_d.get('lead')} (focus lens, not alpha)"
+              "zh": f"{mkt.get('state_zh') or mkt.get('state_en')}（宏观风险 {mkt.get('derisk_blended')}，{quad_zh}）→ 门控 ×{mkt.get('gate_factor')}{betatxt_zh}"})
+    lead = mom_d.get("lead")
+    t.append({"layer": "Momentum", "tier": "confirmer", "stance": lead,
+              "en": f"RS #{mom_d.get('rs_rank') or '—'} — {lead} (focus lens, not alpha)"
                     + (" · early — not yet trend-confirmed" if early else ""),
-              "zh": f"相对强度 #{mom_d.get('rs_rank') or '—'} — {mom_d.get('lead')}（聚焦视角，非超额）"})
+              "zh": f"相对强度 #{mom_d.get('rs_rank') or '—'} — {_LEAD_ZH.get(lead, lead)}（聚焦视角，非超额）"
+                    + (" · 偏早 — 趋势尚未确认" if early else "")})
     if heat and heat.get("heat_1M") is not None:
         hstance = "bullish" if (heat.get("heat_1M") or 0) > 0 else "bearish"
         t.append({"layer": "Heat", "tier": "display", "stance": hstance,
