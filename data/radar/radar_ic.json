@@ -1,7 +1,7 @@
 {
   "schema": "radar_ic.v1",
   "as_of": "2026-06-28",
-  "generated_at": "2026-06-28T19:21:50.196886+00:00",
+  "generated_at": "2026-06-28T21:46:58.173804+00:00",
   "horizon_d": 21,
   "n_snapshots": 1612,
   "n_matured": 0,

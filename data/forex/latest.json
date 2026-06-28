@@ -22,17 +22,17 @@
     },
     "USDJPY": {
       "label": "USD/JPY",
-      "quote": 161.685,
+      "quote": 161.721,
       "chg": 1.1,
       "action": "SHORT",
       "score": -40.0
     },
     "USDCHF": {
       "label": "USD/CHF",
-      "quote": 0.8095,
-      "chg": 2.7,
+      "quote": 0.808,
+      "chg": 2.1,
       "action": "LONG",
-      "score": 30.6
+      "score": 29.1
     },
     "AUDUSD": {
       "label": "AUD/USD",
@@ -43,10 +43,10 @@
     },
     "USDCAD": {
       "label": "USD/CAD",
-      "quote": 1.4194,
-      "chg": 2.1,
+      "quote": 1.4177,
+      "chg": 1.9,
       "action": "LONG",
-      "score": 29.5
+      "score": 29.0
     },
     "USDMXN": {
       "label": "USD/MXN",

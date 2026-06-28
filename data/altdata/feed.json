@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-28T19:21:41.231285+00:00",
+  "generated_utc": "2026-06-28T21:46:43.759971+00:00",
   "as_of": "2026-06-28",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -1320,233 +1320,233 @@
       "emoji": "\ud83d\udcdc",
       "label_en": "Government contracts",
       "label_zh": "\u653f\u5e9c\u5408\u540c",
-      "rows": 12058,
-      "last_seen": "2026-06-22",
+      "rows": 12484,
+      "last_seen": "2026-06-28",
       "recent": [
         {
           "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "KEY SET,SOCKET HEAD SCREWSEE DESCRIPTION IN CONTRACTACTACTACTACTACTACTACT",
+          "Date": "2026-06-28",
+          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER I.A.W. HP P/N CF362A CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURE STANDARD YIELD CARTRIDGE FOR USE WITH HP COLOR LASERJET M552, M553, MFP M577, AND ANY OTHER PRINTER US\u2026",
           "Agency": "General Services Administration",
-          "Amount": "17.0",
-          "action_date": "2026-06-17",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "1173.0",
+          "action_date": "2026-06-19",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "7510016822180,TNR,87A,BK",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, CREW CAB, 6700 - 7500 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "310.2",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "50545.0",
+          "action_date": "2026-06-23",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "WRENCH, OPEN END: IAW ASME B107.100-2020, FLAT WRENCHES. CAT 6 WRENCH,BOX FORMERLY 1B107.6-1 CAT 8 ADJUSTABLE WRENCHES FORMERLY 1B107.8 CAT 9 BOX WRENCHES, DOUBLE HEADFORMERLY 1B107.9 CAT 21WRENCH, CROWFOOT FORMERLY1B\u2026",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "FORD POLICE INTERCEPTOR UTILITY",
           "Agency": "General Services Administration",
-          "Amount": "218.04",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "42688.0",
+          "action_date": "2026-06-23",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "PUNCH, PIN: TYPE II: PUNCHES CLASS 5: PIN OVERALL LENGTH: 5-3/4 INCHES SHANK WIDTH ACROSS FLATS: 7/16 INCH TIP/POINT SZ: 1/4 INCH SHANK SHAPE: HEXAGON MATERIAL: STEEL (PARTIAL DESCRIPTION)",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 SUV, INTERMEDIATE, 4 DR, 5 PASS, FOR UPFITTING",
           "Agency": "General Services Administration",
-          "Amount": "8.17",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "55961.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "PN: CF258A OEM HP",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 SUV, INTERMEDIATE, 4 DR, 5 PASS, MIN 7000 GVWR",
           "Agency": "General Services Administration",
-          "Amount": "116.4",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "59529.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CHISEL, COLD, HAND: TYPE I: CHISELS CLASS 2: COLD OVERALL LENGTH 6 INCHES (+/- .5 INCH) CUTTING EDGE WIDTH: 5/8 INCH (+.05 INCH, -.03 INCH) SHANK SHAPE: HEXAGONAL SHANK WIDTH ACROSS FLATS: 1/2 INCH MINIMUM MATERIAL: S\u2026",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, REG CAB, SRW, MIN 10001 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "13.64",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "43093.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "JUG,INSULATED",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X2 VAN WAGON, FULL SIZE, 15 PASSENGER",
           "Agency": "General Services Administration",
-          "Amount": "188.6",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "61105.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER I.A.W. HEWLETT PACKARD PN CF214A (HP 14A) CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURES STANDARD YIELD CARTRIDGE FOR USE WITH HP COLOR LASERJET 700 M725 AND 700 M712 PR\u2026",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP,FULL SIZE,CREW CAB,MIN 8501 LBS GVWR,EXTREME DUTY",
           "Agency": "General Services Administration",
-          "Amount": "480.8",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "57267.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE,TONERAME CARTRIDGE, TONER I.A.W. HEWLETT PACKARD PN W2022A (HP 414A) CARTRIDGE TYPE NEW (OEM GENUINE) SPECIALFEATURES STANDARD YIELDCARTRIDGE FOR USE WITH HPCOLOR LASERJET PRO M454DW, M454DN, MFP M479FDW,MFP\u2026",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X2 CARGO VAN, FULL SIZE, MIN 8,000 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "994.9",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "42124.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER I.A.W. LEXMARK P/N 80C1SM0 CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURES STANDARD YIELD CARTRIDGE FOR USE WITH LEXMARK COLOR LASERJET PRINTERS CX310N, CX310DN, CX410E, \u2026",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, EXT CAB, SRW, MIN 9201 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "1095.5",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "57539.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER I.A.W. HEWLETT PACKARD P/N CF363X (HP 508X) CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURE HIGH YIELD CARTRIDGE FOR USE WITH HP LASERJET PRINTER SERIES M553 (FLOW), MFP M\u2026",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X2 PICKUP, COMPACT, CREW CAB, MIN 4200 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "2228.5",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "27369.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "TONER,HP508A,LJ,CN",
+          "Ticker": "F",
+          "Date": "2026-06-28",
+          "Description": "4X4 SUV, FULL SIZE, 4 DR, 8 PASS, MIN 7000 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "199.8",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "62236.0",
+          "action_date": "2026-06-22",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER CARTRIDGE TYPE REMANUFACTURED SPECIAL FEATURES EXTRA- HIGH YIELD CARTRIDGE COMPATIBLE FOR USE WITH LEXMARK MS710, MS810, MS711, MS811 AND MS812 PRINTERS SERIES OR ANY OTHER\u2026",
-          "Agency": "General Services Administration",
-          "Amount": "115.15",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Ticker": "SNY",
+          "Date": "2026-06-28",
+          "Description": "FALL 2026 FLU VACCINES B1 INMATES",
+          "Agency": "Department of Justice",
+          "Amount": "2802.0",
+          "action_date": "2026-05-21",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER I.A.W. LEXMARK INTL INC PN 76C00Y0 CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURES STANDARD YIELD CARTRIDGE FOR USE WITH LEXMARK LASER SERIES PRINTERS INCLUDING CS921DE, \u2026",
-          "Agency": "General Services Administration",
-          "Amount": "4014.6",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Ticker": "FARO",
+          "Date": "2026-06-28",
+          "Description": "FARO FOCUS SCANNER CALIBRATIONS",
+          "Agency": "Department of Justice",
+          "Amount": "44589.0",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER: ITEM NAME CARTRIDGE, TONER I.A.W. HEWLETT PACKARD P/N CE271A (HP 650A) CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURE STANDARD YIELD CARTRIDGE FOR USE WITH HP CP5500 SERIES COLOR LASERJET PRINTERS \u2026",
+          "Ticker": "FTS",
+          "Date": "2026-06-28",
+          "Description": "THIS IS A TASK ORDER FOR FREEDOM 250 - LUBBOCK TX0230ZZ",
           "Agency": "General Services Administration",
-          "Amount": "315.25",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "10035.43",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, TONER I.A.W. HEWLETT PACKARD P/N: CF289A (HP89A)",
-          "Agency": "General Services Administration",
-          "Amount": "3958.8",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Ticker": "GD",
+          "Date": "2026-06-28",
+          "Description": "THE PURPOSE OF THIS TASK ORDER IS TO PROCURE SERVICES UNDER ORDERING PERIOD 2 OF USCIS' CONTRACT FOR CARD PERSONALIZATION SYSTEM TECHNOLOGY REFRESHMENT (CPSTR) MAINTENANCE AND CONSUMABLES. THE CPSTR CONTRACT PROVIDES \u2026",
+          "Agency": "Department of Homeland Security",
+          "Amount": "5659567.21",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE,TONERAME CARTRIDGE, TONER I.A.W. HEWLETT PACKARD PN W2023A (HP 414A) CARTRIDGE TYPE NEW (OEM GENUINE) SPECIALFEATURES STANDARD YIELDCARTRIDGE FOR USE WITH HPCOLOR LASERJET PRO M454DW, M454DN, MFP M479FDW,MFP\u2026",
-          "Agency": "General Services Administration",
-          "Amount": "994.9",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Ticker": "GE",
+          "Date": "2026-06-28",
+          "Description": "CT7-9C3 ENGINE ASSEMBLY AND SPARE COMPONENTS FOR THE HC-144 AIRCRAFT.",
+          "Agency": "Department of Homeland Security",
+          "Amount": "15546.98",
+          "action_date": "2026-06-26",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE,TONERAME CARTRIDGE, TONER I.A.W. HEWLETT PACKARD PN W2021A (HP 414A) CARTRIDGE TYPE NEW (OEM GENUINE) SPECIALFEATURES STANDARD YIELDCARTRIDGE FOR USE WITH HPCOLOR LASERJET PRO M454DW, M454DN, MFP M479FDW,MFP\u2026",
-          "Agency": "General Services Administration",
-          "Amount": "994.9",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Ticker": "GE",
+          "Date": "2026-06-28",
+          "Description": "REPAIR RING SEALS AND SEAL RING METAL",
+          "Agency": "Department of Homeland Security",
+          "Amount": "63588.39",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "INK,CARTRIDGE",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, EXTENDED CAB, MIN 8501 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "527.8",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "45016.0",
+          "action_date": "2026-06-25",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "MARKER ASSORTMENT, TUBE TYPE: - SEE ATTACHED DOCUMENT FOR DETAIL.",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X2 PICKUP, FULL SIZE, CREW CAB, MIN 6000 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "40.88",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "39085.0",
+          "action_date": "2026-06-25",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "MIRROR, INSPECTION: OVERALL LENGTH: 8 INCHES MINIMUM TO 15 INCHES MAX ROUND MIRROR DIAMETER: 2-1/4 INCHES HANDLE: VINYL CUSHION GRIP FEATURES: TELESCOPING HANDLE, HINGED 360 DEGREE ADJUSTMENT (PARTIAL DESCRIPTION)",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, CREW CAB, 6700 - 7500 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "29.94",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "40406.0",
+          "action_date": "2026-06-25",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "TONER, CARTRIDGE: ITEM NAME CARTRIDGE, TONER I.A.W. LEXMARK P/N 80C10K0 CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURES STANDARD YIELD CARTRIDGE FOR USE WITH LEXMARK LASER SERIES CX310N, CX310DN, CX410E, CX410DE, CX\u2026",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, EXTENDED CAB, MIN 8501 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "193.6",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "47442.0",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "TONER,HP508A,LJ,BK",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, EXTENDED CAB, MIN 8501 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "159.35",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "45502.0",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "PRINTING MACHINE, LABELPN:PT-D220",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, CREW CAB, 6700 - 7500 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "189.3",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "42367.0",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         },
         {
-          "Ticker": "DNOW",
-          "Date": "2026-06-22",
-          "Description": "CARTRIDGE, EXCESS TONER: ITEM NAME CARTRIDGE, EXCESS TONER I.A.W. LEXMARK INTERNATIONAL P/N 78C0W00 CARTRIDGE TYPE NEW (OEM GENUINE) SPECIAL FEATURES WASTE CONTAINER CARTRIDGE FOR USE WITH LEXMARK MACHINE MODELS: CX62\u2026",
+          "Ticker": "GM",
+          "Date": "2026-06-28",
+          "Description": "4X4 PICKUP, FULL SIZE, CREW CAB, 6700 - 7500 LBS GVWR",
           "Agency": "General Services Administration",
-          "Amount": "79.0",
-          "action_date": "2026-06-18",
-          "_first_seen": "2026-06-23T01:56:28.692788+00:00"
+          "Amount": "40256.0",
+          "action_date": "2026-06-24",
+          "_first_seen": "2026-06-28T20:02:20.106202+00:00"
         }
       ]
     },
@@ -6191,27 +6191,35 @@
     "gov_contracts": [
       {
         "ticker": "DELL",
-        "total_usd": 138080150.0,
-        "contracts": 33,
-        "agencies": 12,
+        "total_usd": 200334672.0,
+        "contracts": 39,
+        "agencies": 13,
         "accel_x": null,
         "top_agency": "Department of Homeland Security"
       },
       {
+        "ticker": "MDLN",
+        "total_usd": 167613583.0,
+        "contracts": 37,
+        "agencies": 2,
+        "accel_x": 34.98,
+        "top_agency": "Department of Veterans Affairs"
+      },
+      {
         "ticker": "GD",
-        "total_usd": 95196355.0,
-        "contracts": 10,
+        "total_usd": 100855922.0,
+        "contracts": 11,
         "agencies": 6,
-        "accel_x": 1.02,
+        "accel_x": 1.08,
         "top_agency": "Department of Homeland Security"
       },
       {
-        "ticker": "MDLN",
-        "total_usd": 83791637.0,
-        "contracts": 35,
-        "agencies": 2,
-        "accel_x": 17.49,
-        "top_agency": "Department of Veterans Affairs"
+        "ticker": "PLTR",
+        "total_usd": 84744630.0,
+        "contracts": 4,
+        "agencies": 4,
+        "accel_x": 0.94,
+        "top_agency": "Department of Homeland Security"
       },
       {
         "ticker": "TPC",
@@ -6231,26 +6239,26 @@
       },
       {
         "ticker": "KBR",
-        "total_usd": 40884749.0,
-        "contracts": 15,
+        "total_usd": 41021250.0,
+        "contracts": 17,
         "agencies": 4,
         "accel_x": 2.07,
         "top_agency": "Department of Commerce"
       },
       {
-        "ticker": "PLTR",
-        "total_usd": 38896013.0,
-        "contracts": 3,
-        "agencies": 3,
-        "accel_x": 0.43,
-        "top_agency": "Department of Agriculture"
+        "ticker": "MSFT",
+        "total_usd": 22858532.0,
+        "contracts": 6,
+        "agencies": 2,
+        "accel_x": null,
+        "top_agency": "Department of State"
       },
       {
         "ticker": "CDW",
-        "total_usd": 17605361.0,
-        "contracts": 29,
+        "total_usd": 18472232.0,
+        "contracts": 36,
         "agencies": 5,
-        "accel_x": 3.86,
+        "accel_x": 4.05,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6262,19 +6270,11 @@
         "top_agency": "Department of Defense"
       },
       {
-        "ticker": "MSFT",
-        "total_usd": 14709951.0,
-        "contracts": 5,
-        "agencies": 1,
-        "accel_x": null,
-        "top_agency": "Department of State"
-      },
-      {
         "ticker": "AXON",
-        "total_usd": 11881195.0,
-        "contracts": 12,
+        "total_usd": 12222950.0,
+        "contracts": 13,
         "agencies": 4,
-        "accel_x": 8.42,
+        "accel_x": 8.67,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6294,20 +6294,20 @@
         "top_agency": "Department of Health and Human Services"
       },
       {
+        "ticker": "F",
+        "total_usd": 7824265.0,
+        "contracts": 158,
+        "agencies": 1,
+        "accel_x": 1.01,
+        "top_agency": "General Services Administration"
+      },
+      {
         "ticker": "EVRG",
         "total_usd": 7241464.0,
         "contracts": 1,
         "agencies": 1,
         "accel_x": null,
         "top_agency": "Department of Energy"
-      },
-      {
-        "ticker": "MCK",
-        "total_usd": 7114457.0,
-        "contracts": 97,
-        "agencies": 4,
-        "accel_x": 0.16,
-        "top_agency": "Department of Justice"
       }
     ],
     "gov_grants": [
@@ -18573,6 +18573,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "PAGP",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
         "ticker": "RCKT",
         "category": "Divestitures",
         "confidence": "high",
@@ -28693,14 +28701,6 @@
         "detail": "Delistings"
       },
       {
-        "ticker": "BSHI",
-        "category": "Other Situations",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Other Situations"
-      },
-      {
         "ticker": "CPIPG",
         "category": "Other Situations",
         "confidence": "high",
@@ -35301,6 +35301,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "UK",
+        "category": "Other",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
         "ticker": "SCWO",
         "category": "Delistings",
         "confidence": "high",
@@ -35733,6 +35741,14 @@
         "detail": "Delistings"
       },
       {
+        "ticker": "CCFN",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
         "ticker": "BURUW",
         "category": "Acquisitions",
         "confidence": "high",
@@ -35995,6 +36011,14 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
+      },
+      {
+        "ticker": "LFST",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
       },
       {
         "ticker": "SOUL-UN",
@@ -36622,6 +36646,14 @@
       },
       {
         "ticker": "HTT",
+        "category": "Issuer Tenders",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Issuer Tenders"
+      },
+      {
+        "ticker": "RBNE",
         "category": "Issuer Tenders",
         "confidence": "high",
         "activist": false,
@@ -37902,11 +37934,11 @@
       },
       {
         "ticker": "NXGLW",
-        "category": "Delistings",
+        "category": "Other",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "WSUPW",
@@ -38246,11 +38278,11 @@
       },
       {
         "ticker": "ECCV",
-        "category": "Delistings",
-        "confidence": "high",
+        "category": "Other",
+        "confidence": "medium",
         "activist": false,
         "filer": null,
-        "detail": "Delistings"
+        "detail": "Other"
       },
       {
         "ticker": "PMMBF",
@@ -38405,12 +38437,124 @@
         "detail": "Acquisitions"
       },
       {
-        "ticker": "CRBD",
+        "ticker": "SMFNF",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "VFSWW",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "VINP",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "DIBS",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "AOSL",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "AMRC",
+        "category": "Spin-Offs",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Spin-Offs"
+      },
+      {
+        "ticker": "BZYR",
+        "category": "Restructuring",
+        "confidence": "medium",
+        "activist": false,
+        "filer": null,
+        "detail": "Restructuring"
+      },
+      {
+        "ticker": "COLL",
         "category": "Acquisitions",
         "confidence": "high",
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
+      },
+      {
+        "ticker": "EPM",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "GAMG",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "JKHY",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
+      },
+      {
+        "ticker": "ON",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
+        "ticker": "PAAPU",
+        "category": "Divestitures",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Divestitures"
+      },
+      {
+        "ticker": "RYES",
+        "category": "Other",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Other"
+      },
+      {
+        "ticker": "WASH",
+        "category": "Capital Returns",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Capital Returns"
       },
       {
         "ticker": "FNV",
@@ -38435,14 +38579,6 @@
         "activist": false,
         "filer": null,
         "detail": "Acquisitions"
-      },
-      {
-        "ticker": "SMFNF",
-        "category": "Capital Returns",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Capital Returns"
       },
       {
         "ticker": "VNET",
@@ -40853,6 +40989,14 @@
         "detail": "Divestitures"
       },
       {
+        "ticker": "CRBD",
+        "category": "Acquisitions",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Acquisitions"
+      },
+      {
         "ticker": "EQH-PC",
         "category": "Acquisitions",
         "confidence": "high",
@@ -41099,14 +41243,6 @@
         "activist": false,
         "filer": null,
         "detail": "Capital Returns"
-      },
-      {
-        "ticker": "ON",
-        "category": "Acquisitions",
-        "confidence": "high",
-        "activist": false,
-        "filer": null,
-        "detail": "Acquisitions"
       },
       {
         "ticker": "PBI-PB",
@@ -41685,13 +41821,13 @@
     "github": [
       {
         "ticker": "NVDA",
-        "stars": 17618,
-        "wow_pct": 1.01,
+        "stars": 17622,
+        "wow_pct": 1.03,
         "hot": true
       },
       {
         "ticker": "NET",
-        "stars": 14646,
+        "stars": 14647,
         "wow_pct": 0.43,
         "hot": true
       },
@@ -41709,39 +41845,33 @@
       },
       {
         "ticker": "MSFT",
-        "stars": 186993,
+        "stars": 186992,
         "wow_pct": 0.22,
         "hot": true
       },
       {
         "ticker": "ESTC",
-        "stars": 77189,
+        "stars": 77188,
         "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "GOOGL",
-        "stars": 196085,
+        "stars": 196087,
         "wow_pct": 0.15,
         "hot": true
       },
       {
         "ticker": "META",
-        "stars": 246276,
+        "stars": 246277,
         "wow_pct": 0.12,
         "hot": true
       },
       {
         "ticker": "U",
-        "stars": 19520,
+        "stars": 19521,
         "wow_pct": 0.12,
         "hot": true
-      },
-      {
-        "ticker": "DDOG",
-        "stars": 3655,
-        "wow_pct": 0.11,
-        "hot": false
       },
       {
         "ticker": "MDB",
@@ -41759,6 +41889,12 @@
         "ticker": "PLTR",
         "stars": 21870,
         "wow_pct": 0.09,
+        "hot": false
+      },
+      {
+        "ticker": "DDOG",
+        "stars": 3654,
+        "wow_pct": 0.08,
         "hot": false
       },
       {
@@ -45213,7 +45349,7 @@
           "retail_buzz",
           "special_situation"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.01% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$218,080,031 \u00b7 darkpool_accum: DPI 0.321 \u00b7 github_momentum: +1.03% stars \u00b7 hf_model_momentum: +6.7% model downloads \u00b7 patent_cluster: 48 grants, 11 IPC classes \u00b7 retail_buzz: 207 WSB mentions \u00b7 special_situation: M&A / Divestitures"
       },
       {
         "ticker": "GOOGL",
@@ -45240,7 +45376,7 @@
           "gov_contract",
           "patent_cluster"
         ],
-        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.22% stars \u00b7 gov_contract: $14,709,951 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
+        "why": "13f_add: STOREBRAND ASSET MANAGEMENT AS +$273,836,088 \u00b7 app_demand: 4.77\u2605 \u00d7 19,684,388 reviews \u00b7 github_momentum: +0.22% stars \u00b7 gov_contract: $22,858,532 awarded \u00b7 patent_cluster: 97 grants, 20 IPC classes"
       },
       {
         "ticker": "HOOD",
@@ -45300,7 +45436,7 @@
           "material_8k",
           "news_sentiment"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $138,080,150 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.8 bullish news (50 art)"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract: $200,334,672 awarded \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 8.01) \u00b7 news_sentiment: 0.8 bullish news (50 art)"
       },
       {
         "ticker": "MRK",
@@ -45344,7 +45480,7 @@
           "activist_13d",
           "gov_contract_accel"
         ],
-        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $40,884,749, 2.1x accel"
+        "why": "activist_13d: 13D activist campaign \u00b7 gov_contract_accel: $41,021,250, 2.1x accel"
       },
       {
         "ticker": "N/A",
@@ -45427,7 +45563,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $17,605,361, 3.9x accel \u00b7 special_situation: Capital Returns"
+        "why": "gov_contract_accel: $18,472,232, 4.0x accel \u00b7 special_situation: Capital Returns"
       },
       {
         "ticker": "BWXT",

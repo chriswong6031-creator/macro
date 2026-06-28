@@ -6,9 +6,9 @@
 |---|---|---:|---:|---|
 | standouts (engine buy-board) | 2026-06-26 | 34 | 34 | ok |
 | briefing (Phase-5 priority queue) | 2026-06-28 | 25 | 25 | ok |
-| radar (divergence radar) | 2026-06-28 | 269 | 269 | ok |
+| radar (divergence radar) | 2026-06-28 | 261 | 261 | ok |
 | altdata (alt-data desk) | 2026-06-28 | 30 | 30 | ok |
-| news (news flow) | 2026-06-28 | 643 | 312 | ok |
+| news (news flow) | 2026-06-28 | 649 | 317 | ok |
 | intel_hub (5-desk command) | 2026-06-28 | 30 | 30 | ok |
 
 _Invariants: coverage floor · score-column degeneracy · content-freeze (as_of advanced but values identical) · staleness · distribution drift. Ground-truth-free — see engine/signal_sanity.py._

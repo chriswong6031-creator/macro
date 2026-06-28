@@ -6,15 +6,15 @@
    "spot": 7354.02,
    "regime": "short",
    "tier": "full",
-   "net_gex_bn": -27.68,
-   "gamma_flip": 7405.08,
-   "dist_to_flip_pct": -0.69,
-   "iv30": 15.48,
+   "net_gex_bn": -27.79,
+   "gamma_flip": 7405.74,
+   "dist_to_flip_pct": -0.7,
+   "iv30": 15.44,
    "put_call_oi_ratio": 1.06,
    "call_wall": 8000.0,
    "put_wall": 7300.0,
    "max_pain": 7200.0,
-   "daily_move_pct": 0.98
+   "daily_move_pct": 0.97
   },
   "NDX": {
    "spot": 29118.24,
