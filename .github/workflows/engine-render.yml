@@ -223,15 +223,21 @@ jobs:
               brun methodology "methodology page (build_methodology)"    scripts.build_methodology
             }
             cl_misc() {
+              # NOTE: policy_intent_desk is DELIBERATELY omitted here. It is an LLM builder
+              # (needs DEEPSEEK_API_KEY, reuses engine.master_brain's client) — exactly the
+              # "master / ai_desk / narrative / altdata LLM brains" this lane's header says it
+              # skips. With no secrets it cannot brief, and rather than degrade silently it was
+              # exiting rc=134 (SIGABRT) every render (the LLM client aborts on init). It writes
+              # a COMMITTED artifact (site/policy_intent.json), so skipping it just keeps the
+              # last nightly's brief until the nightly `daily` (which HAS the key) refreshes it.
               brun seasonality   "factor seasonality (build_seasonality)"      scripts.build_seasonality
               brun reports       "research reports section (build_reports)"     scripts.build_reports
-              brun policy_intent "policy intent desk (policy_intent_desk)"      engine.policy_intent_desk
               brun policy_watch  "fed & policy watch (build_policy_watch)"      scripts.build_policy_watch
               brun index_changes "S&P index changes (build_index_changes)"     scripts.build_index_changes
             }
             cl_markets & cl_china & cl_hk & cl_gex & cl_baskets & cl_misc &
             wait
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow options_skew baskets news methodology seasonality reports policy_intent policy_watch index_changes"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow options_skew baskets news methodology seasonality reports policy_watch index_changes"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
