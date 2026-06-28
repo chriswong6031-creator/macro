@@ -2951,6 +2951,14 @@ def main() -> int:
     try:
         from scripts.build_sp500_heatmap import build as build_sp500_heatmap
         build_sp500_heatmap(site, generated_utc=generated)
+        # Finviz themes treemap (theme → subsector tiles, members on hover) —
+        # the second map-type on the same page; offline from the committed
+        # Finviz snapshot (refresh via scripts/fetch_finviz_themes.py).
+        try:
+            from scripts.build_themes_heatmap import build as build_themes_heatmap
+            build_themes_heatmap(site, generated_utc=generated)
+        except Exception as e:  # noqa: BLE001 — additive, themes map optional
+            log.error("themes heatmap failed: %s", e)
         out_hm = site / "sector_heatmap.html"
         out_hm.write_text(env.get_template("sector_heatmap.html.j2").render())
         log.info("wrote %s (%.0f KB)", out_hm, out_hm.stat().st_size / 1024)

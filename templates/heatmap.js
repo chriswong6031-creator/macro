@@ -26,13 +26,14 @@
   'use strict';
 
   var JSON_URL = 'marketdata/sp500_heatmap.json';
-  var _dataPromise = null;
-  function loadData() {
-    if (!_dataPromise) {
-      _dataPromise = fetch(JSON_URL, { cache: 'no-cache' })
+  var _dataPromises = {};               // url -> promise (one map per source)
+  function loadData(url) {
+    url = url || JSON_URL;
+    if (!_dataPromises[url]) {
+      _dataPromises[url] = fetch(url, { cache: 'no-cache' })
         .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); });
     }
-    return _dataPromise;
+    return _dataPromises[url];
   }
 
   /* ---- per-timeframe colour-scale floors (set the bin widths). 1D keeps the
@@ -166,8 +167,12 @@
     var sectors = {};
     data.tiles.forEach(function (t) {
       var s = sectors[t.sector] || (sectors[t.sector] = { name: t.sector, value: 0, inds: {}, tiles: [] });
-      var ind = s.inds[t.industry] || (s.inds[t.industry] = { name: t.industry, value: 0, tiles: [] });
-      ind.tiles.push(t); ind.value += (t.size || 0);
+      // themes tiles have no sub-industry level — skip the inds bucket for them
+      // (only the S&P treemap reads s.inds; everything else uses s.tiles).
+      if (t.industry != null) {
+        var ind = s.inds[t.industry] || (s.inds[t.industry] = { name: t.industry, value: 0, tiles: [] });
+        ind.tiles.push(t); ind.value += (t.size || 0);
+      }
       s.tiles.push(t); s.value += (t.size || 0);
     });
     return sectors;
@@ -376,49 +381,104 @@
     document.body.appendChild(_mem);
     return _mem;
   }
-  function showMembers(data, sectorName, subName, tiles, cx, cy) {
+  // shared shell: header (title + agg), breadth sub-line, scrollable row list.
+  function memShellHtml(ttl, agg, count, br, unitEn, unitZh, rowsHtml) {
+    var tot = Math.max(1, br.adv + br.dec);
+    var aggCls = agg == null ? '' : (agg >= 0 ? 'up' : 'dn');
+    return ''
+      + '<div class="hm-mem-hd">'
+      +   '<div class="hm-mem-ttl">' + ttl + '</div>'
+      +   '<div class="hm-mem-agg ' + aggCls + '">' + fmtPc(agg) + '</div>'
+      + '</div>'
+      + '<div class="hm-mem-sub">'
+      +   '<span class="hm-mem-ct">' + count + ' ' + L(unitEn, unitZh) + '</span>'
+      +   '<span class="hm-mem-br"><i class="up" style="width:' + (100 * br.adv / tot) + '%"></i>'
+      +     '<i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i></span>'
+      +   '<span class="hm-mem-bn"><b class="up">' + br.adv + '▲</b> <b class="dn">' + br.dec + '▼</b></span>'
+      + '</div>'
+      + '<div class="hm-mem-list">' + rowsHtml + '</div>';
+  }
+  function memShow(key, html, cx, cy) {
     hideCard();
-    var key = sectorName + '||' + (subName || '');
     var el = memEl();
-    if (_memFor !== key) {
-      _memFor = key;
-      var labs = sectorLabels(data);
-      var lab = labs[sectorName] || { en: sectorName, zh: sectorName };
-      var tf = data._tf, edges = edgesFor(tf), pal = binPalette();
-      var agg = sectorAgg(data, tiles, tf);
-      var br = breadth(tiles, tf), tot = Math.max(1, br.adv + br.dec);
-      var ttl = subName
-        ? L(esc(lab.en) + ' <span class="sub">— ' + esc(subName) + '</span>', esc(lab.zh) + ' <span class="sub">— ' + esc(subName) + '</span>')
-        : L(esc(lab.en), esc(lab.zh));
-      var rows = tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
-      var cap = 18, more = Math.max(0, rows.length - cap);
-      var body = '';
-      rows.slice(0, cap).forEach(function (t) {
-        var pc = t.perf[tf], c = pal[binIndex(pc, edges)];
-        body += '<div class="hm-mem-row">'
-          + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
-          + '<span class="hm-mem-t">' + esc(t.t) + '</span>'
-          + '<span class="hm-mem-n">' + esc(t.name) + '</span>'
-          + '<span class="hm-mem-cap">' + fmtCap(t.size) + '</span></div>';
-      });
-      if (more) body += '<div class="hm-mem-more">+' + more + ' ' + L('more', '更多') + '</div>';
-      var aggCls = agg == null ? '' : (agg >= 0 ? 'up' : 'dn');
-      el.innerHTML = ''
-        + '<div class="hm-mem-hd">'
-        +   '<div class="hm-mem-ttl">' + ttl + '</div>'
-        +   '<div class="hm-mem-agg ' + aggCls + '">' + fmtPc(agg) + '</div>'
-        + '</div>'
-        + '<div class="hm-mem-sub">'
-        +   '<span class="hm-mem-ct">' + tiles.length + ' ' + L('names', '只') + '</span>'
-        +   '<span class="hm-mem-br"><i class="up" style="width:' + (100 * br.adv / tot) + '%"></i>'
-        +     '<i class="dn" style="width:' + (100 * br.dec / tot) + '%"></i></span>'
-        +   '<span class="hm-mem-bn"><b class="up">' + br.adv + '▲</b> <b class="dn">' + br.dec + '▼</b></span>'
-        + '</div>'
-        + '<div class="hm-mem-list">' + body + '</div>';
-      el._w = 0;                       // content changed → re-measure
-      el.classList.add('on');
-    }
+    if (_memFor !== key) { _memFor = key; el.innerHTML = html; el._w = 0; el.classList.add('on'); }
     positionFloat(el, cx, cy);
+  }
+  // S&P 500: sector / subsector → its member stocks (ticker · name · cap).
+  function showMembers(data, sectorName, subName, tiles, cx, cy) {
+    var key = sectorName + '||' + (subName || '');
+    if (_memFor === key) { positionFloat(memEl(), cx, cy); return; }
+    var labs = sectorLabels(data);
+    var lab = labs[sectorName] || { en: sectorName, zh: sectorName };
+    var tf = data._tf, edges = edgesFor(tf), pal = binPalette();
+    var agg = sectorAgg(data, tiles, tf);
+    var br = breadth(tiles, tf);
+    var ttl = subName
+      ? L(esc(lab.en) + ' <span class="sub">— ' + esc(subName) + '</span>', esc(lab.zh) + ' <span class="sub">— ' + esc(subName) + '</span>')
+      : L(esc(lab.en), esc(lab.zh));
+    var rows = tiles.slice().sort(function (a, b) { return (b.size || 0) - (a.size || 0); });
+    var cap = 18, more = Math.max(0, rows.length - cap), body = '';
+    rows.slice(0, cap).forEach(function (t) {
+      var pc = t.perf[tf], c = pal[binIndex(pc, edges)];
+      body += '<div class="hm-mem-row">'
+        + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
+        + '<span class="hm-mem-t">' + esc(t.t) + '</span>'
+        + '<span class="hm-mem-n">' + esc(t.name) + '</span>'
+        + '<span class="hm-mem-cap">' + fmtCap(t.size) + '</span></div>';
+    });
+    if (more) body += '<div class="hm-mem-more">+' + more + ' ' + L('more', '更多') + '</div>';
+    memShow(key, memShellHtml(ttl, agg, tiles.length, br, 'names', '只', body), cx, cy);
+  }
+  // Themes: a subsector tile → its member tickers (ticker · move). The tile's
+  // own Finviz move is the header agg (it's what colours the tile), not a
+  // recomputed median of the members.
+  function showSubMembers(data, tile, cx, cy) {
+    var key = 'sub||' + tile.t;
+    if (_memFor === key) { positionFloat(memEl(), cx, cy); return; }
+    var labs = sectorLabels(data);
+    var lab = labs[tile.sector] || { en: tile.sector, zh: tile.sector };
+    var tf = data._tf, edges = edgesFor(tf), pal = binPalette();
+    var members = (tile.members || []).map(function (m) { return { t: m.t, perf: m.perf || {} }; });
+    var br = breadth(members, tf);
+    var subLabel = tile.name + (tile.desc && tile.desc !== tile.name ? ' · ' + tile.desc : '');
+    var ttl = L(esc(lab.en) + ' <span class="sub">— ' + esc(subLabel) + '</span>',
+                esc(lab.zh) + ' <span class="sub">— ' + esc(subLabel) + '</span>');
+    var rows = members.slice().sort(function (a, b) {
+      var av = a.perf[tf], bv = b.perf[tf];
+      return (bv == null ? -1e9 : bv) - (av == null ? -1e9 : av);
+    });
+    var cap = 22, more = Math.max(0, rows.length - cap), body = '';
+    rows.slice(0, cap).forEach(function (m) {
+      var pc = m.perf[tf], c = pal[binIndex(pc, edges)];
+      body += '<div class="hm-mem-row">'
+        + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
+        + '<span class="hm-mem-t">' + esc(m.t) + '</span></div>';
+    });
+    if (more) body += '<div class="hm-mem-more">+' + more + ' ' + L('more', '更多') + '</div>';
+    memShow(key, memShellHtml(ttl, tile.perf[tf], members.length, br, 'members', '成员', body), cx, cy);
+  }
+  // Themes: a theme header → its subsectors (name · move · member count).
+  function showThemeSubs(data, themeName, subTiles, cx, cy) {
+    var key = 'theme||' + themeName;
+    if (_memFor === key) { positionFloat(memEl(), cx, cy); return; }
+    var labs = sectorLabels(data);
+    var lab = labs[themeName] || { en: themeName, zh: themeName };
+    var tf = data._tf, edges = edgesFor(tf), pal = binPalette();
+    var agg = sectorAgg(data, subTiles, tf);
+    var br = breadth(subTiles, tf);
+    var rows = subTiles.slice().sort(function (a, b) {
+      var av = a.perf[tf], bv = b.perf[tf];
+      return (bv == null ? -1e9 : bv) - (av == null ? -1e9 : av);
+    });
+    var body = '';
+    rows.forEach(function (t) {
+      var pc = t.perf[tf], c = pal[binIndex(pc, edges)];
+      body += '<div class="hm-mem-row">'
+        + '<span class="hm-mem-pc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
+        + '<span class="hm-mem-t">' + esc(t.name) + '</span>'
+        + '<span class="hm-mem-cap">' + (t.members ? t.members.length : t.size) + '</span></div>';
+    });
+    memShow(key, memShellHtml(L(esc(lab.en), esc(lab.zh)), agg, subTiles.length, br, 'subsectors', '子板块', body), cx, cy);
   }
   function hideMembers() { _memFor = null; if (_mem) _mem.classList.remove('on'); }
 
@@ -426,7 +486,16 @@
   /*  FULL VIEW — controls + treemap (desktop) / sector list (mobile)        */
   /* ====================================================================== */
   function createFullView(root, data) {
+    // Themes map: two levels (theme → subsector-leaf tile), tiles are subsectors
+    // that carry a member list; hover shows members. Default (S&P) is unchanged.
+    var IS_THEMES = data.map_type === 'themes';
     root.classList.add('hm-scope', 'hm-view');
+    if (IS_THEMES) root.classList.add('hm-themes');
+    var hint = IS_THEMES
+      ? L('Hover a subsector for its member tickers · hover a theme header for its subsectors · pick a timeframe above',
+          '将鼠标悬停在子板块上查看成员个股 · 悬停主题标题查看其子板块 · 在上方选择周期')
+      : L('Hover a sector or subsector header for its members · hover a tile for our read · click through to the analyzer',
+          '将鼠标悬停在板块或子行业标题上查看成员 · 悬停方块查看研判 · 点击进入分析器');
     root.innerHTML = ''
       + '<div class="hm-bar">'
       +   '<div class="hm-tfs" role="tablist" aria-label="Timeframe"></div>'
@@ -436,8 +505,7 @@
       + '</div>'
       + '<div class="hm-sort" role="group" aria-label="Sort"></div>'
       + '<div class="hm-tm-wrap"><div class="hm-tm"></div></div>'
-      + '<div class="hm-hint">' + L('Hover a sector or subsector header for its members · hover a tile for our read · click through to the analyzer',
-                                    '将鼠标悬停在板块或子行业标题上查看成员 · 悬停方块查看研判 · 点击进入分析器') + '</div>';
+      + '<div class="hm-hint">' + hint + '</div>';
 
     var tfsEl = root.querySelector('.hm-tfs');
     var legendEl = root.querySelector('.hm-legend');
@@ -514,8 +582,14 @@
     function updateRead() {
       var br = breadth(data.tiles, '1D');
       var live = data.source === 'polygon-live';
-      var srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—');
-      var srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—');
+      var srcEn, srcZh;
+      if (IS_THEMES) {
+        srcEn = 'Finviz themes · ' + (data.asof || '—');
+        srcZh = 'Finviz 主题 · ' + (data.asof || '—');
+      } else {
+        srcEn = (live ? 'Live · 15-min delayed' : 'Daily close') + ' · ' + (data.asof || '—');
+        srcZh = (live ? '实时 · 延迟15分钟' : '日线收盘') + ' · ' + (data.asof || '—');
+      }
       readEl.innerHTML = '<span class="hm-dot ' + (live ? 'live' : '') + '"></span>'
         + '<span class="hm-read-src">' + L(srcEn, srcZh) + '</span>'
         + '<span class="hm-read-br"><b class="up">' + br.adv + ' ▲</b> <b class="dn">' + br.dec + ' ▼</b></span>';
@@ -607,6 +681,79 @@
       secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-secpc="' + sp.key + '"]') : null; });
       recolor();
     }
+
+    /* ----- themes treemap (theme → subsector-leaf tile) ----- */
+    function tileLabelThemes(t, tw, th) {
+      var pc = t.perf[TF];
+      var showName = tw >= 30 && th >= 16;
+      var showPc = tw >= 40 && th >= 28;
+      if (!showName) return '';
+      var nameF = Math.max(8.5, Math.min(tw / 6.2, th * 0.34, 15));
+      var pcF = Math.max(8, Math.min(tw / 6.0, th * 0.30, 12.5));
+      var s = '<span class="thn" style="font-size:' + nameF.toFixed(1) + 'px">' + esc(t.name) + '</span>';
+      if (showPc) s += '<span class="pc" style="font-size:' + pcF.toFixed(1) + 'px">' + fmtPc(pc) + '</span>';
+      return s;
+    }
+    function layoutThemes() {
+      mode = 'tree'; root.classList.remove('hm-mobile');
+      var animate = firstLayout && !REDUCE; firstLayout = false;
+      tileEls = []; secPc = [];
+      var H = Math.max(560, Math.min(window.innerHeight - 140, 1280));
+      wrap.style.height = H + 'px'; tm.style.height = H + 'px';
+      var W = tm.clientWidth || wrap.clientWidth;
+      if (W <= 0) { requestAnimationFrame(layoutThemes); return; }
+
+      hier = {};
+      data.tiles.forEach(function (t) {
+        var s = hier[t.sector] || (hier[t.sector] = { name: t.sector, value: 0, tiles: [] });
+        s.tiles.push(t); s.value += (t.size || 0);
+      });
+      var secItems = Object.keys(hier).map(function (k) { return { value: hier[k].value, ref: hier[k] }; });
+      var secRects = squarify(secItems, 0, 0, W, H);
+      var html = [], si = 0;
+
+      secRects.forEach(function (sr) {
+        var s = sr.ref;
+        var x = sr.x + SEC_GAP / 2, y = sr.y + SEC_GAP / 2, w = sr.w - SEC_GAP, h = sr.h - SEC_GAP;
+        if (w <= 2 || h <= 2) return;
+        var lab = labs[s.name] || { en: s.name, zh: s.name };
+        var hd = (h > 40 && w > 78) ? Math.min(SEC_HD, h * 0.42) : 0;
+        html.push('<div class="hm-sec" style="left:' + x + 'px;top:' + y + 'px;width:' + w + 'px;height:' + h + 'px">');
+        if (hd) {
+          html.push('<div class="hm-sec-hd" data-sec-name="' + esc(s.name) + '" style="height:' + hd + 'px;line-height:' + hd + 'px">'
+            + '<span class="nm">' + L(esc(lab.en), esc(lab.zh)) + '</span>'
+            + (w > 132 ? '<span class="pc" data-secpc="' + si + '"></span>' : '')
+            + '<span class="hm-sec-i">ⓘ</span></div>');
+          secPc.push({ key: si, tiles: s.tiles, show: w > 132, sector: s.name });
+        }
+        var innerY = hd, innerH = h - hd;
+        var tRects = squarify(s.tiles.map(function (t) { return { value: (t.size || 0.0001), ref: t }; }),
+          0, 0, w, innerH);
+        tRects.forEach(function (tr) {
+          var t = tr.ref;
+          var tw = tr.w - TILE_GAP, th = tr.h - TILE_GAP;
+          if (tw < 2 || th < 2) return;
+          var cls = 'hm-tile hm-thtile';
+          if (tw >= 96 && th >= 56) cls += ' big';
+          if (tw >= 150 && th >= 104) cls += ' huge';
+          if (animate) cls += ' hm-in';
+          var dly = animate ? ';animation-delay:' + Math.min(tileEls.length * 0.8, 480).toFixed(0) + 'ms' : '';
+          html.push('<div class="' + cls + '" data-i="' + tileEls.length + '" style="left:' + tr.x + 'px;top:'
+            + (innerY + tr.y) + 'px;width:' + tw + 'px;height:' + th + 'px' + dly + '">'
+            + tileLabelThemes(t, tw, th) + '</div>');
+          tileEls.push({ t: t });
+        });
+        html.push('</div>');    // .hm-sec
+        si++;
+      });
+      tm.innerHTML = html.join('');
+      Array.prototype.forEach.call(tm.querySelectorAll('.hm-tile'), function (el) {
+        var rec = tileEls[+el.getAttribute('data-i')];
+        rec.el = el; rec.pcEl = el.querySelector('.pc');
+      });
+      secPc.forEach(function (sp) { sp.el = sp.show ? tm.querySelector('.pc[data-secpc="' + sp.key + '"]') : null; });
+      recolor();
+    }
     function recolor() {
       var edges = edgesFor(TF), pal = binPalette();
       tileEls.forEach(function (rec) {
@@ -651,6 +798,16 @@
         });
         rows.forEach(function (t) {
           var pc = t.perf[TF], c = pal[binIndex(pc, edges)];
+          if (IS_THEMES) {
+            // subsector row: name + a member count / description (no per-stock page)
+            var det = t.members && t.members.length
+              ? t.members.length + ' ' + lz('members', '成员')
+              : esc(t.desc || '');
+            html.push('<div class="hm-mrow hm-mrow-th">'
+              + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
+              + '<span class="hm-mid"><b>' + esc(t.name) + '</b><span>' + det + '</span></span></div>');
+            return;
+          }
           var sub = t.industry && t.industry !== t.sector ? esc(t.industry) : esc(t.name);
           html.push('<a class="hm-mrow" href="stock.html#' + encodeURIComponent(t.t) + '">'
             + '<span class="hm-mpc" style="background-color:' + rgb(c) + ';color:' + fgFor(c) + '">' + fmtPc(pc) + '</span>'
@@ -670,18 +827,26 @@
       var tEl = e.target.closest && e.target.closest('.hm-tile');
       if (tEl) {
         var rec = tileEls[+tEl.getAttribute('data-i')];
-        if (rec) { showCard(data, rec.t, e.clientX, e.clientY); return; }
+        // S&P tile → our conviction card; themes tile (a subsector) → its members.
+        if (rec) { IS_THEMES ? showSubMembers(data, rec.t, e.clientX, e.clientY)
+                             : showCard(data, rec.t, e.clientX, e.clientY); return; }
       }
-      var subEl = e.target.closest && e.target.closest('.hm-sub');
-      if (subEl) {
-        var sn = subEl.getAttribute('data-sub-sec'), inn = subEl.getAttribute('data-sub-ind');
-        var grp = hier[sn] && hier[sn].inds[inn];
-        if (grp) { showMembers(data, sn, inn, grp.tiles, e.clientX, e.clientY); return; }
+      if (!IS_THEMES) {
+        var subEl = e.target.closest && e.target.closest('.hm-sub');
+        if (subEl) {
+          var sn = subEl.getAttribute('data-sub-sec'), inn = subEl.getAttribute('data-sub-ind');
+          var grp = hier[sn] && hier[sn].inds[inn];
+          if (grp) { showMembers(data, sn, inn, grp.tiles, e.clientX, e.clientY); return; }
+        }
       }
       var secEl = e.target.closest && e.target.closest('.hm-sec-hd');
       if (secEl) {
         var name = secEl.getAttribute('data-sec-name');
-        if (name && hier[name]) { showMembers(data, name, null, hier[name].tiles, e.clientX, e.clientY); return; }
+        if (name && hier[name]) {
+          IS_THEMES ? showThemeSubs(data, name, hier[name].tiles, e.clientX, e.clientY)
+                    : showMembers(data, name, null, hier[name].tiles, e.clientX, e.clientY);
+          return;
+        }
       }
       hideCard(); hideMembers();
     }
@@ -691,16 +856,18 @@
       processMove(e);
     }
     function onClick(e) {
+      if (IS_THEMES) return;   // subsector tiles are hover-only (members in popup)
       var el = e.target.closest && e.target.closest('.hm-tile');
       if (!el) return;
       var rec = tileEls[+el.getAttribute('data-i')];
       if (rec) window.location.href = 'stock.html#' + encodeURIComponent(rec.t.t);
     }
+    function onLeave() { hideCard(); hideMembers(); }
     tm.addEventListener('mousemove', onMove);
-    tm.addEventListener('mouseleave', function () { hideCard(); hideMembers(); });
+    tm.addEventListener('mouseleave', onLeave);
     tm.addEventListener('click', onClick);
 
-    function layout() { if (isMobile()) layoutList(); else layoutTree(); }
+    function layout() { if (isMobile()) layoutList(); else if (IS_THEMES) layoutThemes(); else layoutTree(); }
 
     var rt;
     function onResize() { clearTimeout(rt); rt = setTimeout(function () { hideCard(); hideMembers(); layout(); }, 150); }
@@ -718,6 +885,9 @@
         window.removeEventListener('resize', onResize);
         document.removeEventListener('themechange', onTheme);
         document.removeEventListener('langchange', onLang);
+        tm.removeEventListener('mousemove', onMove);
+        tm.removeEventListener('mouseleave', onLeave);
+        tm.removeEventListener('click', onClick);
         hideCard(); hideMembers();
       }
     };
@@ -887,6 +1057,16 @@
       + '.hm-tile:hover{z-index:8;filter:brightness(1.12) saturate(1.06);box-shadow:0 0 0 1.5px rgba(255,255,255,.92),0 6px 18px rgba(0,0,0,.5),0 0 22px var(--tg);transform:translateY(-1px);}'
       + '.hm-tile .sym{font-weight:800;letter-spacing:.2px;text-shadow:0 1px 2px rgba(0,0,0,.32);}'
       + '.hm-tile .pc{font-weight:600;font-variant-numeric:tabular-nums;opacity:.95;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,.3);}'
+      // map-type switcher (multi-map host: S&P 500 ⇄ Themes …)
+      + '.hm-maptype{display:inline-flex;gap:3px;margin:0 0 14px;padding:4px;border-radius:12px;background:color-mix(in srgb,var(--panel2) 60%,transparent);border:1px solid var(--hm-edge);box-shadow:0 2px 10px rgba(0,0,0,.12);}'
+      + '.hm-mt{font:700 13px/1 Inter,sans-serif;color:var(--muted);background:transparent;border:0;padding:8px 16px;border-radius:9px;cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;}'
+      + '.hm-mt:hover{color:var(--text);background:color-mix(in srgb,var(--text) 7%,transparent);}'
+      + '.hm-mt.on{background:var(--link);color:#fff;}'
+      + '.hm-loading{padding:48px;text-align:center;color:var(--muted);}'
+      // themes subsector-leaf tile: show the subsector name (not a ticker)
+      + '.hm-thtile{padding:2px 4px;}'
+      + '.hm-thtile .thn{font-weight:800;letter-spacing:.1px;text-shadow:0 1px 2px rgba(0,0,0,.34);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.12;}'
+      + '.hm-mrow-th{cursor:default;}'
       // stock hover card
       + '.hm-card{position:fixed;z-index:1200;left:0;top:0;width:300px;max-width:calc(100vw - 16px);'
       + 'background:color-mix(in srgb,var(--panel) 96%,transparent);border:1px solid color-mix(in srgb,var(--text) 16%,var(--line));'
@@ -993,28 +1173,74 @@
   /* ====================================================================== */
   /*  BOOT                                                                   */
   /* ====================================================================== */
+  function _emptyHtml(msg) {
+    return '<div class="hm-empty" style="padding:48px;text-align:center;color:var(--muted)">' + msg + '</div>';
+  }
+  // Multi-map host: a #heatmap-full carrying data-hm-maps='[{key,label_en,
+  // label_zh,icon,url},...]' gets a map-type switcher and mounts one map at a
+  // time (S&P 500 ⇄ Themes …). Absent the attribute the page behaves exactly as
+  // before (single S&P map), so the scorecard/other surfaces are untouched.
+  function mountMulti(full) {
+    var maps;
+    try { maps = JSON.parse(full.getAttribute('data-hm-maps') || 'null'); } catch (e) { maps = null; }
+    if (!maps || !maps.length) return false;
+    full.classList.add('hm-multi');
+    var bar = document.createElement('div'); bar.className = 'hm-maptype'; bar.setAttribute('role', 'tablist');
+    var host = document.createElement('div'); host.className = 'hm-host';
+    full.appendChild(bar); full.appendChild(host);
+    var curView = null, curKey = null, btns = {};
+    function select(m) {
+      if (curKey === m.key) return;
+      curKey = m.key;
+      Object.keys(btns).forEach(function (k) {
+        var on = k === m.key;
+        btns[k].classList.toggle('on', on); btns[k].setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      if (curView && curView.destroy) { curView.destroy(); curView = null; }
+      host.innerHTML = _emptyHtml('…');
+      loadData(m.url).then(function (data) {
+        if (curKey !== m.key) return;                 // a newer click superseded this
+        if (!data.tiles || !data.tiles.length) { host.innerHTML = _emptyHtml(L('No heatmap data available.', '暂无热力图数据。')); return; }
+        host.innerHTML = '';
+        curView = createFullView(host, data);
+      }).catch(function (e) {
+        if (curKey !== m.key) return;
+        host.innerHTML = _emptyHtml(L('Could not load heatmap data.', '无法加载热力图数据。'));
+        if (window.console) console.error('heatmap load failed', e);
+      });
+    }
+    maps.forEach(function (m) {
+      var b = document.createElement('button'); b.type = 'button';
+      b.className = 'hm-mt'; b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false');
+      b.innerHTML = (m.icon ? m.icon + ' ' : '') + L(m.label_en || m.key, m.label_zh || m.label_en || m.key);
+      b.addEventListener('click', function () { select(m); });
+      btns[m.key] = b; bar.appendChild(b);
+    });
+    select(maps[0]);
+    return true;
+  }
   function boot() {
     injectStyle();
     var full = document.getElementById('heatmap-full');
     var score = document.getElementById('heatmap-scorecard');
     if (!full && !score) return;   // page doesn't use the heatmap
-    loadData().then(function (data) {
-      if (full) {
-        if (!data.tiles || !data.tiles.length) {
-          full.innerHTML = '<div class="hm-empty" style="padding:48px;text-align:center;color:var(--muted)">'
-            + L('No heatmap data available.', '暂无热力图数据。') + '</div>';
-        } else createFullView(full, data);
-      }
-      if (score) {
-        if (!data.tiles || !data.tiles.length) { score.style.display = 'none'; }
+    if (full && full.getAttribute('data-hm-maps')) {
+      mountMulti(full);
+    } else if (full) {
+      loadData().then(function (data) {
+        if (!data.tiles || !data.tiles.length) full.innerHTML = _emptyHtml(L('No heatmap data available.', '暂无热力图数据。'));
+        else createFullView(full, data);
+      }).catch(function (e) {
+        full.innerHTML = _emptyHtml(L('Could not load heatmap data.', '无法加载热力图数据。'));
+        if (window.console) console.error('heatmap load failed', e);
+      });
+    }
+    if (score) {
+      loadData().then(function (data) {
+        if (!data.tiles || !data.tiles.length) score.style.display = 'none';
         else renderScorecard(score, data);
-      }
-    }).catch(function (e) {
-      if (score) score.style.display = 'none';
-      if (full) full.innerHTML = '<div class="hm-empty" style="padding:48px;text-align:center;color:var(--muted)">'
-        + L('Could not load heatmap data.', '无法加载热力图数据。') + '</div>';
-      if (window.console) console.error('heatmap load failed', e);
-    });
+      }).catch(function () { score.style.display = 'none'; });
+    }
   }
 
   window.MMHeatmap = { openOverlay: openOverlay };
