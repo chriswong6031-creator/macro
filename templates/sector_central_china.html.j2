@@ -36,8 +36,51 @@
   .rg-on { color: var(--up); } .rg-off { color: var(--down); } .rg-mix { color: var(--warn); }
   .rg-bar { height: 7px; border-radius: 5px; margin-top: 7px; overflow: hidden; background: var(--line); }
   .rg-bar i { display: block; height: 100%; }
+  /* plain "new here?" orientation strip */
+  .scc-howto { margin: 12px 0 2px; padding: 11px 14px; font-size: 13px; line-height: 1.55; color: var(--muted);
+    background: color-mix(in srgb, var(--link) 6%, var(--panel)); border: 1px solid color-mix(in srgb, var(--link) 22%, var(--line));
+    border-left: 3px solid var(--link); border-radius: 11px; max-width: 96ch; }
+  .scc-howto b { color: var(--text); }
+  /* plain-language headline row spanning the full regime grid */
+  .regime .rg-headline-row { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px;
+    font-size: 14.5px; font-weight: 650; line-height: 1.4; padding: 11px 14px; border: 1px solid var(--line);
+    border-radius: 12px; background: var(--panel); }
+  .rg-headline-row .rg-hl-ic { font-size: 16px; flex: none; }
+  .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
+  .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--up); }
+  .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
+  .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--down); }
+  .rg-headline-row.rg-hl-mix .rg-hl-ic { color: var(--warn); }
+  /* in zh the up/down colour convention flips (red = up) — match it for banner + badges */
+  html[data-lang="zh"] .rg-headline-row.rg-hl-on { border-color: color-mix(in srgb, var(--down) 42%, var(--line)); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-on .rg-hl-ic { color: var(--down); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-off { border-color: color-mix(in srgb, var(--up) 42%, var(--line)); }
+  html[data-lang="zh"] .rg-headline-row.rg-hl-off .rg-hl-ic { color: var(--up); }
+  html[data-lang="zh"] .rg-v.rg-on { color: var(--down); } html[data-lang="zh"] .rg-v.rg-off { color: var(--up); }
+  html[data-lang="zh"] .conv-badge.tier-up { color: var(--down); background: color-mix(in srgb, var(--down) 14%, transparent); border-color: color-mix(in srgb, var(--down) 40%, var(--line)); }
+  html[data-lang="zh"] .conv-badge.tier-down { color: var(--up); background: color-mix(in srgb, var(--up) 14%, transparent); border-color: color-mix(in srgb, var(--up) 40%, var(--line)); }
+  /* collapse the redundant inner chart title on the hub */
+  .scc-page #sc-hero-title { display: none; }
+  /* board universe toggle: redundant with the page-level one on a phone → desktop only.
+     (.scc-tabs.scc-tabs-board to outrank the later .scc-tabs{display:flex} base rule.) */
+  @media (max-width: 880px) { .scc-tabs.scc-tabs-board { display: none; } }
+  /* collapsible reasoning trace on conviction cards */
+  .trace-d > summary { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--muted);
+    cursor: pointer; list-style: none; padding: 4px 0; display: inline-flex; align-items: center; gap: 6px; }
+  .trace-d > summary::-webkit-details-marker { display: none; }
+  .trace-d > summary::after { content: "▾"; font-size: 10px; transition: transform .2s; }
+  .trace-d[open] > summary::after { transform: rotate(180deg); }
+  /* the full sector table, relocated BELOW the cycle map + collapsible on mobile */
+  .scc-tbl-details { margin: 18px 0 6px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); padding: 4px 6px 8px; }
+  .scc-tbl-details > summary { list-style: none; cursor: pointer; padding: 10px 10px; font-size: 14px; font-weight: 720;
+    display: flex; align-items: center; gap: 8px; }
+  .scc-tbl-details > summary::-webkit-details-marker { display: none; }
+  .scc-tbl-details > summary::after { content: "▾"; margin-left: auto; color: var(--muted); transition: transform .2s; }
+  .scc-tbl-details[open] > summary::after { transform: rotate(180deg); }
+  .scc-tbl-details > summary small { font-weight: 400; color: var(--muted); font-size: 12px; }
   /* sub-dashboard rail */
-  .scc-rail { display: flex; gap: 9px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .scc-rail { display: flex; gap: 9px; flex-wrap: wrap; margin: 6px 0 16px; position: sticky; top: 0; z-index: 30;
+    background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); padding: 7px 0; }
   .scc-rail a { font-size: 12.5px; border: 1px solid var(--line); border-radius: 9px; padding: 7px 12px;
     background: var(--panel2, var(--panel)); transition: border-color .15s; }
   .scc-rail a:hover { border-color: var(--muted); }
@@ -123,6 +166,13 @@
   /* conviction card name link */
   .card-nm a { color: inherit; border-bottom: 1px dotted color-mix(in srgb, var(--link) 45%, transparent); transition: color .15s, border-color .15s; }
   .card-nm a:hover { color: var(--link); border-bottom-color: var(--link); }
+  /* mobile: pack the live-desk quick-read chips 2-up so they don't push the chart down */
+  @media (max-width: 880px) {
+    .scc-desk-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .scc-desk-chips .chipset { min-width: 0; }
+    .scc-rail { gap: 7px; }
+    .scc-rail a { font-size: 12px; padding: 8px 10px; }
+  }
 </style>
 </head>
 <body>
@@ -139,11 +189,13 @@
     <div class="scc-asof"><span class="l-en">As of</span><span class="l-zh">截至</span> <b id="scc-asof">…</b></div>
   </header>
 
+  <p class="scc-howto"><span class="l-en"><b>New here?</b> This page maps where each China sector &amp; theme sits in its cycle on a 0–100 clock. <b>Low</b> = beaten-down / washed-out, <b>high</b> = stretched / late. Tap any line or card to read one sector’s story.</span><span class="l-zh"><b>第一次来？</b>本页用 0–100 时钟展示每个中国行业与主题在其周期中的位置。<b>低</b>=超跌／超卖，<b>高</b>=拉伸／晚期。点按任意曲线或卡片即可查看某行业的走势故事。</span></p>
+
   <div id="regime" class="regime"></div>
   <div class="scc-rail">
-    <a href="#sc-desk">📊 <span class="l-en">Live desk</span><span class="l-zh">实时看板</span></a>
-    <a href="#sc-cyclemap">🌀 <span class="l-en">Cycle map</span><span class="l-zh">周期图谱</span></a>
+    <a href="#sc-cyclemap">🌀 <span class="l-en">See the cycle map</span><span class="l-zh">查看周期图谱</span></a>
     <a href="#sc-board">🧠 <span class="l-en">Conviction board</span><span class="l-zh">信念研判</span></a>
+    <a href="#sc-desk-table" id="sc-rail-table">📊 <span class="l-en">Full sector table</span><span class="l-zh">完整行业表</span></a>
     <a href="baskets_china.html">🧺 <span class="l-en">Thematic Baskets &amp; Rotation</span><span class="l-zh">主题篮子与轮动</span> →</a>
   </div>
 
@@ -152,12 +204,10 @@
      it loads so the page degrades cleanly if the desk build hasn't run. #}
   <section class="scc-desk" id="sc-desk" hidden>
     <div class="scc-section-h">
-      <h2><span class="l-en">Live sector desk</span><span class="l-zh">行业实时看板</span></h2>
-      <span class="scc-section-sub"><span class="l-en">Every sector as a clean Shenwan index + live ETF tape — performance, relative strength, cycle position, valuation. Tap a name to focus its cycle.</span><span class="l-zh">每个行业以干净的申万指数 + ETF 实时行情呈现——表现、相对强度、周期位置、估值。点击名称聚焦其周期。</span></span>
+      <h2><span class="l-en">Live sector desk — quick read</span><span class="l-zh">行业实时看板 — 速览</span></h2>
+      <span class="scc-section-sub"><span class="l-en">The strongest, weakest, most beaten-down &amp; most overheated sectors right now. The full table is below the cycle map.</span><span class="l-zh">当前最强、最弱、最超跌与最过热的行业。完整表格在周期图谱下方。</span></span>
     </div>
     <div class="scc-desk-chips" id="sc-desk-chips"></div>
-    <div class="scc-desk-tblwrap"><table class="scc-desk-tbl" id="sc-desk-tbl"></table></div>
-    <div class="poskey" id="sc-desk-key"></div>
   </section>
 
   {# ===== UNIVERSE TOGGLE — the page-level Shenwan⇄Baskets switch. Drives BOTH the cycle
@@ -184,29 +234,34 @@
         <div class="cyc-hero-hd">
           <h2 id="sc-hero-title"><span class="l-en">Sector rotation overlay</span><span class="l-zh">板块轮动叠加</span></h2>
           <div class="cyc-hero-tools">
-            <div class="sc-ctrl-group">
-              <div class="sc-scale disabled" id="sc-scale" aria-label="Price scale">
-                <button class="sc-sbtn on" data-scale="log"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
-                <button class="sc-sbtn" data-scale="linear"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
-              </div>
-              <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
-                <button class="sc-mbtn" data-mode="price"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
-                <button class="sc-mbtn on" data-mode="osc"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+            <div class="sc-modes" id="sc-modes" aria-label="Chart mode">
+              <button class="sc-mbtn" data-mode="price" aria-pressed="false"><span class="l-en">Price</span><span class="l-zh">价格</span></button>
+              <button class="sc-mbtn on" data-mode="osc" aria-pressed="true"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></button>
+            </div>
+            <div class="sc-mode-cap"><span class="l-en">Low = washed-out · High = stretched</span><span class="l-zh">低 = 超卖 · 高 = 拉伸</span></div>
+            <div class="sc-advanced" id="sc-advanced">
+              <button type="button" class="sc-adv-toggle" id="sc-adv-toggle" aria-expanded="false" aria-controls="sc-advbody"><span class="l-en">Chart options</span><span class="l-zh">图表选项</span></button>
+              <div class="sc-adv-body" id="sc-advbody">
+                <div class="sc-scale disabled" id="sc-scale" hidden aria-label="Price scale">
+                  <button class="sc-sbtn on" data-scale="log" aria-pressed="true"><span class="l-en">Log</span><span class="l-zh">对数</span></button>
+                  <button class="sc-sbtn" data-scale="linear" aria-pressed="false"><span class="l-en">Linear</span><span class="l-zh">线性</span></button>
+                </div>
+                <div class="cyc-legend" id="sc-legend" aria-label="Legend">
+                  <span><i class="lc" style="background:color-mix(in srgb,var(--down) 42%,transparent)"></i> <span class="l-en">washed-out</span><span class="l-zh">超卖</span></span>
+                  <span><i class="lc" style="background:color-mix(in srgb,var(--muted) 32%,transparent)"></i> <span class="l-en">mid-cycle</span><span class="l-zh">中段</span></span>
+                  <span><i class="lc" style="background:color-mix(in srgb,var(--warn) 46%,transparent)"></i> <span class="l-en">stretched</span><span class="l-zh">拉伸</span></span>
+                </div>
+                <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
               </div>
             </div>
-            <div class="cyc-legend">
-              <span><i class="ls"></i> <span class="l-en">Price</span><span class="l-zh">价格</span></span>
-              <span><i class="lm lm-pk"></i> <span class="l-en">Peak</span><span class="l-zh">波峰</span></span>
-              <span><i class="lm lm-tr"></i> <span class="l-en">Trough</span><span class="l-zh">波谷</span></span>
-            </div>
-            <div class="cyc-zoom" id="sc-zoom" aria-label="Zoom"></div>
           </div>
         </div>
         <div class="cyc-groups" id="sc-groups" aria-label="Phase filter"></div>
         <div class="cyc-chips" id="sc-chips" aria-label="Sector toggles"></div>
         <div class="sc-baskets" id="sc-baskets" aria-label="Thematic baskets"></div>
+        <span id="sc-sr-status" class="sc-sr-status" role="status" aria-live="polite"></span>
         <div class="sc-chartwrap">
-          <div id="sc-chart" data-h="560" role="img" aria-label="China sector cycle overlay chart"></div>
+          <div id="sc-chart" data-h="560" role="img" aria-label="China sector cycle clock — each line a sector's 0 to 100 cycle position over time. Tap a line for its story."></div>
           <div class="sc-chart-hint" id="sc-chart-hint" hidden></div>
         </div>
       </div>
@@ -220,14 +275,23 @@
     </section>
   </section>
 
+  {# ===== FULL SECTOR TABLE — relocated below the cycle map (was burying it at ~2600px on
+     mobile). The chip-sets stay up top as the quick read; this is the deep dive, collapsed
+     on mobile. renderDesk() fills #sc-desk-tbl / #sc-desk-key by id, location-independent. #}
+  <details class="scc-tbl-details" id="sc-desk-table" hidden>
+    <summary><span class="l-en">Full sector table</span><span class="l-zh">完整行业表</span> <small><span class="l-en">— every Shenwan sector, sortable</span><span class="l-zh">— 全部申万行业，可排序</span></small></summary>
+    <div class="scc-desk-tblwrap"><table class="scc-desk-tbl" id="sc-desk-tbl"></table></div>
+    <div class="poskey" id="sc-desk-key"></div>
+  </details>
+
   <div class="scc-boardhead" id="sc-board">
     <div class="scc-section-h">
       <h2><span class="l-en">Conviction board — one gated read per name</span><span class="l-zh">信念研判 — 每个标的一个门控研判</span></h2>
-      <span class="scc-section-sub"><span class="l-en">Pick a universe to read — this switch is linked to the cycle map above.</span><span class="l-zh">选择查看的范围——此切换与上方周期图谱联动。</span></span>
+      <span class="scc-section-sub"><span class="l-en">One gated read per name — the cycle state leads, the validated credit/vol/margin regime gates it.</span><span class="l-zh">每个标的一个门控研判——周期状态主导，经验证的信用/波动率/融资体制门控。</span></span>
     </div>
     <div class="scc-tabs scc-tabs-board" role="tablist" aria-label="Conviction board universe">
-      <button class="scc-tab on" data-fam="sectors"><span class="l-en">🧭 Shenwan Sectors</span><span class="l-zh">🧭 申万行业</span> <i id="n-sec"></i></button>
-      <button class="scc-tab" data-fam="baskets"><span class="l-en">🧺 Thematic Baskets</span><span class="l-zh">🧺 主题篮子</span> <i id="n-bsk"></i></button>
+      <button class="scc-tab on" role="tab" aria-selected="true" data-fam="sectors"><span class="l-en">🧭 Shenwan Sectors</span><span class="l-zh">🧭 申万行业</span> <i id="n-sec"></i></button>
+      <button class="scc-tab" role="tab" aria-selected="false" data-fam="baskets"><span class="l-en">🧺 Thematic Baskets</span><span class="l-zh">🧺 主题篮子</span> <i id="n-bsk"></i></button>
     </div>
   </div>
   <div id="board" class="board"></div>
@@ -251,6 +315,19 @@
   function lang(){ return document.documentElement.getAttribute("data-lang") === "zh" ? "zh" : "en"; }
   function L(en, zh){ return '<span class="l-en">'+en+'</span><span class="l-zh">'+(zh==null?en:zh)+'</span>'; }
   function esc(s){ return (s==null?'':String(s)).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+  // translate an engine-emitted English value into 中文 when in zh mode (else show it as-is).
+  function zhv(en, m){ var e=(en==null?'':String(en)); return (lang()==='zh' && m[e]) ? m[e] : esc(e); }
+  var QUAD_ZH={'Goldilocks':'温和增长','Reflation':'再通胀','Stagflation':'滞胀','Deflation':'通缩','Inflation':'通胀'};
+  // liquidity is emitted lowercase ('neutral'); keep Title-case keys too as harmless extras
+  var LIQ_ZH={'neutral':'中性','easing':'宽松','tightening':'收紧','expanding':'扩张','contracting':'收缩','tight':'偏紧','loose':'宽松','supportive':'支持性','restrictive':'偏紧',
+              'Neutral':'中性','Easing':'宽松','Tightening':'收紧','Expanding':'扩张','Contracting':'收缩'};
+  var PHASE_ZH={'Topping':'见顶','Trending':'上行','Rolling over':'回落','Prime entry':'入场良机','Bottoming':'筑底','Peak':'见顶','Expansion':'上行','Downturn':'回落','Recovery':'入场良机','Trough':'筑底'};
+  var CONF_ZH={'high':'高','moderate':'中等','low/mixed':'低/混合','low':'低','mixed':'混合'};
+  // desk cycle.state is emitted as {BOTTOM WATCH, DECLINE, RALLY ON, ROLLING OVER}
+  var STATEDESK_ZH={'BOTTOM WATCH':'筑底观察','DECLINE':'下行','RALLY ON':'上行','ROLLING OVER':'回落',
+                    'Washed out':'超跌','Beaten down':'超跌','Euphoric':'过热','Overheated':'过热','Recovering':'复苏'};
+  // reasoning layers are emitted Title-case multi-word
+  var LAYER_ZH={'Cycle state':'周期状态','Forward odds':'前瞻概率','Regime gate':'体制门控','Momentum':'动量','Fragility':'脆弱度','Crowding':'拥挤度','Flow':'资金流','Heat':'热度','Trend':'趋势'};
   var asof=document.getElementById('scc-asof'); if(asof) asof.textContent=D.as_of||'';
   document.getElementById('n-sec').textContent=(D.sectors||[]).length;
   document.getElementById('n-bsk').textContent=(D.baskets||[]).length;
@@ -259,23 +336,34 @@
   function regimeBanner(){
     var risk=M.risk_on, tone=(risk==null)?'mix':(risk>0.15?'on':risk<-0.15?'off':'mix');
     var toneCls={on:'rg-on',off:'rg-off',mix:'rg-mix'}[tone];
+    // this page follows the desk's "Western colours always" choice (good=green, bad=red in
+    // BOTH languages). theme.js flips the --up/--down tokens in zh, so pick the token that
+    // stays green / red regardless of language to keep the bar in step with the flipped text.
+    var GREEN = lang()==='zh' ? 'var(--down)' : 'var(--up)';
+    var RED   = lang()==='zh' ? 'var(--up)'   : 'var(--down)';
     var dr=M.derisk_blended, drPct=dr!=null?Math.round(dr*100):null;
     var flow=M.flow||{}, tv=flow.turnover||{}, sb=flow.southbound||{}, mg=flow.margin||{};
+    // plain-language headline so a non-expert gets the "is this good or bad?" read instantly
+    var headTxt = tone==='on' ? L('China equities are risk-on right now — a broadly supportive backdrop.','当前A股偏好风险——整体环境较为有利。')
+      : tone==='off' ? L('China equities are leaning defensive right now — a cautious backdrop.','当前A股偏防御——环境趋于谨慎。')
+      : L('China equities are mixed right now — no strong risk signal either way.','当前A股信号中性——风险方向不明确。');
+    var headIc = tone==='off' ? '⚠' : tone==='on' ? '✓' : '•';
+    var head='<div class="rg-headline-row rg-hl-'+tone+'"><span class="rg-hl-ic">'+headIc+'</span><span>'+headTxt+'</span></div>';
     var cells=[];
-    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Regime gate','体制门控')+' · '+L('validated','已验证')+'</div>'+
-      '<div class="rg-v '+toneCls+'">'+esc(M.state_en||'—')+'</div>'+
-      '<div class="rg-bar"><i style="width:'+(drPct!=null?drPct:50)+'%;background:'+(tone==='off'?'var(--down)':tone==='on'?'var(--up)':'var(--muted)')+'"></i></div>'+
+    cells.push('<div class="rg-cell lead"><div class="rg-k">'+L('Market backdrop','市场环境')+' · '+L('validated','已验证')+'</div>'+
+      '<div class="rg-v '+toneCls+'">'+(lang()==='zh' && M.state_zh ? esc(M.state_zh) : esc(M.state_en||'—'))+'</div>'+
+      '<div class="rg-bar"><i style="width:'+(drPct!=null?drPct:50)+'%;background:'+(tone==='off'?RED:tone==='on'?GREEN:'var(--muted)')+'"></i></div>'+
       '<div class="rg-d">'+L('de-risk','降险')+' '+(dr!=null?dr:'—')+' · '+L('gate ×','门控 ×')+(M.gate_factor!=null?M.gate_factor:'—')+'</div></div>');
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Quad','象限')+'</div>'+
-      '<div class="rg-v">'+esc(M.quad_name||M.quad||'—')+'</div>'+
+      '<div class="rg-v">'+zhv(M.quad_name||M.quad||'—', QUAD_ZH)+'</div>'+
       '<div class="rg-d">'+L('growth','增长')+' '+(M.growth_score!=null?M.growth_score:'—')+' · '+L('infl','通胀')+' '+(M.inflation_score!=null?M.inflation_score:'—')+'</div></div>');
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('PBoC liquidity','央行流动性')+'</div>'+
-      '<div class="rg-v" style="font-size:16px">'+esc(M.liquidity||'—')+'</div>'+
+      '<div class="rg-v" style="font-size:16px">'+zhv(M.liquidity||'—', LIQ_ZH)+'</div>'+
       '<div class="rg-d">'+L('turnover','成交')+' '+(tv.turnover_t!=null?tv.turnover_t+'T ('+esc(tv.band||'')+')':'—')+'</div></div>');
     cells.push('<div class="rg-cell"><div class="rg-k">'+L('Flow & froth','资金与拥挤')+' · '+L('display','展示')+'</div>'+
       '<div class="rg-v" style="font-size:15px">'+(sb.net!=null?(sb.net>0?'+':'')+sb.net+' '+L('SB','南向'):'—')+'</div>'+
       '<div class="rg-d">'+L('margin','融资')+' '+(mg.pctile!=null?mg.pctile+'%ile':'—')+' · '+L('valn froth','估值拥挤')+' '+(flow.froth_anchor!=null?Math.round(flow.froth_anchor)+'%ile':'—')+'</div></div>');
-    document.getElementById('regime').innerHTML=cells.join('');
+    document.getElementById('regime').innerHTML=head+cells.join('');
   }
 
   /* ---- conviction card ---- */
@@ -284,7 +372,7 @@
     var nm = lang()==='zh' && s.name_zh ? s.name_zh : s.name;
     var sub = (s.kind==='basket' ? (s.etf_proxy?esc(s.etf_proxy)+' · ':'') : (esc(s.shenwan_code||'')+' · ')) + esc(lang()==='zh'?(s.group_zh||s.group):s.group);
     var chips=[];
-    if(cy.phase) chips.push('<span class="chip2">'+esc(cy.phaseLabel||cy.phase)+'</span>');
+    if(cy.phase) chips.push('<span class="chip2">'+zhv(cy.phaseLabel||cy.phase, PHASE_ZH)+'</span>');
     if(cy.pos!=null) chips.push('<span class="chip2">'+L('pos','位置')+' <b>'+Math.round(cy.pos)+'</b></span>');
     if(cy.rs_rank) chips.push('<span class="chip2">RS <b>#'+cy.rs_rank+'</b></span>');
     if(c.confluence) chips.push('<span class="chip2">'+L('confluence','共振')+' <b>'+c.confluence.agree+'/'+c.confluence.of+'</b></span>');
@@ -299,7 +387,7 @@
     // reasoning trace
     var trace=(s.reasoning||[]).map(function(r){
       return '<div class="tr-row"><span class="tr-dot tr-'+esc(r.tier)+'"></span>'+
-        '<span class="tr-layer">'+esc(r.layer)+'</span>'+
+        '<span class="tr-layer">'+zhv(r.layer, LAYER_ZH)+'</span>'+
         '<span class="tr-txt">'+L(esc(r.en),esc(r.zh||r.en))+'</span></div>';
     }).join('');
     // name → its own page: baskets open the dedicated theme page; sectors focus the embedded cycle map.
@@ -312,8 +400,8 @@
         '<div class="conv"><span class="conv-badge tier-'+dir+'">'+L(esc(c.label_en),esc(c.label_zh||c.label_en))+'</span>'+
         '<div class="conv-score">'+c.score+'</div><div class="conv-sub">'+L('conviction','信念')+'</div></div></div>'+
       '<div class="chips">'+chips.join('')+'</div>'+ fwdHtml +
-      '<div class="trace">'+trace+'</div>'+
-      '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+esc((c.confluence||{}).label||'—')+'</b> · '+
+      '<details class="trace-d"><summary>'+L('Why — the full reasoning','为何 — 完整推理')+'</summary><div class="trace">'+trace+'</div></details>'+
+      '<div class="conflu">'+L('confluence','共振度')+': <b class="'+esc((c.confluence||{}).label||'')+'">'+zhv((c.confluence||{}).label||'—', CONF_ZH)+'</b> · '+
         '<a href="'+cycHref+'" data-focus="'+esc(s.id)+'" style="color:var(--link)">'+L('open cycle →','打开周期 →')+'</a></div>'+
     '</article>';
   }
@@ -325,7 +413,7 @@
   /* keep the conviction-board universe toggle linked to the cycle-map family toggle above */
   function setBoardFam(f){
     fam=f;
-    document.querySelectorAll('.scc-tab').forEach(function(x){ x.classList.toggle('on', x.getAttribute('data-fam')===f); });
+    document.querySelectorAll('.scc-tab').forEach(function(x){ var on=x.getAttribute('data-fam')===f; x.classList.toggle('on', on); x.setAttribute('aria-selected', on?'true':'false'); });
     renderBoard();
   }
   function linkTabs(){
@@ -377,7 +465,7 @@
         ? '<span class="scc-mbar"><i style="left:'+p.score+'%"></i></span> <span class="muted" style="font-size:10.5px">'+esc(lang()==='zh'?(p.label_zh||p.label):p.label)+'</span>'
         : '<span class="na">·</span>';
       var rs=(s.rs&&s.rs.mom_60d!=null)?pcCell(s.rs.mom_60d):'<span class="na">·</span>';
-      var st=(s.cycle&&s.cycle.state)?'<span class="scc-cyc">'+esc(s.cycle.state)+'</span>':'<span class="na">·</span>';
+      var st=(s.cycle&&s.cycle.state)?'<span class="scc-cyc">'+zhv(s.cycle.state, STATEDESK_ZH)+'</span>':'<span class="na">·</span>';
       var pe=(s.valuation&&s.valuation.pe!=null)?s.valuation.pe:'·';
       var etf=(s.etf_last!=null)?s.etf_last.toFixed(3):'·';
       return '<tr><td><span class="nm"><a href="sector_cycles_china.html#'+esc(s.sw_code)+'" data-focus="'+esc(s.sw_code)+'">'+esc(nm)+'</a><small>'+esc(s.sw_code)+'</small></span></td>'+
@@ -402,6 +490,8 @@
       L('Cycle position','周期位置')+': <span class="pk pk-lo"></span> '+L('beaten down (near lows)','超跌（接近低位）')+
       ' → <span class="pk pk-hi"></span> '+L('overheated (near highs)','过热（接近高位）')+' · '+L('green = doing well, red = doing poorly','绿=表现强，红=表现弱');
     document.getElementById('sc-desk').hidden=false;
+    var dt=document.getElementById('sc-desk-table');
+    if(dt){ dt.hidden=false; dt.open = window.innerWidth>880; }   // open on desktop, collapsed on phones
   }
   function loadDesk(){
     if(!window.fetch) return;
@@ -439,6 +529,9 @@
     // card name / "open cycle →" / desk name → focus the embedded cycle map in place when possible
     var board=document.getElementById('board'); if(board) board.addEventListener('click', focusDelegate);
     var desk=document.getElementById('sc-desk'); if(desk) desk.addEventListener('click', focusDelegate);
+    // the "Full sector table" rail link should OPEN the (mobile-collapsed) table it jumps to
+    var railTbl=document.getElementById('sc-rail-table');
+    if(railTbl) railTbl.addEventListener('click', function(){ var dt=document.getElementById('sc-desk-table'); if(dt) dt.open=true; });
     document.addEventListener('langchange', function(){ regimeBanner(); renderBoard(); renderGrader(); renderDesk(); });
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();

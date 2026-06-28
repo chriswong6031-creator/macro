@@ -49,12 +49,11 @@ body { background: var(--bg); color: var(--text); }
 #sc-chart { width: 100%; height: 500px; }
 @media (min-width: 881px) { #sc-chart { height: 600px; } }
 @media (min-width: 1400px) { #sc-chart { height: 660px; } }
-@media (max-width: 880px) { #sc-chart { height: 380px; } }
+@media (max-width: 880px) { #sc-chart { height: min(56vh, 440px); } }
 /* let the hero breathe + lift the chart inside its card */
 .sc-page .cyc-hero { padding: 18px 18px 12px; }
 
 /* ---- segmented controls (scale + mode) — premium pill switch ------------ */
-.sc-ctrl-group { display: inline-flex; align-items: center; gap: 8px; }
 .sc-modes, .sc-scale { display: inline-flex; align-items: center; gap: 3px; background: var(--panel2);
   border: 1px solid var(--line); border-radius: 10px; padding: 3px; box-shadow: inset 0 1px 2px rgba(0,0,0,.18); }
 html[data-theme="light"] .sc-modes, html[data-theme="light"] .sc-scale { box-shadow: inset 0 1px 2px rgba(20,30,50,.05); }
@@ -330,7 +329,6 @@ html[data-theme="light"] .sc-openpage { color: #fff; }
 @media (max-width: 880px) {
   .sc-page .cyc-hero-hd { flex-direction: column; align-items: stretch; gap: 10px; }
   .sc-page .cyc-hero-tools { justify-content: flex-start; gap: 12px 14px; }
-  .sc-page .sc-ctrl-group { flex-wrap: wrap; gap: 8px; }
   .sc-page .cyc-zoom { flex-wrap: wrap; }
   .sc-page .sc-chip-all { padding: 6px 12px; }
 }
@@ -340,3 +338,76 @@ html[data-theme="light"] .sc-openpage { color: #fff; }
   .sc-page .sc-bask-hint { display: none; }
   .sc-page .sc-bask-caret { margin-left: auto; }
 }
+
+/* ============================================================================
+   UX overhaul — mobile control reclaim, guided-chart hint, a11y, mode-aware
+   legend. All additive / .sc-page|.scc-page-scoped. (See sector_cycles.js.)
+   ========================================================================== */
+
+/* the Log/Linear scale is hidden entirely in Cycle-position mode (scale.hidden in JS) —
+   defeat the .sc-scale{display:inline-flex} rule so [hidden] actually hides it */
+.sc-scale[hidden] { display: none !important; }
+
+/* the plain-language cycle caption beside the Price/Cycle toggle (mobile aid; the
+   desktop legend already says this, so it's hidden ≥881px) */
+.sc-mode-cap { font-size: 11px; color: var(--muted); white-space: nowrap; }
+@media (min-width: 881px) { .sc-mode-cap { display: none; } }
+
+/* "Chart options" disclosure: desktop shows scale+legend+zoom inline (toggle hidden);
+   mobile folds them behind one tap so the chart isn't buried under a 4-row control wall */
+.sc-adv-toggle { display: none; }
+.sc-advanced, .sc-adv-body { display: inline-flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.cyc-leg-hint { color: var(--link); font-weight: 600; }
+
+/* mode-aware legend band swatches reuse cycle.css .lc; nothing extra needed */
+
+@media (max-width: 880px) {
+  /* stack the hero tools so Price/Cycle + caption + "Chart options" read top-to-bottom */
+  .sc-page .cyc-hero-tools { flex-direction: column; align-items: stretch; gap: 10px; }
+  .sc-page .sc-modes { width: fit-content; }
+  .sc-page .sc-advanced { display: block; width: 100%; }
+  .sc-page .sc-adv-toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; width: fit-content;
+    font-size: 12.5px; font-weight: 700; color: var(--muted); background: var(--panel2);
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px 13px; cursor: pointer; }
+  .sc-page .sc-adv-toggle::after { content: "▾"; font-size: 11px; transition: transform .2s var(--ease); }
+  .sc-page .sc-advanced.open .sc-adv-toggle::after { transform: rotate(180deg); }
+  .sc-page .sc-adv-body { display: none; }
+  .sc-page .sc-advanced.open .sc-adv-body { display: flex; flex-direction: column; align-items: stretch; gap: 12px; margin-top: 10px; }
+
+  /* 40px minimum touch targets across every chart/phase/zoom/chip control */
+  .sc-page .sc-mbtn, .sc-page .sc-sbtn, .sc-page .cyc-zbtn, .sc-page .cyc-gchip,
+  .sc-page .sc-bchip, .sc-page .sc-bask-all, .sc-page .sc-chip-all, .sc-page .cyc-gall,
+  .sc-page .cyc-chip, .sc-page .mini-chip {
+    min-height: 40px; display: inline-flex; align-items: center; }
+  .sc-page .sc-modes, .sc-page .sc-scale { padding: 4px; }
+
+  /* phase filter = ONE horizontal-scroll row (was 132px of wrapped chips) */
+  .sc-page #sc-groups { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; padding-bottom: 6px; }
+  .sc-page #sc-groups::-webkit-scrollbar { display: none; }
+  .sc-page #sc-groups .cyc-glabel, .sc-page #sc-groups .cyc-gchip { flex: none; }
+  .sc-page .cyc-gall { margin-left: 8px; flex: none; }     /* keep "All phases" inline, not auto-pushed */
+
+  /* dim helper labels were barely legible at 10.5px+opacity — restore contrast */
+  .sc-page .cyc-zhint { opacity: 1; font-size: 11px; }
+}
+
+/* one-shot onboarding pill (top-left over the chart) — distinct from the centered
+   empty-state hint; cleared on first interaction by setFocus() */
+.sc-hint-tap { inset: auto; top: 10px; left: 10px; right: 10px; bottom: auto; display: block;
+  pointer-events: none; text-align: left; font-size: 12px; line-height: 1.45; color: var(--text);
+  background: color-mix(in srgb, var(--panel) 90%, transparent); backdrop-filter: blur(6px);
+  border: 1px solid color-mix(in srgb, var(--link) 34%, var(--line)); border-radius: 11px;
+  padding: 8px 11px; max-width: 360px; box-shadow: 0 6px 20px rgba(0,0,0,.24);
+  animation: sc-hint-in .3s var(--ease); z-index: 4; }
+@keyframes sc-hint-in { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+/* visible focus ring for keyboard users across both page chromes */
+.sc-page :focus-visible, .scc-page :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 7px; }
+
+/* honor reduced-motion for the hub chrome + the onboarding pill (the chart engine is
+   gated in JS; cycle.css already covers .cyc-page) */
+@media (prefers-reduced-motion: reduce) {
+  .scc-page *, .sc-page .sc-hint-tap { animation: none !important; transition: none !important; }
+}
+
