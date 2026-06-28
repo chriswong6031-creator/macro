@@ -1820,7 +1820,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>'
         '</div>'
         '<header class="h"><span class="eyebrow"><span class="live"></span>'
-        + _bi("Live · zero-cost data engine · updated " + built, "实时 · 零成本数据引擎 · 更新于 " + built)
+        + _bi("Live · updated " + built, "实时 · 更新于 " + built)
         + '</span><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMIND</span></h1>'
         '<p>' + _bi("Regime dashboards across every major asset class — one mechanical, backtested engine.",
