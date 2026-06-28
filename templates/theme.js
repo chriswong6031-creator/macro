@@ -314,6 +314,24 @@
     });
   }
 
+  /* ---- collapsible action lists (.lst-more button / .lst-collapse wrapper) — see the
+     "Show more" block in theme.css. Delegated on document so it also handles lists injected
+     after load (renderActNow / renderEntries write innerHTML at boot). The 7-on-wide /
+     5-on-narrow row limit is pure CSS; this only flips the collapsed state + aria. */
+  function initListCollapse() {
+    if (window.__lstMoreBound) return;            // bind once
+    window.__lstMoreBound = true;
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.lst-more') : null;
+      if (!btn) return;
+      var wrap = btn.closest('.lst-wrap');
+      var list = wrap && wrap.querySelector('.lst-collapse');
+      if (!list) return;
+      var nowCollapsed = list.classList.toggle('is-collapsed');
+      btn.setAttribute('aria-expanded', nowCollapsed ? 'false' : 'true');
+    });
+  }
+
   /* ---- progressive "show more" for standout-stock card grids ---------------
      Any element with [data-showmore="N"] shows its first N child cards and hides
      the rest behind a control bar that reveals them in chunks of N (staggered
@@ -422,6 +440,7 @@
     initActiveNav();
     initMobileNav();
     initShowMore();
+    initListCollapse();
     themeCharts();
   });
   // charts may finish drawing after DOMContentLoaded; re-theme once more on load
