@@ -232,7 +232,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
   </div>
 
   <div class="h1">🌊 {{ t('Capital Flow Velocity','资金流速') }}</div>
-  <div class="intro">{{ t('One instrument, read top to bottom — from the Stock-Connect channel pulse (all big money) down through sector lanes to the individual names driving them, with the question at every name: <b>does the institution agree?</b>','一把尺子，自上而下贯通——从沪深港通通道脉搏（全部大资金），到板块流向，再到驱动它们的个股，并在每只个股追问：<b>机构是否认同？</b>') }}</div>
+  <div class="intro">{{ t('Where China’s big money is rotating — A-share sectors ranked by 主力 (large-order) flow velocity, drilled into the individual names driving each, with the question at every name: <b>does the institution agree?</b> Cross-border Stock-Connect flows sit below, as context.','中国大资金在向哪里轮动——A股板块按主力（大单）资金流速排序，下钻至驱动它们的个股，并在每只个股追问：<b>机构是否认同？</b> 跨境沪深港通资金作为背景置于下方。') }}</div>
   <div class="note">{{ t('Display-only positioning lens — flow is <b>never</b> scored into an allocation signal. <b>Velocity</b> = standardized net-flow rate (cumulative-flow drift ÷ its own vol); <b>acceleration</b> = its 2nd derivative. <b>Confluence</b> is a binary agree/diverge read where 主力 flow and Dragon-Tiger institutional seats land on the same name — context, not a manufactured score.','仅供定位参考——资金流向<b>从不</b>计入配置信号。<b>流速</b>＝标准化净流入率（累计流向漂移 ÷ 自身波动）；<b>加速度</b>＝其二阶导。<b>共振</b>＝当主力资金与龙虎榜机构席位落在同一只个股上的二元一致/背离判断——仅为背景，非人造分值。') }}</div>
   <div class="legend">
     <span class="lg"><span class="vbar vbar-sm"><span class="vbar-track"><span class="vbar-fill pos" style="width:36%"></span></span></span> <b>{{ t('inflow','流入') }}</b></span>
@@ -241,39 +241,7 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
     <span class="lg"><i class="cdot conf-diverge"></i> <b>{{ t('divergence','背离') }}</b> <span style="color:var(--faint)">{{ t('they disagree','二者相左') }}</span></span>
   </div>
 
-  {# ============================ ZONE 1 — CHANNEL PULSE ============================ #}
-  {% if snap.aggregate %}
-  <div class="sec-h"><h2>🛰️ {{ t('Channel Pulse','通道脉搏') }}</h2>
-    <span class="sub">{{ t('the whole-channel frame · daily 1w / 1m / 3m velocity','整体通道框架 · 日度 1周 / 1月 / 3月流速') }}</span></div>
-  <div class="vgrid">
-    {% for c in snap.aggregate %}
-    <div class="vcard {{ 'frozen' if not c.live }}">
-      <div class="vcard-top">
-        <h3>{{ t(c.label, c.label_zh) }}</h3>
-        {% if c.live %}{{ vstate(c.state, c.state_zh, c.vel_primary) }}{% else %}<span class="vstate mid">{{ t('frozen','已停更') }}</span>{% endif %}
-        <span class="asof">{{ t('as of','截至') }} {{ c.as_of }}</span>
-      </div>
-      {% if c.live %}
-      <div class="vrow">
-        {% for lab in ['1w','1m','3m'] %}
-        <div class="vchip"><div class="k">{{ lab }}</div>{{ vbar(c.vel[lab], 'lg', loop.index) }}</div>
-        {% endfor %}
-      </div>
-      <div class="vmeta">
-        <span>{{ t('~1m net','近1月净额') }} <b class="chg {{ 'pos' if (c.flow_1m_b or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(c.flow_1m_b) }} {{ t('¥B','十亿') }}</b></span>
-        <span>{{ t('up-days (20)','上涨日(20)') }} <b>{{ c.pos_days_20 }}/20</b></span>
-        <span class="sp">{{ spark(c.spark) }}</span>
-      </div>
-      {% else %}
-      <div class="vmeta"><span>{{ t('20d-cum net, through the freeze','20日累计净额，至停更') }}</span><span class="sp">{{ spark(c.spark, frozen=True) }}</span></div>
-      <div class="frozen-banner">⚠ {{ t(c.note, c.note_zh) }}</div>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
-
-  {# ============================ ZONE 2 — FLOW MAP ============================ #}
+  {# ============================ FLOW MAP (PRIMARY) ============================ #}
   {% if snap.ashare_sectors or snap.hk_names %}
   {% set sbt = snap.seats_by_ticker or {} %}
   <div class="sec-h"><h2>🧭 {{ t('Flow Map','资金流向图') }}</h2>
@@ -387,6 +355,38 @@ html[data-lang="zh"] .seat.sell{color:var(--green);background:color-mix(in srgb,
     <div class="legend" style="margin-top:10px">{{ t('Southbound holdings are mainland money via Connect — a flow confirmer, not a standalone signal. '+(h.note or ''),'南向持仓为内地经互联互通的资金——资金确认项，非独立信号。') }}</div>
   </div>
   {% endif %}
+  {% endif %}
+
+  {# ============== CROSS-BORDER CONTEXT — STOCK-CONNECT CHANNELS (secondary) ============== #}
+  {% if snap.aggregate %}
+  <div class="sec-h"><h2>🛰️ {{ t('Stock-Connect Channels','沪深港通通道') }}</h2>
+    <span class="sub">{{ t('cross-border context · mainland ↔ HK aggregate flow · daily 1w / 1m / 3m velocity','跨境背景 · 内地 ↔ 香港整体资金 · 日度 1周 / 1月 / 3月流速') }}</span></div>
+  <div class="vgrid">
+    {% for c in snap.aggregate %}
+    <div class="vcard {{ 'frozen' if not c.live }}">
+      <div class="vcard-top">
+        <h3>{{ t(c.label, c.label_zh) }}</h3>
+        {% if c.live %}{{ vstate(c.state, c.state_zh, c.vel_primary) }}{% else %}<span class="vstate mid">{{ t('frozen','已停更') }}</span>{% endif %}
+        <span class="asof">{{ t('as of','截至') }} {{ c.as_of }}</span>
+      </div>
+      {% if c.live %}
+      <div class="vrow">
+        {% for lab in ['1w','1m','3m'] %}
+        <div class="vchip"><div class="k">{{ lab }}</div>{{ vbar(c.vel[lab], 'lg', loop.index) }}</div>
+        {% endfor %}
+      </div>
+      <div class="vmeta">
+        <span>{{ t('~1m net','近1月净额') }} <b class="chg {{ 'pos' if (c.flow_1m_b or 0)>=0 else 'neg' }}">{{ '%+.1f'|format(c.flow_1m_b) }} {{ t('¥B','十亿') }}</b></span>
+        <span>{{ t('up-days (20)','上涨日(20)') }} <b>{{ c.pos_days_20 }}/20</b></span>
+        <span class="sp">{{ spark(c.spark) }}</span>
+      </div>
+      {% else %}
+      <div class="vmeta"><span>{{ t('20d-cum net, through the freeze','20日累计净额，至停更') }}</span><span class="sp">{{ spark(c.spark, frozen=True) }}</span></div>
+      <div class="frozen-banner">⚠ {{ t(c.note, c.note_zh) }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
   {% endif %}
 
   <div class="foot">
