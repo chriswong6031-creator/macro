@@ -22,7 +22,7 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Rate & Inflation Transmission — {{ as_of }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --blue:{{C.blue}}; --indigo:{{C.indigo}}; --ink:{{C.ink}}; --text:{{C.text}}; --muted:{{C.muted}};
@@ -230,6 +230,55 @@ html[data-theme="dark"] .facpill{background:#222732}
       <div class="dc"><div class="dcl">{{ t('Actual − market-priced','实际−市场定价') }}</div><div class="dcv">{{ D.actual_vs_market_bp|round|int if D.actual_vs_market_bp is not none else '—' }}bp</div><div class="dcn">{{ t('core CPI vs 10y breakeven','核心CPI vs 10年盈亏平衡') }}</div></div>
     </div>
   </div>
+
+  {% if tx.breakeven_decomp %}
+  {% set BD = tx.breakeven_decomp %}
+  {% set cz = BD.cause_badge.cause %}
+  <style>
+  .bdkpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:12px;margin:10px 0 4px}
+  .bd-tag{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--grid);color:var(--ink)}
+  .bd-tag.bd-fall{background:rgba(211,11,11,.10);color:var(--red)}
+  .bd-tag.bd-rise{background:rgba(26,127,67,.12);color:var(--green)}
+  .bd b.dn{color:var(--red)} .bd b.up{color:var(--green)}
+  .bd-badge{margin-top:12px;padding:12px 14px;border-radius:12px;border-left:4px solid var(--faint);background:#f3f5f9}
+  html[data-theme="dark"] .bd-badge{background:#1c212b}
+  .bd-badge-h{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+  .bd-liquidity{border-left-color:var(--red)} .bd-growth{border-left-color:var(--amber)}
+  .bd-real_rate{border-left-color:var(--amber)} .bd-oil{border-left-color:var(--teal)}
+  .bd-reflation{border-left-color:var(--blue)} .bd-quiet{border-left-color:var(--faint)}
+  </style>
+  <div class="card bd" style="margin-top:12px">
+    <h2>{{ t('Breakeven velocity & cause — visibility only', '盈亏平衡速度与成因 — 仅供观察') }}</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:baseline;margin:2px 0 4px">
+      <div class="state-val" style="margin:0">{{ '%.2f'|format(BD.level) if BD.level is not none else '—' }}<small>% {{ t('10y breakeven','10年盈亏平衡') }}</small></div>
+      <span class="bd-tag bd-{{ 'fall' if BD.direction=='falling' else 'rise' if BD.direction=='rising' else 'flat' }}">
+        {{ t('falling','下行') if BD.direction=='falling' else t('rising','上行') if BD.direction=='rising' else t('flat','平稳') }} ·
+        {{ t('downtrend','下降趋势') if BD.trend=='downtrend' else t('uptrend','上升趋势') if BD.trend=='uptrend' else t('choppy','震荡') }}{% if BD.is_fast %} · <b>{{ t('FAST','快速') }}</b>{% endif %}
+      </span>
+    </div>
+    <div class="bdkpis">
+      <div class="kpi">{{ t('5d','5日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_5d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_5d_bp|int) if BD.velocity_bp.chg_5d_bp is not none else '—' }}bp</b></div>
+      <div class="kpi">{{ t('10d','10日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_10d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_10d_bp|int) if BD.velocity_bp.chg_10d_bp is not none else '—' }}bp</b></div>
+      <div class="kpi">{{ t('20d','20日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_20d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_20d_bp|int) if BD.velocity_bp.chg_20d_bp is not none else '—' }}bp</b></div>
+      <div class="kpi">{{ t('63d','63日') }}<b class="{{ 'dn' if (BD.velocity_bp.chg_63d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.velocity_bp.chg_63d_bp|int) if BD.velocity_bp.chg_63d_bp is not none else '—' }}bp</b></div>
+      <div class="kpi">{{ t('Accel 10d','10日加速') }}<b class="{{ 'dn' if (BD.accel_10d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.accel_10d_bp|int) if BD.accel_10d_bp is not none else '—' }}bp</b></div>
+      <div class="kpi">{{ t('Speed pctile','速度分位') }}<b>{{ (BD.fall_speed_pctile*100)|round|int if BD.fall_speed_pctile is not none else '—' }}</b></div>
+      <div class="kpi">{{ t('5y5y 20d','5y5y 20日') }}<b class="{{ 'dn' if (BD.cross_check_5y5y_chg_20d_bp or 0) < 0 else 'up' }}">{{ '%+d'|format(BD.cross_check_5y5y_chg_20d_bp|int) if BD.cross_check_5y5y_chg_20d_bp is not none else '—' }}bp</b></div>
+    </div>
+    <div class="bd-badge bd-{{ cz }}">
+      <div class="bd-badge-h">{{ t('Cause','成因') }}: {{ cz|replace('_',' ')|upper }}</div>
+      <div>{{ b(BD.cause_badge) }}</div>
+    </div>
+    {% if BD.tips_liquidity_flag %}<p class="sub" style="color:var(--red);margin-top:8px">⚠ {{ b(BD.tips_liquidity_flag) }}</p>{% endif %}
+    <div class="sub faint" style="margin-top:8px">{{ t('Co-state','联动状态') }}:
+      {{ t('oil','油') }} {{ '%+.0f'|format(BD.costate.oil_chg_20d_pct) if BD.costate.oil_chg_20d_pct is not none else '—' }}% ·
+      {{ t('real 10y','实际10年') }} {{ '%+d'|format(BD.costate.real10y_chg_20d_bp|int) if BD.costate.real10y_chg_20d_bp is not none else '—' }}bp ·
+      {{ t('nom 10y','名义10年') }} {{ '%+d'|format(BD.costate.nom10y_chg_20d_bp|int) if BD.costate.nom10y_chg_20d_bp is not none else '—' }}bp ·
+      {{ t('HY-OAS z','高收益OAS z') }} {{ BD.costate.hy_oas_z if BD.costate.hy_oas_z is not none else '—' }} ·
+      VIX {{ (BD.costate.vix_pctile*100)|round|int if BD.costate.vix_pctile is not none else '—' }}pct</div>
+    <p class="sub" style="margin-top:8px">{{ b(BD.caveat) }}</p>
+  </div>
+  {% endif %}
 
   {% if yc %}
   <!-- ===================== YIELD CURVE ===================== -->

@@ -26,7 +26,9 @@
      guides:[{x,label,kind}],               // vertical lines (e.g. TODAY)
      xTicks:[..], yTicks:[{v,label}],
      padding:{t,r,b,l}, animate:true, crosshair:true,
-     onHover:(series,pt)=>{}, onLeave:()=>{}, onPick:(id)=>{}, tip:(series,pt)=>html
+     onHover:(series,pt)=>{}, onLeave:()=>{}, onPick:(id|null)=>{}, tip:(series,pt)=>html
+                                            // onPick fires null on an empty-space click
+                                            // while focused (a "miss") so callers can deselect
    }
    ========================================================================== */
 (function () {
@@ -397,6 +399,9 @@
           if (dist < bestDist) { bestDist = dist; best = d; }
         });
         if (best && bestDist < 40) s.onPick(best.id);
+        // clicked empty space (no line within reach) while a series is focused →
+        // signal a "miss" so the page can clear the focus and un-dim every line.
+        else if (self._focus) s.onPick(null);
       });
     }
 

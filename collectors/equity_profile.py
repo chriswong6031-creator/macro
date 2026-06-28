@@ -380,17 +380,21 @@ def _wiki_summary(title: str, headers: dict) -> dict | None:
         return None
 
 
-def _wiki_description(*names: str, max_check: int = 6) -> str | None:
-    """One-paragraph business description via Wikipedia REST. opensearch ranks a
-    namesake court case / town / chemical above the company for many tickers
-    (especially ALL-CAPS SEC names), so we walk the top candidates of each search
-    term, validate each as a company page, and keep the BEST name match — a full
-    match short-circuits; a mere partial ("Antero Resources" for "Antero
-    Midstream") is rejected so a wrong sibling never wins by ranking first."""
+def _wiki_description(*names: str, max_check: int = 6) -> tuple[str | None, str | None]:
+    """One-paragraph business description AND the validated article title via
+    Wikipedia REST. opensearch ranks a namesake court case / town / chemical above
+    the company for many tickers (especially ALL-CAPS SEC names), so we walk the top
+    candidates of each search term, validate each as a company page, and keep the
+    BEST name match — a full match short-circuits; a mere partial ("Antero
+    Resources" for "Antero Midstream") is rejected so a wrong sibling never wins by
+    ranking first. Returns (extract, title); title is reused by the offshore-
+    attention collector (collectors/wiki_pageviews.py) so it never re-resolves the
+    page (and re-incurs the wrong-namesake risk)."""
     headers = {"User-Agent": WIKI_UA, "Accept": "application/json"}
     seen: set[str] = set()
     checked = 0
     best_extract: str | None = None
+    best_title: str | None = None
     best_score = 0
     for term in _search_terms(*names):
         r = _get(WIKI_OPENSEARCH.format(quote(term)), headers)
@@ -416,16 +420,19 @@ def _wiki_description(*names: str, max_check: int = 6) -> str | None:
             s = _wiki_summary(title, headers)
             if not s or not _is_company_page(s, *names):
                 continue
-            score = _match_score(s.get("title") or title, *names)
+            matched = s.get("title") or title
+            score = _match_score(matched, *names)
             if score >= 3:                      # an unambiguous full-name match
-                return _trim(s.get("extract") or "") or None
+                return _trim(s.get("extract") or "") or None, matched
             if score > best_score:              # keep the strongest partial seen
-                best_score, best_extract = score, s.get("extract") or ""
+                best_score, best_extract, best_title = score, s.get("extract") or "", matched
         if checked >= max_check:
             break
     # accept a held candidate only if it matched the WHOLE distinctive name (>=2);
     # a score-1 partial is the wrong-sibling smell → leave it blank.
-    return (_trim(best_extract or "") or None) if best_score >= 2 else None
+    if best_score >= 2:
+        return (_trim(best_extract or "") or None), best_title
+    return None, None
 
 
 def fetch_profiles(force: bool = False, max_new: int = 250,
@@ -469,12 +476,37 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
         tries = _int0(existing.loc[t].get("desc_tries"))
         return age is not None and age >= DESC_RETRY_DAYS and tries < MAX_DESC_TRIES
 
-    # new/stale names take the budget first; leftover budget retries empty descriptions
+    def title_backfill(t: str) -> bool:
+        """Backfill the wiki_title column (added for the offshore-attention chip)
+        into already-cached rows that have a description but no resolved title — so
+        the normal max_new-capped pass repopulates it incrementally without forcing
+        a full re-fetch. Gated on the DESC_RETRY_DAYS cadence so a just-fetched row
+        is never disturbed (a re-fetch could regress a good blurb). Rows still
+        missing a description are already covered by the new/stale + desc_retry
+        budgets above."""
+        if new_or_stale(t) or desc_retry(t):
+            return False
+        if existing.empty or t not in existing.index:
+            return False
+        if not _has_desc(t):
+            return False
+        wt = _cell(existing.loc[t].get("wiki_title")) if "wiki_title" in existing.columns else None
+        if wt is not None and str(wt).strip():
+            return False
+        age = _age(t)
+        return age is not None and age >= DESC_RETRY_DAYS
+
+    # new/stale names take the budget first; leftover budget retries empty
+    # descriptions, then backfills any still-missing wiki_title for the attention chip
     primary = [t for t in universe if new_or_stale(t)]
-    retries = [t for t in universe if t not in set(primary) and desc_retry(t)]
-    todo = (primary + retries)[:max_new]
-    log.info("equity_profile: %d universe, %d new/stale + %d desc-retry → fetching %d (cap %d)",
-             len(universe), len(primary), len(retries), len(todo), max_new)
+    pset = set(primary)
+    retries = [t for t in universe if t not in pset and desc_retry(t)]
+    rset = pset | set(retries)
+    backfill = [t for t in universe if t not in rset and title_backfill(t)]
+    todo = (primary + retries + backfill)[:max_new]
+    log.info("equity_profile: %d universe, %d new/stale + %d desc-retry + %d title-backfill → "
+             "fetching %d (cap %d)",
+             len(universe), len(primary), len(retries), len(backfill), len(todo), max_new)
 
     rows = []
     now = datetime.now(timezone.utc).isoformat()
@@ -493,11 +525,17 @@ def fetch_profiles(force: bool = False, max_new: int = 250,
             rec.update({k: v for k, v in sec.items() if v is not None})
         # Search the clean display name FIRST, the (ALL-CAPS) SEC name as backup:
         # "MICROSOFT CORP" ranks the EU antitrust case ahead of the company.
-        desc = _wiki_description(display, rec.get("name"))
+        desc, wtitle = _wiki_description(display, rec.get("name"))
         prior_desc = prior.get("description")
         if not desc and isinstance(prior_desc, str) and prior_desc.strip():
             desc = prior_desc                       # never regress a good blurb on a failed retry
         rec["description"] = desc or None
+        # persist the validated article title (reused by the offshore-attention
+        # collector so it never re-resolves the page); never regress a good title.
+        prior_title = prior.get("wiki_title")
+        if not wtitle and isinstance(prior_title, str) and prior_title.strip():
+            wtitle = prior_title
+        rec["wiki_title"] = wtitle or None
         # bound the retry loop: reset on success, increment on a still-empty fetch
         rec["desc_tries"] = 0 if rec["description"] else _int0(prior.get("desc_tries")) + 1
         rec["source"] = "wikipedia+sec"

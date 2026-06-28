@@ -356,25 +356,51 @@
   function applyVisibility() {
     var allOff = PHASE_FILTER.every(function (p) { return !phaseState[p.key]; });
     function phaseOK(s) { return allOff || phaseState[s.now.phase]; }
-    // only the ACTIVE family is ever on the chart; in the sectors section all 11 are on
-    // (subject to phase filter), in the baskets section only the ones the user selected.
+    // An explicit user pick is never hidden by a facet: the focused item, or a basket
+    // already overlaid on the chart. Without this carve-out a facet could strand a
+    // selection behind display:none — no off-toggle, and a lying "N on chart" counter.
+    function pinned(s) { return s.id === state.focus || (s.kind === "basket" && !!basketShown[s.id]); }
+    function keepShown(s) { return phaseOK(s) || pinned(s); }
+    // only the ACTIVE family is ever on the chart; sectors obey the phase facet, baskets
+    // ride on the chart only when selected — and an explicit pick overrides the facet.
     chartHidden = {};
     ALL.forEach(function (s) {
       var sel = s.kind === "basket" ? !!basketShown[s.id] : true;
-      chartHidden[s.id] = !(isActive(s) && phaseOK(s) && sel);
+      chartHidden[s.id] = !(isActive(s) && sel && keepShown(s));
     });
+    // When a "Where they stand" facet is active, off-phase sectors/baskets are
+    // REMOVED from the selector (not just dimmed) — so the chip rail and card grid
+    // show only the active facet's members, no horizontal hunting through greyed chips.
     document.querySelectorAll(".cyc-card").forEach(function (cd) {
       var s = byId[cd.getAttribute("data-id")]; if (!s) return;
-      var inF = phaseOK(s);
-      cd.classList.toggle("gdim", !inF);
-      cd.style.order = inF ? "0" : "1";
+      cd.classList.toggle("sc-hide", !keepShown(s));
     });
     document.querySelectorAll(".cyc-chip, .sc-bchip").forEach(function (b) {
       var s = byId[b.getAttribute("data-id")]; if (!s) return;
-      b.classList.toggle("gdim", !phaseOK(s));
+      b.classList.toggle("sc-hide", !keepShown(s));
     });
+    // collapse any thematic-basket category group whose chips are now all filtered out
+    document.querySelectorAll(".sc-bask-cat").forEach(function (cat) {
+      var any = false;
+      cat.querySelectorAll(".sc-bchip").forEach(function (b) { if (!b.classList.contains("sc-hide")) any = true; });
+      cat.classList.toggle("sc-hide", !any);
+    });
+    // a11y: announce the filtered count for screen readers (silent for sighted users)
+    var act = activeList(), shownN = act.filter(keepShown).length;
+    srStatus(shownN < act.length ? L(shownN + " of " + act.length + " shown", "已显示 " + shownN + " / " + act.length + " 项") : "");
     updateChartHint();
     if (heroChart) { heroChart.setHidden(chartHidden); rebuildHero(false); }
+  }
+  // visually-hidden live region near the phase chips — created once, lazily
+  function srStatus(msg) {
+    var node = document.getElementById("sc-sr-status");
+    if (!node) {
+      var host = document.getElementById("sc-groups"); if (!host || !host.parentNode) return;
+      node = el("span", "sc-sr-status"); node.id = "sc-sr-status";
+      node.setAttribute("role", "status"); node.setAttribute("aria-live", "polite");
+      host.parentNode.appendChild(node);
+    }
+    if (node.textContent !== msg) node.textContent = msg;
   }
   function updateChartHint() {
     var hint = document.getElementById("sc-chart-hint");
@@ -775,8 +801,14 @@
     var noun = baskets ? L("baskets", "篮子") : L("sectors", "板块");
     var buckets = { Peak: [], Expansion: [], Downturn: [], Recovery: [], Trough: [] };
     activeList().forEach(function (s) { (buckets[s.now.phase] || (buckets[s.now.phase] = [])).push(s); });
-    function row(title, list, note) {
-      if (!list.length) return "";
+    function row(title, list, note, emptyMsg) {
+      if (!list.length) {
+        // an empty bucket is normally dropped; pass emptyMsg to keep the row with a
+        // "none right now" note (Prime entry is always shown so its absence is explicit).
+        if (!emptyMsg) return "";
+        return '<div class="xc-row xc-row-empty"><div class="xc-rh">' + title + '<span>' + note + '</span></div>' +
+          '<div class="xc-empty">' + emptyMsg + '</div></div>';
+      }
       var chips = list.map(function (s) {
         return '<button class="mini-chip" data-id="' + s.id + '" style="--c:' + s.accent + '"><span class="dot"></span>' + shortNm(s) + '</button>';
       }).join("");
@@ -806,7 +838,9 @@
           row(L("Topping · late", "见顶 · 晚期"), buckets.Peak, L("thin cushion", "缓冲薄弱")) +
           row(L("Trending", "上行中"), buckets.Expansion, L("healthy up-trend", "健康上行")) +
           row(L("Rolling over", "回落中"), buckets.Downturn, L("declining", "下行中")) +
-          row(L("Prime entry", "入场良机"), buckets.Recovery, L("bottomed · turning up", "已筑底 · 转强")) +
+          row(L("Prime entry", "入场良机"), buckets.Recovery, L("bottomed · turning up", "已筑底 · 转强"),
+              L("No " + (baskets ? "baskets" : "sectors") + " are at prime entry right now.",
+                "目前没有处于入场良机的" + (baskets ? "篮子" : "板块") + "。")) +
           row(L("Bottoming", "筑底中"), buckets.Trough, L("washed-out", "超卖")) +
         '</div>' +
       '</div>' +

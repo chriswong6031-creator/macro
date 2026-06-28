@@ -109,6 +109,7 @@ def all_adapters() -> dict:
         # FINRA short interest (Phase 3) is ticker-indexed, fetched from build_factors (like EDGAR), not here.
         ("sentiment_naaim", "collectors.sentiment", "NaaimAdapter"),
         ("sentiment_aaii", "collectors.sentiment", "AaiiAdapter"),
+        ("wiki_pageviews", "collectors.wiki_pageviews", "WikiPageviewsAdapter"),  # offshore attention (display-only; Phase-0 scripts/wiki_attention_phase0.py)
         ("sector_flows", "collectors.sponsors", "SectorFlowAdapter"),
         ("holdings", "collectors.holdings", "HoldingsAdapter"),
         ("etf_holdings", "collectors.etf_holdings", "EtfHoldingsAdapter"),
@@ -137,6 +138,7 @@ def all_adapters() -> dict:
         ("treasury_auctions", "collectors.treasury_auctions", "TreasuryAuctionsAdapter"),  # TreasuryDirect auction RESULTS -> supply-absorption panel (display-only)
         # China A-share dashboard — see research/CHINA_DATA_AUDIT.md
         ("china_prices", "collectors.china_prices", "ChinaPriceAdapter"),
+        ("china_stocks", "collectors.china_stock_prices", "ChinaStockPriceAdapter"),  # per-NAME daily OHLC (high/low) for the signal engine — research/signal_engine/MULTICOUNTRY_DATA.md
         ("china_macro", "collectors.china_macro", "ChinaMacroAdapter"),
         ("china_breadth", "collectors.china_breadth", "ChinaBreadthAdapter"),
         ("china_universe", "collectors.china_universe", "ChinaUniverseAdapter"),  # broad A-share SEARCH set (decoupled from breadth)
@@ -156,6 +158,7 @@ def all_adapters() -> dict:
         # Hong Kong / Hang Seng dashboard — see research/HK_DATA_AUDIT.md
         # (macro reused from china_macro; flows reused from china_connect/china_flows)
         ("hk_prices", "collectors.hk_prices", "HkPriceAdapter"),
+        ("hk_stocks", "collectors.hk_stock_prices", "HkStockPriceAdapter"),  # per-NAME daily OHLC (high/low) for the signal engine — research/signal_engine/MULTICOUNTRY_DATA.md
         ("hk_breadth", "collectors.hk_breadth", "HkBreadthAdapter"),
         ("hkma", "collectors.hkma", "HkmaAdapter"),                            # peg-funding: Aggregate Balance + HIBOR + TWI
         ("hk_indices", "collectors.hk_indices", "HkIndicesAdapter"),           # true Hang Seng TECH (HSTECH) index OHLCV — retires the 3033.HK ETF proxy

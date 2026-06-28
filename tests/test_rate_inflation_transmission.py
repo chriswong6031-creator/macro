@@ -127,6 +127,95 @@ def test_snapshot_degrades_when_columns_missing():
     assert s is not None and "state" in s
 
 
+# --------------------------------------------------------------------------- #
+# breakeven velocity + causal decomposition (display-only visibility layer)
+# --------------------------------------------------------------------------- #
+def _bd_base(n: int = 600, seed: int = 3):
+    idx = pd.bdate_range("2019-01-01", periods=n)
+    rng = np.random.default_rng(seed)
+    nz = lambda c, s: c + rng.normal(0, s, n)  # noqa: E731
+    f = pd.DataFrame(index=idx)
+    f["us10y"] = nz(4.0, 0.01)
+    f["us10y_real"] = nz(1.8, 0.01)
+    f["breakeven_10y"] = nz(2.2, 0.005)
+    f["breakeven_5y5y"] = nz(2.2, 0.005)
+    f["oil"] = nz(80.0, 0.4)
+    f["gold"] = nz(2000.0, 8.0)
+    f["hy_oas"] = nz(3.5, 0.03)
+    f["vix_close"] = nz(16.0, 0.5)
+    return f, idx
+
+
+def _ramp(f, idx, col, end, k=20):
+    f.loc[idx[-k:], col] = np.linspace(float(f[col].iloc[-k - 1]), end, k)
+
+
+def test_breakeven_decomp_structure_and_bilingual():
+    f, idx = _bd_base()
+    bd = rit.breakeven_decomposition(f)
+    assert bd is not None
+    for key in ("level", "velocity_bp", "accel_10d_bp", "fall_speed_pctile",
+                "trend", "direction", "cause_badge", "costate", "caveat"):
+        assert key in bd, key
+    assert bd["cause_badge"]["en"] and bd["cause_badge"]["zh"]
+    assert bd["caveat"]["en"] and bd["caveat"]["zh"]
+    assert bd["direction"] in {"falling", "rising", "flat"}
+    assert bd["trend"] in {"downtrend", "uptrend", "choppy", "n/a"}
+
+
+def test_breakeven_decomp_oil_cause_and_no_false_liquidity_flag():
+    f, idx = _bd_base()
+    _ramp(f, idx, "breakeven_10y", 2.0)       # -20bp (falling)
+    _ramp(f, idx, "breakeven_5y5y", 2.15)     # -5bp (10y falls faster)
+    _ramp(f, idx, "oil", 60.0)                # -25% oil crash
+    # credit + vol stay CALM (no ramp) -> oil is the cause, NOT liquidity
+    bd = rit.breakeven_decomposition(f)
+    assert bd["direction"] == "falling"
+    assert bd["cause_badge"]["cause"] == "oil"
+    # 10y falls faster than 5y5y but credit/vol calm -> the TIPS-liquidity flag must NOT fire
+    assert bd["tips_liquidity_flag"] is None
+
+
+def test_breakeven_decomp_real_rate_cause():
+    f, idx = _bd_base()
+    _ramp(f, idx, "breakeven_10y", 2.0)       # falling
+    _ramp(f, idx, "us10y_real", 1.95)         # +15bp real-rate rise, oil flat
+    bd = rit.breakeven_decomposition(f)
+    assert bd["cause_badge"]["cause"] == "real_rate"
+
+
+def test_breakeven_decomp_liquidity_cause_and_flag():
+    f, idx = _bd_base()
+    _ramp(f, idx, "breakeven_10y", 2.0)       # falling
+    _ramp(f, idx, "breakeven_5y5y", 2.15)     # 10y faster than 5y5y
+    _ramp(f, idx, "us10y", 3.8)               # nominals rallying (-20bp)
+    _ramp(f, idx, "hy_oas", 6.5, k=10)        # credit blowout -> high z
+    _ramp(f, idx, "vix_close", 42.0, k=10)    # vol spike -> high pctile
+    bd = rit.breakeven_decomposition(f)
+    assert bd["cause_badge"]["cause"] == "liquidity"
+    assert bd["tips_liquidity_flag"] is not None        # stressed + 10y faster -> fires
+    assert bd["costate"]["hy_oas_z"] >= 1.0
+
+
+def test_breakeven_decomp_quiet_when_flat():
+    f, idx = _bd_base()
+    bd = rit.breakeven_decomposition(f)        # no ramps -> roughly flat
+    assert bd["direction"] == "flat"
+    assert bd["cause_badge"]["cause"] == "quiet"
+
+
+def test_breakeven_decomp_none_without_breakeven():
+    f, idx = _bd_base()
+    f = f.drop(columns=["breakeven_10y"])
+    assert rit.breakeven_decomposition(f) is None
+
+
+def test_breakeven_decomp_in_snapshot():
+    f = _synthetic_frame()
+    s = rit.snapshot(f)
+    assert "breakeven_decomp" in s
+
+
 def test_disabled_returns_none(monkeypatch):
     from lib import config
     base = config.load()

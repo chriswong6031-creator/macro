@@ -222,11 +222,12 @@ def test_fetch_retries_only_eligible_description_gaps():
     existing.index.name = "ticker"
 
     # Wikipedia succeeds for everyone EXCEPT names carrying FAIL/REGRESS in them
+    # Returns (extract, title): title is reused by the offshore-attention collector.
     def wiki(*names):
         nm = " ".join(str(n) for n in names if n)
         if "FAIL" in nm or "REGRESS" in nm:
-            return None
-        return f"{names[0]} is a company."
+            return None, None
+        return f"{names[0]} is a company.", str(names[0]).replace(" ", "_")
 
     out = _fetch_with_stubs(existing, wiki)
 
