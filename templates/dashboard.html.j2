@@ -4,6 +4,39 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{# Risk-Radar scare-chip hover explainer (Market State board, .msr-scare): says
+   what the alert MEASURES + what its CURRENT band/score means. scare = key
+   credit|rates|bubble|growth|vol; band = calm|watch|caution|elevated|risk-off
+   (engine/risk_radar.py). Bilingual via t(). #}
+{% macro rr_scare_tip(scare, band) -%}
+{%- set base = {
+  'credit':  ('Credit stress — high-yield spreads (OAS) widening fast and junk bonds underperforming Treasuries: the market repricing default and funding risk. Credit usually cracks BEFORE equities, which is why this is a validated leading leg.',
+              '信用压力——高收益利差（OAS）快速走阔、垃圾债跑输国债：市场在重新定价违约与融资风险。信用通常在股票之前破裂，故为经验证的领先因子。'),
+  'rates':   ('Rates / inflation shock — a fast repricing of interest rates: a jump in bond-market volatility (MOVE) and real yields. An inflation or policy surprise forcing equities to re-rate lower.',
+              '利率/通胀冲击——利率的快速重新定价：债市波动率（MOVE）与实际利率跳升。通胀或政策意外迫使股票向下重估。'),
+  'bubble':  ('Bubble / blow-off unwind — an over-extended, euphoric tape with narrowing leadership starting to roll over: a speculative blow-off topping out.',
+              '泡沫/见顶回吐——过度拉伸、亢奋的盘面伴随收窄的领涨结构开始见顶：投机性见顶回落。'),
+  'growth':  ('Growth scare / defensive rotation — defensive sectors (staples, utilities, low-vol) outperforming cyclicals as investors rotate to safety ahead of slowing growth.',
+              '增长恐慌/防御轮动——防御板块（必需消费、公用、低波）跑赢周期股，投资者在增长放缓前轮动至防御。'),
+  'vol':     ('Volatility event — watches for a fast vol spike (VIX term-structure inversion, put/call, dealer gamma). DISPLAY-ONLY: deep options-flow history is not freely available, so this leg accrues forward and self-validates — do not trade it on its own yet.',
+              '波动率事件——监测快速波动率飙升（VIX期限结构倒挂、认沽/认购、做市商Gamma）。仅展示：深度期权流历史无法免费获取，故该因子前向累积并自我验证——暂不单独据此交易。'),
+} -%}
+{%- set st = {
+  'calm':     ('Right now CALM — no meaningful signal in this bucket.',
+               '当前平静——该类别无明显信号。'),
+  'watch':    ('Right now WATCH (earliest live tier) — faint stirrings; high-recall but low-precision. Note it, but do not act on it alone.',
+               '当前观察（最早活跃层）——微弱迹象；高召回低精度。留意即可，暂不单独据此行动。'),
+  'caution':  ('Right now CAUTION — multiple legs firing and pressure building, but the broad tape is still intact.',
+               '当前警惕——多个因子触发、压力上升，但大盘尚未破位。'),
+  'elevated': ('Right now ELEVATED (loud tier) — this fires only when the broad market is also breaking. Trim gross and raise hedges.',
+               '当前升高（响亮层）——仅在大盘同步破位时触发。降低总仓位并增加对冲。'),
+  'risk-off': ('Right now RISK-OFF (loudest) — a conjunction of confirmed legs; defensive sizing is warranted. De-risk means a smaller book, not a different one.',
+               '当前避险（最响）——多因子共振确认；应采取防御性仓位。去风险是减小仓位，而非更换持仓。'),
+} -%}
+{%- set b = base.get(scare, ('', '')) -%}
+{%- set s = st.get(band, st['calm']) -%}
+{{ t(b[0], b[1]) }}<br><br>{{ t(s[0], s[1]) }}
+{%- endmacro %}
 {# coloured, arrowed direction word for a nowcast metric (from nowcast_hist) #}
 {% macro trendword(nh) -%}
 {% if nh and nh.trend %}{% set _ar = {'rising':'▲','accelerating':'▲','falling':'▼','cooling':'▼','flat':'▶'} %}{% set _zh = {'rising':'上行','falling':'下行','accelerating':'加速','cooling':'降温','flat':'走平'} %}<span class="tw tw-{{ nh.dir }}">{{ _ar[nh.trend] }} <span class="l-en">{{ nh.trend }}</span><span class="l-zh">{{ _zh[nh.trend] }}</span></span>{% endif %}
@@ -1136,8 +1169,19 @@
   @media(max-width:760px){body.page-macro .ms-radar .msr-do{max-width:none;flex:1 1 100%}}
   body.page-macro .ms-radar .msr-scares{display:flex;flex-wrap:wrap;align-items:center;gap:5px;flex:1 1 100%;
     margin-top:4px;padding-top:7px;border-top:var(--rule) solid var(--hair);font-size:10.5px;color:var(--ink-3)}
-  body.page-macro .ms-radar .msr-scare{border:var(--rule) solid var(--hair);border-radius:6px;padding:1px 7px;color:var(--ink-2);background:var(--panel)}
+  body.page-macro .ms-radar .msr-scare{border:var(--rule) solid var(--hair);border-radius:6px;padding:1px 7px;color:var(--ink-2);background:var(--panel);position:relative;cursor:help}
   body.page-macro .ms-radar .msr-scare b{font-family:var(--num)}
+  /* hover explainer on each scare chip — what the alert means in its current state.
+     Reuses the global tooltip edge-detection JS (it keys on .msr-scare too). */
+  body.page-macro .ms-radar .msr-scare > .tip{display:none;position:absolute;bottom:150%;left:50%;
+    transform:translateX(-50%);width:290px;max-width:78vw;background:var(--panel);border:1px solid var(--line);
+    padding:9px 11px;border-radius:8px;z-index:60;font-size:12px;line-height:1.45;color:var(--text);
+    text-align:left;font-weight:400;letter-spacing:normal;box-shadow:var(--popover-shadow);
+    pointer-events:none;white-space:normal}
+  body.page-macro .ms-radar .msr-scare:hover > .tip{display:block}
+  body.page-macro .ms-radar .msr-scare.below > .tip{bottom:auto;top:150%}
+  body.page-macro .ms-radar .msr-scare.edge-right > .tip{left:auto;right:0;transform:none}
+  body.page-macro .ms-radar .msr-scare.edge-left > .tip{left:0;right:auto;transform:none}
 
   /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
      replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
@@ -1294,7 +1338,7 @@
            detail folded up from the (now-removed) standalone card. Full per-leg detail +
            self-audit live on the Macro Signals data page. #}
         {% if rd.state in ['caution','elevated','risk-off'] and latest.risk_radar and latest.risk_radar.scares %}
-        <span class="msr-scares">{{ t('Stress:','压力来源：') }}{% for s in latest.risk_radar.scares %}{% if s.score is not none and s.score >= 25 %}{% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else 'var(--ink-3)')) %}<span class="msr-scare" style="border-color:{{ sb }}">{{ t(s.label_en, s.label_zh) }} <b style="color:{{ sb }}">{{ s.score|round|int }}</b></span>{% endif %}{% endfor %}</span>
+        <span class="msr-scares">{{ t('Stress:','压力来源：') }}{% for s in latest.risk_radar.scares %}{% if s.score is not none and s.score >= 25 %}{% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else 'var(--ink-3)')) %}<span class="msr-scare" style="border-color:{{ sb }}">{{ t(s.label_en, s.label_zh) }} <b style="color:{{ sb }}">{{ s.score|round|int }}</b><span class="tip">{{ rr_scare_tip(s.scare, s.band) }}</span></span>{% endif %}{% endfor %}</span>
         {% endif %}
       </div>
       {% endif %}
@@ -2897,7 +2941,7 @@
   // keep tooltips on-screen: open downward near the top, and anchor to the
   // nearest side when close to the left/right viewport edges
   document.addEventListener('mouseover', function (e) {
-    var h = e.target.closest('.help, .hovchart');
+    var h = e.target.closest('.help, .hovchart, .msr-scare');
     if (!h) return;
     var r = h.getBoundingClientRect();
     var tip = h.querySelector('.tip');
