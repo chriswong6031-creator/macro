@@ -39,10 +39,8 @@ mastermind-x.com, www.mastermind-x.com {
 	# Self-signed origin cert; pair with Cloudflare SSL mode = "Full".
 	tls internal
 
-	log {
-		output file /var/log/caddy/access.log {
-			roll_size 20mb
-			roll_keep 5
-		}
-	}
+	# Access logs go to journald (`journalctl -u caddy`). We deliberately do NOT
+	# write a file log: the stock caddy.service systemd sandbox only permits writes
+	# under /var/lib/caddy, so a /var/log/caddy file sink fails with EACCES and
+	# crashes startup. journald is the idiomatic, sandbox-safe sink.
 }
