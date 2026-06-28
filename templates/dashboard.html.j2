@@ -1603,6 +1603,80 @@
   </div>
   {% endif %}
 
+  <!-- ===================== FROTH & FRAGILITY — retail euphoria + hidden distribution (display-only) ===================== -->
+  {% if mode != 'stocks' and froth_fragility %}
+  {% set ff = froth_fragility %}
+  {% set ffc = 'var(--up)' if ff.band == 'calm' else ('var(--warn)' if ff.band in ['watch','elevated'] else 'var(--down)') %}
+  {% set ax = ff.face_a.score if ff.face_a.score is not none else 0 %}
+  {% set bx = ff.face_b.score if ff.face_b.score is not none else 0 %}
+  <div class="panel span12" id="froth-fragility" style="border-left:3px solid {{ ffc }}">
+    <h2>🫧 {{ t('Froth & Fragility — retail euphoria vs hidden distribution', '狂热与脆弱 — 零售欣喜 vs 隐性派发') }}
+      {% if ff.headline is not none %}<span style="color:{{ ffc }};font-weight:800">{{ ff.headline|round|int }}<small style="font-size:13px;font-weight:600;color:var(--muted)">/100 · {{ t(ff.band|capitalize, ff.band_zh) }}</small></span>{% endif %}
+      {% if ff.provisional %}<span class="badge sm" style="margin-left:6px" title="forward record still accruing">{{ t('provisional', '暂定') }}</span>{% endif %}
+      {{ help("A top-risk gauge that measures what a single VIX read cannot: retail EUPHORIA (Face A — semis/AI parabolicity) AND hidden DISTRIBUTION (Face B — a rotating decline under a pinned index, where the cap-weighted index and VIX stay calm because the leaders take turns falling / rotation holds the tape up). The honest read is the 2D danger-quadrant: only EUPHORIC AND FRAGILE together is a distribution-top risk. VIX is coincident index implied-vol — it is √ρ·σ̄, so falling single-stock correlation mechanically pins it low while internal risk builds; this gauge fuses the LEADING internals it misses. DISPLAY-ONLY / validation-accruing: it feeds NO score and NO allocation — the only sanctioned response is SIZING (de-risk), never selection. Each firing is logged and graded on forward QQQ/SMH drawdown + VIX jump.", "一个顶部风险计，衡量单看 VIX 无法捕捉的两面：零售欣喜（A 面——半导体/AI 抛物化）与隐性派发（B 面——被托住的指数下的轮动式下行：龙头轮流下跌或板块轮动撑住大盘，使市值加权指数与 VIX 保持平静）。诚实读法是二维危险象限：唯有“欣喜且脆弱”同时出现才是派发顶部风险。VIX 是同步的指数隐含波动率——约等于 √ρ·σ̄，因此个股相关性下降会机械地把它压低，而内部风险却在累积；本计融合它错过的领先内部指标。仅供展示／积累验证：不计分、不驱动仓位——唯一被许可的回应是减仓，绝非选股。每次触发都会记录并以未来 QQQ/SMH 回撤与 VIX 跳升评分。") }}
+    </h2>
+
+    {% if ff.face_a.score is not none or ff.face_b.score is not none %}
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+      <!-- 2D danger-quadrant -->
+      <div style="flex:0 0 auto">
+        {% set dotx = 12 + ax/100*200 %}{% set doty = 12 + (100-bx)/100*200 %}
+        <svg viewBox="0 0 224 244" width="224" height="244" style="max-width:100%">
+          <rect x="146" y="12" width="76" height="64" fill="#d04545" opacity="0.20"/>
+          <rect x="12"  y="12" width="134" height="64" fill="#e0a030" opacity="0.13"/>
+          <rect x="146" y="76" width="76" height="146" fill="#e0a030" opacity="0.13"/>
+          <rect x="12"  y="76" width="134" height="146" fill="#3fa66a" opacity="0.12"/>
+          <line x1="146" y1="12" x2="146" y2="222" stroke="var(--line)" stroke-dasharray="3 3"/>
+          <line x1="12" y1="76" x2="222" y2="76" stroke="var(--line)" stroke-dasharray="3 3"/>
+          <rect x="12" y="12" width="210" height="210" fill="none" stroke="var(--line)"/>
+          <text x="184" y="48" text-anchor="middle" font-size="9" fill="var(--down)" font-weight="700">TOP RISK</text>
+          <text x="79"  y="48" text-anchor="middle" font-size="9" fill="var(--muted)">STRESS</text>
+          <text x="184" y="152" text-anchor="middle" font-size="9" fill="var(--muted)">LEADERS<tspan x="184" dy="11">ROLLING</tspan></text>
+          <text x="79"  y="152" text-anchor="middle" font-size="9" fill="var(--muted)">BENIGN</text>
+          <circle cx="{{ dotx|round(1) }}" cy="{{ doty|round(1) }}" r="6.5" fill="{{ ffc }}" stroke="var(--bg)" stroke-width="2"/>
+          <text x="117" y="238" text-anchor="middle" font-size="10" fill="var(--muted)">{{ t('Euphoria →','欣喜 →') }}</text>
+          <text x="10" y="117" text-anchor="middle" font-size="10" fill="var(--muted)" transform="rotate(-90 10 117)">{{ t('Fragility →','脆弱 →') }}</text>
+        </svg>
+        <div class="sm" style="text-align:center;font-weight:700;color:{{ ffc }};max-width:224px">{{ t(ff.quadrant_en, ff.quadrant_zh) }}</div>
+      </div>
+
+      <!-- faces + stealth meter -->
+      <div style="flex:1 1 320px;min-width:280px">
+        <div style="font-size:12px;font-weight:600">{{ t('Face A — Euphoria','A 面 — 欣喜') }} <span style="float:right">{{ ax|round|int }}/100</span></div>
+        <div class="rm-bar" style="margin:3px 0 9px">{% for f in ff.face_a.legs %}{% if f.available and f.points %}<div style="width:{{ f.points }}%;background:{{ f.color }}" title="{{ f.label }}: {{ f.points }}"></div>{% endif %}{% endfor %}</div>
+        <div style="font-size:12px;font-weight:600">{{ t('Face B — Fragility / distribution','B 面 — 脆弱／派发') }} <span style="float:right">{{ bx|round|int }}/100</span></div>
+        <div class="rm-bar" style="margin:3px 0 9px">{% for f in ff.face_b.legs %}{% if f.available and f.points %}<div style="width:{{ f.points }}%;background:{{ f.color }}" title="{{ f.label }}: {{ f.points }}"></div>{% endif %}{% endfor %}</div>
+        {% if ff.stealth.score is not none %}
+        <div style="font-size:12px;font-weight:600">{{ t('Stealth distribution','潜伏派发') }}
+          <span style="float:right">{{ ff.stealth.score|round|int }}/100 · {{ ff.stealth.n_lit }}/{{ ff.stealth.n_available or 5 }} · {{ t('gate','闸门') }}: {{ ff.stealth.gate_state|replace('_',' ') }}</span></div>
+        <div class="rm-bar" style="margin:3px 0 4px"><div style="width:{{ ff.stealth.score }}%;background:{{ '#d04545' if ff.stealth.stealth_fire else '#e0a030' }}"></div></div>
+        {% if ff.stealth.vix_decomp %}<div class="muted" style="font-size:10.5px">{{ t('Why VIX is calm','VIX 为何平静') }} {{ help(ff.stealth.vix_decomp, ff.stealth.vix_decomp) }}</div>{% endif %}
+        {% if ff.unwind_risk %}<div class="sm" style="color:var(--down);font-weight:700;margin-top:4px">⚠ {{ t('Unwind risk — correlation snapping back','解构风险——相关性正在回弹') }}</div>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- per-leg breakdown -->
+    <table class="rm-tbl" style="margin-top:12px">
+      <tr><th class="l">{{ t('Leg','腿') }}</th><th>{{ t('Reading','读数') }}</th><th>{{ t('Weight','权重') }}</th><th>{{ t('Points','贡献') }}</th></tr>
+      {% for f in ff.face_a.legs + ff.face_b.legs %}
+      <tr{% if not f.scored %} style="opacity:0.62"{% endif %}><td class="l"><span class="rm-dot" style="background:{{ f.color }}"></span>{{ t(f.label, f.label_zh) }}{% if f.pill == 'accruing' %} <span class="badge sm">{{ t('accruing','积累中') }}</span>{% elif f.pill == 'context' %} <span class="badge sm">{{ t('context','背景') }}</span>{% endif %}
+        {% if f.note %}<div class="muted" style="font-size:10.5px;margin-left:15px">{{ t(f.note, f.note_zh) }}</div>{% endif %}</td>
+        <td>{{ (f.sub|round|int ~ '/100') if f.sub is not none else '—' }}</td>
+        <td>{{ '%.2f'|format(f.weight) }}</td>
+        <td><b>{{ ('%.1f'|format(f.points)) if f.points is not none else '—' }}</b></td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p class="muted sm">{{ t('Not enough data to compute the gauge right now.','当前数据不足以计算该指标。') }}</p>
+    {% endif %}
+
+    <p class="muted sm" style="margin:8px 0 0">{% if ff.provisional and ff.provisional_note %}<b>{{ t('Provisional','暂定') }}:</b> {{ t(ff.provisional_note, ff.provisional_note) }} {% endif %}
+      {% if ff.track_record and ff.track_record.n %}{{ t('Forward record','前瞻记录') }}: {{ ff.track_record.n }} {{ t('firings','次触发') }} · {{ (ff.track_record.hit_rate * 100)|round|int }}% {{ t('hit','命中') }}.{% else %}{{ t('Forward record accruing — graded once horizons mature.','前瞻记录积累中——待持有期成熟后评分。') }}{% endif %}</p>
+    <p class="muted sm" style="margin:6px 0 0">{{ t(ff.disclaimer, ff.disclaimer_zh) }}</p>
+  </div>
+  {% endif %}
+
   <!-- ===================== RATE & INFLATION TRANSMISSION (compact; full page = transmission.html) ===================== -->
   {% if latest.rate_inflation_transmission and latest.rate_inflation_transmission.state %}
   {% set rit = latest.rate_inflation_transmission %}
