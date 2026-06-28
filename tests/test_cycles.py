@@ -424,6 +424,8 @@ def test_fresh_weekly_cross_vetoes_take_profits() -> None:
     assert lad["state"] == "RALLY ON", lad["state"]
     assert lad["entry"]["urgency"] == "hold", lad["entry"]        # board → hold, NOT take_profits
     assert "investor-cycle" in lad["why"]
+    # the glance-level reconciliation sentence is emitted so the daily chips can't read as a conflict
+    assert lad.get("synthesis_line") and "weekly investor cycle just turned up" in lad["synthesis_line"]
 
 
 def test_take_profits_stands_without_a_fresh_weekly_cross() -> None:

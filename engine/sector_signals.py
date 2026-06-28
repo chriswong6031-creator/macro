@@ -224,6 +224,23 @@ def _verdict(d: pd.Series, t3: pd.Series, above200: bool, above50: bool, *,
     return {"state": "NEUTRAL", "conviction": 0, "reason": "in trend, nothing fresh"}
 
 
+def _weekly_riding_override(state: str, weekly_fresh_up: bool, weekly_not_hot: bool) -> dict | None:
+    """WEEKLY-CROSS coherence carve-out. An EXTENDED (overbought-still-rising) read is NOT a
+    "don't chase" top when the WEEKLY (investor) cycle has JUST turned up and isn't itself
+    overbought — that is early in a fresh up-leg. Returns the display override that relabels it
+    RIDING so this panel AGREES with the cycles-ladder's RALLY ON (the XLV 2026-06 case); the
+    caller keeps the state KEY = EXTENDED so the measured base rate is unchanged. None = no override.
+    Mirrors engine.cycles' weekly-cross veto and engine.sector_cycles._classify_phase."""
+    if state == "EXTENDED" and weekly_fresh_up and weekly_not_hot:
+        return {"side": "neutral", "color": "var(--link)", "label_en": "RIDING", "label_zh": "顺势",
+                "act_en": ("Overbought, but the weekly (investor) cycle just turned up — early in a "
+                           "new up-leg, so hold / add on dips, not a top."),
+                "act_zh": ("虽已超买，但周线（投资者）周期刚刚向上转向——处于新上行段早期，"
+                           "因此应持有／回调加仓，而非见顶。"),
+                "reason": "overbought but the weekly investor cycle just turned up — early in a new up-leg"}
+    return None
+
+
 def sector_signal(close: pd.Series, name: str | None = None,
                   spy_close: pd.Series | None = None, ticker: str | None = None,
                   put_absent: bool = False) -> dict:
@@ -247,6 +264,12 @@ def sector_signal(close: pd.Series, name: str | None = None,
     df = _flag_frame(c)
     df3 = _flag_frame(c3)
     d, t3 = df.iloc[-1], df3.iloc[-1]
+    # weekly (investor-cycle) context — the DOMINANT clock the daily/3-day reads live inside.
+    # A daily/3-day "overbought" print is NOT a top early in a fresh weekly up-leg.
+    cW = c.resample("W-FRI").last().dropna()
+    wk = _flag_frame(cW).iloc[-1] if len(cW) >= 30 else None
+    weekly_fresh_up = bool(wk is not None and wk["macd_up"])
+    weekly_not_hot = bool(wk is None or pd.isna(wk["rsi"]) or wk["rsi"] < _EXT_RSI)
     sma200_series = c.rolling(200).mean()
     sma200 = float(sma200_series.iloc[-1])
     sma50 = float(c.iloc[-50:].mean())
@@ -263,6 +286,13 @@ def sector_signal(close: pd.Series, name: str | None = None,
                  slope200_up=slope200_up, osb_eligible=osb_eligible)
     state = v["state"]
     side, label_en, label_zh, act_en, act_zh, color, prio = _STATE_META[state]
+    _ov = _weekly_riding_override(state, weekly_fresh_up, weekly_not_hot)
+    early_weekly_leg = _ov is not None
+    if _ov:
+        side, color = _ov["side"], _ov["color"]
+        label_en, label_zh = _ov["label_en"], _ov["label_zh"]
+        act_en, act_zh = _ov["act_en"], _ov["act_zh"]
+        v["reason"] = _ov["reason"]
     conv = int(v["conviction"])
     conv_en, conv_zh = _CONVICTION.get(min(conv, 3), _CONVICTION[0])
 
@@ -277,7 +307,7 @@ def sector_signal(close: pd.Series, name: str | None = None,
 
     out.update({
         "name": name, "ok": True, "price": round(px, 2),
-        "state": state, "side": side, "priority": prio,
+        "state": state, "side": side, "priority": prio, "early_weekly_leg": early_weekly_leg,
         "label": label_en, "label_zh": label_zh,
         "action": act_en, "action_zh": act_zh, "color": color,
         "conviction": conv, "conviction_label": conv_en, "conviction_label_zh": conv_zh,

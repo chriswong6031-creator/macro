@@ -462,7 +462,7 @@ DC_PHASE_PLAIN = {
     "new": "fresh — a new cycle just started",
     "mid": "mid-cycle — trending",
     "approaching_band": "approaching the window where lows usually form",
-    "in_band": "inside the window where a low is due",
+    "in_band": "inside the typical low-timing window — a dip is more likely from here, though the trend can keep running",
     "stretched": "overdue — past the typical window, so a low could form any day",
 }
 IC_PHASE_PLAIN = {
@@ -477,7 +477,7 @@ DC_PHASE_PLAIN_ZH = {
     "new": "全新——新周期刚刚启动",
     "mid": "周期中段——趋势运行中",
     "approaching_band": "接近低点通常形成的时间窗口",
-    "in_band": "处于低点应当出现的时间窗口内",
+    "in_band": "处于典型的低点时间窗口内——从此处回调概率更高，但趋势仍可能延续",
     "stretched": "逾期——已超过典型窗口，低点随时可能形成",
 }
 IC_PHASE_PLAIN_ZH = {
@@ -1014,10 +1014,12 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     # it only catches names genuinely turning up on the investor clock while daily-extended.
     weekly_fresh_up = bool(w.get("macd_cross_up"))
     weekly_not_hot = (w.get("rsi14") or 50) < 70
+    weekly_cross_rescue = False
     if state == "TOP WATCH" and weekly_fresh_up and weekly_not_hot \
             and cyc.get("above_ma10") and early.get("dir") != "down":
         state = "RALLY ON"
-        extended_gate = False   # a fresh weekly cross makes an overbought daily buy a new-leg
+        extended_gate = False
+        weekly_cross_rescue = True   # a fresh weekly cross makes an overbought daily buy a new-leg
                                 # HOLD, not a chase — clear the gate so entry reads HOLD not "DON'T CHASE"
         why = ("The weekly (investor-cycle) momentum just crossed UP while price holds its "
                "10-day average — the start of a new multi-month up-leg. A daily-overbought print "
@@ -1216,6 +1218,24 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     summary_line_zh = (f"短期（日线）：{tactical_label_zh}。"
                        f"大局（{reg_word_zh}）：{reg_label_zh}。")
 
+    # Plain two-timeframe SYNTHESIS sentence — the glance-level reconciliation that resolves the
+    # "daily looks hot, weekly just turned" tension (surfaced under the verdict bar). Emitted on
+    # the weekly-cross rescue so the daily overbought/late chips can't read as a contradiction.
+    synthesis_line = synthesis_line_zh = ""
+    if weekly_cross_rescue:
+        _rsi = d.get("rsi14")
+        _band_hi = (cyc.get("dc_band") or [None, None])[1]
+        _day = (f"day {cyc.get('dc_day')}" + (f"/{_band_hi}" if _band_hi else "")) \
+            if cyc.get("dc_day") is not None else ""
+        _daily = "Daily is hot (" + (f"RSI {_rsi:.0f}" if _rsi is not None else "extended") \
+            + (f", {_day}" if _day else "") + " — a dip is normal soon)"
+        synthesis_line = (_daily + ", but the weekly investor cycle just turned up — so this is "
+                          "HOLD / ride a new up-leg, not take-profits.")
+        synthesis_line_zh = ("日线偏热（" + (f"RSI {_rsi:.0f}" if _rsi is not None else "已拉伸")
+                             + (f"，周期第 {cyc.get('dc_day')} 天" if cyc.get("dc_day") is not None else "")
+                             + "——短期回调属正常），但周线投资者周期刚刚向上转向——"
+                               "因此应持有 / 顺势新上行段，而非止盈。")
+
     # concise bullet points (the headline facts); full prose lives in `why`
     points = []
     points_zh = []
@@ -1261,7 +1281,9 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
     elif d.get("macd_approaching_up") and d.get("macd_bars_to_cross"):
         points.append(f"Daily momentum ~{d['macd_bars_to_cross']:.0f} bars from turning up")
         points_zh.append(f"日线动量距转为向上约 {d['macd_bars_to_cross']:.0f} 根 K 线")
-    if plain.get("translation") and cyc.get("translation") == "left":
+    if plain.get("translation") and cyc.get("translation") == "left" and not weekly_cross_rescue:
+        # a fresh weekly up-cross overrides a PRIOR-cycle left-translation "tiring" hint —
+        # it describes the completed cycle, not the new leg, so it would contradict the verdict
         points.append("Prior cycle topped early (a tiring-trend hint)")
         points_zh.append("上一周期见顶偏早（趋势走弱的暗示）")
 
@@ -1271,6 +1293,7 @@ def ladder_state(cyc: dict, mtf: dict, early: dict | None = None,
             "regime": reg, "regime_label": REGIME_DISPLAY[reg]["label"],
             "regime_why": regime.get("why", ""), "regime_score": regime.get("score"),
             "regime_line": regime_line, "summary_line": summary_line,
+            "synthesis_line": synthesis_line, "synthesis_line_zh": synthesis_line_zh,
             "points": points, "entry": entry, "cycle_plain": plain,
             "early_note": early_note,
             "early_tier": early.get("tier") if early_note else None,
