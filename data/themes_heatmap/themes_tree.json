@@ -1,0 +1,4474 @@
+[
+  {
+    "theme": "Artificial Intelligence",
+    "key": "Artificial Intelligence",
+    "subsectors": [
+      {
+        "key": "aicompute",
+        "name": "Compute",
+        "description": "Compute & Acceleration",
+        "members": [
+          "NVDA",
+          "SMCI",
+          "AMD",
+          "TSM",
+          "AVGO",
+          "ARM",
+          "ASML",
+          "MU",
+          "ANET",
+          "AMAT",
+          "LRCX",
+          "KLAC",
+          "MRVL",
+          "INTC",
+          "GOOGL",
+          "MSFT"
+        ]
+      },
+      {
+        "key": "aicloud",
+        "name": "Cloud",
+        "description": "Cloud & Infrastructure",
+        "members": [
+          "MSFT",
+          "AMZN",
+          "GOOGL",
+          "ORCL",
+          "SMCI",
+          "EQIX",
+          "DLR",
+          "IBM",
+          "HPE",
+          "DELL",
+          "VRT"
+        ]
+      },
+      {
+        "key": "aimodels",
+        "name": "Models",
+        "description": "Foundation Models & Platforms",
+        "members": [
+          "MSFT",
+          "GOOGL",
+          "META",
+          "NVDA",
+          "AMZN",
+          "IBM",
+          "AI",
+          "PLTR",
+          "BIDU"
+        ]
+      },
+      {
+        "key": "aidata",
+        "name": "Data",
+        "description": "Data Infrastructure & Enablement",
+        "members": [
+          "SNOW",
+          "MSFT",
+          "PLTR",
+          "AMZN",
+          "GOOGL",
+          "MDB",
+          "AI",
+          "NVDA",
+          "CRM",
+          "INOD",
+          "SAP",
+          "NOW",
+          "DDOG"
+        ]
+      },
+      {
+        "key": "aienterprise",
+        "name": "Enterprise",
+        "description": "Enterprise Productivity & Software Integration",
+        "members": [
+          "MSFT",
+          "GOOGL",
+          "ADBE",
+          "CRM",
+          "NOW",
+          "WDAY",
+          "SAP",
+          "PATH",
+          "ORCL",
+          "INTU"
+        ]
+      },
+      {
+        "key": "ainetworking",
+        "name": "Networking",
+        "description": "Networking & Systems Optimization",
+        "members": [
+          "NVDA",
+          "ANET",
+          "AVGO",
+          "SMCI",
+          "MRVL",
+          "NET",
+          "CSCO",
+          "HPE",
+          "IBM",
+          "MSFT"
+        ]
+      },
+      {
+        "key": "aisecurity",
+        "name": "Security",
+        "description": "Cybersecurity",
+        "members": [
+          "PANW",
+          "CRWD",
+          "ZS",
+          "S",
+          "FTNT",
+          "MSFT",
+          "CHKP",
+          "CSCO",
+          "OKTA"
+        ]
+      },
+      {
+        "key": "aiedge",
+        "name": "Edge",
+        "description": "Edge & Embedded Systems",
+        "members": [
+          "QCOM",
+          "ARM",
+          "AMBA",
+          "NXPI",
+          "SYNA",
+          "AAPL",
+          "CEVA",
+          "LSCC",
+          "INTC",
+          "NVDA",
+          "AMD"
+        ]
+      },
+      {
+        "key": "airobotics",
+        "name": "Robotics",
+        "description": "Robotics & Automation",
+        "members": [
+          "CGNX",
+          "ROK",
+          "TER",
+          "NVDA",
+          "ISRG",
+          "ZBRA",
+          "HON",
+          "SYM",
+          "PATH",
+          "AMBA",
+          "AVAV",
+          "TSLA"
+        ]
+      },
+      {
+        "key": "aiapplications",
+        "name": "Applications",
+        "description": "Apps, Domain-Specific AI",
+        "members": [
+          "PLTR",
+          "AI",
+          "BBAI",
+          "RXRX",
+          "UPST",
+          "CRNC",
+          "SOUN",
+          "CGNX",
+          "TSLA"
+        ]
+      },
+      {
+        "key": "aiadssearch",
+        "name": "Ads & Search",
+        "description": "Ads, Search & Recommendations",
+        "members": [
+          "GOOGL",
+          "META",
+          "AMZN",
+          "TTD",
+          "MSFT",
+          "APP",
+          "PINS",
+          "SNAP",
+          "BIDU",
+          "DV",
+          "MGNI",
+          "PUBM"
+        ]
+      },
+      {
+        "key": "aienergy",
+        "name": "Energy",
+        "description": "Power & Energy Solutions",
+        "members": [
+          "AMZN",
+          "MSFT",
+          "GOOGL",
+          "D",
+          "ORCL",
+          "TLN",
+          "IBM",
+          "TSLA",
+          "PWR",
+          "BABA",
+          "AES",
+          "SMR",
+          "OKLO"
+        ]
+      },
+      {
+        "key": "aiagi",
+        "name": "AGI",
+        "description": "AGI, general intelligence",
+        "members": [
+          "MSFT",
+          "GOOGL",
+          "META",
+          "NVDA",
+          "AMZN",
+          "AMD",
+          "IBM"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Cloud Computing",
+    "key": "Cloud Computing",
+    "subsectors": [
+      {
+        "key": "cloudhyperscalers",
+        "name": "Hyperscalers",
+        "description": "Hyperscalers",
+        "members": [
+          "AMZN",
+          "MSFT",
+          "GOOGL",
+          "ORCL",
+          "IBM",
+          "BABA"
+        ]
+      },
+      {
+        "key": "clouddatacenters",
+        "name": "Data Centers",
+        "description": "Data Centers",
+        "members": [
+          "EQIX",
+          "DLR",
+          "IRM",
+          "DBRG"
+        ]
+      },
+      {
+        "key": "clouddatabases",
+        "name": "Databases",
+        "description": "Data Platforms & Databases",
+        "members": [
+          "SNOW",
+          "MDB",
+          "CFLT",
+          "ORCL",
+          "MSFT",
+          "AMZN",
+          "GOOGL",
+          "ESTC",
+          "IBM"
+        ]
+      },
+      {
+        "key": "clouddevops",
+        "name": "DevOps",
+        "description": "DevOps, Observability",
+        "members": [
+          "DDOG",
+          "GTLB",
+          "DT",
+          "CSCO",
+          "MSFT",
+          "AMZN",
+          "ESTC",
+          "PD",
+          "GOOGL",
+          "FROG",
+          "IBM",
+          "ORCL"
+        ]
+      },
+      {
+        "key": "cloudsecurity",
+        "name": "Security",
+        "description": "Security",
+        "members": [
+          "PANW",
+          "CRWD",
+          "ZS",
+          "FTNT",
+          "OKTA",
+          "MSFT",
+          "NET",
+          "S",
+          "AMZN",
+          "GOOGL"
+        ]
+      },
+      {
+        "key": "cloudhybridcloud",
+        "name": "Hybrid Cloud",
+        "description": "Hybrid Cloud",
+        "members": [
+          "IBM",
+          "MSFT",
+          "HPE",
+          "DELL",
+          "AMZN",
+          "GOOGL",
+          "ORCL",
+          "AVGO"
+        ]
+      },
+      {
+        "key": "cloudmulticloud",
+        "name": "Multi Cloud",
+        "description": "Multi-Cloud Management",
+        "members": [
+          "NTNX",
+          "ZS",
+          "RXT",
+          "MSFT",
+          "IBM",
+          "NET",
+          "FFIV",
+          "NOW",
+          "DDOG",
+          "ORCL"
+        ]
+      },
+      {
+        "key": "cloudserverless",
+        "name": "Serverless",
+        "description": "Serverless Computing",
+        "members": [
+          "AMZN",
+          "MSFT",
+          "GOOGL",
+          "NET",
+          "FSLY",
+          "BABA",
+          "IBM"
+        ]
+      },
+      {
+        "key": "cloudpaas",
+        "name": "PaaS",
+        "description": "Platforms & Services, PaaS",
+        "members": [
+          "MSFT",
+          "GOOGL",
+          "AMZN",
+          "DOCN",
+          "TWLO",
+          "ORCL",
+          "CRM",
+          "IBM",
+          "TEAM"
+        ]
+      },
+      {
+        "key": "cloudhardware",
+        "name": "Hardware",
+        "description": "Hardware, Networking & OEM",
+        "members": [
+          "SMCI",
+          "NVDA",
+          "DELL",
+          "HPE",
+          "ANET",
+          "CSCO",
+          "AMD",
+          "INTC",
+          "AVGO",
+          "MRVL",
+          "VRT"
+        ]
+      },
+      {
+        "key": "cloudedge",
+        "name": "Edge",
+        "description": "Edge, CDN, Zero-Trust Networking",
+        "members": [
+          "NET",
+          "AKAM",
+          "FSLY",
+          "ZS",
+          "PANW",
+          "FTNT",
+          "MSFT",
+          "GOOGL",
+          "AMZN"
+        ]
+      },
+      {
+        "key": "cloudhsaas",
+        "name": "H-SaaS",
+        "description": "Horizontal SaaS & Cloud Applications",
+        "members": [
+          "CRM",
+          "TEAM",
+          "MSFT",
+          "NOW",
+          "ZM",
+          "GOOGL",
+          "HUBS",
+          "ADBE",
+          "INTU",
+          "SHOP",
+          "DOCU",
+          "DBX",
+          "MNDY",
+          "ASAN",
+          "WDAY"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Semiconductors",
+    "key": "Semiconductors",
+    "subsectors": [
+      {
+        "key": "semiscompute",
+        "name": "Compute",
+        "description": "Logic & CPUs, GPUs, Accelerators",
+        "members": [
+          "NVDA",
+          "AMD",
+          "INTC",
+          "ARM",
+          "MRVL",
+          "QCOM",
+          "AVGO",
+          "TSM"
+        ]
+      },
+      {
+        "key": "semismemory",
+        "name": "Memory",
+        "description": "Memory & Storage",
+        "members": [
+          "MU",
+          "WDC",
+          "STX",
+          "RMBS"
+        ]
+      },
+      {
+        "key": "semisanalog",
+        "name": "Analog",
+        "description": "Analog, Mixed-Signal & Power Management",
+        "members": [
+          "TXN",
+          "ADI",
+          "ON",
+          "MPWR",
+          "NXPI",
+          "MCHP",
+          "STM"
+        ]
+      },
+      {
+        "key": "semiswireless",
+        "name": "Wireless",
+        "description": "Wireless & Connectivity",
+        "members": [
+          "QCOM",
+          "SWKS",
+          "QRVO",
+          "AVGO",
+          "MRVL",
+          "NXPI"
+        ]
+      },
+      {
+        "key": "semisfoundries",
+        "name": "Foundries",
+        "description": "Foundries & Manufacturing",
+        "members": [
+          "TSM",
+          "GFS",
+          "UMC",
+          "INTC"
+        ]
+      },
+      {
+        "key": "semisdesigntools",
+        "name": "Design Tools",
+        "description": "EDA Tools & Design Software",
+        "members": [
+          "SNPS",
+          "CDNS",
+          "RMBS",
+          "PDFS",
+          "ARM",
+          "KEYS"
+        ]
+      },
+      {
+        "key": "semislithography",
+        "name": "Lithography",
+        "description": "Equipment, Lithography & Deposition",
+        "members": [
+          "ASML",
+          "AMAT",
+          "LRCX",
+          "KLAC",
+          "ACLS"
+        ]
+      },
+      {
+        "key": "semispackaging",
+        "name": "Packaging",
+        "description": "Testing, Packaging & Assembly",
+        "members": [
+          "TER",
+          "AMKR",
+          "COHU",
+          "FORM",
+          "ASX",
+          "CAMT"
+        ]
+      },
+      {
+        "key": "semisnextgen",
+        "name": "Next-Gen",
+        "description": "Emerging Technologies",
+        "members": [
+          "WOLF",
+          "LSCC",
+          "NVTS",
+          "STM",
+          "ON",
+          "POWI",
+          "IONQ",
+          "MRVL",
+          "NVEC",
+          "MRAM",
+          "SIMO",
+          "NVDA",
+          "AMD",
+          "INTC"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Cybersecurity",
+    "key": "Cybersecurity",
+    "subsectors": [
+      {
+        "key": "cybersecurityzerotrust",
+        "name": "ZeroTrust",
+        "description": "Zero Trust",
+        "members": [
+          "ZS",
+          "NET",
+          "OKTA",
+          "PANW",
+          "CRWD",
+          "MSFT",
+          "FTNT",
+          "CSCO"
+        ]
+      },
+      {
+        "key": "cybersecurityendpoint",
+        "name": "Endpoint",
+        "description": "Endpoint Security",
+        "members": [
+          "CRWD",
+          "S",
+          "PANW",
+          "MSFT",
+          "FTNT",
+          "CHKP"
+        ]
+      },
+      {
+        "key": "cybersecuritynetwork",
+        "name": "Network",
+        "description": "Network Security",
+        "members": [
+          "PANW",
+          "FTNT",
+          "CHKP",
+          "CSCO"
+        ]
+      },
+      {
+        "key": "cybersecuritycloud",
+        "name": "Cloud",
+        "description": "Cloud Security",
+        "members": [
+          "PANW",
+          "ZS",
+          "CRWD",
+          "S",
+          "NET",
+          "MSFT",
+          "GOOGL",
+          "CHKP",
+          "AMZN",
+          "QLYS",
+          "TENB"
+        ]
+      },
+      {
+        "key": "cybersecurityidentityiam",
+        "name": "Identity IAM",
+        "description": "Identity & Access Management",
+        "members": [
+          "OKTA",
+          "MSFT",
+          "SAIL",
+          "PANW",
+          "CSCO",
+          "AVGO"
+        ]
+      },
+      {
+        "key": "cybersecuritythreatops",
+        "name": "ThreatOps",
+        "description": "Threat Intelligence",
+        "members": [
+          "CRWD",
+          "RPD",
+          "FTNT",
+          "PANW",
+          "ESTC",
+          "NET"
+        ]
+      },
+      {
+        "key": "cybersecuritysiem",
+        "name": "SIEM",
+        "description": "Security Information & Event Management",
+        "members": [
+          "IBM",
+          "PANW",
+          "MSFT",
+          "CSCO",
+          "CRWD",
+          "FTNT",
+          "RPD"
+        ]
+      },
+      {
+        "key": "cybersecurityappsecurity",
+        "name": "App Security",
+        "description": "Application Security",
+        "members": [
+          "FFIV",
+          "NET",
+          "PANW",
+          "RPD",
+          "FTNT",
+          "CRWD",
+          "QLYS",
+          "ZS"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Software",
+    "key": "Software",
+    "subsectors": [
+      {
+        "key": "softwareos",
+        "name": "OS",
+        "description": "Operating Systems",
+        "members": [
+          "MSFT",
+          "AAPL",
+          "GOOGL"
+        ]
+      },
+      {
+        "key": "softwareenterprise",
+        "name": "Enterprise",
+        "description": "Enterprise Resource Planning & Management",
+        "members": [
+          "SAP",
+          "ORCL",
+          "WDAY",
+          "MSFT",
+          "CRM",
+          "INTU",
+          "ROP"
+        ]
+      },
+      {
+        "key": "softwarecrm",
+        "name": "CRM",
+        "description": "Customer Relationship Management & Marketing",
+        "members": [
+          "CRM",
+          "HUBS",
+          "ADBE",
+          "BRZE",
+          "MSFT",
+          "INTU",
+          "FRSH",
+          "ORCL",
+          "TWLO",
+          "SAP"
+        ]
+      },
+      {
+        "key": "softwarecollaboration",
+        "name": "Collaboration",
+        "description": "Collaboration & Communications",
+        "members": [
+          "ZM",
+          "MSFT",
+          "TEAM",
+          "RNG",
+          "GOOGL",
+          "CSCO",
+          "CRM",
+          "DOCU",
+          "TWLO"
+        ]
+      },
+      {
+        "key": "softwaregaming",
+        "name": "Gaming",
+        "description": "Gaming & Platforms",
+        "members": [
+          "EA",
+          "TTWO",
+          "RBLX",
+          "U",
+          "MSFT",
+          "SONY",
+          "NTES"
+        ]
+      },
+      {
+        "key": "softwareecommerce",
+        "name": "E-Commerce",
+        "description": "E-Commerce & Digital Platforms",
+        "members": [
+          "SHOP",
+          "XYZ",
+          "MELI",
+          "AMZN",
+          "ETSY",
+          "CPNG",
+          "EBAY",
+          "BABA",
+          "PDD",
+          "JD",
+          "WMT"
+        ]
+      },
+      {
+        "key": "softwaredesign",
+        "name": "Design",
+        "description": "Design, Creativity & Engineering",
+        "members": [
+          "ADBE",
+          "ADSK",
+          "PTC",
+          "FIG",
+          "BSY",
+          "U",
+          "CDNS",
+          "SNPS",
+          "TRMB"
+        ]
+      },
+      {
+        "key": "softwaresecurity",
+        "name": "Security",
+        "description": "Cybersecurity",
+        "members": [
+          "PANW",
+          "CRWD",
+          "ZS",
+          "OKTA",
+          "S",
+          "FTNT",
+          "MSFT",
+          "CHKP",
+          "NET",
+          "TENB",
+          "QLYS",
+          "CSCO",
+          "AVGO",
+          "IBM"
+        ]
+      },
+      {
+        "key": "softwaredevops",
+        "name": "DevOps",
+        "description": "DevOps, Management & Observability",
+        "members": [
+          "DDOG",
+          "DT",
+          "GTLB",
+          "TEAM",
+          "NOW",
+          "FROG",
+          "PD",
+          "ESTC",
+          "MSFT",
+          "GOOGL",
+          "AMZN",
+          "CSCO"
+        ]
+      },
+      {
+        "key": "softwaredataanalytics",
+        "name": "Data Analytics",
+        "description": "Data & Analytics",
+        "members": [
+          "SNOW",
+          "MSFT",
+          "PLTR",
+          "GOOGL",
+          "MDB",
+          "ORCL",
+          "AMZN",
+          "MSTR",
+          "ESTC",
+          "TDC",
+          "DOMO",
+          "CSCO",
+          "IBM",
+          "CRM"
+        ]
+      },
+      {
+        "key": "softwarehsaas",
+        "name": "H-SaaS",
+        "description": "Horizontal SaaS Platforms",
+        "members": [
+          "MSFT",
+          "CRM",
+          "GOOGL",
+          "NOW",
+          "ADBE",
+          "WDAY",
+          "TEAM",
+          "ZM",
+          "HUBS",
+          "DOCU",
+          "SAP",
+          "INTU",
+          "ORCL",
+          "SHOP"
+        ]
+      },
+      {
+        "key": "softwarevsaas",
+        "name": "V-SaaS",
+        "description": "Vertical SaaS Platforms",
+        "members": [
+          "VEEV",
+          "BLKB",
+          "TYL",
+          "GWRE",
+          "TOST",
+          "DOCS",
+          "PCOR",
+          "APPF",
+          "COUR",
+          "PTC"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Hardware",
+    "key": "Hardware",
+    "subsectors": [
+      {
+        "key": "hardwarepcsdevices",
+        "name": "PCs & Devices",
+        "description": "Personal Computing & Devices",
+        "members": [
+          "AAPL",
+          "HPQ",
+          "DELL",
+          "LOGI",
+          "INTC",
+          "AMD",
+          "QCOM",
+          "MSFT",
+          "NVDA",
+          "STX"
+        ]
+      },
+      {
+        "key": "hardwareservers",
+        "name": "Servers",
+        "description": "Servers, OEMs & Enterprise Systems",
+        "members": [
+          "DELL",
+          "HPE",
+          "SMCI",
+          "IBM",
+          "CSCO",
+          "NTAP",
+          "ANET"
+        ]
+      },
+      {
+        "key": "hardwarenetworking",
+        "name": "Networking",
+        "description": "Networking Equipment",
+        "members": [
+          "CSCO",
+          "ANET",
+          "HPE",
+          "EXTR",
+          "UI",
+          "MRVL",
+          "AVGO"
+        ]
+      },
+      {
+        "key": "hardwarestorage",
+        "name": "Storage",
+        "description": "Storage",
+        "members": [
+          "NTAP",
+          "PSTG",
+          "WDC",
+          "STX",
+          "DELL",
+          "HPE",
+          "SMCI"
+        ]
+      },
+      {
+        "key": "hardwaredatacenters",
+        "name": "Data Centers",
+        "description": "Data Center Infrastructure",
+        "members": [
+          "VRT",
+          "ETN",
+          "MOD",
+          "NVT",
+          "SMCI",
+          "DELL"
+        ]
+      },
+      {
+        "key": "hardwareelectronics",
+        "name": "Electronics",
+        "description": "Consumer Electronics, Gaming PCs & Consoles",
+        "members": [
+          "SONY",
+          "LOGI",
+          "AAPL",
+          "MSFT",
+          "GRMN",
+          "HPQ",
+          "DELL"
+        ]
+      },
+      {
+        "key": "hardwaregaming",
+        "name": "Gaming",
+        "description": "Gaming & Immersive Pheriperals",
+        "members": [
+          "META",
+          "SONY",
+          "AAPL",
+          "IMMR",
+          "CRSR",
+          "LOGI",
+          "TBCH",
+          "HPQ"
+        ]
+      },
+      {
+        "key": "hardwareprinting",
+        "name": "Printing",
+        "description": "Printing & Imaging",
+        "members": [
+          "HPQ",
+          "DDD",
+          "SSYS",
+          "XRX",
+          "MTLS",
+          "NNDM"
+        ]
+      },
+      {
+        "key": "hardwaretelecom",
+        "name": "Telecom",
+        "description": "Communications & Telecom",
+        "members": [
+          "ANET",
+          "NOK",
+          "ERIC",
+          "CIEN",
+          "CSCO",
+          "LITE",
+          "APH",
+          "ADTN",
+          "VIAV",
+          "MSI",
+          "HPE"
+        ]
+      },
+      {
+        "key": "hardwareindustrialiot",
+        "name": "Industrial IoT",
+        "description": "Industrial & IoT",
+        "members": [
+          "ZBRA",
+          "HON",
+          "ROK",
+          "IOT",
+          "EMR",
+          "TRMB",
+          "ADI",
+          "TEL",
+          "PI",
+          "TXN",
+          "AME"
+        ]
+      },
+      {
+        "key": "hardwarenextgen",
+        "name": "Next-Gen",
+        "description": "Next-Gen & Specialty",
+        "members": [
+          "NVDA",
+          "IONQ",
+          "ISRG",
+          "QBTS",
+          "RGTI",
+          "AVAV",
+          "KTOS",
+          "MBLY",
+          "AMD",
+          "DDD",
+          "SSYS",
+          "TSLA",
+          "TSM",
+          "AAPL",
+          "ASML"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Quantum Computing",
+    "key": "Quantum Computing",
+    "subsectors": [
+      {
+        "key": "quantumhardware",
+        "name": "Hardware",
+        "description": "Hardware Platforms",
+        "members": [
+          "IONQ",
+          "RGTI",
+          "IBM",
+          "GOOGL",
+          "QBTS",
+          "QUBT",
+          "HON"
+        ]
+      },
+      {
+        "key": "quantumcloud",
+        "name": "Cloud",
+        "description": "Cloud Ecosystems",
+        "members": [
+          "AMZN",
+          "MSFT",
+          "IBM",
+          "IONQ",
+          "QBTS",
+          "GOOGL",
+          "RGTI",
+          "NVDA"
+        ]
+      },
+      {
+        "key": "quantumsoftware",
+        "name": "Software",
+        "description": "Software & Tools",
+        "members": [
+          "MSFT",
+          "IBM",
+          "NVDA",
+          "GOOGL",
+          "QBTS",
+          "IONQ",
+          "QUBT"
+        ]
+      },
+      {
+        "key": "quantumenablingtech",
+        "name": "Enabling Tech",
+        "description": "Enabling Technologies",
+        "members": [
+          "KEYS",
+          "NVDA",
+          "AMD",
+          "INTC",
+          "HON",
+          "RGTI"
+        ]
+      },
+      {
+        "key": "quantumnetworking",
+        "name": "Networking",
+        "description": "Networking & Security",
+        "members": [
+          "ARQQ",
+          "LAES",
+          "IBM",
+          "MSFT",
+          "NET",
+          "AMZN",
+          "HON"
+        ]
+      },
+      {
+        "key": "quantumapplications",
+        "name": "Applications",
+        "description": "Applications",
+        "members": [
+          "IBM",
+          "MSFT",
+          "AMZN",
+          "QBTS",
+          "GOOGL",
+          "IONQ",
+          "NVDA",
+          "HON"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Virtual & Augmented Reality",
+    "key": "Virtual & Augmented Reality",
+    "subsectors": [
+      {
+        "key": "varealityhardware",
+        "name": "Hardware",
+        "description": "Headsets & Hardware",
+        "members": [
+          "META",
+          "AAPL",
+          "VUZI",
+          "QCOM",
+          "KOPN",
+          "MSFT",
+          "LITE",
+          "COHR",
+          "NVDA",
+          "AMD",
+          "HPQ"
+        ]
+      },
+      {
+        "key": "varealitysoftware",
+        "name": "Software",
+        "description": "Software Platforms & Operating Systems",
+        "members": [
+          "AAPL",
+          "META",
+          "MSFT",
+          "U",
+          "GOOGL",
+          "SNAP",
+          "SONY"
+        ]
+      },
+      {
+        "key": "varealityapplications",
+        "name": "Applications",
+        "description": "Content & Applications",
+        "members": [
+          "RBLX",
+          "U",
+          "META",
+          "MSFT",
+          "SNAP",
+          "TTWO",
+          "EA",
+          "AAPL",
+          "AXON",
+          "ADBE",
+          "ADSK"
+        ]
+      },
+      {
+        "key": "varealityinfrastructure",
+        "name": "Infrastructure",
+        "description": "Infrastructure & Cloud Rendering",
+        "members": [
+          "AMZN",
+          "MSFT",
+          "NVDA",
+          "GOOGL",
+          "U",
+          "QCOM",
+          "FSLY"
+        ]
+      },
+      {
+        "key": "varealityenterprise",
+        "name": "Enterprise",
+        "description": "Enterprise & Industrial Solutions",
+        "members": [
+          "PTC",
+          "MSFT",
+          "U",
+          "GGRP",
+          "TRMB",
+          "NVDA",
+          "ADSK",
+          "AXON"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Biometrics",
+    "key": "Biometrics",
+    "subsectors": [
+      {
+        "key": "biometricshardware",
+        "name": "Hardware",
+        "description": "Biometric Sensors & Hardware",
+        "members": [
+          "AAPL",
+          "QCOM",
+          "BKYI",
+          "SYNA",
+          "GRMN",
+          "EVLV",
+          "CGNX",
+          "AWRE"
+        ]
+      },
+      {
+        "key": "biometricssoftware",
+        "name": "Software",
+        "description": "Recognition & Analytics",
+        "members": [
+          "MITK",
+          "AUID",
+          "AWRE",
+          "MSFT",
+          "GOOGL",
+          "IDN",
+          "NVDA",
+          "PLTR",
+          "META",
+          "BBAI"
+        ]
+      },
+      {
+        "key": "biometricsidentity",
+        "name": "Identity",
+        "description": "Identity Verification & Security",
+        "members": [
+          "AWRE",
+          "YOU",
+          "MITK",
+          "BKYI",
+          "AUID",
+          "OKTA",
+          "MSFT",
+          "AAPL",
+          "IDN"
+        ]
+      },
+      {
+        "key": "biometricsgovdefense",
+        "name": "Gov & Defense",
+        "description": "Government, Defense & Public Security",
+        "members": [
+          "LDOS",
+          "AWRE",
+          "MITK",
+          "IDN",
+          "BKYI",
+          "AUID",
+          "LHX",
+          "SPCB",
+          "NOC",
+          "ACN",
+          "PSN",
+          "LMT"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Big Data",
+    "key": "Big Data",
+    "subsectors": [
+      {
+        "key": "bigdatainfrastructure",
+        "name": "Infrastructure",
+        "description": "Infrastructure & Storage",
+        "members": [
+          "SNOW",
+          "MSFT",
+          "AMZN",
+          "GOOGL",
+          "MDB",
+          "ORCL",
+          "PSTG",
+          "NVDA",
+          "STX",
+          "WDC",
+          "SMCI",
+          "NTAP",
+          "DELL",
+          "HPE",
+          "EQIX",
+          "DLR"
+        ]
+      },
+      {
+        "key": "bigdataanalyticsbi",
+        "name": "Analytics & BI",
+        "description": "Analytics & Business Intelligence",
+        "members": [
+          "MSFT",
+          "CRM",
+          "DOMO",
+          "MSTR",
+          "PLTR",
+          "TDC",
+          "SAP",
+          "CSCO",
+          "ORCL",
+          "ESTC",
+          "DDOG"
+        ]
+      },
+      {
+        "key": "bigdataproviders",
+        "name": "Providers",
+        "description": "Data Generation, Sourcing & Providers",
+        "members": [
+          "SPGI",
+          "RELX",
+          "TRI",
+          "MCO",
+          "MSCI",
+          "VRSK",
+          "EFX",
+          "IQV",
+          "TRU",
+          "ICE",
+          "FDS",
+          "CSGP"
+        ]
+      },
+      {
+        "key": "bigdataaiplatforms",
+        "name": "AI Platforms",
+        "description": "AI Platforms & Predictive Analytics",
+        "members": [
+          "MSFT",
+          "PLTR",
+          "AMZN",
+          "GOOGL",
+          "AI",
+          "CRM",
+          "NVDA",
+          "SAP",
+          "NICE",
+          "NOW",
+          "AMD"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Electric Vehicles",
+    "key": "Electric Vehicles",
+    "subsectors": [
+      {
+        "key": "evsmanufacturers",
+        "name": "Manufacturers",
+        "description": "Manufacturers",
+        "members": [
+          "TSLA",
+          "RIVN",
+          "NIO",
+          "LCID",
+          "XPEV",
+          "LI",
+          "PSNY",
+          "GM",
+          "F"
+        ]
+      },
+      {
+        "key": "evsbatteries",
+        "name": "Batteries",
+        "description": "Batteries & Materials",
+        "members": [
+          "ALB",
+          "SQM",
+          "LAC",
+          "QS",
+          "SLDP",
+          "MP",
+          "MVST",
+          "SES",
+          "ENVX",
+          "TE",
+          "ABAT"
+        ]
+      },
+      {
+        "key": "evscharging",
+        "name": "Charging",
+        "description": "Charging & Infrastructure",
+        "members": [
+          "CHPT",
+          "TSLA",
+          "EVGO",
+          "BLNK",
+          "ETN",
+          "WBX",
+          "BEEM",
+          "NEE"
+        ]
+      },
+      {
+        "key": "evschips",
+        "name": "Chips",
+        "description": "Auto Semiconductors & Power Electronics",
+        "members": [
+          "WOLF",
+          "ON",
+          "NVTS",
+          "STM",
+          "NXPI",
+          "NVDA",
+          "TXN",
+          "QCOM"
+        ]
+      },
+      {
+        "key": "evssuppliers",
+        "name": "Suppliers",
+        "description": "Key Suppliers & Autonomy Tech",
+        "members": [
+          "MBLY",
+          "BWA",
+          "APTV",
+          "MGA",
+          "INVZ",
+          "DAN",
+          "NVDA",
+          "LEA",
+          "THRM",
+          "QCOM",
+          "NXPI",
+          "AMBA"
+        ]
+      },
+      {
+        "key": "evsselfdriving",
+        "name": "Self-Driving",
+        "description": "Autonomous Driving",
+        "members": [
+          "MBLY",
+          "NVDA",
+          "TSLA",
+          "QCOM",
+          "AUR",
+          "INVZ",
+          "GOOGL",
+          "HSAI",
+          "APTV"
+        ]
+      },
+      {
+        "key": "evsfleets",
+        "name": "Fleets",
+        "description": "Fleet Management & Telematics",
+        "members": [
+          "IOT",
+          "NVVE",
+          "AIOT",
+          "UBER",
+          "TRMB",
+          "LYFT",
+          "BEEM",
+          "VZ"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Industrial Automation",
+    "key": "Industrial Automation",
+    "subsectors": [
+      {
+        "key": "automationrobotics",
+        "name": "Robotics",
+        "description": "Industrial Robotics & Autonomous Systems",
+        "members": [
+          "SYM",
+          "NVDA",
+          "ROK",
+          "NOVT",
+          "ZBRA",
+          "TER"
+        ]
+      },
+      {
+        "key": "automationautomation",
+        "name": "Automation",
+        "description": "Factory & Process Automation Systems",
+        "members": [
+          "ROK",
+          "EMR",
+          "HON",
+          "ETN",
+          "NOVT",
+          "RRX"
+        ]
+      },
+      {
+        "key": "automationmachinevision",
+        "name": "Machine Vision",
+        "description": "Industrial Sensors & Machine Vision",
+        "members": [
+          "CGNX",
+          "TDY",
+          "ON",
+          "NOVT",
+          "ZBRA",
+          "TXN",
+          "ST",
+          "AMBA",
+          "OUST",
+          "AME"
+        ]
+      },
+      {
+        "key": "automationsoftware",
+        "name": "Software",
+        "description": "Industrial Software & Digital Twin",
+        "members": [
+          "PTC",
+          "ADSK",
+          "NVDA",
+          "BSY",
+          "MSFT",
+          "SNPS",
+          "CDNS"
+        ]
+      },
+      {
+        "key": "automationiot",
+        "name": "IoT",
+        "description": "Industrial IoT, Connectivity",
+        "members": [
+          "IOT",
+          "CSCO",
+          "MSFT",
+          "HON",
+          "DGII",
+          "PTC",
+          "ZBRA",
+          "PANW",
+          "ROK",
+          "FTNT",
+          "EMR"
+        ]
+      },
+      {
+        "key": "automationlogistics",
+        "name": "Logistics",
+        "description": "Smart Logistics & Warehouse Automation",
+        "members": [
+          "SYM",
+          "AMZN",
+          "MANH",
+          "FDX",
+          "UPS",
+          "ZBRA",
+          "HON",
+          "CGNX",
+          "GXO",
+          "ROK",
+          "ORCL"
+        ]
+      },
+      {
+        "key": "automationdprinting",
+        "name": "3D Printing",
+        "description": "Additive Manufacturing, 3D Printing",
+        "members": [
+          "DDD",
+          "SSYS",
+          "PRLB",
+          "MTLS",
+          "NNDM",
+          "XMTR",
+          "GE",
+          "CRS"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Defense & Aerospace",
+    "key": "Defense & Aerospace",
+    "subsectors": [
+      {
+        "key": "defensedrones",
+        "name": "Drones",
+        "description": "Drones & Anti-Drone Systems",
+        "members": [
+          "AVAV",
+          "KTOS",
+          "RTX",
+          "RCAT",
+          "LHX",
+          "LMT",
+          "TXT",
+          "NOC",
+          "ONDS",
+          "BA"
+        ]
+      },
+      {
+        "key": "defensemissiles",
+        "name": "Missiles",
+        "description": "Missile Defense & Long-Range Weapons",
+        "members": [
+          "RTX",
+          "LMT",
+          "NOC",
+          "LHX",
+          "BWXT",
+          "GD",
+          "BA"
+        ]
+      },
+      {
+        "key": "defensespacetech",
+        "name": "SpaceTech",
+        "description": "Space Technology & Satellite Services",
+        "members": [
+          "RKLB",
+          "LMT",
+          "IRDM",
+          "NOC",
+          "VSAT",
+          "PL",
+          "RTX",
+          "LHX",
+          "SPIR",
+          "AMZN",
+          "BKSY"
+        ]
+      },
+      {
+        "key": "defensecyberdefense",
+        "name": "CyberDefense",
+        "description": "Cyber Defense & Electronic Warfare",
+        "members": [
+          "RTX",
+          "LHX",
+          "LDOS",
+          "NOC",
+          "CACI",
+          "LMT",
+          "BAH",
+          "MRCY",
+          "PLTR",
+          "PSN",
+          "GD"
+        ]
+      },
+      {
+        "key": "defenseweapons",
+        "name": "Weapons",
+        "description": "Precision Weapons & Ammunition Resupply",
+        "members": [
+          "LMT",
+          "RTX",
+          "OLN",
+          "GD",
+          "NOC",
+          "LHX",
+          "AVAV",
+          "BA"
+        ]
+      },
+      {
+        "key": "defenseaviation",
+        "name": "Aviation",
+        "description": "Next-Generation Aircraft & Maintenance",
+        "members": [
+          "LMT",
+          "NOC",
+          "RTX",
+          "GE",
+          "BA",
+          "HEI",
+          "TDG",
+          "TXT"
+        ]
+      },
+      {
+        "key": "defensemanufacturing",
+        "name": "Manufacturing",
+        "description": "Secure Defense Supply Chains",
+        "members": [
+          "MP",
+          "HWM",
+          "ATI",
+          "BWXT",
+          "HXL",
+          "CRS",
+          "RTX",
+          "GE",
+          "TDG",
+          "NOC",
+          "HEI",
+          "CW",
+          "GD",
+          "LMT"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Transportation & Logistics",
+    "key": "Transportation & Logistics",
+    "subsectors": [
+      {
+        "key": "transportationrail",
+        "name": "Rail",
+        "description": "Freight Rail & Infrastructure",
+        "members": [
+          "UNP",
+          "CSX",
+          "NSC",
+          "CNI",
+          "CP",
+          "WAB"
+        ]
+      },
+      {
+        "key": "transportationtrucking",
+        "name": "Trucking",
+        "description": "Trucking, LTL & Ground Freight",
+        "members": [
+          "ODFL",
+          "SAIA",
+          "XPO",
+          "ARCB",
+          "KNX",
+          "JBHT",
+          "WERN",
+          "TFII",
+          "SNDR",
+          "FDX",
+          "UPS",
+          "LSTR"
+        ]
+      },
+      {
+        "key": "transportationaircargo",
+        "name": "Air Cargo",
+        "description": "Air Freight & Express Delivery",
+        "members": [
+          "FDX",
+          "UPS",
+          "FWRD",
+          "UAL"
+        ]
+      },
+      {
+        "key": "transportationmaritime",
+        "name": "Maritime",
+        "description": "Marine Shipping & Ports",
+        "members": [
+          "ZIM",
+          "MATX",
+          "GNK",
+          "SBLK",
+          "DAC",
+          "GSL",
+          "KEX"
+        ]
+      },
+      {
+        "key": "transportationwarehousing",
+        "name": "Warehousing",
+        "description": "Logistics, Warehousing & Supply Chain Solutions",
+        "members": [
+          "GXO",
+          "CHRW",
+          "EXPD",
+          "MANH",
+          "HUBG",
+          "R",
+          "COLD",
+          "UPS",
+          "FWRD"
+        ]
+      },
+      {
+        "key": "transportationairtravel",
+        "name": "Air Travel",
+        "description": "Air Travel & Passenger Transportation",
+        "members": [
+          "DAL",
+          "UAL",
+          "AAL",
+          "LUV",
+          "ALK",
+          "ALGT",
+          "JOBY",
+          "ACHR"
+        ]
+      },
+      {
+        "key": "transportationinfrastructure",
+        "name": "Infrastructure",
+        "description": "Infrastructure & Equipment",
+        "members": [
+          "CMI",
+          "PCAR",
+          "TRMB",
+          "CAT",
+          "CSX",
+          "UNP",
+          "MANH",
+          "OSK",
+          "GE",
+          "DE",
+          "APTV",
+          "WNC",
+          "CLNE",
+          "TXT",
+          "UPS",
+          "FDX"
+        ]
+      },
+      {
+        "key": "transportationnextgen",
+        "name": "Next-Gen",
+        "description": "Urban Mobility & Emerging Transport Tech",
+        "members": [
+          "UBER",
+          "TSLA",
+          "RIVN",
+          "MBLY",
+          "AUR",
+          "LYFT",
+          "SERV",
+          "NVDA",
+          "LI",
+          "GOOGL",
+          "JOBY",
+          "LCID",
+          "GM"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Space Tech",
+    "key": "Space Tech",
+    "subsectors": [
+      {
+        "key": "spacelaunch",
+        "name": "Launch",
+        "description": "Logistics & Launch Services",
+        "members": [
+          "RKLB",
+          "FLY",
+          "LUNR",
+          "MNTS",
+          "LMT",
+          "NOC",
+          "BA",
+          "SPCE",
+          "VSAT"
+        ]
+      },
+      {
+        "key": "spacesatellites",
+        "name": "Satellites",
+        "description": "Satellite Networks & Connectivity",
+        "members": [
+          "IRDM",
+          "GSAT",
+          "VSAT",
+          "TSAT",
+          "ASTS",
+          "SATS"
+        ]
+      },
+      {
+        "key": "spacedataanalytics",
+        "name": "Data Analytics",
+        "description": "Data Analytics & Earth Observation",
+        "members": [
+          "PL",
+          "BKSY",
+          "SPIR",
+          "RDW",
+          "RKLB",
+          "LDOS"
+        ]
+      },
+      {
+        "key": "spacedefense",
+        "name": "Defense",
+        "description": "Defense & Cybersecurity",
+        "members": [
+          "NOC",
+          "LMT",
+          "LHX",
+          "RTX",
+          "KTOS",
+          "GD",
+          "RKLB"
+        ]
+      },
+      {
+        "key": "spaceinfrastructure",
+        "name": "Infrastructure",
+        "description": "Infrastructure & Exploration",
+        "members": [
+          "LUNR",
+          "RDW",
+          "RKLB",
+          "SPCE",
+          "BA"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Robotics",
+    "key": "Robotics",
+    "subsectors": [
+      {
+        "key": "roboticsautomation",
+        "name": "Automation",
+        "description": "Industrial Automation",
+        "members": [
+          "ROK",
+          "SYM",
+          "CGNX",
+          "EMR",
+          "ZBRA",
+          "HON",
+          "TER",
+          "NVDA"
+        ]
+      },
+      {
+        "key": "roboticslogistics",
+        "name": "Logistics",
+        "description": "Logistics & Warehouse Robotics",
+        "members": [
+          "SYM",
+          "AMZN",
+          "ZBRA",
+          "CGNX",
+          "HON",
+          "TER",
+          "ROK"
+        ]
+      },
+      {
+        "key": "roboticsavmobility",
+        "name": "AV & Mobility",
+        "description": "Autonomous Vehicles & Mobility",
+        "members": [
+          "NVDA",
+          "MBLY",
+          "GOOGL",
+          "TSLA",
+          "AUR",
+          "QCOM",
+          "APTV"
+        ]
+      },
+      {
+        "key": "roboticsmachinevision",
+        "name": "Machine Vision",
+        "description": "Sensors & Vision Systems",
+        "members": [
+          "NVDA",
+          "CGNX",
+          "AMBA",
+          "OUST",
+          "ON",
+          "QCOM",
+          "INVZ",
+          "LITE",
+          "ZBRA",
+          "TDY",
+          "LSCC"
+        ]
+      },
+      {
+        "key": "roboticsmedical",
+        "name": "Medical",
+        "description": "Medical & Surgical Robotics",
+        "members": [
+          "ISRG",
+          "SYK",
+          "MDT",
+          "PRCT",
+          "ZBH",
+          "GMED",
+          "JNJ",
+          "ARAY"
+        ]
+      },
+      {
+        "key": "roboticsconsumer",
+        "name": "Consumer",
+        "description": "Service & Consumer Robotics",
+        "members": [
+          "SERV",
+          "AMZN",
+          "TSLA",
+          "YYGH",
+          "ZBRA",
+          "PATH",
+          "AAPL"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Telecommunications",
+    "key": "Telecommunications",
+    "subsectors": [
+      {
+        "key": "telecomwireless",
+        "name": "Wireless",
+        "description": "Wireless Networks & Carriers",
+        "members": [
+          "VZ",
+          "TMUS",
+          "T",
+          "CMCSA",
+          "CHTR"
+        ]
+      },
+      {
+        "key": "telecominfrastructure",
+        "name": "Infrastructure",
+        "description": "Infrastructure & Equipment",
+        "members": [
+          "AMT",
+          "CCI",
+          "SBAC",
+          "GLW",
+          "CIEN",
+          "CSCO",
+          "VISN",
+          "MSI"
+        ]
+      },
+      {
+        "key": "telecomcloudedge",
+        "name": "Cloud & Edge",
+        "description": "Cloud & Edge Connectivity",
+        "members": [
+          "AMZN",
+          "MSFT",
+          "GOOGL",
+          "AKAM",
+          "NET",
+          "FSLY",
+          "EQIX",
+          "VZ",
+          "T",
+          "ANET"
+        ]
+      },
+      {
+        "key": "telecomg",
+        "name": "5G",
+        "description": "5G Technology & Semiconductors",
+        "members": [
+          "QCOM",
+          "SWKS",
+          "AVGO",
+          "MRVL",
+          "QRVO",
+          "ADI",
+          "INTC"
+        ]
+      },
+      {
+        "key": "telecomsatcom",
+        "name": "Satcom",
+        "description": "Satellite & Space Communication",
+        "members": [
+          "IRDM",
+          "GSAT",
+          "VSAT",
+          "TSAT",
+          "ASTS",
+          "SATS",
+          "AMZN"
+        ]
+      },
+      {
+        "key": "telecomenterprise",
+        "name": "Enterprise",
+        "description": "Enterprise & Unified Communications",
+        "members": [
+          "MSFT",
+          "ZM",
+          "RNG",
+          "CSCO",
+          "TWLO",
+          "EGHT",
+          "CXDO",
+          "VZ"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Nanotechnology",
+    "key": "Nanotechnology",
+    "subsectors": [
+      {
+        "key": "nanotechmaterials",
+        "name": "Materials",
+        "description": "Nanomaterials & Manufacturing",
+        "members": [
+          "MMM",
+          "DD",
+          "PPG",
+          "HON",
+          "NNDM",
+          "NVEC"
+        ]
+      },
+      {
+        "key": "nanotechmedicine",
+        "name": "Medicine",
+        "description": "Nanomedicine & Drug Delivery",
+        "members": [
+          "MRNA",
+          "ARCT",
+          "LQDA",
+          "NBTX",
+          "CLNN",
+          "PFE",
+          "JNJ",
+          "BMY",
+          "TMO",
+          "ABT",
+          "MRK",
+          "REGN"
+        ]
+      },
+      {
+        "key": "nanotechelectronics",
+        "name": "Electronics",
+        "description": "Nanoelectronics & Semiconductors",
+        "members": [
+          "TSM",
+          "ASML",
+          "AMAT",
+          "LRCX",
+          "INTC",
+          "KLAC",
+          "NVDA",
+          "AMD",
+          "ATOM"
+        ]
+      },
+      {
+        "key": "nanotechenergy",
+        "name": "Energy",
+        "description": "Energy & Environment",
+        "members": [
+          "QS",
+          "FSLR",
+          "SLDP",
+          "DD",
+          "ASPN",
+          "TSLA",
+          "PLUG",
+          "AMAT",
+          "ENPH",
+          "XYL",
+          "ECL"
+        ]
+      },
+      {
+        "key": "nanotechproducts",
+        "name": "Products",
+        "description": "Consumer & Industrial Products",
+        "members": [
+          "EL",
+          "MMM",
+          "DD",
+          "PG",
+          "SEE",
+          "CL",
+          "NKE"
+        ]
+      },
+      {
+        "key": "nanotechresearchtools",
+        "name": "Research Tools",
+        "description": "Research Tools & Advanced Instruments",
+        "members": [
+          "TMO",
+          "KLAC",
+          "BRKR",
+          "AMAT",
+          "ONTO",
+          "DHR",
+          "A",
+          "KEYS",
+          "VECO"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Internet of Things",
+    "key": "Internet of Things",
+    "subsectors": [
+      {
+        "key": "iotedgedevices",
+        "name": "Edge Devices",
+        "description": "Connected Devices & Sensors",
+        "members": [
+          "TXN",
+          "ADI",
+          "NXPI",
+          "QCOM",
+          "MCHP",
+          "GRMN",
+          "PI",
+          "HON",
+          "INTC",
+          "LSCC",
+          "SMTC",
+          "CSCO"
+        ]
+      },
+      {
+        "key": "iotnetworking",
+        "name": "Networking",
+        "description": "Connectivity & Networks",
+        "members": [
+          "VZ",
+          "IRDM",
+          "T",
+          "TMUS",
+          "GSAT",
+          "VSAT",
+          "QCOM",
+          "CSCO",
+          "SMTC"
+        ]
+      },
+      {
+        "key": "iothardware",
+        "name": "Hardware",
+        "description": "Edge Computing & Hardware Infrastructure",
+        "members": [
+          "NVDA",
+          "INTC",
+          "QCOM",
+          "AMD",
+          "SMCI",
+          "NXPI",
+          "CSCO"
+        ]
+      },
+      {
+        "key": "iotsoftware",
+        "name": "Software",
+        "description": "Platforms, Software & Analytics",
+        "members": [
+          "MSFT",
+          "AMZN",
+          "PTC",
+          "GOOGL",
+          "IOT",
+          "IBM",
+          "PLTR",
+          "ORCL",
+          "CSCO",
+          "DDOG"
+        ]
+      },
+      {
+        "key": "iotenterprise",
+        "name": "Enterprise",
+        "description": "Industrial & Enterprise IoT",
+        "members": [
+          "ROK",
+          "PTC",
+          "IOT",
+          "EMR",
+          "HON",
+          "CSCO",
+          "DGII",
+          "GE",
+          "CAT",
+          "AI"
+        ]
+      },
+      {
+        "key": "iotsecurity",
+        "name": "Security",
+        "description": "Security & Data Management",
+        "members": [
+          "PANW",
+          "MSFT",
+          "FTNT",
+          "CRWD",
+          "BB",
+          "CSCO",
+          "NET",
+          "OKTA",
+          "TENB"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Autonomous Systems",
+    "key": "Autonomous Systems",
+    "subsectors": [
+      {
+        "key": "autonomousavmobility",
+        "name": "AV & Mobility",
+        "description": "Vehicles & Mobility",
+        "members": [
+          "MBLY",
+          "NVDA",
+          "AUR",
+          "GOOGL",
+          "TSLA",
+          "GM",
+          "UBER"
+        ]
+      },
+      {
+        "key": "autonomousindustrial",
+        "name": "Industrial",
+        "description": "Industrial & Logistics Automation",
+        "members": [
+          "SYM",
+          "ROK",
+          "MANH",
+          "HON",
+          "AMZN",
+          "TER",
+          "ZBRA",
+          "EMR",
+          "DE",
+          "PATH"
+        ]
+      },
+      {
+        "key": "autonomousdefense",
+        "name": "Defense",
+        "description": "Aerospace, Defense & Drones",
+        "members": [
+          "AVAV",
+          "LMT",
+          "NOC",
+          "KTOS",
+          "RTX",
+          "LHX",
+          "RCAT",
+          "PLTR",
+          "BBAI"
+        ]
+      },
+      {
+        "key": "autonomousmachinevision",
+        "name": "Machine Vision",
+        "description": "Sensors & Perception Systems",
+        "members": [
+          "NVDA",
+          "MBLY",
+          "AMBA",
+          "AEVA",
+          "OUST",
+          "QCOM",
+          "ON",
+          "INVZ",
+          "AMD",
+          "CGNX"
+        ]
+      },
+      {
+        "key": "autonomoussoftware",
+        "name": "Software",
+        "description": "Software & Cloud Infrastructure",
+        "members": [
+          "NVDA",
+          "MSFT",
+          "AMZN",
+          "GOOGL",
+          "AUR",
+          "PLTR",
+          "MBLY",
+          "QCOM",
+          "ORCL",
+          "AMBA"
+        ]
+      },
+      {
+        "key": "autonomousspecialized",
+        "name": "Specialized",
+        "description": "Maritime, Agriculture & Specialized Autonomy",
+        "members": [
+          "DE",
+          "CAT",
+          "TRMB",
+          "OII",
+          "AGCO",
+          "TXT",
+          "TDY",
+          "KVHI"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "E-commerce",
+    "key": "E-commerce",
+    "subsectors": [
+      {
+        "key": "ecommercemarketplaces",
+        "name": "Marketplaces",
+        "description": "Online Marketplaces",
+        "members": [
+          "AMZN",
+          "EBAY",
+          "WMT",
+          "ETSY",
+          "MELI",
+          "SHOP",
+          "TGT"
+        ]
+      },
+      {
+        "key": "ecommerceplatforms",
+        "name": "Platforms",
+        "description": "Platforms",
+        "members": [
+          "SHOP",
+          "WIX",
+          "PDD",
+          "VTEX",
+          "XYZ",
+          "ADBE",
+          "LSPD",
+          "CRM"
+        ]
+      },
+      {
+        "key": "ecommerceadsmedia",
+        "name": "Ads & Media",
+        "description": "Retail Media & Advertising",
+        "members": [
+          "AMZN",
+          "WMT",
+          "GOOGL",
+          "TTD",
+          "CRTO",
+          "ROKU",
+          "CART",
+          "TGT",
+          "KR",
+          "DASH",
+          "MGNI",
+          "PUBM",
+          "CVS",
+          "BBY",
+          "HD"
+        ]
+      },
+      {
+        "key": "ecommercelogistics",
+        "name": "Logistics",
+        "description": "Logistics & Delivery",
+        "members": [
+          "UPS",
+          "FDX",
+          "AMZN",
+          "GXO",
+          "DASH",
+          "SYM",
+          "MANH",
+          "UBER",
+          "PLD",
+          "HON",
+          "TRMB"
+        ]
+      },
+      {
+        "key": "ecommercesocial",
+        "name": "Social",
+        "description": "Social & Influencer Commerce",
+        "members": [
+          "META",
+          "PINS",
+          "GOOGL",
+          "AMZN",
+          "SHOP",
+          "SNAP",
+          "ETSY"
+        ]
+      },
+      {
+        "key": "ecommerceomnichannel",
+        "name": "Omnichannel",
+        "description": "Omnichannel Retailers, Online & Physical Stores",
+        "members": [
+          "WMT",
+          "TGT",
+          "HD",
+          "BBY",
+          "KR",
+          "LULU",
+          "COST",
+          "M",
+          "SHOP"
+        ]
+      },
+      {
+        "key": "ecommercegrocery",
+        "name": "Grocery",
+        "description": "Grocery & Local Commerce Platforms",
+        "members": [
+          "CART",
+          "WMT",
+          "DASH",
+          "KR",
+          "AMZN",
+          "TGT",
+          "ACI",
+          "UBER",
+          "CPNG",
+          "SFM"
+        ]
+      },
+      {
+        "key": "ecommercesecondhand",
+        "name": "Secondhand",
+        "description": "Recommerce, Secondhand Marketplaces",
+        "members": [
+          "EBAY",
+          "TDUP",
+          "REAL",
+          "ETSY"
+        ]
+      },
+      {
+        "key": "ecommercedtc",
+        "name": "DTC",
+        "description": "Direct-to-Consumer",
+        "members": [
+          "CHWY",
+          "HIMS",
+          "NKE",
+          "LULU",
+          "BIRD",
+          "LEVI",
+          "EL",
+          "WRBY"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Social Media",
+    "key": "Social Media",
+    "subsectors": [
+      {
+        "key": "socialnetworks",
+        "name": "Networks",
+        "description": "Networks & Communication Platforms",
+        "members": [
+          "META",
+          "RDDT",
+          "SNAP",
+          "PINS",
+          "GOOGL",
+          "MSFT"
+        ]
+      },
+      {
+        "key": "socialvisualcontent",
+        "name": "Visual Content",
+        "description": "Image & Video Content Platforms",
+        "members": [
+          "GOOGL",
+          "SNAP",
+          "META",
+          "PINS",
+          "AMZN"
+        ]
+      },
+      {
+        "key": "socialadvertising",
+        "name": "Advertising",
+        "description": "Advertising Platforms",
+        "members": [
+          "META",
+          "GOOGL",
+          "TTD",
+          "SNAP",
+          "PINS",
+          "RDDT",
+          "CRTO",
+          "MGNI",
+          "DSP",
+          "DV",
+          "APP"
+        ]
+      },
+      {
+        "key": "socialgaming",
+        "name": "Gaming",
+        "description": "Gaming Platforms",
+        "members": [
+          "RBLX",
+          "MSFT",
+          "AMZN",
+          "SONY",
+          "META",
+          "TTWO",
+          "U"
+        ]
+      },
+      {
+        "key": "socialniche",
+        "name": "Niche",
+        "description": "Niche Platforms",
+        "members": [
+          "MTCH",
+          "BMBL",
+          "RDDT",
+          "MSFT"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Digital Entertainment",
+    "key": "Digital Entertainment",
+    "subsectors": [
+      {
+        "key": "entertainmentvideo",
+        "name": "Video",
+        "description": "Video Streaming",
+        "members": [
+          "NFLX",
+          "GOOGL",
+          "ROKU",
+          "DIS",
+          "AMZN",
+          "PSKY",
+          "WBD"
+        ]
+      },
+      {
+        "key": "entertainmentmusic",
+        "name": "Music",
+        "description": "Music & Audio Streaming",
+        "members": [
+          "SPOT",
+          "TME",
+          "AAPL",
+          "SIRI",
+          "AMZN",
+          "GOOGL",
+          "WMG",
+          "SONY"
+        ]
+      },
+      {
+        "key": "entertainmentgaming",
+        "name": "Gaming",
+        "description": "Game Publishers & Developers",
+        "members": [
+          "TTWO",
+          "EA",
+          "MSFT",
+          "NTES",
+          "RBLX",
+          "PLTK",
+          "DDI",
+          "U"
+        ]
+      },
+      {
+        "key": "entertainmentinfrastructure",
+        "name": "Infrastructure",
+        "description": "Streaming & Gaming Infrastructure",
+        "members": [
+          "NVDA",
+          "MSFT",
+          "AMZN",
+          "AMD",
+          "AKAM",
+          "GOOGL",
+          "NET",
+          "ANET",
+          "INTC",
+          "AVGO",
+          "U"
+        ]
+      },
+      {
+        "key": "entertainmentbetting",
+        "name": "Betting",
+        "description": "Sports Betting, Wagering & Prediction Markets",
+        "members": [
+          "DKNG",
+          "FLUT",
+          "GENI",
+          "SRAD",
+          "RSI",
+          "MGM",
+          "CZR",
+          "PENN",
+          "ICE"
+        ]
+      },
+      {
+        "key": "entertainmentgambling",
+        "name": "Gambling",
+        "description": "iGaming & Online Gambling",
+        "members": [
+          "RSI",
+          "DKNG",
+          "FLUT",
+          "SGHC",
+          "MGM",
+          "CZR",
+          "PENN",
+          "BYD",
+          "CHDN",
+          "BALY",
+          "INSE",
+          "SRAD"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Real Estate & REITs",
+    "key": "Real Estate & REITs",
+    "subsectors": [
+      {
+        "key": "realestateittelecom",
+        "name": "IT & Telecom",
+        "description": "Digital Infrastructure",
+        "members": [
+          "EQIX",
+          "DLR",
+          "AMT",
+          "CCI",
+          "SBAC",
+          "UNIT",
+          "IRM"
+        ]
+      },
+      {
+        "key": "realestatewarehousing",
+        "name": "Warehousing",
+        "description": "E-Commerce, Warehousing & Logistics",
+        "members": [
+          "PLD",
+          "COLD",
+          "REXR",
+          "EGP",
+          "TRNO",
+          "STAG"
+        ]
+      },
+      {
+        "key": "realestatehealthcare",
+        "name": "Healthcare",
+        "description": "Healthcare & Senior Living",
+        "members": [
+          "WELL",
+          "VTR",
+          "HR",
+          "OHI",
+          "DOC",
+          "SBRA",
+          "MPT"
+        ]
+      },
+      {
+        "key": "realestatehousing",
+        "name": "Housing",
+        "description": "Housing, Urban Living & Demographics",
+        "members": [
+          "AVB",
+          "EQR",
+          "INVH",
+          "MAA",
+          "AMH",
+          "SUI",
+          "ELS",
+          "UMH"
+        ]
+      },
+      {
+        "key": "realestatetourism",
+        "name": "Tourism",
+        "description": "Travel, Leisure & Entertainment Properties",
+        "members": [
+          "VICI",
+          "HST",
+          "GLPI",
+          "PK",
+          "RHP",
+          "PEB",
+          "LVS",
+          "MAR",
+          "HLT"
+        ]
+      },
+      {
+        "key": "realestateretail",
+        "name": "Retail",
+        "description": "Retail & Consumer Real Estate",
+        "members": [
+          "REG",
+          "KIM",
+          "ADC",
+          "FRT",
+          "SKT",
+          "BRX",
+          "O",
+          "PECO",
+          "SPG",
+          "NNN",
+          "MAC",
+          "EPRT",
+          "KRG",
+          "UE",
+          "FCPT"
+        ]
+      },
+      {
+        "key": "realestateoffice",
+        "name": "Office",
+        "description": "Office & Commercial Workspaces",
+        "members": [
+          "ARE",
+          "BXP",
+          "SLG",
+          "KRC",
+          "CUZ",
+          "VNO",
+          "HIW"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Consumer Goods",
+    "key": "Consumer Goods",
+    "subsectors": [
+      {
+        "key": "consumerfood",
+        "name": "Food",
+        "description": "Health, Food & Beverages",
+        "members": [
+          "CELH",
+          "BYND",
+          "HAIN",
+          "VITL",
+          "UNFI",
+          "PEP",
+          "GIS",
+          "SFM",
+          "ADM",
+          "KO",
+          "MNST",
+          "MDLZ"
+        ]
+      },
+      {
+        "key": "consumerapparel",
+        "name": "Apparel",
+        "description": "Apparel & E-Commerce Retail",
+        "members": [
+          "NKE",
+          "LULU",
+          "DECK",
+          "LEVI",
+          "UAA",
+          "ETSY",
+          "ANF",
+          "AMZN",
+          "SFIX",
+          "SHOP",
+          "VFC"
+        ]
+      },
+      {
+        "key": "consumerluxury",
+        "name": "Luxury",
+        "description": "Modern Luxury & Lifestyle",
+        "members": [
+          "RACE",
+          "EL",
+          "RH",
+          "RL",
+          "CPRI",
+          "TPR",
+          "LUXE",
+          "REAL",
+          "VFC",
+          "SIG"
+        ]
+      },
+      {
+        "key": "consumerfarmdirect",
+        "name": "Farm-Direct",
+        "description": "Farming & Direct Marketplaces",
+        "members": [
+          "VITL",
+          "FDP",
+          "CVGW",
+          "SFM",
+          "AMZN",
+          "UNFI",
+          "WMT",
+          "HAIN"
+        ]
+      },
+      {
+        "key": "consumerhousehold",
+        "name": "Household",
+        "description": "Smart Homes & Household Products",
+        "members": [
+          "ALRM",
+          "SONO",
+          "AMZN",
+          "REZI",
+          "SN",
+          "WHR",
+          "HON",
+          "HD",
+          "W",
+          "TSLA"
+        ]
+      },
+      {
+        "key": "consumersecondhand",
+        "name": "Secondhand",
+        "description": "Resale & Sharing Platforms",
+        "members": [
+          "EBAY",
+          "ABNB",
+          "CVNA",
+          "TDUP",
+          "UBER",
+          "REAL",
+          "RENT",
+          "CPRT",
+          "ETSY"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Smart Home",
+    "key": "Smart Home",
+    "subsectors": [
+      {
+        "key": "smarthomedevices",
+        "name": "Devices",
+        "description": "Connected Devices & Appliances",
+        "members": [
+          "AMZN",
+          "GOOGL",
+          "ARLO",
+          "REZI",
+          "SONO",
+          "AAPL",
+          "WHR",
+          "ADT",
+          "HON"
+        ]
+      },
+      {
+        "key": "smarthomeautomation",
+        "name": "Automation",
+        "description": "Automation & Control Systems",
+        "members": [
+          "ALRM",
+          "REZI",
+          "GOOGL",
+          "AMZN",
+          "AAPL",
+          "CARR",
+          "ADT",
+          "HON",
+          "ALLE",
+          "NRG"
+        ]
+      },
+      {
+        "key": "smarthomesecurity",
+        "name": "Security",
+        "description": "Security & Monitoring",
+        "members": [
+          "ADT",
+          "ALRM",
+          "ARLO",
+          "AMZN",
+          "REZI",
+          "ALLE",
+          "AAPL",
+          "JCI"
+        ]
+      },
+      {
+        "key": "smarthomeenergy",
+        "name": "Energy",
+        "description": "Energy & Utilities",
+        "members": [
+          "ENPH",
+          "SEDG",
+          "ITRI",
+          "STEM",
+          "ETN",
+          "GNRC",
+          "HON",
+          "AEIS"
+        ]
+      },
+      {
+        "key": "smarthomenetworking",
+        "name": "Networking",
+        "description": "Connectivity & Networking",
+        "members": [
+          "NTGR",
+          "UI",
+          "QCOM",
+          "AVGO",
+          "AMZN",
+          "CMCSA",
+          "CHTR"
+        ]
+      },
+      {
+        "key": "smarthomevoiceai",
+        "name": "Voice & AI",
+        "description": "Voice Assistants & AI Integration",
+        "members": [
+          "AMZN",
+          "GOOGL",
+          "AAPL",
+          "SOUN",
+          "MSFT"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Wearables",
+    "key": "Wearables",
+    "subsectors": [
+      {
+        "key": "wearablessmartwatches",
+        "name": "Smartwatches",
+        "description": "Smartwatches & Fitness Devices",
+        "members": [
+          "AAPL",
+          "GRMN",
+          "GOOGL",
+          "MASI"
+        ]
+      },
+      {
+        "key": "wearablesmedical",
+        "name": "Medical",
+        "description": "Health Monitoring & Medical Devices",
+        "members": [
+          "DXCM",
+          "ABT",
+          "IRTC",
+          "MASI",
+          "MDT",
+          "AAPL",
+          "GOOGL",
+          "GEHC"
+        ]
+      },
+      {
+        "key": "wearablesimmersive",
+        "name": "Immersive",
+        "description": "Audio-Visual Immersive Devices",
+        "members": [
+          "QCOM",
+          "SYNA",
+          "ADI",
+          "TXN",
+          "STM",
+          "AVGO",
+          "NXPI",
+          "ON",
+          "MCHP"
+        ]
+      },
+      {
+        "key": "wearablessoftware",
+        "name": "Software",
+        "description": "Software & Ecosystems",
+        "members": [
+          "AAPL",
+          "GOOGL",
+          "GRMN",
+          "QCOM",
+          "META"
+        ]
+      },
+      {
+        "key": "wearablessport",
+        "name": "Sport",
+        "description": "Sports, Fitness & Lifestyle Applications",
+        "members": [
+          "GRMN",
+          "AAPL",
+          "NKE",
+          "PTON",
+          "GOOGL",
+          "UAA",
+          "LULU"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Education Technology",
+    "key": "Education Technology",
+    "subsectors": [
+      {
+        "key": "educationplatforms",
+        "name": "Platforms",
+        "description": "Online Learning Platforms",
+        "members": [
+          "COUR",
+          "UDMY",
+          "DUOL",
+          "LRN",
+          "SKIL",
+          "CHGG"
+        ]
+      },
+      {
+        "key": "educationworkforce",
+        "name": "Workforce",
+        "description": "Workforce Training",
+        "members": [
+          "SKIL",
+          "UDMY",
+          "COUR",
+          "CVSA",
+          "UTI",
+          "DCBO",
+          "LINC",
+          "PRDO",
+          "LAUR",
+          "LRN"
+        ]
+      },
+      {
+        "key": "educationcurriculum",
+        "name": "Curriculum",
+        "description": "Digital Curriculum",
+        "members": [
+          "PSO",
+          "MH",
+          "WLY",
+          "LRN",
+          "COUR",
+          "BNED",
+          "GHC",
+          "UDMY",
+          "DUOL",
+          "TAL",
+          "CVSA"
+        ]
+      },
+      {
+        "key": "educationinfrastructure",
+        "name": "Infrastructure",
+        "description": "Infrastructure",
+        "members": [
+          "ZM",
+          "MSFT",
+          "GOOGL",
+          "COUR",
+          "SKIL",
+          "ADBE",
+          "LRN",
+          "CHGG"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Energy Renewable",
+    "key": "Energy Renewable",
+    "subsectors": [
+      {
+        "key": "energycleansolar",
+        "name": "Solar",
+        "description": "Solar",
+        "members": [
+          "FSLR",
+          "ENPH",
+          "SEDG",
+          "CSIQ",
+          "RUN",
+          "BEP",
+          "JKS",
+          "NEE",
+          "NXT",
+          "SPWR",
+          "DQ"
+        ]
+      },
+      {
+        "key": "energycleanwind",
+        "name": "Wind",
+        "description": "Wind",
+        "members": [
+          "NEE",
+          "BEP",
+          "CWEN",
+          "ENLT",
+          "XIFR",
+          "AES",
+          "CDLR",
+          "GEV",
+          "AMSC",
+          "ACA",
+          "D",
+          "ENB"
+        ]
+      },
+      {
+        "key": "energycleanhydrogen",
+        "name": "Hydrogen",
+        "description": "Hydrogen & Fuel Cells",
+        "members": [
+          "PLUG",
+          "BE",
+          "APD",
+          "FCEL",
+          "BLDP",
+          "LIN",
+          "GTLS",
+          "HTOO",
+          "CMI"
+        ]
+      },
+      {
+        "key": "energycleangeothermal",
+        "name": "Geothermal",
+        "description": "Geothermal",
+        "members": [
+          "ORA",
+          "CEG",
+          "BRK-B",
+          "SLB"
+        ]
+      },
+      {
+        "key": "energycleanutilities",
+        "name": "Utilities",
+        "description": "Utilities & Clean Power Operators",
+        "members": [
+          "CEG",
+          "NEE",
+          "EXC",
+          "DUK",
+          "SO",
+          "CWEN",
+          "XEL",
+          "PEG",
+          "VST",
+          "PPL",
+          "AEP"
+        ]
+      },
+      {
+        "key": "energycleanbatteries",
+        "name": "Batteries",
+        "description": "Batteries & Storage",
+        "members": [
+          "FLNC",
+          "STEM",
+          "TSLA",
+          "NRGV",
+          "EOSE",
+          "GWH",
+          "ENPH",
+          "GNRC",
+          "NEE",
+          "ENS",
+          "VST"
+        ]
+      },
+      {
+        "key": "energycleansmartgrid",
+        "name": "Smart Grid",
+        "description": "Smart Grid & Electrification",
+        "members": [
+          "PWR",
+          "ITRI",
+          "ETN",
+          "NEE",
+          "EXC",
+          "NGG",
+          "HUBB",
+          "GEV",
+          "MPWR"
+        ]
+      },
+      {
+        "key": "energycleanmaterials",
+        "name": "Materials",
+        "description": "Materials & Critical Metals",
+        "members": [
+          "ALB",
+          "FCX",
+          "SQM",
+          "MP",
+          "SCCO",
+          "LAC",
+          "BHP",
+          "RIO"
+        ]
+      },
+      {
+        "key": "energycleanbiofuels",
+        "name": "Biofuels",
+        "description": "Fuels & Bioenergy",
+        "members": [
+          "CLNE",
+          "DAR",
+          "GEVO",
+          "OPAL",
+          "AMTX",
+          "MNTK",
+          "VLO",
+          "CVX",
+          "CLMT",
+          "GPRE"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Energy Traditional",
+    "key": "Energy Traditional",
+    "subsectors": [
+      {
+        "key": "energybaseoilproduction",
+        "name": "Oil Production",
+        "description": "Oil & Gas Exploration & Production",
+        "members": [
+          "COP",
+          "EOG",
+          "DVN",
+          "XOM",
+          "CVX",
+          "OXY",
+          "FANG",
+          "SHEL",
+          "TTE",
+          "APA"
+        ]
+      },
+      {
+        "key": "energybaseoilrefining",
+        "name": "Oil Refining",
+        "description": "Refining & Midstream Infrastructure",
+        "members": [
+          "EPD",
+          "ENB",
+          "MPC",
+          "KMI",
+          "WMB",
+          "OKE",
+          "ET",
+          "PSX",
+          "PAA",
+          "VLO",
+          "DINO"
+        ]
+      },
+      {
+        "key": "energybaseoilservices",
+        "name": "Oil Services",
+        "description": "Oilfield Services & Equipment",
+        "members": [
+          "SLB",
+          "HAL",
+          "BKR",
+          "FTI",
+          "NOV",
+          "OII",
+          "PTEN"
+        ]
+      },
+      {
+        "key": "energybasethermal",
+        "name": "Thermal",
+        "description": "Coal & Thermal Power Generation",
+        "members": [
+          "CNR",
+          "ARLP",
+          "BTU",
+          "HNRG",
+          "METC",
+          "AEP",
+          "DUK",
+          "DTE",
+          "NRG",
+          "HCC",
+          "AMR"
+        ]
+      },
+      {
+        "key": "energybasenuclear",
+        "name": "Nuclear",
+        "description": "Nuclear Power & Advanced Reactors",
+        "members": [
+          "CEG",
+          "BWXT",
+          "SMR",
+          "OKLO",
+          "LEU",
+          "CCJ",
+          "VST",
+          "UEC",
+          "NEE",
+          "GEV"
+        ]
+      },
+      {
+        "key": "energybasemajors",
+        "name": "Majors",
+        "description": "Integrated Energy Majors",
+        "members": [
+          "SHEL",
+          "TTE",
+          "XOM",
+          "CVX",
+          "BP",
+          "EQNR",
+          "E"
+        ]
+      },
+      {
+        "key": "energybaseutilities",
+        "name": "Utilities",
+        "description": "Utilities & Conventional Power Operators",
+        "members": [
+          "SO",
+          "DUK",
+          "AEP",
+          "D",
+          "XEL",
+          "CEG",
+          "ETR",
+          "VST",
+          "SRE"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Commodities Energy",
+    "key": "Commodities Energy",
+    "subsectors": [
+      {
+        "key": "commenergyoil",
+        "name": "Oil",
+        "description": "Crude Oil",
+        "members": [
+          "XOM",
+          "CVX",
+          "COP",
+          "EOG",
+          "OXY",
+          "FANG",
+          "BP",
+          "SHEL",
+          "DVN",
+          "MPC"
+        ]
+      },
+      {
+        "key": "commenergygaslng",
+        "name": "Gas & LNG",
+        "description": "Natural Gas & LNG",
+        "members": [
+          "LNG",
+          "EQT",
+          "EXE",
+          "CQP",
+          "AR",
+          "KMI",
+          "WMB",
+          "CTRA",
+          "ET",
+          "NEXT",
+          "OKE",
+          "SRE"
+        ]
+      },
+      {
+        "key": "commenergyuranium",
+        "name": "Uranium",
+        "description": "Uranium & Nuclear Fuels",
+        "members": [
+          "CCJ",
+          "UUUU",
+          "LEU",
+          "UEC",
+          "NXE",
+          "URG",
+          "DNN",
+          "BWXT",
+          "SMR"
+        ]
+      },
+      {
+        "key": "commenergybiofuels",
+        "name": "Biofuels",
+        "description": "Biofuels & Renewable Fuels",
+        "members": [
+          "DAR",
+          "AMTX",
+          "CLNE",
+          "GEVO",
+          "OPAL",
+          "VLO",
+          "CLMT",
+          "MNTK"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Commodities Metals",
+    "key": "Commodities Metals",
+    "subsectors": [
+      {
+        "key": "commmetalsgold",
+        "name": "Gold",
+        "description": "Gold",
+        "members": [
+          "NEM",
+          "AEM",
+          "WPM",
+          "FNV",
+          "RGLD",
+          "B",
+          "KGC",
+          "GFI",
+          "AU",
+          "PAAS",
+          "CDE"
+        ]
+      },
+      {
+        "key": "commmetalssilver",
+        "name": "Silver",
+        "description": "Silver",
+        "members": [
+          "AG",
+          "EXK",
+          "HL",
+          "PAAS",
+          "SVM",
+          "DVS",
+          "WPM"
+        ]
+      },
+      {
+        "key": "commmetalsprecious",
+        "name": "Precious",
+        "description": "Precious Metals",
+        "members": [
+          "NEM",
+          "FNV",
+          "WPM",
+          "AEM",
+          "RGLD",
+          "SBSW",
+          "B",
+          "PAAS",
+          "HL",
+          "TFPM",
+          "MTA",
+          "BVN"
+        ]
+      },
+      {
+        "key": "commmetalsindustrial",
+        "name": "Industrial",
+        "description": "Industrial & Base Metals",
+        "members": [
+          "FCX",
+          "SCCO",
+          "NUE",
+          "STLD",
+          "AA",
+          "CMC",
+          "BHP",
+          "RIO",
+          "ERO",
+          "CLF",
+          "VALE",
+          "CENX"
+        ]
+      },
+      {
+        "key": "commmetalsbattery",
+        "name": "Battery",
+        "description": "Battery & Energy Transition Metals",
+        "members": [
+          "ALB",
+          "SQM",
+          "LAR",
+          "LAC",
+          "SGML",
+          "NMG",
+          "ATLX",
+          "VALE",
+          "TECK",
+          "MP",
+          "WWR"
+        ]
+      },
+      {
+        "key": "commmetalsrareearth",
+        "name": "Rare Earth",
+        "description": "Rare Earth & Strategic Materials",
+        "members": [
+          "MP",
+          "IPX",
+          "NB",
+          "USAR",
+          "CTGO",
+          "UUUU",
+          "LXFR",
+          "AREC"
+        ]
+      },
+      {
+        "key": "commmetalsrecycling",
+        "name": "Recycling",
+        "description": "Recycling & Circular Materials",
+        "members": [
+          "NUE",
+          "STLD",
+          "CMC",
+          "ABAT",
+          "LKQ"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Commodities Agriculture",
+    "key": "Commodities Agriculture",
+    "subsectors": [
+      {
+        "key": "commagrigrains",
+        "name": "Grains",
+        "description": "Grains & Oilseeds",
+        "members": [
+          "ADM",
+          "BG",
+          "AGRO",
+          "ANDE"
+        ]
+      },
+      {
+        "key": "commagrisofts",
+        "name": "Softs",
+        "description": "Softs & Plantation Crops",
+        "members": [
+          "CSAN",
+          "DOLE",
+          "FDP",
+          "AGRO",
+          "HSY",
+          "SJM"
+        ]
+      },
+      {
+        "key": "commagrilivestock",
+        "name": "Livestock",
+        "description": "Livestock & Animal Protein",
+        "members": [
+          "TSN",
+          "JBS",
+          "PPC",
+          "HRL",
+          "CALM"
+        ]
+      },
+      {
+        "key": "commagrifertilizers",
+        "name": "Fertilizers",
+        "description": "Fertilizers, Crop Inputs & Seeds",
+        "members": [
+          "CTVA",
+          "CF",
+          "MOS",
+          "NTR",
+          "FMC"
+        ]
+      },
+      {
+        "key": "commagribiofuels",
+        "name": "Biofuels",
+        "description": "Renewable Fuels & Biofuels",
+        "members": [
+          "GPRE",
+          "DAR",
+          "REX",
+          "AMTX",
+          "GEVO",
+          "FF",
+          "ADM",
+          "VLO",
+          "ANDE"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Agriculture & FoodTech",
+    "key": "Agriculture & FoodTech",
+    "subsectors": [
+      {
+        "key": "agriculturesmartfarming",
+        "name": "Smart Farming",
+        "description": "Precision Agriculture & Farm Automation",
+        "members": [
+          "DE",
+          "TRMB",
+          "AGCO",
+          "CNH",
+          "LNN",
+          "UAVS"
+        ]
+      },
+      {
+        "key": "agriculturecropinputs",
+        "name": "Crop Inputs",
+        "description": "Agricultural Inputs & Crop Science",
+        "members": [
+          "CTVA",
+          "MOS",
+          "NTR",
+          "CF",
+          "FMC",
+          "UAN",
+          "BIOX",
+          "CBUS"
+        ]
+      },
+      {
+        "key": "agricultureindoorfarming",
+        "name": "Indoor Farming",
+        "description": "Controlled Environment Agriculture",
+        "members": [
+          "LOCL",
+          "HYFM",
+          "VFF",
+          "UGRO"
+        ]
+      },
+      {
+        "key": "agriculturealtprotein",
+        "name": "Alt Protein",
+        "description": "Alternative Proteins",
+        "members": [
+          "BYND",
+          "OTLY",
+          "MLEC",
+          "STKH",
+          "INGR",
+          "DNA",
+          "ADM",
+          "LSF"
+        ]
+      },
+      {
+        "key": "agricultureprocessing",
+        "name": "Processing",
+        "description": "Agri-Food Processing & Distribution",
+        "members": [
+          "ADM",
+          "BG",
+          "SYY",
+          "PFGC",
+          "TSN",
+          "USFD",
+          "UNFI",
+          "DAR",
+          "ANDE",
+          "PPC"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Environmental Sustainability",
+    "key": "Environmental Sustainability",
+    "subsectors": [
+      {
+        "key": "environmentalwater",
+        "name": "Water",
+        "description": "Water Infrastructure & Treatment",
+        "members": [
+          "XYL",
+          "AWK",
+          "PNR",
+          "WTRG",
+          "AWR",
+          "CWT",
+          "CWCO",
+          "MSEX",
+          "WTS",
+          "ECL",
+          "AOS"
+        ]
+      },
+      {
+        "key": "environmentalwaste",
+        "name": "Waste",
+        "description": "Waste Management & Recycling",
+        "members": [
+          "WM",
+          "RSG",
+          "WCN",
+          "GFL",
+          "CLH",
+          "CWST",
+          "BALL",
+          "SON",
+          "LNZA",
+          "MEG"
+        ]
+      },
+      {
+        "key": "environmentalairquality",
+        "name": "Air Quality",
+        "description": "Clean Technologies & Pollution Control",
+        "members": [
+          "CECO",
+          "DCI",
+          "HON",
+          "ECL",
+          "CMI",
+          "GTLS",
+          "FTEK",
+          "AME",
+          "VLTO",
+          "ERII"
+        ]
+      },
+      {
+        "key": "environmentalclimate",
+        "name": "Climate",
+        "description": "Climate Technologies & Carbon Solutions",
+        "members": [
+          "LIN",
+          "JCI",
+          "OXY",
+          "ORGN",
+          "AES",
+          "NEE",
+          "BEPC",
+          "FSLR",
+          "HON",
+          "RNW",
+          "OC",
+          "LNZA",
+          "NPWR"
+        ]
+      },
+      {
+        "key": "environmentalagriculture",
+        "name": "Agriculture",
+        "description": "Sustainable Agriculture & Resource Management",
+        "members": [
+          "JCI",
+          "LIN",
+          "NEE",
+          "FSLR",
+          "ORGN",
+          "BEPC",
+          "OXY",
+          "AES",
+          "RNW",
+          "HON",
+          "OC",
+          "NPWR",
+          "LNZA"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Healthcare & Biotech",
+    "key": "Healthcare & Biotech",
+    "subsectors": [
+      {
+        "key": "healthcarenextgen",
+        "name": "Next-Gen",
+        "description": "Next-Gen Biotech Platforms",
+        "members": [
+          "MRNA",
+          "BNTX",
+          "CRSP",
+          "NTLA",
+          "BEAM",
+          "VRTX",
+          "ALNY",
+          "REGN"
+        ]
+      },
+      {
+        "key": "healthcareoncology",
+        "name": "Oncology",
+        "description": "Oncology & Precision Cancer Therapeutics",
+        "members": [
+          "BMY",
+          "MRK",
+          "GH",
+          "AZN",
+          "ILMN",
+          "BNTX",
+          "GILD",
+          "EXEL",
+          "TNGX",
+          "ABBV",
+          "AMGN",
+          "JNJ",
+          "PFE"
+        ]
+      },
+      {
+        "key": "healthcaremetabolic",
+        "name": "Metabolic",
+        "description": "Metabolic & Cardiometabolic",
+        "members": [
+          "LLY",
+          "NVO",
+          "VKTX",
+          "GPCR",
+          "ALT",
+          "AMGN",
+          "PFE",
+          "MRK"
+        ]
+      },
+      {
+        "key": "healthcarediagnostics",
+        "name": "Diagnostics",
+        "description": "Diagnostics, Biomarkers & Liquid Biopsy",
+        "members": [
+          "TMO",
+          "ILMN",
+          "GH",
+          "DHR",
+          "NTRA",
+          "EXAS",
+          "TXG",
+          "PACB",
+          "LH",
+          "DGX",
+          "BIO",
+          "QDEL"
+        ]
+      },
+      {
+        "key": "healthcaregenomics",
+        "name": "Genomics",
+        "description": "Genomics & Personalized Medicine",
+        "members": [
+          "ILMN",
+          "PACB",
+          "CRSP",
+          "NTLA",
+          "GH",
+          "TXG",
+          "TEM",
+          "TWST",
+          "TMO",
+          "VRTX",
+          "SEER",
+          "CDNA"
+        ]
+      },
+      {
+        "key": "healthcaredevices",
+        "name": "Devices",
+        "description": "Medical Devices & HealthTech Hardware",
+        "members": [
+          "MDT",
+          "ISRG",
+          "SYK",
+          "EW",
+          "BSX",
+          "ABT",
+          "DXCM",
+          "GEHC",
+          "TNDM",
+          "BDX",
+          "RMD"
+        ]
+      },
+      {
+        "key": "healthcaretelemedicine",
+        "name": "Telemedicine",
+        "description": "Digital Health, Telemedicine & Remote Care",
+        "members": [
+          "TDOC",
+          "DXCM",
+          "HIMS",
+          "ABT",
+          "DOCS",
+          "AMWL",
+          "AMZN",
+          "MDT",
+          "AAPL",
+          "PRVA",
+          "LFST",
+          "IRTC",
+          "OSCR"
+        ]
+      },
+      {
+        "key": "healthcareitdata",
+        "name": "IT & Data",
+        "description": "IT, Services & Data Infrastructure",
+        "members": [
+          "IQV",
+          "UNH",
+          "VEEV",
+          "ORCL",
+          "HCAT",
+          "HQY",
+          "PHR",
+          "DOCS",
+          "EVH",
+          "WAY",
+          "OMCL",
+          "GDRX"
+        ]
+      },
+      {
+        "key": "healthcaretherapeutics",
+        "name": "Therapeutics",
+        "description": "Regenerative Medicine, Psychedelics, Cannabis",
+        "members": [
+          "DFTX",
+          "ATAI",
+          "MESO",
+          "FATE",
+          "CMPS",
+          "SANA",
+          "HELP",
+          "CGC",
+          "TLRY",
+          "CRSP",
+          "GHRS",
+          "JAZZ",
+          "CRON",
+          "GILD"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Aging Population & Longevity",
+    "key": "Aging Population & Longevity",
+    "subsectors": [
+      {
+        "key": "longevityhealthcare",
+        "name": "Healthcare",
+        "description": "Healthcare & Medical Devices",
+        "members": [
+          "MDT",
+          "ABT",
+          "ZBH",
+          "SYK",
+          "GEHC",
+          "BSX",
+          "DXCM",
+          "BAX"
+        ]
+      },
+      {
+        "key": "longevityagingpharma",
+        "name": "Aging Pharma",
+        "description": "Age-Related Pharmaceuticals & Biotech",
+        "members": [
+          "LLY",
+          "NVO",
+          "BIIB",
+          "PFE",
+          "JNJ",
+          "MRK",
+          "GERN",
+          "BMY",
+          "CRSP"
+        ]
+      },
+      {
+        "key": "longevityseniorliving",
+        "name": "Senior Living",
+        "description": "Senior Living & Assisted Care",
+        "members": [
+          "WELL",
+          "VTR",
+          "OHI",
+          "NHI",
+          "ENSG",
+          "BKD",
+          "SBRA",
+          "EHC"
+        ]
+      },
+      {
+        "key": "longevityhealthyaging",
+        "name": "Healthy Aging",
+        "description": "Healthy Aging & Nutrition",
+        "members": [
+          "ABT",
+          "HIMS",
+          "CELH",
+          "DXCM",
+          "NUS",
+          "SFM",
+          "BODI",
+          "CHD"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Healthy Food & Nutrition",
+    "key": "Healthy Food & Nutrition",
+    "subsectors": [
+      {
+        "key": "nutritionaltprotein",
+        "name": "Alt Protein",
+        "description": "Plant-Based Foods & Meat Alternatives",
+        "members": [
+          "BYND",
+          "OTLY",
+          "STKL",
+          "INGR",
+          "ADM",
+          "GIS",
+          "BG",
+          "SFM",
+          "KHC",
+          "KR"
+        ]
+      },
+      {
+        "key": "nutritionretailers",
+        "name": "Retailers",
+        "description": "Organic & Natural Food Retailers",
+        "members": [
+          "SFM",
+          "NGVC",
+          "AMZN",
+          "KR",
+          "COST",
+          "UNFI",
+          "ACI",
+          "WMT"
+        ]
+      },
+      {
+        "key": "nutritionsupplements",
+        "name": "Supplements",
+        "description": "Functional & Nutritional Supplements",
+        "members": [
+          "HLF",
+          "SMPL",
+          "BRBR",
+          "HLN",
+          "CELH",
+          "NATR",
+          "NUS",
+          "CHD"
+        ]
+      },
+      {
+        "key": "nutritionmealdelivery",
+        "name": "Meal Delivery",
+        "description": "Food Delivery & Meal Kits",
+        "members": [
+          "DASH",
+          "UBER",
+          "AMZN",
+          "WMT",
+          "KR",
+          "SFM"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "FinTech",
+    "key": "FinTech",
+    "subsectors": [
+      {
+        "key": "fintechpayments",
+        "name": "Payments",
+        "description": "Digital Payments & Merchant Infrastructure",
+        "members": [
+          "V",
+          "MA",
+          "PYPL",
+          "XYZ",
+          "TOST",
+          "FISV",
+          "GPN",
+          "FOUR",
+          "AXP",
+          "AFRM",
+          "ACIW",
+          "DLO"
+        ]
+      },
+      {
+        "key": "fintechneobanks",
+        "name": "Neobanks",
+        "description": "Digital Banking & Neobanks",
+        "members": [
+          "SOFI",
+          "NU",
+          "XYZ",
+          "ALLY",
+          "DAVE",
+          "MQ"
+        ]
+      },
+      {
+        "key": "fintechlending",
+        "name": "Lending",
+        "description": "Lending, Credit & BNPL",
+        "members": [
+          "UPST",
+          "AFRM",
+          "LC",
+          "XYZ",
+          "PYPL",
+          "SOFI"
+        ]
+      },
+      {
+        "key": "fintechtrading",
+        "name": "Trading",
+        "description": "Trading Platforms & WealthTech",
+        "members": [
+          "HOOD",
+          "IBKR",
+          "ETOR",
+          "SCHW",
+          "SOFI",
+          "ORLY",
+          "VIRT"
+        ]
+      },
+      {
+        "key": "fintechblockchain",
+        "name": "Blockchain",
+        "description": "Crypto, Blockchain & Tokenization",
+        "members": [
+          "COIN",
+          "RIOT",
+          "MARA",
+          "CLSK",
+          "XYZ",
+          "MSTR",
+          "NVDA"
+        ]
+      },
+      {
+        "key": "fintechexchanges",
+        "name": "Exchanges",
+        "description": "Exchanges & Market Infrastructure",
+        "members": [
+          "CME",
+          "ICE",
+          "NDAQ",
+          "CBOE",
+          "MKTX",
+          "TW",
+          "COIN"
+        ]
+      },
+      {
+        "key": "fintechinsurance",
+        "name": "Insurance",
+        "description": "InsurTech & Embedded Insurance",
+        "members": [
+          "LMND",
+          "ROOT",
+          "HIPO",
+          "TRUP",
+          "OSCR",
+          "GWRE",
+          "SLQT",
+          "EVER"
+        ]
+      }
+    ]
+  },
+  {
+    "theme": "Crypto & Blockchain",
+    "key": "Crypto & Blockchain",
+    "subsectors": [
+      {
+        "key": "blockchainplatforms",
+        "name": "Platforms",
+        "description": "Cryptocurrency Platforms",
+        "members": [
+          "COIN",
+          "HOOD",
+          "XYZ",
+          "BKKT",
+          "PYPL"
+        ]
+      },
+      {
+        "key": "blockchaininfrastructure",
+        "name": "Infrastructure",
+        "description": "Blockchain Infrastructure",
+        "members": [
+          "XYZ",
+          "IBM",
+          "AMZN",
+          "COIN"
+        ]
+      },
+      {
+        "key": "blockchainpayments",
+        "name": "Payments",
+        "description": "Financial Services & Payments",
+        "members": [
+          "XYZ",
+          "JPM",
+          "PYPL",
+          "V",
+          "MA",
+          "COIN"
+        ]
+      },
+      {
+        "key": "blockchainenterprise",
+        "name": "Enterprise",
+        "description": "Enterprise Blockchain Solutions",
+        "members": [
+          "IBM",
+          "ORCL",
+          "ACN",
+          "MSFT",
+          "AMZN",
+          "WMT",
+          "CRM"
+        ]
+      },
+      {
+        "key": "blockchaintokenization",
+        "name": "Tokenization",
+        "description": "Tokenization & Digital Assets",
+        "members": [
+          "BLK",
+          "COIN",
+          "XYZ",
+          "WT",
+          "NDAQ",
+          "IBM",
+          "TROW",
+          "MSFT"
+        ]
+      },
+      {
+        "key": "blockchainmining",
+        "name": "Mining",
+        "description": "Cryptocurrency Mining & Staking",
+        "members": [
+          "MARA",
+          "RIOT",
+          "CLSK",
+          "CORZ",
+          "IREN",
+          "CIFR",
+          "HUT",
+          "BTDR",
+          "COIN"
+        ]
+      }
+    ]
+  }
+]

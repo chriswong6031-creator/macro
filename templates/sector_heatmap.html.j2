@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S&P 500 Heatmap — Market Intelligence</title>
+<title>Market Heatmaps — S&P 500 · Themes — Market Intelligence</title>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -47,17 +47,17 @@
 <div class="wrap">
   <div class="hm-head">
     <div>
-      <h1>🔥 {{ t('S&P 500 Heatmap', 'S&P 500 热力图') }}</h1>
-      <div class="sub">{{ t('Every S&P 500 name grouped Sector → Subsector → stock the Finviz way, sized by market cap and shaded by the move over the timeframe you pick. Only the names big enough to read carry a label; the rest are pure colour. Hover a sector or subsector header for its members, hover a tile for our conviction read, and click through to the full analyzer.',
-                            '全部标普500成份股，按「板块 → 子行业 → 个股」分组（Finviz 风格），按市值定大小，并按所选周期的涨跌幅着色。仅大市值个股显示代码，其余仅以颜色呈现。将鼠标悬停在板块或子行业标题上查看其成员，悬停方块查看我们的研判，点击进入完整分析器。') }}</div>
+      <h1>🔥 {{ t('Market Heatmaps', '市场热力图') }}</h1>
+      <div class="sub">{{ t('Two institutional treemaps in our theme. <b>S&P 500</b> — every name grouped Sector → Subsector → stock the Finviz way, sized by market cap; hover a tile for our conviction read. <b>Themes</b> — Finviz\'s narrative baskets grouped Theme → Subsector, coloured by each subsector\'s move; hover a subsector for its member tickers. Both shade by the move over the timeframe you pick.',
+                            '两张机构级树图，采用我们的主题配色。<b>标普500</b> — 全部成份股按「板块 → 子行业 → 个股」分组（Finviz 风格），按市值定大小；悬停方块查看我们的研判。<b>主题</b> — Finviz 叙事篮子按「主题 → 子板块」分组，按各子板块涨跌幅着色；悬停子板块查看其成员个股。两者均按所选周期的涨跌幅着色。') }}</div>
     </div>
   </div>
 
-  <div id="heatmap-full"></div>
+  <div id="heatmap-full" data-hm-maps='[{"key":"sp500","icon":"🔥","label_en":"S&amp;P 500","label_zh":"标普500","url":"marketdata/sp500_heatmap.json"},{"key":"themes","icon":"🧭","label_en":"Themes","label_zh":"主题","url":"marketdata/themes_heatmap.json"}]'></div>
 
   <div class="hm-foot">
-    {{ t('Tiles are sized by market cap and binned by the % change over the selected timeframe (the 1D view uses ±1/2/3% bins; longer windows widen the bins so the map stays legible — green = up, red = down, inverted in 中文 to the Asian convention). Daily windows (1D–1Y) are computed from adjusted closes. The hover card shows our own conviction read (verdict, 0–100 score, drivers and cautions) — research context, never a buy signal.',
-          '方块按市值定大小，并按所选周期的涨跌幅分档着色（1天视图采用 ±1/2/3% 分档；更长周期会拓宽分档以保持可读性 — 绿涨红跌，中文模式按亚洲习惯反转）。日线周期（1天–1年）由复权收盘价计算。悬停卡片展示我们自有的研判（结论、0–100 评分、驱动因素与风险提示）——仅作研究参考，绝非买入信号。') }}
+    {{ t('Green = up, red = down (inverted in 中文 to the Asian convention); the 1D view bins at ±1/2/3%, longer windows widen the bins so the map stays legible. <b>S&P 500</b> tiles are sized by market cap and computed from adjusted closes; the hover card is our own conviction read (verdict, 0–100 score, drivers and cautions) — research context, never a buy signal. <b>Themes</b> tiles are subsectors sized by member count, coloured by Finviz\'s subsector move; hovering lists the member tickers with their own moves. Themes data: Finviz themes map.',
+          '绿涨红跌（中文模式按亚洲习惯反转）；1天视图采用 ±1/2/3% 分档，更长周期会拓宽分档以保持可读性。<b>标普500</b> 方块按市值定大小、由复权收盘价计算；悬停卡片为我们自有的研判（结论、0–100 评分、驱动与风险）——仅作研究参考，绝非买入信号。<b>主题</b> 方块为子板块，按成员数量定大小，按 Finviz 子板块涨跌幅着色；悬停可列出成员个股及其涨跌幅。主题数据来源：Finviz 主题图。') }}
   </div>
 </div>
 
