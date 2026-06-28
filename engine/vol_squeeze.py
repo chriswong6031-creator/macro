@@ -185,6 +185,15 @@ _CAVEAT = ("Volatility compression read — a TIMING context, not a direction ca
 _CAVEAT_ZH = ("波动压缩读数 — 属择时背景，并非方向判断。持续的压缩意味着更大的波动正在蓄势；"
               "方向要等价格放量突破压缩箱后才确认。中等效力，绝非独立信号。")
 
+# EXPANSION is the OPPOSITE end of the cycle from a squeeze — realized vol already sits in its
+# top quintile and nothing is coiled — so it gets its own read, not the compression caveat above.
+_CAVEAT_EXP = ("Volatility is already elevated — realized vol sits in the top fifth of the past "
+               "year, so the move is underway, not loading. This is the opposite of a coiled "
+               "squeeze: the quiet entry is already gone. A late / heads-up read, never a "
+               "standalone signal.")
+_CAVEAT_EXP_ZH = ("波动率已处于高位 — 实现波动率位于过去一年前五分之一，行情已在进行，而非蓄势。"
+                  "这与压缩蓄势相反：安静的入场点已过。属偏晚的提示读数，绝非独立信号。")
+
 
 def _out(state, bias, days, bbwp, hvp, box_hi, box_lo, pos, to_upper, to_lower,
          fired_dir, coverage, *, volume_confirmed=None) -> dict:
@@ -196,5 +205,7 @@ def _out(state, bias, days, bbwp, hvp, box_hi, box_lo, pos, to_upper, to_lower,
         "box_hi": box_hi, "box_lo": box_lo, "pos": pos,
         "to_upper_pct": to_upper, "to_lower_pct": to_lower,
         "fired_dir": fired_dir, "volume_confirmed": volume_confirmed,
-        "coverage": coverage, "caveat": _CAVEAT, "caveat_zh": _CAVEAT_ZH,
+        "coverage": coverage,
+        "caveat": _CAVEAT_EXP if state == "EXPANSION" else _CAVEAT,
+        "caveat_zh": _CAVEAT_EXP_ZH if state == "EXPANSION" else _CAVEAT_ZH,
     }
