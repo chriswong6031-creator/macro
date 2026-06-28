@@ -119,6 +119,47 @@ jobs:
           path: data/intraday
           key: intraday-render-${{ github.run_id }}
           restore-keys: intraday-
+      - name: pick render scope from changed files (push narrows; dispatch honors its input)
+        id: pick
+        # SAFE scope detection: narrow to ONE region ONLY when every changed file is in that
+        # region's whitelist AND render.yml's scope for it fully rebuilds those pages. Anything
+        # shared (_partials, *_base), multi-region, a sub-page no narrow scope covers, or
+        # unknown -> 'all' (today's behavior, zero regression). A wrong scope can only FAIL a
+        # render (recoverable — the render step's `case` exits on an unknown scope), never
+        # silently stale a page. Cuts a single-desk/dashboard edit from a ~28m full render to
+        # a few minutes.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "scope=${{ github.event.inputs.scope }}" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          FILES=$(gh api "repos/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.event.after }}" --jq '.files[].filename' 2>/dev/null)
+          if [ -z "$FILES" ]; then echo "::notice::no changed-file list -> full render"; echo "scope=all" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "$FILES" | sed 's/^/  changed: /'
+          region_of() {
+            case "$1" in
+              templates/china.html.j2|scripts/build_china.py) echo china;;
+              templates/hk.html.j2|scripts/build_hk.py) echo hk;;
+              templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py) echo markets;;
+              templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
+              templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
+              templates/dashboard.html.j2|templates/stock.html.j2|scripts/build_site.py) echo macro;;
+              *) echo all;;
+            esac
+          }
+          REGIONS=""
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            r=$(region_of "$f")
+            case " $REGIONS " in *" $r "*) ;; *) REGIONS="$REGIONS $r";; esac
+          done <<< "$FILES"
+          REGIONS=$(echo $REGIONS | xargs)
+          read -ra _arr <<< "$REGIONS"
+          if [ "${#_arr[@]}" -ne 1 ] || echo " $REGIONS " | grep -q " all "; then S=all; else S="$REGIONS"; fi
+          echo "::notice::changed regions=[$REGIONS] -> render scope=$S"
+          echo "scope=$S" >> "$GITHUB_OUTPUT"
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
         # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
@@ -132,7 +173,7 @@ jobs:
           LIVE_QUOTES_WORKER_URL: ${{ vars.LIVE_QUOTES_WORKER_URL }}
         run: |
           set +e
-          SCOPE="${{ github.event.inputs.scope }}"; SCOPE="${SCOPE:-all}"
+          SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
           echo "::notice::render scope = $SCOPE"
           # marker for the library-rebuild guard (same as daily): only libraries whose
           # dashboard didn't build them fresh this run get rebuilt by the safety net.
