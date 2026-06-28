@@ -1953,10 +1953,24 @@
     <div class="idx-risk">
       {% set dr = latest.conditions.drawdown_risk %}
       {% set rc = latest.conditions.recession %}
+      {# Slow macro/credit drawdown gauge. Relabelled to the engine's OWN lagging identity
+         (dr.label/dr.label_zh) so it no longer collides word-for-word with the leading Risk
+         Radar banner above — a different NAME + 63d horizon stops 15 vs 91 reading as one
+         metric self-contradicting. Low-band 8% is the unconditional base rate, shown as such
+         (never as "calm"). See the radar reconciliation note just below the grid. #}
       <div class="idx-gauge">
-        <div class="idx-gk">{{ t('Drawdown risk', '回撤风险') }}</div>
-        <div class="idx-gv">{{ dr.score|round|int if dr and dr.score is not none else '—' }}<small>/100</small></div>
-        <div class="muted" style="font-size:11px">{% if dr and dr.dd10_prob_pct is not none %}{{ t('P(≥10% / 63d)', '概率(≥10%/63日)') }} {{ dr.dd10_prob_pct }}%{% endif %}</div>
+        <div class="idx-gk" title="Slow macro/credit composite (recession risk, NFCI, EBP, HY OAS) · lags price · 63-day horizon · for near-term timing see the Risk Radar above · 慢速宏观/信用综合（衰退风险、NFCI、EBP、高收益利差）· 滞后于价格 · 63日窗口 · 近端择时见上方风险雷达">
+          {% if dr and dr.label %}{{ t(dr.label, dr.label_zh or dr.label) }}{% else %}{{ t('Macro/credit drawdown pressure (lagging)', '宏观/信用回撤压力（滞后）') }}{% endif %}
+          {{ help('A SLOW macro/credit composite (recession risk, NFCI, EBP, HY OAS) over a 63-day horizon — it LAGS price, so a low read here is NOT a near-term all-clear: in the low band the figure equals the unconditional base rate (no forward edge). For the leading, near-term (≤21d) drawdown-odds read, trust the Risk Radar at the top of the Market State board above. The two answer different questions and can legitimately disagree.', '慢速的宏观/信用综合指标（衰退风险、NFCI、EBP、高收益利差），观察窗口为63日 — 它滞后于价格，因此此处读数偏低并不代表近端“安全”：在低区间内该数值等于无条件基准概率（无前瞻信号）。近端（≤21日）的领先回撤概率，请以上方市场状态板顶部的风险雷达为准。两者回答的是不同问题，出现分歧属正常。') }}
+        </div>
+        <div class="idx-gv">{{ dr.score|round|int if dr and dr.score is not none else '—' }}<small>/100{% if dr and dr.lead_lag %} · {{ t('lagging', '滞后') }}{% endif %}</small></div>
+        {% if dr and dr.dd10_prob_pct is not none %}
+          {% if dr.dd10_prob_informative %}
+          <div class="muted" style="font-size:11px">{{ t('P(≥10% / 63d)', '概率(≥10%/63日)') }} <b>{{ dr.dd10_prob_pct }}%</b></div>
+          {% elif dr.is_base_rate %}
+          <div class="muted" style="font-size:11px">{{ dr.dd10_prob_pct }}% = {{ t('base rate · no forward edge', '基准概率 · 无前瞻信号') }} <span style="color:var(--ink-3)">(≥10% / 63d)</span></div>
+          {% endif %}
+        {% endif %}
       </div>
       <div class="idx-gauge">
         <div class="idx-gk">{{ t('Recession risk', '衰退风险') }}</div>
@@ -1976,6 +1990,19 @@
       </a>
       {% endif %}
     </div>
+    {# Reconciliation — sibling BELOW the 3-col grid (never a 4th cell). Fires ONLY when the leading
+       Risk Radar is loud, so the slow gauge's low read above can never be misread as an all-clear
+       while the banner screams caution. Defers to the banner: names state+score once as a pointer,
+       does NOT restate its 5d/10d/21d odds. None-safe (triple-guarded). #}
+    {% if market_state and market_state.radar and market_state.radar.is_loud %}
+    {% set rd = market_state.radar %}
+    {% set rdcol = 'var(--down)' if rd.state == 'risk-off' else ('var(--orange)' if rd.state == 'elevated' else 'var(--warn)') %}
+    <p class="muted" style="font-size:11.5px;margin:8px 0 0;border-left:3px solid {{ rdcol }};padding-left:9px">
+      {{ t('This macro/credit gauge is slow and lagging — a low read here is not an all-clear.', '此宏观/信用指标为慢速、滞后指标 — 低读数并不代表解除警报。') }}
+      {{ t('The leading, near-term Risk Radar above is louder', '上方领先的近期风险雷达更为响亮') }}
+      (<b style="color:{{ rdcol }}">{{ t(rd.state|upper, rd.state_zh) }}{% if rd.top_score is not none %} {{ rd.top_score }}/100{% endif %}</b>{% if rd.label_en %} — {{ t(rd.label_en, rd.label_zh) }}{% endif %}){{ t(' — it is the ≤21-day read to trust for timing.', ' — 它是择时应信赖的≤21日读数。') }}
+    </p>
+    {% endif %}
     {% if risk_model and risk_model.legs %}
     <h3 style="margin-top:16px">{{ t('Index risk model — what is driving de-risk', '指数风险模型 — 降险信号由什么驱动') }}
       {{ help("The S&P Vector de-risk score (0-100) and the legs that build it: macro-stress drawdown gauge, recession risk, financial conditions, credit-spread widening, and net-liquidity. Each leg's points sum to the score, so the bar shows exactly what is risk-on or risk-off now. The full allocation strategy + backtest lives on the S&P Vector page.", "标普向量降险评分（0-100）及其构成分项：宏观压力回撤计、衰退风险、金融条件、信用利差走阔、净流动性。各分项贡献分相加即为总分，进度条直观显示当前什么在加／降风险。完整仓位策略与回测见标普向量页。") }}
