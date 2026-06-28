@@ -1,0 +1,74 @@
+{% macro t(en, zh='') -%}
+<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
+{%- endmacro %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Subsector Rotation — Market Intelligence</title>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 'Inter',-apple-system,
+         "Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:0 0 28px; }
+  a { text-decoration:none; }
+  .wrap { padding:16px; }
+  @media (min-width:1100px){ .wrap{ padding:18px max(28px,calc((100vw - 1680px)/2)); } }
+  .sr-head { display:flex; flex-wrap:wrap; align-items:flex-end; gap:8px 22px; margin:10px 2px 16px; }
+  .sr-head h1 { font-size:23px; margin:0; font-weight:800; letter-spacing:-.015em; }
+  .sr-head .sub { color:var(--muted); font-size:12.5px; margin-top:5px; max-width:80ch; line-height:1.5; }
+  .sr-foot { color:var(--muted); font-size:11px; margin:16px 2px 0; line-height:1.6; }
+</style>
+</head>
+<body>
+<nav class="site-nav">
+    {% include "_navlinks.html.j2" %}
+  <div class="nav-search">
+    <span class="mag">🔎</span>
+    <input type="text" autocomplete="off" aria-label="Search stocks"
+      placeholder="Search any stock, ETF, commodity or crypto…" data-ph-zh="搜索任意股票、ETF、商品或加密货币…">
+    <div class="nav-sugg"></div>
+  </div>
+  <div class="nav-ctrls">
+    <a class="ai-brief-link" href="mastermind.html">🤖 {{ t('Mastermind', '操盘大脑') }}</a>
+    <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener">🖥️ {{ t('Terminal', '终端') }}</a>
+    <a class="ai-brief-link" href="aibrief.html">🧠 {{ t('AI Daily Brief', 'AI每日简报') }}</a>
+    <button class="theme-switch" aria-label="Toggle dark / light mode">
+      <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
+    </button>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <span class="pill"></span>
+      <span class="opt en-opt" data-l="en">EN</span>
+      <span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="sr-head">
+    <div>
+      <h1>🌀 {{ t('Subsector Rotation', '子行业轮动') }}</h1>
+      <div class="sub">{{ t("Finviz's broad-universe theme → subsector map (268 subsectors across 40 themes), read for rotation: a relative-rotation map of leadership vs momentum, a velocity/acceleration screen for themes heating up early, and the subsectors leaders are rotating into and out of. A breadth/rotation lens, not a buy list — and separate from our own equal-weight thematic baskets.",
+                            "Finviz 全市场「主题 → 子行业」图谱（40 个主题、268 个子行业）的轮动解读：相对轮动图（领先度 vs 动量）、捕捉早期升温主题的速度/加速度筛选，以及资金正在轮入/轮出的子行业。这是广度/轮动视角，并非买入清单，且独立于我们自有的等权主题篮子。") }}</div>
+    </div>
+  </div>
+
+  <div id="rotation-app"></div>
+
+  <div class="sr-foot">
+    {{ t('Performance is Finviz\'s own multi-horizon snapshot (1D–1Y), refreshed nightly. Relative strength is measured cross-sectionally vs the median subsector. The rotation map plots RS-Ratio (medium-term leadership) against RS-Momentum (is that leadership improving); acceleration compares the latest weekly pace to the 3-month pace. Research context only — not investment advice.',
+          '业绩为 Finviz 自有的多周期快照（1天–1年），每晚刷新。相对强度以横截面方式相对中位数子行业衡量。轮动图以 RS-Ratio（中期领先度）对 RS-Momentum（领先度是否改善）作图；加速度比较最近一周节奏与三个月节奏。仅供研究参考，非投资建议。') }}
+  </div>
+</div>
+
+<footer class="site-footer">
+  <span class="made">Made with ❤️ in Canada</span>
+  <span class="dev">Developed by Chris Wong</span>
+</footer>
+
+<script src="theme.js"></script>
+<script src="subsector_rotation.js"></script>
+</body>
+</html>
