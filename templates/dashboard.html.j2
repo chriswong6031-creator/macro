@@ -1134,6 +1134,11 @@
   body.page-macro .ms-radar .msr-amp{font-size:11px;color:var(--rc);font-weight:600;line-height:1.3}
   body.page-macro .ms-radar .msr-do{font-size:11.5px;color:var(--ink-2);max-width:34ch}
   @media(max-width:760px){body.page-macro .ms-radar .msr-do{max-width:none;flex:1 1 100%}}
+  body.page-macro .ms-radar .msr-scares{display:flex;flex-wrap:wrap;align-items:center;gap:5px;flex:1 1 100%;
+    margin-top:4px;padding-top:7px;border-top:var(--rule) solid var(--hair);font-size:10.5px;color:var(--ink-3)}
+  body.page-macro .ms-radar .msr-scare{border:var(--rule) solid var(--hair);border-radius:6px;padding:1px 7px;color:var(--ink-2);background:var(--panel)}
+  body.page-macro .ms-radar .msr-scare b{font-family:var(--num)}
+  body.page-macro .ms-radar .msr-more{margin-left:auto;color:var(--link);font-weight:700}
 
   /* Heads-up strip — compact live flags (next catalyst / Fed stance / fragility),
      replacing the old full-width Event-Risk + Turning-Point + Fed-reaction panels.
@@ -1286,6 +1291,12 @@
           {% if rd.dd21 is not none %}<span class="msr-odds">{{ t('Pullback odds (≥5%)','回撤概率（≥5%）') }} · 5d {{ (rd.dd5*100)|round|int }}% · 10d {{ (rd.dd10*100)|round|int }}% · <b>21d {{ (rd.dd21*100)|round|int }}%</b></span>{% endif %}
         </span>
         {% if rd.is_loud %}<span class="msr-do"><b>{{ t('Do','应对') }}:</b> {{ t(rd.do_en, rd.do_zh) }}{% if rd.gross and rd.gross < 1 %} · {{ t('gross','仓位') }} ×{{ '%.2f'|format(rd.gross) }}{% endif %}</span>{% endif %}
+        {# On risk-off, surface the Risk-Radar scare-type breakdown right here — the key
+           detail folded up from the (now-removed) standalone card. Full per-leg detail +
+           self-audit live on the Macro Signals data page. #}
+        {% if rd.state in ['caution','elevated','risk-off'] and latest.risk_radar and latest.risk_radar.scares %}
+        <span class="msr-scares">{{ t('Stress:','压力来源：') }}{% for s in latest.risk_radar.scares %}{% if s.score is not none and s.score >= 25 %}{% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else 'var(--ink-3)')) %}<span class="msr-scare" style="border-color:{{ sb }}">{{ t(s.label_en, s.label_zh) }} <b style="color:{{ sb }}">{{ s.score|round|int }}</b></span>{% endif %}{% endfor %}<a class="msr-more" href="macro_signals.html">{{ t('full radar →','完整雷达 →') }}</a></span>
+        {% endif %}
       </div>
       {% endif %}
       <div class="ms-head">
@@ -1535,6 +1546,32 @@
           <span class="v-mean">{{ t('multi-year backdrop', '多年期背景') }}</span>
         </div>
       </div>
+      {% if pb %}
+      {# Posture + outlook — folded up from the old standalone 'How to trade the regime',
+         'Where we are' and 'What's likely next' cards into the backdrop itself. #}
+      {% set _stvmap = {'run':('let winners run','让赢家奔跑'),'hold':('trail your stops','收紧止损'),'shift':('look for a regime change','留意周期转变'),'reset':('regime just turned — reset','周期刚转 — 重置')} %}
+      {% set _stv = _stvmap.get(stance.key, ('','')) if stance else ('','') %}
+      <div class="hero-posture" style="grid-column:1/-1;border-top:1px solid var(--line);margin-top:16px;padding-top:14px">
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <b style="font-size:13.5px">{{ t('How to trade this regime','如何交易当前周期') }}</b>
+          {{ help("Built from conditions that held up in both halves of a 2007–2026 backtest. The dial is the headline — how much risk current conditions support. Sector & stock calls live on the Stock Dashboard; there is no stable monthly 'this sector wins' signal.","基于在 2007–2026 回测前后两半都站得住脚的条件构建。刻度盘是核心 — 当前条件支持多大风险。板块与个股判断在个股看板；月度上不存在稳定的“某板块跑赢”信号。") }}
+          {% if pb.progress %}<span class="muted sm" style="margin-left:auto">{{ pb.progress.age_days }} {{ t('trading days in','个交易日') }} · {{ t('median','中位') }} {{ pb.progress.median_days }}{% if stance and _stv[0] %} · <b>{{ t(_stv[0], _stv[1]) }}</b>{% endif %}</span>{% endif %}
+        </div>
+        {% if pb.dial %}
+        <div class="dial">{% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}<span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ td(p) }}</span>{% endfor %}</div>
+        {% for sign, r_en, r_zh in pb.dial.reasons %}<div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b> {{ t(r_en, r_zh) }}</div>{% endfor %}
+        {% endif %}
+        <div style="margin-top:11px;display:flex;gap:18px;flex-wrap:wrap;align-items:center;font-size:13px">
+          {% if pb.next_list %}<span class="help" style="font-weight:600;color:var(--link);width:auto;height:auto;border:none;margin:0">{{ t("What's likely next",'接下来可能发生什么') }} ▾<span class="tip" style="width:300px;font-weight:400">
+            <span class="l-en"><b>What's likely next</b> — historical base rates since 2007, not a forecast.</span><span class="l-zh"><b>接下来可能发生什么</b> — 2007 年以来的历史基础概率，并非预测。</span><br>
+            {% for n in pb.next_list %}{{ td(n.name) }} <b>{{ n.prob_pct }}%</b>{{ ' · ' if not loop.last }}{% endfor %}
+            {% if pb.triggers %}<br><span class="l-en">Signals that would announce the shift:</span><span class="l-zh">将预告转变的信号：</span>
+            <ul style="margin:4px 0 0;padding-left:16px">{% for trg_en, trg_zh in pb.triggers %}<li>{{ t(trg_en, trg_zh) }}</li>{% endfor %}</ul>{% endif %}
+          </span></span>{% endif %}
+          <a href="us_stocks.html" style="font-weight:600;color:var(--link)">{{ t('→ Regime-approved sectors & stocks','→ 周期认可的板块与个股') }}</a>
+        </div>
+      </div>
+      {% endif %}
     </div>
     </div>{# /.ms-front — close the side-by-side board #}
     <details class="howto">
@@ -1542,13 +1579,13 @@
       <div>
         <span class="l-en">
         <b>1.</b> The colored badge is the market regime — the "weather" (not a calendar quarter!). The second badge is the transition radar — whether that weather is about to change.<br>
-        <b>2.</b> <b>Where we are</b> shows how far along this regime likely is. <b>What's likely next</b> gives the historical odds of each path and what to do about it. <b>How to trade it</b> turns today's conditions into a posture and concrete names.<br>
+        <b>2.</b> Right under the regime is <b>how to trade it</b> — a posture dial (defensive → aggressive) with the conditions behind it, how far along this regime is, and a hover for the historical odds of what comes next.<br>
         <b>3.</b> Everything below that is supporting evidence. Hover any <span class="help">?</span> for a plain-English explanation. <span class="pos">Green = risk-friendly</span>, <span class="neg">red = risk-hostile</span>.<br>
         <b>4.</b> This is a context machine with measured odds, not a crystal ball.
         </span>
         <span class="l-zh">
         <b>1.</b> 彩色徽章是市场周期 — 即"天气"（不是日历季度！）。第二个徽章是转换雷达 — 这种天气是否即将改变。<br>
-        <b>2.</b> <b>我们身处何处</b>显示当前周期大致走到哪一步。<b>接下来可能发生什么</b>给出每条路径的历史概率及应对方式。<b>如何交易</b>把今日条件转化为持仓姿态与具体标的。<br>
+        <b>2.</b> 周期正下方是<b>如何交易</b> — 一个持仓刻度盘（防御 → 激进）及其背后的条件、当前周期已走多远，并可悬停查看接下来各路径的历史概率。<br>
         <b>3.</b> 其下的所有内容都是佐证。将鼠标悬停在任意 <span class="help">?</span> 上可获得通俗解释。<span class="pos">绿色 = 风险友好</span>，<span class="neg">红色 = 风险敌对</span>。<br>
         <b>4.</b> 这是一台带有量化概率的背景分析机器，而非水晶球。
         </span>
@@ -1719,7 +1756,7 @@
   <!-- ===================== RATE & INFLATION TRANSMISSION (compact; full page = transmission.html) ===================== -->
   {% if latest.rate_inflation_transmission and latest.rate_inflation_transmission.state %}
   {% set rit = latest.rate_inflation_transmission %}
-  <div class="panel span12" id="rate-transmission">
+  <div class="panel span6" id="rate-transmission">
     <h2>{{ t('Rates & inflation — who it helps, who it hurts', '利率与通胀 — 利好谁、利空谁') }}
       {{ help("How today's interest rates and inflation help or hurt each asset class. Green = tailwind, red = headwind. It's a read on pressure, not a buy/sell call. The full cause-and-effect breakdown is on the Transmission page.", "当前利率与通胀如何利好或利空各类资产。绿色＝顺风，红色＝逆风。这是对压力的判断，而非买卖信号。完整的因果分解见“传导”页面。") }}
       <a href="transmission.html" style="float:right;font-size:12px;font-weight:600">{{ t('Full page →', '完整页面 →') }}</a>
@@ -1731,10 +1768,10 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">
       <div><span class="tone-down" style="font-weight:700">{{ t('Headwind','逆风') }}</span>
-        {% for h in rit.headwinds[:4] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind head">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+        {% for h in rit.headwinds[:3] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind head">{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
       </div>
       <div><span class="tone-up" style="font-weight:700">{{ t('Tailwind','顺风') }}</span>
-        {% for h in rit.tailwinds[:4] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind tail">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
+        {% for h in rit.tailwinds[:3] %}<div style="margin-top:5px;display:flex;justify-content:space-between;gap:10px;align-items:baseline"><span><span class="l-en">{{ h.label.en }}</span><span class="l-zh">{{ h.label.zh }}</span></span> <b class="wind tail">+{{ '%.2f'|format(h.net) }}</b></div>{% else %}<div class="muted">—</div>{% endfor %}
       </div>
     </div>
     <p class="muted sm" style="margin:10px 0 0">{{ t('A read on risk, not return — context only.', '仅作风险判断而非回报，仅供参考。') }}</p>
@@ -1745,7 +1782,7 @@
   {% if latest.cross_asset_confirm and latest.cross_asset_confirm.verdict not in [none, 'unknown'] %}
   {% set cac = latest.cross_asset_confirm %}
   {% set _cvtone = 'up' if cac.verdict == 'confirm' else ('down' if cac.verdict == 'diverge' else 'flat') %}
-  <details class="panel span12 fold" id="cross-asset-confirm">
+  <details class="panel span6 fold" id="cross-asset-confirm">
     <summary>{{ t('Bonds & FX cross-check — do they confirm stocks?', '债券与外汇交叉验证 — 是否确认股票？') }}
       <span class="badge tone-{{ _cvtone }}">{{ t(cac.verdict, cac.verdict_zh) }}{% if cac.agree_pct is not none %} · {{ cac.agree_pct }}%{% endif %}</span>
       {{ help("Bonds and the dollar move faster than stocks, so this checks whether they agree with the stock-market read. They AGREE = the move has support; they DIVERGE = a yellow flag worth watching. Context only, never a buy/sell signal.", "债券与美元比股票反应更快，因此本面板检查它们是否认同股市读数。一致＝走势有支撑；背离＝值得留意的黄旗。仅供参考，绝非买卖信号。") }}
@@ -1879,28 +1916,9 @@
 
   {# Fired alerts moved into the combined "Now" board (alerts · news · relief radar) below. #}
 
-  <!-- Risk Radar detail — the headline read now lives in the Market State banner at the
-       top of the page; this collapsed fold keeps the per-scare breakdown, jargon-stripped. -->
-  {% set RR = latest.risk_radar %}
-  {% if RR and RR.scares %}
-  <details class="panel span12 fold" id="risk-radar">
-    <summary>{{ t('Risk Radar — what’s driving it', '风险雷达 — 由什么驱动') }} <span class="muted sm">· {{ RR.state|upper }}{% if RR.top_score is not none %} {{ RR.top_score|round|int }}/100{% endif %}</span></summary>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:11px">
-    {% for s in RR.scares %}
-      {% set sb = 'var(--down)' if s.band=='risk-off' else ('var(--orange)' if s.band=='elevated' else ('var(--warn)' if s.band=='caution' else ('var(--ink-3)' if s.band=='watch' else 'var(--line)'))) %}
-      <div class="rr-scare" style="border-left:3px solid {{ sb }}">
-        <div class="sm" style="font-weight:700">{{ t(s.label_en, s.label_zh) }} <span style="color:{{ sb }}">{{ s.score|round|int }}</span></div>
-        <div class="muted" style="font-size:10.5px">{{ s.band|upper }}</div>
-      </div>
-    {% endfor %}
-    </div>
-    <p class="muted sm" style="margin:10px 0 0">{{ t('Each bar is one kind of market stress, scored 0–100. The radar only turns loud when the broad market is actually breaking — it sizes risk, it never picks stocks.', '每个条目代表一类市场压力，评分 0–100。只有当大盘真正破位时雷达才会转为响亮 —— 它用于调整风险敞口，绝不选股。') }}</p>
-    {% set MA = market_state.audit if market_state else none %}
-    {% if MA %}
-    <div class="muted" style="font-size:11px;border-top:1px solid var(--line);padding-top:7px;margin-top:9px">🧾 {{ t('Self-audit','自检') }}: {% if MA.n_graded and MA.n_graded > 0 %}{{ MA.n_graded }} {{ t('risk calls graded vs the next 5–21 days of S&P','次风险判断已对照其后 5–21 日标普评判') }}{% if MA.risk_precision is not none %} · {{ t('precision','精度') }} {{ (MA.risk_precision*100)|round|int }}%{% if MA.risk_lift %} ({{ MA.risk_lift }}× {{ t('base','基准') }}){% endif %}{% endif %}{% if MA.recall_dd5 is not none %} · {{ t('recall','召回') }} {{ (MA.recall_dd5*100)|round|int }}%{% endif %} — {{ t('the loop re-weights its own signals from its misses, no manual tuning','该循环据自身失误重新加权，无需人工调参') }}.{% else %}{{ t('accruing — every Market-State risk call is logged and graded against the next 5–21 days of S&P, so the gauge learns which signals actually lead and prunes the rest. No human tuning.','积累中 —— 每次市场状态风险判断都会被记录并对照其后 5–21 日标普评判，使指标学习哪些信号真正领先并剔除其余。无需人工调参。') }}{% endif %}</div>
-    {% endif %}
-  </details>
-  {% endif %}
+  {# Risk Radar standalone card removed — its headline + (on risk-off) the scare-type
+     breakdown now live in the Market State banner; full per-scare detail + self-audit
+     are on the Macro Signals data page (macro_signals.html). #}
 
   <!-- ============ EARLY RISK-STATE BANNER (engine/risk_state.py) — fallback when Risk Radar v2 absent ============ -->
   {% set RS = latest.risk_state %}
@@ -2054,366 +2072,7 @@
   {% endif %}{# /dislocation panel — only when active #}
   {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
 
-  {% if latest.business_cycle and latest.business_cycle.available %}
-  {% set BC = latest.business_cycle %}
-  {% set SIG = BC.recession_signal %}
-  {% set M = BC.measured %}
-  {% set phase_c = {'expansion':'var(--up)','slowdown':'#d98a00','contraction':'var(--down)','recovery':'#4c8bf5','unknown':'var(--muted)'} %}
-  {% set phase_z = {'expansion':'扩张','slowdown':'放缓','contraction':'收缩','recovery':'复苏','unknown':'未知'} %}
-  <div class="panel span12" id="business-cycle">
-    <h2>🔄 {{ t('Business cycle — Leading · Coincident · Lagging', '商业周期 — 领先 · 同步 · 滞后') }}
-      {{ help("A Conference-Board-style decomposition that keeps three tiers SEPARATE so the lead-lag SEQUENCE is readable: Leading indicators (jobless claims, building permits, capital-goods orders, manufacturing hours, the S&P 500, HY credit spread, the yield curve, consumer expectations) roll over FIRST; months later Coincident indicators (payrolls, real income, industrial production, manufacturing & trade sales) confirm the actual peak; Lagging indicators confirm last. Each tier is inverse-volatility-standardized monthly changes (the CB method), shown as 6-month momentum (red) vs a smoothed trend (blue), NBER recessions shaded. The recession signal is the CB '3 D's' — depth+duration (leading momentum below a calibrated threshold) AND diffusion (broad weakening). Unlike the 0–100 recession-risk score beside it, this does NOT blend the tiers — the separation IS the anticipation. Reverse-engineered free from FRED; measured, see reports/business-cycle-validation.md.", "会议委员会式的三层分解，把层级分开以读出领先-滞后顺序：领先指标（初请失业金、营建许可、资本品订单、制造业工时、标普500、高收益利差、收益率曲线、消费者预期）最先转向；数月后同步指标（非农、实际收入、工业产出、制造与贸易销售）确认真正峰值；滞后指标最后确认。每层为逆波动率标准化的月度变化（CB 方法），以6个月动量（红）对比平滑趋势（蓝）呈现，并标注 NBER 衰退阴影。衰退信号采用 CB“三D”——深度+持续（领先动量低于校准阈值）且扩散广泛走弱。与旁边的0–100衰退风险评分不同，此面板不混合层级——分离本身即前瞻性。基于免费 FRED 数据逆向构建并实测，详见 reports/business-cycle-validation.md。") }}
-    </h2>
-    <p class="muted sm" style="margin:-4px 0 10px">{{ t('Where the recession-risk score blends everything into one number, this keeps Leading / Coincident / Lagging apart so you can watch the turn propagate. Measured against NBER dates — never eyeballed.', '衰退风险评分把一切揉成一个数字；此面板把领先／同步／滞后分开，让你看清转折如何传导。以 NBER 日期实测，绝非肉眼判断。') }}</p>
-    <div class="grid">
 
-      <!-- recession signal status -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        {% set on = SIG.state == 'on' %}
-        {% set scolor = 'var(--down)' if on else 'var(--up)' %}
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Recession signal', '衰退信号') }} <span class="muted sm">{{ t('CB 3 D’s', 'CB 三D') }}</span></div>
-        <div style="font-size:22px;font-weight:700;color:{{ scolor }}">{{ t('ON', '触发') if on else t('OFF', '未触发') }}
-          <span class="badge" style="font-size:11px;vertical-align:middle">{{ SIG.months_active }} {{ t('mo active', '月触发') if on else t('mo clear', '月平静') }}</span></div>
-        <div class="muted sm" style="margin-top:5px">{{ t('Fires when leading 6-month momentum is below', '当领先6个月动量低于') }} {{ SIG.conditions.roc_threshold }} {{ t('and diffusion at or below', '且扩散度不高于') }} {{ SIG.conditions.diffusion_max|round|int }}.
-          {{ t('Now:', '当前：') }} {{ t('depth', '深度') }} {{ '✓' if SIG.conditions.depth else '✗' }} · {{ t('breadth', '广度') }} {{ '✓' if SIG.conditions.breadth else '✗' }}</div>
-        <div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">
-          {{ t('Cycle phase', '周期阶段') }}: <b style="color:{{ phase_c.get(BC.phase.label,'var(--muted)') }}">{{ t(BC.phase.label, phase_z.get(BC.phase.label, BC.phase.label)) }}</b></div>
-      </div>
-
-      <!-- measured track record -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Measured vs NBER', '对照 NBER 实测') }}
-          {{ help("The signal backtested against actual NBER recession dates: lead time, false-positive count, hit rate. Effective sample is tiny (~3 point-in-time recessions), so treat the lead as illustrative, not statistically robust. The false alarms are the famous growth scares (1995 soft landing, 2002 double-dip fear, 2022 inflation scare) the real Conference Board LEI also flagged.", "信号针对 NBER 实际衰退日期回测：领先时长、误报次数、命中率。有效样本极小（约3次可点对点回溯的衰退），故领先时长仅供示意，并非统计稳健。误报恰是著名的增长恐慌（1995 软着陆、2002 二次探底担忧、2022 通胀恐慌），真实的 CB 领先指标同样曾误报。") }}</div>
-        {% if M %}
-        <div class="kv">{{ t('Recessions caught (1985+)', '已捕捉衰退（1985+）') }} <b style="color:var(--up)">{{ M.endo_caught }}/{{ M.endo_recessions }}</b></div>
-        <div class="kv">{{ t('Median lead', '中位领先') }} <b>~{{ M.median_lead_months }} {{ t('months', '个月') }}</b> <span class="muted sm">({{ t('mean', '均值') }} {{ M.mean_lead_months }})</span></div>
-        <div class="kv">{{ t('False alarms in 40y', '40年误报') }} <b>{{ M.false_positives }}</b> <span class="muted sm">{{ t('— 1995 · 2002 · 2022 growth scares', '— 1995 · 2002 · 2022 增长恐慌') }}</span></div>
-        <div class="kv">{{ t('Point-in-time era (1997+)', '可点对点回溯（1997+）') }} <b style="color:var(--up)">{{ M.pit_era_caught }}/{{ M.pit_era_recessions }}</b></div>
-        {% else %}<div class="muted sm">{{ t('Not yet calibrated — run scripts/validate_business_cycle.py', '尚未校准 — 运行 scripts/validate_business_cycle.py') }}</div>{% endif %}
-      </div>
-
-      <!-- three tiers with mini Zeberg-style charts -->
-      {% for tk, ten, tzh, tnote, tnote_z in [
-          ('leading','Leading','领先','turns first','最先转向'),
-          ('coincident','Coincident','同步','marks the peak','标记峰值'),
-          ('lagging','Lagging','滞后','confirms last','最后确认')] %}
-      {% set T = BC.tiers.get(tk) %}
-      {% if T and T.mom6 is not none %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-        {% set dcolor = 'var(--up)' if T.direction=='rising' else 'var(--down)' %}
-        <div style="min-width:190px">
-          <div style="font-weight:700">{{ t(ten, tzh) }} <span class="muted sm">{{ t(tnote, tnote_z) }}</span></div>
-          <div style="font-size:20px;font-weight:700;color:{{ dcolor }}">{{ '%+.2f'|format(T.mom6) }}
-            <span class="muted" style="font-size:12px">{{ t('6mo mom.', '6月动量') }}</span></div>
-          <div class="muted sm">{{ t('diffusion', '扩散度') }} {{ T.diffusion|round|int }} · {{ T.n_legs }} {{ t('legs', '指标') }} · {{ T.asof }}</div>
-        </div>
-        <div style="flex:1;min-width:240px">{{ bcspark(T.spark_mom6, T.spark_trend, BC.spark_recession) }}</div>
-      </div>
-      {% endif %}
-      {% endfor %}
-
-    </div>
-    <p class="muted sm" style="margin-top:8px">⚠️ {{ t(BC.caveat, BC.caveat_zh) }} <span class="muted sm">{{ t('Red = 6-month momentum · blue = trend · grey = NBER recessions.', '红=6个月动量 · 蓝=趋势 · 灰=NBER 衰退。') }}</span></p>
-  </div>
-  {% endif %}
-
-  {% if latest.conditions %}
-  {% set C = latest.conditions %}
-  {% set FC = C.financial_conditions %}
-  {% set RC = C.recession %}
-  {% set GN = C.growth_nowcast %}
-  {% set IN = C.inflation_nowcast %}
-  {% set RA = C.risk_appetite %}
-  {% set DR = C.drawdown_risk %}
-  {% set CAP = C.capitulation %}
-  {% set ST = C.style_tilt %}
-  {% set LN = C.labor_nowcast %}
-  {% set SC = (latest.playbook or {}).scenario %}
-  {% set NH = nowcast_hist or {} %}
-  <div class="panel span12" id="conditions">
-    <h2>🛰️ {{ t('The economy & risk, in real time', '经济与风险 · 实时') }}
-      {{ help("Live reads on the economy and market risk, from official Fed and options data — to complement the price-based regime above. Covers how stressed the financial system is, the odds of a recession, real-time growth and inflation, and how much appetite the market has for risk right now. Context only; it never changes the regime call.", "来自官方美联储与期权数据的经济与市场风险实时读数，用以补充上方基于价格的周期判断。涵盖金融体系的紧张程度、衰退概率、实时增长与通胀，以及市场当前的风险偏好。仅供参考，绝不改变周期判断。") }}
-    </h2>
-    <div class="grid">
-
-      {# Financial-conditions (NFCI) card retired — it duplicated the OFR Financial Stress
-         Index below (both = financial tightness vs a 5-year percentile). OFR survives because
-         it breaks the stress into channels (credit / funding / volatility …). #}
-
-      <!-- Systemic stress (OFR FSI decomposition) -->
-      {% set SS = C.systemic_stress %}
-      {% if SS and SS.ofr_fsi is not none %}
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Systemic stress', '系统性压力') }} <span class="muted sm">OFR FSI</span>
-          {{ help("The OFR Financial Stress Index — a daily gauge built from 33 global market variables. 0 = average stress since 2000; NEGATIVE = calmer than normal, POSITIVE = stressed. Unlike NFCI it splits the reading into five CHANNELS (credit, equity valuation, safe assets, funding, volatility) and three regions (US, other-advanced, EM), so you can see WHERE stress is coming from — the funding leg captures offshore-dollar / cross-currency-basis strain. It is a COINCIDENT gauge: it confirms and explains stress, it does not forecast it. Free OFR data — see research/DATA_SIGNAL_EXPANSION_2026.md.", "OFR 金融压力指数 — 由 33 个全球市场变量构成的每日指标。0＝2000 年以来的平均压力；负＝比平常更平静，正＝有压力。与 NFCI 不同，它把读数拆为五个渠道（信用、股票估值、避险资产、融资、波动）与三个地区（美国、其他发达、新兴市场），可看出压力来自何处 — 融资项捕捉离岸美元/交叉货币基差紧张。这是同步指标：确认并解释压力，而非预测。免费 OFR 数据。") }}</div>
-        {% set scolor = 'var(--down)' if SS.state in ('elevated','acute') else ('var(--up)' if SS.state=='calm' else 'var(--muted)') %}
-        <div style="font-size:22px;font-weight:700;color:{{ scolor }}">{{ '%+.2f'|format(SS.ofr_fsi) }}
-          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(SS.state, {'calm':'平静','normal':'一般','elevated':'偏高','acute':'急性'}.get(SS.state, SS.state)) }}{% if SS.trend %} · {{ t(SS.trend, {'rising':'上升中','easing':'缓和中'}.get(SS.trend, SS.trend)) }}{% endif %}</span></div>
-        <div class="muted sm" style="margin-top:4px">{{ t('More stressed than', '压力高于') }} {{ (SS.ofr_fsi_pctile*100)|round|int if SS.ofr_fsi_pctile is not none else '—' }}% {{ t('of the past 5 years', '的近五年') }}{% if SS.leading_driver %} · {{ t('led by', '主导渠道') }} {{ SS.leading_driver }}{% endif %}</div>
-        {% if SS.functional %}
-        <details class="jarg"><summary>{{ t('stress by channel', '分渠道压力') }}</summary>
-          <div class="jbody">
-            {% set _fl = {'credit': ('Credit', '信用', 'Corporate / credit-market stress.', '企业／信用市场压力。'),
-                          'equity_valuation': ('Equity valuation', '股票估值', 'Equity drawdown & valuation stress.', '股票回撤与估值压力。'),
-                          'safe_assets': ('Safe assets', '避险资产', 'Flight-to-safety demand for Treasuries.', '对国债的避险需求。'),
-                          'funding': ('Funding', '融资', 'Money-market & offshore-dollar (x-ccy basis) funding stress.', '货币市场与离岸美元（交叉货币基差）融资压力。'),
-                          'volatility': ('Volatility', '波动', 'Cross-asset implied / realized volatility.', '跨资产隐含／已实现波动。')} %}
-            {% for k,v in SS.functional.items() %}{% set m = _fl.get(k) %}{% if m %}
-            <div class="jrow"><span class="jk">{{ t(m[0], m[1]) }}</span><span class="jv">{{ t(m[2], m[3]) }}</span><span class="jn" style="color:{{ 'var(--down)' if v>0.05 else ('var(--up)' if v<-0.05 else 'var(--muted)') }}">{{ '%+.2f'|format(v) }}</span></div>
-            {% endif %}{% endfor %}
-            {% if SS.regional %}<div class="muted" style="font-size:10px;margin-top:5px">{{ t('By region', '分地区') }}: {% for k,v in SS.regional.items() %}{{ {'united_states':'US','other_advanced':t('Adv','发达'),'emerging_markets':'EM'}.get(k,k) }} {{ '%+.2f'|format(v) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-            {% if SS.a2p2_spread_bps is not none or SS.cp_bill_spread_bps is not none %}
-            <div class="jrow" style="margin-top:5px"><span class="jk">{{ t('CP spreads', '商票利差') }}</span><span class="jv">{{ t('Commercial-paper credit-quality (A2/P2−AA) & funding (CP−bill) stress.', '商业票据信用质量（A2/P2−AA）与融资（票据−国库券）压力。') }}</span><span class="jn">{% if SS.a2p2_spread_bps is not none %}A2/P2 {{ SS.a2p2_spread_bps|round|int }}bp{% endif %}{% if SS.cp_bill_spread_bps is not none %} · {{ t('CP-bill', '票据') }} {{ SS.cp_bill_spread_bps|round|int }}bp{% endif %}</span></div>{% endif %}
-            <div class="muted" style="font-size:10px;margin-top:5px">{{ t('+ = stress contribution · − = calm. A coincident gauge that names the channel — not a timing trigger.', '正＝压力贡献 · 负＝平静。同步指标，用于指明渠道 — 非择时触发器。') }}</div>
-          </div>
-        </details>{% endif %}
-      </div>
-      {% endif %}
-
-      <!-- Recession risk -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Recession risk', '衰退风险') }}
-          {{ help("A 0–100 score for how close the US economy is to recession, blending four respected signals (the breakdown is under 'what's behind it'). LOW today means the expansion looks intact; it climbs months before a downturn, not on the day. A risk gauge, not a market-timing trigger.", "美国经济离衰退有多近的 0–100 评分，融合四个公认信号（拆解见'背后构成'）。今日低位意味着扩张看起来完好；它在衰退前数月就上升，而非当天。这是风险指标，而非择时触发器。") }}</div>
-        {% if RC.score is not none %}
-        {% set rcolor = 'var(--down)' if RC.label=='high' else ('var(--warn)' if RC.label=='elevated' else 'var(--up)') %}
-        <div style="font-size:22px;font-weight:700;color:{{ rcolor }}">{{ RC.score|round|int }}<span class="muted" style="font-size:13px">/100</span>
-          <span class="badge" style="font-size:11px;vertical-align:middle">{{ t(RC.label, {'low':'低','elevated':'偏高','high':'高'}.get(RC.label, RC.label)) }}</span></div>
-        <div style="height:7px;border-radius:4px;background:var(--line);margin:7px 0;overflow:hidden"><div style="height:100%;width:{{ RC.score|round|int }}%;background:{{ rcolor }}"></div></div>
-        <details class="jarg"><summary>{{ t("what's behind it", '背后构成') }}</summary>
-          <div class="jbody">
-            <div class="jrow"><span class="jk">Sahm</span><span class="jv">{{ t('The Sahm rule — unemployment rising off its lows (≥0.50). Shown for context; the scored labor leg is jobless claims (it leads Sahm and tested stronger vs NBER).', '萨姆规则 — 失业率从低位回升（≥0.50）。此处为参考；评分采用的劳动力指标为申领失业金（领先萨姆规则，对 NBER 历史检验更强）。') }}</span><span class="jn">{{ '%.2f'|format(RC.sahm) if RC.sahm is not none else '—' }}</span></div>
-            <div class="jrow"><span class="jk">{{ t('NY Fed prob','纽约联储概率') }}</span><span class="jv">{{ t('Model odds of recession within 12 months (from the yield curve).', '未来 12 个月衰退的模型概率（源自收益率曲线）。') }}</span><span class="jn">{{ '%.0f'|format(RC.ny_fed_prob) if RC.ny_fed_prob is not none else '—' }}%</span></div>
-            <div class="jrow"><span class="jk">EBP</span><span class="jv">{{ t('Excess Bond Premium — fear priced into corporate credit beyond default risk. Above 0 = stress.', '超额债券溢价 — 企业信用中超出违约风险的恐惧定价。大于 0＝压力。') }}</span><span class="jn">{{ '%+.2f'|format(RC.ebp) if RC.ebp is not none else '—' }}</span></div>
-            {% if RC.curve_note %}<div class="jrow"><span class="jk">{{ t('Curve','曲线') }}</span><span class="jv">{{ t('10y minus 3m slope — inverted (negative) has preceded most recessions; we adjust it for term premium to strip the 2022–24 false alarm.', '十年期减三个月斜率 — 倒挂（负）曾领先多数衰退；我们对其做期限溢价调整以剔除 2022–24 的假警报。') }}</span><span class="jn">{{ '%+.2f'|format(RC.curve_raw) if RC.curve_raw is not none else '—' }}→{{ '%+.2f'|format(RC.curve_tp_adjusted) if RC.curve_tp_adjusted is not none else '—' }}</span></div>{% endif %}
-            {% if RC.components and RC.components.claims is not none %}<div class="jrow"><span class="jk">{{ t('Jobless claims','申领失业金') }}</span><span class="jv">{{ t('4-week-average initial claims surging vs a year ago — a leading labor signal that turns before the unemployment rate (validated vs NBER).', '首次申领失业金4周均值同比飙升 — 领先于失业率的劳动力信号（已对 NBER 验证）。') }}</span><span class="jn">{{ '%.0f'|format(RC.components.claims) }}/100</span></div>{% endif %}
-          </div>
-        </details>
-        {% if DR and DR.score is not none %}
-        {% set dcolor = 'var(--down)' if DR.band in ('high','extreme') else ('var(--warn)' if DR.band=='elevated' else 'var(--muted)') %}
-        <div class="kv" style="margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">{{ t('Macro-stress (drawdown risk)', '宏观压力（回撤风险）') }}
-          {{ help("A LEAN 4-factor macro-stress composite (recession-risk + NFCI + Excess Bond Premium + HY credit spreads; the weak curve/VIX legs were dropped after measurement). It is a DRAWDOWN-RISK gauge, not a return forecast: at the HIGH band the S&P had a ~36% chance of a >10% drawdown over the next 3 months vs ~8% base rate — the cleanest drawdown discriminator we measured (beats quad==Q4 and net-liquidity). Returns still rebound, so this says 'size down / widen stops', not 'sell everything'.", "精简版四因子宏观压力综合（衰退风险＋NFCI＋超额债券溢价＋高收益信用利差；曲线/VIX 经测量后剔除）。这是回撤风险指标而非回报预测：在高位区，标普未来三个月出现 >10% 回撤的概率约 36%（基准约 8%）。") }}
-          <b style="float:right;color:{{ dcolor }}">{{ DR.score|round|int }}/100 · {{ t(DR.band, {'low':'低','elevated':'偏高','high':'高','extreme':'极高'}.get(DR.band, DR.band)) }}</b></div>
-        <div class="muted sm">{{ t('Chance of a >10% S&P fall in 3 months:', '标普三月内下跌超 10% 的概率：') }} <b style="color:{{ dcolor }}">~{{ DR.dd10_prob_pct }}%</b> <span class="muted">{{ t('(vs ~8% normally)', '（平常约 8%）') }}</span></div>
-        {% endif %}
-        {% else %}<div class="muted">—</div>{% endif %}
-      </div>
-
-      <!-- Growth & inflation nowcast -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Growth & inflation nowcast', '增长与通胀即时预测') }}
-          <span class="muted" style="font-weight:400;font-size:11px">· {{ t('hover a metric for its history', '悬停指标查看历史') }}</span></div>
-
-        <div class="kv">
-          <span class="hovchart">{{ t('Weekly Economic Index', '周度经济指数') }}<span class="tip">
-            <span class="nph"><span class="l-en">Weekly Economic Index</span><span class="l-zh">周度经济指数</span></span>
-            <span class="l-en"> — a real-time read on US growth from 10 weekly series (retail, hours, claims, fuel, steel…), scaled to GDP-growth terms. Updates every Thursday, so it sees turns months before quarterly GDP.</span><span class="l-zh"> — 由 10 个周度序列（零售、工时、申领、燃料、钢铁…）合成的实时美国增长读数，换算到 GDP 增速口径。每周四更新，比季度 GDP 提前数月见到拐点。</span>
-            {{ nchart(NH.wei) }}</span></span>
-          <b>{{ '%.1f'|format(GN.wei) if GN.wei is not none else '—' }}%</b> {{ trendword(NH.wei) }}</div>
-
-        <div class="kv">
-          <span class="hovchart">{{ t('GDPNow (Atlanta Fed)', 'GDPNow') }}<span class="tip">
-            <span class="nph"><span class="l-en">GDPNow — Atlanta Fed</span><span class="l-zh">GDPNow — 亚特兰大联储</span></span>
-            <span class="l-en"> — the Atlanta Fed's running estimate of the CURRENT quarter's GDP growth, rebuilt after every data release. Not a forecast — a nowcast of the quarter in progress.</span><span class="l-zh"> — 亚特兰大联储对当前季度 GDP 增速的滚动估计，每次数据发布后重算。不是预测，而是对进行中季度的即时测算。</span>
-            {{ nchart(NH.gdpnow) }}</span></span>
-          <b>{{ '%.1f'|format(GN.gdpnow) if GN.gdpnow is not none else '—' }}%</b> {{ trendword(NH.gdpnow) }}</div>
-
-        {% if IN.sticky_ann is not none %}<div class="kv" style="margin-top:4px">
-          <span class="hovchart">{{ t('Sticky CPI (persistent)', '黏性 CPI（持续性）') }}<span class="tip">
-            <span class="nph"><span class="l-en">Sticky-price CPI</span><span class="l-zh">黏性价格 CPI</span></span>
-            <span class="l-en"> — inflation in prices that change SLOWLY (rent, services, insurance). Because they reset infrequently, they capture the persistent, hard-to-shift core of inflation — what the Fed watches.</span><span class="l-zh"> — 调价缓慢的商品价格（房租、服务、保险）。因为很少重设，它们刻画了顽固、难以撼动的通胀核心 — 美联储紧盯的部分。</span>
-            {{ nchart(NH.sticky) }}</span></span>
-          <b>{{ '%.1f'|format(IN.sticky_ann) }}%</b> {{ trendword(NH.sticky) }}</div>{% endif %}
-
-        {% if IN.flexible_ann is not none %}<div class="kv">
-          <span class="hovchart">{{ t('Flexible CPI (transitory)', '弹性 CPI（暂时性）') }}<span class="tip">
-            <span class="nph"><span class="l-en">Flexible-price CPI</span><span class="l-zh">弹性价格 CPI</span></span>
-            <span class="l-en"> — inflation in prices that move FAST (gas, food, cars). It's noisy and mean-reverting — big swings here are usually transitory, so a flexible-led spike fades faster than a sticky-led one.</span><span class="l-zh"> — 变动迅速的商品价格（汽油、食品、汽车）。噪声大、均值回归 — 这里的大幅波动通常是暂时的，弹性主导的飙升比黏性主导的消退更快。</span>
-            {{ nchart(NH.flexible) }}</span></span>
-          <b>{{ '%.1f'|format(IN.flexible_ann) }}%</b> {{ trendword(NH.flexible) }}</div>{% endif %}
-
-        {% if IN.read %}<div class="muted sm" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Read:', '判读：') }} <b>{{ t(IN.read, {'persistent (sticky-led)':'持续性（黏性主导）','transitory (flexible-led)':'暂时性（弹性主导）'}.get(IN.read, IN.read)) }}</b>
-          {{ help("Which side of inflation is running hotter right now. 'Transitory (flexible-led)' = the gap is driven by the FAST, noisy prices (gas/food/cars), which tend to mean-revert — so this kind of inflation usually fades on its own. 'Persistent (sticky-led)' = the SLOW prices (rent/services) are leading, which is stubborn and what forces the Fed's hand. It compares the two nowcasts above; it is a read on the MIX, not a forecast of the level.", "现在通胀的哪一侧更热。'暂时性（弹性主导）'＝差距由快速、噪声大的价格（汽油/食品/汽车）驱动，往往均值回归，所以这类通胀通常自行消退。'持续性（黏性主导）'＝缓慢价格（房租/服务）领先，顽固且最终迫使美联储行动。它比较上面两个即时预测，判读的是结构而非水平的预测。") }}</div>{% endif %}
-      </div>
-
-      <!-- Labor & real-activity nowcast (leading; front-runs payrolls) -->
-      {% if LN %}
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Labor & real activity', '劳动力与实体活动') }}
-          {{ help("High-frequency, LEADING reads on the real economy that front-run the monthly (and heavily revised) jobs report. Weekly jobless claims (rising = more layoffs), Indeed job postings (labor DEMAND), and the daily withheld income & employment taxes deposited at the Treasury (a near-real-time read on total wages — very hard to game). They turn months before payrolls confirm. Free FRED / Treasury / SF Fed data — see research/REAL_ACTIVITY_NOWCAST.md.", "对实体经济的高频领先读数，抢在月度（且大幅修正）的就业报告之前。每周首次申领失业金（上升＝裁员增多）、Indeed 招聘职位（劳动力需求）、以及财政部每日预扣所得与就业税存款（对总工资的近实时读数，极难操纵）。它们比非农数据提前数月转向。免费 FRED／财政部／旧金山联储数据。") }}
-          <span class="muted" style="font-weight:400;font-size:11px">· {{ t('leads payrolls', '领先非农') }}</span></div>
-
-        {% if LN.initial_claims_4wk is not none %}
-        {% set _ccol = 'var(--down)' if LN.claims_trend=='rising' else 'var(--up)' %}
-        <div class="kv">{{ t('Initial claims (4wk avg)', '首次申领（4周均）') }}
-          <b>{{ (LN.initial_claims_4wk/1000)|round|int }}k</b>
-          {% if LN.claims_yoy_pct is not none %}<span class="sm" style="color:{{ _ccol }}">{{ '%+.0f'|format(LN.claims_yoy_pct) }}% y/y {{ '▲' if LN.claims_trend=='rising' else '▼' }}</span>{% endif %}</div>{% endif %}
-
-        {% if LN.continued_claims is not none %}<div class="kv">{{ t('Continued claims', '续领失业金') }} <b>{{ '%.2f'|format(LN.continued_claims/1000000) }}M</b></div>{% endif %}
-
-        {% if LN.indeed_postings is not none %}
-        {% set _icol = 'var(--up)' if LN.indeed_trend=='rising' else 'var(--down)' %}
-        <div class="kv">{{ t('Indeed job postings', 'Indeed 招聘职位') }}
-          <b>{{ '%.0f'|format(LN.indeed_postings) }}</b>
-          {% if LN.indeed_chg_3m_pct is not none %}<span class="sm" style="color:{{ _icol }}">{{ '%+.1f'|format(LN.indeed_chg_3m_pct) }}%/3mo {{ '▲' if LN.indeed_trend=='rising' else '▼' }}</span>{% endif %}</div>{% endif %}
-
-        {% if LN.withheld_tax_yoy_pct is not none %}
-        {% set _wcol = 'var(--up)' if LN.income_trend=='rising' else 'var(--down)' %}
-        <div class="kv">{{ t('Withheld income taxes', '预扣所得税') }}
-          {{ help("Income & employment taxes deposited daily at the Treasury straight from paychecks. The trailing-3-month total vs a year ago is a near-real-time read on total WAGE income — hard to manipulate, and it leads the payroll report.", "每日从工资中直接缴入财政部的所得与就业税。近三个月合计同比是对总工资收入的近实时读数 — 难以操纵，且领先非农报告。") }}
-          <b style="color:{{ _wcol }}">{{ '%+.1f'|format(LN.withheld_tax_yoy_pct) }}%</b> <span class="muted sm">y/y</span></div>{% endif %}
-
-        {% if LN.read %}
-        {% set _rcol = 'var(--up)' if LN.read=='labor firm' else ('var(--down)' if LN.read=='labor cooling' else 'var(--muted)') %}
-        <div class="muted sm" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Read:', '判读：') }}
-          <b style="color:{{ _rcol }}">{{ t(LN.read, {'labor firm':'劳动力稳健','labor cooling':'劳动力降温','labor mixed':'劳动力分化'}.get(LN.read, LN.read)) }}</b></div>{% endif %}
-      </div>
-      {% endif %}
-
-      <!-- Risk appetite -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Risk appetite (cross-asset)', '风险偏好（跨资产）') }}</div>
-        {% if RA.roro is not none %}
-        {% set rocolor = 'var(--up)' if RA.roro_state=='risk-on' else ('var(--down)' if RA.roro_state=='risk-off' else 'var(--muted)') %}
-        <div class="kv">RORO <b style="color:{{ rocolor }}">{{ '%+.2f'|format(RA.roro) }}</b> <span class="badge" style="font-size:11px">{{ t(RA.roro_state, {'risk-on':'风险偏好','risk-off':'避险','neutral':'中性'}.get(RA.roro_state, RA.roro_state)) }}</span></div>
-        {% set RC = fear_euphoria.confirmation if (fear_euphoria and fear_euphoria.confirmation) else none %}
-        {% if RC %}
-        {% set _dcol = 'var(--up)' if RC.direction=='risk-on' else ('var(--down)' if RC.direction=='risk-off' else 'var(--muted)') %}
-        <div class="kv" style="margin-top:5px;padding-top:5px;border-top:1px solid var(--line)">{{ t('Cross-asset confirmation', '跨资产确认') }}
-          {{ help("How many of the 7 cross-asset RORO legs (VIX, HY credit, SKEW, vol term structure, financial conditions, copper/gold, the dollar) agree on the dominant risk direction RIGHT NOW — the dispersion the single RORO mean hides. A 5-of-7 split and a unanimous read can average to the same number; this shows which it is. The full 7-leg bar breakdown is in the Fear↔Euphoria panel below. DISPLAY-ONLY: it never scores or sizes anything.", "7 项跨资产 RORO 分量（VIX、高收益信用、SKEW、波动率期限结构、金融条件、铜／金、美元）当前有多少项在主导风险方向上一致 — 这是单一 RORO 均值掩盖的离散度。5/7 的分歧与全体一致可能平均成同一数字；此处揭示究竟是哪种。完整 7 项柱状拆解见下方恐惧↔欣喜面板。仅供显示：绝不评分或决定仓位。") }}
-          <b style="color:{{ _dcol }}">{{ RC.agree }}/{{ RC.total }}</b>
-          <span class="muted sm">{{ t('legs', '项') }} {{ t(RC.direction, {'risk-on':'偏好风险','risk-off':'避险','split':'对半'}.get(RC.direction, RC.direction)) }}</span>
-          <span class="badge" style="font-size:11px">{{ t(RC.verdict_en, RC.verdict_zh) }}</span></div>
-        {% if RC.dissent %}
-        <div class="muted sm" style="margin-top:2px">{{ t('dissent', '背离') }}: {% for d in RC.dissent %}{{ t(d.en, d.zh) }}{% if not loop.last %} · {% endif %}{% endfor %}</div>
-        {% else %}
-        <div class="muted sm" style="margin-top:2px">{{ t('all legs aligned', '全部分量一致') }}</div>
-        {% endif %}
-        {% endif %}
-        {% endif %}
-        {% if RA.vrp is not none %}<div class="kv">{{ t('Equity vol-risk-premium', '股票波动率风险溢价') }} <b>{{ '%+.1f'|format(RA.vrp) }}</b> <span class="muted sm">{{ ((RA.vrp_pctile or 0)*100)|round|int }}%ile</span></div>{% endif %}
-        {% if RA.vix_term is not none %}<div class="kv">{{ t('VIX term structure', 'VIX 期限结构') }} <b>{{ '%.2f'|format(RA.vix_term) }}</b> <span class="muted sm">{{ t('backwardation' if RA.vix_term>=1 else 'contango', '倒挂' if RA.vix_term>=1 else '正向') }}</span></div>{% endif %}
-        {% if RA.skew is not none %}<div class="kv">{{ t('CBOE SKEW (tail)', 'CBOE SKEW（尾部）') }} <b>{{ RA.skew|round|int }}</b> <span class="muted sm">{{ ((RA.skew_pctile or 0)*100)|round|int }}%ile</span></div>{% endif %}
-        {% if RA.stock_bond_corr is not none %}
-        {% set sbcolor = 'var(--down)' if 'breakdown' in (RA.stock_bond_regime or '') else 'var(--muted)' %}
-        <div class="kv">{{ t('Stock-bond corr', '股债相关性') }} <b style="color:{{ sbcolor }}">{{ '%+.2f'|format(RA.stock_bond_corr) }}</b> <span class="muted sm">{{ t('bonds not hedging' if 'breakdown' in (RA.stock_bond_regime or '') else ('bonds hedge' if 'diversifying' in (RA.stock_bond_regime or '') else 'mixed'), '债券未对冲' if 'breakdown' in (RA.stock_bond_regime or '') else ('债券对冲' if 'diversifying' in (RA.stock_bond_regime or '') else '混合')) }}</span></div>{% endif %}
-        {% if RA.vol_target_scalar is not none %}<div class="kv">{{ t('Vol-target exposure', '波动率目标敞口') }} <b>{{ '%.2f'|format(RA.vol_target_scalar) }}×</b></div>{% endif %}
-        {% if RA.get('news_sentiment') is not none %}
-        {% set _nscol = 'var(--up)' if RA.news_sentiment_state=='optimistic' else 'var(--down)' %}
-        <div class="kv">{{ t('News sentiment', '新闻情绪') }}
-          {{ help("The San Francisco Fed's Daily News Sentiment Index — economic tone extracted from major US newspapers (history from 1980). A continuous, reproducible read of the macro mood (positive = optimistic), and a quant complement to the AI news digests.", "旧金山联储每日新闻情绪指数 — 从美国主流报纸提取的经济基调（自 1980 年）。对宏观情绪的连续、可复现读数（正值＝乐观），是 AI 新闻摘要的量化补充。") }}
-          <b style="color:{{ _nscol }}">{{ '%+.2f'|format(RA.news_sentiment) }}</b> <span class="muted sm">{{ t(RA.news_sentiment_state, {'optimistic':'乐观','pessimistic':'悲观'}.get(RA.news_sentiment_state, RA.news_sentiment_state)) }}</span></div>{% endif %}
-        {% if CAP and CAP.active %}
-        {% set _firing = CAP.signals_firing or [] %}
-        {% set _cot_on = (CAP.score or 0) - (_firing|length) %}
-        {% set _vrp_on = 'VRP extreme' in _firing %}
-        {% set _vix_on = 'VIX panic' in _firing %}
-        <div class="kv" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line)">{{ t('Capitulation', '恐慌触底') }}
-          <span class="help">?<span class="tip">
-            <span class="l-en"><b>Capitulation gauge</b> — a CONTRARIAN bounce setup. It counts how many of three "everyone has panicked" signals are firing right now:</span>
-            <span class="l-zh"><b>恐慌触底指标</b> — 逆向反弹布局。统计三个"人人恐慌"信号当前有几个触发：</span>
-            <table class="sigtab">
-              <tr><td><b>Vol-risk-premium extreme</b><br><span class="muted" style="font-size:10px"><span class="l-en">fear over-priced vs actual moves</span><span class="l-zh">恐惧相对实际波动被高估</span></span></td><td class="{{ 'sig-on' if _vrp_on else 'sig-off' }}">{{ '✓ firing' if _vrp_on else '– quiet' }}</td></tr>
-              <tr><td><b>VIX &gt; 30</b><br><span class="muted" style="font-size:10px"><span class="l-en">outright panic in options</span><span class="l-zh">期权市场全面恐慌</span></span></td><td class="{{ 'sig-on' if _vix_on else 'sig-off' }}">{{ '✓ firing' if _vix_on else '– quiet' }}</td></tr>
-              <tr><td><b>COT washout</b><br><span class="muted" style="font-size:10px"><span class="l-en">speculators dumped their longs</span><span class="l-zh">投机者抛空多头</span></span></td><td class="{{ 'sig-on' if _cot_on >= 1 else 'sig-off' }}">{{ '✓ firing' if _cot_on >= 1 else '– quiet' }}</td></tr>
-            </table>
-            <span class="l-en">MEASURED: when ≥2 stack, the S&P returned <b>+9.3%</b> over the next 3 months (<b>86%</b> positive) with shallower drawdowns — vs +2.8% base. It marks fear, not a forecast, and is silent in calm markets.</span>
-            <span class="l-zh">实测：当 ≥2 个叠加时，标普未来三月 <b>+9.3%</b>（<b>86%</b> 为正），回撤更浅 — 基准 +2.8%。它标记恐惧而非预测，平静市场中静默。</span>
-          </span></span>
-          <b style="float:right;color:var(--up)">{{ CAP.score }}/3 {% if CAP.strong %}⚑{% endif %}</b></div>
-        <div class="muted sm">{{ t('Historically a bounce setup:', '历史上的反弹布局：') }} <b style="color:var(--up)">+{{ CAP.measured_bounce_pct }}%/3mo</b>, {{ CAP.measured_hit_pct }}% {{ t('positive (vs +2.8% base)', '为正（基准 +2.8%）') }}</div>
-        {% endif %}
-      </div>
-
-      <details class="span12" style="background:transparent;border:0;padding:0">
-      <summary style="cursor:pointer;color:var(--link);font-weight:600;padding:6px 0">{{ t('More — what\'s driving markets, factor leadership & scenario odds','更多 — 市场驱动、因子领先与情景概率') }}</summary>
-      <details class="span12" style="background:transparent;border:0;padding:0"><summary style="cursor:pointer;color:var(--link);font-weight:600;padding:6px 0">{{ t('More — what\'s driving markets, factor leadership & scenario odds','更多 — 市场驱动、因子领先与情景概率') }}</summary>
-
-      <!-- What's driving markets — daily cross-asset driver attribution (DISPLAY-ONLY) -->
-      {% if latest.market_drivers and latest.market_drivers.verdict not in [none, 'unknown'] %}
-      {% set MD = latest.market_drivers %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t("What's driving markets", '市场驱动因素') }}
-          <span class="muted sm">{{ t('past week', '过去一周') }}</span>
-          {{ help("Which single cross-asset FORCE has moved the tape over the last week — Fed repricing, real-rate shock, USD, credit stress, a liquidity impulse, China, oil, AI/semis or crypto. Each driver is a fingerprint of cross-asset legs; this names the strongest by scoring how coherently each fingerprint is lit — every leg's 5-day move z-scored against its own year of history, so a 2σ move in real yields is comparable to a 2σ move in HY spreads. 'Mixed' = no single driver clearly leads the runner-up; 'quiet' = nothing is moving beyond its normal weekly range. DISPLAY-ONLY: a regime read, it never scores or sizes anything.", "过去一周哪一种跨资产力量在主导行情 — 美联储重定价、实际利率冲击、美元、信用压力、流动性脉冲、中国、油价、AI/半导体或加密。每个驱动是一组跨资产腿的指纹；此处通过衡量每个指纹被点亮的一致程度来指出最强者 — 每条腿的 5 日变动相对其自身一年历史做 z 标准化，使实际利率的 2σ 变动与高收益利差的 2σ 变动可比。'混合'＝没有单一驱动明显领先次强者；'平静'＝波动未超出正常周度区间。仅供显示：这是周期读数，绝不评分或决定仓位。") }}
-          {% set _vcol = 'var(--text)' if MD.verdict=='clear' else 'var(--muted)' %}
-          <span class="badge" style="float:right;font-size:11px;color:{{ _vcol }}">{{ t(MD.verdict, MD.verdict_zh) }}{% if MD.confidence %} · {{ t('confidence', '置信度') }} {{ t(MD.confidence, MD.confidence_zh) }}{% endif %}</span>
-        </div>
-        {% if MD.verdict == 'quiet' %}
-        <div class="muted">{{ t('No dominant driver — cross-asset moves are within their normal weekly range.', '无主导驱动 — 跨资产波动处于正常的周度区间内。') }}</div>
-        {% else %}
-        <div style="font-size:15px;font-weight:600;margin-bottom:2px">{{ t(MD.primary_label, MD.primary_label_zh) }}
-          <span class="muted" style="font-weight:400">— {{ t(MD.direction, MD.direction_zh) }}</span></div>
-        {% if MD.verdict == 'mixed' and MD.runner_up_label %}
-        <div class="muted sm" style="margin-bottom:4px">{{ t('jointly with', '与之并列') }} {{ t(MD.runner_up_label, MD.runner_up_label_zh) }} {{ t('— no single dominant driver', '— 无单一主导驱动') }}</div>
-        {% endif %}
-        {% if MD.evidence_legs %}
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0">
-          {% for e in MD.evidence_legs %}
-          <span class="badge" style="font-size:11px;border:1px solid var(--line);background:var(--panel)">{{ t(e.en, e.zh) }} {{ '%+.1f'|format(e.z) }}σ</span>
-          {% endfor %}
-        </div>
-        {% endif %}
-        <div class="muted sm">{{ t('Invalidation', '失效条件') }}: {{ t(MD.invalidation, MD.invalidation_zh) }}</div>
-        {% endif %}
-        <!-- all-driver strength bars (neutral on purpose — a decomposition, not a buy/sell on any leg) -->
-        <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
-          {% for s in MD.scores %}
-          {% set _isp = (s.driver == MD.primary and MD.verdict != 'quiet') %}
-          <div style="display:flex;align-items:center;gap:8px;margin:2px 0;{% if _isp %}font-weight:700{% endif %}">
-            <div style="flex:0 0 150px;font-size:12px">{{ t(s.label, s.label_zh) }}</div>
-            <div style="flex:1;background:var(--panel);border-radius:3px;height:8px;overflow:hidden">
-              <div style="width:{{ (([s.strength, 3]|min)/3*100)|round|int }}%;height:8px;background:var(--{{ 'text' if _isp else 'muted' }});opacity:{{ 0.65 if _isp else 0.4 }}"></div>
-            </div>
-            <div class="muted sm" style="flex:0 0 44px;text-align:right">{{ '%+.2f'|format(s.projection) }}</div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
-      <!-- factor leadership (cross-sectional equity factors) -->
-      {% if factor_leadership %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.7">
-        <b>{{ t('Equity factor leadership', '股票因子领先') }}</b>
-        {{ help("Which STYLE of stock is winning over the last 63 days — Value (cheap), Quality (strong balance sheets), Profitability (high margins) or Low-vol (defensive). Quality / profitability leading = a risk-on, growth-led tape; value / low-vol leading = defensive, late-cycle. Full breakdown on the Factors page.", "哪种风格的股票在领先（近 63 日）——价值（便宜）、质量（资产负债表稳健）、盈利（高利润率）或低波动（防御）。质量／盈利领先＝风险偏好、成长主导；价值／低波动领先＝防御、周期晚段。完整拆解见因子页。") }}
-        <a href="factors.html" class="muted sm" style="float:right">{{ t('Factors page →', '因子页 →') }}</a>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:5px">
-          {% for L in factor_leadership %}
-          <span class="badge" style="font-size:11px;border:1px solid var(--line);background:var(--panel);color:{{ 'var(--up)' if L.spread_pct>=0 else 'var(--down)' }}">{{ td(L.label) }} {{ '%+.1f'|format(L.spread_pct) }}%</span>
-          {% endfor %}
-        </div>
-        {% if ST and ST.tilt %}<div class="muted sm" style="margin-top:6px">{{ t('Value vs Growth tilt:', '价值对成长倾向：') }} <b style="color:{{ 'var(--up)' if ST.tilt=='value' else ('var(--down)' if ST.tilt=='growth' else 'var(--muted)') }}">{{ t(ST.tilt, {'value':'价值','growth':'成长','neutral':'中性'}.get(ST.tilt, ST.tilt)) }}</b>{% if ST.yield_chg_1m_bp is not none %} <span class="muted">({{ t('10y','十年期') }} {{ '%+.0f'|format(ST.yield_chg_1m_bp) }}bp/mo — {{ t('rising favours value, falling favours growth','上行利好价值、下行利好成长') }})</span>{% endif %}</div>{% endif %}
-      </div>
-      {% endif %}
-
-      <!-- scenario odds (quad x financial-conditions direction) -->
-      {% if SC and SC.current %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">
-        {% set _hit = SC.current.hit_pct|round|int %}
-        <div style="font-weight:700;margin-bottom:4px">{{ t('What happens next — scenario odds', '接下来会怎样 — 情景概率') }}
-          <span class="help">?<span class="tip">
-            <span class="l-en">History rhymes. We look back at every month that matched <b>today's setup</b> — the regime's risk group AND whether financial conditions were loosening or tightening — and count how often the S&P rose the next month.</span>
-            <span class="l-zh">历史会重演。我们回看所有与<b>今日格局</b>相符的月份 — 周期的风险组别，以及金融条件当时在宽松还是收紧 — 统计标普次月上涨的频率。</span>
-            <span class="l-en" style="display:block;margin-top:5px">Adding the conditions-direction split moved the hit rate 13–20pp and held in both halves of 2007–2026. These are <b>base rates from history, not a forecast</b>.</span>
-            <span class="l-zh" style="display:block;margin-top:5px">加入条件方向后，胜率变动 13–20 个百分点，并在 2007–2026 两个样本半区均成立。这些是<b>历史基础概率，而非预测</b>。</span>
-          </span></span></div>
-        <div class="muted sm" style="margin-bottom:6px">{{ t("Today's setup:", '今日格局：') }} <b>{{ td(SC.group) }}</b> · {{ t('conditions', '条件') }} <b>{{ t(SC.direction, {'loosening':'宽松中','tightening':'收紧中'}.get(SC.direction, SC.direction)) }}</b></div>
-        <div class="oddsbar" title="{{ _hit }}% / {{ 100-_hit }}%">
-          <div class="ob-hit" style="width:{{ _hit }}%">{% if _hit >= 18 %}{{ _hit }}% ↑{% endif %}</div>
-          <div class="ob-miss" style="width:{{ 100-_hit }}%">{% if (100-_hit) >= 18 %}{{ 100-_hit }}% ↓{% endif %}</div>
-        </div>
-        <div class="muted sm">{{ t('S&P higher one month later', '标普一个月后走高') }} <b style="color:var(--up)">{{ _hit }}%</b> {{ t('of the time', '的概率') }}
-          <span class="muted">({{ '%+.2f'|format(SC.current.avg_pct) }}% {{ t('avg', '平均') }}, n={{ SC.current.n }})</span>
-          {% if SC.contrast %}
-          <div class="ocmp"><span>{{ t('vs', '对比') }}</span><span class="oc-alt">{{ SC.contrast.hit_pct|round|int }}%</span><span>{{ t('when conditions are', '当条件为') }} {{ t(SC.contrast_direction, {'loosening':'宽松','tightening':'收紧'}.get(SC.contrast_direction, SC.contrast_direction)) }}</span></div>{% endif %}</div>
-      </div>
-      {% endif %}
-
-      </details>
-
-    </div>
-  </div>
-  {% endif %}
 
   {% set TL = {'monetary':['Fed','美联储'],'inflation':['Inflation','通胀'],'labor':['Labor','就业'],'growth':['Growth','增长'],'credit':['Rates','利率'],'fiscal':['Fiscal','财政'],'earnings':['Earnings','业绩'],'guidance':['Guidance','指引'],'analyst':['Analysts','分析师'],'deals':['Deals','并购/IPO'],'capital_return':['Buybacks','回购/分红'],'stocks':['Stocks','个股'],'macro':['Macro','宏观']} %}
   <style id="nb-css">
@@ -2448,7 +2107,7 @@
   body.page-macro #now-board .nb-cat b{color:var(--ink-2);font-family:var(--num);font-size:10.5px}
   html[data-lang="zh"] body.page-macro #now-board .nb-strip-h{letter-spacing:0}
   </style>
-  <div class="panel span12" id="now-board">
+  <div class="panel span6" id="now-board">
     <h2>📰 {{ t('Market news &amp; catalysts','市场新闻与日程') }}
       {{ help("Reputable, macro-relevant headlines — filtered, theme-tagged and ranked by impact. Press a story to open a condensed read. Plus the US high-impact event window and any active relief-radar snap. All CONTEXT — never scored; the mechanical model never reads it.", "可靠、与宏观相关的头条 — 经筛选、标注主题并按影响排序。点按展开精简解读。另含美国高影响事件窗口与正在触发的反弹雷达。全部为背景 — 从不评分，机械模型从不读取。") }}
       <a href="news.html" style="float:right;font-size:12px;font-weight:600;color:var(--link)">{{ t('Full feed →','完整新闻 →') }}</a>
@@ -2507,7 +2166,7 @@
 
   <!-- ===== FEAR <-> EUPHORIA SYNTHESIS (display-only conditioning lens) ===== -->
   {% if mode != 'stocks' %}
-  <div class="panel span12" id="fear-euphoria">
+  <div class="panel span6" id="fear-euphoria">
     <h2>🌡️ {{ t('Fear ↔ Euphoria: regime synthesis', '恐惧 ↔ 欣喜：周期综合') }}
       {{ help("A conditioning lens, NOT a signal. It synthesises components this dashboard already computes — the cross-asset RORO risk-appetite composite, the dislocation verdict and the capitulation gauge — into one Fear↔Euphoria regime read. It does NOT score direction or size positions, and never feeds the quad, the macro-risk score or any axis. 'Contrarian at extremes' is regime-dependent: fear is buyable only when the Fed put is present; in put-absent regimes extreme fear can be a falling knife.", "这是环境视角，不是信号。它综合本仪表盘已计算的成分 — 跨资产 RORO 风险偏好综合、错位读数与投降指标 — 形成单一的恐惧↔欣喜周期读数。它不评分方向、不决定仓位，也绝不进入象限、宏观风险评分或任何轴。'极端时反向操作'取决于周期：只有在美联储托底在位时，恐惧才可买入；托底缺失时，极端恐惧可能是下跌中的刀子。") }}
       <a href="gex.html" class="muted" style="font-size:12px;font-weight:400;float:right">{{ t('dealer gamma →','交易商 gamma →') }}</a>
@@ -2515,9 +2174,6 @@
     <p class="muted sm" style="margin:-4px 0 10px">{{ t('A regime read, not a signal — it synthesises existing components and never scores direction or sizes positions.', '这是周期读数而非信号 — 仅综合已有成分，绝不评分方向或决定仓位。') }}</p>
     {% if fear_euphoria %}
     {% set FE = fear_euphoria %}
-    {% set DL = latest.dislocation %}
-    {% set FCAP = (latest.conditions or {}).capitulation %}
-    {% set FCOMP = (latest.conditions or {}).complacency %}
     {% set _bandzh = {'Panic':'恐慌','Fear':'恐惧','Neutral':'中性','Greed':'贪婪','Euphoria':'欣喜'} %}
     <div class="grid">
 
@@ -2540,80 +2196,7 @@
         <div class="muted sm" style="margin-top:8px">{{ t("Today's score is the rolling-5-year percentile of the RORO composite (valid after ~2.5y). 'Contrarian at extremes' is regime-dependent — see the dislocation read below.", '今日评分为 RORO 综合的滚动五年百分位（约 2.5 年后有效）。"极端时反向操作"取决于周期 — 见下方错位读数。') }}</div>
       </div>
 
-      <!-- 7-leg decomposition (neutral fill, no green/red) -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        <div style="font-weight:700;margin-bottom:6px">{{ t('What is driving it', '驱动因素') }} <span class="muted sm">{{ t('7 RORO legs', '7 项 RORO 分量') }}</span>
-          {{ help("The seven cross-asset legs of the RORO composite, each shown as its signed contribution (risk-on positive) and its own rolling-5-year percentile. Six fear legs are negated so that, like the headline, higher = more risk-on; copper/gold enters positive. Bars are deliberately neutral-coloured — this is a regime decomposition, not a buy/sell on any leg.", "RORO 综合的七项跨资产分量，各自显示其带符号贡献（偏好风险为正）及其滚动五年百分位。六项恐惧分量取负，使其与总览一致：越高越偏好风险；铜／金以正向计入。柱状刻意采用中性色 — 这是周期拆解，而非对任一分量的买卖。") }}</div>
-        {% for leg in FE.legs %}
-        <div style="display:flex;align-items:center;gap:8px;margin:5px 0">
-          <span style="flex:0 0 132px;font-size:12px">{{ t(leg.name_en, leg.name_zh) }}</span>
-          <div style="flex:1;height:7px;border-radius:4px;background:var(--line);overflow:hidden"><div style="height:100%;width:{{ leg.pct }}%;background:var(--muted)"></div></div>
-          <span class="muted sm" style="flex:0 0 96px;text-align:right">{{ '%+.2f'|format(leg.value) }} · {{ td(leg.lean) }}</span>
-        </div>
-        {% endfor %}
-      </div>
-
-      <!-- positioning + dislocation + capitulation -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        {% if FE.positioning %}
-        {% set P = FE.positioning %}
-        <div style="font-weight:700;margin-bottom:4px">{{ t('Positioning vs price', '持仓与价格') }}
-          <span class="badge" style="font-size:11px;background:var(--panel);float:right">
-            {% if P.chip=='confirms' %}{{ t('positioning confirms', '持仓与价格一致') }}
-            {% elif P.chip=='diverges' %}{{ t('positioning diverges', '持仓与价格背离') }}
-            {% else %}{{ t('positioning mixed', '持仓信号混杂') }}{% endif %}</span>
-          {{ help("A DESCRIPTIVE read of whether smart-money positioning agrees with the price trend — never a buy/sell. Bullish if COT speculators are washed out OR insider Form-4 breadth is net-buying; bearish if COT is crowded long OR insiders are net-selling. 'Confirms' = positioning leans the same way price is trending; 'diverges' = the opposite; 'mixed' when the two positioning sources disagree.", "对聪明钱持仓是否与价格趋势一致的描述性读数 — 绝非买卖建议。当 COT 投机者被清洗 或 内部人 Form-4 净买入时偏多；当 COT 拥挤做多 或 内部人净卖出时偏空。'一致'＝持仓方向与价格趋势相同；'背离'＝相反；当两个持仓来源不一致时为'混杂'。") }}</div>
-        <div class="muted sm">{{ t('COT spec', 'COT 投机') }}: {% if P.cot_washed_out %}{{ t('washed out', '已清洗') }}{% elif P.cot_crowded_long %}{{ t('crowded long', '拥挤做多') }}{% else %}{{ t('neutral', '中性') }}{% endif %}
-          · {{ t('insider breadth', '内部人广度') }} {{ '%+.0f'|format(P.insider_breadth * 100) }}%
-          · {{ t('price', '价格') }} {{ t('up', '上行') if P.price_up else t('down', '下行') }}</div>
-        {% endif %}
-
-        {% if DL %}
-        <div class="kv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">{{ t('Dislocation read', '错位读数') }}
-          <b style="float:right">{{ td(DL.verdict) }}</b></div>
-        <div class="muted sm">{{ t('Fed put', '美联储托底') }}: <b>{{ td(DL.put_state) if DL.put_state else (t('Put present','托底在位') if DL.fed_put else t('Put ABSENT','托底缺失')) }}</b>
-          {% if DL.inputs and DL.inputs.spy_drawdown_pct is not none %} · {{ t('S&P drawdown', '标普回撤') }} {{ DL.inputs.spy_drawdown_pct }}%{% endif %}</div>
-        {% if DL.capitulation_caveat %}<div class="sm" style="margin-top:4px;color:var(--muted)">⚠ {{ DL.capitulation_caveat }}</div>{% endif %}
-        {% endif %}
-
-        {% if FCAP and FCAP.score is not none %}
-        <div class="kv" style="margin-top:8px">{{ t('Capitulation', '投降') }}
-          <b style="float:right">{{ FCAP.score }}/3 {{ t('signals', '信号') }}</b></div>
-        {% if FCAP.signals_firing %}<div class="muted sm">{{ FCAP.signals_firing | join(' · ') }}</div>{% endif %}
-        {% if FCAP.measured_bounce_pct is not none %}<div class="muted sm">{{ t('measured bounce', '实测反弹') }} {{ '%+.1f'|format(FCAP.measured_bounce_pct) }}% ({{ FCAP.measured_hit_pct }}% {{ t('hit', '命中') }})</div>{% endif %}
-        {% endif %}
-
-        {# Complacency / hidden-fragility — the euphoria-side MIRROR of the
-           capitulation block above. Display-only conjunction (calm AND weak),
-           neutral styling, never scored. #}
-        {% if FCOMP and FCOMP.state %}
-        {% set _cl = [] %}
-        {% if FCOMP.vix_low %}{% set _ = _cl.append(t('VIX low', 'VIX 偏低')) %}{% endif %}
-        {% if FCOMP.contango %}{% set _ = _cl.append(t('steep contango', '陡峭正向')) %}{% endif %}
-        {% set _fl = [] %}
-        {% if FCOMP.breadth_div %}{% set _ = _fl.append(t('breadth not confirming', '广度未确认')) %}{% endif %}
-        {% if FCOMP.credit_widen %}{% set _ = _fl.append(t('HY credit widening', '高收益走阔')) %}{% endif %}
-        <div class="kv" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">{{ t('Complacency', '自满') }}
-          {{ help("The euphoria-side MIRROR of the capitulation gauge. Capitulation marks extreme fear (a measured bounce); this marks the opposite tail — a CALM surface (VIX in the bottom quartile of its 2-year range, a steep-contango term structure) sitting over WEAKENING internals (the index near its 1-year high while fewer stocks hold their 200-day average, and high-yield credit quietly widening). 'Hidden fragility' fires ONLY on the conjunction — calm AND weak together. It is NOT a timing signal and is never scored: a low VIX is persistent and roughly neutral for forward returns, and the fragility only bites when a catalyst arrives. Context for position-sizing humility, not a sell.", "投降指标的欣喜一侧镜像。投降标记极端恐惧（实测反弹）；本指标标记相反一端 — 平静的表象（VIX 处于两年区间最低四分位、陡峭的正向期限结构）叠加走弱的内部结构（指数接近一年高点，但守住 200 日均线的个股越来越少，且高收益信用悄然走阔）。'隐性脆弱'仅在两者同时出现时触发 — 又平静又虚弱。它不是择时信号，也从不参与评分：低 VIX 具有持续性、对未来收益大致中性，脆弱只有催化剂到来时才发作。它用于仓位上的谦逊，而非卖出建议。") }}
-          <b style="float:right">{% if FCOMP.state=='hidden_fragility' %}⚠ {{ t('hidden fragility', '隐性脆弱') }}{% elif FCOMP.state=='watch' %}{{ t('watch', '留意') }}{% elif FCOMP.state=='calm' %}{{ t('calm', '平静') }}{% else %}{{ t('neutral', '中性') }}{% endif %}</b></div>
-        {% if FCOMP.warning %}
-        <div class="muted sm">{{ _cl|join(' · ') }} <span style="opacity:.55">{{ t('over', '叠加') }}</span> {{ _fl|join(' · ') }}</div>
-        {% elif FCOMP.state=='calm' %}
-        <div class="muted sm">{{ _cl|join(' · ') if _cl else t('calm surface', '表象平静') }} · {{ t('internals confirming', '内部确认') }}</div>
-        {% endif %}
-        <div class="muted sm" style="margin-top:1px">
-          {%- if FCOMP.vix_pctile is not none %}VIX {{ (FCOMP.vix_pctile*100)|round|int }}%ile{% endif %}
-          {%- if FCOMP.vix_term is not none %} · vix/3m {{ '%.2f'|format(FCOMP.vix_term) }}{% endif %}
-          {%- if FCOMP.breadth_above200_pctile is not none %} · %&gt;200dma {{ (FCOMP.breadth_above200_pctile*100)|round|int }}%ile{% endif %}
-          {%- if FCOMP.hy_oas_chg_21d_bp is not none %} · HY {{ '%+.0f'|format(FCOMP.hy_oas_chg_21d_bp) }}bp/mo{% endif %}
-        </div>
-        <div class="muted sm" style="margin-top:2px">{{ t('Display-only mirror of capitulation — never scored.', '投降指标的纯展示镜像 — 从不评分。') }}</div>
-        {% endif %}
-
-        {# Cross-asset absorption KV retired — an unexplained 0–1 ratio with no threshold or
-           action; the same cross-asset stress is read more legibly by the OFR systemic-stress
-           channels and the Risk-Radar. #}
-      </div>
+      <a class="span12" href="macro_signals.html" style="display:block;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;color:var(--link);font-weight:600">{{ t('Full breakdown — the 7 RORO legs, positioning vs price, dislocation &amp; capitulation \u2192','\u5b8c\u6574\u62c6\u89e3 — 7 \u9879 RORO \u5206\u91cf\u3001\u6301\u4ed3\u5bf9\u4ef7\u683c\u3001\u9519\u4f4d\u4e0e\u6295\u964d \u2192') }}</a>
 
     </div>
     {% else %}
@@ -2905,166 +2488,6 @@
   {% endif %}
   {% endif %}{# /mode != macro — action board #}
 
-  <!-- ======================= NOW ======================= -->
-  {% if pb %}
-  {% if mode != 'stocks' %}
-  <div class="panel span6">
-    <h2>{{ t('Where we are in this regime', '我们身处此周期何处') }}
-      {{ help("Compares this regime's age against every " + latest.quad_name + " period since 2007 in this exact classifier. Regimes don't die of old age — but the older one gets relative to history, the more weight every warning flag deserves.", "将此周期的年龄与自 2007 年以来本分类器中每一段 " + latest.quad_name + " 周期对比。周期不会因年老而自然消亡 — 但相对历史越老，每一面预警旗都越值得加重看待。") }}
-    </h2>
-    <p style="font-size:14.5px; margin: 2px 0 6px"><b>{{ t(pb.quad_meaning.en, pb.quad_meaning.zh) }}.</b></p>
-    {% if pb.progress %}
-    <div class="lifebar">
-      <div class="zone" style="left:0; width:{{ pb.progress.zone_early_pct }}%; background:color-mix(in srgb, var(--up) 35%, var(--panel))"></div>
-      <div class="zone" style="left:{{ pb.progress.zone_early_pct }}%; width:{{ pb.progress.zone_mid_pct - pb.progress.zone_early_pct }}%; background:color-mix(in srgb, var(--warn) 35%, var(--panel))"></div>
-      <div class="zone" style="left:{{ pb.progress.zone_mid_pct }}%; width:{{ 100 - pb.progress.zone_mid_pct }}%; background:color-mix(in srgb, var(--down) 35%, var(--panel))"></div>
-      <div class="marker" style="left:{{ pb.progress.bar_pct }}%"></div>
-    </div>
-    <div class="lifelabels"><span>{{ t('young', '年轻') }}</span><span>{{ t('mid-life', '中年') }}</span><span>{{ t('old', '年老') }}</span></div>
-    <p style="margin:10px 0 4px"><b>{{ t(pb.progress.phase | upper, tr(pb.progress.phase)) }}</b> — {{ t(pb.progress.phase_note, pb.progress.phase_note_zh) }}.</p>
-
-    {% if stance %}
-    {% set _sv = {
-      'run':   ('🟢', 'Let winners run', '让赢家继续奔跑', 'Trend intact — the odds of a regime shift are low.', '趋势完好 — 周期转变的概率较低。'),
-      'hold':  ('🟡', 'Stay with the trend — trail your stops', '跟随趋势 — 收紧移动止损', 'Warnings are building: stop ADDING regime-dependent bets, but no break yet.', '预警正在累积：停止加注依赖周期的押注，但尚未破位。'),
-      'shift': ('🟠', 'Start looking for a regime change', '开始留意周期转变', 'Shift odds are compounding — reduce risk before the label flips.', '转变概率层层叠加 — 在标签翻转前降低风险。'),
-      'reset': ('🔄', 'Regime just turned — reset', '周期刚刚转变 — 重置', 'The label changed within the last week: switch to the new playbook.', '标签在过去一周内已改变：切换到新剧本。')
-    } %}
-    {% set _s = _sv[stance.key] %}
-    <div class="stance stance-{{ stance.key }}">
-      <div class="stance-hd">
-        <span class="stance-ico">{{ _s[0] }}</span>
-        <div>
-          <div class="stance-v">{{ t(_s[1], _s[2]) }}</div>
-          <div class="stance-sub">{{ t(_s[3], _s[4]) }}</div>
-        </div>
-      </div>
-      <div class="stance-track"><i style="left:{{ stance.pos_pct }}%"></i></div>
-      <div class="stance-ends"><span>{{ t('let winners run', '让赢家奔跑') }}</span><span>{{ t('look for a change', '留意转变') }}</span></div>
-      <div class="stance-meta">{{ t(stance.age_word, {'young':'年轻','mid-life':'中年','old':'年老'}.get(stance.age_word, stance.age_word)) }} {{ td(latest.quad_name) }} · {{ t('radar', '雷达') }} {{ td(stance.radar) }}{% if stance.n_warn %} · {{ stance.n_warn }} {{ t('warning' if stance.n_warn == 1 else 'warnings', '预警') }}{% endif %}
-        {{ help("This verdict combines two things on this page: how far through its historical lifespan this regime is (the bar above), and the transition radar (top of page). STABLE → let winners run; WEAKENING → stop adding & trail stops; TRANSITIONING → look for a change; NEW REGIME → reset. An OLD regime makes every warning matter more. Base rates from 2007-present, not a prediction.", "此判断综合本页两件事：此周期已走过其历史寿命的多少（上方进度条），以及转换雷达（页面顶部）。稳定 → 让赢家奔跑；走弱 → 停止加注并收紧止损；转换中 → 留意转变；新周期 → 重置。年老的周期会让每个预警都更重要。基于 2007 年至今的基础概率，而非预测。") }}</div>
-    </div>
-    {% endif %}
-
-    <p class="muted" style="margin:4px 0">
-      <span class="l-en">
-      {{ pb.progress.age_days }} trading days in, vs a median of {{ pb.progress.median_days }}
-      across {{ pb.progress.n_history }} past {{ latest.quad_name }} periods.
-      {{ pb.progress.pct_longer | round | int }}% of them lasted longer than this one has so far{% if pb.progress.median_remaining_days %} —
-      and those that did typically ran another ~{{ pb.progress.median_remaining_days }} trading days
-      (≈{{ (pb.progress.median_remaining_days / 5) | round(1) }} weeks){% endif %}.
-      </span>
-      <span class="l-zh">
-      已运行 {{ pb.progress.age_days }} 个交易日，对比 {{ pb.progress.n_history }} 段过往 {{ td(latest.quad_name) }} 周期的中位数 {{ pb.progress.median_days }} 个交易日。
-      其中 {{ pb.progress.pct_longer | round | int }}% 比当前这一段持续得更久{% if pb.progress.median_remaining_days %} —
-      而那些更久的通常还会再运行约 {{ pb.progress.median_remaining_days }} 个交易日
-      （≈{{ (pb.progress.median_remaining_days / 5) | round(1) }} 周）{% endif %}。
-      </span>
-      {{ help("Historical base rates from this classifier's own 2007-present history — odds and typical paths, not predictions. A young regime + STABLE radar = let winners run. An old regime + warnings = the odds of a shift compound.", "来自本分类器自身 2007 年至今历史的基础概率 — 是概率与典型路径，而非预测。年轻周期 + 稳定雷达 = 让赢家继续奔跑。年老周期 + 预警 = 转变的概率层层叠加。") }}
-    </p>
-    {% else %}
-    <p class="muted">{{ t('Not enough regime history for lifespan statistics yet.', '周期历史尚不足以做寿命统计。') }}</p>
-    {% endif %}
-  </div>
-
-  <!-- ======================= NEXT ======================= -->
-  <div class="panel span6">
-    <h2>{{ t("What's likely next — and how to trade it", '接下来可能发生什么 — 以及如何交易') }}
-      {{ help("Simple historical frequencies: across every " + latest.quad_name + " period since 2007, which regime came next. These are base rates, not forecasts — but they tell you which playbook to keep warm. The watch names below are NOT buys yet; the evidence says anticipating rotations loses money — wait for the trend to confirm.", "简单的历史频率：自 2007 年以来每一段 " + latest.quad_name + " 周期之后，接下来出现的是哪个周期。这些是基础概率，而非预测 — 但能告诉你该把哪套剧本备着。下方的观察标的目前还不是买入；证据表明提前押注轮动会亏钱 — 等趋势确认。") }}
-    </h2>
-    {% for n in pb.next_list %}
-    <div class="prob">
-      <span class="nm">{{ td(n.name) }}</span>
-      <span class="bar"><i style="width:{{ n.prob_pct }}%; background: var(--q{{ n.code[1] }})"></i></span>
-      <span class="pc">{{ n.prob_pct }}%</span>
-    </div>
-    {% endfor %}
-    {% if pb.watchlist %}
-      <h3>{{ t('Accumulation watchlist for that shift', '为该转变准备的吸筹观察名单') }}</h3>
-      {% for x in pb.watchlist %}
-        <div class="card"><span class="calltag tag-watch">{{ td("WATCH — DON'T BUY YET") }}</span>
-          <b class="tk">{{ x.ticker }}</b> · {{ td(x.name) }}<br>
-          <span class="muted">{{ t(x.why, x.why_zh) }}</span></div>
-      {% endfor %}
-    {% endif %}
-    <h3>{{ t('The signals that would announce the shift', '将预告该转变的信号') }}</h3>
-    <ul class="compact muted">
-      {% for trg_en, trg_zh in pb.triggers %}<li>{{ t(trg_en, trg_zh) }}</li>{% endfor %}
-    </ul>
-  </div>
-  {% endif %}{# /mode != stocks — where we are + what's next #}
-
-  {% if mode != 'stocks' %}
-  <!-- ============== TRADE IT — regime posture dial (macro) ============== -->
-  <div class="panel span12">
-    <h2>{{ t('How to trade the current regime', '如何交易当前周期') }}
-      {{ help("Built from conditions that held up in both halves of a 2007-2026 backtest. The dial is the headline: how much risk current conditions support. Sector calls below it are risk filters and confirmation tools — our research found no stable 'this sector will outperform' signal at monthly horizons, so anyone selling you that is curve-fitting.", "基于在 2007–2026 回测前后两半都站得住脚的条件构建。刻度盘是核心：当前条件支持多大的风险。其下的板块判断是风险过滤器与确认工具 — 我们的研究在月度时间尺度上未发现稳定的'某板块将跑赢'信号，所以任何向你兜售此类信号的人都是在过拟合。") }}
-    </h2>
-    <div class="dial">
-      {% for p in ["DEFENSIVE","CAREFUL","NEUTRAL","CONSTRUCTIVE","AGGRESSIVE"] %}
-        <span class="{{ 'active-' + p if pb.dial.posture == p }}">{{ td(p) }}</span>
-      {% endfor %}
-    </div>
-    {% for sign, r_en, r_zh in pb.dial.reasons %}
-      <div class="reason"><b class="sig sig-{{ {'+':'p','-':'m','i':'i'}[sign] }}">{{ {'+':'+','-':'−','i':'i'}[sign] }}</b> {{ t(r_en, r_zh) }}</div>
-    {% endfor %}
-    <a href="us_stocks.html" style="display:inline-block;margin-top:12px;font-weight:600;color:var(--link)">{{ t('→ Regime-approved sectors & stocks (US Stock Dashboard)', '→ 周期认可的板块与个股（美国个股看板）') }}</a>
-  </div>
-  {% endif %}{# /mode != stocks — regime posture dial #}
-
-  {# Regime-approved "leaders & avoids" scorecard removed (2026-06-23): superseded by
-     the validated Sector buy/sell setups board (#sectors below), engine/sector_signals —
-     research/SECTOR_CONFLUENCE.md. The old card mislabelled extended sectors as
-     "confirmed leadership" and gave no topping signal. #}
-  {% endif %}{# /if pb #}
-
-  {% if mode != 'stocks' %}
-  <!-- ======================= SIGNALS ======================= -->
-  <div class="panel span6" id="dials">
-    <h2>{{ t('The two dials behind the regime', '周期背后的两个刻度盘') }}
-      {{ help("The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms). Growth above zero + inflation below zero = Goldilocks, and so on. The white marker is today.", "周期标签来自两个介于 -1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。增长高于零 + 通胀低于零 = 理想增长，以此类推。白色标记代表今日。") }}
-    </h2>
-    <p style="margin:8px 0 0"><b>{{ t('Growth:', '增长：') }} {{ t("RISING", '上行') if latest.growth_score >= 0 else t("FALLING", '下行') }}</b>
-      <span class="muted">({{ "%+.2f" | format(latest.growth_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.growth_confidence * 100) | round | int }}%)</span>
-      {{ help("Is the economy's growth impulse improving or deteriorating, as priced by markets: copper vs gold, consumer discretionary vs staples, small vs large caps, cyclical vs defensive sectors, the 2-year yield, breadth — confirmed slowly by payrolls and industrial production.", "经济的增长动能正在改善还是恶化，以市场定价衡量：铜对黄金、可选消费对必需消费、小盘对大盘、周期板块对防御板块、2 年期收益率、市场广度 — 由非农就业与工业产出缓慢确认。") }}
-    </p>
-    <div class="gauge"><i style="left: {{ ((latest.growth_score + 1) / 2 * 100) | round(1) }}%"></i></div>
-    <p style="margin:10px 0 0"><b>{{ t('Inflation pressure:', '通胀压力：') }} {{ t("RISING", '上行') if latest.inflation_score >= 0 else t("FALLING", '下行') }}</b>
-      <span class="muted">({{ "%+.2f" | format(latest.inflation_score) }} {{ t('of ±1 · agreement', '／±1 · 一致度') }} {{ (latest.inflation_confidence * 100) | round | int }}%)</span>
-      {{ help("Is inflation pressure building or cooling, as priced by markets: bond-market inflation expectations, oil, energy-sector strength, and inflation-winner vs inflation-loser sector baskets.", "通胀压力正在累积还是降温，以市场定价衡量：债市通胀预期、原油、能源板块强度，以及通胀受益板块对通胀受损板块的组合。") }}
-    </p>
-    <div class="gauge"><i style="left: {{ ((latest.inflation_score + 1) / 2 * 100) | round(1) }}%"></i></div>
-
-    <h3>{{ t("What's voting for this regime", '哪些指标在为此周期投票') }}
-      {{ help("Each chip is one indicator inside the two dials. Green chips point WITH the regime call; red chips point AGAINST it. Lots of red = shaky ground (and lower 'signal agreement').", "每个标签代表两个刻度盘中的一个指标。绿色标签与周期判断同向；红色标签与之反向。红色越多 = 根基越不稳（且'信号一致度'越低）。") }}
-    </h3>
-    <div>
-      {% for c in components_confirming %}<span class="chip chip-pos">{{ c }}</span>{% endfor %}
-      {% for c in components_contradicting %}<span class="chip chip-neg">{{ c }}</span>{% endfor %}
-      {% if not components_confirming and not components_contradicting %}<span class="muted">{{ t('all quiet', '一切平静') }}</span>{% endif %}
-    </div>
-
-    <h3>{{ t('Weakest link', '最薄弱环节') }}
-      {{ help("Of everything currently supporting the regime call, this indicator is closest to flipping sides — the single thing most likely to change the picture.", "在当前支撑周期判断的所有指标中，这一个最接近倒戈 — 是最有可能改变全局的单一因素。") }}
-    </h3>
-    <p class="muted">{{ flip_plain }}</p>
-
-    {% if latest.preference_check %}
-    <h3>{{ t('Does the market agree with the regime?', '市场是否认同此周期？') }}
-      {{ help("The regime implies certain sectors should lead. This checks whether they actually ARE. Agreement strengthens the call; disagreement is an early warning — when the tape stops cooperating with the story, the story is often about to change.", "此周期暗示某些板块应当领先。这里检验它们是否真的在领先。一致会强化判断；分歧则是早期预警 — 当盘面不再配合剧情时，剧情往往即将改变。") }}
-    </h3>
-    <p class="muted">{{ latest.preference_check.note }}
-      {% if latest.preference_check.actual_ranks %}
-        <span class="l-en">({% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} is #{{ r }}{{ ", " if not loop.last }}{% endfor %} of {{ latest.sector_rs | length }})</span><span class="l-zh">（{% for t, r in latest.preference_check.actual_ranks.items() %}{{ t }} 排名第 {{ r }}{{ "，" if not loop.last }}{% endfor %}，共 {{ latest.sector_rs | length }} 个）</span>
-      {% endif %}
-    </p>
-    {% endif %}
-  </div>
-
-  {# internals (risk-appetite gauges) panel retired — folded into the Market State command-center's Risk-appetite factor #}
-  {# market internals — risk appetite gauges retired — folded into the Market State command-center #}
-
-  {% endif %}{# /mode != stocks — two dials + internals #}
 
   {% if mode != 'macro' %}
   <!-- ===================== US EQUITY SIZE & STYLE ===================== -->
@@ -3410,97 +2833,6 @@
   {% endif %}{# /sector_setups #}
   {% endif %}{# /mode != macro — size/style + sector heat #}
 
-  {% if mode != 'stocks' %}
-  <div class="panel span6">
-    <h2>{{ t('Commodities & macro tape', '大宗商品与宏观盘面') }}
-      {{ help("The non-equity instruments the regime engine watches, with their technicals and seasonal tendency. No heat score here — regime alignment and rotation stages are equity-sector concepts.", "周期引擎所关注的非股票类标的，及其技术面与季节性倾向。这里没有热度分数 — 周期契合度与轮动阶段是股票板块的概念。") }}
-    </h2>
-    <table>
-      <tr><th class="l">{{ t('instrument', '标的') }}</th><th>{{ t('trend', '趋势') }}</th><th>RSI</th><th>{{ t('off 52w high', '距52周高') }}</th><th>{{ t('3mo', '3月') }}</th><th>{{ t('seasonal', '季节性') }}</th></tr>
-      {% for c in commodities %}
-      <tr>
-        <td class="l"><b>{{ td(c.name) }}</b></td>
-        <td>{{ "✓" if c.above200 else "✗" }}200d {{ "✓" if c.above50 else "✗" }}50d</td>
-        <td>{{ c.rsi14 | round | int if c.rsi14 is not none else "—" }}</td>
-        <td class="{{ 'neg' if c.off_52w_high_pct < -10 else '' }}">{{ "%+.1f" | format(c.off_52w_high_pct) }}%</td>
-        <td class="{{ 'pos' if c.mom_60d_pct > 0 else 'neg' }}">{{ "%+.1f" | format(c.mom_60d_pct) }}%</td>
-        <td>
-          <span class="help" style="width:auto;height:auto;border:none;margin:0">
-            <span style="cursor:help">{{ (c.season_this or "—").split(":")[1].split("avg")[0].strip() if c.season_this else "—" }}</span>
-            <span class="tip">{{ t(c.season_this, c.season_this_zh) if c.season_this else t("Not enough history.", "历史数据不足。") }}</span>
-          </span>
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-
-  <div class="panel span6" id="liquidity">
-    <h2>{{ t('Fed liquidity — the money tide', '美联储流动性 — 资金潮') }}
-      {{ help("Top: net money in the system (Fed balance sheet minus reverse-repo minus the Treasury's account), in billions. Bottom: its 4-week change — the impulse. Green above the dotted line = expanding (historically the most reliable tailwind); red below = contracting.", "上方：系统内的净资金（美联储资产负债表减逆回购减财政部账户），单位十亿。下方：其 4 周变化 — 即动能。虚线之上为绿色 = 扩张（历史上最可靠的顺风）；下方为红色 = 收缩。") }}
-    </h2>
-    <div class="chart">{{ chart_liquidity | safe }}</div>
-  </div>
-
-  <div class="panel span6" id="credit">
-    <h2>{{ t('Credit stress & market breadth', '信用压力与市场广度') }}
-      {{ help("Top: the extra yield junk-bond investors demand — the market's best early smoke detector; rising = stress building; below ~4% is calm. Bottom: % of S&P 500 stocks above their 50-day average — participation. Strong indexes with collapsing breadth are fragile.", "上方：垃圾债投资者要求的额外收益率 — 市场最好的早期烟雾探测器；上行 = 压力累积；低于约 4% 为平静。下方：标普 500 中高于其 50 日均线的股票占比 — 即参与度。指数走强而广度崩塌则脆弱。") }}
-    </h2>
-    <div class="chart">{{ chart_credit_breadth | safe }}</div>
-  </div>
-
-  <!-- ======================= VIX MONITOR ======================= -->
-  {% if vix %}
-  <div class="panel span6" id="vix-monitor">
-    <h2>{{ t('VIX monitor', 'VIX 监测') }}
-      {{ help("The 30-day VIX path with the conventional regime bands (below 15 = calm/complacent, 20-25 = elevated, above 30 = high fear). The sharper read shown beside is OURS: the VIX term structure (spot vs 3-month — backwardation = near-term stress) and where today sits in VIX's own history.", "30 日 VIX 走势，叠加常规区间（低于 15 = 平静／自满，20–25 = 偏高，高于 30 = 高度恐慌）。旁边给出的是我们更锐利的解读：VIX 期限结构（现货对 3 个月 — 倒挂＝近期压力）以及今日在 VIX 自身历史中的位置。") }}
-    </h2>
-    <div class="vixhead">
-      <span class="vixnum">{{ '%.2f' | format(vix.last) }}</span>
-      <span class="{{ 'pos' if vix.chg > 0 else 'neg' if vix.chg < 0 else 'muted' }}">{{ '%+.2f' | format(vix.chg) }} ({{ '%+.1f' | format(vix.pct) }}%)</span>
-      <span class="badge vix-{{ vix.tone }}">{{ vix.regime }}</span>
-    </div>
-    <p class="muted" style="font-size:13px; margin:8px 2px 4px; line-height:1.5">
-      {% if vix.ratio is not none %}{{ t('Term structure', '期限结构') }} <b>{{ '%.2f' | format(vix.ratio) }}</b> {{ vix.rword }} · {% endif %}
-      <span class="l-en">today sits at the <b>{{ '%.0f' | format(vix.pctile) }}th</b> percentile of VIX history</span><span class="l-zh">今日处于 VIX 历史 <b>{{ '%.0f' | format(vix.pctile) }}</b> 百分位</span>
-    </p>
-    <div class="chart">{{ chart_vix | safe }}</div>
-    <div class="vixstats">
-      <span class="kv">{{ vix.days }}{{ t('d high', '日高') }} <b>{{ '%.2f' | format(vix.hi) }}</b></span>
-      <span class="kv">{{ vix.days }}{{ t('d low', '日低') }} <b>{{ '%.2f' | format(vix.lo) }}</b></span>
-      <span class="kv">{{ t('prev close', '前收') }} <b>{{ '%.2f' | format(vix.prev) }}</b></span>
-    </div>
-  </div>
-  {% endif %}
-
-  <!-- ======================= POSITIONING ======================= -->
-  <div class="panel span6" id="positioning">
-    <h2>{{ t("Who's positioned how — the crowd meter", '谁如何持仓 — 拥挤度计') }}
-      {{ help("What different investor groups are currently doing, shown as a position on each dial. The middle is normal; the ENDS are the danger zones — when a marker sits at either extreme, that trade is crowded and prone to violent reversal. Hover each name for the underlying numbers.", "不同投资者群体当前在做什么，以每个刻度盘上的位置呈现。中间为正常；两端是危险区 — 当标记落在任一极端时，该交易已拥挤且易发生剧烈反转。将鼠标悬停在每个名称上可查看底层数字。") }}
-    </h2>
-    <table>
-      <tr><th class="l">{{ t('who / what', '谁／什么') }}</th><th class="l" style="min-width:150px">{{ t('where they stand', '当前位置') }}</th><th class="l">{{ t('what it means', '含义') }}</th></tr>
-      {% for p in positioning %}
-      <tr>
-        <td class="l">{{ p.name }} {{ help(p.tip) }}</td>
-        <td class="l">
-          {% if p.pct is not none %}
-            <div class="pgauge"><i style="left: {{ p.pct | round(1) }}%"></i></div>
-            <div class="pends"><span>{{ p.left }}</span><span>{{ p.right }}</span></div>
-          {% else %}
-            <span class="plabel {{ 'plabel-hot' if 'amplif' in p.label or 'hedg' in p.label or 'complacent' in p.label else 'plabel-norm' }}">{{ p.label }}</span>
-          {% endif %}
-        </td>
-        <td class="l muted">
-          {% if p.pct is not none %}<b style="color:var(--text)">{{ p.label }}</b>{% if p.verdict %} — {{ p.verdict }}{% endif %}
-          {% else %}{{ p.verdict }}{% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </table>
-  </div>
-
-  {% endif %}{# /mode != stocks — commodities, liquidity, credit, positioning #}
 
   {% if mode != 'macro' %}
   <!-- ======================= ACCUMULATION WATCH ======================= -->

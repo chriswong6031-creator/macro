@@ -3026,6 +3026,40 @@ def main() -> int:
     out_st = site / "us_stocks.html"
     out_st.write_text(env.get_template("dashboard.html.j2").render(**vm, mode="stocks"))
     log.info("wrote %s (%.0f KB)", out_st, out_st.stat().st_size / 1024)
+
+    # Macro Signals — the dense data page that holds every gauge OFFLOADED from
+    # macro.html so the front page stays uncluttered: business cycle, real-time
+    # conditions/nowcast, the full Fear↔Euphoria breakdown, the two regime dials,
+    # commodities tape, Fed liquidity, credit/breadth, VIX and positioning. Same VM,
+    # display-only. Plus a machine-readable JSON the Brain / AI desks can consume.
+    out_msig = site / "macro_signals.html"
+    out_msig.write_text(env.get_template("macro_signals.html.j2").render(**vm))
+    log.info("wrote %s (%.0f KB)", out_msig, out_msig.stat().st_size / 1024)
+    try:
+        _nh = {k: {kk: vv for kk, vv in (v or {}).items() if kk != "svg"}
+               for k, v in (vm.get("nowcast_hist") or {}).items()}
+        _msdata = {
+            "date": latest.get("date", ""),
+            "generated_utc": generated,
+            "business_cycle": latest.get("business_cycle"),
+            "conditions": latest.get("conditions"),
+            "nowcast_hist": _nh,
+            "fear_euphoria": vm.get("fear_euphoria"),
+            "growth_score": latest.get("growth_score"),
+            "inflation_score": latest.get("inflation_score"),
+            "components_confirming": vm.get("components_confirming"),
+            "components_contradicting": vm.get("components_contradicting"),
+            "commodities": vm.get("commodities"),
+            "vix": vm.get("vix"),
+            "positioning": vm.get("positioning"),
+        }
+        _msdir = site / "macrodata"
+        _msdir.mkdir(parents=True, exist_ok=True)
+        (_msdir / "macro_signals.json").write_text(
+            json.dumps(_msdata, indent=2, default=str))
+        log.info("wrote macrodata/macro_signals.json")
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("macro_signals.json failed: %s", e)
     # landing-hub card stat (presence-gated by the .html existing)
     _ab = vm["action_board"] or {}
     _ts = top_setups or {}

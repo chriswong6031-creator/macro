@@ -52,6 +52,9 @@ def main() -> int:
     out = site / "news.html"
     out.write_text(env.get_template("news.html.j2").render(**vm))
     print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
+    out = site / "macro_signals.html"
+    out.write_text(env.get_template("macro_signals.html.j2").render(**vm))
+    print(f"wrote {out} ({out.stat().st_size/1024:.0f} KB)")
     return 0
 
 
