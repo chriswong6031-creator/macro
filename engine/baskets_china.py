@@ -74,3 +74,29 @@ def compute_china_baskets() -> dict | None:
     bench = store.read("china", mem.get("benchmark", BENCHMARK_DEFAULT))
     return compute_region_baskets(closes, mem, bench,
                                   lambda s: store.read("china", s), name_key="name_zh")
+
+
+def _ths_membership() -> dict | None:
+    """THS-sourced membership (data/baskets_china_ths/membership.json) — the 同花顺 concept-board
+    sibling of _membership(), seeded by scripts.seed_china_ths_baskets."""
+    p = config.data_dir() / "baskets_china_ths" / "membership.json"
+    if not p.exists():
+        return None
+    try:
+        return json.loads(p.read_text())
+    except Exception as e:  # noqa: BLE001
+        log.warning("china THS baskets membership unreadable: %s", e)
+        return None
+
+
+def compute_china_ths_baskets() -> dict | None:
+    """Same compute as compute_china_baskets(), but over the 同花顺 (THS) concept-board membership.
+    Identical data plane (china_search closes + CSI 300 benchmark) so the THS page is computed
+    exactly like the curated one. Additive — returns None if the THS membership isn't seeded."""
+    mem = _ths_membership()
+    if not mem or not mem.get("baskets"):
+        return None
+    closes = _closes()
+    bench = store.read("china", mem.get("benchmark", BENCHMARK_DEFAULT))
+    return compute_region_baskets(closes, mem, bench,
+                                  lambda s: store.read("china", s), name_key="name_zh")

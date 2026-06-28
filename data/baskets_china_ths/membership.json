@@ -1,0 +1,6234 @@
+{
+  "version": "2026-06-27",
+  "seed_date": "2021-06-15",
+  "curated": "2026-06-27",
+  "source": "tonghuashun_concept_boards",
+  "snapshots": [
+    "2026-06-27"
+  ],
+  "benchmark": "510300.SS",
+  "benchmark_label": "CSI 300",
+  "benchmark_label_zh": "沪深300",
+  "construction": "Equal-weighted, point-in-time dated membership, buy-and-hold between changes. Members are 同花顺 (Tonghuashun) concept-board constituents, filtered to the free china_search price cache. Benchmark = CSI 300 (沪深300).",
+  "history_note": "Membership is THS's, snapshotted over time; `added`/`removed` reflect when a name entered/left the THS board (first-run members seed at the cache start). Series before a name's add date is a backtest of the membership at that point.",
+  "note": "A-share baskets mirroring 同花顺 concept-board themes & members — descriptive structure, not an out-of-sample backtest and not a buy list.",
+  "baskets": {
+    "ths_ai": {
+      "name": "Artificial Intelligence",
+      "name_zh": "人工智能",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Broad A-share AI complex — models, compute and applications.",
+      "thesis_zh": "A股人工智能总线 — 模型、算力与应用。",
+      "members": [
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001309.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德明利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002202.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金风科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002354.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天娱数科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300759.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "康龙化成",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300762.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海瀚讯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301095.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广立微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603678.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "火炬电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688387.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信科移动",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "人工智能",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '人工智能' — 14 members in cache, 36 outside."
+        }
+      ]
+    },
+    "ths_cpo": {
+      "name": "Co-Packaged Optics (CPO)",
+      "name_zh": "共封装光学(CPO)",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Optical-interconnect supply chain for AI datacentre switching.",
+      "thesis_zh": "AI数据中心交换的光互连产业链。",
+      "members": [
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001309.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德明利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300285.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国瓷材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300319.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "麦捷科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300323.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华灿光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301095.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广立微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600184.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光电股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603773.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沃格光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南亚新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688531.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "日联科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "共封装光学(CPO)",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '共封装光学(CPO)' — 15 members in cache, 15 outside."
+        }
+      ]
+    },
+    "ths_storage_chip": {
+      "name": "Memory Chips",
+      "name_zh": "存储芯片",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "DRAM/NAND memory design, manufacture and modules.",
+      "thesis_zh": "DRAM/NAND存储设计、制造与模组。",
+      "members": [
+        {
+          "ticker": "001309.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德明利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002409.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "雅克科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300346.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南大光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300398.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞凯材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300567.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "精测电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300666.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江丰电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300751.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈为股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301095.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广立微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "珂玛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600206.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "有研新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600667.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "太极实业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603650.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "彤程新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603938.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三孚股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688037.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "芯源微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688110.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东芯股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688120.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华海清科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688126.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沪硅产业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688233.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "神工股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688361.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科飞测",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688432.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "有研硅",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南亚新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688525.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "佰维存储",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688652.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京仪装备",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688783.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "西安奕材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "存储芯片",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '存储芯片' — 26 members in cache, 14 outside."
+        }
+      ]
+    },
+    "ths_litho": {
+      "name": "Lithography Equipment",
+      "name_zh": "光刻机",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Domestic lithography tools and their supply chain.",
+      "thesis_zh": "国产光刻机及配套产业链。",
+      "members": [
+        {
+          "ticker": "002008.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "大族激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002549.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯美特气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "003031.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中瓷电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300260.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新莱应材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "赛微电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300666.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江丰电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300809.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华辰装备",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300990.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "同飞股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301095.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广立微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301297.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "富乐德",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "珂玛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600353.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "旭光电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600619.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海立股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600850.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华东电脑",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600895.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "张江高科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603005.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶方科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603297.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "永新光学",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603360.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "百傲化学",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603773.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沃格光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688127.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "蓝特光学",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688146.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中船特气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688167.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "炬光科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688195.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "腾景科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688268.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华特气体",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688409.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "富创精密",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688502.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "茂莱光学",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688605.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "先锋精科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688630.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "芯碁微装",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "光刻机",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '光刻机' — 28 members in cache, 21 outside."
+        }
+      ]
+    },
+    "ths_sic": {
+      "name": "3rd-Gen Semiconductors",
+      "name_zh": "第三代半导体",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "SiC/GaN wide-bandgap power & RF semiconductors.",
+      "thesis_zh": "碳化硅/氮化镓宽禁带功率与射频半导体。",
+      "members": [
+        {
+          "ticker": "001270.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铖昌科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002617.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "露笑科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300323.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华灿光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300398.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞凯材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300666.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江丰电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300751.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈为股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300776.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "帝尔激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301095.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广立微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "珂玛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603005.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶方科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603678.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "火炬电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688120.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华海清科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688233.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "神工股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688375.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD国博电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "第三代半导体",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '第三代半导体' — 17 members in cache, 13 outside."
+        }
+      ]
+    },
+    "ths_adv_pkg": {
+      "name": "Advanced Packaging",
+      "name_zh": "先进封装",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Chiplet / 2.5D-3D advanced semiconductor packaging.",
+      "thesis_zh": "Chiplet/2.5D-3D先进封装。",
+      "members": [
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002409.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "雅克科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300398.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞凯材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300567.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "精测电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300751.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈为股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300776.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "帝尔激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600206.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "有研新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600667.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "太极实业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603002.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏昌电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603005.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶方科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603773.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沃格光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688012.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中微公司",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688037.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "芯源微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688120.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华海清科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688361.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科飞测",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688375.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD国博电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688525.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "佰维存储",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "先进封装",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '先进封装' — 22 members in cache, 28 outside."
+        }
+      ]
+    },
+    "ths_liquid_cool": {
+      "name": "Liquid-Cooled Servers",
+      "name_zh": "液冷服务器",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Liquid cooling for AI server racks.",
+      "thesis_zh": "面向AI服务器机柜的液冷方案。",
+      "members": [
+        {
+          "ticker": "000333.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "美的集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000651.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格力电器",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002335.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科华数据",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002831.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "裕同科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300260.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新莱应材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300376.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "易事特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300433.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "蓝思科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300602.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞荣达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600141.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兴发集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600160.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "巨化股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600596.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新安股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603019.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科曙光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688503.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "聚和材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688531.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "日联科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "液冷服务器",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '液冷服务器' — 18 members in cache, 32 outside."
+        }
+      ]
+    },
+    "ths_aidc": {
+      "name": "Data Centers (AIDC)",
+      "name_zh": "数据中心(AIDC)",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "AI datacentre build-out — IDC operators and gear.",
+      "thesis_zh": "AI数据中心建设 — IDC运营商与设备。",
+      "members": [
+        {
+          "ticker": "001309.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德明利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300260.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新莱应材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏和科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603678.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "火炬电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "数据中心(AIDC)",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '数据中心(AIDC)' — 6 members in cache, 14 outside."
+        }
+      ]
+    },
+    "ths_xinchuang": {
+      "name": "Domestic IT (Xinchuang)",
+      "name_zh": "信创",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Domestic-substitution IT stack — OS, chips, software.",
+      "thesis_zh": "信息技术应用创新 — 国产操作系统、芯片、软件。",
+      "members": [
+        {
+          "ticker": "000547.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天发展",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002183.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "怡亚通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002354.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天娱数科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301095.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广立微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301269.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华大九天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301308.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江波龙",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603019.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科曙光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688525.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "佰维存储",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688777.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中控技术",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "信创",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '信创' — 11 members in cache, 29 outside."
+        }
+      ]
+    },
+    "ths_pcb": {
+      "name": "PCB",
+      "name_zh": "PCB概念",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Printed-circuit-board makers riding AI-server demand.",
+      "thesis_zh": "受益AI服务器需求的PCB厂商。",
+      "members": [
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002859.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洁美科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300776.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "帝尔激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301526.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国际复材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏和科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南亚新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "PCB概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept 'PCB概念' — 8 members in cache, 12 outside."
+        }
+      ]
+    },
+    "ths_consumer_elec": {
+      "name": "Consumer Electronics",
+      "name_zh": "消费电子概念",
+      "category": "Technology & AI",
+      "category_zh": "科技与AI",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Phones, wearables and their A-share supply chain.",
+      "thesis_zh": "手机、可穿戴及A股供应链。",
+      "members": [
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001399.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "N惠科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002182.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云海金属",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002635.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安洁科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002859.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洁美科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300285.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国瓷材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300323.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华灿光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300776.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "帝尔激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301526.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国际复材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603005.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶方科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏和科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688110.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东芯股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "消费电子概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '消费电子概念' — 16 members in cache, 24 outside."
+        }
+      ]
+    },
+    "ths_humanoid": {
+      "name": "Humanoid Robots",
+      "name_zh": "人形机器人",
+      "category": "Robotics & Automation",
+      "category_zh": "机器人与自动化",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Humanoid-robot makers and component suppliers.",
+      "thesis_zh": "人形机器人整机与零部件。",
+      "members": [
+        {
+          "ticker": "000333.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "美的集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002354.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天娱数科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002617.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "露笑科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300319.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "麦捷科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301345.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "涛涛车业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600184.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光电股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600596.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新安股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600835.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海机电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688400.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凌云光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688525.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "佰维存储",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "人形机器人",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '人形机器人' — 17 members in cache, 23 outside."
+        }
+      ]
+    },
+    "ths_robotics": {
+      "name": "Robotics",
+      "name_zh": "机器人概念",
+      "category": "Robotics & Automation",
+      "category_zh": "机器人与自动化",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Industrial robots, automation and motion control.",
+      "thesis_zh": "工业机器人、自动化与运动控制。",
+      "members": [
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002182.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云海金属",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002354.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天娱数科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002617.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "露笑科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002635.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安洁科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300762.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海瀚讯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603194.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中力股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "机器人概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '机器人概念' — 14 members in cache, 26 outside."
+        }
+      ]
+    },
+    "ths_solar": {
+      "name": "Solar PV",
+      "name_zh": "光伏概念",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Solar value chain — silicon, cells, modules, inverters.",
+      "thesis_zh": "光伏产业链 — 硅料、电池、组件、逆变器。",
+      "members": [
+        {
+          "ticker": "002129.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "TCL中环",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300395.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "菲利华",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300398.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞凯材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300666.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江丰电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300751.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈为股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300776.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "帝尔激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301526.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国际复材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600176.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国巨石",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600660.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "福耀玻璃",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601636.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "旗滨集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603938.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三孚股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605376.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "博迁新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688605.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "先锋精科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "光伏概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '光伏概念' — 21 members in cache, 29 outside."
+        }
+      ]
+    },
+    "ths_battery": {
+      "name": "Lithium Battery",
+      "name_zh": "锂电池概念",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Li-ion cells, materials and the battery supply chain.",
+      "thesis_zh": "锂电池电芯、材料与产业链。",
+      "members": [
+        {
+          "ticker": "002080.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中材科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002859.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洁美科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300285.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国瓷材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300567.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "精测电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300751.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "迈为股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "珂玛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603194.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中力股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605376.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "博迁新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "锂电池概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '锂电池概念' — 13 members in cache, 27 outside."
+        }
+      ]
+    },
+    "ths_solid_state": {
+      "name": "Solid-State Battery",
+      "name_zh": "固态电池",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Next-gen solid-state battery developers.",
+      "thesis_zh": "下一代固态电池研发企业。",
+      "members": [
+        {
+          "ticker": "002080.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中材科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002859.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洁美科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300285.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国瓷材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "固态电池",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '固态电池' — 8 members in cache, 12 outside."
+        }
+      ]
+    },
+    "ths_storage_ess": {
+      "name": "Energy Storage",
+      "name_zh": "储能",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Grid/behind-the-meter energy-storage systems.",
+      "thesis_zh": "电网侧/用户侧储能系统。",
+      "members": [
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002202.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金风科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002335.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科华数据",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002635.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安洁科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300820.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "英杰电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600619.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海立股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕鼓动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603194.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中力股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688516.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特维",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "储能",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '储能' — 13 members in cache, 37 outside."
+        }
+      ]
+    },
+    "ths_wind": {
+      "name": "Wind Power",
+      "name_zh": "风电",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Wind turbines, components and offshore wind.",
+      "thesis_zh": "风电整机、零部件与海上风电。",
+      "members": [
+        {
+          "ticker": "000547.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天发展",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001289.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "龙源电力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002015.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "协鑫能科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002080.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中材科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002202.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金风科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300065.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海兰信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300185.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "通裕重工",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300772.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "运达股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301526.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国际复材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600025.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华能水电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600176.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国巨石",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600460.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "士兰微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600795.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国电电力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600905.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三峡能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601112.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "振石股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688248.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南网科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688295.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中复神鹰",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "风电",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '风电' — 17 members in cache, 33 outside."
+        }
+      ]
+    },
+    "ths_hydrogen": {
+      "name": "Hydrogen",
+      "name_zh": "氢能源",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Hydrogen production, storage and fuel cells.",
+      "thesis_zh": "氢气制取、储运与燃料电池。",
+      "members": [
+        {
+          "ticker": "002080.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中材科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002182.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云海金属",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002202.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金风科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002335.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科华数据",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002635.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安洁科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300285.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国瓷材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300772.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "运达股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300820.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "英杰电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕鼓动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603698.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天工程",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605090.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "九丰能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "氢能源",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '氢能源' — 13 members in cache, 17 outside."
+        }
+      ]
+    },
+    "ths_nuclear": {
+      "name": "Nuclear Power",
+      "name_zh": "核电",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Nuclear power operators and equipment.",
+      "thesis_zh": "核电运营商与设备。",
+      "members": [
+        {
+          "ticker": "000962.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东方钽业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002149.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "西部材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002335.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科华数据",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002960.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "青鸟消防",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300185.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "通裕重工",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300416.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "苏试试验",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300455.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "康拓红外",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300820.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "英杰电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600900.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长江电力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕鼓动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601868.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国能建",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603678.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "火炬电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603698.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天工程",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688776.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国光电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "核电",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '核电' — 16 members in cache, 24 outside."
+        }
+      ]
+    },
+    "ths_charging": {
+      "name": "EV Charging",
+      "name_zh": "充电桩",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "EV charging-pile makers and operators.",
+      "thesis_zh": "充电桩制造与运营。",
+      "members": [
+        {
+          "ticker": "000429.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "粤高速Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002015.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "协鑫能科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002183.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "怡亚通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002239.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特佳",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002635.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安洁科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300319.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "麦捷科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300376.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "易事特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300602.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞荣达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300820.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "英杰电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301215.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中汽股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600703.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三安光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605111.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新洁能",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688469.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "芯联集成",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "充电桩",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '充电桩' — 18 members in cache, 32 outside."
+        }
+      ]
+    },
+    "ths_uhv": {
+      "name": "Ultra-High Voltage",
+      "name_zh": "特高压",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "UHV transmission equipment and the grid build-out.",
+      "thesis_zh": "特高压输电设备与电网建设。",
+      "members": [
+        {
+          "ticker": "002202.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金风科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002409.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "雅克科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301526.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国际复材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600406.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国电南瑞",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600563.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "法拉电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601096.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏盛华源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601669.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国电建",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601868.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国能建",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688469.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "芯联集成",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "特高压",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '特高压' — 11 members in cache, 19 outside."
+        }
+      ]
+    },
+    "ths_vpp": {
+      "name": "Virtual Power Plant",
+      "name_zh": "虚拟电厂",
+      "category": "Energy Transition",
+      "category_zh": "新能源",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Virtual-power-plant / demand-response platforms.",
+      "thesis_zh": "虚拟电厂/需求响应平台。",
+      "members": [
+        {
+          "ticker": "000021.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "深科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000685.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中山公用",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000883.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "湖北能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002015.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "协鑫能科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002354.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天娱数科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002434.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "万里扬",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300274.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "阳光电源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300376.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "易事特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300638.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广和通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600017.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "日照港",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600023.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "浙能电力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600027.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD华电国",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600116.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三峡水利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600353.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "旭光电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600406.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国电南瑞",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600995.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南网储能",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕鼓动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601669.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国电建",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601868.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国能建",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688248.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南网科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "虚拟电厂",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '虚拟电厂' — 22 members in cache, 28 outside."
+        }
+      ]
+    },
+    "ths_nev": {
+      "name": "New-Energy Vehicles",
+      "name_zh": "新能源汽车",
+      "category": "Autos & Mobility",
+      "category_zh": "汽车与出行",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "EV/PHEV makers and the new-energy auto chain.",
+      "thesis_zh": "新能源整车与产业链。",
+      "members": [
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300398.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞凯材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603194.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中力股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南亚新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "新能源汽车",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '新能源汽车' — 9 members in cache, 11 outside."
+        }
+      ]
+    },
+    "ths_autonomous": {
+      "name": "Autonomous Driving",
+      "name_zh": "无人驾驶",
+      "category": "Autos & Mobility",
+      "category_zh": "汽车与出行",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Self-driving software, sensors and ADAS.",
+      "thesis_zh": "自动驾驶软件、传感器与ADAS。",
+      "members": [
+        {
+          "ticker": "000901.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002239.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥特佳",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002335.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科华数据",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300342.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天银机电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300602.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞荣达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301345.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "涛涛车业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600066.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宇通客车",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603297.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "永新光学",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605111.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新洁能",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688502.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "茂莱光学",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "无人驾驶",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '无人驾驶' — 16 members in cache, 34 outside."
+        }
+      ]
+    },
+    "ths_auto_elec": {
+      "name": "Automotive Electronics",
+      "name_zh": "汽车电子",
+      "category": "Autos & Mobility",
+      "category_zh": "汽车与出行",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Automotive chips, electronics and domain controllers.",
+      "thesis_zh": "汽车芯片、电子与域控制器。",
+      "members": [
+        {
+          "ticker": "001309.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德明利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002635.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安洁科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300323.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华灿光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301526.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国际复材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603005.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶方科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603773.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沃格光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "汽车电子",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '汽车电子' — 11 members in cache, 19 outside."
+        }
+      ]
+    },
+    "ths_die_cast": {
+      "name": "Integrated Die-Casting",
+      "name_zh": "一体化压铸",
+      "category": "Autos & Mobility",
+      "category_zh": "汽车与出行",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Giga-casting / integrated die-cast body suppliers.",
+      "thesis_zh": "一体化压铸车身供应商。",
+      "members": [
+        {
+          "ticker": "000651.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格力电器",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002101.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广东鸿图",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002182.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云海金属",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002434.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "万里扬",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002906.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华阳集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300083.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "劲胜精密",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300124.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "汇川技术",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300415.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "伊之密",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300428.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "四通新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300602.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞荣达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300926.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "博俊科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301268.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铭利达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600006.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东风汽车",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600733.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "北汽蓝谷",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600888.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新疆众和",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603169.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兰石重装",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603305.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "旭升集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华达科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603418.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "友升股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603663.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三祥新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688531.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "日联科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "一体化压铸",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '一体化压铸' — 22 members in cache, 28 outside."
+        }
+      ]
+    },
+    "ths_low_altitude": {
+      "name": "Low-Altitude Economy",
+      "name_zh": "低空经济",
+      "category": "Autos & Mobility",
+      "category_zh": "汽车与出行",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "eVTOL / drones / low-altitude airspace economy.",
+      "thesis_zh": "eVTOL/无人机/低空空域经济。",
+      "members": [
+        {
+          "ticker": "000547.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天发展",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002182.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云海金属",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002183.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "怡亚通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002965.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "祥鑫科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300136.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信维通信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300342.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天银机电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300416.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "苏试试验",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301319.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "唯特偶",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601698.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605090.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "九丰能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605111.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新洁能",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688248.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南网科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688387.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信科移动",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688523.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天环宇",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "低空经济",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '低空经济' — 19 members in cache, 31 outside."
+        }
+      ]
+    },
+    "ths_innovative_rx": {
+      "name": "Innovative Drugs",
+      "name_zh": "创新药",
+      "category": "Healthcare & Biotech",
+      "category_zh": "医药与生物科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Innovative-drug developers and their CXO partners.",
+      "thesis_zh": "创新药研发企业及CXO伙伴。",
+      "members": [
+        {
+          "ticker": "000538.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云南白药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002004.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华邦健康",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002332.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "仙琚制药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002821.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯莱英",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300347.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泰格医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300759.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "康龙化成",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301015.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "百洋医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301263.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泰恩康",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600079.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "ST人福",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600285.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "羚锐制药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600572.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "康恩贝",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600993.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "马应龙",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603259.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "药明康德",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605116.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥锐特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688131.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "皓元医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688266.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泽璟制药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688289.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "圣湘生物",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688578.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "艾力斯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "创新药",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '创新药' — 19 members in cache, 31 outside."
+        }
+      ]
+    },
+    "ths_aesthetics": {
+      "name": "Medical Aesthetics",
+      "name_zh": "医美概念",
+      "category": "Healthcare & Biotech",
+      "category_zh": "医药与生物科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Medical-aesthetics products and services.",
+      "thesis_zh": "医疗美容产品与服务。",
+      "members": [
+        {
+          "ticker": "000028.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国药一致",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000538.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云南白药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000990.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "诚志股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002004.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华邦健康",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002139.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "拓邦股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600216.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "浙江医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601607.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "医美概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '医美概念' — 7 members in cache, 33 outside."
+        }
+      ]
+    },
+    "ths_bci": {
+      "name": "Brain-Computer Interface",
+      "name_zh": "脑机接口",
+      "category": "Healthcare & Biotech",
+      "category_zh": "医药与生物科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Brain-computer-interface research and hardware.",
+      "thesis_zh": "脑机接口研发与硬件。",
+      "members": [
+        {
+          "ticker": "000650.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "仁和药业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002195.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "岩山科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002243.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "通产丽星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002324.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "普利特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002465.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海格通信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002555.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "三七互娱",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002602.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "世纪华通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300007.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "汉威科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300459.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "汤姆猫",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301363.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "美好医疗",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600056.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600587.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新华医疗",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688306.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "均普智能",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "脑机接口",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '脑机接口' — 14 members in cache, 36 outside."
+        }
+      ]
+    },
+    "ths_synbio": {
+      "name": "Synthetic Biology",
+      "name_zh": "合成生物",
+      "category": "Healthcare & Biotech",
+      "category_zh": "医药与生物科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Synthetic-biology and bio-manufacturing.",
+      "thesis_zh": "合成生物与生物制造。",
+      "members": [
+        {
+          "ticker": "002001.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新和成",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002714.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "牧原股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002821.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯莱英",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301047.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "义翘神州",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301263.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泰恩康",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600299.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "安迪苏",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603456.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "九洲药业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603690.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "至纯科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605116.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥锐特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605507.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国邦医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688131.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "皓元医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "合成生物",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '合成生物' — 11 members in cache, 39 outside."
+        }
+      ]
+    },
+    "ths_med_devices": {
+      "name": "Medical Devices",
+      "name_zh": "医疗器械概念",
+      "category": "Healthcare & Biotech",
+      "category_zh": "医药与生物科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Medical-device makers across imaging, IVD, implants.",
+      "thesis_zh": "影像、IVD、植介入等医疗器械。",
+      "members": [
+        {
+          "ticker": "000725.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "京东方Ａ",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002149.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "西部材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002456.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "欧菲光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300347.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泰格医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "珂玛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600206.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "有研新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688605.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "先锋精科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "医疗器械概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '医疗器械概念' — 11 members in cache, 19 outside."
+        }
+      ]
+    },
+    "ths_baijiu": {
+      "name": "Baijiu (Liquor)",
+      "name_zh": "白酒概念",
+      "category": "Consumer",
+      "category_zh": "消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "China's premium liquor — the bellwether consumer basket.",
+      "thesis_zh": "白酒 — 消费风向标篮子。",
+      "members": [
+        {
+          "ticker": "000568.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "泸州老窖",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000596.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "古井贡酒",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000858.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "五粮液",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000860.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "顺鑫农业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002183.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "怡亚通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002304.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洋河股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600059.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "古越龙山",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600155.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华创云信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600332.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "白云山",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD贵州茅",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600559.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "老白干酒",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600750.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江中药业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600809.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "山西汾酒",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "今世缘",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603919.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金徽酒",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "白酒概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '白酒概念' — 15 members in cache, 33 outside."
+        }
+      ]
+    },
+    "ths_prepared_food": {
+      "name": "Prepared Dishes",
+      "name_zh": "预制菜",
+      "category": "Consumer",
+      "category_zh": "消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Pre-made / ready-meal food producers.",
+      "thesis_zh": "预制菜/速食生产商。",
+      "members": [
+        {
+          "ticker": "000651.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格力电器",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000876.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新希望",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000895.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "双汇发展",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002840.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华统股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300498.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "温氏股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601933.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "永辉超市",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603057.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "紫燕食品",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605296.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "神农集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "预制菜",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '预制菜' — 8 members in cache, 12 outside."
+        }
+      ]
+    },
+    "ths_appliances": {
+      "name": "Home Appliances",
+      "name_zh": "家用电器",
+      "category": "Consumer",
+      "category_zh": "消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "White goods and small home appliances.",
+      "thesis_zh": "大家电与小家电。",
+      "members": [
+        {
+          "ticker": "000333.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "美的集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000651.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格力电器",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000727.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "冠捷科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000810.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "创维数字",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002032.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "苏泊尔",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300342.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天银机电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300458.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "全志科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300602.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "飞荣达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600060.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海信视像",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600460.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "士兰微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600619.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海立股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600690.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海尔智家",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603195.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "公牛集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "家用电器",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '家用电器' — 14 members in cache, 36 outside."
+        }
+      ]
+    },
+    "ths_cross_border": {
+      "name": "Cross-Border E-Commerce",
+      "name_zh": "跨境电商",
+      "category": "Consumer",
+      "category_zh": "消费",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Cross-border e-commerce sellers and enablers.",
+      "thesis_zh": "跨境电商卖家与服务商。",
+      "members": [
+        {
+          "ticker": "002127.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南极电商",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002354.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天娱数科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002617.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "露笑科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002960.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "青鸟消防",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301015.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "百洋医药",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301345.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "涛涛车业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601933.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "永辉超市",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603268.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "松发股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603713.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "密尔克卫",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "跨境电商",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '跨境电商' — 10 members in cache, 40 outside."
+        }
+      ]
+    },
+    "ths_rare_earth": {
+      "name": "Rare-Earth & Magnets",
+      "name_zh": "稀土永磁",
+      "category": "Materials & Resources",
+      "category_zh": "资源与材料",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Rare-earth miners and permanent-magnet makers.",
+      "thesis_zh": "稀土开采与永磁制造。",
+      "members": [
+        {
+          "ticker": "001280.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国铀业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002056.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "横店东磁",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600206.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "有研新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600549.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "厦门钨业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "稀土永磁",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '稀土永磁' — 4 members in cache, 6 outside."
+        }
+      ]
+    },
+    "ths_gold": {
+      "name": "Gold",
+      "name_zh": "黄金概念",
+      "category": "Materials & Resources",
+      "category_zh": "资源与材料",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Gold miners and producers.",
+      "thesis_zh": "黄金开采与生产。",
+      "members": [
+        {
+          "ticker": "000060.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中金岭南",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000408.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "藏格矿业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000506.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "招金黄金",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002867.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "周大生",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600089.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "特变电工",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600489.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中金黄金",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600497.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "驰宏锌锗",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600612.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "老凤祥",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600961.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "株冶集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600988.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "赤峰黄金",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601899.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD紫金矿",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603132.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金徽股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603588.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "高能环境",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605599.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "菜百股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "黄金概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '黄金概念' — 15 members in cache, 25 outside."
+        }
+      ]
+    },
+    "ths_coal": {
+      "name": "Coal",
+      "name_zh": "煤炭概念",
+      "category": "Materials & Resources",
+      "category_zh": "资源与材料",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Thermal/coking coal producers — the high-dividend value bloc.",
+      "thesis_zh": "动力/焦煤生产 — 高股息价值板块。",
+      "members": [
+        {
+          "ticker": "000552.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "甘肃能化",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001286.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕西能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002128.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电投能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600027.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD华电国",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600123.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兰花科创",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600157.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "永泰能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600188.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兖矿能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广汇能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600348.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华阳股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600403.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "大有能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600740.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "山西焦化",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600863.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华能蒙电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600888.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新疆众和",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600925.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "苏能股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600971.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恒源煤电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600989.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宝丰能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600997.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "开滦股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601088.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国神华",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601225.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD陕西煤",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601233.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "桐昆股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601898.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中煤能源",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603393.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "新天然气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "煤炭概念",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '煤炭概念' — 22 members in cache, 28 outside."
+        }
+      ]
+    },
+    "ths_fintech": {
+      "name": "Internet Finance",
+      "name_zh": "互联网金融",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Internet-finance platforms and fintech.",
+      "thesis_zh": "互联网金融平台与金融科技。",
+      "members": [
+        {
+          "ticker": "000703.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恒逸石化",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000728.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国元证券",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600177.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "雅戈尔",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "互联网金融",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '互联网金融' — 4 members in cache, 16 outside."
+        }
+      ]
+    },
+    "ths_digital_curr": {
+      "name": "Digital Currency",
+      "name_zh": "数字货币",
+      "category": "Financials",
+      "category_zh": "金融",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Digital-RMB / e-CNY infrastructure plays.",
+      "thesis_zh": "数字人民币/e-CNY基础设施。",
+      "members": [
+        {
+          "ticker": "000676.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "智度投资",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002049.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "紫光国微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002104.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "恒宝股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002268.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科网安",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002537.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海立美达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300077.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国民技术",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300188.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "美亚柏科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300339.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "润和软件",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300579.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "数字认证",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301236.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "软通动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600415.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "小商品城",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600718.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东软集团",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688362.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "甬矽电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688521.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "芯原股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "数字货币",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '数字货币' — 14 members in cache, 36 outside."
+        }
+      ]
+    },
+    "ths_defense": {
+      "name": "Defense",
+      "name_zh": "军工",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Defense primes and the military-industrial chain.",
+      "thesis_zh": "军工总装与军民产业链。",
+      "members": [
+        {
+          "ticker": "001270.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铖昌科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002080.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中材科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002182.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "云海金属",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300342.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天银机电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300762.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海瀚讯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600184.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "光电股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600206.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "有研新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600459.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "贵研铂业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕鼓动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601698.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603194.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中力股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603678.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "火炬电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603698.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天工程",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688375.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD国博电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "军工",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '军工' — 19 members in cache, 31 outside."
+        }
+      ]
+    },
+    "ths_big_plane": {
+      "name": "Large Aircraft",
+      "name_zh": "大飞机",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "C919 large-aircraft and commercial-aviation chain.",
+      "thesis_zh": "C919大飞机及商用航空产业链。",
+      "members": [
+        {
+          "ticker": "000768.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航西飞",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002025.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电器",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002046.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国机精工",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002465.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "海格通信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002985.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "北摩高科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "302132.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航成飞",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600760.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航沈飞",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605123.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "派克新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688295.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中复神鹰",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688523.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天环宇",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688538.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "和辉光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688586.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江航装备",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688777.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中控技术",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "大飞机",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '大飞机' — 16 members in cache, 34 outside."
+        }
+      ]
+    },
+    "ths_space": {
+      "name": "Commercial Aerospace",
+      "name_zh": "商业航天",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Commercial space — launch, satellites, ground.",
+      "thesis_zh": "商业航天 — 火箭、卫星、地面。",
+      "members": [
+        {
+          "ticker": "001270.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铖昌科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002129.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "TCL中环",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300088.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "长信科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300762.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海瀚讯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600552.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "凯盛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601369.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "陕鼓动力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "商业航天",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '商业航天' — 9 members in cache, 11 outside."
+        }
+      ]
+    },
+    "ths_satnav": {
+      "name": "Satellite Navigation",
+      "name_zh": "卫星导航",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "BeiDou satellite-navigation applications.",
+      "thesis_zh": "北斗卫星导航应用。",
+      "members": [
+        {
+          "ticker": "000547.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天发展",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000901.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001270.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铖昌科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001389.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "广合科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002149.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "西部材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002183.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "怡亚通",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300136.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信维通信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300285.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国瓷材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300342.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天银机电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300455.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "康拓红外",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300762.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海瀚讯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301005.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "超捷股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600118.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国卫星",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600246.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "万通发展",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603773.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "沃格光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688375.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD国博电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688387.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信科移动",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688503.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "聚和材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688523.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天环宇",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688776.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国光电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688818.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "电科蓝天",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "卫星导航",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '卫星导航' — 24 members in cache, 26 outside."
+        }
+      ]
+    },
+    "ths_machine_tool": {
+      "name": "Machine Tools",
+      "name_zh": "工业母机",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "High-end CNC machine tools ('mother machines').",
+      "thesis_zh": "高端数控机床（工业母机）。",
+      "members": [
+        {
+          "ticker": "000651.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "格力电器",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002008.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "大族激光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002046.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国机精工",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002338.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥普光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002595.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "豪迈科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300607.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "拓斯达",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300809.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "华辰装备",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "工业母机",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '工业母机' — 7 members in cache, 23 outside."
+        }
+      ]
+    },
+    "ths_specialized": {
+      "name": "Specialized SMEs",
+      "name_zh": "专精特新",
+      "category": "Advanced Manufacturing",
+      "category_zh": "高端制造",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "'Little-giant' specialized & sophisticated SMEs.",
+      "thesis_zh": "专精特新“小巨人”企业。",
+      "members": [
+        {
+          "ticker": "001270.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "铖昌科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "001309.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "德明利",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002859.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洁美科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300762.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海瀚讯",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "珂玛科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603256.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "宏和科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605358.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "立昂微",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605376.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "博迁新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688003.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "天准科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688387.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "信科移动",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688392.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "骄成超声",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688409.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "富创精密",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688519.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "南亚新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688584.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上海合晶",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688605.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "先锋精科",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "专精特新",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '专精特新' — 15 members in cache, 35 outside."
+        }
+      ]
+    },
+    "ths_quantum": {
+      "name": "Quantum Tech",
+      "name_zh": "量子科技",
+      "category": "Frontier Tech",
+      "category_zh": "前沿科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Quantum computing / communication research.",
+      "thesis_zh": "量子计算/通信研究。",
+      "members": [
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002335.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "科华数据",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600050.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "XD中国联",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600406.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国电南瑞",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600879.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "航天电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600941.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国移动",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601728.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国电信",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603019.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中科曙光",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605116.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "奥锐特",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688249.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "晶合集成",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "量子科技",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '量子科技' — 10 members in cache, 20 outside."
+        }
+      ]
+    },
+    "ths_fusion": {
+      "name": "Nuclear Fusion",
+      "name_zh": "可控核聚变",
+      "category": "Frontier Tech",
+      "category_zh": "前沿科技",
+      "etf_proxy": null,
+      "etf_proxy_note": "",
+      "created": "2021-06-15",
+      "weighting": "equal",
+      "thesis": "Controlled-fusion research and supply chain.",
+      "thesis_zh": "可控核聚变研究与产业链。",
+      "members": [
+        {
+          "ticker": "000811.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "冰轮环境",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "000962.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东方钽业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002149.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "西部材料",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002179.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中航光电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002430.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "杭氧股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002484.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "江海股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002611.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "东方精工",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "002859.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "洁美科技",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300820.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "英杰电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "300827.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上能电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "301522.SZ",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "上大股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600023.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "浙能电力",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600353.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "旭光电子",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "600549.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "厦门钨业",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601868.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国能建",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "601985.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "中国核电",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603169.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "兰石重装",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "603699.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "纽威股份",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "605123.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "派克新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688102.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "斯瑞新材",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688106.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "金宏气体",
+          "rationale": "同花顺概念成分 · THS concept member"
+        },
+        {
+          "ticker": "688776.SS",
+          "added": "2021-06-15",
+          "removed": null,
+          "name_zh": "国光电气",
+          "rationale": "同花顺概念成分 · THS concept member"
+        }
+      ],
+      "ths_concept": "可控核聚变",
+      "changelog": [
+        {
+          "date": "2021-06-15",
+          "action": "import",
+          "note": "Imported 同花顺 concept '可控核聚变' — 22 members in cache, 28 outside."
+        }
+      ]
+    }
+  }
+}

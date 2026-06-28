@@ -2647,6 +2647,13 @@ def main() -> int:
         _build_baskets_china.main()
     except Exception as e:  # noqa: BLE001
         log.error("china baskets (via build_vector) failed (%s)", e)
+    try:  # 同花顺 (Tonghuashun) concept-board baskets page — the machine-maintained sibling, off
+          # the same china_search cache + data/baskets_china_ths/membership.json (seeded out-of-band
+          # by scripts.seed_china_ths_baskets since THS IP-throttles bursty scraping). Additive.
+        from scripts import build_baskets_china_ths as _build_baskets_china_ths
+        _build_baskets_china_ths.main()
+    except Exception as e:  # noqa: BLE001
+        log.error("china THS baskets (via build_vector) failed (%s)", e)
     try:  # Hong Kong thematic baskets page — same pattern, off the hk_search cache.
         from scripts import build_baskets_hk as _build_baskets_hk
         _build_baskets_hk.main()
